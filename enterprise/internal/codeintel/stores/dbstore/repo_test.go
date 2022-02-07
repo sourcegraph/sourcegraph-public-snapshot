@@ -11,15 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepoIDsByGlobPatterns(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -90,10 +87,7 @@ func TestRepoIDsByGlobPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatterns(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -159,10 +153,7 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 

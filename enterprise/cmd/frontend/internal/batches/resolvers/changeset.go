@@ -174,7 +174,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 	}
 
@@ -356,6 +356,13 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 		return nil, nil
 	}
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
+}
+
+func (r *changesetResolver) ForkNamespace() *string {
+	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
+		return &namespace
+	}
+	return nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {

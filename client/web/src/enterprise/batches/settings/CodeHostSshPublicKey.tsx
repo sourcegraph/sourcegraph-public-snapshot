@@ -3,6 +3,8 @@ import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
 
+import { Button, TextArea, Link } from '@sourcegraph/wildcard'
+
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 const configInstructionLinks: Record<ExternalServiceKind, string> = {
@@ -15,6 +17,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
+    [ExternalServiceKind.NPMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
@@ -46,15 +49,15 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
             <div className="d-flex justify-content-between align-items-end mb-2">
                 <label htmlFor={LABEL_ID}>{label}</label>
                 {showCopyButton && (
-                    <button type="button" className="btn btn-secondary" onClick={onCopy}>
+                    <Button onClick={onCopy} variant="secondary">
                         <ContentCopyIcon className="icon-inline" />
                         {copied ? 'Copied!' : 'Copy'}
-                    </button>
+                    </Button>
                 )}
             </div>
-            <textarea
+            <TextArea
                 id={LABEL_ID}
-                className="form-control text-monospace mb-3"
+                className="text-monospace mb-3"
                 rows={5}
                 spellCheck="false"
                 value={sshPublicKey}
@@ -62,9 +65,9 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
             />
             {showInstructionsLink && (
                 <p>
-                    <a href={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
+                    <Link to={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
                         Configuration instructions
-                    </a>
+                    </Link>
                 </p>
             )}
         </>

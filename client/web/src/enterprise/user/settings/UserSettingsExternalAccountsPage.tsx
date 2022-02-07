@@ -3,8 +3,8 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'

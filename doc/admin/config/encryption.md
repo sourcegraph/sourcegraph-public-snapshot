@@ -48,7 +48,7 @@ If you use the Google Cloud KMS backend (or other future API based encryption ba
 ## Disabling encryption
 If you decide to disable encryption, or want to switch to a new key, you must first decrypt the database. In order to do this you have to do a few things:
 
-* set the env var `ALLOW_DECRYPT_MIGRATION` to `true` on the `frontend` service. this allows decryptions to run, and prevents arbitrary queries decrypting the database.
+* set the env var `ALLOW_DECRYPT_MIGRATION` to `true` on the `worker` service. this allows decryptions to run, and prevents arbitrary queries decrypting the database.
 * update the migration to run the decryption (see SQL below).
 * once the migrations are complete, remove the keys from site config.
 

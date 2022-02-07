@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import { interval, Observable } from 'rxjs'
 import { switchMap, filter, take, tap } from 'rxjs/operators'
 
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { getPlatformName } from '../../util/context'

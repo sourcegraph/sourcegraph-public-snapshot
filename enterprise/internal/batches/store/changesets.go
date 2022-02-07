@@ -28,10 +28,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// ChangesetColumns are used by by the changeset related Store methods and by
+// changesetColumns are used by by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var ChangesetColumns = []*sqlf.Query{
+var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -41,6 +41,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_id"),
 	sqlf.Sprintf("changesets.external_service_type"),
 	sqlf.Sprintf("changesets.external_branch"),
+	sqlf.Sprintf("changesets.external_fork_namespace"),
 	sqlf.Sprintf("changesets.external_deleted_at"),
 	sqlf.Sprintf("changesets.external_updated_at"),
 	sqlf.Sprintf("changesets.external_state"),
@@ -77,6 +78,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
 	sqlf.Sprintf("external_state"),
@@ -111,6 +113,7 @@ var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
 	sqlf.Sprintf("external_state"),
@@ -158,6 +161,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
+		nullStringColumn(c.ExternalForkNamespace),
 		nullTimeColumn(c.ExternalDeletedAt),
 		nullTimeColumn(c.ExternalUpdatedAt),
 		nullStringColumn(string(c.ExternalState)),
@@ -188,7 +192,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		vars = append(vars, c.ID)
 	}
 
-	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
+	vars = append(vars, sqlf.Join(changesetColumns, ", "))
 
 	return sqlf.Sprintf(q, vars...), nil
 }
@@ -225,7 +229,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -265,7 +269,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 	ctx, endObservation := s.operations.countChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
 	}
@@ -421,7 +425,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -526,7 +530,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	ctx, endObservation := s.operations.listChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 	}
@@ -628,7 +632,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 		join,
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -713,7 +717,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -757,7 +761,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 		cs.UpdatedAt,
 		val,
 		cs.ID,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 	}
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
@@ -816,6 +820,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.UpdatedAt,
 		metadata,
 		nullStringColumn(c.ExternalBranch),
+		nullStringColumn(c.ExternalForkNamespace),
 		nullTimeColumn(c.ExternalDeletedAt),
 		nullTimeColumn(c.ExternalUpdatedAt),
 		nullStringColumn(string(c.ExternalState)),
@@ -828,7 +833,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.SyncErrorMessage,
 		nullStringColumn(title),
 		c.ID,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 	}
 
 	return sqlf.Sprintf(updateChangesetCodeHostStateQueryFmtstr, vars...), nil
@@ -837,7 +842,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 var updateChangesetCodeHostStateQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:UpdateChangesetCodeHostState
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1032,7 +1037,7 @@ updated_records AS (
 SELECT COUNT(id) FROM all_matching WHERE all_matching.reconciler_state = %s
 `
 
-func ScanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
+func scanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {
 		return &btypes.Changeset{}, false, err
@@ -1126,6 +1131,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
+		&dbutil.NullString{S: &t.ExternalForkNamespace},
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
 		&dbutil.NullString{S: &externalState},
@@ -1248,7 +1254,7 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoChangesetsStats generating authz query conds")
 	}
@@ -1282,7 +1288,7 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
 		btypes.ReconcilerStateQueued.ToDB(),
-		sqlf.Join(ChangesetColumns, ","),
+		sqlf.Join(changesetColumns, ","),
 	)
 
 	var c btypes.Changeset

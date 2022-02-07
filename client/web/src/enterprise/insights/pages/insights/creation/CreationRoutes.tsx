@@ -2,9 +2,9 @@ import React from 'react'
 import { Switch, Route, useRouteMatch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../../../auth'
-import { lazyComponent } from '../../../../../util/lazyComponent'
 
 import { InsightCreationPageType } from './InsightCreationPage'
 
@@ -41,6 +41,16 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
                 render={() => (
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.Search}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            />
+
+            <Route
+                path={`${match.url}/capture-group`}
+                render={() => (
+                    <InsightCreationLazyPage
+                        mode={InsightCreationPageType.CaptureGroup}
                         telemetryService={telemetryService}
                     />
                 )}

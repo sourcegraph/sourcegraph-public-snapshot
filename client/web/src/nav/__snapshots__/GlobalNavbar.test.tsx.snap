@@ -108,21 +108,16 @@ exports[`GlobalNavbar default 1`] = `
             >
               <a
                 class="dropdown-item showOnTouchScreen"
-                to="/search"
+                href="/search"
               >
                 Search home
               </a>
               <a
                 class="dropdown-item"
+                href="/contexts"
                 role="menuitem"
-                to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -169,12 +164,7 @@ exports[`GlobalNavbar default 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -218,7 +208,7 @@ exports[`GlobalNavbar default 1`] = `
       >
         <a
           class="link"
-          to="https://about.sourcegraph.com"
+          href="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -233,16 +223,17 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
-            to="/sign-in"
+            class="btn btnOutlineSecondary btnSm mr-1"
+            href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm signUp"
-            to="/sign-up"
+            class="btn btnSm signUp"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            tabindex="0"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>
@@ -260,8 +251,6 @@ exports[`GlobalNavbar default 1`] = `
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""
@@ -382,21 +371,16 @@ exports[`GlobalNavbar low-profile 1`] = `
             >
               <a
                 class="dropdown-item showOnTouchScreen"
-                to="/search"
+                href="/search"
               >
                 Search home
               </a>
               <a
                 class="dropdown-item"
+                href="/contexts"
                 role="menuitem"
-                to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -443,12 +427,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -492,7 +471,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <a
           class="link"
-          to="https://about.sourcegraph.com"
+          href="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -507,16 +486,17 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
-            to="/sign-in"
+            class="btn btnOutlineSecondary btnSm mr-1"
+            href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm signUp"
-            to="/sign-up"
+            class="btn btnSm signUp"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            tabindex="0"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>
@@ -534,8 +514,6 @@ exports[`GlobalNavbar low-profile 1`] = `
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""

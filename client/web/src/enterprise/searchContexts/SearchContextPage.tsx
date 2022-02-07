@@ -5,28 +5,28 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
-
-import { SearchContextProps } from '../../search'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
+        Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
+        PlatformContextProps<'requestGraphQL'> {}
 
 const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
@@ -87,12 +87,14 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3>
-                    <span>
-                        {filteredRepositories.length}{' '}
-                        {pluralize('repository', filteredRepositories.length, 'repositories')}
-                    </span>
-                </h3>
+                {filteredRepositories.length > 0 && (
+                    <h3>
+                        <span>
+                            {filteredRepositories.length}{' '}
+                            {pluralize('repository', filteredRepositories.length, 'repositories')}
+                        </span>
+                    </h3>
+                )}
                 {repositories.length > 0 && (
                     <input
                         type="text"
@@ -127,16 +129,16 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, fetchSearchContextBySpec } = props
+    const { match, fetchSearchContextBySpec, platformContext } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec).pipe(
+                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec]
+            [match.params.spec, fetchSearchContextBySpec, platformContext]
         )
     )
 
@@ -146,7 +148,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                 <div className="container col-8">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
-                            <LoadingSpinner />
+                            <LoadingSpinner inline={false} />
                         </div>
                     )}
                     {searchContextOrError && !isErrorLike(searchContextOrError) && searchContextOrError !== LOADING && (
@@ -168,14 +170,17 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                             <div className="d-flex align-items-center">
                                                 <span>{searchContextOrError.spec}</span>
                                                 {!searchContextOrError.public && (
-                                                    <div
+                                                    <Badge
+                                                        variant="secondary"
+                                                        pill={true}
                                                         className={classNames(
-                                                            'badge badge-pill badge-secondary ml-2',
+                                                            'ml-2',
                                                             styles.searchContextPagePrivateBadge
                                                         )}
+                                                        as="div"
                                                     >
                                                         Private
-                                                    </div>
+                                                    </Badge>
                                                 )}
                                             </div>
                                         ),
@@ -183,13 +188,14 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
-                                        <Link
+                                        <Button
                                             to={`/contexts/${searchContextOrError.spec}/edit`}
-                                            className="btn btn-secondary"
                                             data-testid="edit-search-context-link"
+                                            variant="secondary"
+                                            as={Link}
                                         >
                                             Edit
-                                        </Link>
+                                        </Button>
                                     )
                                 }
                             />
@@ -208,16 +214,29 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                         />
                                     </div>
                                 )}
-                                {!searchContextOrError.autoDefined && (
+                                {!searchContextOrError.autoDefined && searchContextOrError.query.length === 0 && (
                                     <SearchContextRepositories repositories={searchContextOrError.repositories} />
+                                )}
+                                {searchContextOrError.query.length > 0 && (
+                                    <Link
+                                        to={`/search?${buildSearchURLQuery(
+                                            searchContextOrError.query,
+                                            SearchPatternType.regexp,
+                                            false
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <SyntaxHighlightedSearchQuery query={searchContextOrError.query} />
+                                    </Link>
                                 )}
                             </Container>
                         </>
                     )}
                     {isErrorLike(searchContextOrError) && (
-                        <div className="alert alert-danger">
+                        <Alert variant="danger">
                             Error while loading the search context: <strong>{searchContextOrError.message}</strong>
-                        </div>
+                        </Alert>
                     )}
                 </div>
             </Page>

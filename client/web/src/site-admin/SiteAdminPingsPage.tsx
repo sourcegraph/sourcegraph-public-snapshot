@@ -4,12 +4,11 @@ import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { checkOk } from '@sourcegraph/http-client'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -65,7 +64,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
             <h3>Most recent ping</h3>
             {latestPing === undefined ? (
                 <p>
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </p>
             ) : isEmpty(latestPing) ? (
                 <p>No recent ping data to display.</p>

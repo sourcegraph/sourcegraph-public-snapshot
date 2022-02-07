@@ -1,18 +1,19 @@
-import { cleanup, render } from '@testing-library/react'
+import { cleanup } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { SearchPatternType } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+import { useExperimentalFeatures } from '../../stores'
+import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -50,21 +51,12 @@ describe('SearchPage', () => {
         onThemePreferenceChange: () => undefined,
         authenticatedUser: authUser,
         globbing: false,
-        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
-        setPatternType: () => undefined,
-        caseSensitive: false,
-        setCaseSensitivity: () => undefined,
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,
-        showSearchContext: false,
-        showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
-        showEnterpriseHomePanels: false,
-        showOnboardingTour: false,
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
@@ -79,39 +71,39 @@ describe('SearchPage', () => {
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
-        container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        container = renderWithRouter(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
-        container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />)
-            .container
+        useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+
+        container = renderWithRouter(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
 
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
-        container = render(
-            <SearchPage
-                {...defaultProps}
-                isSourcegraphDotCom={true}
-                showEnterpriseHomePanels={true}
-                authenticatedUser={null}
-            />
+        useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+
+        container = renderWithRouter(
+            <SearchPage {...defaultProps} isSourcegraphDotCom={true} authenticatedUser={null} />
         ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should not show home panels if showEnterpriseHomePanels disabled', () => {
-        container = render(<SearchPage {...defaultProps} />).container
+        container = renderWithRouter(<SearchPage {...defaultProps} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should show home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
-        container = render(<SearchPage {...defaultProps} showEnterpriseHomePanels={true} />).container
+        useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+
+        container = renderWithRouter(<SearchPage {...defaultProps} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })

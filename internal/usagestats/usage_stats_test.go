@@ -14,7 +14,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -690,11 +690,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 }
 
 func setupForTest(t *testing.T) database.DB {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	return database.NewDB(dbtesting.GetDB(t))
+	return database.NewDB(dbtest.NewDB(t))
 }
 
 func mockTimeNow(t time.Time) {

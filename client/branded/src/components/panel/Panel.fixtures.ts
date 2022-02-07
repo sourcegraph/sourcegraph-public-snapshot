@@ -7,7 +7,7 @@ import { ExtensionDocument } from '@sourcegraph/shared/src/api/extension/api/tex
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 export const panels: PanelViewData[] = [
     {

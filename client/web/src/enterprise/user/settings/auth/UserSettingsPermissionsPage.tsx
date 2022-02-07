@@ -1,9 +1,7 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -37,9 +35,9 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{
                 description={
                     <>
                         Learn more about{' '}
-                        <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
                             background permissions syncing
-                        </a>
+                        </Link>
                         .
                     </>
                 }
@@ -47,14 +45,14 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{
             />
             <Container className="mb-3">
                 {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         Site admin can access all repositories in the Sourcegraph instance.
-                    </div>
+                    </Alert>
                 ) : !permissionsInfo ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         This user is queued to sync permissions, it can only access non-private repositories until
                         syncing is finished.
-                    </div>
+                    </Alert>
                 ) : (
                     <>
                         <table className="table">

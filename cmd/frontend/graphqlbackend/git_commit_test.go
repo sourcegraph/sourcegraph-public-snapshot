@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -19,7 +19,7 @@ import (
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 
 	commit := &gitdomain.Commit{
 		ID:      "c1",
@@ -113,13 +113,13 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
-	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(nil, nil)
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
 

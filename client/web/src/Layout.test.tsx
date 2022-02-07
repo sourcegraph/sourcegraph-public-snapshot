@@ -3,15 +3,16 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
-import sinon from 'sinon'
 
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
+import { useNavbarQueryState } from './stores'
 
 jest.mock('./theme', () => ({
-    useTheme: () => ({
+    useThemeProps: () => ({
         isLightTheme: true,
         themePreference: 'system',
         onThemePreferenceChange: () => {},
@@ -21,8 +22,6 @@ jest.mock('./theme', () => ({
 describe('Layout', () => {
     const defaultProps: LayoutProps = ({
         // Parsed query components
-        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        setParsedSearchQuery: () => {},
         patternType: SearchPatternType.literal,
         setPatternType: () => {},
         caseSensitive: false,
@@ -51,193 +50,71 @@ describe('Layout', () => {
         document.querySelector('#root')?.remove()
     })
 
-    it('should update parsedSearchQuery if different between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis2&patternType=regexp' })
-
-        const setParsedSearchQuery = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.called(setParsedSearchQuery)
-        sinon.assert.calledWith(setParsedSearchQuery, 'r:golang/oauth2 test f:travis2')
-    })
-
-    it('should not update parsedSearchQuery if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
-
-        const setParsedSearchQuery = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setParsedSearchQuery)
-    })
-
-    it('should update parsedSearchQuery if changing to empty', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=&patternType=regexp' })
-
-        const setParsedSearchQuery = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.called(setParsedSearchQuery)
-        sinon.assert.calledWith(setParsedSearchQuery, '')
-    })
-
     it('should update patternType if different between URL and context', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
-        const setPatternTypeSpy = sinon.spy()
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
-        sinon.assert.called(setPatternTypeSpy)
-        sinon.assert.calledWith(setPatternTypeSpy, SearchPatternType.regexp)
-    })
-
-    it('should not update patternType if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
-
-        const setPatternTypeSpy = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.regexp}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setPatternTypeSpy)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.regexp)
     })
 
     it('should not update patternType if query is empty', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=&patternType=regexp' })
 
-        const setPatternTypeSpy = sinon.spy()
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
-        sinon.assert.notCalled(setPatternTypeSpy)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.literal)
     })
 
     it('should update caseSensitive if different between URL and context', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
 
-        const setCaseSensitivitySpy = sinon.spy()
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
-        sinon.assert.called(setCaseSensitivitySpy)
-        sinon.assert.calledWith(setCaseSensitivitySpy, true)
-    })
-
-    it('should not update caseSensitive if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes' })
-
-        const setCaseSensitivitySpy = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={true}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setCaseSensitivitySpy)
+        expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(true)
     })
 
     it('should not update caseSensitive if query is empty', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=case:yes' })
 
-        const setCaseSensitivitySpy = sinon.spy()
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
-        sinon.assert.notCalled(setCaseSensitivitySpy)
+        expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
     })
 })

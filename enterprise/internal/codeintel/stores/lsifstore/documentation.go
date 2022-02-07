@@ -312,7 +312,7 @@ func (s *Store) documentationDefinitions(
 	limit,
 	offset int,
 ) (_ []Location, _ int, err error) {
-	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("resultID", string(resultID)),
 	}})
@@ -332,7 +332,7 @@ func (s *Store) documentationDefinitions(
 		return nil, 0, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	var found *precise.RangeData
 	for _, rn := range documentData.Document.Ranges {
 		if rn.DocumentationResultID == resultID {
@@ -340,7 +340,7 @@ func (s *Store) documentationDefinitions(
 			break
 		}
 	}
-	traceLog(log.Bool("found", found == nil))
+	trace.Log(log.Bool("found", found == nil))
 	if found == nil {
 		return nil, 0, errors.New("not found")
 	}
@@ -350,7 +350,7 @@ func (s *Store) documentationDefinitions(
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	locations := make([]Location, 0, limit)
 	for _, resultID := range orderedResultIDs {

@@ -8,9 +8,7 @@ import signale from 'signale'
 import {
     PROXY_ROUTES,
     getAPIProxySettings,
-    getCSRFTokenCookieMiddleware,
     environmentConfig,
-    getCSRFTokenAndCookie,
     STATIC_ASSETS_PATH,
     STATIC_INDEX_PATH,
     HTTP_WEB_SERVER_URL,
@@ -19,21 +17,17 @@ import {
 
 const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
-async function startProductionServer(): Promise<void> {
+function startProductionServer(): void {
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('production.server.ts only supports *web-standalone* usage')
     }
 
-    // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
-    const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
-    signale.await('Production server', { ...environmentConfig, csrfContextValue, csrfCookieValue })
+    signale.await('Production server', { ...environmentConfig })
 
     const app = express()
 
     // Serve index.html in place of any 404 responses.
     app.use(historyApiFallback() as RequestHandler)
-    // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.
-    app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
 
     // Serve build artifacts.
 
@@ -51,8 +45,6 @@ async function startProductionServer(): Promise<void> {
         PROXY_ROUTES,
         createProxyMiddleware(
             getAPIProxySettings({
-                // Attach `x-csrf-token` header to every proxy request.
-                csrfContextValue,
                 apiURL: SOURCEGRAPH_API_URL,
             })
         )
@@ -67,4 +59,4 @@ async function startProductionServer(): Promise<void> {
     })
 }
 
-startProductionServer().catch(error => signale.error(error))
+startProductionServer()

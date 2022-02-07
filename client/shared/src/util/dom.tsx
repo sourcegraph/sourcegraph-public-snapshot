@@ -1,3 +1,6 @@
+import { head } from 'lodash'
+import { Observable } from 'rxjs'
+
 /**
  * Highlights a node using recursive node walking.
  *
@@ -149,4 +152,27 @@ function highlightNodeHelper(
     }
 
     return { highlightingCompleted: false, charsConsumed: currentOffset - origOffset, charsHighlighted }
+}
+
+/**
+ * An Observable wrapper around ResizeObserver
+ */
+export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> => {
+    let animationFrameID: number
+
+    return new Observable(function subscribe(observer) {
+        const resizeObserver = new ResizeObserver(entries => {
+            // Move `ResizeObserver` measurements into a RAF to avoid the "ResizeObserver loop limit exceeded" error.
+            // See the thread for background info: https://github.com/WICG/resize-observer/issues/38
+            animationFrameID = window.requestAnimationFrame(() => {
+                observer.next(head(entries))
+            })
+        })
+        resizeObserver.observe(target)
+
+        return function unsubscribe() {
+            window.cancelAnimationFrame(animationFrameID)
+            resizeObserver.disconnect()
+        }
+    })
 }

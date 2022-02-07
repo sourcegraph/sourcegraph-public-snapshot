@@ -9,15 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestClear(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	for i := 0; i < 5; i++ {

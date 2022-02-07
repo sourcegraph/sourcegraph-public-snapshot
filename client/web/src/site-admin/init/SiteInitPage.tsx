@@ -1,8 +1,9 @@
-import classNames from 'classnames'
 import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -16,6 +17,7 @@ import styles from './SiteInitPage.module.scss'
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
     pingUrl.searchParams.set('email', args.email)
+    pingUrl.searchParams.set('tos_accepted', 'true') // Terms of Service are required to be accepted
 
     await fetch(pingUrl.toString(), {
         credentials: 'include',
@@ -67,13 +69,13 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     featureFlags,
 }) => {
     if (!needsSiteInit) {
-        return <Redirect to="/search" />
+        return <Redirect to={PageRoutes.Search} />
     }
 
     return (
         <div className={styles.siteInitPage}>
-            <div className={classNames('card', styles.content)}>
-                <div className="card-body p-4">
+            <Card className={styles.content}>
+                <CardBody className="p-4">
                     <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
@@ -96,8 +98,8 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                             />
                         </>
                     )}
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </div>
     )
 }

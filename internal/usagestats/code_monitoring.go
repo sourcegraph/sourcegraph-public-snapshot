@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetCodeMonitoringUsageStatistics(ctx context.Context, db dbutil.DB) (*types.CodeMonitoringUsageStatistics, error) {
+func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
 	const getCodeMonitoringUsageStatisticsQuery = `
 SELECT
     codeMonitoringPageViews,

@@ -62,10 +62,12 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:
 		return NewPagureSource(svc, cf)
+	case extsvc.KindNPMPackages:
+		return NewNPMPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
-		return nil, fmt.Errorf("cannot create source for kind %q", svc.Kind)
+		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
 }
 

@@ -5,8 +5,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
@@ -27,34 +26,22 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
-function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
-    const current = parseBrowserRepoURL(H.createPath(currentLocation))
-    const symbol = parseBrowserRepoURL(symbolLocation)
-    return (
-        current.repoName === symbol.repoName &&
-        current.revision === symbol.revision &&
-        current.filePath === symbol.filePath &&
-        isEqual(current.position, symbol.position)
-    )
-}
-
-const symbolIsActiveTrue = (): boolean => true
-const symbolIsActiveFalse = (): boolean => false
-
 interface SymbolNodeProps {
     node: SymbolNodeFields
-    location: H.Location
+    onHandleClick: () => void
+    isActive: boolean
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
-    const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
+    const isActiveFunc = (): boolean => isActive
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
                 className={classNames('test-symbol-link', styles.link)}
                 activeClassName={styles.linkActive}
+                onClick={onHandleClick}
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
                 <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
@@ -123,12 +110,14 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     repoID: Scalars['ID']
     /** The path of the file or directory currently shown in the content area */
     activePath: string
+    onHandleSymbolClick: () => void
 }
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
     repoID,
     revision = '',
     activePath,
+    onHandleSymbolClick,
 }) => {
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
@@ -180,6 +169,17 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
         />
     )
 
+    const currentLocation = parseBrowserRepoURL(H.createPath(location))
+    const isSymbolActive = (symbolUrl: string): boolean => {
+        const symbolLocation = parseBrowserRepoURL(symbolUrl)
+        return (
+            currentLocation.repoName === symbolLocation.repoName &&
+            currentLocation.revision === symbolLocation.revision &&
+            currentLocation.filePath === symbolLocation.filePath &&
+            isEqual(currentLocation.position, symbolLocation.position)
+        )
+    }
+
     return (
         <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
             <ConnectionForm
@@ -195,9 +195,13 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>
-                    <Tooltip />
                     {connection.nodes.map((node, index) => (
-                        <SymbolNode key={index} node={node} location={location} />
+                        <SymbolNode
+                            key={index}
+                            node={node}
+                            onHandleClick={onHandleSymbolClick}
+                            isActive={isSymbolActive(node.url)}
+                        />
                     ))}
                 </ConnectionList>
             )}

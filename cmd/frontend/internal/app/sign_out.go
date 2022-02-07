@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SignOutURL struct {
@@ -32,7 +31,7 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	ssoSignOutHandler = f
 }
 
-func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 
@@ -62,7 +61,7 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 }
 
 // logSignOutEvent records an event into the security event log.
-func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventName, err error) {
+func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 

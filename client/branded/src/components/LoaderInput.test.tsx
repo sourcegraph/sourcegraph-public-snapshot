@@ -3,7 +3,7 @@ import React from 'react'
 
 import { LoaderInput } from './LoaderInput'
 
-jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
+jest.mock('@sourcegraph/wildcard', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 
 describe('LoaderInput', () => {
     it('should render a loading spinner when loading prop is true', () => {

@@ -7,13 +7,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	got := NewGitTreeEntryResolver(db,
 		&GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
@@ -38,7 +38,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ReadFile = nil })
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	gitTree := NewGitTreeEntryResolver(db,
 		&GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),

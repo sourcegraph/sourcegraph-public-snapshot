@@ -63,8 +63,6 @@ This will happen automatically via CI. You don't need to do anything after mergi
 
 Once published, the image version will need to be updated in the following locations to make Sourcegraph use it:
 
-- [`sourcegraph/sourcegraph > dev/syntect_server.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/syntect_server.sh?subtree=true#L26:82)
-- [`sourcegraph/sourcegraph > docker-images/syntax-highlighter/build.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/syntax-highlighter/build.sh?subtree=true#L9:29)
 - [`sourcegraph/sourcegraph > cmd/server/Dockerfile`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/server/Dockerfile?subtree=true#L54:13)
 - [`sourcegraph/sourcegraph > sg.config.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/sg.config.yaml?subtree=true#L206:7)
 
@@ -127,6 +125,7 @@ $ cargo update -p syntect
 - ASP vb.NET (`vb`)
 - HTML (ASP.net) (`aspx`, `ascx`, `master`)
 - ActionScript (`as`)
+- Apex (`apex`, `cls`, `trigger`)
 - AppleScript (`applescript`, `script editor`)
 - Batch File (`bat`, `cmd`)
 - NAnt Build File (`build`)
@@ -238,6 +237,7 @@ $ cargo update -p syntect
 - R Console (``)
 - R (`R`, `r`, `Rprofile`)
 - Rd (R Documentation) (`rd`)
+- RPM Spec (`spec`)
 - HTML (Rails) (`rails`, `rhtml`, `erb`, `html.erb`)
 - JavaScript (Rails) (`js.erb`)
 - Ruby Haml (`haml`)
@@ -251,7 +251,7 @@ $ cargo update -p syntect
 - Sass (`sass`, `scss`)
 - SQL (`sql`, `ddl`, `dml`)
 - Scala (`scala`, `sbt`, `sc`)
-- Bourne Again Shell (bash) (`sh`, `bash`, `zsh`, `ash`, `.bash_aliases`, `.bash_completions`, `.bash_functions`, `.bash_login`, `.bash_logout`, `.bash_profile`, `.bash_variables`, `.bashrc`, `.profile`, `.textmate_init`, `.zlogin`, `.zlogout`, `.zprofile`, `.zshenv`, `.zshrc`, `PKGBUILD`, `.ebuild`, `.eclass`)
+- Bourne Again Shell (bash) (`sh`, `bash`, `zsh`, `ash`, `.bash_aliases`, `.bash_completions`, `.bash_functions`, `.bash_login`, `.bash_logout`, `.bash_profile`, `.bash_variables`, `.bashrc`, `.profile`, `.textmate_init`, `.zlogin`, `.zlogout`, `.zprofile `, `.zshenv`, `.zshrc`, `PKGBUILD`, `.ebuild`, `.eclass`)
 - Shell-Unix-Generic (``)
 - commands-builtin-shell-bash (``)
 - Smalltalk (`st`)
@@ -267,6 +267,8 @@ $ cargo update -p syntect
 - Thrift (`thrift`, `frugal`)
 - TypeScript (`ts`)
 - TypeScriptReact (`tsx`)
+- vhdl.tmLanguage (``)
+- verilog.tmLanguage (``)
 - VimL (`vim`, `.vimrc`, `.gvimrc`)
 - Vue Component (`vue`)
 - XML (`xml`, `xsd`, `xslt`, `tld`, `dtml`, `rng`, `rss`, `opml`, `svg`)

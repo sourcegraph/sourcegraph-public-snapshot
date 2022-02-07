@@ -19,19 +19,64 @@ var (
 	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
 )
 
-func enforceAuthViaGitHub(ctx context.Context, r *http.Request, repoName string) (int, error) {
-	githubToken := r.URL.Query().Get("github_token")
+func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
+	githubToken := query.Get("github_token")
 	if githubToken == "" {
 		return http.StatusUnauthorized, ErrGitHubMissingToken
 	}
 
+	key := makeGitHubAuthCacheKey(githubToken, repoName)
+
+	if authorized, ok := githubAuthCache.Get(key); ok {
+		if !authorized {
+			return http.StatusUnauthorized, ErrGitHubUnauthorized
+		}
+
+		return 0, nil
+	}
+
+	defer func() {
+		switch err {
+		case nil:
+			githubAuthCache.Set(key, true)
+		case ErrGitHubUnauthorized:
+			// Note: We explicitly do not store false here in case a user is
+			// adjusting permissions on a cache key. Storing false here would
+			// result in a cached rejection after the key has been modified
+			// on the code host.
+		default:
+		}
+	}()
+
+	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
+}
+
+var _ AuthValidator = enforceAuthViaGitHub
+
+func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
+		if githubErr := new(github.APIError); errors.As(err, &githubErr) {
+			if shouldMirrorGitHubError(githubErr.Code) {
+				return githubErr.Code, errors.Wrap(errors.New(githubErr.Message), "github error")
+			}
+		}
+
 		return http.StatusInternalServerError, err
 	} else if !author {
 		return http.StatusUnauthorized, ErrGitHubUnauthorized
 	}
 
 	return 0, nil
+}
+
+func shouldMirrorGitHubError(statusCode int) bool {
+	for _, sc := range []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound} {
+		if statusCode == sc {
+			return true
+		}
+	}
+
+	return false
 }
 
 func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubClient) (bool, error) {
@@ -50,7 +95,7 @@ func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubC
 // is present in set of visible repositories, indicating authorship of the user initiating the current
 // upload request.
 func checkGitHubAppInstallationPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (author bool, wrongTokenType bool, _ error) {
-	installationRepositories, err := client.ListInstallationRepositories(ctx)
+	installationRepositories, _, _, err := client.ListInstallationRepositories(ctx, 1) // TODO(code-intel): Loop over pages
 	if err != nil {
 		// A 403 error with this text indicates that the supplied token is a user token and not
 		// an app installation token. We'll send back a special flag to the caller to inform them

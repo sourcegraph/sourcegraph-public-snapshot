@@ -1,7 +1,7 @@
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { EmptyPanelView } from './EmptyPanelView'
 
@@ -14,7 +14,7 @@ export const ExtensionsLoadingPanelView: React.FunctionComponent<ExtensionsLoadi
 
     return (
         <EmptyPanelView className={className}>
-            <LoadingSpinner />
+            <LoadingSpinner inline={false} />
             <span className="mx-2">Loading Sourcegraph extensions</span>
             <PuzzleIcon className="icon-inline" />
         </EmptyPanelView>

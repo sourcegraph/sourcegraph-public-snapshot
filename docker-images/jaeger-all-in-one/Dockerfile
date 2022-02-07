@@ -5,10 +5,9 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:116273_2021-11-12_dbac772@sha256:78995f23b1dbadb35ba4a153adecde3f309ee3763888e4172e0f8dc05c9728d3
+FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
 USER root
 RUN apk update
-# hadolint ignore=DL3018
 RUN apk --no-cache add bash curl apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

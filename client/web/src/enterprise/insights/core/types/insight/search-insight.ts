@@ -6,7 +6,7 @@ import {
     BackendInsight as SearchBasedBackendInsightSettings,
     BackendInsightSeries,
     InsightFilters as SearchBasedBackendFilters,
-} from '../../../../../schema/settings.schema'
+} from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightFields } from './common'
 
@@ -39,6 +39,8 @@ export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSett
     type: InsightExecutionType.Backend
     viewType: InsightType.SearchBased
     series: SearchBasedInsightSeries[]
+    step: Duration
+    filters: SearchBasedBackendFilters
 }
 
 /**
@@ -53,7 +55,7 @@ export interface SearchBasedExtensionInsightSettings {
 }
 
 export interface SearchBasedInsightSeries extends BackendInsightSeries {
-    id: string | null
+    id: string
 }
 
 /**

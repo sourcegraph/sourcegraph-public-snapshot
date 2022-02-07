@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -25,12 +26,14 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -40,7 +43,17 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimiter graphqlbackend.LimitWatcher) http.Handler {
+func NewHandler(
+	db database.DB,
+	m *mux.Router,
+	schema *graphql.Schema,
+	githubWebhook webhooks.Registerer,
+	gitlabWebhook,
+	bitbucketServerWebhook http.Handler,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimiter graphqlbackend.LimitWatcher,
+) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -67,14 +80,13 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
 	)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
-
 	githubWebhook.Register(&gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gitlabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(bitbucketServerWebhook)))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.Handler)))
@@ -121,10 +133,12 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable:       backend.NewRepos(db.Repos()).ListIndexable,
-		RepoStore:           database.Repos(db),
-		SearchContextsStore: database.SearchContexts(db),
-		Indexers:            search.Indexers(),
+		ListIndexable: backend.NewRepos(db.Repos()).ListIndexable,
+		RepoStore:     database.Repos(db),
+		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+			return searchcontexts.RepoRevs(ctx, db, repoIDs)
+		},
+		Indexers: search.Indexers(),
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
@@ -133,10 +147,6 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
-	m.Get(apirouter.SavedQueriesListAll).Handler(trace.Route(handler(serveSavedQueriesListAll(db))))
-	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.Route(handler(serveSavedQueriesGetInfo(db))))
-	m.Get(apirouter.SavedQueriesSetInfo).Handler(trace.Route(handler(serveSavedQueriesSetInfo(db))))
-	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
 	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))

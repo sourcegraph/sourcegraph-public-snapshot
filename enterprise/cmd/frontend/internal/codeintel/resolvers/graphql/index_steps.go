@@ -7,7 +7,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -20,6 +19,7 @@ import (
 //
 // The setup and teardown steps match the executor setup and teardown.
 type indexStepsResolver struct {
+	db    database.DB
 	index store.Index
 }
 
@@ -33,9 +33,9 @@ func (r *indexStepsResolver) PreIndex() []gql.PreIndexStepResolver {
 	var resolvers []gql.PreIndexStepResolver
 	for i, step := range r.index.DockerSteps {
 		if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.%d", i)); ok {
-			resolvers = append(resolvers, &preIndexStepResolver{step: step, entry: &entry})
+			resolvers = append(resolvers, &preIndexStepResolver{db: r.db, step: step, entry: &entry})
 		} else {
-			resolvers = append(resolvers, &preIndexStepResolver{step: step, entry: nil})
+			resolvers = append(resolvers, &preIndexStepResolver{db: r.db, step: step, entry: nil})
 		}
 	}
 
@@ -44,15 +44,15 @@ func (r *indexStepsResolver) PreIndex() []gql.PreIndexStepResolver {
 
 func (r *indexStepsResolver) Index() gql.IndexStepResolver {
 	if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.%d", len(r.index.DockerSteps))); ok {
-		return &indexStepResolver{index: r.index, entry: &entry}
+		return &indexStepResolver{db: r.db, index: r.index, entry: &entry}
 	}
 
-	return &indexStepResolver{index: r.index, entry: nil}
+	return &indexStepResolver{db: r.db, index: r.index, entry: nil}
 }
 
 func (r *indexStepsResolver) Upload() gql.ExecutionLogEntryResolver {
 	if entry, ok := r.findExecutionLogEntry("step.src.0"); ok {
-		return gql.NewExecutionLogEntryResolver(database.NewDB(dbconn.Global), entry)
+		return gql.NewExecutionLogEntryResolver(r.db, entry)
 	}
 
 	return nil
@@ -78,7 +78,7 @@ func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string)
 		if !strings.HasPrefix(entry.Key, prefix) {
 			continue
 		}
-		r := gql.NewExecutionLogEntryResolver(database.NewDB(dbconn.Global), entry)
+		r := gql.NewExecutionLogEntryResolver(r.db, entry)
 		resolvers = append(resolvers, r)
 	}
 

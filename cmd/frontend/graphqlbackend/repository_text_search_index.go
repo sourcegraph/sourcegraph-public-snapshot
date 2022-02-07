@@ -78,8 +78,8 @@ func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
 	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
 
-func (r *repositoryTextSearchIndexStatus) ContentByteSize() int32 {
-	return int32(r.entry.Stats.ContentBytes)
+func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
+	return BigInt{r.entry.Stats.ContentBytes}
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {

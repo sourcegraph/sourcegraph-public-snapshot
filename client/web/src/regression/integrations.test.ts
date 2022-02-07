@@ -3,7 +3,7 @@ import { merge } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError } from 'rxjs/operators'
 
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { checkOk } from '@sourcegraph/http-client'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 
 describe('Native integrations regression test suite', () => {

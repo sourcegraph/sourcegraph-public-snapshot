@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // dbLicense describes an product license row in the product_licenses DB table.
@@ -26,7 +25,7 @@ var errLicenseNotFound = errors.New("product license not found")
 
 // dbLicenses exposes product licenses in the product_licenses DB table.
 type dbLicenses struct {
-	db dbutil.DB
+	db database.DB
 }
 
 // Create creates a new product license entry given a license key.

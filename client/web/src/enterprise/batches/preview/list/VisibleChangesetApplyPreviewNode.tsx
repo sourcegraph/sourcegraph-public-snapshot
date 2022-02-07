@@ -8,14 +8,15 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
+import { Branch, BranchMerge } from '../../Branch'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
@@ -66,9 +67,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
 
     return (
         <>
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
+            <Button
+                variant="icon"
+                className="test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -77,7 +78,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 ) : (
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
-            </button>
+            </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
             ) : (
@@ -161,14 +162,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}
-            <button
-                type="button"
+            <Button
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
-                    'btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview'
+                    'd-block d-sm-none test-batches-expand-preview'
                 )}
+                outline={true}
+                variant="secondary"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -176,7 +178,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
-            </button>
+            </Button>
             {isExpanded && (
                 <>
                     <div
@@ -220,7 +222,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id={`select-changeset-${isPublishableResult.changesetSpecID}`}
             type="checkbox"
-            className="btn"
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
@@ -229,7 +230,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
-            className="btn"
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
@@ -274,18 +274,18 @@ const ExpandedSection: React.FunctionComponent<
     }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
                 <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
-            </div>
+            </Alert>
         )
     }
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong>{' '}
                 will be imported from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
-            </div>
+            </Alert>
         )
     }
     return (
@@ -294,8 +294,8 @@ const ExpandedSection: React.FunctionComponent<
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDiff}
                             className={classNames(
@@ -317,12 +317,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDescription}
                             className={classNames(
@@ -344,12 +344,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectCommits}
                             className={classNames(
@@ -373,17 +373,17 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                 </ul>
             </div>
             {selectedTab === 'diff' && (
                 <>
                     {node.delta.diffChanged && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             The files in this changeset have been altered from the previous version. These changes will
                             be pushed to the target branch.
-                        </div>
+                        </Alert>
                     )}
                     <ChangesetSpecFileDiffConnection
                         history={history}
@@ -515,12 +515,17 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <del className="badge badge-danger mr-2">
-                        {spec.targets.changeset.currentSpec?.description.baseRef}
-                    </del>
+                    <Branch
+                        className="mr-2"
+                        deleted={true}
+                        name={spec.targets.changeset.currentSpec?.description.baseRef}
+                    />
                 )}
-            <span className="badge badge-primary">{spec.targets.changesetSpec.description.baseRef}</span> &larr;{' '}
-            <span className="badge badge-primary">{spec.targets.changesetSpec.description.headRef}</span>
+            <BranchMerge
+                baseRef={spec.targets.changesetSpec.description.baseRef}
+                forkTarget={spec.targets.changesetSpec.forkTarget}
+                headRef={spec.targets.changesetSpec.description.headRef}
+            />
         </div>
     )
 }

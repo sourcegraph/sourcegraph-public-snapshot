@@ -8,6 +8,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -26,18 +27,18 @@ var (
 func testExec(ctx context.Context, args []string) error {
 	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		out.WriteLine(errLine)
+		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
 	}
 
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified"))
 		return flag.ErrHelp
 	}
 
 	cmd, ok := globalConf.Tests[args[0]]
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 

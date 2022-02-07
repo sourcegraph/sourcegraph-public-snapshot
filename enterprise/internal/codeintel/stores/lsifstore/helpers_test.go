@@ -14,12 +14,12 @@ import (
 const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
+	db := dbtest.NewDB(t)
+
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
-
-	db := dbtest.NewDB(t)
 
 	tx, err := db.Begin()
 	if err != nil {

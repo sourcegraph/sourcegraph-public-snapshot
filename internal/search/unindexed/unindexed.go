@@ -15,8 +15,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -63,18 +66,17 @@ func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRe
 	return g.Wait()
 }
 
-// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
+// SearchFilesInReposBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
-	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, stream)
-	})
+	agg := streaming.NewAggregatingStream()
+	err := SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, agg)
 
-	fms, fmErr := matchesToFileMatches(matches)
+	fms, fmErr := matchesToFileMatches(agg.Results)
 	if fmErr != nil && err == nil {
 		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
-	return fms, stats, err
+	return fms, agg.Stats, err
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error)
@@ -304,27 +306,31 @@ func callSearcherOverRepos(
 }
 
 type RepoSubsetTextSearch struct {
-	ZoektArgs         *search.ZoektParameters
-	SearcherArgs      *search.SearcherParameters
-	FileMatchLimit    int32
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	ZoektArgs        *search.ZoektParameters
+	SearcherArgs     *search.SearcherParameters
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
+
+	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
-	defer cleanup()
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "RepoSubsetTextSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
+	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, t.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}
@@ -336,4 +342,42 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender,
 
 func (*RepoSubsetTextSearch) Name() string {
 	return "RepoSubsetText"
+}
+
+type RepoUniverseTextSearch struct {
+	GlobalZoektQuery *zoektutil.GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+
+	RepoOptions search.RepoOptions
+	UserID      int32
+}
+
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	userID := int32(0)
+
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a != nil {
+			userID = a.UID
+		}
+	}
+
+	userPrivateRepos := searchrepos.PrivateReposForUser(ctx, db, userID, t.RepoOptions)
+	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
+	})
+	return nil, g.Wait()
+}
+
+func (*RepoUniverseTextSearch) Name() string {
+	return "RepoUniverseText"
 }

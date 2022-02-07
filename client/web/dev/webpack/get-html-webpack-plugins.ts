@@ -10,13 +10,13 @@ const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
 
 export interface WebpackManifest {
     /** Main app entry JS bundle */
-    appBundle: string
+    'app.js': string
     /** Main app entry CSS bundle, only used in production mode */
-    cssBundle?: string
+    'app.css'?: string
     /** Runtime bundle, only used in development mode */
-    runtimeBundle?: string
+    'runtime.js'?: string
     /** React entry bundle, only used in production mode */
-    reactBundle?: string
+    'react.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
 }
@@ -29,10 +29,10 @@ export interface WebpackManifest {
  * between our development server and the actual production server.
  */
 export const getHTMLPage = ({
-    appBundle,
-    cssBundle,
-    runtimeBundle,
-    reactBundle,
+    'app.js': appBundle,
+    'app.css': cssBundle,
+    'runtime.js': runtimeBundle,
+    'react.js': reactBundle,
     isModule,
 }: WebpackManifest): string => `
 <!DOCTYPE html>
@@ -89,10 +89,10 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
             }
 
             return getHTMLPage({
-                appBundle,
-                cssBundle: getBundleFromPath(files.css, 'styles/app'),
-                runtimeBundle: getBundleFromPath(files.js, 'scripts/runtime'),
-                reactBundle: getBundleFromPath(files.js, 'scripts/react'),
+                'app.js': appBundle,
+                'app.css': getBundleFromPath(files.css, 'styles/app'),
+                'runtime.js': getBundleFromPath(files.js, 'scripts/runtime'),
+                'react.js': getBundleFromPath(files.js, 'scripts/react'),
             })
         }) as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),

@@ -19,6 +19,15 @@
         background-color: var(--color-bg-2);
     }
 
+    &__visibility {
+        :global(.form-check) {
+            margin: 0.5rem 0;
+            :global(.form-check-label) {
+                margin-left: 0.21rem;
+            }
+        }
+    }
+
     &__visibility-radio {
         margin-top: 0.2rem;
         width: 0.875rem;
@@ -27,5 +36,12 @@
 
     &__visibility-title {
         cursor: pointer;
+    }
+
+    &__query {
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color-2);
     }
 }

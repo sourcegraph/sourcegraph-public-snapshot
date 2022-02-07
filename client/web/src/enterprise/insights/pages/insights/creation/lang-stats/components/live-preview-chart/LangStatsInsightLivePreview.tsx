@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
+import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 
 import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'

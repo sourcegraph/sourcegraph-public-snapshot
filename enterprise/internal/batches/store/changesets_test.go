@@ -30,7 +30,7 @@ import (
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -415,7 +415,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -680,7 +680,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -2158,7 +2158,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2292,7 +2292,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 

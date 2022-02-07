@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react'
 import { useLocation, useParams } from 'react-router'
 
+import { FeedbackText } from '@sourcegraph/wildcard'
+
 import { AuthenticatedUser } from '../auth'
-import { FeedbackText } from '../components/FeedbackText'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'

@@ -11,7 +11,8 @@ const (
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
-	SearchStream = "search.stream"
+	SearchStream  = "search.stream"
+	ComputeStream = "compute.stream"
 
 	SrcCliVersion  = "src-cli.version"
 	SrcCliDownload = "src-cli.download"
@@ -26,10 +27,6 @@ const (
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 
-	SavedQueriesListAll    = "internal.saved-queries.list-all"
-	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
-	SavedQueriesSetInfo    = "internal.saved-queries.set-info"
-	SavedQueriesDeleteInfo = "internal.saved-queries.delete-info"
 	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	OrgsListUsers          = "internal.orgs.list-users"
 	OrgsGetByName          = "internal.orgs.get-by-name"
@@ -73,6 +70,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
+	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -96,10 +94,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/saved-queries/list-all").Methods("POST").Name(SavedQueriesListAll)
-	base.Path("/saved-queries/get-info").Methods("POST").Name(SavedQueriesGetInfo)
-	base.Path("/saved-queries/set-info").Methods("POST").Name(SavedQueriesSetInfo)
-	base.Path("/saved-queries/delete-info").Methods("POST").Name(SavedQueriesDeleteInfo)
 	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
 	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)

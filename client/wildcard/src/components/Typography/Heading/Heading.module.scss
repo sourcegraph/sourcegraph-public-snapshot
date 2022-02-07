@@ -1,0 +1,37 @@
+.h1 {
+    font-size: 1.625rem; // 26px
+    font-weight: 600;
+    letter-spacing: (0.5/26) + em;
+    margin: 0 0 1rem;
+}
+
+.h2 {
+    font-size: 1.25rem; // 20px
+    font-weight: 600;
+    letter-spacing: (0.25/20) + em;
+}
+
+.h3 {
+    font-size: 1rem; // 16px
+    font-weight: 600;
+    letter-spacing: (0.25/16) + em;
+}
+
+.h4 {
+    font-size: 0.875rem; // 14px
+    font-weight: 500;
+    letter-spacing: (0.25/14) + em;
+}
+
+.h5 {
+    font-size: 0.625rem; // 10px
+    font-weight: 600;
+    letter-spacing: (0.5/10) + em;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.h6 {
+    font-size: 0.625rem;
+    font-weight: 400;
+}

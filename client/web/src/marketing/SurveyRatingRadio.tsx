@@ -3,6 +3,8 @@ import { range } from 'lodash'
 import React, { useState } from 'react'
 import { useHistory } from 'react-router'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { eventLogger } from '../tracking/eventLogger'
 
 import radioStyles from './SurveyRatingRadio.module.scss'
@@ -47,12 +49,14 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
                 const focused = score === focusedIndex
 
                 return (
-                    <label
+                    <Button
                         key={score}
-                        className={classNames('btn btn-primary', radioStyles.ratingBtn, {
+                        className={classNames(radioStyles.ratingBtn, {
                             active: pressed,
                             focus: focused,
                         })}
+                        variant="primary"
+                        as="label"
                     >
                         <input
                             type="radio"
@@ -64,7 +68,7 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
                         />
 
                         {score}
-                    </label>
+                    </Button>
                 )
             })}
             <div id="survey-rating-scale" className={radioStyles.ratingScale}>

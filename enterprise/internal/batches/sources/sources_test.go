@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -530,7 +529,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				database.Mocks.ExternalServices.List = nil
 			})
 
-			havePushConfig, haveErr := gitserverPushConfig(context.Background(), database.ExternalServices(&dbtesting.MockDB{}), repo, tt.authenticator)
+			havePushConfig, haveErr := gitserverPushConfig(context.Background(), database.ExternalServices(database.NewDB(nil)), repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

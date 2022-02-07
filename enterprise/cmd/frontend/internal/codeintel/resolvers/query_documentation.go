@@ -20,7 +20,7 @@ const slowDocumentationPageRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_ *precise.DocumentationPageData, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -33,7 +33,7 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 	defer endObservation()
 
 	for i := range r.uploads {
-		traceLog(log.Int("uploadID", r.uploads[i].ID))
+		trace.Log(log.Int("uploadID", r.uploads[i].ID))
 
 		// In the case of multiple LSIF uploads, we merely return the most-recent page from a
 		// matching bundle.
@@ -55,7 +55,7 @@ const slowDocumentationPathInfoRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string) (_ *precise.DocumentationPathInfoData, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -68,7 +68,7 @@ func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string
 	defer endObservation()
 
 	for i := range r.uploads {
-		traceLog(log.Int("uploadID", r.uploads[i].ID))
+		trace.Log(log.Int("uploadID", r.uploads[i].ID))
 
 		// In the case of multiple LSIF uploads, we merely return the most-recent info from a
 		// matching bundle.

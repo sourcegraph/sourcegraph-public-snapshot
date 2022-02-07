@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	dbstore2 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,7 +22,8 @@ import (
 )
 
 var schemeToExternalService = map[string]string{
-	"semanticdb": extsvc.KindJVMPackages,
+	dbstore2.JVMPackagesScheme: extsvc.KindJVMPackages,
+	dbstore2.NPMPackagesScheme: extsvc.KindNPMPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -184,14 +186,14 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go and lsif-java.
+// were indexed via lsif-go, lsif-java and lsif-tsc.
 func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
 		return false, errors.Wrap(err, "dbstore.GetUploadByID")
 	}
 
-	return upload.Indexer == "lsif-go" || upload.Indexer == "lsif-java", nil
+	return upload.Indexer == "lsif-go" || upload.Indexer == "lsif-java" || upload.Indexer == "lsif-tsc", nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

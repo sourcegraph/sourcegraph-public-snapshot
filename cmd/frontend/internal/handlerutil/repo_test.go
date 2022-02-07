@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +21,7 @@ func TestGetRepo(t *testing.T) {
 			backend.Mocks.Repos = backend.MockRepos{}
 		})
 
-		_, err := GetRepo(context.Background(), dbmock.NewMockDB(), map[string]string{"Repo": "repo1"})
+		_, err := GetRepo(context.Background(), database.NewMockDB(), map[string]string{"Repo": "repo1"})
 		if !errors.HasType(err, &URLMovedError{}) {
 			t.Fatalf("err: want type *URLMovedError but got %T", err)
 		}

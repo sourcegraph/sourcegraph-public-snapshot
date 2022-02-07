@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -32,6 +34,8 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
+// GitCommitResolver resolves git commits.
+//
 // Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
 	db           database.DB
@@ -56,7 +60,7 @@ type GitCommitResolver struct {
 	commitErr  error
 }
 
-// NewGitCommitResolver returns a new CommitResulover. When commit is set to nil,
+// NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
@@ -77,7 +81,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -203,7 +207,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -222,14 +226,14 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if !stat.Mode().IsRegular() {
+	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
 	return NewGitTreeEntryResolver(r.db, r, stat), nil
@@ -242,7 +246,7 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return git.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
+	return git.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {

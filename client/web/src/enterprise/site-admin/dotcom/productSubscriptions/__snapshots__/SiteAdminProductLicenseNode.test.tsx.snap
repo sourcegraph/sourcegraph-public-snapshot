@@ -60,7 +60,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     <div>
       Tags: 
       <div
-        class="mr-1 badge badge-secondary"
+        class="mr-1"
       >
         a
       </div>
@@ -81,7 +81,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg
@@ -159,7 +159,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     <div>
       Tags: 
       <div
-        class="mr-1 badge badge-secondary"
+        class="mr-1"
       >
         a
       </div>
@@ -180,7 +180,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg

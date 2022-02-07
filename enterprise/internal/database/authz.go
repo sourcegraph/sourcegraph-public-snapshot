@@ -28,7 +28,7 @@ func NewAuthzStoreWith(other basestore.ShareableStore, clock func() time.Time) d
 }
 
 type authzStore struct {
-	store *PermsStore
+	store PermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.

@@ -9,20 +9,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getEventRepoMetadata(ctx context.Context, db dbutil.DB, event streaming.SearchEvent) (map[api.RepoID]*types.SearchedRepo, error) {
+func getEventRepoMetadata(ctx context.Context, db database.DB, event streaming.SearchEvent) (map[api.RepoID]*types.SearchedRepo, error) {
 	ids := repoIDs(event.Results)
 	if len(ids) == 0 {
 		// Return early if there are no repos in the event
 		return nil, nil
 	}
 
-	metadataList, err := database.Repos(db).Metadata(ctx, ids...)
+	metadataList, err := db.Repos().Metadata(ctx, ids...)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetch metadata from db")
 	}
@@ -36,9 +35,8 @@ func getEventRepoMetadata(ctx context.Context, db dbutil.DB, event streaming.Sea
 
 // repoNamer returns a best-effort function which translates repository IDs
 // into names.
-func repoNamer(ctx context.Context, db dbutil.DB) streamapi.RepoNamer {
+func repoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
 	cache := map[api.RepoID]api.RepoName{}
-	repoStore := database.Repos(db)
 
 	return func(ids []api.RepoID) []api.RepoName {
 		// Strategy is to populate from cache. So we first populate the cache
@@ -51,7 +49,7 @@ func repoNamer(ctx context.Context, db dbutil.DB) streamapi.RepoNamer {
 		}
 
 		if len(missing) > 0 {
-			err := repoStore.StreamMinimalRepos(ctx, database.ReposListOptions{
+			err := db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 				IDs: missing,
 			}, func(repo *types.MinimalRepo) {
 				cache[repo.ID] = repo.Name

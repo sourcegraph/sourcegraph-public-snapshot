@@ -2,11 +2,9 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Link } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/common'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -65,9 +63,11 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 title="Oops, we couldn't find the dashboard"
                 subtitle={
                     <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID:{' '}
-                        <code className="badge badge-secondary">{dashboardId}</code> in your{' '}
-                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
+                        We couldn't find that dashboard. Try to find the dashboard with ID:
+                        <Badge variant="secondary" as="code">
+                            {dashboardId}
+                        </Badge>{' '}
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />
@@ -108,13 +108,9 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
-                </a>
+                </Link>
             </span>
 
             <Container className="mt-4">
@@ -142,7 +138,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}

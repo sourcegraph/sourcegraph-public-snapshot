@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -48,7 +47,7 @@ type JVMPackagesRepoStore interface {
 func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error) {
 	var c schema.JVMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Newf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newJVMPackagesSource(svc, &c)
 }
@@ -75,6 +74,9 @@ func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConne
 
 // ListRepos returns all Maven artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
+//
+// [FIXME: deduplicate-listed-repos] The current implementation will return
+// multiple repos with the same URL if there are different versions of it.
 func (s *JVMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listDependentRepos(ctx, results)
 }
@@ -137,7 +139,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 				if errors.Is(err, context.DeadlineExceeded) {
 					timedOut++
 				} else {
-					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.CoursierSyntax())
+					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.PackageManagerSyntax())
 				}
 				continue
 			}

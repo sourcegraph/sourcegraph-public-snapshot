@@ -29,8 +29,9 @@ jobs:
     - name: Preview report diff
       run: git --no-pager diff
 
-    - name: Open pull request
+    - name: Create pull request
       uses: peter-evans/create-pull-request@v3
+      id: cpr
       with:
         labels: automerge
         base: main
@@ -47,3 +48,11 @@ jobs:
         # currently @sourcegraph-bot cross-repo-github-actions in 1password
         # configure in https://github.com/sourcegraph/sourcegraph/settings/secrets/GH_REPO_TOKEN
         token: ${{ secrets.GH_REPO_TOKEN }}
+
+    - name: Enable pull request automerge
+      if: steps.cpr.outputs.pull-request-operation == 'created'
+      uses: peter-evans/enable-pull-request-automerge@v1
+      with:
+        token: ${{ secrets.GH_REPO_TOKEN }}
+        pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+        merge-method: squash

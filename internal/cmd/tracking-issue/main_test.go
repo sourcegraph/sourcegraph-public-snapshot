@@ -25,6 +25,7 @@ var (
 		13987, // Code Intelligence 3.21 Tracking issue
 		13988, // Cloud 2020-09-23 Tracking issue
 		14166, // RFC-214: Tracking issue
+		25768, // RFC 496: Continuous integration observability
 	}
 )
 

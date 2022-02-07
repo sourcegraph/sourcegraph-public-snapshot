@@ -200,6 +200,10 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
+func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+	return r.user.TosAccepted
+}
+
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -251,7 +255,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
 func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
-	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil
@@ -376,6 +380,40 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserID *graphql.ID }) (*EmptyResponse, error) {
+	var affectedUserID int32
+	if args.UserID != nil {
+		var err error
+		affectedUserID, err = UnmarshalUserID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		affectedUserID = user.ID
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
+		return nil, err
+	}
+
+	tosAccepted := true
+	update := database.UserUpdate{
+		TosAccepted: &tosAccepted,
+	}
+
+	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 

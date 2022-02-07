@@ -127,7 +127,7 @@ func rfcTitlesPrinter(out *output.Output) func(r *drive.FileList) error {
 			matches := rfcTitleRegex.FindStringSubmatch(i.Name)
 			if len(matches) == 4 {
 				number := matches[1]
-				status := matches[2]
+				status := strings.ToUpper(matches[2])
 				name := matches[3]
 
 				var statusColor output.Style

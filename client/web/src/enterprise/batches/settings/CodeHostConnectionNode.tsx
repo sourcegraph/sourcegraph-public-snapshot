@@ -4,6 +4,8 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
+import { Badge, Button } from '@sourcegraph/wildcard'
+
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
@@ -78,44 +80,40 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
-                            <span
-                                className="badge badge-secondary"
-                                data-tooltip="Changesets on this code host will
+                            <Badge
+                                variant="secondary"
+                                tooltip="Changesets on this code host will
                             be created with a global token until a personal access token is added."
                             >
                                 Global token
-                            </span>
+                            </Badge>
                         )}
                     </h3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
                         {isEnabled && (
                             <>
-                                <button
-                                    type="button"
-                                    className="btn btn-link text-danger text-nowrap test-code-host-connection-node-btn-remove"
+                                <Button
+                                    className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
+                                    variant="link"
                                 >
                                     Remove
-                                </button>
+                                </Button>
                                 {node.requiresSSH && (
-                                    <button
-                                        type="button"
-                                        onClick={onClickView}
-                                        className="btn btn-secondary text-nowrap ml-2"
-                                    >
+                                    <Button onClick={onClickView} className="text-nowrap ml-2" variant="secondary">
                                         View public key
-                                    </button>
+                                    </Button>
                                 )}
                             </>
                         )}
                         {!isEnabled && (
-                            <button
-                                type="button"
-                                className="btn btn-success text-nowrap test-code-host-connection-node-btn-add"
+                            <Button
+                                className="text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
+                                variant="success"
                             >
                                 Add credentials
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>

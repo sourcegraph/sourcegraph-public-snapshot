@@ -4,7 +4,6 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -13,6 +12,7 @@ import {
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/shared/src/util/url'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -64,14 +64,14 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                Tooltip.forceUpdate()
+                TooltipController.forceUpdate()
             })
         )
 
         // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.key === 'h'))
+                .pipe(filter(event => event.altKey && event.code === 'KeyH'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
@@ -88,7 +88,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink className="btn" file={true} onSelect={this.onClick}>
+                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
                     <HistoryIcon className="icon-inline" />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
@@ -96,7 +96,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         }
         return (
             <RepoHeaderActionButtonLink
-                className="btn btn-icon"
+                className="btn-icon"
                 file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}

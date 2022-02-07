@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -38,7 +37,7 @@ func (r repoListerMock) List(ctx context.Context, q zoektquery.Q, opts *zoekt.Li
 }
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	defaultBranchRef := "refs/heads/main"
 	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {

@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -40,6 +40,13 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 
 		return e.process(ctx, tx, service.NewWorkspaceResolver, job)
 	}
+}
+
+type workspaceCacheKey struct {
+	dbWorkspace   *btypes.BatchSpecWorkspace
+	repo          batcheslib.Repository
+	stepCacheKeys []string
+	skippedSteps  map[int32]struct{}
 }
 
 func (r *batchSpecWorkspaceCreator) process(
@@ -77,10 +84,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
 	// Collect all cache keys so we can look them up in a single query.
-	cacheKeyWorkspaces := make(map[string]struct {
-		dbWorkspace *btypes.BatchSpecWorkspace
-		workspace   *service.RepoWorkspace
-	})
+	cacheKeyWorkspaces := make(map[string]workspaceCacheKey)
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -94,7 +98,6 @@ func (r *batchSpecWorkspaceCreator) process(
 			Path:               w.Path,
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-			Steps:              w.Steps,
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
@@ -105,31 +108,77 @@ func (r *batchSpecWorkspaceCreator) process(
 		if spec.NoCache {
 			continue
 		}
+		if !spec.AllowIgnored && w.Ignored {
+			continue
+		}
+		if !spec.AllowUnsupported && w.Unsupported {
+			continue
+		}
 
-		key := service.CacheKeyForWorkspace(spec, w)
+		r := batcheslib.Repository{
+			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
+			Name:        string(w.Repo.Name),
+			BaseRef:     w.Branch,
+			BaseRev:     string(w.Commit),
+			FileMatches: w.FileMatches,
+		}
+
+		key := cache.KeyForWorkspace(
+			&template.BatchChangeAttributes{
+				Name:        spec.Spec.Name,
+				Description: spec.Spec.Description,
+			},
+			r,
+			w.Path,
+			w.OnlyFetchWorkspace,
+			spec.Spec.Steps,
+		)
+
 		rawKey, err := key.Key()
 		if err != nil {
 			return err
 		}
-		cacheKeyWorkspaces[rawKey] = struct {
-			dbWorkspace *btypes.BatchSpecWorkspace
-			workspace   *service.RepoWorkspace
-		}{
-			dbWorkspace: workspace,
-			workspace:   w,
+
+		skippedSteps, err := batcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Name), w.FileMatches)
+		if err != nil {
+			return err
+		}
+
+		stepCacheKeys := make([]string, 0, len(spec.Spec.Steps))
+		// Generate cache keys for all the step results as well.
+		for i := 0; i < len(spec.Spec.Steps)-1; i++ {
+			if _, ok := skippedSteps[int32(i)]; ok {
+				continue
+			}
+			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
+			rawStepKey, err := key.Key()
+			if err != nil {
+				return nil
+			}
+			stepCacheKeys = append(stepCacheKeys, rawStepKey)
+		}
+
+		cacheKeyWorkspaces[rawKey] = workspaceCacheKey{
+			dbWorkspace:   workspace,
+			repo:          r,
+			stepCacheKeys: stepCacheKeys,
+			skippedSteps:  skippedSteps,
 		}
 	}
 
 	// Fetch all cache entries by their keys.
 	cacheKeys := make([]string, 0, len(cacheKeyWorkspaces))
-	for key := range cacheKeyWorkspaces {
+	stepCacheKeys := make([]string, 0, len(cacheKeyWorkspaces))
+	for key, w := range cacheKeyWorkspaces {
 		cacheKeys = append(cacheKeys, key)
+
+		stepCacheKeys = append(stepCacheKeys, w.stepCacheKeys...)
 	}
 	entriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
-	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 	if len(cacheKeys) > 0 {
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: cacheKeys,
+			UserID: spec.UserID,
+			Keys:   cacheKeys,
 		})
 		if err != nil {
 			return err
@@ -138,14 +187,47 @@ func (r *batchSpecWorkspaceCreator) process(
 			entriesByCacheKey[entry.Key] = entry
 		}
 	}
+	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
+	if len(stepCacheKeys) > 0 {
+		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: spec.UserID,
+			Keys:   stepCacheKeys,
+		})
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			stepEntriesByCacheKey[entry.Key] = entry
+		}
+	}
 
 	// All changeset specs to be created.
 	cs := make([]*btypes.ChangesetSpec, 0)
 	// Collect all IDs of used cache entries to mark them as recently used later.
 	usedCacheEntries := make([]int64, 0)
+	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 
 	// Check for an existing cache entry for each of the workspaces.
 	for rawKey, workspace := range cacheKeyWorkspaces {
+		for idx, key := range workspace.stepCacheKeys {
+			// Ignore statically skipped steps.
+			if _, ok := workspace.skippedSteps[int32(idx)]; ok {
+				continue
+			}
+
+			if c, ok := stepEntriesByCacheKey[key]; ok {
+				var res execution.AfterStepResult
+				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {
+					return err
+				}
+				workspace.dbWorkspace.SetStepCacheResult(idx+1, btypes.StepCacheResult{Key: key, Value: &res})
+			} else {
+				// Only add cache entries up until we don't have the cache entry
+				// for the previous step anymore.
+				break
+			}
+		}
+
 		entry, ok := entriesByCacheKey[rawKey]
 		if !ok {
 			continue
@@ -153,16 +235,35 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
+		// Mark the cache entries as used.
+		usedCacheEntries = append(usedCacheEntries, entry.ID)
+
 		// Build the changeset specs from the cache entry.
-		changesetSpecs, err := changesetSpecsFromCache(spec, workspace.workspace, entry)
+		var executionResult execution.Result
+		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
+			return err
+		}
+
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, executionResult)
 		if err != nil {
 			return err
 		}
-		cs = append(cs, changesetSpecs...)
-		changesetsByWorkspace[workspace.dbWorkspace] = changesetSpecs
 
-		// And mark the cache entries as used.
-		usedCacheEntries = append(usedCacheEntries, entry.ID)
+		var specs []*btypes.ChangesetSpec
+		for _, s := range rawSpecs {
+			changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
+			if err != nil {
+				return err
+			}
+			changesetSpec.BatchSpecID = spec.ID
+			changesetSpec.RepoID = workspace.dbWorkspace.RepoID
+			changesetSpec.UserID = spec.UserID
+
+			specs = append(specs, changesetSpec)
+		}
+
+		cs = append(cs, specs...)
+		changesetsByWorkspace[workspace.dbWorkspace] = specs
 	}
 
 	// Mark all used cache entries as recently used for cache eviction purposes.
@@ -212,7 +313,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	// Associate the changeset specs with the workspace.
+	// Associate the changeset specs with the workspace now that they have IDs.
 	for workspace, changesetSpecs := range changesetsByWorkspace {
 		for _, spec := range changesetSpecs {
 			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
@@ -220,53 +321,4 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
-}
-
-func changesetSpecsFromCache(spec *btypes.BatchSpec, w *service.RepoWorkspace, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
-	var executionResult execution.Result
-	if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-		return nil, err
-	}
-
-	repoID := string(graphqlbackend.MarshalRepositoryID(w.Repo.ID))
-	input := &batcheslib.ChangesetSpecInput{
-		BaseRepositoryID: repoID,
-		HeadRepositoryID: repoID,
-		Repository: batcheslib.ChangesetSpecRepository{
-			Name:        string(w.Repo.Name),
-			FileMatches: w.FileMatches,
-			BaseRef:     git.EnsureRefPrefix(w.Branch),
-			BaseRev:     string(w.Commit),
-		},
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
-		Template:         spec.Spec.ChangesetTemplate,
-		TransformChanges: spec.Spec.TransformChanges,
-		Result:           executionResult,
-	}
-
-	rawSpecs, err := batcheslib.BuildChangesetSpecs(input, batcheslib.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var specs []*btypes.ChangesetSpec
-	for _, s := range rawSpecs {
-		changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
-		if err != nil {
-			return nil, err
-		}
-		changesetSpec.BatchSpecID = spec.ID
-		changesetSpec.RepoID = w.Repo.ID
-		changesetSpec.UserID = spec.UserID
-
-		specs = append(specs, changesetSpec)
-
-	}
-	return specs, nil
 }

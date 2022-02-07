@@ -36,9 +36,9 @@ func (c *indexingConfig) Load() {
 	c.DependencyIndexerSchedulerConcurrency = c.GetInt("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY", "1", "The maximum number of dependency graphs that can be processed concurrently.")
 }
 
-func (c *janitorConfig) Validate() error {
+func (c *indexingConfig) Validate() error {
 	var errs *multierror.Error
 	errs = multierror.Append(errs, c.BaseConfig.Validate())
-	errs = multierror.Append(errs, c.MetricsConfig.Validate())
+	errs = multierror.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
 	return errs.ErrorOrNil()
 }

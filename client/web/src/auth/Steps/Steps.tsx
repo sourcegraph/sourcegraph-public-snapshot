@@ -15,6 +15,7 @@ export interface StepProps {
 
 interface StepListProps {
     numeric: boolean
+    className?: string
     children: React.ReactElement<StepProps> | React.ReactElement<StepProps, string | React.JSXElementConstructor<any>>[]
 }
 
@@ -70,7 +71,7 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
     )
 }
 
-export const StepList: React.FunctionComponent<StepListProps> = ({ children, numeric }) => {
+export const StepList: React.FunctionComponent<StepListProps> = ({ children, numeric, className }) => {
     const { state, dispatch } = useStepsContext()
 
     const { initialStep } = state
@@ -104,7 +105,7 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
     })
 
     return (
-        <nav>
+        <nav className={className}>
             {numeric ? (
                 <ol className={stepsStyles.listNumeric}>{element}</ol>
             ) : (

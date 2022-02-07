@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -121,7 +122,7 @@ func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
 func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	return git.DiffPath(ctx, repo.Name, sourceCommit, targetCommit, path)
+	return git.DiffPath(ctx, repo.Name, sourceCommit, targetCommit, path, authz.DefaultSubRepoPermsChecker)
 }
 
 // adjustPosition translates the given position by adjusting the line number based on the

@@ -8,8 +8,8 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { Badge, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -43,7 +43,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     if (mirrorInfo.cloneInProgress) {
         return (
             <small data-tooltip="Clone in progress." className="mr-2 text-success">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </small>
         )
     }
@@ -119,9 +119,9 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     return (
         <RepositoryNodeContainer as="tr">
             <td className="border-color">
-                <a
+                <Link
                     className={classNames('w-100 d-flex justify-content-between align-items-center', styles.link)}
-                    href={url}
+                    to={url}
                     onClick={handleOnClick}
                 >
                     <div className="d-flex align-items-center">
@@ -131,10 +131,14 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         <RepoLink className="text-muted" repoName={name} to={null} />
                     </div>
                     <div>
-                        {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
+                        {isPrivate && (
+                            <Badge variant="secondary" className="text-muted" as="div">
+                                Private
+                            </Badge>
+                        )}
                         <ChevronRightIcon className="icon-inline ml-2 text-primary" />
                     </div>
-                </a>
+                </Link>
             </td>
         </RepositoryNodeContainer>
     )
@@ -195,7 +199,13 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                         onClick={handleOnClick}
                     />
                 </div>
-                <div>{isPrivate && <div className="badge bg-color-2 text-muted">Private</div>}</div>
+                <div>
+                    {isPrivate && (
+                        <Badge className="bg-color-2 text-muted" as="div">
+                            Private
+                        </Badge>
+                    )}
+                </div>
             </RepositoryNodeContainer>
         </tr>
     )

@@ -6,6 +6,10 @@ The `worker` service is a collection of background jobs that run periodically or
 
 The following jobs are defined by the `worker` service.
 
+#### `out-of-band-migrations`
+
+This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
+
 #### `codeintel-commitgraph`
 
 This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.

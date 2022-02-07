@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import { Button } from '@sourcegraph/wildcard'
 
 export const ShowMoreButton: React.FunctionComponent<{
     onClick: () => void
@@ -7,13 +8,8 @@ export const ShowMoreButton: React.FunctionComponent<{
     dataTestid?: string
 }> = ({ onClick, className, dataTestid }) => (
     <div className="text-center py-3">
-        <button
-            type="button"
-            className={classNames('btn btn-link', className)}
-            onClick={onClick}
-            data-testid={dataTestid}
-        >
+        <Button className={className} onClick={onClick} data-testid={dataTestid} variant="link">
             Show more
-        </button>
+        </Button>
     </div>
 )

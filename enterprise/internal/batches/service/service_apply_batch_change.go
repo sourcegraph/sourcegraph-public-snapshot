@@ -191,8 +191,8 @@ func (s *Service) ReconcileBatchChange(
 	batchChange.NamespaceUserID = batchSpec.NamespaceUserID
 	batchChange.Name = batchSpec.Spec.Name
 	a := actor.FromContext(ctx)
-	if batchChange.InitialApplierID == 0 {
-		batchChange.InitialApplierID = a.UID
+	if batchChange.CreatorID == 0 {
+		batchChange.CreatorID = a.UID
 	}
 	batchChange.LastApplierID = a.UID
 	batchChange.LastAppliedAt = s.clock()

@@ -2,19 +2,25 @@ import classNames from 'classnames'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { ModalVideo } from '../documentation/ModalVideo'
+import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
-import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
+import {
+    SearchExample,
+    exampleQueries,
+    exampleTripsAndTricks,
+    fonts,
+    exampleNotebooks,
+} from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
 
@@ -48,9 +54,10 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.searchExampleCardWrapper}>
-                        <Link
+                        <Card
+                            as={Link}
                             to={example.to}
-                            className={classNames('card', styles.searchExampleCard)}
+                            className={styles.searchExampleCard}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
@@ -59,7 +66,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.query} />
                                 </div>
                             </div>
-                        </Link>
+                        </Card>
                         <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
                             {example.label}
                         </Link>
@@ -70,73 +77,133 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     )
 }
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
-    const onSignUpClick = useCallback(() => {
-        props.telemetryService.log('HomepageCTAClicked', { campaign: 'Sign up link' }, { campaign: 'Sign up link' })
-    }, [props.telemetryService])
+interface TipsAndTricksProps extends TelemetryProps {
+    title: string
+    examples: SearchExample[]
+    moreLink: {
+        href: string
+        label: string
+    }
+}
+const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
+    title,
+    moreLink,
+    telemetryService,
+    examples,
+}) => {
+    const searchExampleClicked = useCallback(
+        (trackEventName: string) => (): void => telemetryService.log(trackEventName),
+        [telemetryService]
+    )
+    return (
+        <div className={classNames(styles.tipsAndTricks)}>
+            <div className={classNames('mb-2', styles.title)}>{title}</div>
+            <div className={styles.tipsAndTricksExamples}>
+                {examples.map(example => (
+                    <div key={example.query} className={styles.tipsAndTricksExample}>
+                        {example.label}
+                        <Card
+                            as={Link}
+                            to={example.to}
+                            className={styles.tipsAndTricksCard}
+                            onClick={searchExampleClicked(example.trackEventName)}
+                        >
+                            <SyntaxHighlightedSearchQuery query={example.query} />
+                        </Card>
+                    </div>
+                ))}
+            </div>
+            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
+                {moreLink.label}
+            </Link>
+        </div>
+    )
+}
 
+export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
+    const isOnboardingFeatureEnabled = props.featureFlags.get('getting-started-tour')
+    const isSearchNotebookFeatureEnabled = props.featureFlags.get('search-notebook-onboarding')
     return (
         <DynamicWebFonts fonts={fonts}>
             <div className={styles.loggedOutHomepage}>
-                <div className={styles.helpContent}>
-                    {props.featureFlags.get('search-notebook-onboarding') ? (
-                        <SearchExamples
-                            title="Search notebooks"
-                            subtitle="Three ways code search is more efficient than your IDE"
-                            examples={exampleNotebooks}
-                            icon={<BookOutlineIcon />}
-                            {...props}
+                {isOnboardingFeatureEnabled && (
+                    <div className={styles.content}>
+                        <OnboardingTour
+                            isFixedHeight={true}
+                            className={styles.onboardingTour}
+                            telemetryService={props.telemetryService}
                         />
-                    ) : (
-                        <SearchExamples
-                            title="Search examples"
-                            subtitle="Find answers faster with code search across multiple repos and commits"
-                            examples={exampleQueries}
-                            icon={<MagnifyingGlassSearchIcon />}
-                            {...props}
-                        />
-                    )}
-                    <div className={styles.thumbnail}>
-                        <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                        <ModalVideo
-                            id="three-ways-to-search-title"
-                            title="Three ways to search"
-                            src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                            thumbnail={{
-                                src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
-                                alt: 'Watch and learn video thumbnail',
-                            }}
-                            onToggle={isOpen =>
-                                props.telemetryService.log(
-                                    isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
-                                )
-                            }
-                        />
-                    </div>
-                </div>
-
-                <div className="d-flex justify-content-center">
-                    <div className={classNames('card', styles.ctaCard)}>
-                        <div className="d-flex align-items-center">
-                            <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+                        <div className={styles.videoCard}>
+                            <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                            <ModalVideo
+                                id="three-ways-to-search-title"
+                                title="Three ways to search"
+                                src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                showCaption={true}
+                                thumbnail={{
+                                    src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                    alt: 'Watch and learn video thumbnail',
+                                }}
+                                onToggle={isOpen =>
+                                    props.telemetryService.log(
+                                        isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                    )
+                                }
+                                assetsRoot={window.context?.assetsRoot || ''}
+                            />
                         </div>
-                        <span>
-                            Search your public and private code.{' '}
-                            <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
-                                Sign up
-                            </Link>{' '}
-                            to get started, or{' '}
-                            <a
-                                href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                read our blog post
-                            </a>{' '}
-                            to learn more.
-                        </span>
+
+                        <TipsAndTricks
+                            title="Tips and Tricks"
+                            examples={exampleTripsAndTricks}
+                            moreLink={{
+                                label: 'More search features',
+                                href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                            }}
+                            {...props}
+                        />
                     </div>
-                </div>
+                )}
+                {!isOnboardingFeatureEnabled && (
+                    <div className={styles.helpContent}>
+                        {isSearchNotebookFeatureEnabled ? (
+                            <SearchExamples
+                                title="Search notebooks"
+                                subtitle="Three ways code search is more efficient than your IDE"
+                                examples={exampleNotebooks}
+                                icon={<BookOutlineIcon />}
+                                {...props}
+                            />
+                        ) : (
+                            <SearchExamples
+                                title="Search examples"
+                                subtitle="Find answers faster with code search across multiple repos and commits"
+                                examples={exampleQueries}
+                                icon={<MagnifyingGlassSearchIcon />}
+                                {...props}
+                            />
+                        )}
+
+                        <div className={styles.thumbnail}>
+                            <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                            <ModalVideo
+                                id="three-ways-to-search-title"
+                                title="Three ways to search"
+                                src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                thumbnail={{
+                                    src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                    alt: 'Watch and learn video thumbnail',
+                                }}
+                                onToggle={isOpen =>
+                                    props.telemetryService.log(
+                                        isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                    )
+                                }
+                                assetsRoot={window.context?.assetsRoot || ''}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 <div className={styles.heroSection}>
                     <HeroSection {...props} />
@@ -188,7 +255,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         </DynamicWebFonts>
     )
 }
-
 const MagnifyingGlassSearchIcon = React.memo(() => (
     <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path

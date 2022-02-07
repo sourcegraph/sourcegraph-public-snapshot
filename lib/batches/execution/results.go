@@ -54,11 +54,11 @@ type AfterStepResult struct {
 	// StepIndex is the index of the step in the list of steps.
 	StepIndex int `json:"stepIndex"`
 	// Diff is the cumulative `git diff` after executing the Step.
-	Diff []byte `json:"diff"`
+	Diff string `json:"diff"`
 	// Outputs is a copy of the Outputs after executing the Step.
 	Outputs map[string]interface{} `json:"outputs"`
-	// PreviousStepResult is the StepResult of the step before Step, if Step !=
-	// 0.
+	// PreviousStepResult is the StepResult of the step before Step, if
+	// StepIndex != 0.
 	PreviousStepResult StepResult `json:"previousStepResult"`
 }
 
@@ -76,5 +76,5 @@ type Result struct {
 	// Path relative to the repository's root directory in which the steps
 	// have been executed.
 	// No leading slashes. Root directory is blank string.
-	Path string
+	Path string `json:"path"`
 }

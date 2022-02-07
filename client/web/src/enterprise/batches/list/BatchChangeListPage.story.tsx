@@ -3,6 +3,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeListPage } from './BatchChangeListPage'
@@ -39,6 +41,7 @@ add('List of batch changes', () => (
                 canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesLicensed}
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
             />
         )}
     </WebStory>
@@ -53,6 +56,7 @@ add('Licensing not enforced', () => (
                 canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesNotLicensed}
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
             />
         )}
     </WebStory>
@@ -83,6 +87,7 @@ add('No batch changes', () => {
                     canCreate={true}
                     queryBatchChanges={queryBatchChanges}
                     areBatchChangesLicensed={batchChangesLicensed}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -112,6 +117,7 @@ add('All batch changes tab empty', () => (
                 queryBatchChanges={QUERY_NO_BATCH_CHANGES}
                 areBatchChangesLicensed={batchChangesLicensed}
                 openTab="batchChanges"
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
             />
         )}
     </WebStory>
@@ -127,6 +133,7 @@ add('All batch changes tab empty, cannot create', () => (
                 queryBatchChanges={QUERY_NO_BATCH_CHANGES}
                 areBatchChangesLicensed={batchChangesLicensed}
                 openTab="batchChanges"
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
             />
         )}
     </WebStory>

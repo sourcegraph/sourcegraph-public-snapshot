@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/common'
+import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { isErrorLike } from '../../util/errors'
 import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
 
@@ -14,25 +14,36 @@ interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOr
     iconClassName?: string
     badgeClassName?: string
     errorAlertClassName?: string
+    errorAlertVariant?: AlertProps['variant']
     contentClassName?: string
 }
 
 export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsProps> = props => {
-    const { hoverOrError, iconClassName, errorAlertClassName, badgeClassName, contentClassName } = props
+    const {
+        hoverOrError,
+        iconClassName,
+        errorAlertClassName,
+        errorAlertVariant,
+        badgeClassName,
+        contentClassName,
+    } = props
 
     if (hoverOrError === 'loading') {
         return (
             <div className={classNames(hoverOverlayStyle.loaderRow)}>
-                <LoadingSpinner className={iconClassName} />
+                <LoadingSpinner inline={false} className={iconClassName} />
             </div>
         )
     }
 
     if (isErrorLike(hoverOrError)) {
         return (
-            <div className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}>
+            <Alert
+                className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(hoverOrError.message)}
-            </div>
+            </Alert>
         )
     }
 
@@ -56,6 +67,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
                     content={content}
                     aggregatedBadges={hoverOrError.aggregatedBadges}
                     errorAlertClassName={errorAlertClassName}
+                    errorAlertVariant={errorAlertVariant}
                     badgeClassName={badgeClassName}
                     contentClassName={contentClassName}
                 />

@@ -2,7 +2,7 @@ import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 import React from 'react'
 
-import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 

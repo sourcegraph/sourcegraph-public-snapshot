@@ -97,8 +97,8 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
-				return 0, 0, nil
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
+				return 0, 0, 0, nil
 			},
 		},
 		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
@@ -199,7 +199,7 @@ func NewStrictMockDBStore() *MockDBStore {
 			},
 		},
 		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
-			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+			defaultHook: func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
 				panic("unexpected invocation of MockDBStore.DeleteSourcedCommits")
 			},
 		},
@@ -587,24 +587,24 @@ func (c DBStoreDeleteIndexesWithoutRepositoryFuncCall) Results() []interface{} {
 // DeleteSourcedCommits method of the parent MockDBStore instance is
 // invoked.
 type DBStoreDeleteSourcedCommitsFunc struct {
-	defaultHook func(context.Context, int, string, time.Time) (int, int, error)
-	hooks       []func(context.Context, int, string, time.Time) (int, int, error)
+	defaultHook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)
+	hooks       []func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)
 	history     []DBStoreDeleteSourcedCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteSourcedCommits delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDBStore) DeleteSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, int, error) {
-	r0, r1, r2 := m.DeleteSourcedCommitsFunc.nextHook()(v0, v1, v2, v3)
-	m.DeleteSourcedCommitsFunc.appendCall(DBStoreDeleteSourcedCommitsFuncCall{v0, v1, v2, v3, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockDBStore) DeleteSourcedCommits(v0 context.Context, v1 int, v2 string, v3 time.Duration, v4 time.Time) (int, int, int, error) {
+	r0, r1, r2, r3 := m.DeleteSourcedCommitsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DeleteSourcedCommitsFunc.appendCall(DBStoreDeleteSourcedCommitsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
+	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the DeleteSourcedCommits
 // method of the parent MockDBStore instance is invoked and the hook queue
 // is empty.
-func (f *DBStoreDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+func (f *DBStoreDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -612,7 +612,7 @@ func (f *DBStoreDeleteSourcedCommitsFunc) SetDefaultHook(hook func(context.Conte
 // DeleteSourcedCommits method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+func (f *DBStoreDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -620,21 +620,21 @@ func (f *DBStoreDeleteSourcedCommitsFunc) PushHook(hook func(context.Context, in
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreDeleteSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, int, error) {
-		return r0, r1, r2
+func (f *DBStoreDeleteSourcedCommitsFunc) SetDefaultReturn(r0 int, r1 int, r2 int, r3 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
+		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreDeleteSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, time.Time) (int, int, error) {
-		return r0, r1, r2
+func (f *DBStoreDeleteSourcedCommitsFunc) PushReturn(r0 int, r1 int, r2 int, r3 error) {
+	f.PushHook(func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
+		return r0, r1, r2, r3
 	})
 }
 
-func (f *DBStoreDeleteSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Time) (int, int, error) {
+func (f *DBStoreDeleteSourcedCommitsFunc) nextHook() func(context.Context, int, string, time.Duration, time.Time) (int, int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -678,7 +678,10 @@ type DBStoreDeleteSourcedCommitsFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 time.Time
+	Arg3 time.Duration
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -687,19 +690,22 @@ type DBStoreDeleteSourcedCommitsFuncCall struct {
 	Result1 int
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
-	Result2 error
+	Result2 int
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreDeleteSourcedCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreDeleteSourcedCommitsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // DBStoreDeleteUploadsStuckUploadingFunc describes the behavior when the

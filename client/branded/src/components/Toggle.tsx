@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { TOGGLE_DISPLAY } from './constants'
 import styles from './Toggle.module.scss'
 
 interface Props {
@@ -9,6 +10,9 @@ interface Props {
 
     /** The DOM ID of the element. */
     id?: string
+
+    /** inline-center adds an extra margin-top to centralise text around toggle, defaults to inline-center */
+    display?: typeof TOGGLE_DISPLAY[number]
 
     /**
      * Called when the user changes the input's value.
@@ -40,6 +44,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     onClick,
+    display = 'inline-center',
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
     'aria-describedby': ariaDescribedby,
@@ -58,7 +63,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classNames(styles.toggle, className)}
+            className={classNames(styles.toggle, className, display === 'inline-center' && styles.inlineCenter)}
             id={id}
             title={title}
             value={value ? 1 : 0}

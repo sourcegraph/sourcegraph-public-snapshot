@@ -30,7 +30,7 @@ func TestDeduper(t *testing.T) {
 			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
-			DiffPreview: &HighlightedString{},
+			DiffPreview: &MatchedString{},
 		}
 	}
 
@@ -62,8 +62,8 @@ func TestDeduper(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		input    []Match
-		expected []Match
+		input    Matches
+		expected Matches
 	}{
 		{
 			name: "no dups",

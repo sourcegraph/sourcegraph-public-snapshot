@@ -12,7 +12,7 @@ import (
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
 // also returns the size of the complete result set to aid in pagination.
 func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []Diagnostic, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.diagnostics.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.diagnostics.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("prefix", prefix),
 		log.Int("limit", limit),
@@ -24,13 +24,13 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, li
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("numDocuments", len(documentData)))
+	trace.Log(log.Int("numDocuments", len(documentData)))
 
 	totalCount := 0
 	for _, documentData := range documentData {
 		totalCount += len(documentData.Document.Diagnostics)
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	diagnostics := make([]Diagnostic, 0, limit)
 	for _, documentData := range documentData {

@@ -45,3 +45,8 @@ kbd {
 .search-keyword {
     color: var(--search-keyword-color);
 }
+
+// Color of the `:` separator of the context dropdown, for example.
+.search-filter-separator {
+    color: var(--search-filter-separator-color);
+}

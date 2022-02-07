@@ -1,11 +1,12 @@
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -17,13 +18,13 @@ import {
     UserSettingsAreaUserProfileResult,
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
-import { OnboardingTourProps } from '../../search'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
+import styles from './UserSettingsArea.module.scss'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -35,7 +36,6 @@ export interface UserSettingsAreaProps
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,
-        OnboardingTourProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
@@ -146,10 +146,14 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
                 </SiteAdminAlert>
             )}
             <div className="d-flex">
-                <UserSettingsSidebar items={sideBarItems} {...context} className="flex-0 mr-3 user-settings-sidebar" />
+                <UserSettingsSidebar
+                    items={sideBarItems}
+                    {...context}
+                    className={classNames('flex-0 mr-3', styles.userSettingsSidebar)}
+                />
                 <div className="flex-1">
                     <ErrorBoundary location={props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
                                 {props.routes.map(
                                     ({ path, exact, render, condition = () => true }) =>

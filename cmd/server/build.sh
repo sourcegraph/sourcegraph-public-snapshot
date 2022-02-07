@@ -60,9 +60,9 @@ echo "--- go build"
 PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/github-proxy
   github.com/sourcegraph/sourcegraph/cmd/gitserver
-  github.com/sourcegraph/sourcegraph/cmd/query-runner
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/sourcegraph/cmd/symbols
+  github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/google/zoekt/cmd/zoekt-archive-index
   github.com/google/zoekt/cmd/zoekt-git-index
   github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver

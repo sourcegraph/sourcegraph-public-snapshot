@@ -61,7 +61,9 @@ type Source interface {
 
 ## Syncing
 
-We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically sync each code host connection in the background. It compares the list of repos configured with those in our `repo` table and ensures that they are consistent. See [`Syncer.SyncExternalServices`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/repos/syncer.go#L166) for details.
+We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically sync each code host connection in the background. It compares the list of repos configured with those in our `repo` table and ensures that they are consistent. The syncer respects limits set in the site config for `userRepos.maxPerSite` (20000 by default) and `userRepos.maxPerUser` (2000 by default) and if either of these limits are exceeded, the code host connection will stop syncing until the limits are increased or the excess repositories are removed.
+
+See [`Syncer.SyncExternalServices`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/repos/syncer.go#L166) for details.
 
 ## Git Update Scheduler
 

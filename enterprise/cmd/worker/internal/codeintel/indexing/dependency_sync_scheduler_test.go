@@ -6,8 +6,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	enterprisedbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	ossdbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -20,8 +21,8 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "semanticdb", Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: ossdbstore.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
 		dbStore:     mockDBStore,
@@ -29,7 +30,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
-	job := dbstore.DependencySyncingJob{
+	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), job); err != nil {
@@ -67,7 +68,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
@@ -76,7 +77,7 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
-	job := dbstore.DependencySyncingJob{
+	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), job); err != nil {

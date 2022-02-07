@@ -9,7 +9,7 @@ import (
 
 // NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
 // containing the result.
-func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err error) {
+func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
 	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
@@ -17,7 +17,6 @@ func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err err
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
 		AllowConditionalExec:   true,
-		AllowFiles:             allowFiles,
 	})
 
 	return c, err
@@ -120,6 +119,12 @@ func (s BatchSpecState) Finished() bool {
 		s == BatchSpecStateFailed ||
 		s == BatchSpecStateErrored ||
 		s == BatchSpecStateCanceled
+}
+
+// FinishedAndNotCanceled returns whether the execution of the BatchSpec ran
+// through and finished without being canceled.
+func (s BatchSpecState) FinishedAndNotCanceled() bool {
+	return s == BatchSpecStateCompleted || s == BatchSpecStateFailed
 }
 
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.

@@ -10,9 +10,6 @@ import (
 )
 
 func TestStencil(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	ranges, err := store.Stencil(context.Background(), testBundleID, "internal/index/indexer.go")

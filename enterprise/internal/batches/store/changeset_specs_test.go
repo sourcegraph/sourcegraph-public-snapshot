@@ -62,6 +62,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		if i == cap(changesetSpecs)-1 {
 			c.BatchSpecID = 0
+			forkNamespace := "fork"
+			c.ForkNamespace = &forkNamespace
 		}
 		changesetSpecs = append(changesetSpecs, c)
 	}
@@ -481,12 +483,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 				if tc.batchSpecApplied {
 					batchChange := &btypes.BatchChange{
-						Name:             fmt.Sprintf("batch change for spec %d", batchSpec.ID),
-						BatchSpecID:      batchSpec.ID,
-						InitialApplierID: batchSpec.UserID,
-						NamespaceUserID:  batchSpec.NamespaceUserID,
-						LastApplierID:    batchSpec.UserID,
-						LastAppliedAt:    time.Now(),
+						Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+						BatchSpecID:     batchSpec.ID,
+						CreatorID:       batchSpec.UserID,
+						NamespaceUserID: batchSpec.NamespaceUserID,
+						LastApplierID:   batchSpec.UserID,
+						LastAppliedAt:   time.Now(),
 					}
 					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 						t.Fatal(err)
@@ -548,7 +550,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
-		user := ct.CreateTestUser(t, s.DB(), true)
+		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
@@ -739,7 +741,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 
 	t.Run("ListChangesetSpecsWithConflictingHeadRef", func(t *testing.T) {
-		user := ct.CreateTestUser(t, s.DB(), true)
+		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
 
 		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		if err := repoStore.Create(ctx, repo2); err != nil {
@@ -807,7 +809,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 		t.Fatal(err)
 	}
 
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Create old batch spec and batch change
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -864,7 +866,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -994,7 +996,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
@@ -1159,7 +1161,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need a batch spec.
 	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)

@@ -19,7 +19,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -226,7 +225,7 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 	}
 }
 
-func pruneUserCredentials(t *testing.T, db dbutil.DB, key encryption.Key) {
+func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
 	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {

@@ -1,5 +1,5 @@
 []store.RecordSeriesPointArgs{
-	store.RecordSeriesPointArgs{
+	{
 		SeriesID: "series1",
 		Point: store.SeriesPoint{
 			Time: time.Time{
@@ -11,7 +11,7 @@
 		RepoID:      valast.Addr(api.RepoID(1)).(*api.RepoID),
 		PersistMode: store.PersistMode("record"),
 	},
-	store.RecordSeriesPointArgs{
+	{
 		SeriesID: "series1",
 		Point: store.SeriesPoint{
 			Time:  time.Time{ext: 63713520000},

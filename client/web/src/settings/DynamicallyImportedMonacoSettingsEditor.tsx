@@ -1,18 +1,17 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import { EditorAction } from '../site-admin/configHelpers'
 import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -135,19 +134,20 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                     <div className={adminConfigurationStyles.actionGroups}>
                         <div className={adminConfigurationStyles.actions}>
                             {this.props.actions.map(({ id, label }) => (
-                                <button
+                                <Button
                                     key={id}
-                                    className={classNames('btn btn-secondary btn-sm', adminConfigurationStyles.action)}
+                                    className={adminConfigurationStyles.action}
                                     onClick={() => this.runAction(id, this.configEditor)}
-                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     {label}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
                 )}
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         {...this.props}
                         onDidSave={this.onSave}

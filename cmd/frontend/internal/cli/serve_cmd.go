@@ -17,6 +17,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -30,18 +32,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -96,38 +99,29 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+	}
+	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	ctx := context.Background()
-	migrate := true
-
-	for {
-		// We need this loop so that we handle the missing versions table,
-		// which would be added by running the migrations. Once we detect that
-		// it's missing, we run the migrations and try to update the version again.
-
-		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return nil, err
-		}
-
-		if !migrate {
-			return dbconn.Global, nil
-		}
-
-		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
-			return nil, err
-		}
-
-		migrate = false
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+		return nil, err
 	}
+
+	return sqlDB, nil
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -145,6 +139,21 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		log.Fatalf("ERROR: %v", err)
 	}
 	db := database.NewDB(sqlDB)
+
+	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
+		log15.Warn("Skipping out-of-band migrations check")
+	} else {
+		observationContext := &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+
+		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
+			log.Fatalf("failed to validate out of band migrations: %v", err)
+		}
+	}
 
 	// override site config first
 	if err := overrideSiteConfig(ctx, db); err != nil {
@@ -176,34 +185,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
-	// Create an out-of-band migration runner onto which each enterprise init function
-	// can register migration routines to run in the background while they still have
-	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
-
-	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
-	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service encryption job: %v", err)
-	}
-	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
-	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run user external account encryption job: %v", err)
-	}
-
-	// Run a background job to calculate the has_webhooks field on external
-	// service records.
-	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service webhook job: %v", err)
-	}
-
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
 	if len(os.Args) >= 2 {
@@ -264,12 +252,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
-	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
-	// being initialized
-	if dbconn.Global == nil {
-		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
-	}
-
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
@@ -280,6 +262,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
+		enterprise.NotebooksResolver,
+		enterprise.ComputeResolver,
 	)
 	if err != nil {
 		return err
@@ -300,10 +284,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		server,
-		outOfBandMigrationRunner,
-	}
+	routines := []goroutine.BackgroundRoutine{server}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
@@ -335,6 +316,8 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.BitbucketServerWebhook,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewExecutorProxyHandler,
+		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	if err != nil {

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -13,14 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -37,22 +34,32 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhook webhooks.Registerer, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newExecutorProxyHandler enterprise.NewExecutorProxyHandler, rateLimitWatcher graphqlbackend.LimitWatcher) (http.Handler, error) {
+func newExternalHTTPHandler(
+	db database.DB,
+	schema *graphql.Schema,
+	gitHubWebhook webhooks.Registerer,
+	gitLabWebhook, bitbucketServerWebhook http.Handler,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
+	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, rateLimitWatcher)
+	apiHandler := internalhttpapi.NewHandler(db, r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, newComputeStreamHandler, rateLimitWatcher)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
 	}
 	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
+	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
@@ -63,16 +70,15 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
 
+	githubAppCloudSetupHandler := newGitHubAppCloudSetupHandler()
+
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db)
+	appHandler := app.NewHandler(db, githubAppCloudSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
 	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
-	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
-		return globals.ExternalURL().Scheme == "https"
-	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
@@ -101,8 +107,8 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
-	h = ot.Middleware(h)
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
+	h = ot.HTTPMiddleware(h)
 
 	return h, nil
 }
@@ -123,43 +129,23 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		withActor(
-			internalhttpapi.NewInternalHandler(
-				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-				db,
-				schema,
-				newCodeIntelUploadHandler,
-				rateLimitWatcher,
+		actor.HTTPMiddleware(
+			featureflag.Middleware(database.FeatureFlags(db),
+				internalhttpapi.NewInternalHandler(
+					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
+					db,
+					schema,
+					newCodeIntelUploadHandler,
+					rateLimitWatcher,
+				),
 			),
 		),
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
-	h = ot.Middleware(h)
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
+	h = ot.HTTPMiddleware(h)
 	return h
-}
-
-// withActor wraps an existing HTTP handler by setting an actor in the HTTP request context.
-// It takes a user ID from the X-Sourcegraph-User-ID request header and if that fails to parse,
-// defaults to an internal actor.
-//
-// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
-// for the internal endpoint), because internal requests can bypass repository permissions checks.
-func withActor(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var a actor.Actor
-
-		userID, err := strconv.ParseInt(r.Header.Get("X-Sourcegraph-User-ID"), 10, 32)
-		if err != nil || userID == 0 {
-			a.Internal = true
-		} else {
-			a.UID = int32(userID)
-		}
-
-		rWithActor := r.WithContext(actor.WithActor(r.Context(), &a))
-		h.ServeHTTP(w, rWithActor)
-	})
 }
 
 // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is
@@ -246,29 +232,57 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		return false
 	}
 
+	// crossOriginPolicyAPI - handling of API routes.
+	//
+	// Even if the request was not from a trusted origin, we will allow the browser to send it AND
+	// include credentials even. Traditionally, this would be a CSRF vulnerability! But because we
+	// know for a fact that we will only respect sessions (cookie-based-authentication) iff the
+	// request came from a trusted origin, in session.go:CookieMiddlewareWIthCSRFSafety, we know it
+	// is safe to do this.
+	//
+	// This is the ONLY way in which we can enable public access of our Sourcegraph.com API, i.e. to
+	// allow random.com to send requests to our GraphQL and search APIs either unauthenticated or
+	// using an access token.
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	if isTrustedOrigin(r) {
-		// The request came from a trusted origin, either from the browser extension's fixed origin
-		// identifier or from an origin present in the site configuration `corsOrigin` allow list.
-		//
-		// This means we should allow the exact origin to make the request, the browser will grant
-		// their request the ability to authenticate via a session cookie.
-		//
-		// Note: API users also rely on this codepath handling wildcards properly. For example, if
-		// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*"
-		// (via a proxy, not what a browser would ever send) and would expect Sourcegraph to respond
-		// appropriately to any Origin request header:
-		//
-		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-		//
-		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	}
+	// Note: This must mirror the request's `Origin` header exactly as API users rely on this
+	// codepath handling for example wildcards `*` and `null` origins properly. For example, if
+	// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*" (via
+	// a proxy, a browser would never send a literal "*") and would expect Sourcegraph to respond
+	// appropriately with the request's Origin header. Similarly, some environments issue requests
+	// with a `null` Origin header, such as VS Code extensions from within WebViews and Figma
+	// extensions. Thus:
+	//
+	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+	// 	"Origin: null" -> "Access-Control-Allow-Origin: null"
+	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+	//
+	// Again, this is fine because we allow API requests from any origin and instead prevent CSRF
+	// attacks via enforcing that we only respect session auth iff the origin is trusted. See the
+	// docstring above this one for more info.
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 
 	if r.Method == "OPTIONS" {
+		// CRITICAL: Only trusted origins are allowed to send the secure X-Requested-With and
+		// X-Sourcegraph-Client headers, which indicate to us later (in session.go:CookieMiddlewareWIthCSRFSafety)
+		// that the request came from a trusted origin. To understand these secure headers, see
+		// "What does X-Requested-With do anyway?" in https://github.com/sourcegraph/sourcegraph/pull/27931
+		//
+		// Any origin may send us POST, GET, OPTIONS requests with arbitrary content types, auth
+		// (session cookies and access tokens), etc. but only trusted origins may send us the secure
+		// X-Requested-With header.
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		if isTrustedOrigin(r) {
+			// X-Sourcegraph-Client is the deprecated form of X-Requested-With, so we treat it the same
+			// way. It is NOT respected anymore, but is left as an allowed header so as to not block
+			// requests that still do include it as e.g. part of a proxy put in front of Sourcegraph.
+			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		} else {
+			// X-Sourcegraph-Should-Trace just indicates if we should record an HTTP request to our
+			// tracing system and never has an impact on security, it's fine to always allow that
+			// header to be set by browsers.
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		}
 		w.WriteHeader(http.StatusOK)
 		return true // we handled the request
 	}

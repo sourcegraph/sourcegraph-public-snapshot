@@ -2,7 +2,6 @@ package batches
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -16,23 +15,20 @@ import (
 
 var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
 
-type ChangesetSpecRepository struct {
+// Repository is a repository in which the steps of a batch spec are executed.
+//
+// It is part of the cache.ExecutionKey, so changes to the names of fields here
+// will lead to cache busts.
+type Repository struct {
+	ID          string
 	Name        string
+	BaseRef     string
+	BaseRev     string
 	FileMatches []string
-
-	BaseRef string
-	BaseRev string
 }
 
 type ChangesetSpecInput struct {
-	// BaseRepositoryID is the GraphQL ID of the base repository.
-	BaseRepositoryID string
-	// HeadRepositoryID is the GraphQL ID of the head repository. Until we
-	// support forks it always needs to be the same as BaseRepositoryID.
-	HeadRepositoryID string
-
-	// Repository contains information about the repository in which the changes were made.
-	Repository ChangesetSpecRepository
+	Repository Repository
 
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
@@ -56,6 +52,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		Outputs: input.Result.Outputs,
 		Repository: template.Repository{
 			Name:        input.Repository.Name,
+			Branch:      strings.TrimPrefix(input.Repository.BaseRef, "refs/heads/"),
 			FileMatches: input.Repository.FileMatches,
 		},
 	}
@@ -120,8 +117,8 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		}
 
 		return &ChangesetSpec{
-			BaseRepository: input.BaseRepositoryID,
-			HeadRepository: input.HeadRepositoryID,
+			BaseRepository: input.Repository.ID,
+			HeadRepository: input.Repository.ID,
 			BaseRef:        input.Repository.BaseRef,
 			BaseRev:        input.Repository.BaseRev,
 
@@ -237,13 +234,13 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 
 	for _, g := range groups {
 		if _, ok := uniqueBranches[g.Branch]; ok {
-			return NewValidationError(fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
+			return NewValidationError(errors.Newf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
 		} else {
 			uniqueBranches[g.Branch] = struct{}{}
 		}
 
 		if g.Branch == defaultBranch {
-			return NewValidationError(fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
+			return NewValidationError(errors.Newf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
 		}
 	}
 

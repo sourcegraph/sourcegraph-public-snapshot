@@ -1,15 +1,15 @@
 import classNames from 'classnames'
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
+import { VisibilityPicker } from '../../../../../../components/creation-ui-kit'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
-import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
@@ -64,7 +64,6 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <form
             ref={innerRef}
             noValidate={true}
@@ -132,7 +131,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

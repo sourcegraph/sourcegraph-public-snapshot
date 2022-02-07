@@ -26,6 +26,10 @@ This happens if the extension is disabled or if you're visiting a page where an 
 You can upgrade an extension in your private extension registry by simpily running the same `src extensions copy -extension-id=... -current-user=...` command as you would when you first [publish the extension](https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry).
 
 
+#### What does it mean when a red dot shows up on the Sourcegraph browser extension icon?
+
+The red dot indicates that either the Sourcegraph URL entered is invalid, or you are currently on a private repository. Visit our [browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#make-it-work-for-private-code) for more information about enabling Sourcegraph to work with private repositories.
+
 ## Extension Specific FAQs
 
 #### Sonarqube: Error fetching Sonarqube data: Error: Forbidden
@@ -59,7 +63,8 @@ It's likely that the CSV file exceeds the browser's limit for data URI size. Use
 
 #### Search-export: The number of exported results does not match the number of results displayed on Sourcegraph
 
-This is expected, as all instances that match for a single file will be listed in the same entry column under the Search matches row.  
+The Sourcegraph [Streaming API](../../api/stream_api/index.md) determines the number of results in the Sourcegraph UI. However, our Search-export extension runs a query on our GraphQL API and will only export the complete list of results if the search query includes the `count:all` keyword.
+
 
 ___
 

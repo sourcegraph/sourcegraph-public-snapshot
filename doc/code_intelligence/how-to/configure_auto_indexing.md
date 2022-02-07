@@ -9,10 +9,6 @@ img.screenshot {
   border: 1px solid lightgrey;
   border-radius: 10px;
 }
-
-img.screenshot.thin-screenshot {
-  max-width: 200px;
-}
 </style>
 
 <aside class="experimental">

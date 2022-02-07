@@ -9,9 +9,6 @@ import (
 )
 
 func TestDatabaseDefinitions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
@@ -31,9 +28,6 @@ func TestDatabaseDefinitions(t *testing.T) {
 }
 
 func TestDatabaseReferences(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`

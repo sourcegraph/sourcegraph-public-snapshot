@@ -18,7 +18,7 @@ exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
         />
       </a>
       <button
-        class="btn btn-secondary btn-sm"
+        class="btn btnSecondary btnSm"
         type="button"
       >
         Unlink
@@ -37,7 +37,7 @@ exports[`SiteAdminProductSubscriptionBillingLink no linked billing 1`] = `
       class="d-flex align-items-center"
     >
       <button
-        class="btn btn-secondary btn-sm"
+        class="btn btnSecondary btnSm"
         type="button"
       >
         Link billing subscription

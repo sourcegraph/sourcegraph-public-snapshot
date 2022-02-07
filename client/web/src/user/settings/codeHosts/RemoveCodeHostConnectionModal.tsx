@@ -1,8 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/common'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { deleteExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -67,8 +67,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
+        <Modal
             aria-labelledby={`heading--remove-${serviceName}-code-host`}
             aria-describedby={`description--remove-${serviceName}-code-host`}
             onDismiss={onDidCancel}
@@ -81,24 +80,25 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
                     {getWarningMessage(serviceName, orgName, repoCount)}
                 </div>
                 <div className="d-flex justify-content-end">
-                    <button
-                        type="button"
+                    <Button
                         disabled={isLoading}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={onDidCancel}
+                        outline={true}
+                        variant="secondary"
                     >
                         Cancel
-                    </button>
+                    </Button>
                     <LoaderButton
                         type="submit"
-                        className="btn btn-danger"
                         loading={isLoading}
                         disabled={isLoading}
                         label="Yes, remove connection"
                         alwaysShowLabel={true}
+                        variant="danger"
                     />
                 </div>
             </Form>
-        </Dialog>
+        </Modal>
     )
 }

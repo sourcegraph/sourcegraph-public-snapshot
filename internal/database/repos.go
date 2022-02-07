@@ -18,6 +18,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -41,8 +43,9 @@ import (
 )
 
 type RepoNotFoundErr struct {
-	ID   api.RepoID
-	Name api.RepoName
+	ID         api.RepoID
+	Name       api.RepoName
+	HashedName api.RepoHashedName
 }
 
 func (e *RepoNotFoundErr) Error() string {
@@ -72,6 +75,7 @@ type RepoStore interface {
 	Get(context.Context, api.RepoID) (*types.Repo, error)
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
+	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
@@ -112,10 +116,6 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
-	if Mocks.Repos.Get != nil {
-		return Mocks.Repos.Get(ctx, id)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Get", "")
 	defer func() {
 		tr.SetError(err)
@@ -191,10 +191,6 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 //
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, nameOrURI)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
 		tr.SetError(err)
@@ -233,13 +229,35 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	return repos[0], repos[0].IsBlocked()
 }
 
+// GetByHashedName returns the repository with the given hashedName from the database, or an error.
+// RepoHashedName is the repository hashed name.
+// When a repo isn't found or has been blocked, an error is returned.
+func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
+	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	repos, err := s.listRepos(ctx, tr, ReposListOptions{
+		HashedName:     string(repoHashedName),
+		LimitOffset:    &LimitOffset{Limit: 1},
+		IncludeBlocked: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(repos) == 0 {
+		return nil, &RepoNotFoundErr{HashedName: repoHashedName}
+	}
+
+	return repos[0], repos[0].IsBlocked()
+}
+
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	if Mocks.Repos.GetByIDs != nil {
-		return Mocks.Repos.GetByIDs(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
 		tr.SetError(err)
@@ -266,10 +284,6 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
 		if err != nil {
@@ -292,10 +306,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
-	if Mocks.Repos.Metadata != nil {
-		return Mocks.Repos.Metadata(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
 		tr.SetError(err)
@@ -484,6 +494,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
+	case extsvc.TypeNPMPackages:
+		r.Metadata = new(npmpackages.Metadata)
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
@@ -525,6 +537,9 @@ type ReposListOptions struct {
 	// version contexts may have their own table
 	// and this may be replaced by the version context name.
 	Names []string
+
+	// HashedName is a repository hashed name used to limit the results to that repository.
+	HashedName string
 
 	// URIs selects any repos in the given set of URIs (i.e. uri column)
 	URIs []string
@@ -698,10 +713,6 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	if Mocks.Repos.List != nil {
-		return Mocks.Repos.List(ctx, opt)
-	}
-
 	// always having ID in ORDER BY helps Postgres create a more performant query plan
 	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
@@ -755,10 +766,6 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
-	if Mocks.Repos.ListMinimalRepos != nil {
-		return Mocks.Repos.ListMinimalRepos(ctx, opt)
-	}
-
 	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
@@ -939,6 +946,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
 	}
 
+	if opt.HashedName != "" {
+		// This will use the repo_hashed_name_idx
+		where = append(where, sqlf.Sprintf(`sha256(lower(name)::bytea) = decode(%s, 'hex')`, opt.HashedName))
+	}
+
 	if len(opt.URIs) > 0 {
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
@@ -1014,7 +1026,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := AuthzQueryConds(ctx, NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, err
 	}
@@ -1055,7 +1067,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
 func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1126,7 +1138,7 @@ WHERE
 	(
 		repo.stars >= %s
 		OR
-		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
+		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
 		OR
 		repo.id IN (
 			SELECT
@@ -1135,6 +1147,8 @@ WHERE
 				external_service_repos
 			WHERE
 				external_service_repos.user_id IS NOT NULL
+				OR
+				external_service_repos.org_id IS NOT NULL
 
 			UNION ALL
 
@@ -1505,10 +1519,6 @@ LIMIT 1
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
-	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
-		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
-	}
-
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
@@ -1605,7 +1615,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
 func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
-	re, err := regexpsyntax.Parse(pattern, regexpsyntax.OneLine)
+	re, err := regexpsyntax.Parse(pattern, regexpsyntax.Perl)
 	if err != nil {
 		return nil, nil, "", err
 	}

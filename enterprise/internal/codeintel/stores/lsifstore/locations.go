@@ -36,7 +36,7 @@ func (s *Store) Implementations(ctx context.Context, bundleID int, path string, 
 }
 
 func (s *Store) definitionsReferences(ctx context.Context, extractor func(r precise.RangeData) precise.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -49,16 +49,16 @@ func (s *Store) definitionsReferences(ctx context.Context, extractor func(r prec
 		return nil, 0, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
-	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	orderedResultIDs := extractResultIDs(ranges, extractor)
 	locationsMap, totalCount, err := s.locations(ctx, bundleID, orderedResultIDs, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	locations := make([]Location, 0, limit)
 	for _, resultID := range orderedResultIDs {
@@ -72,7 +72,7 @@ func (s *Store) definitionsReferences(ctx context.Context, extractor func(r prec
 // method returns a map from result set identifiers to another map from document paths to locations
 // within that document, as well as a total count of locations within the map.
 func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, limit, offset int) (_ map[precise.ID][]Location, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.locations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.locations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("numIDs", len(ids)),
 		log.String("ids", idsToString(ids)),
@@ -90,7 +90,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numIndexes", len(indexes)),
 		log.String("indexes", intsToString(indexes)),
 	)
@@ -101,20 +101,20 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	// Filter out all data in rangeIDsByResultID that falls outside of the current page. This
 	// also returns the set of paths for documents we will need to fetch to resolve the results
 	// of the current page.
 	rangeIDsByResultID, paths := limitResultMap(ids, rangeIDsByResultID, limit, offset)
-	traceLog(
+	trace.Log(
 		log.Int("numPaths", len(paths)),
 		log.String("paths", strings.Join(paths, ", ")),
 	)
 
 	// Hydrate the locations result set by replacing range ids with their actual data from their
 	// containing document. This refines the map constructed in the previous step.
-	locationsByResultID, _, err := s.readRangesFromDocuments(ctx, bundleID, ids, paths, rangeIDsByResultID, traceLog)
+	locationsByResultID, _, err := s.readRangesFromDocuments(ctx, bundleID, ids, paths, rangeIDsByResultID, trace)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -316,7 +316,7 @@ const documentBatchSize = 50
 // readRangesFromDocuments extracts range data from the documents with the given paths. This method returns a map from
 // result set identifiers to the set of locations composing that result set. The output resolves the missing data given
 // via the rangeIDsByResultID parameter. This method also returns a total count of ranges in the result set.
-func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []precise.ID, paths []string, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, traceLog observation.TraceLogger) (map[precise.ID][]Location, int, error) {
+func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []precise.ID, paths []string, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, trace observation.TraceLogger) (map[precise.ID][]Location, int, error) {
 	totalCount := 0
 	locationsByResultID := make(map[precise.ID][]Location, len(ids))
 
@@ -334,7 +334,7 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 		}
 
 		visitDocuments := s.makeDocumentVisitor(func(path string, document precise.DocumentData) {
-			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, traceLog)
+			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, trace)
 		})
 
 		pathQueries := make([]*sqlf.Query, 0, len(batch))
@@ -370,7 +370,7 @@ WHERE
 // readRangesFromDocument extracts range data from the given document. This method populates the given locationsByResultId
 // map, which resolves the missing data given via the rangeIDsByResultID parameter. This method returns a total count of
 // ranges in the result set.
-func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, locationsByResultID map[precise.ID][]Location, path string, document precise.DocumentData, traceLog observation.TraceLogger) int {
+func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[precise.ID]map[string][]precise.ID, locationsByResultID map[precise.ID][]Location, path string, document precise.DocumentData, trace observation.TraceLogger) int {
 	totalCount := 0
 	for id, rangeIDsByPath := range rangeIDsByResultID {
 		rangeIDs := rangeIDsByPath[path]
@@ -388,7 +388,7 @@ func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[prec
 				})
 			}
 		}
-		traceLog(
+		trace.Log(
 			log.String("id", string(id)),
 			log.String("path", path),
 			log.Int("numLocationsForIDInPath", len(locations)),

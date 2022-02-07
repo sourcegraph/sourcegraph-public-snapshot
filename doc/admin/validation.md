@@ -8,11 +8,19 @@ Instance validation provides a quick way to check that a Sourcegraph instance fu
  or an update.
 
 The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental command `validate` which drives the
- validation from a user-provided configuration file with a validation specification (in JSON or YAML format).
+ validation from a user-provided configuration file with a validation specification (in JSON or YAML format). if no validation specification file is provided it will execute the following: 
+ 
+* temporarily add an external service
+* wait for a repository to be cloned
+* perform a search on the cloned repo
+* perform a search on a non-indexed branch of the cloned repo
+* remove the added external service
 
 ### Validation specification
  
-The best way to describe this initial, simple and experimental validation specification is with the example below:
+Validation specifications can be provided in either a YAML or JSON format. The best way to describe this initial, simple, and experimental validation specification is with the example below:
+
+#### YAML File Specification
 
 ```yaml
 # creates the first admin user on a fresh install (skips creation if user exists)
@@ -36,12 +44,47 @@ externalService:
 
 # checks maxTries if specified repo is cloned and waits sleepBetweenTriesSeconds between checks 
 waitRepoCloned:
-  repo: github.com/footest/foo
+  repo: github.com/sourcegraph-testing/zap
   maxTries: 5
   sleepBetweenTriesSeconds: 2
 
 # performs the specified search and checks that at least one result is returned
-searchQuery: repo:^github.com/footest/foo$ uniquelyFoo
+searchQuery: 
+  - repo:^github.com/sourcegraph-testing/zap$ test
+  - repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test
+```
+#### JSON File Specification
+
+```json
+{   
+   "firstAdmin": {
+    "email": "foo@example.com",
+    "username": "foo",
+    "password": "{{ .admin_password }}"
+    },
+    "externalService": {
+        "config": {
+            "url": "https://github.com",
+            "token": "{{ .github_token }}",
+            "orgs": [],
+            "repos": [
+                "sourcegraph-testing/zap"
+            ]
+        },
+        "kind": "GITHUB",
+        "displayName": "footest",
+        "deleteWhenDone": true
+    },
+    "waitRepoCloned": {
+        "repo": "github.com/sourcegraph-testing/zap",
+        "maxTries": 5,
+        "sleepBetweenTriesSeconds": 5
+    },
+    "searchQuery": [
+        "repo:^github.com/sourcegraph-testing/zap$ test",
+        "repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test"
+    ]
+}
 ```
 
 With this configuration, the validation command executes the following steps: 
@@ -51,11 +94,11 @@ With this configuration, the validation command executes the following steps:
 * wait for a repository to be cloned
 * perform a search
  
-Every step is optional (if the corresponding top-level key is not present then the step is skipped).
-
+>NOTE: Every step is optional (if the corresponding top-level key is not present then the step is skipped).
+> 
 ### Passing in secrets
 
-It is often the case that the config file with the validation specification needs to declare passwords, tokens or other
+It is often the case that the config file with the validation specification needs to declare passwords, tokens, or other
 secrets and these secrets should not be exposed or committed to a git repo.
 
 The validation specification can refer to string values that come from a context specified outside the config file
@@ -65,13 +108,22 @@ use that.
 
 ### Usage
 
-Use the [`src` CLI](https://github.com/sourcegraph/src-cli) to validate:
-
+Use the [`src` CLI](https://github.com/sourcegraph/src-cli) to validate with a validation specification file:
 ```shell script
 src validate -context github_token=$GITHUB_TOKEN validate.yaml
+```
+```shell script
+src validate -context github_token=$GITHUB_TOKEN validate.json
+```
+To execute default validation checks:
+
+```shell script
+src validate -context github_token=$GITHUB_TOKEN
 ```
 
 The `src` binary finds the Sourcegraph instance to validate from the environment variables 
 [`SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
 
 > Note: The `SRC_ACCESS_TOKEN` is not needed when a first admin user is declared in the validation specification.
+
+

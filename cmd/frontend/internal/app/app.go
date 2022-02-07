@@ -5,15 +5,13 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -22,7 +20,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB) http.Handler {
+func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -49,10 +47,6 @@ func NewHandler(db database.DB) http.Handler {
 		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
 	})))
 
-	if envvar.SourcegraphDotComMode() {
-		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL(db))))
-	}
-
 	r.Get(router.UI).Handler(ui.Router())
 
 	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
@@ -73,7 +67,9 @@ func NewHandler(db database.DB) http.Handler {
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
-	r.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))
+	// Sourcegraph Cloud GitHub App setup
+	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppCloudSetupHandler))
+
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 
 	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

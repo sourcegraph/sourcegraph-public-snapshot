@@ -1,9 +1,11 @@
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup } from '@testing-library/react'
 import * as H from 'history'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import {
@@ -11,7 +13,7 @@ import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'
@@ -56,14 +58,6 @@ const defaultProps = {
 describe('FileMatchChildren', () => {
     afterAll(cleanup)
 
-    it('calls onSelect callback when an item is clicked', () => {
-        const { container } = render(<FileMatchChildren {...defaultProps} onSelect={onSelect} />)
-        const item = container.querySelector('[data-testid="file-match-children-item"]')
-        expect(item).toBeVisible()
-        fireEvent.click(item!)
-        expect(onSelect.calledOnce).toBe(true)
-    })
-
     it('does not disable the highlighting timeout', () => {
         /*
             Because disabling the timeout should only ever be done in response
@@ -72,7 +66,9 @@ describe('FileMatchChildren', () => {
             ideal.
         */
         const fetchHighlightedFileLineRanges = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
-        render(<FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />)
+        renderWithRouter(
+            <FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />
+        )
         sinon.assert.calledOnce(fetchHighlightedFileLineRanges)
         sinon.assert.calledWithMatch(fetchHighlightedFileLineRanges, { disableTimeout: false })
     })

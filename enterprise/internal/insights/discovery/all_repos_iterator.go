@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,8 +47,6 @@ type AllReposIterator struct {
 	counter *prometheus.CounterVec
 
 	// Internal fields below.
-	cachedRepoNamesAge time.Time
-	cachedRepoNames    []string
 	cachedPageRequests map[database.LimitOffset]cachedPageRequest
 }
 
@@ -66,36 +66,9 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 // data for the same subset of repos we index for search.
 //
 // If the forEach function returns an error, pagination is stopped and the error returned.
-func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
+func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string, id api.RepoID) error) error {
 	// 🚨 SECURITY: this context will ensure that this iterator goes over all repositories
 	globalCtx := actor.WithInternalActor(ctx)
-
-	if a.SourcegraphDotComMode {
-		// Has the cache expired or empty? If so, refresh it.
-		if a.timeSince(a.cachedRepoNamesAge) > a.RepositoryListCacheTime || a.cachedRepoNames == nil {
-			a.cachedRepoNames = a.cachedRepoNames[:0]
-
-			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
-			// forever. Instead, we use the same list of indexable repositories used when you do a global
-			// search on Sourcegraph.com.
-			res, err := a.IndexableReposLister.List(globalCtx)
-			if err != nil {
-				return errors.Wrap(err, "IndexableReposLister.List")
-			}
-			for _, r := range res {
-				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))
-			}
-			a.cachedRepoNamesAge = a.Clock()
-		}
-		for _, repo := range a.cachedRepoNames {
-			if err := forEach(repo); err != nil {
-				a.counter.WithLabelValues("error").Inc()
-				return errors.Wrap(err, "forEach")
-			}
-			a.counter.WithLabelValues("success").Inc()
-		}
-		return nil
-	}
 
 	// Regular deployments of Sourcegraph.
 	//
@@ -106,7 +79,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 	}
 	for {
 		// Get the next page.
-		repos, err := a.cachedRepoStoreList(ctx, limitOffset)
+		repos, err := a.cachedRepoStoreList(globalCtx, limitOffset)
 		if err != nil {
 			return errors.Wrap(err, "RepoStore.List")
 		}
@@ -116,7 +89,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 
 		// Call the forEach function on every repository.
 		for _, r := range repos {
-			if err := forEach(string(r.Name)); err != nil {
+			if err := forEach(string(r.Name), r.ID); err != nil {
 				a.counter.WithLabelValues("error").Inc()
 				return errors.Wrap(err, "forEach")
 			}
@@ -132,7 +105,6 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 // cachedRepoStoreList calls a.repoStore.List to do a paginated list of repositories, and caches the
 // results in-memory for some time.
 //
-// This is primarily useful because we call this function e.g. 1 time per 365 days.
 func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page database.LimitOffset) ([]*types.Repo, error) {
 	if a.cachedPageRequests == nil {
 		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}
@@ -145,9 +117,6 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 	trueP := true
 	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{
 		Index: &trueP,
-
-		// Order by repository name.
-		OrderBy: database.RepoListOrderBy{{Field: database.RepoListName}},
 
 		LimitOffset: &page,
 	})

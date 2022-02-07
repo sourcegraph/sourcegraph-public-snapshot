@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func init() {
+	useFastPasswordMocks()
+}
+
 func TestDBTransactions(t *testing.T) {
 	ctx := context.Background()
 	t.Run("no transaction works", func(t *testing.T) {

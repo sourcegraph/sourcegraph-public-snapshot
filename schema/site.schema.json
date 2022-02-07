@@ -154,6 +154,12 @@
             }
           }
         },
+        "npmPackages": {
+          "description": "Allow adding NPM packages code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -209,6 +215,40 @@
             ]
           ]
         },
+        "search.index.revisions": {
+          "description": "An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "SearchIndexRevisionsRule",
+            "additionalProperties": false,
+            "required": ["revisions"],
+            "anyOf": [{ "required": ["name"] }],
+            "properties": {
+              "name": {
+                "description": "Regular expression which matches against the name of a repository (e.g. \"^github\\.com/owner/name$\").",
+                "type": "string",
+                "format": "regex"
+              },
+              "revisions": {
+                "description": "Revisions to index",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "examples": [
+            [
+              {
+                "name": "^github.com/org/.*",
+                "revisions": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"]
+              }
+            ]
+          ]
+        },
         "search.index.branches": {
           "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
           "type": "object",
@@ -223,6 +263,11 @@
               "name/of/repo": ["develop"]
             }
           ]
+        },
+        "search.index.query.contexts": {
+          "description": "Enables indexing of revisions of repos matching any query defined in search contexts.",
+          "type": "boolean",
+          "default": false
         },
         "versionContexts": {
           "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
@@ -313,10 +358,11 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
-              "default": 0,
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "default": 24,
               "type": "integer",
-              "group": "Search"
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -362,6 +408,12 @@
       "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": true
+    },
+    "batchChanges.enforceForks": {
+      "description": "When enabled, all branches created by batch changes will be pushed to forks of the original repository.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
     },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
@@ -843,6 +895,11 @@
               "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
+            },
+            "codeIntelDSN": {
+              "description": "Sentry Data Source Name (DSN) for code intel errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
             }
           }
         }
@@ -1030,6 +1087,24 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "githubApp.cloud": {
+          "description": "The config options for Sourcegraph Cloud GitHub App.",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "appID": {
+              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "privateKey": {
+              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"
@@ -1205,6 +1280,22 @@
           "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
           "type": "string",
           "default": "72h"
+        }
+      }
+    },
+    "organizationInvitations": {
+      "description": "Configuration for organization invitations.",
+      "type": "object",
+      "required": ["signingKey"],
+      "properties": {
+        "expiryTime": {
+          "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
+          "type": "integer",
+          "default": 48
+        },
+        "signingKey": {
+          "description": "HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "type": "string"
         }
       }
     }

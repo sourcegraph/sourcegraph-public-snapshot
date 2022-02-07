@@ -12,6 +12,10 @@ interface UseBlockShortcutsOptions
     isMacPlatform: boolean
 }
 
+export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
+    return (isMacPlatform && isMetaKey) || (!isMacPlatform && isCtrlKey)
+}
+
 export const useBlockShortcuts = ({
     id,
     isMacPlatform,
@@ -24,7 +28,7 @@ export const useBlockShortcuts = ({
 }: UseBlockShortcutsOptions): { onKeyDown: (event: React.KeyboardEvent) => void } => {
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent): void => {
-            const isModifierKeyDown = (isMacPlatform && event.metaKey) || (!isMacPlatform && event.ctrlKey)
+            const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'
                 if (isModifierKeyDown) {

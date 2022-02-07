@@ -13,6 +13,7 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,8 +24,9 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 	entries := make([]*btypes.BatchSpecExecutionCacheEntry, 0, 3)
 	for i := 0; i < cap(entries); i++ {
 		job := &btypes.BatchSpecExecutionCacheEntry{
-			Key:   fmt.Sprintf("check-out-this-cache-key-%d", i),
-			Value: fmt.Sprintf("what-about-this-cache-value-huh-%d", i),
+			UserID: 900 + int32(i),
+			Key:    fmt.Sprintf("check-out-this-cache-key-%d", i),
+			Value:  fmt.Sprintf("what-about-this-cache-value-huh-%d", i),
 		}
 
 		entries = append(entries, job)
@@ -51,10 +53,13 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("ListByKeys", func(t *testing.T) {
+		t.Run("ListByUserIDAndKeys", func(t *testing.T) {
 			for i, job := range entries {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					cs, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{job.Key}})
+					cs, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+						UserID: job.UserID,
+						Keys:   []string{job.Key},
+					})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -75,14 +80,18 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 		clock.Add(1 * time.Minute)
 
 		keyConflict := &btypes.BatchSpecExecutionCacheEntry{
-			Key:   entries[0].Key,
-			Value: "new value",
+			UserID: entries[0].UserID,
+			Key:    entries[0].Key,
+			Value:  "new value",
 		}
 		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, keyConflict); err != nil {
 			t.Fatal(err)
 		}
 
-		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{keyConflict.Key}})
+		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: keyConflict.UserID,
+			Keys:   []string{keyConflict.Key},
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,8 +111,9 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 
 	t.Run("MarkUsedBatchSpecExecutionCacheEntries", func(t *testing.T) {
 		entry := &btypes.BatchSpecExecutionCacheEntry{
-			Key:   "the-amazing-cache-key",
-			Value: "the-mysterious-cache-value",
+			UserID: 9999,
+			Key:    "the-amazing-cache-key",
+			Value:  "the-mysterious-cache-value",
 		}
 
 		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
@@ -114,7 +124,10 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 			t.Fatal(err)
 		}
 
-		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
+		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: entry.UserID,
+			Keys:   []string{entry.Key},
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,16 +146,18 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	// Separate test function because we want a clean DB
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	c := &ct.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+	user := ct.CreateTestUser(t, db, true)
 
 	maxSize := 10 * 1024 // 10kb
 
 	for i := 0; i < 20; i += 1 {
 		entry := &btypes.BatchSpecExecutionCacheEntry{
-			Key:   fmt.Sprintf("cache-key-%d", i),
-			Value: strings.Repeat("a", 1024),
+			UserID: user.ID,
+			Key:    fmt.Sprintf("cache-key-%d", i),
+			Value:  strings.Repeat("a", 1024),
 		}
 
 		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {

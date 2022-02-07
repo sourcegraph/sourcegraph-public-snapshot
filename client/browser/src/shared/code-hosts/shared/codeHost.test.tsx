@@ -1,29 +1,29 @@
 import { nextTick } from 'process'
 import { promisify } from 'util'
 
+import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
-import renderer from 'react-test-renderer'
 import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
+import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
-import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
+import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { subtypeOf, allOf, check, isTaggedUnionMember } from '@sourcegraph/shared/src/util/types'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -52,7 +52,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'error',
 }
 
-const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
+const elementRenderedAtMount = (mount: Element): RenderResult | undefined => {
     const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
 }
@@ -158,7 +158,7 @@ describe('codeHost', () => {
         test('renders the hover overlay mount', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -181,7 +181,7 @@ describe('codeHost', () => {
             const { extensionHostAPI } = await integrationTestContext()
             const commandPaletteMount = createTestElement()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -201,7 +201,7 @@ describe('codeHost', () => {
         test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -237,7 +237,7 @@ describe('codeHost', () => {
                 },
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -315,7 +315,7 @@ describe('codeHost', () => {
                 const line = document.createElement('div')
                 codeView.append(line)
                 subscriptions.add(
-                    handleCodeHost({
+                    await handleCodeHost({
                         ...commonArguments(),
                         codeHost: {
                             type: 'github',
@@ -436,7 +436,7 @@ describe('codeHost', () => {
                         parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
                 }
                 subscriptions.add(
-                    handleCodeHost({
+                    await handleCodeHost({
                         ...commonArguments(),
                         codeHost: {
                             type: 'github',
@@ -595,7 +595,7 @@ describe('codeHost', () => {
                 { addedNodes: [document.body], removedNodes: [] },
             ])
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     mutations,
                     codeHost: {
@@ -685,7 +685,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -734,7 +734,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -798,7 +798,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -839,7 +839,7 @@ describe('codeHost', () => {
             await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
-            expect(nativeTooltip).toHaveClass('native-tooltip--hidden')
+            expect(nativeTooltip).toHaveAttribute('data-native-tooltip-hidden', 'true')
         })
     })
 

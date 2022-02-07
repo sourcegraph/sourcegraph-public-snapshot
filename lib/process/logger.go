@@ -84,7 +84,7 @@ func (l *Logger) writeLines(ctx context.Context) {
 						// But since there *was* a newline, we need to flush,
 						// but only if there is more than a newline or there
 						// was already content.
-						if len(line) != 1 || l.buf.Len() > 0 {
+						if len(line) != 0 || l.buf.Len() > 0 {
 							if err := l.bufLine(line); err != nil {
 								break
 							}

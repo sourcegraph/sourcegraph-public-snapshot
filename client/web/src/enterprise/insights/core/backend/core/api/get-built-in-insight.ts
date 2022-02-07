@@ -1,8 +1,8 @@
 import { Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
+import { asError } from '@sourcegraph/common'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { isSearchBasedInsight } from '../../../types'
 import { GetBuiltInsightInput } from '../../code-insights-backend-types'

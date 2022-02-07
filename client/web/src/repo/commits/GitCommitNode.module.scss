@@ -64,7 +64,6 @@
 
     &-toggle {
         flex: none;
-        font-size: 0.5625rem;
         padding: 0 0.175rem;
         margin-right: 0.5rem;
     }
@@ -96,7 +95,7 @@
 .oid {
     /* Fix vertical alignment of code text relative to the icon in the adjacent button. */
     display: block;
-    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     margin-top: 2px;
 }
 

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

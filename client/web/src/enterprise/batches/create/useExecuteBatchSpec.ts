@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useHistory } from 'react-router'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../graphql-operations'
 
@@ -18,7 +18,7 @@ interface UseExecuteBatchSpecResult {
 }
 
 /**
- * Custom hook for "Create" page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
+ * Custom hook for "CreateOrEdit" page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
  *
  * @param batchSpecID The current batch spec ID.
  */

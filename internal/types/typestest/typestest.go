@@ -177,6 +177,51 @@ func MakeExternalServices() types.ExternalServices {
 	}
 }
 
+// MakeNamespacedExternalServices creates one configured external service per kind, per user or org.
+func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalServices {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	services := []*types.ExternalService{}
+
+	if userID > 0 {
+		services = append(services, &types.ExternalService{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "Github - User",
+			Config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: userID,
+		}, &types.ExternalService{
+			Kind:            extsvc.KindGitLab,
+			DisplayName:     "GitLab - User",
+			Config:          `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: userID,
+		})
+	}
+	if orgID > 0 {
+		services = append(services, &types.ExternalService{
+			Kind:           extsvc.KindGitHub,
+			DisplayName:    "Github - Org",
+			Config:         `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			CreatedAt:      now,
+			UpdatedAt:      now,
+			NamespaceOrgID: orgID,
+		}, &types.ExternalService{
+			Kind:           extsvc.KindGitLab,
+			DisplayName:    "GitLab - Org",
+			Config:         `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			CreatedAt:      now,
+			UpdatedAt:      now,
+			NamespaceOrgID: orgID,
+		})
+	}
+
+	return services
+}
+
 // Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
 func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {

@@ -31,7 +31,7 @@ const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s)`
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
-var BatchSpecResolutionJobColums = SQLColumns{
+var batchSpecResolutionJobColums = SQLColumns{
 	"batch_spec_resolution_jobs.id",
 
 	"batch_spec_resolution_jobs.batch_spec_id",
@@ -105,7 +105,7 @@ func (s *Store) createBatchSpecResolutionJobQuery(wj *btypes.BatchSpecResolution
 		state,
 		wj.CreatedAt,
 		wj.UpdatedAt,
-		sqlf.Join(BatchSpecResolutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(batchSpecResolutionJobColums.ToSqlf(), ", "),
 	)
 }
 
@@ -159,7 +159,7 @@ func getBatchSpecResolutionJobQuery(opts *GetBatchSpecResolutionJobOpts) *sqlf.Q
 
 	return sqlf.Sprintf(
 		getBatchSpecResolutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecResolutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(batchSpecResolutionJobColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -215,7 +215,7 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 
 	return sqlf.Sprintf(
 		listBatchSpecResolutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecResolutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(batchSpecResolutionJobColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -251,14 +251,6 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	}
 
 	return nil
-}
-
-func ScanFirstBatchSpecResolutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecResolutionJob, bool, error) {
-	jobs, err := scanBatchSpecResolutionJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-	return jobs[0], true, nil
 }
 
 func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecResolutionJob, error) {

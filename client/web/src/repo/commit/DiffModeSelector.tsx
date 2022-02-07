@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
 import { DiffMode } from './RepositoryCommitPage'
 
@@ -17,29 +18,23 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
     small,
 }) => (
     <div className={className}>
-        <div role="group" className="btn-group">
-            <button
+        <ButtonGroup>
+            <Button
                 onClick={() => onHandleDiffMode('unified')}
-                type="button"
-                className={classNames(
-                    'btn',
-                    diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary',
-                    small && 'btn-sm'
-                )}
+                size={small ? 'sm' : undefined}
+                variant="secondary"
+                outline={diffMode !== 'unified'}
             >
                 Unified
-            </button>
-            <button
+            </Button>
+            <Button
                 onClick={() => onHandleDiffMode('split')}
-                type="button"
-                className={classNames(
-                    'btn',
-                    diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary',
-                    small && 'btn-sm'
-                )}
+                size={small ? 'sm' : undefined}
+                variant="secondary"
+                outline={diffMode !== 'split'}
             >
                 Split
-            </button>
-        </div>
+            </Button>
+        </ButtonGroup>
     </div>
 )

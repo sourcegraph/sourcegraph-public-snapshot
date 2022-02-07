@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -209,7 +208,7 @@ func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struc
 	return &EmptyResponse{}, nil
 }
 
-func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
+func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
 	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
 	if parentErr != nil && *parentErr != nil {
 		eventArgs.Reason = (*parentErr).Error()

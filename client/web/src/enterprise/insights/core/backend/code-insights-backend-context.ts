@@ -15,6 +15,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
+    public hasInsights = errorMockMethod('hasInsight')
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
@@ -40,6 +41,9 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
         errorMockMethod('getSearchInsightContent')().toPromise()
     public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
+
+    public getCaptureInsightContent = (): Promise<LineChartContent<any, string>> =>
+        errorMockMethod('getCaptureInsightContent')().toPromise()
 
     // Repositories API
     public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>

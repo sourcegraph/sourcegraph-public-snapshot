@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -173,10 +172,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 }
 
 func TestUsers_Create_SiteAdmin(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := NewDB(dbtesting.GetDB(t))
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.GlobalState().Get(ctx); err != nil {

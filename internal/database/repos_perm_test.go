@@ -52,7 +52,7 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
@@ -84,75 +84,68 @@ func TestAuthzQueryConds(t *testing.T) {
 		}
 	})
 
-	defer func() {
-		Mocks.Users.GetByCurrentAuthUser = nil
-	}()
 	tests := []struct {
 		name                string
-		setup               func(t *testing.T) context.Context
+		setup               func(t *testing.T) (context.Context, DB)
 		authzAllowByDefault bool
 		wantQuery           *sqlf.Query
 	}{
 		{
 			name: "internal actor bypass checks",
-			setup: func(t *testing.T) context.Context {
-				return actor.WithInternalActor(context.Background())
+			setup: func(t *testing.T) (context.Context, DB) {
+				return actor.WithInternalActor(context.Background()), db
 			},
 			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider and not allow by default",
-			setup: func(t *testing.T) context.Context {
-				return context.Background()
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
 			},
 			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider but allow by default",
-			setup: func(t *testing.T) context.Context {
-				return context.Background()
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
 			},
 			authzAllowByDefault: true,
 			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1, SiteAdmin: true}, nil
-				}
-				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
-				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			setup: func(t *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1, SiteAdmin: true}, nil
-				}
+			setup: func(t *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
 				conf.Get().AuthzEnforceForSiteAdmins = true
 				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
 					conf.Get().AuthzEnforceForSiteAdmins = false
 				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is not a site admin",
-			setup: func(t *testing.T) context.Context {
-				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-					return &types.User{ID: 1}, nil
-				}
-				t.Cleanup(func() {
-					Mocks.Users = MockUsers{}
-				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			setup: func(t *testing.T) (context.Context, DB) {
+				users := NewMockUserStoreFrom(db.Users())
+				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				mockDB := NewMockDBFrom(db)
+				mockDB.UsersFunc.SetDefaultReturn(users)
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
@@ -163,7 +156,8 @@ func TestAuthzQueryConds(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := AuthzQueryConds(test.setup(t), db)
+			ctx, mockDB := test.setup(t)
+			q, err := AuthzQueryConds(ctx, mockDB)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -176,10 +170,6 @@ func TestAuthzQueryConds(t *testing.T) {
 }
 
 func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
@@ -858,7 +848,6 @@ VALUES
 	// AuthzEnforceForSiteAdmins is set
 	conf.Get().AuthzEnforceForSiteAdmins = true
 	t.Cleanup(func() {
-		Mocks.Users = MockUsers{}
 		conf.Get().AuthzEnforceForSiteAdmins = false
 	})
 	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})

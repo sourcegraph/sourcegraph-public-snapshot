@@ -154,27 +154,36 @@ type Label struct {
 	Name        string
 }
 
+type PullRequestRepo struct {
+	ID    string
+	Owner struct {
+		Login string
+	}
+}
+
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
-	RepoWithOwner string `json:"-"`
-	ID            string
-	Title         string
-	Body          string
-	State         string
-	URL           string
-	HeadRefOid    string
-	BaseRefOid    string
-	HeadRefName   string
-	BaseRefName   string
-	Number        int64
-	Author        Actor
-	Participants  []Actor
-	Labels        struct{ Nodes []Label }
-	TimelineItems []TimelineItem
-	Commits       struct{ Nodes []CommitWithChecks }
-	IsDraft       bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	RepoWithOwner  string `json:"-"`
+	ID             string
+	Title          string
+	Body           string
+	State          string
+	URL            string
+	HeadRefOid     string
+	BaseRefOid     string
+	HeadRefName    string
+	BaseRefName    string
+	Number         int64
+	Author         Actor
+	BaseRepository PullRequestRepo
+	HeadRepository PullRequestRepo
+	Participants   []Actor
+	Labels         struct{ Nodes []Label }
+	TimelineItems  []TimelineItem
+	Commits        struct{ Nodes []CommitWithChecks }
+	IsDraft        bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // AssignedEvent represents an 'assigned' event on a PullRequest.
@@ -1375,6 +1384,13 @@ fragment prCommit on PullRequestCommit {
   }
 }
 
+fragment repo on Repository {
+  id
+  owner {
+    login
+  }
+}
+
 fragment pr on PullRequest {
   id
   title
@@ -1391,6 +1407,12 @@ fragment pr on PullRequest {
   %s
   author {
     ...actor
+  }
+  baseRepository {
+    ...repo
+  }
+  headRepository {
+    ...repo
   }
   participants(first: 100) {
     nodes {
@@ -1458,6 +1480,7 @@ var (
 		return url
 	}()
 
+	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 )
 
@@ -1548,7 +1571,7 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
-// RepoNotFoundError is when the requested GitHub organization is not found.
+// OrgNotFoundError is when the requested GitHub organization is not found.
 type OrgNotFoundError struct{}
 
 func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }
@@ -1643,6 +1666,26 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 	return parts[0], parts[1], nil
 }
 
+// Owner splits a GitHub repository's "owner/name" string and only returns the
+// owner.
+func (r *Repository) Owner() (string, error) {
+	if owner, _, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return owner, nil
+	}
+}
+
+// Name splits a GitHub repository's "owner/name" string and only returns the
+// name.
+func (r *Repository) Name() (string, error) {
+	if _, name, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return name, nil
+	}
+}
+
 // Repository is a GitHub repository.
 type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
@@ -1677,15 +1720,13 @@ func nodeIDCacheKey(id string) string                   { return "1:" + id }
 var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
-	if !nocache {
-		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
-			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
-			if cached.NotFound {
-				return nil, ErrRepoNotFound
-			}
-			return &cached.Repository, nil
+func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
+	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
+		if cached.NotFound {
+			return nil, ErrRepoNotFound
 		}
+		return &cached.Repository, nil
 	}
 
 	repo, keys, err := getRepositoryFromAPI(ctx)

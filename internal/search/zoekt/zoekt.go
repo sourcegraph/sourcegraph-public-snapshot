@@ -9,6 +9,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -68,23 +69,28 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	return true, spanContext
 }
 
-func SearchOpts(ctx context.Context, k int, fileMatchLimit int32) zoekt.SearchOptions {
+func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
-		Trace:                  shouldTrace,
-		SpanContext:            spanContext,
-		MaxWallTime:            defaultTimeout,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		// Ask for 2000 more results so we have results to populate
-		// RepoStatusLimitHit.
-		MaxDocDisplayCount: int(fileMatchLimit) + 2000,
+		Trace:       shouldTrace,
+		SpanContext: spanContext,
+		MaxWallTime: defaultTimeout,
 	}
 
 	if userProbablyWantsToWaitLonger := fileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	}
+
+	if selector.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+	} else {
+		searchOpts.ShardMaxMatchCount = 100 * k
+		searchOpts.TotalMaxMatchCount = 100 * k
+		searchOpts.ShardMaxImportantMatch = 15 * k
+		searchOpts.TotalMaxImportantMatch = 25 * k
+		// Ask for 2000 more results so we have results to populate
+		// RepoStatusLimitHit.
+		searchOpts.MaxDocDisplayCount = int(fileMatchLimit) + 2000
 	}
 
 	return searchOpts

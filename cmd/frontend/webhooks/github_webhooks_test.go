@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h := GitHubWebhook{}
@@ -111,7 +108,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewFromDSN(t, *dsn)
+	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
 

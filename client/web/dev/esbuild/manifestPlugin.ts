@@ -9,8 +9,8 @@ import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
 export const assetPathPrefix = '/.assets'
 
 export const getManifest = (): WebpackManifest => ({
-    appBundle: path.join(assetPathPrefix, 'scripts/app.js'),
-    cssBundle: path.join(assetPathPrefix, 'scripts/app.css'),
+    'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
+    'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
     isModule: true,
 })
 

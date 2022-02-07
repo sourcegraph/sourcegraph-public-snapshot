@@ -81,6 +81,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
 			log.Bool("opts.whole", opts.Whole),
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
 			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
 			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
@@ -215,10 +216,15 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	var cat string
 	var tags []trace.Tag
+
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		cat = "List"
+		if opts == nil || !opts.Minimal {
+			cat = "List"
+		} else {
+			cat = "ListMinimal"
+		}
 		tags = []trace.Tag{
 			{Key: "span.kind", Value: "client"},
 			{Key: "peer.address", Value: m.hostname},

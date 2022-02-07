@@ -1,0 +1,14 @@
+.editorconfig
+.github/**
+.gitignore
+.prettierignore
+.vscode-test/**
+.vscode/**
+**/*.map
+out/test/**
+prettier.config.json
+src/**
+test/**
+tsconfig.json
+.eslintrc.js
+.eslintignore

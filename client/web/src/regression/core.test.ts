@@ -5,12 +5,13 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { getUser, setTosAccepted } from './util/api'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import {
     ensureLoggedInOrCreateTestUser,
@@ -50,6 +51,11 @@ describe('Core functionality regression test suite', () => {
                 ...config,
             })
         )
+        const user = await getUser(gqlClient, testUsername)
+        if (!user) {
+            throw new Error(`test user ${testUsername} does not exist`)
+        }
+        await setTosAccepted(gqlClient, user.id)
         screenshots = new ScreenshotVerifier(driver)
     })
 
@@ -75,7 +81,8 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    test('2.2.1 User settings are saved and applied', async () => {
+    // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/29098
+    test.skip('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {

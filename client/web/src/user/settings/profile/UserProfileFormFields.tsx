@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'

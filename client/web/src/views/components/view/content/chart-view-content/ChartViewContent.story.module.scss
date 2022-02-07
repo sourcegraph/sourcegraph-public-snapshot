@@ -1,6 +1,11 @@
 .chart {
     width: 26rem;
     height: 20rem;
+
+    &--lg {
+        width: 32rem;
+        height: 26rem;
+    }
 }
 
 .charts {

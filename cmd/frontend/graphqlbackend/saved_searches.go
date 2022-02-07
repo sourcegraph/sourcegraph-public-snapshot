@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -134,20 +133,6 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins should be able to send test notifications.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	id, err := unmarshalSavedSearchID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-	savedSearch, err := database.SavedSearches(r.db).GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	go queryrunnerapi.Client.TestNotification(context.Background(), *savedSearch)
 	return &EmptyResponse{}, nil
 }
 

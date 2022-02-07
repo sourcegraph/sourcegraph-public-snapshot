@@ -17,6 +17,9 @@ type RepoID int32
 // Previously, this was called RepoURI.
 type RepoName string
 
+// Repository hashed name
+type RepoHashedName string
+
 func (r RepoName) Equal(o RepoName) bool {
 	return strings.EqualFold(string(r), string(o))
 }

@@ -6,10 +6,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
+func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) {
 	for {
 		// We choose 93 days as the interval to ensure that we have at least the last three months
 		// of logs at all times.
@@ -24,7 +24,7 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 	}
 }
 
-func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db database.DB) {
 	for {
 		// We choose 7 days as the interval to ensure that we have at least the last week's worth of
 		// logs at all times.

@@ -44,7 +44,7 @@ export interface useFieldAPI<FieldValue> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur: FocusEventHandler<HTMLInputElement>
+        onBlur: FocusEventHandler<HTMLInputElement> | (() => void)
     } & InputProps<FieldValue>
 
     /**
@@ -136,6 +136,13 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
             requestAnimationFrame(() => {
                 startAsyncValidation({ value: state.value, validity })
             })
+
+            return setState(state => ({
+                ...state,
+                validState: 'CHECKING' as const,
+                error: '',
+                validity,
+            }))
         }
 
         return setState(state => ({

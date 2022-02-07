@@ -165,6 +165,8 @@ describe('Organizations', () => {
                     lastID: settingsID,
                     contents: updatedSettings,
                 })
+
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
             })
         })
         describe('Members tab', () => {
@@ -214,6 +216,8 @@ describe('Organizations', () => {
                     2,
                     'Expected members list to show 2 members.'
                 )
+
+                await percySnapshotWithVariants(driver.page, 'Organization members list')
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

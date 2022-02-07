@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestReverseProxyRequestPaths(t *testing.T) {
@@ -34,7 +34,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(dbmock.NewMockDB(), []Endpoint{ep})
+	rph.Populate(database.NewMockDB(), []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -46,7 +46,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), dbmock.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
 
 	rtr.ServeHTTP(w, req)
 
@@ -74,7 +74,7 @@ func TestIndexLinks(t *testing.T) {
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(dbmock.NewMockDB(), []Endpoint{ep})
+	rph.Populate(database.NewMockDB(), []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -86,7 +86,7 @@ func TestIndexLinks(t *testing.T) {
 
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), dbmock.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
 
 	rtr.ServeHTTP(w, req)
 

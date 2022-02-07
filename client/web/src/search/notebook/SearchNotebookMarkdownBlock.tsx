@@ -6,8 +6,8 @@ import * as Monaco from 'monaco-editor'
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -35,7 +35,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     onSelectBlock,
     ...props
 }) => {
-    const [isEditing, setIsEditing] = useState(false)
+    const [isEditing, setIsEditing] = useState(input.length === 0)
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
 

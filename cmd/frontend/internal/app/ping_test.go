@@ -10,7 +10,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -18,9 +18,9 @@ func TestLatestPingHandler(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-admins can't access the ping data", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
@@ -54,9 +54,9 @@ func TestLatestPingHandler(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			el := dbmock.NewMockEventLogStore()
+			el := database.NewMockEventLogStore()
 			el.LatestPingFunc.SetDefaultHook(test.pingFn)
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.EventLogsFunc.SetDefaultReturn(el)
 
 			req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)

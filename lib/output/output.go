@@ -133,6 +133,13 @@ func (o *Output) Lock() {
 	o.w.Write([]byte("\033[?25l"))
 }
 
+func (o *Output) SetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.opts.Verbose = true
+
+}
+
 func (o *Output) Unlock() {
 	// Show the cursor once more.
 	o.w.Write([]byte("\033[?25h"))
@@ -239,4 +246,8 @@ func (o *Output) MoveUpLines(lines int) {
 // capabilities.
 func (o *Output) writeStyle(style Style) {
 	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]interface{}{style})...)
+}
+
+func (o *Output) ClearScreen() {
+	fmt.Fprintf(o.w, "\033c")
 }

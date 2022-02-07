@@ -1,7 +1,7 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
-  "semanticCommits": false,
+  "semanticCommits": "disabled",
   "rebaseWhen": "never",
   "packageRules": [
     {
@@ -27,7 +27,7 @@
       "packagePatterns": ["^alpine:3.12"],
       "fileMatch": ["^Dockerfile$"],
       "paths": ["docker-images/**"],
-      "labels": ["automerge"]
+      "automerge": true
     }
   ]
 }

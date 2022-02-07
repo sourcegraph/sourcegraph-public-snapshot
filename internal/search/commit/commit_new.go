@@ -1,43 +1,50 @@
 package commit
 
 import (
-	"bufio"
 	"context"
 	"regexp"
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CommitSearch struct {
-	Query         gitprotocol.Node
-	RepoOpts      search.RepoOptions
-	Diff          bool
-	HasTimeFilter bool
-	Limit         int
-
-	Db database.DB
+	Query                gitprotocol.Node
+	RepoOpts             search.RepoOptions
+	Diff                 bool
+	HasTimeFilter        bool
+	Limit                int
+	CodeMonitorID        *int64
+	IncludeModifiedFiles bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
-		return err
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "CommitSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.TagFields(trace.LazyFields(j.Tags))
+
+	if err := j.ExpandUsernames(ctx, db); err != nil {
+		return nil, err
 	}
 
 	opts := j.RepoOpts
@@ -51,17 +58,18 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	bounded := goroutine.NewBounded(8)
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
 
@@ -71,11 +79,12 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		}
 
 		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
+			Repo:                 repoRev.Repo.Name,
+			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Query:                j.Query,
+			IncludeDiff:          j.Diff,
+			Limit:                j.Limit,
+			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
@@ -88,18 +97,19 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 			})
 		}
 
-		g.Go(func() error {
+		bounded.Go(func() error {
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
+
 			return err
 		})
 	}
 
-	return g.Wait()
+	return nil, bounded.Wait()
 }
 
 func (j CommitSearch) Name() string {
@@ -109,7 +119,24 @@ func (j CommitSearch) Name() string {
 	return "Commit"
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {
+func (j *CommitSearch) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", j.Query),
+		trace.Stringer("repoOpts", &j.RepoOpts),
+		log.Bool("diff", j.Diff),
+		log.Bool("hasTimeFilter", j.HasTimeFilter),
+		log.Int("limit", j.Limit),
+		log.Int64("codeMonitorID", func() int64 {
+			if j.CodeMonitorID != nil {
+				return *j.CodeMonitorID
+			}
+			return 0
+		}()),
+		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+	}
+}
+
+func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
@@ -143,19 +170,19 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 // For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
 // "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
 // "alice@example\\.org"].
-func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
+func expandUsernamesToEmails(ctx context.Context, db database.DB, values []string) (expandedValues []string, err error) {
 	expandOne := func(ctx context.Context, value string) ([]string, error) {
 		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
 			return nil, nil
 		}
 
-		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := db.Users().GetByUsername(ctx, strings.TrimPrefix(value, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {
@@ -297,27 +324,11 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 }
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
-	var (
-		matchBody       string
-		matchHighlights []result.HighlightedRange
-		diffPreview     *result.HighlightedString
-		messagePreview  *result.HighlightedString
-	)
-
+	var diffPreview, messagePreview *result.MatchedString
 	if diff {
-		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}))
-		diffPreview = &result.HighlightedString{
-			Value:      in.Diff.Content,
-			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
-		}
+		diffPreview = &in.Diff
 	} else {
-		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
-		messagePreview = &result.HighlightedString{
-			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
-		}
+		messagePreview = &in.Message
 	}
 
 	return &result.CommitMatch{
@@ -337,59 +348,10 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			Parents: in.Parents,
 		},
 		Repo:           repo,
-		MessagePreview: messagePreview,
 		DiffPreview:    diffPreview,
-		Body: result.HighlightedString{
-			Value:      matchBody,
-			Highlights: matchHighlights,
-		},
+		MessagePreview: messagePreview,
+		ModifiedFiles:  in.ModifiedFiles,
 	}
-}
-
-func searchRangesToHighlights(s string, ranges []result.Range) []result.HighlightedRange {
-	res := make([]result.HighlightedRange, 0, len(ranges))
-	for _, r := range ranges {
-		res = append(res, searchRangeToHighlights(s, r)...)
-	}
-	return res
-}
-
-// searchRangeToHighlight converts a Range (which can cross multiple lines)
-// into HighlightedRange, which is scoped to one line. In order to do this
-// correctly, we need the string that is being highlighted in order to identify
-// line-end boundaries within multi-line ranges.
-// TODO(camdencheek): push the Range format up the stack so we can be smarter about multi-line highlights.
-func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange {
-	var res []result.HighlightedRange
-
-	// Use a scanner to handle \r?\n
-	scanner := bufio.NewScanner(strings.NewReader(s[r.Start.Offset:r.End.Offset]))
-	lineNum := r.Start.Line
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		character := 0
-		if lineNum == r.Start.Line {
-			character = r.Start.Column
-		}
-
-		length := len(line)
-		if lineNum == r.End.Line {
-			length = r.End.Column - character
-		}
-
-		if length > 0 {
-			res = append(res, result.HighlightedRange{
-				Line:      int32(lineNum),
-				Character: int32(character),
-				Length:    int32(length),
-			})
-		}
-
-		lineNum++
-	}
-
-	return res
 }
 
 func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {

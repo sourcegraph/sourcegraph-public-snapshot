@@ -15,6 +15,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
+	basestore.ShareableStore
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
@@ -22,11 +23,13 @@ type DB interface {
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GitserverRepos() GitserverRepoStore
 	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
+	OrgStats() OrgStatsStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	SavedSearches() SavedSearchStore
@@ -40,7 +43,6 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
-	Executors() ExecutorStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -111,6 +113,10 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
 }
 
+func (d *db) GitserverRepos() GitserverRepoStore {
+	return NewGitserverReposWith(d.Store)
+}
+
 func (d *db) GlobalState() GlobalStateStore {
 	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
 }
@@ -129,6 +135,10 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
+}
+
+func (d *db) OrgStats() OrgStatsStore {
+	return OrgStatsWith(d.Store)
 }
 
 func (d *db) Phabricator() PhabricatorStore {
@@ -181,10 +191,6 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
-}
-
-func (d *db) Executors() ExecutorStore {
-	return ExecutorsWith(d.Store)
 }
 
 func (d *db) Unwrap() dbutil.DB {

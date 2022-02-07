@@ -11,7 +11,8 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": ""
+    "ViewerPermission": "",
+    "Visibility": "INTERNAL"
    }
   ],
   "TotalCount": 1,

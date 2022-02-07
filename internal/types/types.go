@@ -660,6 +660,7 @@ type User struct {
 	BuiltinAuth           bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
 }
 
 type Org struct {
@@ -676,6 +677,11 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type OrgStats struct {
+	OrgID             int32
+	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -1229,6 +1235,10 @@ type SearchContext struct {
 	NamespaceUserName string
 	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
 	NamespaceOrgName string
+
+	// Query is the Sourcegraph query that defines this search context
+	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
+	Query string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions

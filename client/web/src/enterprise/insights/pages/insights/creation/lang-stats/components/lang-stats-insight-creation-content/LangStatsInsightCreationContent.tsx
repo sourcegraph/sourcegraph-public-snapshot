@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { useAsyncInsightTitleValidator } from '../../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
@@ -11,7 +12,6 @@ import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
-import styles from './LangStatsInsightCreationContent.module.scss'
 import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators'
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
@@ -95,9 +95,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
-    const allFieldsForPreviewAreValid =
-        repository.meta.validState === 'VALID' ||
-        (repository.meta.validState === 'CHECKING' && threshold.meta.validState === 'VALID')
+    const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
 
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.

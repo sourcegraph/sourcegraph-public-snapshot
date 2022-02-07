@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -54,6 +55,7 @@ func TestRanges(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	adjustedRanges, err := resolver.Ranges(context.Background(), 10, 20)
 	if err != nil {

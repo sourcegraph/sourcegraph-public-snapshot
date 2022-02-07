@@ -3,16 +3,13 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/amplitude"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -23,7 +20,6 @@ import (
 
 // pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
 var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
-var amplitudeAPIToken = env.Get("AMPLITUDE_API_TOKEN", "", "The API token for the Amplitude project to send data to.")
 
 // Event represents a request to log telemetry.
 type Event struct {
@@ -88,9 +84,6 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 		go func() {
 			if err := publishSourcegraphDotComEvents(events); err != nil {
 				log15.Error("publishSourcegraphDotComEvents failed", "err", err)
-			}
-			if err := publishAmplitudeEvents(events); err != nil {
-				log15.Error("publishAmplitudeEvents failed", "err", err)
 			}
 		}()
 	}
@@ -186,79 +179,6 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 	}
 
 	return pubsubEvents, nil
-}
-
-func publishAmplitudeEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() {
-		return nil
-	}
-	if amplitudeAPIToken == "" {
-		return nil
-	}
-
-	amplitudeEvents, err := createAmplitudeEvents(events)
-	if err != nil {
-		return err
-	}
-
-	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
-		APIKey: amplitudeAPIToken,
-		Events: amplitudeEvents,
-	})
-	if err != nil {
-		return err
-	}
-
-	return amplitude.Publish(amplitudeEvent)
-}
-
-func createAmplitudeEvents(events []Event) ([]amplitude.AmplitudeEvent, error) {
-	amplitudeEvents := make([]amplitude.AmplitudeEvent, 0, len(events))
-	for _, event := range events {
-		if _, ok := amplitude.DenyList[event.EventName]; ok {
-			continue
-		}
-
-		// For anonymous users, do not assign a user ID.
-		// Amplitude does not want User IDs for anonymous users
-		// so it can perform merging for users who sign up based on device ID.
-		var userID string
-		if event.UserID != 0 {
-			// Minimum length for an Amplitude user ID is 5 characters.
-			userID = fmt.Sprintf("%06d", event.UserID)
-		}
-
-		if event.DeviceID == nil {
-			return nil, errors.New("amplitude: Missing device ID")
-		}
-		if event.EventID == nil {
-			return nil, errors.New("amplitude: Missing event ID")
-		}
-		if event.InsertID == nil {
-			return nil, errors.New("amplitude: Missing insert ID")
-		}
-
-		userProperties, err := json.Marshal(amplitude.UserProperties{
-			AnonymousUserID: event.UserCookieID,
-			FeatureFlags:    event.FeatureFlags,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		amplitudeEvents = append(amplitudeEvents, amplitude.AmplitudeEvent{
-			UserID:          userID,
-			DeviceID:        *event.DeviceID,
-			InsertID:        *event.InsertID,
-			EventID:         *event.EventID,
-			EventType:       event.EventName,
-			EventProperties: event.PublicArgument,
-			UserProperties:  userProperties,
-			Time:            time.Now().Unix(),
-		})
-	}
-
-	return amplitudeEvents, nil
 }
 
 // logLocalEvents logs a batch of user events.

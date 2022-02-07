@@ -112,6 +112,8 @@ Once you know that executing the batch spec works with one or more repositories,
 
 ### Can you download a repository archive?
 
+> NOTE: Using Batch Changes with Windows Subsytem For Linux (WSL) will add [network latency](https://github.com/microsoft/WSL/issues/4901) that can cause timeouts.
+
 If `src` is stuck in the "Initializing workspace" phase for a repository or fails to initialize the workspace, try to see whether you can download an archive of the repository manually on your command line with `curl`:
 
 ```

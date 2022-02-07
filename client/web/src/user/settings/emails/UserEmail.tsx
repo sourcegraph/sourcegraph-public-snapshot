@@ -1,7 +1,8 @@
 import React, { useState, FunctionComponent } from 'react'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -134,45 +135,50 @@ export const UserEmail: FunctionComponent<Props> = ({
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                     <span className="mr-2">{email}</span>
-                    {verified && <span className="badge badge-success mr-1">Verified</span>}
-                    {!verified && !verificationPending && (
-                        <span className="badge badge-secondary mr-1">Not verified</span>
+                    {verified && (
+                        <Badge variant="success" className="mr-1">
+                            Verified
+                        </Badge>
                     )}
-                    {isPrimary && <span className="badge badge-primary mr-1">Primary</span>}
+                    {!verified && !verificationPending && (
+                        <Badge variant="secondary" className="mr-1">
+                            Not verified
+                        </Badge>
+                    )}
+                    {isPrimary && (
+                        <Badge variant="primary" className="mr-1">
+                            Primary
+                        </Badge>
+                    )}
                     {!verified && verificationPending && (
                         <span>
                             <span className={styles.dot}>&bull;&nbsp;</span>
-                            <button
-                                type="button"
-                                className="btn btn-link p-0"
+                            <Button
+                                className="p-0"
                                 onClick={() => resendEmailVerification(email)}
                                 disabled={isLoading}
+                                variant="link"
                             >
                                 Resend verification email
-                            </button>
+                            </Button>
                         </span>
                     )}
                 </div>
                 <div className="d-flex align-items-center">
                     {viewerCanManuallyVerify && (
-                        <button
-                            type="button"
-                            className="btn btn-link p-0"
+                        <Button
+                            className="p-0"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={isLoading}
+                            variant="link"
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
-                        </button>
+                        </Button>
                     )}{' '}
                     {!isPrimary && (
-                        <button
-                            type="button"
-                            className="btn btn-link text-danger p-0"
-                            onClick={removeEmail}
-                            disabled={isLoading}
-                        >
+                        <Button className="text-danger p-0" onClick={removeEmail} disabled={isLoading} variant="link">
                             Remove
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

@@ -1,4 +1,4 @@
-[]*types.Dashboard{&types.Dashboard{
+[]*types.Dashboard{{
 	ID:           1,
 	Title:        "test dashboard",
 	InsightIDs:   []string{"unique1234"},

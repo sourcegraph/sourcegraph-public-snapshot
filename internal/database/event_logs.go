@@ -226,6 +226,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		ctx,
 		l.Handle().DB(),
 		"event_logs",
+		batch.MaxNumPostgresParameters,
 		[]string{
 			"name",
 			"url",

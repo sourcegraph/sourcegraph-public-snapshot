@@ -15,13 +15,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -61,9 +61,10 @@ func TestGetSearchInsights(t *testing.T) {
 }
 
 func TestGetSearchInsightsMulti(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -131,9 +132,10 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 }
 
 func TestGetIntegrationInsights(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)

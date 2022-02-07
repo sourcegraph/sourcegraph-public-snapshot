@@ -11,16 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
 	migrator := NewDiagnosticsCountMigrator(store, 250)
 	serializer := lsifstore.NewSerializer()

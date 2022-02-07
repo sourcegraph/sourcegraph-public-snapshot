@@ -19,7 +19,7 @@ const ImplementationsLimit = 100
 
 // Implementations returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Implementations(ctx context.Context, line, character int, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Implementations", r.operations.implementations, slowImplementationsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Implementations", r.operations.implementations, slowImplementationsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -59,7 +59,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 			return nil, "", err
 		}
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
 		log.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)),
 	)
@@ -69,7 +69,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 			return nil, "", err
 		}
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
 		log.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)),
 	)
@@ -80,7 +80,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
 		for len(locations) < limit {
-			localLocations, hasMore, err := r.pageLocalLocations(ctx, r.lsifStore.Implementations, adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
+			localLocations, hasMore, err := r.pageLocalLocations(ctx, r.lsifStore.Implementations, adjustedUploads, &cursor.LocalCursor, limit-len(locations), trace)
 			if err != nil {
 				return nil, "", err
 			}
@@ -101,7 +101,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		if err != nil {
 			return nil, "", err
 		}
-		traceLog(
+		trace.Log(
 			log.Int("numDefinitionUploads", len(uploads)),
 			log.String("definitionUploads", uploadIDsToString(uploads)),
 		)
@@ -118,7 +118,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), trace)
 			if err != nil {
 				return nil, "", err
 			}
@@ -131,7 +131,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		}
 	}
 
-	traceLog(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all implementations
@@ -141,7 +141,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	if err != nil {
 		return nil, "", err
 	}
-	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	nextCursor := ""
 	if cursor.Phase != "done" {

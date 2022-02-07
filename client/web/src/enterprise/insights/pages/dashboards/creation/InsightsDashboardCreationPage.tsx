@@ -2,10 +2,9 @@ import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
@@ -60,13 +59,9 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
-                </a>
+                </Link>
             </span>
 
             <Container className="mt-4">
@@ -90,7 +85,8 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}

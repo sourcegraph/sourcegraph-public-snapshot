@@ -1,4 +1,7 @@
 .dropdown-button {
+    // Added padding from .dropdown-toggle-split to overide default padding
+    padding: 0.375rem 0.5625rem;
+
     &__item {
         min-width: min(90vw, 350px);
     }

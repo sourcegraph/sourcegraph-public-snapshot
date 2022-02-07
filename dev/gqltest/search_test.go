@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -22,7 +23,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
@@ -49,12 +50,6 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	err = client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
@@ -70,7 +65,7 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndex(
+	err = client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
@@ -100,6 +95,9 @@ type searchClient interface {
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
+
+	UpdateSiteConfiguration(config *schema.SiteConfiguration) error
+	SiteConfiguration() (*schema.SiteConfiguration, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -232,7 +230,24 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("context: search", func(t *testing.T) {
+	t.Run("non fatal missing repo revs", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:sgtest rev:print-options NewHunksReader")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(results.Results) == 0 {
+			t.Fatal("want results, got none")
+		}
+
+		for _, r := range results.Results {
+			if want, have := "print-options", r.RevSpec.Expr; have != want {
+				t.Fatalf("want rev to be %q, got %q", want, have)
+			}
+		}
+	})
+
+	t.Run("context: search repo revs", func(t *testing.T) {
 		repo1, err := client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)
 		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
@@ -260,6 +275,55 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
+		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
+			t.Fatalf("Missing repositories: %v", missingRepos)
+		}
+
+		if len(wantRepos) != len(results) {
+			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		}
+	})
+
+	t.Run("context: search query", func(t *testing.T) {
+		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchContextsQuery": true}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		_, err = client.Repository("github.com/sgtest/java-langserver")
+		require.NoError(t, err)
+		_, err = client.Repository("github.com/sgtest/jsonrpc2")
+		require.NoError(t, err)
+
+		namespace := client.AuthenticatedUserID()
+		searchContextID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{
+				Name:      "SearchContextV2",
+				Namespace: &namespace,
+				Public:    true,
+				Query:     `r:^github\.com/sgtest f:drop lang:java`,
+			}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
+		require.NoError(t, err)
+
+		defer func() {
+			err = client.DeleteSearchContext(searchContextID)
+			require.NoError(t, err)
+		}()
+
+		searchContext, err := client.GetSearchContext(searchContextID)
+		require.NoError(t, err)
+
+		query := fmt.Sprintf("context:%s select:repo", searchContext.Spec)
+		results, err := client.SearchRepositories(query)
+		require.NoError(t, err)
+
+		wantRepos := []string{"github.com/sgtest/java-langserver"}
 		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
 			t.Fatalf("Missing repositories: %v", missingRepos)
 		}
@@ -411,23 +475,25 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "error count:1000",
 				query: "error count:1000",
 			},
-			{
-				name:          "something with more than 1000 results and use count:1000",
-				query:         ". count:1000",
-				minMatchCount: 1000,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "something with more than 1000 results and use count:1000",
+			// 	query:         ". count:1000",
+			// 	minMatchCount: 1000,
+			// },
 			{
 				name:          "default limit streaming",
 				query:         ".",
 				minMatchCount: 500,
 				skip:          skipGraphQL,
 			},
-			{
-				name:          "default limit graphql",
-				query:         ".",
-				minMatchCount: 30,
-				skip:          skipStream,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "default limit graphql",
+			// 	query:         ".",
+			// 	minMatchCount: 30,
+			// 	skip:          skipStream,
+			// },
 			{
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",
@@ -947,11 +1013,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
 			{
-				name:            `Or distributive property on commits deduplicates and merges`,
-				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				exactMatchCount: 35,
-				skip:            skipStream,
+				name:  `Or distributive property on commits deduplicates and merges`,
+				query: `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				skip:  skipStream,
 			},
+			{
+				name:  `Exact default count is respected in OR queries`,
+				query: `foo OR bar OR (type:repo diff)`,
+			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			//	name:            `Or distributive property on commits deduplicates and merges`,
+			//	query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+			//	exactMatchCount: 30,
+			//	skip:            skipStream,
+			// },
+			// {
+			//	name:            `Exact default count is respected in OR queries`,
+			//	query:           `foo OR bar OR (type:repo diff)`,
+			//	exactMatchCount: 30,
+			// },
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -1274,94 +1355,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 // testSearchOther other contains search tests for parts of the GraphQL API
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
-	t.Run("Suggestions", func(t *testing.T) {
-		repo1, err := client.Repository("github.com/sgtest/java-langserver")
-		if err != nil {
-			t.Fatal(err)
-		}
-		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		scID1, err := client.CreateSearchContext(
-			gqltestutil.CreateSearchContextInput{Name: "SuggestionSearchContext", Public: true},
-			[]gqltestutil.SearchContextRepositoryRevisionsInput{
-				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
-				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
-			})
-		if err != nil {
-			t.Fatal(err)
-		}
-		scID2, err := client.CreateSearchContext(gqltestutil.CreateSearchContextInput{Name: "EmptySearchContext", Public: true}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err = client.DeleteSearchContext(scID1)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.DeleteSearchContext(scID2)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		tests := []struct {
-			query string
-			want  []string
-		}{{
-			query: `repo:sourcegraph-typescript$ type:file file:deploy`,
-			want: []string{
-				"lang:json",
-				"lang:text",
-				"lang:yaml",
-				"lang:shell",
-				"lang:markdown",
-				"lang:codeowners",
-				"lang:dockerfile",
-				"lang:javascript",
-				"lang:typescript",
-				"lang:ignore list",
-				"lang:editorconfig",
-				"file:deploy.sh",
-			},
-		}, {
-			query: `context:SuggestionSearchContext repo:`,
-			want: []string{
-				"repo:github.com/sgtest/java-langserver",
-				"repo:github.com/sgtest/jsonrpc2",
-				"context:SuggestionSearchContext",
-			},
-		}, {
-			query: `context:Empty`,
-			want: []string{
-				"context:EmptySearchContext",
-			},
-		}}
-
-		for _, test := range tests {
-			t.Run(test.query, func(t *testing.T) {
-				results, err := client.SearchSuggestions(test.query)
-				if err != nil {
-					t.Fatal(err)
-				}
-				var got []string
-				for _, r := range results {
-					got = append(got, r.String())
-				}
-
-				sort.Strings(test.want)
-				sort.Strings(got)
-
-				if d := cmp.Diff(test.want, got); d != "" {
-					t.Fatalf("mismatch (-want, +got)\n%s", d)
-				}
-			})
-		}
-	})
-
 	t.Run("search statistics", func(t *testing.T) {
 		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
 		if err != nil {

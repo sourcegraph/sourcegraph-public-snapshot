@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 
+import { gql } from '@sourcegraph/http-client'
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -66,7 +66,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, 
                     after={
                         window.context.sourcegraphDotComMode && (
                             <p className="mt-4">
-                                <a href="https://about.sourcegraph.com/contact">Contact support</a> to delete your
+                                <Link to="https://about.sourcegraph.com/contact">Contact support</Link> to delete your
                                 account.
                             </p>
                         )

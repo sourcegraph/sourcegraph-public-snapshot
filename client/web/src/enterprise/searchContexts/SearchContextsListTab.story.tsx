@@ -3,20 +3,21 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { ListSearchContextsResult } from '@sourcegraph/search'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { ListSearchContextsResult } from '../../graphql-operations'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
-const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
+const { add } = storiesOf('web/enterprise/searchContexts/SearchContextsListTab', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => (
         <div className="p-3 container" style={{ position: 'static' }}>
@@ -30,6 +31,7 @@ const defaultProps: SearchContextsListTabProps = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
 const propsWithContexts: SearchContextsListTabProps = {
@@ -59,6 +61,7 @@ const propsWithContexts: SearchContextsListTabProps = {
                     autoDefined: false,
                     public: true,
                     description: 'Only code in version 1.5',
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     repositories: [],
                     viewerCanManage: true,
@@ -76,6 +79,7 @@ const propsWithContexts: SearchContextsListTabProps = {
                     autoDefined: false,
                     public: false,
                     description: 'Only code in version 1.6',
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     repositories: [],
                     viewerCanManage: true,

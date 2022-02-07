@@ -1,6 +1,6 @@
 import { get } from 'lodash'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
 import {
@@ -74,7 +74,7 @@ export const addInsightToSettings = (settings: string, insight: Insight): string
 /**
  * Returns insight configuration, removes all synthetic properties from the insight object
  */
-const getSanitizedInsight = (insight: Insight): InsightConfiguration => {
+const getSanitizedInsight = (insight: Insight): InsightConfiguration | undefined => {
     if (isLangStatsInsight(insight)) {
         const { id, visibility, type, viewType, ...originalInsight } = insight
 
@@ -92,7 +92,7 @@ const getSanitizedInsight = (insight: Insight): InsightConfiguration => {
         return { ...originalInsight, series: sanitizedSeries }
     }
 
-    return insight
+    return
 }
 
 interface RemoveInsightFromSettingsInputs {

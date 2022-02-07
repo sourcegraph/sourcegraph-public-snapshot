@@ -62,7 +62,7 @@ func ScanSourcedCommits(rows *sql.Rows, queryErr error) (_ []SourcedCommits, err
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
 func (s *Store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
-	ctx, traceLog, endObservation := s.operations.staleSourcedCommits.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.staleSourcedCommits.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now = now.UTC()
@@ -79,7 +79,7 @@ func (s *Store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastChe
 	for _, commits := range sourcedCommits {
 		numCommits += len(commits.Commits)
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numRepositories", len(sourcedCommits)),
 		log.Int("numCommits", numCommits),
 	)
@@ -123,7 +123,7 @@ GROUP BY repository_id, commit
 // to the given repository identifier and commit. This method returns the count of upload and index records
 // modified, respectively.
 func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
-	ctx, traceLog, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -138,7 +138,7 @@ func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 	if err != nil {
 		return 0, 0, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("uploadsUpdated", uploadsUpdated),
 		log.Int("indexesUpdated", indexesUpdated),
 	)
@@ -170,7 +170,7 @@ SELECT
 
 const sourcedCommitsCandidateUploadsCTE = `
 candidate_uploads AS (
-	SELECT u.id
+	SELECT u.id, u.state, u.uploaded_at
 	FROM lsif_uploads u
 	WHERE u.repository_id = %s AND u.commit = %s
 
@@ -192,30 +192,47 @@ candidate_indexes AS (
 )
 `
 
-// DeleteSourcedCommits deletes each upload and index records belonging to the given repository identifier and
-// commit. Uploads are soft deleted and indexes are hard-deleted. This method returns the count of upload and
-// index records modified, respectively.
-func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsDeleted int, indexesDeleted int, err error) {
-	ctx, traceLog, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// DeleteSourcedCommits deletes each upload and index records belonging to the given repository identifier
+// and commit. Uploads are soft deleted and indexes are hard-deleted. This method returns the count of upload
+// and index records modified.
+//
+// If a maximum commit lag is supplied, then any upload records in the uploading, queued, or processing states
+// younger than the provided lag will not be deleted, but its timestamp will be modified as if the sibling method
+// UpdateSourcedCommits was called instead. This configurable parameter enables support for remote code hosts
+// that are not the source of truth; if we deleted all pending records without resolvable commits introduce races
+// between the customer's Sourcegraph instance and their CI (and their CI will usually win).
+func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (
+	uploadsUpdated int,
+	uploadsDeleted int,
+	indexesDeleted int,
+	err error,
+) {
+	ctx, trace, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	uploadsDeleted, indexesDeleted, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
+	now = now.UTC()
+	interval := int(maximumCommitLag / time.Second)
+
+	uploadsUpdated, uploadsDeleted, indexesDeleted, err = scanTripleOfCounts(s.Query(ctx, sqlf.Sprintf(
 		deleteSourcedCommitsQuery,
 		repositoryID, commit, // candidate_uploads
 		repositoryID, commit, // candidate_indexes
+		now, interval, // tagged_candidate_uploads
+		now, // update_uploads
 	)))
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
-	traceLog(
+	trace.Log(
+		log.Int("uploadsUpdated", uploadsUpdated),
 		log.Int("uploadsDeleted", uploadsDeleted),
 		log.Int("indexesDeleted", indexesDeleted),
 	)
 
-	return uploadsDeleted, indexesDeleted, nil
+	return uploadsUpdated, uploadsDeleted, indexesDeleted, nil
 }
 
 const deleteSourcedCommitsQuery = `
@@ -223,10 +240,22 @@ const deleteSourcedCommitsQuery = `
 WITH
 ` + sourcedCommitsCandidateUploadsCTE + `,
 ` + sourcedCommitsCandidateIndexesCTE + `,
+tagged_candidate_uploads AS (
+	SELECT
+		u.*,
+		(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
+	FROM candidate_uploads u
+),
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET commit_last_checked_at = %s
+	WHERE EXISTS (SELECT 1 FROM tagged_candidate_uploads tu WHERE tu.id = u.id AND tu.protected)
+	RETURNING 1
+),
 delete_uploads AS (
 	UPDATE lsif_uploads u
 	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
-	WHERE id IN (SELECT id FROM candidate_uploads)
+	WHERE EXISTS (SELECT 1 FROM tagged_candidate_uploads tu WHERE tu.id = u.id AND NOT tu.protected)
 	RETURNING 1
 ),
 delete_indexes AS (
@@ -235,8 +264,9 @@ delete_indexes AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads,
-	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes
+	(SELECT COUNT(*) FROM update_uploads) AS num_uploads_updated,
+	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads_deleted,
+	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes_deleted
 `
 
 func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
@@ -252,4 +282,19 @@ func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err e
 	}
 
 	return value1, value2, nil
+}
+
+func scanTripleOfCounts(rows *sql.Rows, queryErr error) (value1, value2, value3 int, err error) {
+	if queryErr != nil {
+		return 0, 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value1, &value2, &value3); err != nil {
+			return 0, 0, 0, err
+		}
+	}
+
+	return value1, value2, value3, nil
 }

@@ -6,72 +6,58 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func Test_CreateCodeHostConnection(t *testing.T) {
+func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
 	createCodeHostConnectionHelper(t, false)
 }
 
-func Test_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
+func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
 	createCodeHostConnectionHelper(t, true)
 }
 
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
-	db := database.NewDB(dbtest.NewDB(t))
-
 	ctx := context.Background()
-	s := &sessionIssuerHelper{}
+	db := database.NewMockDB()
+	s := &sessionIssuerHelper{db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
 		_, err := s.CreateCodeHostConnection(ctx, nil, "")
-		if err == nil {
-			t.Fatal("Want error but got nil")
-		}
+		assert.Error(t, err)
 	})
 
 	mockGitLabCom := newMockProvider(t, db, "gitlabcomclient", "gitlabcomsecret", "https://gitlab.com/")
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
-	var got *types.ExternalService
-	database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-		got = externalService
-		return nil
+	tok := &oauth2.Token{
+		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
 	}
-	defer func() { database.Mocks.ExternalServices.Create = nil }()
-
 	act := &actor.Actor{UID: 1}
 	glUser := &gitlab.User{
 		ID:       101,
 		Username: "alice",
 	}
 
-	now := time.Now()
 	ctx = actor.WithActor(ctx, act)
 	ctx = WithUser(ctx, glUser)
-	tok := &oauth2.Token{
-		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
-	}
+	now := time.Now()
 
-	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (database.ExternalServiceStore, error) {
-		return database.ExternalServices(db), nil
-	}
-	database.Mocks.ExternalServices.Done = func(err error) error {
-		return nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.TransactFunc.SetDefaultReturn(externalServices, nil)
+	externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if !serviceExists {
 			return nil, nil
 		}
@@ -92,25 +78,25 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 				UpdatedAt:       now,
 			},
 		}, nil
-	}
-	database.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
-		if len(services) != 1 {
-			t.Fatalf("Expected 1 service in Upsert, got %d", len(services))
-		}
-		// Tweak timestamps
-		services[0].CreatedAt = now
-		services[0].UpdatedAt = now
-		got = services[0]
-		return nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
+	var got *types.ExternalService
+	externalServices.CreateFunc.SetDefaultHook(func(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
+		got = es
+		return nil
+	})
+	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, svcs ...*types.ExternalService) error {
+		require.Len(t, svcs, 1)
+
+		// Tweak timestamps
+		svcs[0].CreatedAt = now
+		svcs[0].UpdatedAt = now
+		got = svcs[0]
+		return nil
+	})
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	_, err := s.CreateCodeHostConnection(ctx, tok, mockGitLabCom.ConfigID().ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	want := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
@@ -127,7 +113,5 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
+	assert.Equal(t, want, got)
 }

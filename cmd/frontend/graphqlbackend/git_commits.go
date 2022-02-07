@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -58,7 +59,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			Author:       author,
 			After:        after,
 			Path:         path,
-		})
+		}, authz.DefaultSubRepoPermsChecker)
 	}
 
 	r.once.Do(func() { r.commits, r.err = do() })

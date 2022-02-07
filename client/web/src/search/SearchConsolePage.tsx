@@ -6,20 +6,21 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { StreamingSearchResultsList, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
-import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
+import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { LATEST_VERSION } from './results/StreamingSearchResults'
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 import styles from './SearchConsolePage.module.scss'
-import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -61,6 +62,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         streamSearch,
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
+
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -143,9 +146,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
-                        <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
+                        <Button onClick={triggerSearch} variant="primary" size="lg">
                             Search &nbsp; {props.isMacPlatform ? <kbd>⌘</kbd> : <kbd>Ctrl</kbd>}+<kbd>⏎</kbd>
-                        </button>
+                        </Button>
                     </div>
                     <MonacoEditor
                         {...props}
@@ -162,7 +165,14 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         (results.state === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <StreamingSearchResultsList {...props} allExpanded={false} results={results} />
+                            <StreamingSearchResultsList
+                                {...props}
+                                allExpanded={false}
+                                results={results}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={window.context?.assetsRoot || ''}
+                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                            />
                         ))}
                 </div>
             </div>

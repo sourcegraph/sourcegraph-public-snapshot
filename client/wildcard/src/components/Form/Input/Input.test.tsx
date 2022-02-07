@@ -31,7 +31,7 @@ describe('Input', () => {
                   value="Input value"
                 />
                 <div
-                  class="loading-spinner spinner"
+                  class="loadingSpinner spinner"
                 />
               </div>
               <small

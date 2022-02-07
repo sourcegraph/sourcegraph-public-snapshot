@@ -19,6 +19,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -180,12 +181,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						StargazerCount: 0,
 						ForkCount:      0,
 						IsPrivate:      true,
-						// We're hitting ghe.sgdev.org here, so visibility should not be empty.
-						// However, our GHE instance is < 3.3.0 and it is guarded behind a feature
-						// flag.  We will need to enable the feature flag once our GHE instance is
-						// upgraded to at least 3.3.0 and then fix the test to expect a type
-						// "internal" here.
-						Visibility: github.Visibility(""),
+						Visibility:     github.VisibilityInternal,
 					},
 				}
 
@@ -202,6 +198,14 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 		tc.name = "GITHUB-ENTERPRISE/" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGithubInternalRepoVisibility: true,
+					},
+				},
+			})
+
 			rcache.SetupForTest(t)
 			fixtureName := "githubenterprise-getrepo"
 			gheToken := os.Getenv("GHE_TOKEN")

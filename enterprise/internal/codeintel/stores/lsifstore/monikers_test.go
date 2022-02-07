@@ -11,9 +11,6 @@ import (
 )
 
 func TestDatabaseMonikersByPosition(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
@@ -40,9 +37,6 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 }
 
 func TestDatabaseBulkMonikerResults(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	edgeDefinitionLocations := []Location{

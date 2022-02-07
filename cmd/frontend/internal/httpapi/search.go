@@ -55,11 +55,7 @@ type searchIndexerServer struct {
 		StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
 	}
 
-	// SearchContextsStore is a subset of database.SearchContextsStore used by
-	// searchIndexerServer.
-	SearchContextsStore interface {
-		GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
-	}
+	SearchContextsRepoRevs func(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -161,7 +157,9 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
+			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
+				NoEnsureRevision: true,
+			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
 				// repo.
@@ -183,7 +181,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		}, nil
 	}
 
-	revisionsForRepo, revisionsForRepoErr := h.SearchContextsStore.GetAllRevisionsForRepos(ctx, indexedIDs)
+	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, indexedIDs)
 	getSearchContextRevisions := func(repoID int32) ([]string, error) {
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
@@ -198,7 +196,12 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		repoIDs[i] = int32(indexedIDs[i])
 	}
 
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoIDs...)
+	b := searchbackend.GetIndexOptions(
+		&siteConfig,
+		getRepoIndexOptions,
+		getSearchContextRevisions,
+		repoIDs...,
+	)
 	_, _ = w.Write(b)
 	return nil
 }

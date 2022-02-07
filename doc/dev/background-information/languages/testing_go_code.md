@@ -146,7 +146,7 @@ When testing code that depends on a database connection, you may want to test ho
 
 #### Testing with a mocked database
 
-Helpers for mocking out a database can be found in the `internal/database/dbmock` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `dbmock` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
+Helpers for mocking out a database can be found in the `internal/database` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `database` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
 
 ```go
 func getRepo(db database.DB, id int) *types.Repo {
@@ -155,10 +155,10 @@ func getRepo(db database.DB, id int) *types.Repo {
 
 func TestGetRepos(t *testing.T) {
 	t.Parallel()
-	repoStore := dbmock.NewMockRepoStore()
+	repoStore := database.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(&types.Repo{Name: "my cool repo", ID: 123})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
 	got := getRepos(db, 0)

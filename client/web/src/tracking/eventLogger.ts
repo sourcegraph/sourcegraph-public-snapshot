@@ -22,6 +22,7 @@ export class EventLogger implements TelemetryService {
     private lastSourceURL?: string
     private deviceID = ''
     private eventID = 0
+    private listeners: Set<(eventName: string) => void> = new Set()
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -29,7 +30,9 @@ export class EventLogger implements TelemetryService {
         // Enforce HTTPS
         secure: true,
         // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
-        sameSite: 'Strict',
+        // However, we do need it on page redirects when users sign up via OAuth, hence using the Lax policy.
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
+        sameSite: 'Lax',
         // Specify the Domain attribute to ensure subdomains (about.sourcegraph.com) can receive this cookie.
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
         domain: location.hostname,
@@ -38,8 +41,9 @@ export class EventLogger implements TelemetryService {
     constructor() {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
-        browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform }, { platform })
+        browserExtensionMessageReceived.subscribe(({ platform, version }) => {
+            const args = { platform, version }
+            this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -82,16 +86,19 @@ export class EventLogger implements TelemetryService {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        for (const listener of this.listeners) {
+            listener(eventLabel)
+        }
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
-        this.logToConsole(eventLabel, eventProperties)
+        this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
-    private logToConsole(eventLabel: string, object?: any): void {
+    private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, object)
+            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 
@@ -213,6 +220,11 @@ export class EventLogger implements TelemetryService {
         this.cohortID = cohortID
         this.deviceID = deviceID
     }
+
+    public addEventLogListener(callback: (eventName: string) => void): () => void {
+        this.listeners.add(callback)
+        return () => this.listeners.delete(callback)
+    }
 }
 
 export const eventLogger = new EventLogger()
@@ -245,17 +257,25 @@ function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
+    const utmCampaign = parsedUrl.searchParams.get('utm_campaign')
+
+    const utmProps = {
+        utm_campaign: utmCampaign || undefined,
+        utm_source: utmSource || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+        utm_term: parsedUrl.searchParams.get('utm_term') || undefined,
+        utm_content: parsedUrl.searchParams.get('utm_content') || undefined,
+    }
+
     if (utmSource === 'saved-search-email') {
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
         eventLogger.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
         eventLogger.log('CodeMonitorEmailLinkClicked')
+    } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
+        eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
     }
 
-    return {
-        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
-        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
-    }
+    return utmProps
 }

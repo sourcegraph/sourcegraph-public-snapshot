@@ -66,6 +66,7 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		}
 
 		defer func() {
+			instrumentGraphQL(traceData)
 			traceGraphQL(traceData)
 		}()
 

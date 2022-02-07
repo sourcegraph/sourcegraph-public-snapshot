@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Panel renders correctly positioned at page bottom 1`] = `
+<DocumentFragment>
+  <div
+    class="panel panelBottom"
+    style="height: 200px;"
+  >
+    <div
+      class="handle handleBottom"
+    />
+  </div>
+</DocumentFragment>
+`;

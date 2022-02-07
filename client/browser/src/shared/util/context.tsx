@@ -65,6 +65,6 @@ function isSafari(): boolean {
     return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
 }
 
-export function isDefaultSourcegraphUrl(url: string): boolean {
-    return url.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
+export function isDefaultSourcegraphUrl(url?: string): boolean {
+    return url?.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
 }

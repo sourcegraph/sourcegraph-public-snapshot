@@ -8,9 +8,6 @@ import (
 )
 
 func TestDatabaseRanges(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	//   20: // NewWriter creates a new Writer.

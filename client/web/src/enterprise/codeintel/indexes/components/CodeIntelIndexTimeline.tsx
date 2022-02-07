@@ -5,8 +5,8 @@ import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent, useMemo } from 'react'
 
+import { isDefined } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'

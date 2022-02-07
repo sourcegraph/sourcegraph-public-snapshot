@@ -19,10 +19,11 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
+    createRelease,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -370,7 +371,7 @@ cc @${config.captainGitHubUsername}
 
             // Render changes
             const createdChanges = await createChangesets({
-                requiredCommands: ['comby', sed, 'find', 'go'],
+                requiredCommands: ['comby', sed, 'find', 'go', 'src'],
                 changes: [
                     {
                         owner: 'sourcegraph',
@@ -390,6 +391,8 @@ cc @${config.captainGitHubUsername}
                             `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' {} +`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
+                            // Update sourcegraph.com frontpage
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'client/web/src/search/home/SelfHostInstructions.tsx'`,
 
                             notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
@@ -401,12 +404,14 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
-                            `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
+                            notPatchRelease
+                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
+                                : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
                                 ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries"',
+                                : 'echo "Skipping upgrade guide entries on patch release"',
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -415,12 +420,14 @@ cc @${config.captainGitHubUsername}
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
                                         'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the batch change have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
+                                    'Ensure all other pull requests in the batch change have been merged',
+                                    'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
+                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
@@ -435,6 +442,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/pages/get-started.tsx'`,
                         ],
                         ...prBodyAndDraftState(
                             [],
@@ -589,14 +597,31 @@ Batch change: ${batchChangeURL}`,
             const { upcoming: release } = await releaseVersions(config)
             const githubClient = await getAuthenticatedGitHubClient()
 
+            // Create final GitHub release
+            let githubRelease = ''
+            try {
+                githubRelease = await createRelease(
+                    githubClient,
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        release,
+                    },
+                    dryRun.tags
+                )
+            } catch (error) {
+                console.error('Failed to generate GitHub release:', error)
+                // Do not block process
+            }
+
             // Set up announcement message
-            const versionAnchor = release.format().replace(/\./g, '-')
             const batchChangeURL = batchChanges.batchChangeURL(
                 batchChanges.releaseTrackingBatchChange(release.version, await batchChanges.sourcegraphCLIConfig())
             )
             const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
-* Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
+* Changelog: ${changelogURL(release.format())}
+* GitHub release: ${githubRelease || 'Failed to generate release'}
 * Release batch change: ${batchChangeURL}`
 
             // Slack

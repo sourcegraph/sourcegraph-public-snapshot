@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -48,7 +48,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got, err := editorRev(ctx, dbmock.NewMockDB(), repoName, c.inputRev, c.beExplicit)
+		got, err := editorRev(ctx, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,10 +59,10 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
 
-	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
 		[]*types.ExternalService{
 			{
@@ -102,7 +102,7 @@ func TestEditorRedirect(t *testing.T) {
 		nil,
 	)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 

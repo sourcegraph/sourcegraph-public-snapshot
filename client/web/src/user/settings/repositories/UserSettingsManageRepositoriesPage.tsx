@@ -1,15 +1,22 @@
 import classNames from 'classnames'
 import { isEqual, capitalize } from 'lodash'
-import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
+import React, { ChangeEvent, FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import {
+    ProductStatusBadge,
+    Container,
+    PageSelector,
+    RadioButton,
+    TextArea,
+    Button,
+    Alert,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -110,21 +117,21 @@ type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-warning my-3" role="alert" key={warning}>
+    <Alert className="my-3" role="alert" key={warning} variant="warning">
         <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-danger my-3" role="alert" key={error.message}>
+    <Alert className="my-3" role="alert" key={error.message} variant="danger">
         <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayAffiliateRepoProblems = (
@@ -361,13 +368,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          * number of affiliated repos equals to the number of selected repos -
          * set radio to 'all'
          * 2. if only some repos were selected - set radio to 'selected'
-         * 3. if no repos selected - empty state
+         * 3. if no repos selected or this is an org - set radio to 'selected'
+         * 4. otherwise, empty
          */
 
         const radioSelectOption =
             externalServices.length === codeHostsHaveSyncAllQuery.length && codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
-                : selectedAffiliatedRepos.size > 0
+                : selectedAffiliatedRepos.size > 0 || isOrgOwner
                 ? 'selected'
                 : ''
 
@@ -385,7 +393,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, isOrgOwner])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -572,37 +580,43 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             {!isOrgOwner && (
-                <label className="d-flex flex-row align-items-baseline">
-                    <input
-                        type="radio"
+                <div className="d-flex flex-row align-items-baseline">
+                    <RadioButton
+                        name="all_repositories"
+                        id="sync_all_repositories"
                         value="all"
                         disabled={noCodeHostsOrErrors}
                         checked={selectionState.radio === 'all'}
                         onChange={handleRadioSelect}
+                        label={
+                            <div className="d-flex flex-column ml-2">
+                                <p className="mb-0">Sync all repositories</p>
+                                <p className="font-weight-normal text-muted">
+                                    Will sync all current and future public and private repositories
+                                </p>
+                            </div>
+                        }
                     />
-                    <div className="d-flex flex-column ml-2">
-                        <p className="mb-0">Sync all repositories</p>
-                        <p className="font-weight-normal text-muted">
-                            Will sync all current and future public and private repositories
-                        </p>
-                    </div>
-                </label>
+                </div>
             )}
 
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    name="selected_repositories"
+                    id="sync_selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     disabled={noCodeHostsOrErrors}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
+                                Sync selected repositories
+                            </p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
-                        Sync selected repositories
-                    </p>
-                </div>
-            </label>
+            </div>
         </Form>
     )
 
@@ -658,28 +672,25 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
-    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
-        const selectedRepos = [...selectionState.repos.values()]
-        // if no specific code host selected, return all selected repos
-        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
-    }
-
-    const areAllReposSelected = (): boolean => {
-        if (selectionState.repos.size === 0) {
+    const areAllFilteredReposSelected = useCallback((): boolean => {
+        if (selectionState.repos.size === 0 || filteredRepos.length === 0) {
             return false
         }
 
-        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
-        return selectedRepos.length === filteredRepos.length
-    }
+        // if selection state does not contain all of the filtered repos, return false
+        return !filteredRepos.some(repo => !selectionState.repos.has(getRepoServiceAndName(repo)))
+    }, [selectionState, filteredRepos])
 
-    const selectAll = (): void => {
-        const newSelectAll = new Map<string, Repo>()
-        // if not all repos are selected, we should select all, otherwise empty the selection
+    const toggleAll = (event: ChangeEvent<HTMLInputElement>): void => {
+        const { checked } = event.target
+        const newSelectAll = new Map<string, Repo>(selectionState.repos)
 
-        if (selectionState.repos.size !== filteredRepos.length) {
-            for (const repo of filteredRepos) {
+        for (const repo of filteredRepos) {
+            // if checkbox is checked, we should add filtered repo, otherwise we remove
+            if (checked) {
                 newSelectAll.set(getRepoServiceAndName(repo), repo)
+            } else {
+                newSelectAll.delete(getRepoServiceAndName(repo))
             }
         }
         setSelectionState({
@@ -700,8 +711,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={areAllReposSelected()}
-                        onChange={selectAll}
+                        checked={areAllFilteredReposSelected()}
+                        onChange={toggleAll}
+                        disabled={filteredRepos.length === 0}
                     />
                     <label
                         htmlFor="select-all-repos"
@@ -769,7 +781,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
             <h2 className="d-flex mb-2">
-                Manage Repositories <Badge status="beta" className="ml-2" useLink={true} />
+                Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
             </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
@@ -796,7 +808,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             </p>
 
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
-                                <div className="alert alert-primary">
+                                <Alert variant="primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
                                     <Link
                                         to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
@@ -805,16 +817,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     >
                                         Get updated when this feature launches
                                     </Link>
-                                </div>
+                                </Alert>
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                                <div className="alert alert-warning mb-2">
+                                <Alert className="mb-2" variant="warning">
                                     <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
                                         Connect with a code host
                                     </Link>{' '}
                                     to add
                                     {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
-                                </div>
+                                </Alert>
                             )}
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
@@ -865,8 +877,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">
                                         <p className="mb-2">Repositories to sync</p>
-                                        <textarea
-                                            className="form-control"
+                                        <TextArea
                                             rows={5}
                                             value={publicRepoState.repos}
                                             onChange={handlePublicReposChanged}
@@ -891,19 +902,22 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={fetchingRepos === 'loading'}
-                    className="btn btn-primary test-goto-add-external-service-page mr-2"
+                    className="test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
                     label={fetchingRepos ? 'Saving...' : 'Save'}
                     disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
+                    variant="primary"
                 />
 
-                <Link
-                    className="btn btn-secondary test-goto-add-external-service-page"
+                <Button
+                    className="test-goto-add-external-service-page"
                     to={`${routingPrefix}/repositories`}
+                    variant="secondary"
+                    as={Link}
                 >
                     Cancel
-                </Link>
+                </Button>
             </Form>
         </UserSettingReposContainer>
     )

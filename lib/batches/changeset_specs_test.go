@@ -18,7 +18,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		BaseRepository: "base-repo-id",
 		BaseRef:        "refs/heads/my-cool-base-ref",
 		BaseRev:        "f00b4r",
-		HeadRepository: "head-repo-id",
+		// This field is deprecated and should always match BaseRepository.
+		HeadRepository: "base-repo-id",
 		HeadRef:        "refs/heads/my-branch",
 
 		Title: "The title",
@@ -46,15 +47,13 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	}
 
 	defaultInput := &ChangesetSpecInput{
-		Repository: ChangesetSpecRepository{
+		Repository: Repository{
+			ID:          "base-repo-id",
 			Name:        "github.com/sourcegraph/src-cli",
 			FileMatches: []string{"go.mod", "README"},
 			BaseRef:     "refs/heads/my-cool-base-ref",
 			BaseRev:     "f00b4r",
 		},
-
-		BaseRepositoryID: "base-repo-id",
-		HeadRepositoryID: "head-repo-id",
 
 		BatchChangeAttributes: &template.BatchChangeAttributes{
 			Name:        "the name",

@@ -6,7 +6,8 @@ import React from 'react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -196,6 +197,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                             queryAllChangesetIDs={queryAllChangesetIDs}
                             extensionsController={{} as any}
                             platformContext={{} as any}
+                            settingsCascade={EMPTY_SETTINGS_CASCADE}
                         />
                     </MockedTestProvider>
                 )}
@@ -237,6 +239,7 @@ add('Empty changesets', () => {
                         deleteBatchChange={deleteBatchChange}
                         extensionsController={{} as any}
                         platformContext={{} as any}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
                     />
                 </MockedTestProvider>
             )}

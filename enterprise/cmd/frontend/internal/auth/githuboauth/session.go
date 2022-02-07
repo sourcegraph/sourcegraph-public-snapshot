@@ -158,7 +158,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	// this point we may already have a code host and we just need to update the
 	// token with the new one.
 
-	tx, err := database.ExternalServices(s.db).Transact(ctx)
+	tx, err := s.db.ExternalServices().Transact(ctx)
 	if err != nil {
 		return
 	}

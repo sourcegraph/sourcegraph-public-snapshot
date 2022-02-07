@@ -37,8 +37,10 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
+      {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
       {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
       CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
@@ -57,7 +59,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":303,"column":3}],"message":"Could
+    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":316,"column":3}],"message":"Could
       not resolve to a PullRequest with the number of 100000."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -65,14 +67,14 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Aug 2021 13:30:13 GMT
+      - Thu, 30 Dec 2021 22:37:54 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -90,15 +92,14 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 120C:523D:137491:362668:6124F465
+      - B980:142E:1E1A5FB:551FEEF:61CE34C1
       X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
+        read:user, repo, workflow
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "76"
+      - "77"
       X-Xss-Protection:
       - "0"
     status: 200 OK

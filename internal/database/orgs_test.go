@@ -16,9 +16,6 @@ import (
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -41,9 +38,6 @@ func TestOrgs_ValidNames(t *testing.T) {
 }
 
 func TestOrgs_Count(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -71,9 +65,6 @@ func TestOrgs_Count(t *testing.T) {
 }
 
 func TestOrgs_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -139,9 +130,6 @@ func TestOrgs_GetByID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -194,9 +182,6 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()

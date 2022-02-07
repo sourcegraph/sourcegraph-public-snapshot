@@ -11,18 +11,18 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
+import { Link, Button } from '@sourcegraph/wildcard'
 
-import { Link } from '../../../shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
-import { ErrorAlert } from '../components/alerts'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'
@@ -481,9 +481,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 toggle={this.toggleIsOpen}
                 className="nav-link py-0 px-0 percy-hide chromatic-ignore"
             >
-                <DropdownToggle caret={false} className="btn btn-link" nav={true}>
+                <Button caret={false} nav={true} variant="link" as={DropdownToggle}>
                     {this.renderIcon()}
-                </DropdownToggle>
+                </Button>
 
                 <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>

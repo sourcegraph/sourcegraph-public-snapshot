@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
+import { LSIFIndexState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
 import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
@@ -186,6 +186,10 @@ Completed.args = {
             startedAt: '2020-06-14T12:25:30+00:00',
             finishedAt: '2020-06-14T12:30:30+00:00',
         }),
+}
+Completed.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
 }
 
 export const Errored = Template.bind({})

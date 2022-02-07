@@ -3,7 +3,7 @@ import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions, useSteps } from '.'
 
@@ -11,20 +11,12 @@ const Actions = () => {
     const { setStep, currentIndex, currentStep } = useSteps()
     return (
         <>
-            <button
-                disabled={currentStep.isFirstStep}
-                className="btn btn-primary"
-                onClick={() => setStep(currentIndex - 1)}
-            >
+            <Button disabled={currentStep.isFirstStep} onClick={() => setStep(currentIndex - 1)} variant="primary">
                 Previous
-            </button>
-            <button
-                disabled={currentStep.isLastStep}
-                className="btn btn-primary"
-                onClick={() => setStep(currentIndex + 1)}
-            >
+            </Button>
+            <Button disabled={currentStep.isLastStep} onClick={() => setStep(currentIndex + 1)} variant="primary">
                 Next
-            </button>
+            </Button>
         </>
     )
 }

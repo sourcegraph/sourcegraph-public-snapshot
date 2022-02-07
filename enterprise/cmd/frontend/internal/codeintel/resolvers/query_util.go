@@ -8,9 +8,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -135,7 +137,7 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 
 // monikerLocations returns the set of locations (within the given uploads) with an attached moniker
 // whose scheme+identifier matches any of the given monikers.
-func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]lsifstore.Location, int, error) {
+func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]lsifstore.Location, int, error) {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
 		ids = append(ids, uploads[i].ID)
@@ -158,13 +160,28 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.
 // commit.
 func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
+
+	checkerEnabled := authz.SubRepoEnabled(r.checker)
+	var a *actor.Actor
+	if checkerEnabled {
+		a = actor.FromContext(ctx)
+	}
 	for _, location := range locations {
 		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
 		if err != nil {
 			return nil, err
 		}
 
-		adjustedLocations = append(adjustedLocations, adjustedLocation)
+		if !checkerEnabled {
+			adjustedLocations = append(adjustedLocations, adjustedLocation)
+		} else {
+			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, repo, adjustedLocation.Path); err != nil {
+				return nil, err
+			} else if include {
+				adjustedLocations = append(adjustedLocations, adjustedLocation)
+			}
+		}
 	}
 
 	return adjustedLocations, nil
@@ -207,7 +224,7 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
 // slice. The slice is filtered in-place and returned (to update the slice length).
-func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []dbstore.Dump) ([]dbstore.Dump, error) {
+func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []store.Dump) ([]store.Dump, error) {
 	filtered := uploads[:0]
 
 	for i := range uploads {
@@ -225,7 +242,7 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 	return filtered, nil
 }
 
-func uploadIDsToString(vs []dbstore.Dump) string {
+func uploadIDsToString(vs []store.Dump) string {
 	ids := make([]string, 0, len(vs))
 	for _, v := range vs {
 		ids = append(ids, strconv.Itoa(v.ID))

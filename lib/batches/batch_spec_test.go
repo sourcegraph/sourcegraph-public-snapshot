@@ -2,7 +2,11 @@ package batches
 
 import (
 	"fmt"
+	"sort"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -169,17 +173,17 @@ changesetTemplate:
 			}
 		}
 	})
-	t.Run("uses unsupported files attribute", func(t *testing.T) {
+	t.Run("uses conflicting branch attributes", func(t *testing.T) {
 		const spec = `
 name: hello-world
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repository: github.com/foo/bar
+    branch: foo
+    branches: [bar]
 steps:
   - run: echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
-    files:
-      /tmp/horse.txt: yipeeee
 
 changesetTemplate:
   title: Hello World
@@ -190,13 +194,15 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowFiles: false})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
 
-		wantErr := `1 error occurred:
-	* step 1 in batch spec uses the 'files' attribute to create files in the step container, which is not supported in this Batch Changes version
+		wantErr := `3 errors occurred:
+	* on.0: Must validate one and only one schema (oneOf)
+	* on.0: Must validate at least one schema (anyOf)
+	* on.0: Must validate one and only one schema (oneOf)
 
 `
 		haveErr := err.Error()
@@ -205,3 +211,170 @@ changesetTemplate:
 		}
 	})
 }
+
+func TestOnQueryOrRepository_Branches(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			input *OnQueryOrRepository
+			want  []string
+		}{
+			"no branches": {
+				input: &OnQueryOrRepository{},
+				want:  nil,
+			},
+			"single branch": {
+				input: &OnQueryOrRepository{Branch: "foo"},
+				want:  []string{"foo"},
+			},
+			"single branch, non-nil but empty branches": {
+				input: &OnQueryOrRepository{
+					Branch:   "foo",
+					Branches: []string{},
+				},
+				want: []string{"foo"},
+			},
+			"multiple branches": {
+				input: &OnQueryOrRepository{
+					Branches: []string{"foo", "bar"},
+				},
+				want: []string{"foo", "bar"},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := tc.input.GetBranches()
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, have)
+			})
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		_, err := (&OnQueryOrRepository{
+			Branch:   "foo",
+			Branches: []string{"bar"},
+		}).GetBranches()
+		assert.Equal(t, ErrConflictingBranches, err)
+	})
+}
+
+func TestSkippedStepsForRepo(t *testing.T) {
+	tests := map[string]struct {
+		spec        *BatchSpec
+		wantSkipped []int32
+	}{
+		"no if": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if has static true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: "true"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"one of many steps has if with static true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "true"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if has static non-true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: "this is not true"},
+				},
+			},
+			wantSkipped: []int32{0},
+		},
+
+		"one of many steps has if with static non-true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "every type system needs generics"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{1},
+		},
+
+		"if expression that can be partially evaluated to true": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if expression that can be partially evaluated to false": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+				},
+			},
+			wantSkipped: []int32{0},
+		},
+
+		"one of many steps has if expression that can be evaluated to false": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{1},
+		},
+
+		"if expression that can NOT be partially evaluated": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			haveSkipped, err := SkippedStepsForRepo(tt.spec, "github.com/sourcegraph/src-cli", []string{})
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+
+			want := tt.wantSkipped
+			sort.Sort(sortableInt32(want))
+			have := make([]int32, 0, len(haveSkipped))
+			for s := range haveSkipped {
+				have = append(have, s)
+			}
+			sort.Sort(sortableInt32(have))
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+type sortableInt32 []int32
+
+func (s sortableInt32) Len() int { return len(s) }
+
+func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
+
+func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

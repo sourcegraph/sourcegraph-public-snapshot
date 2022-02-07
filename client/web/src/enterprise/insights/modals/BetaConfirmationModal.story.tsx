@@ -1,17 +1,17 @@
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
-import { noop } from 'lodash'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
-import { TemporarySettingsContext } from '../../../settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
-} from '../../../settings/temporary/TemporarySettingsStorage'
+} from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 
-import { BetaConfirmationModal, BetaConfirmationModalContent } from './BetaConfirmationModal'
+import { WebStory } from '../../../components/WebStory'
+
+import { BetaConfirmationModal } from './BetaConfirmationModal'
 
 const mockClient = createMockClient(
     { contents: JSON.stringify({}) },
@@ -45,7 +45,3 @@ export const BetaModalUI: React.FunctionComponent = () => {
         </TemporarySettingsContext.Provider>
     )
 }
-
-export const BetaModalContent: React.FunctionComponent = () => (
-    <BetaConfirmationModalContent onAccept={noop} onDismiss={noop} />
-)

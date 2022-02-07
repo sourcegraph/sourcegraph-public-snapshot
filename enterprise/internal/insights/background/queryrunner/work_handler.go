@@ -6,6 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -37,6 +43,8 @@ type workHandler struct {
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
+
+	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -51,6 +59,8 @@ func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.In
 		series, err := r.fetchSeries(ctx, seriesID)
 		if err != nil {
 			return nil, err
+		} else if series == nil {
+			return nil, errors.Newf("workHandler.getSeries: insight definition not found for series_id: %s", seriesID)
 		}
 
 		r.mu.Lock()
@@ -69,45 +79,36 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
-	defer func() {
-		if err != nil {
-			log15.Error("insights.queryrunner.workHandler", "error", err)
+func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+	results, err := r.computeSearch(ctx, job.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	var recordings []store.RecordSeriesPointArgs
+	groupedByRepo := query.GroupByRepository(results)
+	for repoKey, byRepo := range groupedByRepo {
+		groupedByCapture := query.GroupByCaptureMatch(byRepo)
+		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
+		if idErr != nil {
+			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
+			continue
 		}
-	}()
+		for _, group := range groupedByCapture {
+			capture := group.Value
+			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
+		}
+	}
+	return recordings, nil
+}
 
-	err = r.limiter.Wait(ctx)
+type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
+
+func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	var results *query.GqlSearchResponse
+	results, err = query.Search(ctx, job.SearchQuery)
 	if err != nil {
 		return err
-	}
-	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
-	if err != nil {
-		return err
-	}
-
-	log15.Info("dequeue_job", "job", *job)
-
-	series, err := r.getSeries(ctx, job.SeriesID)
-	if err != nil {
-		return err
-	}
-
-	// Actually perform the search query.
-	//
-	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
-	// repository on Sourcegraph - so we must be careful to only record insightful information that
-	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
-	// that a repository exists may or may not be fine, exposing individual results is definitely
-	// not, etc.)
-	var results *gqlSearchResponse
-	results, err = search(ctx, job.SearchQuery)
-	if err != nil {
-		return err
-	}
-
-	recordTime := time.Now()
-	if job.RecordTime != nil {
-		recordTime = *job.RecordTime
 	}
 
 	if len(results.Errors) > 0 {
@@ -151,25 +152,15 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if timedout := len(results.Data.Search.Results.Timedout); timedout > 0 {
 		log15.Error("insights query issue", "timedout_repos", timedout, "query", job.SearchQuery)
 	}
-
-	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
-	// repository on Sourcegraph - so we must be careful to only record insightful information that
-	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
-	// that a repository exists may just barely be fine, exposing individual results is definitely
-	// not, etc.) OR record only data that we later restrict to only users who have access to those
-	// repositories.
-
-	// Figure out how many matches we got for every unique repository returned in the search
-	// results.
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
 	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
-		decoded, err := decodeResult(result)
+		decoded, err := query.DecodeResult(result)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
-		repoNames[decoded.repoID()] = decoded.repoName()
-		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
+		repoNames[decoded.RepoID()] = decoded.RepoName()
+		matchesPerRepo[decoded.RepoID()] = matchesPerRepo[decoded.RepoID()] + decoded.MatchCount()
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)
@@ -200,7 +191,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			continue
 		}
 
-		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
@@ -208,7 +199,92 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	return err
 }
 
-func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+	if store.PersistMode(job.PersistMode) != store.RecordMode {
+		return nil
+	}
+	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
+	if err != nil {
+		return err
+	}
+	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	}
+	return err
+}
+
+func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	err = streaming.Search(ctx, job.SearchQuery, decoder)
+	if err != nil {
+		return errors.Wrap(err, "streaming.Search")
+	}
+	log15.Info("Search Counts", "streaming", *countPtr)
+	if len(streamErrs) > 0 {
+		log15.Error("streaming errors", "errors", streamErrs)
+	}
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, match := range streamRepoCounts {
+		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), nil)
+		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
+		}
+	}
+	return err
+}
+
+func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
+	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
+	// repositories they can see.
+	ctx = actor.WithInternalActor(ctx)
+	defer func() {
+		if err != nil {
+			log15.Error("insights.queryrunner.workHandler", "error", err)
+		}
+	}()
+	err = r.limiter.Wait(ctx)
+	if err != nil {
+		return errors.Wrap(err, "limiter.Wait")
+	}
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return errors.Wrap(err, "dequeueJob")
+	}
+
+	series, err := r.getSeries(ctx, job.SeriesID)
+	if err != nil {
+		return errors.Wrap(err, "getSeries")
+	}
+
+	recordTime := time.Now()
+	if job.RecordTime != nil {
+		recordTime = *job.RecordTime
+	}
+
+	handlersByType := map[types.GenerationMethod]insightsHandler{
+		types.SearchCompute: r.computeHandler,
+		types.SearchStream:  r.searchStreamHandler,
+		types.Search:        r.searchHandler,
+	}
+
+	executableHandler, ok := handlersByType[series.GenerationMethod]
+	if !ok {
+		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
+	}
+	return executableHandler(ctx, job, series, recordTime)
+}
+
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
 		SeriesID: record.SeriesID,
@@ -216,6 +292,7 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			SeriesID: record.SeriesID,
 			Time:     recordTime,
 			Value:    value,
+			Capture:  capture,
 		},
 		RepoName:    &repoName,
 		RepoID:      &repoID,

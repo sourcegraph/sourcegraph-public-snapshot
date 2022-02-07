@@ -3,13 +3,15 @@ import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
+import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import {
+    Settings,
+    InsightDashboard as InsightDashboardConfiguration,
+} from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings, InsightDashboard as InsightDashboardConfiguration } from '../../../../../schema/settings.schema'
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../../pages/dashboards/dashboard-page/components/add-insight-modal/utils/get-reachable-insights'
 import { findDashboardByUrlId } from '../../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'
@@ -76,6 +78,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         )
 
     public getInsightById = (id: string): Observable<Insight | null> => of(findInsightById(this.settingCascade, id))
+
+    public hasInsights = (): Observable<boolean> =>
+        this.getInsights({ dashboardId: ALL_INSIGHTS_DASHBOARD_ID }).pipe(map(insights => insights.length > 0))
 
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> => {
         const { name } = input
@@ -264,6 +269,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = <D extends keyof ViewContexts>(
         input: GetLangStatsInsightContentInput<D>
     ): Promise<PieChartContent<any>> => getLangStatsInsightContent(input.insight, input.options)
+
+    public getCaptureInsightContent = (): Promise<LineChartContent<any, string>> =>
+        Promise.reject(new Error('Setting based api doesnt support capture group insight'))
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

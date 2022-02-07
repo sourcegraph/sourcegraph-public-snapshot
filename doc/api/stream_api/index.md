@@ -13,13 +13,16 @@ Compared to our [GraphQL API](../graphql/index.md), it offers shorter times to f
 supports running exhaustive searches returning a large volume of results without
 putting pressure on the backend.
 
+## Endpoint
+`/.api/search/stream`
+
 ## Request
 
 ```bash
 curl --header "Accept: text/event-stream" \
      --header "Authorization: token <access token>" \
      --get \
-     --url "<Sourcegraph URL>/search/stream" \
+     --url "<Sourcegraph URL>/.api/search/stream" \
      --data-urlencode "q=<query>" \
      [--data-urlencode "display=<display-limit>"]
 ```
@@ -78,7 +81,7 @@ On Sourcegraph Cloud we can run queries without authentication.
 ```shellsession
 $ curl --header "Accept: text/event-stream" \
      --get \
-     --url "https://sourcegraph.com/search/stream" \
+     --url "https://sourcegraph.com/.api/search/stream" \
      --data-urlencode "q=r:sourcegraph/sourcegraph doResults count:1"
 
 event: matches
@@ -104,7 +107,7 @@ data: {}
 To search a pattern over all indexed repositories, add `count:all` and remove all repo filters. For example, to search all indexed repositories for the string "secret", you can run the following command
 
 ```bash
-curl --header "Accept:text/event-stream" --get --url "https://sourcegraph.com/search/stream" --data-urlencode "q=secret count:all"
+curl --header "Accept:text/event-stream" --get --url "https://sourcegraph.com/.api/search/stream" --data-urlencode "q=secret count:all"
 ```
 
 If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://github.com/sourcegraph/src-cli).

@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 	"testing"
@@ -9,7 +10,7 @@ import (
 func TruncateTables(t *testing.T, db *sql.DB, tables ...string) {
 	t.Helper()
 
-	_, err := db.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY CASCADE")
+	_, err := db.ExecContext(context.Background(), "TRUNCATE "+strings.Join(tables, ", ")+" RESTART IDENTITY CASCADE")
 	if err != nil {
 		t.Fatal(err)
 	}

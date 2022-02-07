@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -80,17 +80,17 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 <h3>Setting up executors</h3>
                 <p className="mb-0">
                     Executors enable{' '}
-                    <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
+                    <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
-                    </a>{' '}
-                    and {/* TODO: Adjust this link */}
-                    <a href="https://docs.sourcegraph.com/batches/server_side" rel="noopener">
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
-                    </a>
+                    </Link>
                     . In order to use those features,{' '}
-                    <a href="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/deploy_executors" rel="noopener">
                         set them up
-                    </a>
+                    </Link>
                     .
                 </p>
             </Container>
@@ -138,12 +138,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                                 />
                             )}
                             {node.hostname}{' '}
-                            <span
-                                className="badge badge-secondary"
-                                data-tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            <Badge
+                                variant="secondary"
+                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
                             >
                                 {node.queueName}
-                            </span>
+                            </Badge>
                         </h4>
                     </div>
                     <span>

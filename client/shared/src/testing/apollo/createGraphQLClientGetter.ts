@@ -3,7 +3,8 @@ import { ObservableQuery } from '@apollo/client'
 import { mock } from 'jest-mock-extended'
 import { of, Subscriber } from 'rxjs'
 
-import { GraphQLClient } from '../../graphql/graphql'
+import { GraphQLClient } from '@sourcegraph/http-client'
+
 import { PlatformContext } from '../../platform/context'
 
 interface CreateGraphQLClientGetterOptions {

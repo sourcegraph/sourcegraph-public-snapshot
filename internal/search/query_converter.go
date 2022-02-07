@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -16,9 +17,9 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
-// unionRegexp separates values with a | operator to create a string
+// UnionRegExps separates values with a | operator to create a string
 // representing a union of regexp patterns.
-func unionRegexp(values []string) string {
+func UnionRegExps(values []string) string {
 	if len(values) == 0 {
 		// As a regular expression, "()" and "" are equivalent so this
 		// condition wouldn't ordinarily be needed to distinguish these
@@ -62,7 +63,7 @@ func LangToFileRegexp(lang string) string {
 	for _, filename := range filenamesFromLanguage[lang] {
 		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
 	}
-	return unionRegexp(patterns)
+	return UnionRegExps(patterns)
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -163,7 +164,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               unionRegexp(filesExclude),
+		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		Languages:                    langInclude,
@@ -228,7 +229,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q
@@ -300,6 +301,23 @@ func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, err
 			return nil, err
 		}
 		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
+	}
+
+	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
+	// more precise language metadata based on file contents analyzed by go-enry, so it's
+	// useful to pass lang: queries down.
+	//
+	// Currently, negated lang queries create filename-based ExcludePatterns that cannot be
+	// corrected by the more precise language metadata. If this is a problem, indexed search
+	// queries should have a special query converter that produces *only* Language predicates
+	// instead of filepatterns.
+	if len(p.Languages) > 0 && feat.ContentBasedLangFilters {
+		or := &zoekt.Or{}
+		for _, lang := range p.Languages {
+			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
+			or.Children = append(or.Children, &zoekt.Language{Language: lang})
+		}
+		and = append(and, or)
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil

@@ -12,19 +12,17 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetUploadByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -85,10 +83,7 @@ func TestGetUploadByID(t *testing.T) {
 }
 
 func TestGetUploadByIDDeleted(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// Upload does not exist initially
@@ -129,10 +124,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 }
 
 func TestGetQueuedUploadRank(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -181,10 +173,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 }
 
 func TestGetUploadsByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -237,10 +226,7 @@ func TestGetUploadsByIDs(t *testing.T) {
 }
 
 func TestDeleteUploadsStuckUploading(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -287,10 +273,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 }
 
 func TestGetUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -461,10 +444,7 @@ func TestGetUploads(t *testing.T) {
 }
 
 func TestInsertUploadUploading(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -513,10 +493,7 @@ func TestInsertUploadUploading(t *testing.T) {
 }
 
 func TestInsertUploadQueued(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -568,10 +545,7 @@ func TestInsertUploadQueued(t *testing.T) {
 }
 
 func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertRepo(t, db, 50, "")
@@ -627,10 +601,7 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 }
 
 func TestMarkQueued(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -656,10 +627,7 @@ func TestMarkQueued(t *testing.T) {
 }
 
 func TestMarkFailed(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -687,10 +655,7 @@ func TestMarkFailed(t *testing.T) {
 }
 
 func TestAddUploadPart(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
@@ -713,13 +678,11 @@ func TestAddUploadPart(t *testing.T) {
 }
 
 func TestDeleteUploadByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50},
 	)
 
@@ -753,13 +716,11 @@ func TestDeleteUploadByID(t *testing.T) {
 }
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
@@ -793,10 +754,7 @@ func TestDeleteUploadByIDNotCompleted(t *testing.T) {
 }
 
 func TestDeleteUploadByIDMissingRow(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
@@ -807,10 +765,8 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
 	var uploads []Upload
@@ -819,7 +775,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertUploads(t, db, uploads...)
+	insertUploads(t, sqlDB, uploads...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
@@ -833,7 +789,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -880,10 +836,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 }
 
 func TestHardDeleteUploadByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -925,10 +878,7 @@ func TestHardDeleteUploadByID(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -970,10 +920,7 @@ func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
 }
 
 func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1021,11 +968,8 @@ func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScan(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
 	insertRepo(t, db, 50, "r0")
@@ -1048,11 +992,11 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false),
-			(2, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false),
-			(3, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false),
-			(4, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false),
-			(5, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false)
+			(101, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false),
+			(102, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false),
+			(103, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false),
+			(104, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false),
+			(105, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -1096,7 +1040,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
-	query = `UPDATE lsif_configuration_policies SET indexing_enabled = true WHERE id = 5`
+	query = `UPDATE lsif_configuration_policies SET indexing_enabled = true WHERE id = 105`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
@@ -1110,11 +1054,8 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 }
 
 func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	now := timeutil.Now()
 	insertRepo(t, db, 50, "r0")
@@ -1137,7 +1078,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -1183,10 +1124,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 }
 
 func TestSelectRepositoriesForRetentionScan(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1207,7 +1145,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 		}
 
 		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitserver.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
 			t.Fatalf("unexpected error updating commit graph: %s", err)
 		}
 	}
@@ -1254,10 +1192,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 }
 
 func TestUpdateUploadRetention(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1285,10 +1220,7 @@ func TestUpdateUploadRetention(t *testing.T) {
 }
 
 func TestUpdateReferenceCounts(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -1405,13 +1337,11 @@ func TestUpdateReferenceCounts(t *testing.T) {
 }
 
 func TestSoftDeleteExpiredUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 50, State: "completed"},
 		Upload{ID: 51, State: "completed"},
 		Upload{ID: 52, State: "completed"},
@@ -1489,10 +1419,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 }
 
 func TestGetOldestCommitDate(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -1550,10 +1477,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 }
 
 func TestUpdateCommitedAt(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()

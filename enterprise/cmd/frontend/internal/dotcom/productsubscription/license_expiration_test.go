@@ -61,19 +61,22 @@ func TestCheckForUpcomingLicenseExpirations(t *testing.T) {
 		}
 		return infos[licenseKey], "", nil
 	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{Username: "alice"}, nil
-	}
+
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
 	t.Cleanup(func() {
 		conf.Mock(cfg)
 		mocks.subscriptions = mockSubscriptions{}
 		mocks.licenses = mockLicenses{}
 		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
-		database.Mocks.Users = database.MockUsers{}
 	})
 
 	client := &fakeSlackClient{}
-	checkForUpcomingLicenseExpirations(nil, clock, client)
+	checkForUpcomingLicenseExpirations(db, clock, client)
 
 	wantPayloads := []*slack.Payload{
 		{Text: "The license for user `alice` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:"},

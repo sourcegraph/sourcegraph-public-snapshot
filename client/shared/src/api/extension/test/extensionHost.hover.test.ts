@@ -2,8 +2,8 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
 import { Hover } from 'sourcegraph'
 
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientAPI } from '../../client/api/api'

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './ShowMoreButton.module.scss'
 
 interface ShowMoreProps {
@@ -14,18 +16,12 @@ interface ShowMoreProps {
  * FilteredConnection styled Button to support fetching more results
  */
 export const ShowMoreButton: React.FunctionComponent<ShowMoreProps> = ({ className, compact, centered, onClick }) => (
-    <button
-        type="button"
-        className={classNames(
-            'btn btn-sm',
-            styles.normal,
-            !compact && styles.noncompact,
-            centered && styles.centered,
-            'btn-link',
-            className
-        )}
+    <Button
+        className={classNames(styles.normal, !compact && styles.noncompact, centered && styles.centered, className)}
         onClick={onClick}
+        size="sm"
+        variant="link"
     >
         Show more
-    </button>
+    </Button>
 )

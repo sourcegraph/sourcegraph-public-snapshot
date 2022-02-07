@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -35,7 +34,7 @@ func TestReposService_Get(t *testing.T) {
 
 	wantRepo := &types.Repo{ID: 1, Name: "github.com/u/r"}
 
-	repoStore := dbmock.NewMockRepoStore()
+	repoStore := database.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(wantRepo, nil)
 	s := &repos{store: repoStore}
 
@@ -53,7 +52,7 @@ func TestReposService_List(t *testing.T) {
 		{Name: "r2"},
 	}
 
-	repoStore := dbmock.NewMockRepoStore()
+	repoStore := database.NewMockRepoStore()
 	repoStore.ListFunc.SetDefaultReturn(wantRepos, nil)
 	s := &repos{store: repoStore}
 

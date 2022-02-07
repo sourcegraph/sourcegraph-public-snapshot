@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -48,6 +49,7 @@ func TestStencil(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	ranges, err := resolver.Stencil(context.Background())
 	if err != nil {

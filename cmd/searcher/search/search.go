@@ -64,16 +64,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.Deadline != "" {
-		var deadline time.Time
-		if err := deadline.UnmarshalText([]byte(p.Deadline)); err != nil {
-			http.Error(w, "invalid deadline: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		dctx, cancel := context.WithDeadline(ctx, deadline)
-		defer cancel()
-		ctx = dctx
-	}
 	if !p.PatternMatchesContent && !p.PatternMatchesPath {
 		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
 		// search file content in that case.
@@ -112,10 +102,9 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
 	defer cancel()
 
-	deadlineHit, err := s.search(ctx, &p, stream)
+	err = s.search(ctx, &p, stream)
 	doneEvent := searcher.EventDone{
-		DeadlineHit: deadlineHit,
-		LimitHit:    stream.LimitHit(),
+		LimitHit: stream.LimitHit(),
 	}
 	if err != nil {
 		doneEvent.Error = err.Error()
@@ -130,7 +119,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 }
 
-func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
+func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
@@ -150,7 +139,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	span.SetTag("limit", p.Limit)
 	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
 	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
-	span.SetTag("deadline", p.Deadline)
 	span.SetTag("indexerEndpoints", p.IndexerEndpoints)
 	span.SetTag("select", p.Select)
 	defer func(start time.Time) {
@@ -160,11 +148,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		if ctx.Err() == context.Canceled {
 			code = "canceled"
 			span.SetTag("err", err)
-		} else if ctx.Err() == context.DeadlineExceeded {
-			code = "timedout"
-			span.SetTag("err", err)
-			deadlineHit = true
-			err = nil // error is fully described by deadlineHit=true return value
 		} else if err != nil {
 			tr.LazyPrintf("error: %v", err)
 			tr.SetError()
@@ -178,12 +161,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v deadlineHit=%v", code, sender.SentCount(), sender.LimitHit(), deadlineHit)
+		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
 		tr.Finish()
 		requestTotal.WithLabelValues(code).Inc()
 		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
 		span.SetTag("limitHit", sender.LimitHit())
-		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.Log != nil {
 			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", sender.SentCount(), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
@@ -201,7 +183,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if !p.IsStructuralPat {
 		rg, err = compile(&p.PatternInfo)
 		if err != nil {
-			return false, badRequestError{err.Error()}
+			return badRequestError{err.Error()}
 		}
 	}
 
@@ -210,7 +192,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	}
 	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
 	if err != nil {
-		return false, err
+		return err
 	}
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
@@ -226,7 +208,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get archive")
+		return errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
@@ -240,9 +222,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		return false, filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
-		return false, regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		return regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}
 }
 

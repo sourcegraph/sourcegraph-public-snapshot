@@ -136,8 +136,6 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestServer_EnqueueRepoUpdate(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 
 	svc := types.ExternalService{
@@ -148,11 +146,8 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }`,
 	}
 
-	if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
-		t.Fatal(err)
-	}
-
 	repo := types.Repo{
+		ID:   1,
 		Name: "github.com/foo/bar",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
@@ -162,64 +157,58 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		Metadata: new(github.Repository),
 	}
 
-	if err := store.RepoStore.Create(ctx, &repo); err != nil {
-		t.Fatal(err)
+	initStore := func(db database.DB) *repos.Store {
+		store := repos.NewStore(db, sql.TxOptions{})
+		if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.RepoStore.Create(ctx, &repo); err != nil {
+			t.Fatal(err)
+		}
+		return store
 	}
 
 	type testCase struct {
-		name     string
-		store    *repos.Store
-		repo     api.RepoName
-		res      *protocol.RepoUpdateResponse
-		err      string
-		teardown func()
+		name string
+		repo api.RepoName
+		res  *protocol.RepoUpdateResponse
+		err  string
+		init func(database.DB) *repos.Store
 	}
 
-	var testCases []testCase
-	testCases = append(testCases,
-		func() testCase {
-			database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
-				return nil, errors.New("boom")
-			}
-			return testCase{
-				name:  "returns an error on store failure",
-				store: store,
-				err:   `store.list-repos: boom`,
-				teardown: func() {
-					database.Mocks.Repos = database.MockRepos{}
-				},
-			}
-		}(),
-		testCase{
-			name:  "missing repo",
-			store: store,
-			repo:  "foo",
-			err:   `repo foo not found with response: repo "foo" not found in store`,
+	testCases := []testCase{{
+		name: "returns an error on store failure",
+		init: func(realDB database.DB) *repos.Store {
+			repos := database.NewMockRepoStoreFrom(realDB.Repos())
+			repos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
+			store := initStore(realDB)
+			store.RepoStore = repos
+			return store
 		},
-		func() testCase {
-			repo := repo.Clone()
-			return testCase{
-				name:  "existing repo",
-				store: store,
-				repo:  repo.Name,
-				res: &protocol.RepoUpdateResponse{
-					ID:   repo.ID,
-					Name: string(repo.Name),
-				},
-			}
-		}(),
-	)
+		err: `store.list-repos: boom`,
+	}, {
+		name: "missing repo",
+		init: initStore,
+		repo: "foo",
+		err:  `repo foo not found with response: repo "foo" not found in store`,
+	}, {
+		name: "existing repo",
+		repo: repo.Name,
+		init: initStore,
+		res: &protocol.RepoUpdateResponse{
+			ID:   repo.ID,
+			Name: string(repo.Name),
+		},
+	}}
 
 	for _, tc := range testCases {
 		tc := tc
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.teardown != nil {
-				defer tc.teardown()
-			}
-
-			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
+			sqlDB := dbtest.NewDB(t)
+			store := tc.init(database.NewDB(sqlDB))
+			s := &Server{Store: store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.NewClient(srv.URL)

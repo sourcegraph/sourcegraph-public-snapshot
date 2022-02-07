@@ -324,29 +324,36 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	return version
 }
 
-func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
+// fetchGitHubVersion will attempt to identify the GitHub Enterprise Server's version.  If the
+// method is called by a client configured to use github.com, it will return allMatchingSemver.
+//
+// Additionally if it fails to parse the version. or the API request fails with an error, it
+// defaults to returning allMatchingSemver as well.
+func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
+	version = allMatchingSemver
+
 	if c.githubDotCom {
-		return allMatchingSemver
+		return
 	}
 
-	var resp struct {
-		InstalledVersion string `json:"installed_version"`
-	}
-	req, err := http.NewRequest("GET", "/meta", nil)
+	// Initiate a v3Client since this requires a V3 API request.
+	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
+		log15.Warn("Failed to fetch GitHub enterprise version",
+			"method", "fetchGitHubVersion",
+			"apiURL", c.apiURL,
+			"err", err,
+		)
+		return
 	}
-	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version: doRequest", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
+
+	version, err = semver.NewVersion(v)
+	if err != nil {
+		return
 	}
-	version, err := semver.NewVersion(resp.InstalledVersion)
-	if err == nil {
-		return version
-	}
-	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
-	return allMatchingSemver
+
+	return version
 }
 
 func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
@@ -571,4 +578,109 @@ fragment RepositoryFields on Repository {
 	%s
 }
 	`, strings.Join(conditionalGHEFields, "\n	"))
+}
+
+// Fork forks the given repository. If org is given, then the repository will
+// be forked into that organisation, otherwise the repository is forked into
+// the authenticated user's account.
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
+	// December 2021, so we have to fall back to the REST API.
+	return NewV3Client(c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+}
+
+type RecentCommittersParams struct {
+	// Repository name
+	Name string
+	// Repository owner
+	Owner string
+	// After is the cursor to paginate from.
+	After Cursor
+	// First is the page size. Default to 100 if left zero.
+	First int
+}
+
+type RecentCommittersResults struct {
+	Nodes []struct {
+		Authors struct {
+			Nodes []struct {
+				Date      string
+				Email     string
+				Name      string
+				AvatarURL string
+			}
+		}
+	}
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   Cursor
+	}
+}
+
+// Lists recent committers for a repository.
+func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommittersParams) (*RecentCommittersResults, error) {
+	if params.First == 0 {
+		params.First = 100
+	}
+
+	query := `
+	  query($name: String!, $owner: String!, $after: String, $first: Int!) {
+		repository(name: $name, owner: $owner) {
+		  defaultBranchRef {
+			target {
+			  ... on Commit {
+				history(after: $after, first: $first) {
+				  pageInfo { hasNextPage, endCursor }
+				  nodes {
+					authors(first: 50) {
+					  nodes {
+						email
+						name
+						avatarUrl
+						date
+					  }
+					}
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  }
+	`
+
+	vars := map[string]interface{}{
+		"name":  params.Name,
+		"owner": params.Owner,
+		"first": params.First,
+	}
+	if params.After != "" {
+		vars["after"] = params.After
+	}
+
+	var result struct {
+		Repository struct {
+			DefaultBranchRef struct {
+				Target struct {
+					History RecentCommittersResults
+				}
+			}
+		}
+	}
+	err := c.requestGraphQL(ctx, query, vars, &result)
+	if err != nil {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
+				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("RecentCommitters: GitHub repository not found", "error", err2)
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return &result.Repository.DefaultBranchRef.Target.History, nil
 }

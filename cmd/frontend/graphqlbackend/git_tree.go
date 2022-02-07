@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -44,6 +45,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 	entries, err := git.ReadDir(
 		ctx,
+		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),

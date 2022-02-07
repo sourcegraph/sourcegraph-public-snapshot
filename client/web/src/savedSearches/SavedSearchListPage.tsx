@@ -5,25 +5,24 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchPatternTypeProps } from '@sourcegraph/search'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
-import { PatternTypeProps } from '../search'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
+interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -79,22 +78,26 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>
                 </div>
                 <div>
-                    <Link
-                        className="btn btn-secondary btn-sm test-edit-saved-search-button"
+                    <Button
+                        className="test-edit-saved-search-button"
                         to={`${this.props.match.path}/${this.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>{' '}
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-danger test-delete-saved-search-button"
+                    </Button>{' '}
+                    <Button
+                        className="test-delete-saved-search-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"
+                        variant="danger"
+                        size="sm"
                     >
                         <DeleteIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
         )
@@ -113,7 +116,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -136,18 +139,20 @@ export class SavedSearchListPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={styles.savedSearchListPage}>
+            <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
                 <PageHeader
                     path={[{ text: 'Saved searches' }]}
                     headingElement="h2"
                     description="Manage notifications and alerts for specific search queries."
                     actions={
-                        <Link
+                        <Button
                             to={`${this.props.match.path}/add`}
-                            className="btn btn-primary test-add-saved-search-button"
+                            className="test-add-saved-search-button"
+                            variant="primary"
+                            as={Link}
                         >
                             <PlusIcon className="icon-inline" /> Add saved search
-                        </Link>
+                        </Button>
                     }
                     className="mb-3"
                 />
@@ -170,6 +175,8 @@ const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageCon
     savedSearchesOrError,
     ...props
 }) => {
+    const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
+
     if (savedSearchesOrError === undefined) {
         return <LoadingSpinner />
     }
@@ -187,7 +194,7 @@ const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageCon
         <Container>
             <div className="list-group list-group-flush">
                 {namespaceSavedSearches.map(search => (
-                    <SavedSearchNode key={search.id} {...props} savedSearch={search} />
+                    <SavedSearchNode key={search.id} {...props} patternType={searchPatternType} savedSearch={search} />
                 ))}
             </div>
         </Container>

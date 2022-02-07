@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -272,7 +271,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
@@ -353,7 +352,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	const email = "a@example.com"
@@ -396,7 +395,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	}
 }
 
-func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
+func isUserEmailVerified(ctx context.Context, db DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
@@ -411,7 +410,7 @@ func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email 
 	return false, errors.Errorf("email not found: %s", email)
 }
 
-func isUserEmailPrimary(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
+func isUserEmailPrimary(ctx context.Context, db DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})

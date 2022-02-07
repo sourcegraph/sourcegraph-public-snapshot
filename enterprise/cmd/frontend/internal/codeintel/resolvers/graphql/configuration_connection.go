@@ -6,24 +6,30 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type codeIntelligenceConfigurationPolicyConnectionResolver struct {
+	db         database.DB
 	policies   []dbstore.ConfigurationPolicy
 	totalCount int
+	errTracer  *observation.ErrCollector
 }
 
-func NewCodeIntelligenceConfigurationPolicyConnectionResolver(policies []dbstore.ConfigurationPolicy, totalCount int) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
+func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, policies []dbstore.ConfigurationPolicy, totalCount int, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
 	return &codeIntelligenceConfigurationPolicyConnectionResolver{
+		db:         db,
 		policies:   policies,
 		totalCount: totalCount,
+		errTracer:  errTracer,
 	}
 }
 
 func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
 	resolvers := make([]gql.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
-		resolvers = append(resolvers, NewConfigurationPolicyResolver(policy))
+		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.db, policy, r.errTracer))
 	}
 
 	return resolvers, nil

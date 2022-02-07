@@ -7,11 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type operations struct {
@@ -46,6 +43,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name:              fmt.Sprintf("codeintel.resolvers.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForSentry | observation.EmitForDefault
+			},
 		})
 	}
 
@@ -68,11 +68,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationReferences:   op("DocumentationReferences"),
 		documentationSearch:       op("DocumentationSearch"),
 		hover:                     op("Hover"),
-		queryResolver:             op("QueryResolver"),
+		implementations:           op("Implementations"),
 		ranges:                    op("Ranges"),
 		references:                op("References"),
-		implementations:           op("Implementations"),
 		stencil:                   op("Stencil"),
+		queryResolver:             op("QueryResolver"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}
@@ -87,17 +87,14 @@ func observeResolver(
 	observationArgs observation.Args,
 ) (context.Context, observation.TraceLogger, func()) {
 	start := time.Now()
-	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, err, observationArgs)
+	ctx, trace, endObservation := operation.WithAndLogger(ctx, err, observationArgs)
 
-	return ctx, traceLog, func() {
+	return ctx, trace, func() {
 		duration := time.Since(start)
 		endObservation(1, observation.Args{})
 
 		if duration >= threshold {
 			lowSlowRequest(name, duration, err, observationArgs)
-		}
-		if honey.Enabled() {
-			_ = createHoneyEvent(ctx, name, observationArgs, err, duration).Send()
 		}
 	}
 }
@@ -113,31 +110,4 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	}
 
 	log15.Warn("Slow codeintel request", pairs...)
-}
-
-func createHoneyEvent(
-	ctx context.Context,
-	name string,
-	observationArgs observation.Args,
-	err *error,
-	duration time.Duration,
-) honey.Event {
-	fields := map[string]interface{}{
-		"type":        name,
-		"duration_ms": duration.Milliseconds(),
-	}
-
-	if err != nil && *err != nil {
-		fields["error"] = (*err).Error()
-	}
-	if traceID := trace.ID(ctx); traceID != "" {
-		fields["trace"] = trace.URL(traceID, conf.ExternalURL())
-		fields["traceID"] = traceID
-	}
-
-	event := honey.NewEventWithFields("codeintel", fields)
-
-	event.AddLogFields(observationArgs.LogFields)
-
-	return event
 }

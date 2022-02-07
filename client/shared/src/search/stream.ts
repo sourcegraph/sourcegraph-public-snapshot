@@ -3,11 +3,14 @@ import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../graphql/schema'
+import { SymbolKind } from '../schema'
+
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }

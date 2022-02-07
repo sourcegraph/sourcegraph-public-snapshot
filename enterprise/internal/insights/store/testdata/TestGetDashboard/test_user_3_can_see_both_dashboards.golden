@@ -1,5 +1,5 @@
 []*types.Dashboard{
-	&types.Dashboard{
+	{
 		ID:           1,
 		Title:        "test dashboard",
 		InsightIDs:   []string{"unique1234"},
@@ -7,7 +7,7 @@
 		OrgIdGrants:  []int64{},
 		GlobalGrant:  true,
 	},
-	&types.Dashboard{
+	{
 		ID:           2,
 		Title:        "private dashboard for user 3",
 		UserIdGrants: []int64{3},

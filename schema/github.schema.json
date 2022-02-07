@@ -6,7 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
@@ -161,7 +161,7 @@
     },
     "authorization": {
       "title": "GitHubAuthorization",
-      "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
+      "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
       "type": "object",
       "properties": {
         "groupsCacheTTL": {
@@ -170,6 +170,10 @@
           "default": 72
         }
       }
+    },
+    "githubAppInstallationID": {
+      "description": "The installation ID of the GitHub App.",
+      "type": "string"
     },
     "cloudGlobal": {
       "title": "CloudGlobal",

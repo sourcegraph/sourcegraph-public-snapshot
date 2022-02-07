@@ -30,7 +30,7 @@ When introducing a new service/container we pay the cost of:
 
 - Introducing and maintaining [its Kubernetes YAML](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/base).
 - Adding it to our [docker-compose deployments](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/38).
-- Integrating it as a raw process in [the single-container `sourcegraph/server` deployment mode](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/server).
+- Integrating it as a raw process in [the single-container `sourcegraph/server` deployment mode](https://github.com/sourcegraph/sourcegraph/tree/main/cmd/server).
 - Documenting clearly [how it scales](https://docs.sourcegraph.com/admin/install/kubernetes/scale) alongside other services for cluster deployments.
 - Updating our [architecture diagram](https://docs.sourcegraph.com/dev/background-information/architecture).
 - Documenting the service itself in general and how site admins should manage and debug it (these needs to be done regardless of it being a new service, but if it is a new service there are additional aspects to consider.)

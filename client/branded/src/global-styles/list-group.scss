@@ -1,11 +1,120 @@
-$list-group-bg: transparent;
-$list-group-border-color: var(--border-color);
-$list-group-item-padding-y: 0.25rem;
-$list-group-item-padding-x: 0.5rem;
-$list-group-action-color: var(--body-color);
-$list-group-action-hover-color: var(--body-color);
-$list-group-hover-bg: var(--color-bg-2);
-$list-group-action-active-color: var(--body-color);
-$list-group-action-active-bg: var(--color-bg-3);
+:root {
+    --list-group-bg: transparent;
+    --list-group-item-padding-y: 0.25rem;
+    --list-group-item-padding-x: 0.5rem;
+    --list-group-color: inherit;
+    --list-group-border-width: 1px;
+    --list-group-border-radius: var(--border-radius);
+    --list-group-disabled-color: var(--gray-06);
+    --list-group-active-color: var(--white);
+    --list-group-active-bg: var(--primary);
+    --list-group-active-border-color: var(--list-group-active-bg);
+    --list-group-text-decoration: none;
+}
 
-@import 'bootstrap/scss/list-group';
+// Base class
+//
+// Easily usable on <ul>, <ol>, or <div>.
+
+.list-group {
+    display: flex;
+    flex-direction: column;
+
+    // No need to set list-style: none; since .list-group-item is block level
+    padding-left: 0; // reset padding because ul and ol
+    margin-bottom: 0;
+    border-radius: var(--list-group-border-radius);
+}
+
+// Interactive list items
+//
+// Use anchor or button elements instead of `li`s or `div`s to create interactive
+// list items. Includes an extra `.active` modifier class for selected items.
+
+.list-group-item-action {
+    width: 100%; // For `<button>`s (anchors become 100% by default though)
+    color: var(--body-color);
+    text-align: inherit; // For `<button>`s (anchors inherit)
+
+    // Hover state
+    &:hover,
+    &:focus {
+        z-index: 1; // Place hover/focus items above their siblings for proper border styling
+        color: var(--body-color);
+        text-decoration: var(--list-group-text-decoration);
+        background-color: var(--color-bg-2);
+    }
+
+    &:active {
+        color: var(--body-color);
+        background-color: var(--color-bg-3);
+    }
+}
+
+// Individual list items
+//
+// Use on `li`s or `div`s within the `.list-group` parent.
+
+.list-group-item {
+    position: relative;
+    display: block;
+    padding: var(--list-group-item-padding-y) var(--list-group-item-padding-x);
+    color: var(--list-group-color);
+    text-decoration: var(--list-group-text-decoration);
+    background-color: var(--list-group-bg);
+    border: var(--list-group-border-width) solid var(--border-color);
+
+    &:first-child {
+        border-top-left-radius: inherit;
+        border-top-right-radius: inherit;
+    }
+
+    &:last-child {
+        border-bottom-right-radius: inherit;
+        border-bottom-left-radius: inherit;
+    }
+
+    &.disabled,
+    &:disabled {
+        color: var(--list-group-disabled-color);
+        pointer-events: none;
+
+        :global(.theme-light) & {
+            background-color: var(--white);
+        }
+    }
+
+    // Include both here for `<a>`s and `<button>`s
+    &.active {
+        z-index: 2; // Place active items above their siblings for proper border styling
+        color: var(--list-group-active-color);
+        background-color: var(--list-group-active-bg);
+        border-color: var(--list-group-active-border-color);
+    }
+
+    & + & {
+        border-top-width: 0;
+
+        &.active {
+            margin-top: calc(var(--btn-padding-y-sm) * -1);
+            border-top-width: var(--list-group-border-width);
+        }
+    }
+}
+
+// Flush list items
+//
+// Remove borders and border-radius to keep list group items edge-to-edge. Most
+// useful within other components (e.g., cards).
+
+.list-group-flush {
+    border-radius: 0;
+
+    > .list-group-item {
+        border-width: 0 0 var(--list-group-border-width);
+
+        &:last-child {
+            border-bottom-width: 0;
+        }
+    }
+}

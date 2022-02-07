@@ -1,22 +1,5 @@
 .overlay {
-    display: flex;
     background-color: #343a4d4d; // --color-bg-3 with 30% opacity
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    overflow: auto;
-    padding: 1.5rem;
-}
-
-.content {
-    max-width: 32rem;
-    width: 100%;
-    margin: auto;
-    background-color: var(--color-bg-1);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
     padding: 1.5rem;
 }
 
@@ -28,7 +11,7 @@
 .media-hero-content {
     display: flex;
     // Stretch the charts container to the full width ignore parent paddings and border
-    // stylelint-disable-next-line declaration-property-unit-whitelist
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin: 1.5rem calc((-1px - 1.5rem));
     padding: 1rem 1.5rem;
     background: var(--marketing-gradient);

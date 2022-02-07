@@ -34,6 +34,7 @@ var changesetSpecInsertColumns = []string{
 	"diff_stat_deleted",
 	"created_at",
 	"updated_at",
+	"fork_namespace",
 
 	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
 	// contain normalized data from `spec` and are used for JOINs and WHERE
@@ -45,7 +46,7 @@ var changesetSpecInsertColumns = []string{
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
 // insert, update and query changeset specs.
-var changesetSpecColumns = []string{
+var changesetSpecColumns = SQLColumns{
 	"changeset_specs.id",
 	"changeset_specs.rand_id",
 	"changeset_specs.spec",
@@ -57,19 +58,7 @@ var changesetSpecColumns = []string{
 	"changeset_specs.diff_stat_deleted",
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
-}
-var changesetSpecColumnsSQL = []*sqlf.Query{
-	sqlf.Sprintf("changeset_specs.id"),
-	sqlf.Sprintf("changeset_specs.rand_id"),
-	sqlf.Sprintf("changeset_specs.spec"),
-	sqlf.Sprintf("changeset_specs.batch_spec_id"),
-	sqlf.Sprintf("changeset_specs.repo_id"),
-	sqlf.Sprintf("changeset_specs.user_id"),
-	sqlf.Sprintf("changeset_specs.diff_stat_added"),
-	sqlf.Sprintf("changeset_specs.diff_stat_changed"),
-	sqlf.Sprintf("changeset_specs.diff_stat_deleted"),
-	sqlf.Sprintf("changeset_specs.created_at"),
-	sqlf.Sprintf("changeset_specs.updated_at"),
+	"changeset_specs.fork_namespace",
 }
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
@@ -125,6 +114,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.DiffStatDeleted,
 				c.CreatedAt,
 				c.UpdatedAt,
+				c.ForkNamespace,
 				&dbutil.NullString{S: externalID},
 				&dbutil.NullString{S: headRef},
 				&dbutil.NullString{S: title},
@@ -140,6 +130,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		ctx,
 		s.Handle().DB(),
 		"changeset_specs",
+		batch.MaxNumPostgresParameters,
 		changesetSpecInsertColumns,
 		"",
 		changesetSpecColumns,
@@ -308,7 +299,7 @@ func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetSpecsQueryFmtstr,
-		sqlf.Join(changesetSpecColumnsSQL, ", "),
+		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -388,7 +379,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listChangesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetSpecColumnsSQL, ", "),
+		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -533,6 +524,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.ForkNamespace,
 	)
 
 	if err != nil {

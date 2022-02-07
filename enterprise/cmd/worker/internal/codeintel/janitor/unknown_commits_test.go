@@ -84,7 +84,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	dbStore.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	clock := glock.NewMockClock()
-	janitor := newJanitor(dbStore, time.Minute, 100, newMetrics(&observation.TestContext), clock)
+	janitor := newJanitor(dbStore, time.Minute, 100, time.Minute, newMetrics(&observation.TestContext), clock)
 
 	if err := janitor.Handle(context.Background()); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)

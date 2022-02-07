@@ -14,6 +14,9 @@ func toSnakeCase(s string) string {
 	dist.Grow(len(s) + len(s)/3) // avoid reallocation memory
 	for i := 0; i < len(s); i++ {
 		cur := s[i]
+		if cur == ' ' {
+			continue
+		}
 		// if - or _: write _
 		if cur == '-' || cur == '_' {
 			dist.WriteByte('_')
@@ -38,7 +41,11 @@ func toSnakeCase(s string) string {
 		if i < len(s)-1 {
 			next := s[i+1]
 			if next >= 'a' && next <= 'z' {
-				if last != '.' && last != '_' && last != '-' {
+				isLastCapital := last >= 'A' && last <= 'Z'
+				// specialize pluralized acronyms but not 'Is', so
+				if cur == 'I' && next == 's' {
+					dist.WriteByte('_')
+				} else if last != '.' && last != '_' && last != '-' && (!isLastCapital || next != 's') {
 					dist.WriteByte('_')
 				}
 				dist.WriteByte(cur + 32)

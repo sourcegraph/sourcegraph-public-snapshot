@@ -5,7 +5,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -374,6 +374,15 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             // Mock `Date.now` to stabilize timestamps
@@ -475,6 +484,15 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(
@@ -533,6 +551,15 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -570,6 +597,15 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -773,6 +809,15 @@ describe('Repository', () => {
                                     },
                                 },
                             ],
+                        },
+                    },
+                }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
                         },
                     },
                 }),

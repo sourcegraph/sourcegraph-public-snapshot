@@ -39,13 +39,13 @@ func GetTracePolicy() TracePolicy {
 	return TracePolicy(trPolicy.Load())
 }
 
-// Middleware wraps the handler with the following:
+// HTTPMiddleware wraps the handler with the following:
 //
 // - If the HTTP header, X-Sourcegraph-Should-Trace, is set to a truthy value, set the
 //   shouldTraceKey context.Context value to true
-// - github.com/opentracing-contrib/go-stdlib/nethttp.Middleware, which creates a new span to track
+// - github.com/opentracing-contrib/go-stdlib/nethttp.HTTPMiddleware, which creates a new span to track
 //   the request handler from the global tracer.
-func Middleware(h http.Handler, opts ...nethttp.MWOption) http.Handler {
+func HTTPMiddleware(h http.Handler, opts ...nethttp.MWOption) http.Handler {
 	return MiddlewareWithTracer(opentracing.GlobalTracer(), h)
 }
 

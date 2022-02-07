@@ -26,7 +26,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -36,7 +36,18 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	userID := ct.CreateTestUser(t, db, true).ID
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
 
-	spec := &btypes.BatchSpec{UserID: userID, NamespaceUserID: userID}
+	spec := &btypes.BatchSpec{
+		UserID:          userID,
+		NamespaceUserID: userID,
+		Spec: &batches.BatchSpec{
+			Steps: []batches.Step{
+				{
+					Run:       "echo 'hello world'",
+					Container: "alpine:3",
+				},
+			},
+		},
+	}
 	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
@@ -46,19 +57,13 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	workspace := &btypes.BatchSpecWorkspace{
-		ID:               0,
-		BatchSpecID:      spec.ID,
-		ChangesetSpecIDs: []int64{},
-		RepoID:           repo.ID,
-		Branch:           "refs/heads/main",
-		Commit:           string(testRev),
-		Path:             "a/b/c",
-		Steps: []batches.Step{
-			{
-				Run:       "echo 'hello world'",
-				Container: "alpine:3",
-			},
-		},
+		ID:                 0,
+		BatchSpecID:        spec.ID,
+		ChangesetSpecIDs:   []int64{},
+		RepoID:             repo.ID,
+		Branch:             "refs/heads/main",
+		Commit:             string(testRev),
+		Path:               "a/b/c",
 		FileMatches:        []string{"a/b/c.go"},
 		OnlyFetchWorkspace: false,
 		Unsupported:        true,
@@ -70,7 +75,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,8 +107,8 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 
 		Steps: []apitest.BatchSpecWorkspaceStep{
 			{
-				Run:       workspace.Steps[0].Run,
-				Container: workspace.Steps[0].Container,
+				Run:       spec.Spec.Steps[0].Run,
+				Container: spec.Spec.Steps[0].Container,
 			},
 		},
 	}

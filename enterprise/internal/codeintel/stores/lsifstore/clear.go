@@ -26,7 +26,7 @@ var tableNames = []string{
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, traceLog, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numBundleIDs", len(bundleIDs)),
 		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})
@@ -55,7 +55,7 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
-		traceLog(log.String("tableName", tableName))
+		trace.Log(log.String("tableName", tableName))
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err

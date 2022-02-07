@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -16,12 +16,12 @@ import (
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
 	const repoName = api.RepoName("my/repo")
 
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 
@@ -188,10 +188,10 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.repoURL, func(t *testing.T) {
-			users := dbmock.NewMockUserStore()
+			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {

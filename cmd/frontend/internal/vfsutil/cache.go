@@ -46,12 +46,10 @@ func (f *cachedFile) Evict() {
 // single-flighting.
 func cachedFetch(ctx context.Context, component, key string, fetcher func(context.Context) (io.ReadCloser, error)) (ff *cachedFile, err error) {
 	initArchiveCacheDir()
-	s := &diskcache.Store{
-		// Dir uses component as a subdir to prevent conflicts between
-		// components with the same key.
-		Dir:       filepath.Join(ArchiveCacheDir, component),
-		Component: component,
-	}
+	// Dir uses component as a subdir to prevent conflicts between
+	// components with the same key.
+	s := diskcache.NewStore(filepath.Join(ArchiveCacheDir, component), component)
+
 	f, err := s.Open(ctx, []string{key}, fetcher)
 	if err != nil {
 		return nil, err

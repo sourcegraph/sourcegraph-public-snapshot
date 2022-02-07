@@ -1,5 +1,5 @@
+import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredExtension } from '@sourcegraph/shared/src/extensions/extension'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 

@@ -7,12 +7,11 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -132,7 +131,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     }, [closePopover, hijackLink, isPopoverOpen, showPopover])
 
     const onClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
             eventLogger.log('GoToCodeHostClicked')
 
             if (isPopoverOpen) {
@@ -215,9 +214,9 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionAnchor
-                className="btn test-go-to-code-host"
+                className="test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
+                to={hijackLink ? '' : url}
                 target="_blank"
                 file={true}
                 rel="noopener noreferrer"
@@ -234,9 +233,9 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     return (
         <>
             <RepoHeaderActionAnchor
-                className="btn btn-icon test-go-to-code-host"
+                className="btn-icon test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
+                to={hijackLink ? '' : url}
                 target="_blank"
                 rel="noopener noreferrer"
                 id={TARGET_ID}

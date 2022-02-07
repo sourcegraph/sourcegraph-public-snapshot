@@ -60,6 +60,15 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
 			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
 		},
+		// Allow absolute git commands
+		{
+			input: exec.Command("/foo/bar/git", "ls-remote"),
+			tlsConfig: &tlsConfig{
+				SSLCAInfo: "/tmp/foo.certs",
+			},
+			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
+			expectedArgs: []string{"/foo/bar/git", "-c", "credential.helper=", "ls-remote"},
+		},
 	}
 
 	for _, test := range tests {
