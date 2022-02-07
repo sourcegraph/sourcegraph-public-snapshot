@@ -370,11 +370,6 @@
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
           "default": false
-        },
-        "enableRepoUpdateIntervalJitter": {
-          "description": "Enable a jitter of 5% in the update interval of a repo in the schedule",
-          "type": "boolean",
-          "default": false
         }
       },
       "examples": [
