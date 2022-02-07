@@ -3,7 +3,7 @@ import { EMPTY, of } from 'rxjs'
 import { debounceTime, first, switchMap } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { finallyReleaseProxy, wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { makeRepoURI, parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebarAPI } from '../contract'
@@ -42,7 +42,7 @@ export class SourcegraphReferenceProvider implements vscode.ReferenceProvider {
             )
         )
             .pipe(
-                // Debt: can share this code w/ definition provider.
+                finallyReleaseProxy(),
                 switchMap(({ isLoading, result }) => {
                     if (isLoading) {
                         return EMPTY
@@ -64,7 +64,6 @@ export class SourcegraphReferenceProvider implements vscode.ReferenceProvider {
 
                     return of(locations)
                 }),
-                // TODO validate that this is OK, and actually unsubscribe when token emits event.
                 debounceTime(1000),
                 first()
             )
