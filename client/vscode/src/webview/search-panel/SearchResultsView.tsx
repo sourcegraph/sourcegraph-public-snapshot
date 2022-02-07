@@ -437,6 +437,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                         }
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
+                        instanceURL={instanceURL}
                     />
                     {authenticatedUser && showSavedSearchForm && (
                         <SavedSearchCreateForm

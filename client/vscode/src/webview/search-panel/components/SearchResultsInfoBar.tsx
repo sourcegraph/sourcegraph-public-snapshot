@@ -14,7 +14,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 // Debt: this is a fork of the web <SearchResultsInfobar>.
 export interface SearchResultsInfoBarProps
-    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'authenticatedUser'> {
+    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'authenticatedUser' | 'instanceURL'> {
     stats: JSX.Element
 
     onShareResultsClick: () => void
@@ -80,6 +80,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         setShowSavedSearchForm,
         onShareResultsClick,
         stats,
+        instanceURL,
     } = props
 
     const showActionButtonExperimentalVersion = !authenticatedUser
@@ -92,7 +93,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         },
         [platformContext.telemetryService, setShowSavedSearchForm, showSavedSearchForm]
     )
-
+    console.log({ instanceURL })
     const saveSearchButton = useMemo(
         () => (
             <li className={classNames('mr-2', styles.navItem)}>
@@ -114,10 +115,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
+                    instanceURL={instanceURL}
                 />
             </li>
         ),
-        [showActionButtonExperimentalVersion, onActionButtonClick, platformContext.telemetryService]
+        [showActionButtonExperimentalVersion, onActionButtonClick, platformContext.telemetryService, instanceURL]
     )
 
     return (
