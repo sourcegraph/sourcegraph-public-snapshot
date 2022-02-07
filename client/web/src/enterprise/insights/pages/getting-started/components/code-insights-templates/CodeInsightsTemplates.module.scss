@@ -46,4 +46,9 @@
     position: absolute;
     right: 0.25rem;
     top: 0.25rem;
+    color: var(--icon-color);
+
+    &:hover {
+        color: var(--body-color);
+    }
 }
