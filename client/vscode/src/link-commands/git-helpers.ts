@@ -188,7 +188,7 @@ export function getSourcegraphFileUrl(
 ): string {
     // Use editor endpoint to construct sourcegraph file URL
     const fileUrl =
-        `${SourcegraphUrl}/-/editor` +
+        `${SourcegraphUrl}-/editor` +
         `?remote_url=${encodeURIComponent(remoteURL)}` +
         `&branch=${encodeURIComponent(branch)}` +
         `&file=${encodeURIComponent(fileRelative)}` +
