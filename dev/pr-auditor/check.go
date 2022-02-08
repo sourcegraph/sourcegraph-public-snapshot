@@ -26,8 +26,8 @@ var markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 func checkTestPlan(ctx context.Context, ghc *github.Client, payload *EventPayload) checkResult {
 	pr := payload.PullRequest
 
-	// Reviewed can be inferred from payload, but if not reviewed we double-check through
-	// the GitHub API
+	// Whether or not this PR was reviewed can be inferred from payload, but an approval
+	// might not have any comments so we need to double-check through the GitHub API
 	var err error
 	reviewed := pr.ReviewComments > 0
 	if !reviewed {
@@ -38,34 +38,31 @@ func checkTestPlan(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		reviewed = len(reviews) > 0
 	}
 
-	// Parse aceptance data from body
-	const (
-		acceptanceHeader = "## Test plan"
-	)
-	sections := strings.Split(pr.Body, acceptanceHeader)
+	// Parse test plan data from body
+	sections := strings.Split(pr.Body, "# Test plan")
 	if len(sections) < 2 {
 		return checkResult{
 			Reviewed: reviewed,
 			Error:    err,
 		}
 	}
-	acceptanceSection := sections[1]
-	acceptanceLines := strings.Split(acceptanceSection, "\n")
-	var explanation []string
-	for _, l := range acceptanceLines {
+	testPlanSection := sections[1]
+	testPlanRawLines := strings.Split(testPlanSection, "\n")
+	var testPlanLines []string
+	for _, l := range testPlanRawLines {
 		line := strings.TrimSpace(l)
-		explanation = append(explanation, line)
+		testPlanLines = append(testPlanLines, line)
 	}
 
 	// Merge into single string
-	fullExplanation := strings.Join(explanation, "\n")
+	testPlan := strings.Join(testPlanLines, "\n")
 	// Remove comments
-	fullExplanation = markdownCommentRegexp.ReplaceAllString(fullExplanation, "")
+	testPlan = markdownCommentRegexp.ReplaceAllString(testPlan, "")
 	// Remove whitespace
-	fullExplanation = strings.TrimSpace(fullExplanation)
+	testPlan = strings.TrimSpace(testPlan)
 	return checkResult{
 		Reviewed: reviewed,
-		TestPlan: fullExplanation,
+		TestPlan: testPlan,
 		Error:    err,
 	}
 }
