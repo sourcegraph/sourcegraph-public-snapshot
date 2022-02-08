@@ -19,7 +19,17 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-func Parse(path string) error {
+type Options struct {
+	RegistryUsername string
+	RegistryPassword string
+}
+
+var (
+	options Options
+)
+
+func Parse(path string, _options Options) error {
+	options = _options
 
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
@@ -212,7 +222,13 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 		i.isDockerRegistry = true
 	}
 
-	resp, err := http.Get(fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", i.name))
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s:pull", i.name), nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.SetBasicAuth(options.RegistryUsername, options.RegistryPassword)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}

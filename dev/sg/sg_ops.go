@@ -27,8 +27,10 @@ var (
 		},
 		Subcommands: []*ffcli.Command{opsUpdateImagesCommand},
 	}
-	opsUpdateImagesFlagSet = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
-	opsUpdateImagesCommand = &ffcli.Command{
+	opsUpdateImagesFlagSet                       = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
+	opsUpdateImagesContainerRegistryUsernameFlag = opsUpdateImagesFlagSet.String("cr-username", "", "Username for the container registry (required)")
+	opsUpdateImagesContainerRegistryPasswordFlag = opsUpdateImagesFlagSet.String("cr-password", "", "Password or access token for the container registry (required)")
+	opsUpdateImagesCommand                       = &ffcli.Command{
 		Name:        "update-images",
 		ShortUsage:  "sg ops update-images [flags] <dir>",
 		ShortHelp:   "Updates images in given directory to latest published image",
@@ -63,5 +65,18 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
-	return images.Parse(args[0])
+	if *opsUpdateImagesContainerRegistryUsernameFlag == "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Registry username not provided"))
+		return flag.ErrHelp
+	}
+	if *opsUpdateImagesContainerRegistryPasswordFlag == "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Registry password not provided"))
+		return flag.ErrHelp
+	}
+	return images.Parse(
+		args[0],
+		images.Options{
+			RegistryUsername: *opsUpdateImagesContainerRegistryUsernameFlag,
+			RegistryPassword: *opsUpdateImagesContainerRegistryPasswordFlag,
+		})
 }
