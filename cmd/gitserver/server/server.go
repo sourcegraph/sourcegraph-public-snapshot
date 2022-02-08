@@ -1145,7 +1145,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	if req.Timeout == nil || *req.Timeout {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
+		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
 		defer cancel()
 	}
 
