@@ -1,6 +1,10 @@
 package gitdomain
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/inconshreveable/log15"
+)
 
 var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling execSafe.
@@ -10,23 +14,32 @@ var (
 		"remote": {"-v"},
 		"diff":   append([]string{}, gitCommonAllowlist...),
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains"},
+		"branch": {"-r", "-a", "--contains", "--merged"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
-		"rev-list":     {"--max-parents", "--reverse", "--max-count"},
+		"rev-list":     {"--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 
 		"archive": {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
 
+		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r"},
+		"ls-files":     {"--with-tree", "-z"},
+		"rm":           {},
+		"checkout":     {},
+		"for-each-ref": {"--format"},
+		"tag":          {"--list", "--sort", "-creatordate", "--format"},
+		"merge-base":   {"--"},
+
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
 		"testerror":   {},
+		"show-ref":    {"--heads"},
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
 	gitCommonAllowlist = []string{
-		"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
 		"--until", "--since", "--author", "--committer",
@@ -37,6 +50,9 @@ var (
 		"--find-copies",
 		"--find-renames",
 		"--inter-hunk-context",
+		"--after",
+		"--date.order",
+		"-s",
 	}
 )
 
@@ -62,6 +78,7 @@ func IsAllowedGitCmd(args []string) bool {
 	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
 		// Command not allowed
+		log15.Warn("IsAllowedGitCmd: command not allowed", "cmd", cmd)
 		return false
 	}
 	for _, arg := range args[1:] {
@@ -76,6 +93,7 @@ func IsAllowedGitCmd(args []string) bool {
 			}
 
 			if !isAllowedGitArg(allowedArgs, arg) {
+				log15.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", "cmd", cmd, "arg", arg)
 				return false
 			}
 		}
