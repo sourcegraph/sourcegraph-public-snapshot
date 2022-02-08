@@ -104,9 +104,9 @@ type Task struct {
 
 func NewTaskLog() *TaskLog {
 	return &TaskLog{
-		currentName:  "<start>",
+		currentName:  "idle",
 		currentStart: time.Now(),
-		nameToTask:   map[string]*Task{"<start>": {Duration: 0, Count: 1}},
+		nameToTask:   map[string]*Task{"idle": {Duration: 0, Count: 1}},
 	}
 }
 
@@ -144,9 +144,9 @@ func (t *TaskLog) Continue(name string) {
 }
 
 func (t *TaskLog) Reset() {
-	t.currentName = "<start>"
+	t.currentName = "idle"
 	t.currentStart = time.Now()
-	t.nameToTask = map[string]*Task{"<start>": {Duration: 0, Count: 0}}
+	t.nameToTask = map[string]*Task{"idle": {Duration: 0, Count: 1}}
 }
 
 func (t *TaskLog) Print() {
@@ -158,7 +158,7 @@ func (t *TaskLog) Print() {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Printf("Tasks (%s total): ", total)
+	fmt.Printf("Tasks (%.0fs total): ", total.Seconds())
 
 	type kv struct {
 		Key   string
@@ -175,7 +175,7 @@ func (t *TaskLog) Print() {
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("%d%% %dx %s ", kv.Value.Duration*100/total, kv.Value.Count, kv.Key)
+		fmt.Printf("%s %d%% %dx, ", kv.Key, kv.Value.Duration*100/total, kv.Value.Count)
 	}
 	fmt.Println()
 }
@@ -201,7 +201,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 		tasklog.Start("GetCommit")
 		_, height, present, err := GetCommit(db, repo, commit)
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -212,7 +212,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 		missingCount += 1
 		return true, nil
 	})
-	tasklog.Start("idle")
+	tasklog.Continue("idle")
 	if err != nil {
 		return errors.Wrap(err, "RevList")
 	}
@@ -241,20 +241,20 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 		tasklog.Start("InsertCommit")
 		err = InsertCommit(tx, repo, entry.Commit, tipHeight+1, hops[r])
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
 		}
 
-		tasklog.Start("AppendHop (added)")
+		tasklog.Start("AppendHop+")
 		err = AppendHop(tx, hops[0:r], AddedAD, entry.Commit)
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
-		tasklog.Start("AppendHop (deleted)")
+		tasklog.Start("AppendHop-")
 		err = AppendHop(tx, hops[0:r], DeletedAD, entry.Commit)
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -278,7 +278,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 				for _, hop := range hops {
 					tasklog.Start("GetBlob")
 					id, found, err = GetBlob(tx, hop, deletedPath)
-					tasklog.Start("idle")
+					tasklog.Continue("idle")
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
 					}
@@ -293,7 +293,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 			tasklog.Start("UpdateBlobHops")
 			err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
-			tasklog.Start("idle")
+			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "UpdateBlobHops")
 			}
@@ -305,7 +305,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 			tasklog.Start("parse")
 			symbols, err := parse(addedPath, contents)
-			tasklog.Start("idle")
+			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "parse")
 			}
@@ -318,21 +318,21 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 			}
 			tasklog.Start("InsertBlob")
 			id, err := InsertBlob(tx, blob, repo)
-			tasklog.Start("idle")
+			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
 			}
 			pathToBlobIdCache[addedPath] = id
 			return nil
 		})
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "while looping ArchiveEach")
 		}
 
 		tasklog.Start("DeleteRedundant")
 		err = DeleteRedundant(tx, entry.Commit)
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
 		}
@@ -342,7 +342,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 		if err != nil {
 			return errors.Wrap(err, "commit transaction")
 		}
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 
 		tipCommit = entry.Commit
 		tipHeight += 1
@@ -363,7 +363,7 @@ func getHops(tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, err
 	for {
 		tasklog.Start("GetCommit")
 		ancestor, _, present, err := GetCommit(tx, repo, current)
-		tasklog.Start("idle")
+		tasklog.Continue("idle")
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
 		} else if !present {
