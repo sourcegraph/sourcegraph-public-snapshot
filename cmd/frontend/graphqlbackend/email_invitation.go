@@ -85,7 +85,9 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 var emailTemplateEmailInvitation = txemail.MustValidate(txtypes.Templates{
 	Subject: `{{.FromName}} has invited you to Sourcegraph`,
 	Text: `
-Sourcegraph is browser based code search and navigation at it’s core.  Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the worlds most innovated companies can’t live without it.
+{{.FromName}} has invited you to Sourcegraph
+
+Sourcegraph is browser-based code search and navigation at its core. Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the world’s most innovated companies can’t live without it.
 
 Claim your invitation:
 
@@ -96,7 +98,9 @@ Learn more about Sourcegraph:
 https://about.sourcegraph.com
 `,
 	HTML: `
-<p>Sourcegraph is browser based code search and navigation at it’s core.  Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the worlds most innovated companies can’t live without it.</p>
+<p><strong>{{.FromName}}</strong> has invited you to Sourcegraph</p>
+
+<p>Sourcegraph is browser-based code search and navigation at its core. Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the world’s most innovated companies can’t live without it.</p>
 
 <p><strong><a href="{{.URL}}">Claim your invitation</a></strong></p>
 
