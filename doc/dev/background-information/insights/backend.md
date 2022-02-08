@@ -46,7 +46,7 @@ This flag should be used judiciously and should generally be considered a last r
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
 ### Sourcegraph Setting
-Code Insights is currently behind an experimental feature flag on Sourcegraph. You can enable it in settings.
+Code Insights is currently enabled by default on customer instances 3.32 and later, but can be disabled from appearing in the UI by setting this flag to false. 
 
 ```json
   "experimentalFeatures": {
@@ -66,7 +66,7 @@ would be excluded from using Code Insights, we have decided we must move away fr
 We are currently in progress to retire TimescaleDB in favor of the standard vanilla Postgres image that ships with Sourcegraph. This will simplify our operations, support, and likely
 will not present a performance problem given the primary constraint on Code Insights is search throughput.
 
-The current timeline is planned that this migration will begin in 3.37, and finish in 3.38.
+The current timeline is planned such that this migration will begin in 3.37, and finish in 3.38.
 
 ## Insight Metadata
 Historically, insights ran entirely within the Sourcegraph extensions API on the browser. These insights are limited to small sets of manually defined repositories
@@ -77,7 +77,7 @@ During beta, insight metadata were stored in Sourcegraph settings files, and per
 
 As of 3.35, Code Insights data is stored entirely in the `codeinsights-db` database, and exposed through a GraphQL API. Settings are deprecated as a storage
 option, although the text in the settings will persist unless deleted. In this release Code Insights shipped an [out of band migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/migration/migration.go) that automatically migrates
-all data from settings to the database for the last time, and disables the previously running sync jobs.
+all data from settings to the database for the last time. 3.35 also disabled the previously running sync jobs by default, which can be re-enabled using an environment variable feature flag `ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE` on the `worker` and `frontend` services. This flag is not meant to be used and is only provided as a last resort option for any users unable to use Code Insights.
 
 ## Life of an insight
 
@@ -104,7 +104,7 @@ A standard search series will execute Sourcegraph searches, and tabulate the cou
 was to be able to derive the series themselves from the results; that is to say a result of `(result: 1.17, count: 5) (result: 1.13, count: 3)` would generate two individual time series,
 one for each unique result.
 
-We support this behavior by tabulating the results of a `compute` search, and dynamically modifying the series that are returned. These series can be calculated both [globally](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L160:6&subtree=true), and 
+We support this behavior by tabulating the results of a `compute` [search](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/query/graphql_compute.go), and dynamically modifying the series that are returned. These series can be calculated both [globally](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L160:6&subtree=true), and 
 [just-in-time](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L221-244&subtree=true).
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects the new insight
@@ -195,7 +195,7 @@ it will be skipped and ultimately not populate in the data series. Improving thi
 
 The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
 
-1. Dequeueing search queries that have been queued by the either the current, spapshot, or historical recorder. Queries are stored with a `priority` field that 
+1. Dequeueing search queries that have been queued by the either the current, snapshot, or historical recorder. Queries are stored with a `priority` field that 
    [dequeues](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be905/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L134) queries in ascending priority order (0 is higher priority than 100).
 2. Executing a search against Sourcegraph with the provided query. These queries are executed against the `internal` API, meaning they are *unauthorized* and can see all results. This allows us to build global results and filter based on user permissions at query time.
 3. Flagging any error states (such as limitHit, meaning there was some reason the search did not return all possible results) as a `dirty query`.
