@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -129,9 +130,19 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 			}
 		}()
 
-		parser := mustCreateCtagsParser(config.Ctags)
+		// Lazily create the parser
+		var parser ctags.Parser
+		createParserOnce := sync.Once{}
+		defer func() {
+			if parser != nil {
+				parser.Close()
+			}
+		}()
 
 		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
+			createParserOnce.Do(func() {
+				parser = mustCreateCtagsParser(config.Ctags)
+			})
 			entries, err := parser.Parse(path, bytes)
 			if err != nil {
 				return nil, err
