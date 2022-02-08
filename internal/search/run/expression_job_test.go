@@ -14,6 +14,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
+func newMockSender(waitTime time.Duration) Job {
+	res := &result.RepoMatch{Name: "test", ID: 1}
+	mj := NewMockJob()
+	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
+		s.Send(streaming.SearchEvent{Results: []result.Match{res}})
+		time.Sleep(waitTime)
+		return nil, nil
+	})
+	return mj
+}
+
+func newMockSenders(n int, waitTime time.Duration) []Job {
+	senders := make([]Job, 0, n)
+	for i := 0; i < n; i++ {
+		senders = append(senders, newMockSender(waitTime))
+	}
+	return senders
+}
+
 func TestAndJob(t *testing.T) {
 	t.Run("NewAndJob", func(t *testing.T) {
 		t.Run("no children is simplified", func(t *testing.T) {
@@ -26,26 +45,13 @@ func TestAndJob(t *testing.T) {
 	})
 
 	t.Run("result returned from all subexpressions is streamed", func(t *testing.T) {
-		res := &result.RepoMatch{Name: "test", ID: 1}
-		mj := NewMockJob()
-		mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: []result.Match{res}})
-			time.Sleep(10 * time.Millisecond)
-			return nil, nil
-		})
-
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				var subexpressions []Job
-				for j := 0; j < i; j++ {
-					subexpressions = append(subexpressions, mj)
-				}
-
-				j := NewAndJob(subexpressions...)
+				j := NewAndJob(newMockSenders(i, 10*time.Millisecond)...)
 
 				start := time.Now()
 				var eventTime time.Time
-				s := streaming.StreamFunc(func(e streaming.SearchEvent) {
+				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
 					eventTime = time.Now()
 				})
 				_, err := j.Run(context.Background(), nil, s)
@@ -61,25 +67,15 @@ func TestAndJob(t *testing.T) {
 	})
 
 	t.Run("result not returned from all subexpressions is not streamed", func(t *testing.T) {
-		res := &result.RepoMatch{Name: "test", ID: 1}
-		sender, noSender := NewMockJob(), NewMockJob()
-		sender.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: []result.Match{res}})
-			return nil, nil
-		})
+		noSender := NewMockJob()
 		noSender.RunFunc.SetDefaultReturn(nil, nil)
 
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				subexpressions := []Job{noSender}
-				for j := 1; j < i; j++ {
-					subexpressions = append(subexpressions, sender)
-				}
-
-				j := NewAndJob(subexpressions...)
+				j := NewAndJob(append([]Job{noSender}, newMockSenders(i-1, 0)...)...)
 
 				eventSent := false
-				s := streaming.StreamFunc(func(e streaming.SearchEvent) {
+				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
 					eventSent = true
 				})
 				_, err := j.Run(context.Background(), nil, s)
@@ -102,26 +98,13 @@ func TestOrJob(t *testing.T) {
 	})
 
 	t.Run("result returned from all subexpressions is streamed", func(t *testing.T) {
-		res := &result.RepoMatch{Name: "test", ID: 1}
-		mj := NewMockJob()
-		mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: []result.Match{res}})
-			time.Sleep(10 * time.Millisecond)
-			return nil, nil
-		})
-
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				var subexpressions []Job
-				for j := 0; j < i; j++ {
-					subexpressions = append(subexpressions, mj)
-				}
-
-				j := NewOrJob(subexpressions...)
+				j := NewOrJob(newMockSenders(i, 10*time.Millisecond)...)
 
 				start := time.Now()
 				var eventTime time.Time
-				s := streaming.StreamFunc(func(e streaming.SearchEvent) {
+				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
 					eventTime = time.Now()
 				})
 				_, err := j.Run(context.Background(), nil, s)
@@ -131,27 +114,16 @@ func TestOrJob(t *testing.T) {
 		}
 	})
 
-	t.Run("result not returned from all subexpressions is not streamed until all subexpressions return", func(t *testing.T) {
-		res := &result.RepoMatch{Name: "test", ID: 1}
-		sender, noSender := NewMockJob(), NewMockJob()
-		sender.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: []result.Match{res}})
-			time.Sleep(10 * time.Millisecond)
-			return nil, nil
-		})
+	t.Run("result not streamed until all subexpression return the same result", func(t *testing.T) {
+		noSender := NewMockJob()
 		noSender.RunFunc.SetDefaultReturn(nil, nil)
 
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				subexpressions := []Job{noSender}
-				for j := 1; j < i; j++ {
-					subexpressions = append(subexpressions, sender)
-				}
-
-				j := NewOrJob(subexpressions...)
+				j := NewOrJob(append([]Job{noSender}, newMockSenders(i-1, 10*time.Millisecond)...)...)
 
 				var eventTime time.Time
-				s := streaming.StreamFunc(func(e streaming.SearchEvent) {
+				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
 					eventTime = time.Now()
 				})
 				_, err := j.Run(context.Background(), nil, s)
