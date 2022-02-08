@@ -10,7 +10,7 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	LSIFUploadStoreConfig   lsifuploadstore.Config
+	LSIFUploadStoreConfig   *lsifuploadstore.Config
 	AutoIndexEnqueuerConfig *enqueuer.Config
 	HunkCacheSize           int
 }
@@ -19,6 +19,8 @@ func (c *Config) Load() {
 	enqueuerConfig := &enqueuer.Config{}
 	enqueuerConfig.Load()
 	c.AutoIndexEnqueuerConfig = enqueuerConfig
+
+	c.LSIFUploadStoreConfig = &lsifuploadstore.Config{}
 	c.LSIFUploadStoreConfig.Load()
 
 	c.HunkCacheSize = c.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
