@@ -146,10 +146,12 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     console.error('Error updating sidebar query state from panel', error)
                 })
 
+            platformContext.telemetryService.log('VSCESearchSubmitted')
+
             // Clear repo view
             setRepoToShow(null)
         },
-        [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
+        [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI, platformContext]
     )
 
     // Submit new search on change
