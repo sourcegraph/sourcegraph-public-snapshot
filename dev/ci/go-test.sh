@@ -30,7 +30,7 @@ function go_test() {
     -covermode=atomic \
     -race \
     -v \
-    $test_packages | tee "$tmpfile"
+    $test_packages | tee "$tmpfile" | richgo testfilter
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
@@ -107,6 +107,10 @@ echo "--- comby install"
 ./dev/codeinsights-db.sh &
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+
+# Install richgo (TODO)
+go install github.com/kyoh86/richgo@latest
+asdf reshim golang
 
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
