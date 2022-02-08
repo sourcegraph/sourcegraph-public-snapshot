@@ -11,15 +11,15 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/fetcher"
-	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Parser interface {
-	Parse(ctx context.Context, args sharedtypes.SearchArgs, paths []string) (<-chan SymbolOrError, error)
+	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan SymbolOrError, error)
 }
 
 type SymbolOrError struct {
@@ -51,7 +51,7 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, args sharedtypes.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
+func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
 	ctx, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),

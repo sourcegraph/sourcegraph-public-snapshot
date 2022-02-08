@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewHandler(
-	searchFunc sharedtypes.SearchFunc,
+	searchFunc types.SearchFunc,
 	ctagsBinary string,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -26,9 +26,9 @@ func NewHandler(
 
 const maxNumSymbolResults = 500
 
-func handleSearchWith(searchFunc sharedtypes.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
+func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var args sharedtypes.SearchArgs
+		var args types.SearchArgs
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

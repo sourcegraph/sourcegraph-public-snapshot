@@ -7,14 +7,14 @@ import (
 	"io"
 	"sync"
 
-	gitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver"
+	gitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver) used for
-// unit testing.
+// github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver) used for unit
+// testing.
 type MockGitserverClient struct {
 	// FetchTarFunc is an instance of a mock function object controlling the
 	// behavior of the method FetchTar.

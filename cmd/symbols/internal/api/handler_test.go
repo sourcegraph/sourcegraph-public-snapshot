@@ -11,12 +11,12 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver"
-	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/observability"
+	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

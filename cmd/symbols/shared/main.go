@@ -2,10 +2,8 @@ package shared
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -13,8 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
-	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
-	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -33,39 +30,12 @@ import (
 
 const addr = ":3184"
 
-func Main(setup func(config *Config, observationContext *observation.Context) (sharedtypes.SearchFunc, []goroutine.BackgroundRoutine)) {
-	config.Load()
+func Main(setup func(observationContext *observation.Context) (types.SearchFunc, []goroutine.BackgroundRoutine, string)) {
+	routines := []goroutine.BackgroundRoutine{}
 
 	// Set up Google Cloud Profiler when running in Cloud
 	if err := profiler.Init(); err != nil {
 		log.Fatalf("Failed to start profiler: %v", err)
-	}
-
-	env.Lock()
-	env.HandleHelpFlag()
-	conf.Init()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
-
-	if err := config.Validate(); err != nil {
-		log.Fatalf("Failed to load configuration: %s", err)
-	}
-
-	// Ensure we register our database driver before calling
-	// anything that tries to open a SQLite database.
-	sqlite.Init()
-
-	if config.SanityCheck {
-		fmt.Print("Running sanity check...")
-		if err := sqlite.SanityCheck(); err != nil {
-			fmt.Println("failed ❌", err)
-			os.Exit(1)
-		}
-
-		fmt.Println("passed ✅")
-		os.Exit(0)
 	}
 
 	// Initialize tracing/metrics
@@ -78,31 +48,32 @@ func Main(setup func(config *Config, observationContext *observation.Context) (s
 			SampleRate: 5,
 		},
 	}
+	// Run setup
+	searchFunc, newRoutines, ctagsBinary := setup(observationContext)
+	routines = append(routines, newRoutines...)
+
+	// Initialization
+	env.Lock()
+	env.HandleHelpFlag()
+	conf.Init()
+	logging.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
 
 	// Start debug server
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	var searchFunc sharedtypes.SearchFunc
-	var routines []goroutine.BackgroundRoutine
-	if setup == nil {
-		searchFunc, routines = SetupSqlite(config, observationContext)
-	} else {
-		searchFunc, routines = setup(config, observationContext)
-		if searchFunc == nil {
-			searchFunc, routines = SetupSqlite(config, observationContext)
-		}
-	}
-
-	apiHandler := api.NewHandler(searchFunc, config.Ctags.Command)
-
+	// Create HTTP server
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(apiHandler, conf.DefaultClient()))),
+		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(api.NewHandler(searchFunc, ctagsBinary), conf.DefaultClient()))),
 	})
+	routines = append(routines, server)
 
 	// Mark health server as ready and go!
 	close(ready)
-	goroutine.MonitorBackgroundRoutines(context.Background(), append([]goroutine.BackgroundRoutine{server}, routines...)...)
+	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
