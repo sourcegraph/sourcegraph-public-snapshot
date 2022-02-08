@@ -84,4 +84,4 @@ Running _down_ migrations in a rollback **should NOT** be necessary if all migra
 
 ### Reverting a migration
 
-If a PR which contains a DB migration was reverted, it may still have been applied to Sourcegraph.com, k8s.sgdev.org, etc. due to their rollout schedules. In some cases, it may also have been part of a Sourcegraph release. To fix this, you should create a PR to revert the migrations of that commit. The `sg migration revert <commit>` command automates all the necessary changes the migration definitions.
+If a reverted PR contains a DB migration, it may still have been applied to Sourcegraph.com, k8s.sgdev.org, etc. due to their rollout schedules. In some cases, it may also have been part of a Sourcegraph release. To fix this, you should create a PR to revert the migrations of that commit. The `sg migration revert <commit>` command automates all the necessary changes the migration definitions.
