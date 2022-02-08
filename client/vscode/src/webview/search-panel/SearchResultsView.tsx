@@ -224,7 +224,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     const fullQuery = useMemo(
         () =>
-            appendContextFilter(context.submittedSearchQueryState.queryState.query, context.selectedSearchContextSpec),
+            appendContextFilter(
+                context.submittedSearchQueryState.queryState.query ?? '',
+                context.selectedSearchContextSpec
+            ),
         [context]
     )
 
@@ -438,6 +441,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         instanceURL={instanceURL}
+                        fullQuery={fullQuery}
                     />
                     {authenticatedUser && showSavedSearchForm && (
                         <SavedSearchCreateForm
