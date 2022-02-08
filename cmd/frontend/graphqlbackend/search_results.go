@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -939,16 +939,19 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	job := run.NewLimitJob(
-		maxResults,
-		run.NewTimeoutJob(
-			args.Timeout,
-			run.NewJobWithOptional(
-				run.NewParallelJob(requiredJobs...),
-				run.NewParallelJob(optionalJobs...),
-			),
-		),
+	job := run.NewJobWithOptional(
+		run.NewParallelJob(requiredJobs...),
+		run.NewParallelJob(optionalJobs...),
 	)
+
+	// If and/or jobs are not enabled, set limit and timeout here.
+	// If the feature is enabled, this will be set in toEvaluateJob.
+	if !r.SearchInputs.Features.GetBoolOr("cc-and-or-jobs", false) {
+		job = run.NewLimitJob(
+			maxResults,
+			run.NewTimeoutJob(args.Timeout, job),
+		)
+	}
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {

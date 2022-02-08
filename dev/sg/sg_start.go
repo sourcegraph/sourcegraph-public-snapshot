@@ -9,19 +9,20 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
 	startFlagSet       = flag.NewFlagSet("sg start", flag.ExitOnError)
 	debugStartServices = startFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
+	addToMacOSFirewall = startFlagSet.Bool("add-to-macos-firewall", false, "OSX only; Add required exceptions to the firewall")
 	infoStartServices  = startFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
 	warnStartServices  = startFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
 	errorStartServices = startFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
@@ -236,7 +237,7 @@ func startExec(ctx context.Context, args []string) error {
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, *verboseFlag, cmds...)
+	return run.Commands(ctx, env, *addToMacOSFirewall, *verboseFlag, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

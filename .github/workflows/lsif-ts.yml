@@ -55,7 +55,7 @@ jobs:
         working-directory: ${{ matrix.root }}
         # Temporarily disable client/web uploads to Dogfood because of long queues
         # https://github.com/sourcegraph/sourcegraph/issues/30493#issuecomment-1030090306
-        if: ${{ matrix.root }} != "client/web"
+        if: matrix.root != 'client/web'
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/

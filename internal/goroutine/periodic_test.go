@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestPeriodicGoroutine(t *testing.T) {

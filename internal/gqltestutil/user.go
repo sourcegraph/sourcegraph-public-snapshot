@@ -1,8 +1,6 @@
 package gqltestutil
 
-import (
-	"github.com/cockroachdb/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // CreateUser creates a new user with the given username and email.
 // It returns the GraphQL node ID of newly created user.
