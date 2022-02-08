@@ -3,12 +3,12 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
-const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default;
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const {
