@@ -8,7 +8,7 @@
     "sourceRoot": "src",
     "baseUrl": "./src",
     "paths": {
-      "*": ["types/*", "../../shared/src/types/*", "*"],
+      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
     },
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -17,6 +17,7 @@
   },
   "references": [
     { "path": "../shared" },
+    { "path": "../common" },
     { "path": "../branded" },
     { "path": "../search" },
     { "path": "../search-ui" },

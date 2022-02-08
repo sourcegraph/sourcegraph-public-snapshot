@@ -5,6 +5,7 @@ import * as React from 'react'
 import { render } from 'react-dom'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
+import { isExternalLink } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -25,7 +26,6 @@ import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/not
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isExternalLink } from '@sourcegraph/shared/src/util/url'
 
 import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'

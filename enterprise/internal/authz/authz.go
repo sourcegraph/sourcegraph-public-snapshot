@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
@@ -14,10 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -251,4 +253,12 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 		return nil, nil
 	}
 	return providers[0], nil
+}
+
+func RefreshInterval() time.Duration {
+	interval := conf.Get().AuthzRefreshInterval
+	if interval <= 0 {
+		return 5 * time.Second
+	}
+	return time.Duration(interval) * time.Second
 }

@@ -3,6 +3,7 @@ package streaming
 import (
 	"context"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
@@ -184,4 +185,88 @@ func (c *resultCountingStream) Send(event SearchEvent) {
 
 func (c *resultCountingStream) Count() int {
 	return int(c.count.Load())
+}
+
+// NewBatchingStream returns a stream that batches results sent to it, holding
+// delaying their forwarding by a max time of maxDelay, then sending the batched
+// event to the parent stream. The first event is passed through without delay.
+// When there will be no more events sent on the batching stream, Done() must be
+// called to flush the remaining batched events.
+func NewBatchingStream(maxDelay time.Duration, parent Sender) *batchingStream {
+	return &batchingStream{
+		parent:   parent,
+		maxDelay: maxDelay,
+	}
+}
+
+type batchingStream struct {
+	parent   Sender
+	maxDelay time.Duration
+
+	mu             sync.Mutex
+	sentFirstEvent bool
+	dirty          bool
+	batch          SearchEvent
+	timer          *time.Timer
+	flushScheduled bool
+}
+
+func (s *batchingStream) Send(event SearchEvent) {
+	s.mu.Lock()
+
+	// Update the batch
+	s.batch.Results = append(s.batch.Results, event.Results...)
+	s.batch.Stats.Update(&event.Stats)
+	s.dirty = true
+
+	// If this is our first event with results, flush immediately
+	if !s.sentFirstEvent && len(event.Results) > 0 {
+		s.sentFirstEvent = true
+		s.flush()
+		s.mu.Unlock()
+		return
+	}
+
+	if s.timer == nil {
+		// Create a timer and schedule a flush
+		s.timer = time.AfterFunc(s.maxDelay, func() {
+			s.mu.Lock()
+			s.flush()
+			s.flushScheduled = false
+			s.mu.Unlock()
+		})
+		s.flushScheduled = true
+	} else if !s.flushScheduled {
+		// Reuse the timer, scheduling a new flush
+		s.timer.Reset(s.maxDelay)
+		s.flushScheduled = true
+	}
+	// If neither of those conditions is true,
+	// a flush has already been scheduled and
+	// we're good to go.
+	s.mu.Unlock()
+}
+
+// Done should be called when no more events will be sent down
+// the stream. It flushes any events that are currently batched
+// and cancels any scheduled flush.
+func (s *batchingStream) Done() {
+	s.mu.Lock()
+	// Cancel any scheduled flush
+	if s.timer != nil {
+		s.timer.Stop()
+	}
+
+	s.flush()
+	s.mu.Unlock()
+}
+
+// flush sends the currently batched events to the parent stream. The caller must hold
+// a lock on the batching stream.
+func (s *batchingStream) flush() {
+	if s.dirty {
+		s.parent.Send(s.batch)
+		s.batch = SearchEvent{}
+		s.dirty = false
+	}
 }

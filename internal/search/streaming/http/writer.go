@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type WriterStat struct {

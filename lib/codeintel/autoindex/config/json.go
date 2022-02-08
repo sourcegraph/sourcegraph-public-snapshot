@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // default json behaviour is to render nil slices as "null", so we manually

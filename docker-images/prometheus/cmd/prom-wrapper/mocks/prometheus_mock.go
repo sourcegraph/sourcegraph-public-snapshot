@@ -75,6 +75,9 @@ type MockAPI struct {
 	// TargetsMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method TargetsMetadata.
 	TargetsMetadataFunc *APITargetsMetadataFunc
+	// WalReplayFunc is an instance of a mock function object controlling
+	// the behavior of the method WalReplay.
+	WalReplayFunc *APIWalReplayFunc
 }
 
 // NewMockAPI creates a new mock of the API interface. All methods return
@@ -179,6 +182,11 @@ func NewMockAPI() *MockAPI {
 		TargetsMetadataFunc: &APITargetsMetadataFunc{
 			defaultHook: func(context.Context, string, string, string) ([]v1.MetricMetadata, error) {
 				return nil, nil
+			},
+		},
+		WalReplayFunc: &APIWalReplayFunc{
+			defaultHook: func(context.Context) (v1.WalReplayStatus, error) {
+				return v1.WalReplayStatus{}, nil
 			},
 		},
 	}
@@ -288,6 +296,11 @@ func NewStrictMockAPI() *MockAPI {
 				panic("unexpected invocation of MockAPI.TargetsMetadata")
 			},
 		},
+		WalReplayFunc: &APIWalReplayFunc{
+			defaultHook: func(context.Context) (v1.WalReplayStatus, error) {
+				panic("unexpected invocation of MockAPI.WalReplay")
+			},
+		},
 	}
 }
 
@@ -354,6 +367,9 @@ func NewMockAPIFrom(i v1.API) *MockAPI {
 		},
 		TargetsMetadataFunc: &APITargetsMetadataFunc{
 			defaultHook: i.TargetsMetadata,
+		},
+		WalReplayFunc: &APIWalReplayFunc{
+			defaultHook: i.WalReplay,
 		},
 	}
 }
@@ -2545,5 +2561,110 @@ func (c APITargetsMetadataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c APITargetsMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// APIWalReplayFunc describes the behavior when the WalReplay method of the
+// parent MockAPI instance is invoked.
+type APIWalReplayFunc struct {
+	defaultHook func(context.Context) (v1.WalReplayStatus, error)
+	hooks       []func(context.Context) (v1.WalReplayStatus, error)
+	history     []APIWalReplayFuncCall
+	mutex       sync.Mutex
+}
+
+// WalReplay delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAPI) WalReplay(v0 context.Context) (v1.WalReplayStatus, error) {
+	r0, r1 := m.WalReplayFunc.nextHook()(v0)
+	m.WalReplayFunc.appendCall(APIWalReplayFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the WalReplay method of
+// the parent MockAPI instance is invoked and the hook queue is empty.
+func (f *APIWalReplayFunc) SetDefaultHook(hook func(context.Context) (v1.WalReplayStatus, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WalReplay method of the parent MockAPI instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *APIWalReplayFunc) PushHook(hook func(context.Context) (v1.WalReplayStatus, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *APIWalReplayFunc) SetDefaultReturn(r0 v1.WalReplayStatus, r1 error) {
+	f.SetDefaultHook(func(context.Context) (v1.WalReplayStatus, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *APIWalReplayFunc) PushReturn(r0 v1.WalReplayStatus, r1 error) {
+	f.PushHook(func(context.Context) (v1.WalReplayStatus, error) {
+		return r0, r1
+	})
+}
+
+func (f *APIWalReplayFunc) nextHook() func(context.Context) (v1.WalReplayStatus, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *APIWalReplayFunc) appendCall(r0 APIWalReplayFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of APIWalReplayFuncCall objects describing the
+// invocations of this function.
+func (f *APIWalReplayFunc) History() []APIWalReplayFuncCall {
+	f.mutex.Lock()
+	history := make([]APIWalReplayFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// APIWalReplayFuncCall is an object that describes an invocation of method
+// WalReplay on an instance of MockAPI.
+type APIWalReplayFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.WalReplayStatus
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c APIWalReplayFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c APIWalReplayFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

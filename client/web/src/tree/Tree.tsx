@@ -6,10 +6,11 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
+import { formatSearchParameters } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepo, formatSearchParameters } from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
 
