@@ -158,12 +158,12 @@ func (r *Runner) applyMigrations(
 	} else if retry {
 		// There are active index creation operations ongoing; wait a short time before requerying
 		// the state of the migrations so we don't flood the database with constant queries to the
-		// system catalog.
+		// system catalog. We check here instead of in the caller because we dont' want a delay when
+		// we drop the lock to create an index concurrently (returning `droppedLock = true` below).
 		return true, wait(ctx, indexPollInterval)
 	}
 
 	return droppedLock, nil
-
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.
