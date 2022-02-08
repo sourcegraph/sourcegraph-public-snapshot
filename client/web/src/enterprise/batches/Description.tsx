@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { BatchChangeFields } from '../../graphql-operations'
 

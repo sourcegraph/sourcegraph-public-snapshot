@@ -59,11 +59,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <Link
-                    to="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
                 </Link>
             </span>

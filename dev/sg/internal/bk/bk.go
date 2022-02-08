@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 

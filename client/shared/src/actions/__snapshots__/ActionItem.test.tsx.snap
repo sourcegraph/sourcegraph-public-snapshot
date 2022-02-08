@@ -3,7 +3,7 @@
 exports[`ActionItem "open" command renders as link 1`] = `
 <DocumentFragment>
   <a
-    class="btn test-action-item"
+    class="anchorLink btn btnLink test-action-item p-0 font-weight-normal border-0 align-baseline d-inline"
     href="https://example.com/bar"
     tabindex="0"
   >
@@ -15,7 +15,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <DocumentFragment>
   <a
-    class="btn test-action-item"
+    class="anchorLink btn btnLink test-action-item p-0 font-weight-normal border-0 align-baseline d-inline"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"
@@ -29,7 +29,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <DocumentFragment>
   <a
-    class="btn test-action-item"
+    class="anchorLink btn btnLink test-action-item p-0 font-weight-normal border-0 align-baseline d-inline"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"
@@ -45,7 +45,7 @@ exports[`ActionItem actionItem variant 1`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -64,7 +64,7 @@ exports[`ActionItem non-actionItem variant 1`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -83,7 +83,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
 <DocumentFragment>
   <a
     aria-pressed="false"
-    class="btn test-action-item"
+    class="test-action-item"
     data-action-item-pressed="false"
     href=""
     role="button"
@@ -112,7 +112,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
 <DocumentFragment>
   <a
     aria-pressed="true"
-    class="btn test-action-item"
+    class="test-action-item"
     data-action-item-pressed="true"
     href=""
     role="button"
@@ -127,7 +127,7 @@ exports[`ActionItem run command 1`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -146,7 +146,7 @@ exports[`ActionItem run command 2`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -165,7 +165,7 @@ exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -184,7 +184,7 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 <DocumentFragment>
   <a
     aria-label="Error: x"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="Error: x"
     href=""
     role="button"
@@ -211,7 +211,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
     />
     <a
       aria-label="d"
-      class="btn test-action-item actionItemLoading disabled"
+      class="test-action-item actionItemLoading disabled"
       data-tooltip="d"
       disabled=""
       href=""
@@ -240,7 +240,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"
@@ -259,7 +259,7 @@ exports[`ActionItem title element 1`] = `
 <DocumentFragment>
   <a
     aria-label="d"
-    class="btn test-action-item"
+    class="test-action-item"
     data-tooltip="d"
     href=""
     role="button"

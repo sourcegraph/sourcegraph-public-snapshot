@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

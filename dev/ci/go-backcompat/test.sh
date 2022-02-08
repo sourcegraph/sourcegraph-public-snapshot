@@ -126,15 +126,6 @@ for schema in frontend codeintel codeinsights; do
   mv "${MIGRATION_STAGING}/${MIGRATION_FORMAT}/${schema}" "./migrations/${schema}"
 done
 
-# go-test.sh requires python 3.10.0 to calculate the api key value for
-# BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY, but not all versions
-# we check out are guaranteed to have this dependency.
-#
-# Add it by force here.
-#
-# TODO: Remove this once no longer relevant (post-3.37 branch cut)
-grep -qxF 'python 3.10.0' ./.tool-versions || echo 'python 3.10.0' >>./.tool-versions
-
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we
 # might end up with a combination of files from both commits that ruin

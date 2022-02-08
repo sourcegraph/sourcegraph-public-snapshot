@@ -11,10 +11,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A ZipCache is a shared data structure that provides efficient access to a collection of zip files.

@@ -2,8 +2,10 @@ package batches
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -254,3 +256,125 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 		assert.Equal(t, ErrConflictingBranches, err)
 	})
 }
+
+func TestSkippedStepsForRepo(t *testing.T) {
+	tests := map[string]struct {
+		spec        *BatchSpec
+		wantSkipped []int32
+	}{
+		"no if": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if has static true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: "true"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"one of many steps has if with static true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "true"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if has static non-true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: "this is not true"},
+				},
+			},
+			wantSkipped: []int32{0},
+		},
+
+		"one of many steps has if with static non-true value": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "every type system needs generics"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{1},
+		},
+
+		"if expression that can be partially evaluated to true": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+
+		"if expression that can be partially evaluated to false": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+				},
+			},
+			wantSkipped: []int32{0},
+		},
+
+		"one of many steps has if expression that can be evaluated to false": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 3"},
+				},
+			},
+			wantSkipped: []int32{1},
+		},
+
+		"if expression that can NOT be partially evaluated": {
+			spec: &BatchSpec{
+				Steps: []Step{
+					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
+				},
+			},
+			wantSkipped: []int32{},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			haveSkipped, err := SkippedStepsForRepo(tt.spec, "github.com/sourcegraph/src-cli", []string{})
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+
+			want := tt.wantSkipped
+			sort.Sort(sortableInt32(want))
+			have := make([]int32, 0, len(haveSkipped))
+			for s := range haveSkipped {
+				have = append(have, s)
+			}
+			sort.Sort(sortableInt32(have))
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+type sortableInt32 []int32
+
+func (s sortableInt32) Len() int { return len(s) }
+
+func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
+
+func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

@@ -4,10 +4,10 @@ import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { subtypeOf } from '../util/types'
 
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
 

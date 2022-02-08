@@ -8,9 +8,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.RedisStoreConf))

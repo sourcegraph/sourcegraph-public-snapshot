@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 
@@ -19,7 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -112,13 +113,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		if c.ChangedFiles.AffectsClient() {
+		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
 		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+
+	case ReleaseNightly:
+		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -126,7 +130,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -161,7 +165,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
 		ops.Append(
 			wait,
@@ -202,7 +206,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
 			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
@@ -216,7 +220,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageScanOps)
 
 		// Core tests
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
@@ -246,7 +250,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch, ReleaseBranch) {
 			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}

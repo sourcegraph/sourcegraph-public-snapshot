@@ -12,19 +12,19 @@ exports[`SiteAdminOverviewPage < 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
@@ -46,37 +46,37 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/users"
       >
         10 users
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/organizations"
       >
         5 organizations
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/surveys"
       >
         100 user survey responses
@@ -120,7 +120,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             </h2>
             <h3>
               <a
-                class="btn btnSecondary"
+                class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
                 View all usage statistics 
@@ -429,19 +429,19 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
       class="list-group"
     >
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         0 repositories
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed

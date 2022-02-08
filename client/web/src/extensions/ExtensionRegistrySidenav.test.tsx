@@ -1,12 +1,13 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'
 
 describe('ExtensionsQueryInputToolbar', () => {
     test('renders', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <ExtensionRegistrySidenav
                     selectedCategory="Code analysis"
                     onSelectCategory={() => {}}

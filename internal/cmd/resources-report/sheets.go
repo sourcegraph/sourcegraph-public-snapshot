@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/sheets/v4"
+
+	"github.com/cockroachdb/errors"
 )
 
 var reportSheetHeaders = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}

@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ authz.Provider = (*Provider)(nil)

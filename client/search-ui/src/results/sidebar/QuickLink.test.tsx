@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { getQuickLinks } from './QuickLink'
 
@@ -22,6 +22,6 @@ describe('QuickLink', () => {
         ]
         const links = getQuickLinks({ subjects: [], final: { quicklinks } })
         expect(links.length).toBe(2)
-        expect(renderWithRouter(<>{links}</>).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 })

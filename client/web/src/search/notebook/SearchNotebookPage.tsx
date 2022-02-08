@@ -123,7 +123,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     useEffect(() => {
         // Update the notebook if there are some updates in the queue and the notebook has fully loaded (i.e. there is no update
         // currently in progress).
-        if (updateQueue.length > 0 && isNotebookLoaded(latestNotebook)) {
+        if (updateQueue.length > 0 && isNotebookLoaded(latestNotebook) && latestNotebook.namespace) {
             // Aggregate partial updates from the queue into a single update.
             const updateInput = updateQueue.reduce((input, value) => ({ ...input, ...value }))
             // Clear the queue for new updates and save the changes to the backend.
@@ -133,6 +133,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                 title: latestNotebook.title,
                 blocks: latestNotebook.blocks.map(GQLBlockToGQLInput),
                 public: latestNotebook.public,
+                namespace: latestNotebook.namespace.id,
                 // Apply updates.
                 ...updateInput,
             })

@@ -9,7 +9,7 @@ export const EmptyUploads: React.FunctionComponent = () => (
         <br />
         No uploads yet. Enable precise code intelligence by{' '}
         <Link
-            to="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+            to="/help/code_intelligence/explanations/precise_code_intelligence"
             target="_blank"
             rel="noreferrer noopener"
         >

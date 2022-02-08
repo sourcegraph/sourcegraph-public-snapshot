@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const syncInterval = 5 * time.Minute
