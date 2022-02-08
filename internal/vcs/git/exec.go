@@ -32,7 +32,7 @@ func execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, 
 		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
-	if !isAllowedGitCmd(params) {
+	if !IsAllowedGitCmd(params) {
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
@@ -60,7 +60,7 @@ func execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadC
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !isAllowedGitCmd(args) {
+	if !IsAllowedGitCmd(args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
 	cmd := gitserver.DefaultClient.Command("git", args...)
@@ -82,6 +82,10 @@ var (
 		"rev-list":     {"--max-parents", "--reverse", "--max-count"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
+
+		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
+		"testcommand": {},
+		"testerror":   {},
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
@@ -112,12 +116,12 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	return false
 }
 
-// isAllowedGitCmd checks if the cmd and arguments are allowed.
-func isAllowedGitCmd(args []string) bool {
-	// check if the supplied command is a allowed cmd
-	if len(gitCmdAllowlist) == 0 {
+// IsAllowedGitCmd checks if the cmd and arguments are allowed.
+func IsAllowedGitCmd(args []string) bool {
+	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
+
 	cmd := args[0]
 	allowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
