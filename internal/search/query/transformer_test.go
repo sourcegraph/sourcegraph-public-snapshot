@@ -275,17 +275,17 @@ func TestSubstituteConcat(t *testing.T) {
 		{
 			input:  `foo\d "bar*"`,
 			concat: fuzzyRegexp,
-			want:   `"(foo\\d).*?(bar\\*)"`,
+			want:   `"(?:foo\\d).*?(?:bar\\*)"`,
 		},
 		{
 			input:  `"bar*" foo\d "bar*" foo\d`,
 			concat: fuzzyRegexp,
-			want:   `"(bar\\*).*?(foo\\d).*?(bar\\*).*?(foo\\d)"`,
+			want:   `"(?:bar\\*).*?(?:foo\\d).*?(?:bar\\*).*?(?:foo\\d)"`,
 		},
 		{
 			input:  "a b (c and d) e f (g or h) (i j k)",
 			concat: fuzzyRegexp,
-			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
+			want:   `"(?:a).*?(?:b)" (and "c" "d") "(?:e).*?(?:f)" (or "g" "h") "(i j k)"`,
 		},
 		{
 			input:  "(a not b not c d)",
