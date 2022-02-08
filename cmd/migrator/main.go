@@ -87,5 +87,4 @@ func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil
 
 		return cliutil.NewShim(connections.RunnerFromDSNs(dsns, appName, storeFactory)), nil
 	}
-
 }
