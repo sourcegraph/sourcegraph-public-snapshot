@@ -194,7 +194,7 @@ func (r *UploadResolver) populateMatchingCommits(visibileCommits []string, match
 				ConfigurationPolicy: *policyByID(policies, *policyMatch.PolicyID),
 				matched:             true,
 			})
-			potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches)
+			potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches) - 1
 		}
 	}
 
@@ -213,7 +213,7 @@ func (r *UploadResolver) populateMatchingCommits(visibileCommits []string, match
 							matched:             true,
 							protectingCommits:   []string{commit},
 						})
-						potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches)
+						potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches) - 1
 					}
 				}
 			}
