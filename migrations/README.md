@@ -6,13 +6,7 @@ The children of this directory contain migrations for each Postgres database ins
 - `codeintel` is a database containing only processed LSIF data (which can become extremely large)
 - `codeinsights` is a TimescaleDB database, containing only Code Insights time series data
 
-The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances. Each database also has a uniquely named schema versions table:
-
-| database       | schema version table name        |
-| -------------- | -------------------------------- |
-| `frontend`     | `schema_migrations`              |
-| `codeintel`    | `codeintel_schema_migrations`    |
-| `codeinsights` | `codeinsights_schema_migrations` |
+The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances.
 
 ## Migrating up and down
 
@@ -20,7 +14,7 @@ Up migrations will happen automatically in development on service startup. In pr
 
 - `sg migration up` runs all migrations to the latest version
 - `sg migration up -db=frontend -target=<version>` runs up migrations (relative to the current database version) on the frontend database until it hits the target version
-- `sg migration down -db=codeintel` runs one _down_ migration (relative to the current database version) on the codeintel database
+- `sg migration undo -db=codeintel` runs one _down_ migration (relative to the current database version) on the codeintel database
 
 ## Adding a migration
 
@@ -31,11 +25,12 @@ To create a new migration file, run the following command.
 ```
 $ sg migration add -db=<db_name> <my_migration_name>
 Migration files created
- Up migration: ~/migrations/frontend/1528395961_my_migration_name.up.sql
- Down migration: ~/migrations/frontend/1528395961_my_migration_name.down.sql
+ Up query file: ~/migrations/codeintel/1644260831/up.sql
+ Down query file: ~/migrations/codeintel/1644260831/down.sql
+ Metadata file: ~/migrations/codeintel/1644260831/metadata.yaml
 ```
 
-This will create an _up_ and _down_ pair of migration files (printed by the given command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `./dev/generate.sh`).
+This will create an _up_ and _down_ pair of migration files (whose path is printed by the following command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `./dev/generate.sh`).
 
 To pass CI, you'll additionally need to:
 
