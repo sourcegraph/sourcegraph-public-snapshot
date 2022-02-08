@@ -5,15 +5,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-
-	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.

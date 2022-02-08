@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
-	runCommand = &ffcli.Command{
+	runFlagSet              = flag.NewFlagSet("sg run", flag.ExitOnError)
+	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", false, "OSX only; Add required exceptions to the firewall")
+	runCommand              = &ffcli.Command{
 		Name:       "run",
 		ShortUsage: "sg run <command>...",
 		ShortHelp:  "Run the given commands.",
@@ -49,7 +50,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, *verboseFlag, cmds...)
+	return run.Commands(ctx, globalConf.Env, *runFlagAddToMacFirewall, *verboseFlag, cmds...)
 }
 func constructRunCmdLongHelp() string {
 	var out strings.Builder

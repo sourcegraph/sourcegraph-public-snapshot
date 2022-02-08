@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
@@ -92,8 +92,9 @@ const executableWorkspaceJobsConditionFmtstr = `
 	AND
 	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
 	AND
-	jsonb_array_length(batch_spec_workspaces.steps) > 0
-	AND
+	-- TODO: Reimplement this. It was broken already, so no regression from the current state.
+	-- NOT batch_spec_workspaces.skipped
+	-- AND
 	batch_spec_workspaces.cached_result_found IS FALSE
 )`
 

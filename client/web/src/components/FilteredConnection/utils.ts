@@ -1,9 +1,9 @@
 import { GraphQLError } from 'graphql'
 import type { Location } from 'history'
 
+import { hasProperty } from '@sourcegraph/common'
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'

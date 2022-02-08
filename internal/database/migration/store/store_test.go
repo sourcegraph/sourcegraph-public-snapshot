@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -24,29 +25,124 @@ func TestEnsureSchemaTable(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM test_migrations_table")); err == nil {
-		t.Fatalf("expected query to fail due to missing schema table")
+	tableNames := []string{
+		"migration_logs",
+		defaultTestTableName,
 	}
 
-	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err == nil {
-		t.Fatalf("expected query to fail due to missing logs table")
+	// Test initially missing tables
+	for _, tableName := range tableNames {
+		if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM %s", quote(tableName))); err == nil {
+			t.Fatalf("expected query to fail due to missing table %q", tableName)
+		}
 	}
 
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
 
-	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM test_migrations_table")); err != nil {
-		t.Fatalf("unexpected error querying version table: %s", err)
+	// Test tables were created
+	for _, tableName := range tableNames {
+		if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM %s", quote(tableName))); err != nil {
+			t.Fatalf("unexpected error querying %q: %s", tableName, err)
+		}
 	}
 
-	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err != nil {
-		t.Fatalf("unexpected error querying logs table: %s", err)
-	}
-
+	// Test idempotency
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("expected method to be idempotent, got error: %s", err)
 	}
+}
+
+func TestEnsureTableBackfills(t *testing.T) {
+	t.Run("fresh database", func(t *testing.T) {
+		db := dbtest.NewDB(t)
+		store := testStore(db)
+		ctx := context.Background()
+
+		if err := store.EnsureSchemaTable(ctx); err != nil {
+			t.Fatalf("unexpected error ensuring schema table exists: %s", err)
+		}
+
+		assertLogs(t, ctx, store, nil)
+	})
+
+	k := 5
+	n := k * 5
+	tableName := "test_migrations_table_backfill"
+
+	expectedLogs := make([]migrationLog, 0, n)
+	for i := 0; i <= n; i++ {
+		s := true
+		expectedLogs = append(expectedLogs, migrationLog{Schema: tableName, Version: 1000000000 + i, Up: true, Success: &s})
+	}
+
+	runTest := func(k int) func(t *testing.T) {
+		return func(t *testing.T) {
+			db := dbtest.NewDB(t)
+			store := NewWithDB(db, tableName, NewOperations(&observation.TestContext))
+			ctx := context.Background()
+
+			if err := store.Exec(ctx, sqlf.Sprintf(`CREATE TABLE %s(version bigint NOT NULL PRIMARY KEY, dirty boolean NOT NULL)`, quote(tableName))); err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (%s, false)`, quote(tableName), 1000000000+n)); err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if err := store.Exec(ctx, sqlf.Sprintf(`
+				CREATE TABLE migration_logs(
+					id SERIAL PRIMARY KEY,
+					migration_logs_schema_version integer NOT NULL,
+					schema text NOT NULL,
+					version integer NOT NULL,
+					up bool NOT NULL,
+					started_at timestamptz NOT NULL,
+					finished_at timestamptz,
+					success boolean,
+					error_message text
+				)
+			`)); err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			for i := 0; i < k; i++ {
+				if err := store.Exec(ctx, sqlf.Sprintf(`
+				INSERT INTO migration_logs(
+					migration_logs_schema_version,
+					schema,
+					version,
+					up,
+					started_at,
+					finished_at,
+					success
+				) VALUES (
+					1,
+					%s,
+					%s,
+					true,
+					NOW(),
+					NOW(),
+					true
+				)`,
+					tableName,
+					1000000000+n-i,
+				)); err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+			}
+
+			if err := store.EnsureSchemaTable(ctx); err != nil {
+				t.Fatalf("unexpected error ensuring schema table exists: %s", err)
+			}
+
+			assertLogs(t, ctx, store, expectedLogs)
+		}
+	}
+
+	t.Run("full insert", runTest(0))       // no migration logs
+	t.Run("partial insert", runTest(k))    // k migration logs
+	t.Run("nothing to insert", runTest(n)) // n migration logs
 }
 
 func TestVersions(t *testing.T) {
@@ -107,7 +203,7 @@ func TestVersions(t *testing.T) {
 				error_message
 			) VALUES (%s, %s, %s, %s, NOW(), %s, NOW(), %s)`,
 			currentMigrationLogSchemaVersion,
-			"test_migrations_table",
+			defaultTestTableName,
 			migrationLog.version,
 			migrationLog.up,
 			migrationLog.success,
@@ -180,7 +276,7 @@ func TestWrappedUp(t *testing.T) {
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
-	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (15, false)`)); err != nil {
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (15, false)`, quote(defaultTestTableName))); err != nil {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 
@@ -200,18 +296,18 @@ func TestWrappedUp(t *testing.T) {
 
 	logs := []migrationLog{
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
 		}, {
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
 			Success: boolPtr(true),
@@ -228,7 +324,6 @@ func TestWrappedUp(t *testing.T) {
 					seed_type text,
 					bark_type text
 				);
-
 				INSERT INTO test_trees VALUES
 					('oak', 'broad', 'regular', 'strong'),
 					('birch', 'narrow', 'regular', 'flaky'),
@@ -249,7 +344,7 @@ func TestWrappedUp(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 16,
 			Up:      true,
 			Success: boolPtr(true),
@@ -281,7 +376,7 @@ func TestWrappedUp(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 17,
 			Up:      true,
 			Success: boolPtr(false),
@@ -299,7 +394,7 @@ func TestWrappedDown(t *testing.T) {
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
-	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (14, false)`)); err != nil {
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (14, false)`, quote(defaultTestTableName))); err != nil {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 	if err := store.Exec(ctx, sqlf.Sprintf(`
@@ -344,19 +439,19 @@ func TestWrappedDown(t *testing.T) {
 
 	logs := []migrationLog{
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 12,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
@@ -383,7 +478,7 @@ func TestWrappedDown(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      false,
 			Success: boolPtr(true),
@@ -410,7 +505,7 @@ func TestWrappedDown(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      false,
 			Success: boolPtr(false),
@@ -573,8 +668,14 @@ retryLoop:
 	}
 }
 
+const defaultTestTableName = "test_migrations_table"
+
 func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, "test_migrations_table", NewOperations(&observation.TestContext))
+	return testStoreWithName(db, defaultTestTableName)
+}
+
+func testStoreWithName(db dbutil.DB, name string) *Store {
+	return NewWithDB(db, name, NewOperations(&observation.TestContext))
 }
 
 func strPtr(v string) *string {
@@ -588,7 +689,11 @@ func boolPtr(value bool) *bool {
 func assertLogs(t *testing.T, ctx context.Context, store *Store, expectedLogs []migrationLog) {
 	t.Helper()
 
-	logs, err := scanMigrationLogs(store.Query(ctx, sqlf.Sprintf(`SELECT schema, version, up, success FROM migration_logs ORDER BY started_at`)))
+	sort.Slice(expectedLogs, func(i, j int) bool {
+		return expectedLogs[i].Version < expectedLogs[j].Version
+	})
+
+	logs, err := scanMigrationLogs(store.Query(ctx, sqlf.Sprintf(`SELECT schema, version, up, success FROM migration_logs ORDER BY version`)))
 	if err != nil {
 		t.Fatalf("unexpected error scanning logs: %s", err)
 	}

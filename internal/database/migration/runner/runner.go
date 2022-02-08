@@ -5,11 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Runner struct {
@@ -81,10 +79,10 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 	wg.Wait()
 	close(errorCh)
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for err := range errorCh {
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 
@@ -233,12 +231,12 @@ func (r *Runner) withLockedSchemaState(
 	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
 		return false, err
 	} else if retry {
-		// An index is currently being created. Wait a small time and return to the caller to
-		// be re-invoked. We don't want to take any action here while the other proceses is
-		// working.
-		return true, wait(ctx, indexPollInterval)
+		// An index is currently being created. WE return true here to flag to the caller that
+		// we should wait a small time, then be re-invoked. We don't want to take any action
+		// here while the other proceses is working.
+		return true, nil
 	}
 
-	// Invoke the callback with the current schema stateee
+	// Invoke the callback with the current schema state
 	return false, f(schemaVersion, byState, unlock)
 }

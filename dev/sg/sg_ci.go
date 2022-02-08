@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 	"github.com/gen2brain/beeep"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -67,7 +67,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -99,8 +99,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
-				return nil
+				return writePrettyMarkdown(out)
 			},
 		}, {
 			Name:      "status",
@@ -370,6 +369,17 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				return nil
+			},
+		}, {
+			Name:      "docs",
+			ShortHelp: "Render reference documentation for build pipeline types.",
+			Exec: func(ctx context.Context, args []string) error {
+				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+				out, err := run.InRoot(cmd)
+				if err != nil {
+					return err
+				}
+				return writePrettyMarkdown(out)
 			},
 		}},
 	}

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
@@ -153,8 +153,17 @@ func (r *Runner) applyMigrations(
 		return nil
 	}
 
-	retry, err := r.withLockedSchemaState(ctx, schemaContext, definitions, callback)
-	return retry || droppedLock, err
+	if retry, err := r.withLockedSchemaState(ctx, schemaContext, definitions, callback); err != nil {
+		return false, err
+	} else if retry {
+		// There are active index creation operations ongoing; wait a short time before requerying
+		// the state of the migrations so we don't flood the database with constant queries to the
+		// system catalog. We check here instead of in the caller because we dont' want a delay when
+		// we drop the lock to create an index concurrently (returning `droppedLock = true` below).
+		return true, wait(ctx, indexPollInterval)
+	}
+
+	return droppedLock, nil
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.
@@ -192,7 +201,7 @@ const indexPollInterval = time.Second
 
 // createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
 // hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
-// instances (see `interrnal/database/migration/store/store_test.go:TestIndexStatus` for an example). Instead,
+// instances (see `internal/database/migration/store/store_test.go:TestIndexStatus` for an example). Instead,
 // we use Postgres system tables to determine the status of the index being created and re-issue the index
 // creation command if it's missing or invalid.
 //

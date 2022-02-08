@@ -3,11 +3,10 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type TemporarySettingsResolver struct {

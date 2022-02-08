@@ -9,12 +9,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

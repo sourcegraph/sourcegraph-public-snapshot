@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
@@ -300,7 +300,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err != nil {
 		return nil, err
 	}
-	if memberCount == 1 {
+	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
@@ -316,6 +316,16 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		)
 	}
 	return nil, nil
+}
+
+func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false
+	}
+	if err := backend.CheckSameUser(ctx, userID); err != nil {
+		return false
+	}
+	return true
 }
 
 func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {

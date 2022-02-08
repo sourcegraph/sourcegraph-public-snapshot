@@ -3,10 +3,9 @@ package main
 import (
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config struct {
@@ -29,8 +28,8 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
-	var errs *multierror.Error
-	errs = multierror.Append(errs, c.BaseConfig.Validate())
-	errs = multierror.Append(errs, c.UploadStoreConfig.Validate())
+	var errs *errors.MultiError
+	errs = errors.Append(errs, c.BaseConfig.Validate())
+	errs = errors.Append(errs, c.UploadStoreConfig.Validate())
 	return errs.ErrorOrNil()
 }

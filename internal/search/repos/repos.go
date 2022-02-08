@@ -10,13 +10,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Resolved struct {
@@ -77,12 +78,12 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Limit = 500
 	}
 
-	errs := new(multierror.Error)
+	errs := new(errors.MultiError)
 
 	for {
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
 				break
 			}
@@ -90,7 +91,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
 
 		if err = handle(&page); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			break
 		}
 
@@ -226,7 +227,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	var res struct {
 		sync.Mutex
 		Resolved
-		multierror.Error
+		errors.MultiError
 	}
 
 	res.Resolved = Resolved{
@@ -335,7 +336,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 					if hasCommitAfter, err := git.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
-							multierror.Append(&res.Error, err)
+							errors.Append(&res.MultiError, err)
 							res.Unlock()
 						}
 						continue
@@ -374,7 +375,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	err = res.ErrorOrNil()
 	if len(res.MissingRepoRevs) > 0 {
-		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
+		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}
 
 	return res.Resolved, err
@@ -675,14 +676,24 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	}, fatalErr
 }
 
-func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForUser", strconv.Itoa(int(userID)))
+// Get all private repos for the the current actor. On sourcegraph.com, those are
+// only the repos directly added by the user. Otherwise it's all repos the user has
+// access to on all connected code hosts / external services.
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
-	// Get all private repos for the the current actor. On sourcegraph.com, those are
-	// only the repos directly added by the user. Otherwise it's all repos the user has
-	// access to on all connected code hosts / external services.
-	//
+	userID := int32(0)
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			userID = a.UID
+		} else {
+			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			return nil
+		}
+	}
+	tr.LogFields(otlog.Int32("userID", userID))
+
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
 	// best to address that first.

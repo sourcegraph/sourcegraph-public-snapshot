@@ -370,11 +370,6 @@
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
           "default": false
-        },
-        "enableRepoUpdateIntervalJitter": {
-          "description": "Enable a jitter of 5% in the update interval of a repo in the schedule",
-          "type": "boolean",
-          "default": false
         }
       },
       "examples": [
@@ -699,6 +694,11 @@
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
       "default": false
+    },
+    "authz.refreshInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",

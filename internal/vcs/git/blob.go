@@ -7,14 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
