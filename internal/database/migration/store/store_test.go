@@ -149,7 +149,6 @@ func TestVersions(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
-
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}

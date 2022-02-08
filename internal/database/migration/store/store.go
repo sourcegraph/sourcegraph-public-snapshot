@@ -290,7 +290,11 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 		}
 	}()
 
-	return f()
+	if err := f(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
