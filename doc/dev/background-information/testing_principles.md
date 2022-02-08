@@ -32,7 +32,9 @@ A good automated test suite increases the velocity of our team because it allows
 The testing pyramid is a helpful way to determine the most appropriate type of test when deciding how to test a change:
 
 ![Testing pyramid](testing-pyramid.svg)
+The closer a test is to the bottom, the larger the scope of that test is. It means that failures will be harder to link to the actual cause. Tests at the bottom are notoriously slower than at the top. 
 
+It's important to take into account this trade-off when deciding at which level to implement a test. Please refer to each testing level below for more details.
 #### Unit tests
 
 Unit tests test individual functions in our codebase and are the most desirable kind of test to write.
