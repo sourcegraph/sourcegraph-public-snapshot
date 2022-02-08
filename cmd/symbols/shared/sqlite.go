@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/sync/semaphore"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -57,9 +59,9 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, []g
 		diskcache.WithObservationContext(observationContext),
 	)
 
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses, observationContext)
-	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser)
+	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser, semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing)))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	searchFunc := api.MakeSqliteSearchFunc(observability.NewOperations(observationContext), cachedDatabaseWriter)
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"golang.org/x/sync/semaphore"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
@@ -22,21 +24,27 @@ type databaseWriter struct {
 	path            string
 	gitserverClient gitserver.GitserverClient
 	parser          parser.Parser
+	sem             *semaphore.Weighted
 }
 
 func NewDatabaseWriter(
 	path string,
 	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
+	sem *semaphore.Weighted,
 ) DatabaseWriter {
 	return &databaseWriter{
 		path:            path,
 		gitserverClient: gitserverClient,
 		parser:          parser,
+		sem:             sem,
 	}
 }
 
 func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
+	w.sem.Acquire(ctx, 1)
+	defer w.sem.Release(1)
+
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {
 		return err
 	} else if ok {

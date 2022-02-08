@@ -20,7 +20,6 @@ type RepositoryFetcher interface {
 
 type repositoryFetcher struct {
 	gitserverClient     gitserver.GitserverClient
-	fetchSem            chan int
 	operations          *operations
 	maxTotalPathsLength int
 }
@@ -35,10 +34,9 @@ type parseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
-		fetchSem:            make(chan int, maximumConcurrentFetches),
 		operations:          newOperations(observationContext),
 		maxTotalPathsLength: maxTotalPathsLength,
 	}
@@ -68,13 +66,6 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 		log.String("paths", strings.Join(paths, ":")),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	onDefer, err := f.limitConcurrentFetches(ctx)
-	if err != nil {
-		return err
-	}
-	defer onDefer()
-	trace.Log(log.Event("acquired fetch semaphore"))
 
 	f.operations.fetching.Inc()
 	defer f.operations.fetching.Dec()
@@ -132,19 +123,6 @@ func batchByTotalLength(paths []string, maxTotalLength int) [][]string {
 	batches = append(batches, currentBatch)
 
 	return batches
-}
-
-func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(), error) {
-	f.operations.fetchQueueSize.Inc()
-	defer f.operations.fetchQueueSize.Dec()
-
-	select {
-	case f.fetchSem <- 1:
-		return func() { <-f.fetchSem }, nil
-
-	case <-ctx.Done():
-		return func() {}, ctx.Err()
-	}
 }
 
 func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger) error {

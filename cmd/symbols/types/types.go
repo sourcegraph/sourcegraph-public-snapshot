@@ -15,25 +15,27 @@ import (
 )
 
 type SqliteConfig struct {
-	SanityCheck       bool
-	CacheDir          string
-	CacheSizeMB       int
-	NumCtagsProcesses int
-	RequestBufferSize int
-	ProcessingTimeout time.Duration
-	Ctags             CtagsConfig
-	RepositoryFetcher RepositoryFetcherConfig
+	SanityCheck             bool
+	CacheDir                string
+	CacheSizeMB             int
+	NumCtagsProcesses       int
+	RequestBufferSize       int
+	ProcessingTimeout       time.Duration
+	Ctags                   CtagsConfig
+	RepositoryFetcher       RepositoryFetcherConfig
+	MaxConcurrentlyIndexing int
 }
 
 func LoadSqliteConfig(baseConfig env.BaseConfig) SqliteConfig {
 	return SqliteConfig{
-		Ctags:             LoadCtagsConfig(baseConfig),
-		SanityCheck:       baseConfig.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"),
-		CacheDir:          baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
-		CacheSizeMB:       baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
-		NumCtagsProcesses: baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
-		RequestBufferSize: baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
-		ProcessingTimeout: baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository"),
+		Ctags:                   LoadCtagsConfig(baseConfig),
+		SanityCheck:             baseConfig.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"),
+		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
+		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
+		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
+		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
+		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository"),
+		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
 	}
 }
 

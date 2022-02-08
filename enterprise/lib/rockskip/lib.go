@@ -2,6 +2,7 @@ package rockskip
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
@@ -17,6 +18,7 @@ import (
 	pg "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
@@ -180,7 +182,7 @@ func (t *TaskLog) Print() {
 	fmt.Println()
 }
 
-func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
+func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
 	unlock, err := onVisit(tasklog, db, repo, maxRepos)
 	defer func() {
 		if unlock != nil {
@@ -216,6 +218,16 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 	if err != nil {
 		return errors.Wrap(err, "RevList")
 	}
+
+	if missingCount == 0 {
+		return nil
+	}
+
+	tasklog.Start("Acquire semaphore")
+	sem.Acquire(context.Background(), 1)
+	defer sem.Release(1)
+
+	fmt.Println("Indexing", missingCount, "commits")
 
 	pathToBlobIdCache := map[string]int{}
 

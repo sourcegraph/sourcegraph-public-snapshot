@@ -10,6 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -53,50 +54,33 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, [
 }
 
 type RockskipConfig struct {
-	Ctags             types.CtagsConfig
-	RepositoryFetcher types.RepositoryFetcherConfig
-	MaxRepos          int
+	Ctags                   types.CtagsConfig
+	RepositoryFetcher       types.RepositoryFetcherConfig
+	MaxRepos                int
+	MaxConcurrentlyIndexing int
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	return RockskipConfig{
-		Ctags:             types.LoadCtagsConfig(baseConfig),
-		RepositoryFetcher: types.LoadRepositoryFetcherConfig(baseConfig),
-		MaxRepos:          baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories for Rockskip to store in Postgres, with LRU eviction"),
+		Ctags:                   types.LoadCtagsConfig(baseConfig),
+		RepositoryFetcher:       types.LoadRepositoryFetcherConfig(baseConfig),
+		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories for Rockskip to store in Postgres, with LRU eviction"),
+		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
 	}
 }
 
 func MakeRockskipSearchFunc(observationContext *observation.Context, config RockskipConfig) (types.SearchFunc, error) {
-	parser := mustCreateCtagsParser(config.Ctags)
-
-	var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		entries, err := parser.Parse(path, bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		symbols = []rockskip.Symbol{}
-		for _, entry := range entries {
-			symbols = append(symbols, rockskip.Symbol{
-				Name:   entry.Name,
-				Parent: entry.Parent,
-				Kind:   entry.Kind,
-				Line:   entry.Line,
-			})
-		}
-
-		return symbols, nil
-	}
-
 	operations := sharedobservability.NewOperations(observationContext)
 	// TODO use operations
 	_ = operations
 
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
-	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
+	f := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 
 	db := mustInitializeCodeIntelDB()
+
+	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
 		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
@@ -145,7 +129,28 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 			}
 		}()
 
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos)
+		parser := mustCreateCtagsParser(config.Ctags)
+
+		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
+			entries, err := parser.Parse(path, bytes)
+			if err != nil {
+				return nil, err
+			}
+
+			symbols = []rockskip.Symbol{}
+			for _, entry := range entries {
+				symbols = append(symbols, rockskip.Symbol{
+					Name:   entry.Name,
+					Parent: entry.Parent,
+					Kind:   entry.Kind,
+					Line:   entry.Line,
+				})
+			}
+
+			return symbols, nil
+		}
+
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
 		cancel()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
