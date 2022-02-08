@@ -3,14 +3,14 @@ import React, { useEffect } from 'react'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AlertLink } from '@sourcegraph/wildcard'
 
+import { ExtensionRadialGradientIcon } from '../../components/CtaIcons'
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
-import { ExtensionRadialGradientIcon } from '../../search/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 export interface NativeIntegrationAlertProps {
-    className: string
+    className?: string
     onAlertDismissed: () => void
     externalURLs: ExternalLinkFields[]
 }

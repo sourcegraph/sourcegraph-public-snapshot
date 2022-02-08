@@ -4,7 +4,7 @@ import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
 
-import { BrowserExtensionAlert } from './BrowserExtensionAlert'
+import { IDEExtensionAlert } from './IdeExtensionAlert'
 
 const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
 
@@ -12,13 +12,11 @@ const config: Meta = {
     title: 'web/repo/actions',
     decorators: [decorator],
     parameters: {
-        component: BrowserExtensionAlert,
+        component: IDEExtensionAlert,
     },
 }
 
 export default config
 
-export const BrowserExtensionAlertDefault: Story = () => (
-    <BrowserExtensionAlert onAlertDismissed={action('onAlertDismissed')} />
-)
-BrowserExtensionAlertDefault.storyName = 'BrowserExtensionAlert'
+export const IDEExtensionAlertDefault: Story = () => <IDEExtensionAlert onAlertDismissed={action('onAlertDismissed')} />
+IDEExtensionAlertDefault.storyName = 'IDEExtensionAlert'

@@ -2,11 +2,11 @@ import React, { useEffect } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 
-import { ExtensionRadialGradientIcon } from '../../search/CtaIcons'
+import { ExtensionRadialGradientIcon } from '../../components/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props {
-    className: string
+    className?: string
     onAlertDismissed: () => void
 }
 

@@ -21,8 +21,8 @@ import { Button, ButtonLink, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
+import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
 import { SearchPatternType } from '../../graphql-operations'
-import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
 import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import {

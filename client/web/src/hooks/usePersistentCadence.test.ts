@@ -43,4 +43,11 @@ describe('usePersistentCadence', () => {
 
         expect(usePersistentCadence(testKey2, testCadence)).toBe(true)
     })
+
+    it('returns true on {N+shift}th run', () => {
+        const testShift = 2
+        localStorage.setItem(testKey, (testCadence + testShift).toString())
+
+        expect(usePersistentCadence(testKey, testCadence, testShift)).toBe(true)
+    })
 })
