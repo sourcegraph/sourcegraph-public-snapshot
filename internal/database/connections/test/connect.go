@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewTestDB creates a new connection to the a database and applies the given migrations.
@@ -20,7 +19,7 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 	defer func() {
 		if err != nil {
 			if closeErr := db.Close(); closeErr != nil {
-				err = multierror.Append(err, closeErr)
+				err = errors.Append(err, closeErr)
 			}
 		}
 	}()

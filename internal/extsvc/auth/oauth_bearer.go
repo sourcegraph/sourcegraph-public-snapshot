@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang-jwt/jwt/v4"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc

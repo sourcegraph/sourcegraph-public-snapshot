@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
@@ -11,7 +10,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useMatchMedia } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, useMatchMedia, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { OnboardingTour } from '../onboarding-tour/OnboardingTour'
@@ -37,7 +36,7 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
@@ -46,7 +45,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
             props.telemetryService.log('FileTreeViewClicked', {
@@ -87,8 +85,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     )}
                     <Tabs
                         className="w-100 h-100 test-repo-revision-sidebar pr-3"
-                        defaultIndex={tabIndex}
-                        onChange={handleTabsChange}
+                        defaultIndex={persistedTabIndex}
+                        onChange={setPersistedTabIndex}
+                        lazy={true}
                     >
                         <div className="tablist-wrapper d-flex flex-1">
                             <TabList>
@@ -109,37 +108,37 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className={classNames('d-flex explorer', styles.tabpanels)}>
-                            <TabPanels className="w-100 overflow-auto">
-                                <TabPanel tabIndex={-1}>
-                                    {tabIndex === 0 && (
-                                        <Tree
-                                            key="files"
-                                            repoName={props.repoName}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            history={props.history}
-                                            location={props.location}
-                                            scrollRootSelector=".explorer"
-                                            activePath={props.filePath}
-                                            activePathIsDir={props.isDir}
-                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                            extensionsController={props.extensionsController}
-                                            isLightTheme={props.isLightTheme}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    )}
+                        <div
+                            aria-hidden={true}
+                            className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                            tabIndex={-1}
+                        >
+                            <TabPanels>
+                                <TabPanel>
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
+                                        revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
+                                        activePath={props.filePath}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                        telemetryService={props.telemetryService}
+                                    />
                                 </TabPanel>
-                                <TabPanel className="h-100">
-                                    {tabIndex === 1 && (
-                                        <RepoRevisionSidebarSymbols
-                                            key="symbols"
-                                            repoID={props.repoID}
-                                            revision={props.revision}
-                                            activePath={props.filePath}
-                                            onHandleSymbolClick={handleSymbolClick}
-                                        />
-                                    )}
+                                <TabPanel>
+                                    <RepoRevisionSidebarSymbols
+                                        key="symbols"
+                                        repoID={props.repoID}
+                                        revision={props.revision}
+                                        activePath={props.filePath}
+                                        onHandleSymbolClick={handleSymbolClick}
+                                    />
                                 </TabPanel>
                             </TabPanels>
                         </div>

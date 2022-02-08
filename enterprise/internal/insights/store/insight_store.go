@@ -6,18 +6,14 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
-
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/cockroachdb/errors"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type InsightStore struct {

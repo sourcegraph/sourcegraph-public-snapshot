@@ -1,5 +1,6 @@
-import { tryCatch } from '@sourcegraph/common'
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
+
+import { tryCatch } from '../errors'
 
 /**
  * Provide one.
