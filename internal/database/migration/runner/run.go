@@ -153,8 +153,17 @@ func (r *Runner) applyMigrations(
 		return nil
 	}
 
-	retry, err := r.withLockedSchemaState(ctx, schemaContext, definitions, callback)
-	return retry || droppedLock, err
+	if retry, err := r.withLockedSchemaState(ctx, schemaContext, definitions, callback); err != nil {
+		return false, err
+	} else if retry {
+		// There are active index creation operations ongoing; wait a short time before requerying
+		// the state of the migrations so we don't flood the database with constant queries to the
+		// system catalog.
+		return true, wait(ctx, indexPollInterval)
+	}
+
+	return droppedLock, nil
+
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.

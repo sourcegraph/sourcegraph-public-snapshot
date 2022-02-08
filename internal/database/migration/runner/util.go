@@ -52,8 +52,9 @@ func validateSchemaState(
 
 	if len(byState.pending) > 0 {
 		// We are currently holding the lock, so any migrations that are "pending" are either
-		// dead, or they're concurrent index creation objects. We'll partition this set into
-		// those two groups and determine what to do.
+		// dead and the migrator instance has died before finishing the operation, or they're
+		// active concurrent index creation operations. We'll partition this set into those two
+		// groups and determine what to do.
 		if pendingDefinitions, failedDefinitions, err := partitionPendingMigrations(ctx, schemaContext, byState.pending); err != nil {
 			return false, err
 		} else if len(failedDefinitions) > 0 {

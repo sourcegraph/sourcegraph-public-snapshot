@@ -241,10 +241,10 @@ func (r *Runner) withLockedSchemaState(
 	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
 		return false, err
 	} else if retry {
-		// An index is currently being created. Wait a small time and return to the caller to
-		// be re-invoked. We don't want to take any action here while the other proceses is
-		// working.
-		return true, wait(ctx, indexPollInterval)
+		// An index is currently being created. WE return true here to flag to the caller that
+		// we should wait a small time, then be re-invoked. We don't want to take any action
+		// here while the other proceses is working.
+		return true, nil
 	}
 
 	// Invoke the callback with the current schema state
