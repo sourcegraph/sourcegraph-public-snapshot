@@ -172,4 +172,22 @@ func TestRun(t *testing.T) {
 		mockassert.CalledN(t, store.UpFunc, 1)
 		mockassert.NotCalled(t, store.DownFunc)
 	})
+
+	t.Run("upgrade (create index concurrently)", func(t *testing.T) {
+		store := testStoreWithVersion(0, false)
+
+		if err := makeTestRunner(t, store).Run(ctx, Options{
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "concurrent-index",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		mockassert.CalledN(t, store.UpFunc, 2)
+		mockassert.NotCalled(t, store.DownFunc)
+	})
 }

@@ -15,6 +15,7 @@ func makeTestSchemas(t *testing.T) []*schemas.Schema {
 	return []*schemas.Schema{
 		makeTestSchema(t, "well-formed"),
 		makeTestSchema(t, "query-error"),
+		makeTestSchema(t, "concurrent-index"),
 	}
 }
 

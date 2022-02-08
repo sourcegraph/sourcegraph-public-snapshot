@@ -202,23 +202,28 @@ func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err err
 type lockedVersionCallback func(
 	schemaVersion schemaVersion,
 	byState definitionsByState,
+	earlyUnlock unlockFunc,
 ) error
+
+type unlockFunc func(err error) error
 
 // withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
 // database. The resulting schema state is passed to the given function. The advisory lock
-// will be released on function exit.
+// will be released on function exit, but the callback may explicitly release the lock earlier.
+//
+// This method returns a true-valued flag if it should be re-invoked by the caller.
 func (r *Runner) withLockedSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	f lockedVersionCallback,
-) (err error) {
+) (retry bool, _ error) {
 	// Take an advisory lock to determine if there are any migrator instances currently
 	// running queries unrelated to non-concurrent index creation. This will block until
 	// we are able to gain the lock.
 	unlock, err := r.pollLock(ctx, schemaContext.store)
 	if err != nil {
-		return err
+		return false, err
 	} else {
 		defer func() { err = unlock(err) }()
 	}
@@ -227,15 +232,21 @@ func (r *Runner) withLockedSchemaState(
 	// from our original assumption if another migrator is running concurrently.
 	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
 	if err != nil {
-		return err
+		return false, err
 	}
 	byState := groupByState(schemaVersion, definitions)
 
-	// Detect failed migrations prior to the callback
-	if err := validateSchemaState(ctx, schemaContext, byState); err != nil {
-		return err
+	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
+	// instances to finish their current work.
+	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
+		return false, err
+	} else if retry {
+		// An index is currently being created. WE return true here to flag to the caller that
+		// we should wait a small time, then be re-invoked. We don't want to take any action
+		// here while the other proceses is working.
+		return true, nil
 	}
 
 	// Invoke the callback with the current schema state
-	return f(schemaVersion, byState)
+	return false, f(schemaVersion, byState, unlock)
 }
