@@ -24,7 +24,7 @@ func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {
 	panic("unknown block type")
 }
 
-func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, username string, viewerCanManage bool) Notebook {
+func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, creatorUsername string, updaterUsername string, viewerCanManage bool) Notebook {
 	blocks := make([]NotebookBlock, 0, len(notebook.Blocks))
 	for _, block := range notebook.Blocks {
 		blocks = append(blocks, BlockToAPIResponse(block))
@@ -32,7 +32,8 @@ func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, username
 	return Notebook{
 		ID:              string(id),
 		Title:           notebook.Title,
-		Creator:         NotebookCreator{Username: username},
+		Creator:         NotebookUser{Username: creatorUsername},
+		Updater:         NotebookUser{Username: updaterUsername},
 		CreatedAt:       notebook.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:       notebook.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		Public:          notebook.Public,
@@ -58,14 +59,23 @@ func BlockToAPIInput(block notebooks.NotebookBlock) graphqlbackend.CreateNoteboo
 	panic("unknown block type")
 }
 
+func marshalNamespaceID(notebook *notebooks.Notebook) graphql.ID {
+	if notebook.NamespaceUserID != 0 {
+		return graphqlbackend.MarshalUserID(notebook.NamespaceUserID)
+	} else {
+		return graphqlbackend.MarshalOrgID(notebook.NamespaceOrgID)
+	}
+}
+
 func NotebookToAPIInput(notebook *notebooks.Notebook) graphqlbackend.NotebookInputArgs {
 	blocks := make([]graphqlbackend.CreateNotebookBlockInputArgs, 0, len(notebook.Blocks))
 	for _, block := range notebook.Blocks {
 		blocks = append(blocks, BlockToAPIInput(block))
 	}
 	return graphqlbackend.NotebookInputArgs{
-		Title:  notebook.Title,
-		Public: notebook.Public,
-		Blocks: blocks,
+		Title:     notebook.Title,
+		Public:    notebook.Public,
+		Blocks:    blocks,
+		Namespace: marshalNamespaceID(notebook),
 	}
 }

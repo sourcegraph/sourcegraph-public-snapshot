@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { ForwardReferenceComponent } from '../../types'
 
 import styles from './Button.module.scss'
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
-import { getButtonSize, getButtonStyle } from './utils'
+import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
@@ -16,6 +17,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
      * Allows modifying the size of the button. Supports larger or smaller variants.
      */
     size?: typeof BUTTON_SIZES[number]
+    /**
+     * Allows modifying the display property of the button. Supports inline-block or block variants.
+     */
+    display?: typeof BUTTON_DISPLAY[number]
     /**
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
@@ -54,21 +59,25 @@ export const Button = React.forwardRef(
             outline,
             className,
             disabled,
+            display,
             ...attributes
         },
         reference
     ) => {
         const tooltip = attributes['data-tooltip']
+        const { isBranded } = useWildcardTheme()
+
+        const brandedButtonClassname = classNames(
+            styles.btn,
+            variant && getButtonStyle({ variant, outline }),
+            display && getButtonDisplay({ display }),
+            size && getButtonSize({ size })
+        )
 
         const buttonComponent = (
             <Component
                 ref={reference}
-                className={classNames(
-                    'btn',
-                    variant && getButtonStyle({ variant, outline }),
-                    size && getButtonSize({ size }),
-                    className
-                )}
+                className={classNames(isBranded && brandedButtonClassname, className)}
                 type={type}
                 disabled={disabled}
                 {...attributes}

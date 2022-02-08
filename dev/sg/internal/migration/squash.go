@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -35,7 +34,7 @@ func Squash(database db.Database, commit string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("no migrations exist at commit %s", commit)
+		return errors.Newf("no migrations exist at commit %s", commit)
 	}
 
 	// Run migrations up to last migration index and dump the database into a single migration file pair
@@ -177,7 +176,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			squasherContainerName,
 		}
 		if _, killErr := run.DockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
+			err = errors.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
 		}
 
 		return err

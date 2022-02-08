@@ -2,11 +2,12 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRunnerRun(t *testing.T) {
@@ -53,7 +54,7 @@ func TestRunnerRun(t *testing.T) {
 
 	t.Run("upgrade error", func(t *testing.T) {
 		store := testStoreWithVersion(10000, false)
-		store.UpFunc.PushReturn(fmt.Errorf("uh-oh"))
+		store.UpFunc.PushReturn(errors.Newf("uh-oh"))
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
@@ -73,7 +74,7 @@ func TestRunnerRun(t *testing.T) {
 
 	t.Run("downgrade error", func(t *testing.T) {
 		store := testStoreWithVersion(10001, false)
-		store.DownFunc.PushReturn(fmt.Errorf("uh-oh"))
+		store.DownFunc.PushReturn(errors.Newf("uh-oh"))
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{

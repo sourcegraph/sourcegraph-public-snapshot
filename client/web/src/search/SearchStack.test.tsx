@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
 import { SearchStackEntry } from '../stores/searchStack'
@@ -11,8 +11,8 @@ import { SearchStackEntry } from '../stores/searchStack'
 import { SearchStack } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithRouterResult =>
-        renderWithRouter(<SearchStack {...props} />)
+    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(<SearchStack {...props} />)
 
     afterEach(cleanup)
 

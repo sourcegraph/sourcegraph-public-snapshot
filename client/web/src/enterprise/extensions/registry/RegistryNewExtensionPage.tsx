@@ -168,11 +168,11 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
-                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
                                 Learn more
                             </Link>{' '}
                             about authoring Sourcegraph extensions{' '}
-                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
                                 <HelpCircleOutline className="icon-inline" />
                             </Link>
                         </div>

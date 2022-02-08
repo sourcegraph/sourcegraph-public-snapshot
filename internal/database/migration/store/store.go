@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store struct {
@@ -161,35 +160,6 @@ WHERE row_number = 1
 ORDER BY version
 `
 
-// Lock creates and holds an advisory lock. This method returns a function that should be called
-// once the lock should be released. This method accepts the current function's error output and
-// wraps any additional errors that occur on close.
-//
-// Note that we don't use the internal/database/locker package here as that uses transactionally
-// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
-func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
-	key := s.lockKey()
-
-	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
-		return false, nil, err
-	}
-
-	close := func(err error) error {
-		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-			err = multierror.Append(err, unlockErr)
-		}
-
-		return err
-	}
-
-	return true, close, nil
-}
-
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
 // and wraps any additional errors that occur on close. Calling this method when the lock was not
@@ -214,7 +184,7 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 	close := func(err error) error {
 		if locked {
 			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-				err = multierror.Append(err, unlockErr)
+				err = errors.Append(err, unlockErr)
 			}
 
 			// No-op if called more than once
@@ -309,7 +279,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 			errMsgPtr(err),
 			logID,
 		)); execErr != nil {
-			err = multierror.Append(err, execErr)
+			err = errors.Append(err, execErr)
 		}
 	}()
 

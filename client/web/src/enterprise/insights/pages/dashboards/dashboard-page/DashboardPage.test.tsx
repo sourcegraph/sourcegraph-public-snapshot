@@ -7,6 +7,8 @@ import { Router, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
+
 import { CodeInsightsBackend } from '../../../core/backend/code-insights-backend'
 import {
     CodeInsightsBackendContext,
@@ -48,7 +50,7 @@ const Wrapper: React.FunctionComponent<{ api: Partial<CodeInsightsBackend> }> = 
     return <CodeInsightsBackendContext.Provider value={extendedApi}>{children}</CodeInsightsBackendContext.Provider>
 }
 
-const renderWithRouter = (
+const renderWithBrandedContext = (
     component: React.ReactElement,
     { route = '/', history = createMemoryHistory({ initialEntries: [route] }), api = {} } = {}
 ) => ({
@@ -64,14 +66,18 @@ const renderWithRouter = (
 })
 
 describe('DashboardsPage', () => {
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
     it('should redirect to "All insights" page if no dashboardId is provided', () => {
-        const { history } = renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} />)
+        const { history } = renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} />)
 
         expect(history.location.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`)
     })
 
     it('should render dashboard not found page when id is not found', () => {
-        renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
+        renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
             api: {
                 getDashboardSubjects: () => of([]),
                 getDashboards: () => of([]),
@@ -82,7 +88,7 @@ describe('DashboardsPage', () => {
     })
 
     it('should log events', () => {
-        renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
+        renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
             api: {
                 getDashboardSubjects: () => of([]),
                 getDashboards: () => of([]),

@@ -13,7 +13,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var numFiles = flag.Int("nf", 100, "number of files to write")

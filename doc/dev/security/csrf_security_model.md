@@ -119,7 +119,7 @@ The delineation of API and non-API endpoints is very important because we can al
 * The Sourcegraph browser extension, which browsers provide a distinct ORIGIN for (separate from the domain they are executing on.)
 * The `src` CLI, running on dev laptops, in CI pipelines, on servers, etc.
 * Users via `curl` or various programming languages.
-* Code host integrations, e.g. the Sourcegraph plugin running server-side on a Bitbucket server instance - or GitLab's integration.
+* Code host integrations, e.g. the Sourcegraph plugin running server-side on a Bitbucket Server / Bitbucket Data Center instance - or GitLab's integration.
 * Other websites, such as e.g. github1s.com using our GraphQL API to power various features.
 * Editor extensions (potentially in the future, not today)
 * The Sourcegraph application itself (however, most often this goes through `/.internal` which is unauthenticated and never exposed publicly.)

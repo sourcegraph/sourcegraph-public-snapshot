@@ -35,7 +35,7 @@ type CommitSearch struct {
 	IncludeModifiedFiles bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "CommitSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -44,7 +44,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, db); err != nil {
-		return err
+		return nil, err
 	}
 
 	opts := j.RepoOpts
@@ -66,7 +66,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bounded := goroutine.NewBounded(8)
@@ -109,7 +109,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		})
 	}
 
-	return bounded.Wait()
+	return nil, bounded.Wait()
 }
 
 func (j CommitSearch) Name() string {

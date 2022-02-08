@@ -5,6 +5,8 @@ import { NavLink, NavLinkProps } from 'react-router-dom'
 
 import { Button } from '@sourcegraph/wildcard'
 
+import styles from './LinkWithIcon.module.scss'
+
 interface LinkWithIconProps extends NavLinkProps {
     text: string
     icon: React.ComponentType<{ className?: string }>
@@ -21,7 +23,7 @@ export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props =>
             as={NavLink}
             to={to}
             exact={exact}
-            className={classNames('d-flex', 'align-items-center', className)}
+            className={classNames('d-flex', 'align-items-center', styles.linkWithIcon, className)}
             activeClassName={activeClassName}
             variant="link"
             data-testid={kebabCase(text)}
