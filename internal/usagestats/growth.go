@@ -150,13 +150,11 @@ func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
 	}
 
 	return &types.CTAUsage{
-		UserCountWhoSawBextCtaOnFilePage:       userCountWhoSawBextCtaOnFilePage,
-		UserCountWhoClickedBextCtaOnFilePage:   userCountWhoClickedBextCtaOnFilePage,
-		UserCountWhoSawBextCtaOnSearchPage:     userCountWhoSawBextCtaOnSearchPage,
-		UserCountWhoClickedBextCtaOnSearchPage: userCountWhoClickedBextCtaOnSearchPage,
-		BextCtaDisplaysOnFilePage:              bextCtaDisplaysOnFilePage,
-		BextCtaClicksOnFilePage:                bextCtaClicksOnFilePage,
-		BextCtaDisplaysOnSearchPage:            bextCtaDisplaysOnSearchPage,
-		BextCtaClicksOnSearchPage:              bextCtaClicksOnSearchPage,
+		BrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnFilePage, EventCount: bextCtaDisplaysOnFilePage},
+			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnSearchPage, EventCount: bextCtaDisplaysOnSearchPage},
+			ClickedOnFilePage:     types.UserAndEventCount{UserCount: userCountWhoClickedBextCtaOnFilePage, EventCount: bextCtaClicksOnFilePage},
+			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: userCountWhoClickedBextCtaOnSearchPage, EventCount: bextCtaClicksOnSearchPage},
+		},
 	}, nil
 }

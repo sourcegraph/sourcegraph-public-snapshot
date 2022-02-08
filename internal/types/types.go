@@ -1035,17 +1035,26 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
+// UserAndEventCount represents the number of events triggered in a given
+// time frame per user and overall.
+type UserAndEventCount struct {
+	UserCount  int32
+	EventCount int32
+}
+
+// FileAndSearchPageUserAndEventCounts represents the number of events triggered
+// on the "search result" and "file" pages in a given time frame.
+type FileAndSearchPageUserAndEventCounts struct {
+	DisplayedOnFilePage   UserAndEventCount
+	DisplayedOnSearchPage UserAndEventCount
+	ClickedOnFilePage     UserAndEventCount
+	ClickedOnSearchPage   UserAndEventCount
+}
+
 // CTAUsage represents the total number of CTAs displayed and clicked
 // on the "search result" and "file" pages over the current month.
 type CTAUsage struct {
-	UserCountWhoSawBextCtaOnFilePage       int32
-	UserCountWhoClickedBextCtaOnFilePage   int32
-	UserCountWhoSawBextCtaOnSearchPage     int32
-	UserCountWhoClickedBextCtaOnSearchPage int32
-	BextCtaDisplaysOnFilePage              int32
-	BextCtaClicksOnFilePage                int32
-	BextCtaDisplaysOnSearchPage            int32
-	BextCtaClicksOnSearchPage              int32
+	BrowserExtensionCTA FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users

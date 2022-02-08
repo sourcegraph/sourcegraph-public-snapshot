@@ -51,14 +51,12 @@ func TestCTAUsageUsageStatistics(t *testing.T) {
 	}
 
 	want := &types.CTAUsage{
-		UserCountWhoSawBextCtaOnFilePage:       1,
-		UserCountWhoClickedBextCtaOnFilePage:   1,
-		UserCountWhoSawBextCtaOnSearchPage:     1,
-		UserCountWhoClickedBextCtaOnSearchPage: 1,
-		BextCtaDisplaysOnFilePage:              1,
-		BextCtaClicksOnFilePage:                1,
-		BextCtaDisplaysOnSearchPage:            2,
-		BextCtaClicksOnSearchPage:              1,
+		BrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: 1, EventCount: 1},
+			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: 1, EventCount: 2},
+			ClickedOnFilePage:     types.UserAndEventCount{UserCount: 1, EventCount: 1},
+			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: 1, EventCount: 1},
+		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
