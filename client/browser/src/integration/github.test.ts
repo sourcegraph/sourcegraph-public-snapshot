@@ -37,7 +37,6 @@ describe('GitHub', () => {
         ]
         // Requests to other origins that we need to ignore to prevent breaking tests.
         for (const urlToMock of URLS_TO_MOCK) {
-
             testContext.server.any(urlToMock).intercept((request, response) => {
                 response.sendStatus(200)
             })
@@ -71,6 +70,9 @@ describe('GitHub', () => {
                 repository: {
                     name: rawRepoName,
                 },
+            }),
+            ResolveRawRepoName: ({ repoName }) => ({
+                repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
             }),
             BlobContent: () => ({
                 repository: {
@@ -118,7 +120,7 @@ describe('GitHub', () => {
         })
     })
 
-    it('shows hover tooltips when hovering a token', async () => {
+    it.only('shows hover tooltips when hovering a token', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -153,7 +155,7 @@ describe('GitHub', () => {
         // Serve a mock extension with a simple hover provider
         mockExtension({
             id: 'simple/hover',
-            bundle: simpleHoverProvider,
+            bundle: simpleHoverProvider(),
         })
 
         await driver.page.goto(
@@ -186,8 +188,8 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
-
-        // await driver.page.waitForTimeout(100000)
+        await token.click()
+        await driver.page.waitForTimeout(100000)
     })
 
     describe('Pull request pages', () => {

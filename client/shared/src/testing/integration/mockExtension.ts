@@ -103,7 +103,7 @@ export function setupExtensionMocking({
  * Shows the token that the user is hovering over in the hover overlay.
  * Used to verify that the correct document and position info reaches the extension.
  */
-export function simpleHoverProvider(): void {
+export const simpleHoverProvider = (provideDefinition?: any) => (): void => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
@@ -124,6 +124,18 @@ export function simpleHoverProvider(): void {
                         range,
                     }
                 },
+            })
+        )
+
+        context.subscriptions.add(
+            sourcegraph.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () =>
+                    new sourcegraph.Location(
+                        new URL(
+                            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+                        ),
+                        new sourcegraph.Range(new sourcegraph.Position(4, 5), new sourcegraph.Position(5, 14))
+                    ),
             })
         )
     }

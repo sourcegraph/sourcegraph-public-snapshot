@@ -142,7 +142,7 @@ describe('GitLab', () => {
         // Serve a mock extension with a simple hover provider
         mockExtension({
             id: 'simple/hover',
-            bundle: simpleHoverProvider,
+            bundle: simpleHoverProvider(),
         })
 
         await driver.page.goto(
