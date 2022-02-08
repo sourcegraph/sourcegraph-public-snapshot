@@ -1,10 +1,11 @@
 import classNames from 'classnames'
-import { createMemoryHistory } from 'history'
+import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -23,6 +24,10 @@ import {
     toPositionOrRangeQueryParameter,
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
+    parseQueryAndHash,
+    formatSearchParameters,
+    addLineRangeQueryParameter,
+    lprToRange,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Tab,
@@ -36,6 +41,7 @@ import {
     CardHeader,
     useDebounce,
     Button,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -46,7 +52,9 @@ import {
     LocationFields,
     Maybe,
 } from '../graphql-operations'
+import { resolveRevision } from '../repo/backend'
 import { Blob, BlobProps } from '../repo/blob/Blob'
+import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
@@ -65,7 +73,7 @@ interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel !== false
 
-export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => {
     if (!props.coolCodeIntelEnabled) {
         return null
     }
@@ -161,7 +169,7 @@ export const ReferencesList: React.FunctionComponent<
         setFilter(undefined)
     }, [props.clickedToken])
 
-    const history = useMemo(() => createMemoryHistory(), [])
+    const history = useMemo(() => H.createMemoryHistory(), [])
 
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
@@ -653,6 +661,18 @@ const ReferenceGroup: React.FunctionComponent<{
 
 const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
+export const ResizableCoolCodeIntelPanel = React.memo<
+    CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }
+>(props => (
+    <Resizable
+        className={styles.resizablePanel}
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<CoolCodeIntelPanel {...props} />}
+    />
+))
+
 export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
     props => {
         const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
@@ -701,30 +721,122 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelC
     }
 )
 
-export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+export function locationWithoutReferences(location: H.Location): H.LocationDescriptorObject {
+    const parsedQuery = parseQueryAndHash(location.search, location.hash)
+    delete parsedQuery.viewState
+
+    const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
+    const result = {
+        search: formatSearchParameters(
+            addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
+        ),
+        hash: '',
+    }
+    return result
+}
+
+export const CoolCodeIntelResizablePanel: React.FunctionComponent<
+    CoolCodeIntelProps & { onClose: () => void }
+> = props => {
+    let token = props.clickedToken
+
+    const history = useHistory()
+    const location = useLocation()
+
     const [closed, close] = useState(false)
-    const handlePanelClose = useCallback(() => close(true), [])
+    const handlePanelClose = useCallback(() => {
+        // Signal up that panel is closed
+        props.onClose()
+        // Remove 'viewState' from location
+        history.push(locationWithoutReferences(location))
+        // close(true)
+    }, [props, history, location])
+
     useEffect(() => {
-        if (props.clickedToken) {
+        if (token) {
             close(false)
         }
-    }, [props.clickedToken])
+    }, [token])
 
     if (closed) {
         return null
     }
 
-    if (!props.clickedToken) {
+    const { hash, pathname, search } = location
+    const { line, character, viewState } = parseQueryAndHash(search, hash)
+
+    // If we don't have a token that someone clicked on and we don't have
+    // '#tab=...' in the URL, we don't need to show the panel.
+    if (!token && !viewState) {
         return null
     }
 
-    return (
-        <Resizable
-            className={styles.resizablePanel}
-            handlePosition="top"
-            defaultSize={350}
-            storageKey="panel-size"
-            element={<CoolCodeIntelPanel {...props} handlePanelClose={handlePanelClose} />}
-        />
+    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+
+    const tokenSameAsUrl =
+        token &&
+        token.repoName === repoName &&
+        token.line === line &&
+        token.character === character &&
+        token.filePath === filePath
+
+    const haveFileLocationAndViewState =
+        line &&
+        character &&
+        filePath &&
+        viewState &&
+        (viewState === 'references' || viewState.startsWith('implementations_'))
+
+    // If we have info in URL, no clicked token, or the clicked token is not the
+    // same as what's in the URL, we use what's in the URL as token
+    if (haveFileLocationAndViewState && (!token || !tokenSameAsUrl)) {
+        const urlBasedToken = {
+            repoName,
+            line,
+            character,
+            filePath,
+        }
+        if (commitID === undefined || revision === undefined) {
+            return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
+        }
+
+        token = { ...urlBasedToken, revision, commitID }
+    }
+
+    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={handlePanelClose} />
+}
+
+export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
+    CoolCodeIntelProps & {
+        repoName: string
+        line: number
+        character: number
+        filePath: string
+        revision?: string
+
+        handlePanelClose: (closed: boolean) => void
+    }
+> = props => {
+    const resolvedRevision = useObservable(
+        useMemo(() => resolveRevision({ repoName: props.repoName, revision: props.revision }), [
+            props.repoName,
+            props.revision,
+        ])
     )
+
+    if (!resolvedRevision) {
+        return null
+    }
+
+    const token = {
+        repoName: props.repoName,
+        line: props.line,
+        character: props.character,
+        filePath: props.filePath,
+
+        revision: props.revision || resolvedRevision.defaultBranch,
+        commitID: resolvedRevision.commitID,
+    }
+
+    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={props.handlePanelClose} />
 }
