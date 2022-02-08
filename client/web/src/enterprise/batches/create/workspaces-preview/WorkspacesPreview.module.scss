@@ -6,10 +6,13 @@
 }
 
 .icon-container {
+    // The height and width must match that defined on the icon SVG
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     height: 50px;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     width: 50px;
     margin-top: 2rem;
-    & > * {
+    * {
         position: absolute;
     }
 }
@@ -35,7 +38,7 @@
     margin: 0;
     border: none;
     vertical-align: baseline;
-    width: 90px;
+    width: 6rem;
 }
 
 .on-example {
