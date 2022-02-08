@@ -3,8 +3,9 @@ package definition
 import (
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Definition struct {

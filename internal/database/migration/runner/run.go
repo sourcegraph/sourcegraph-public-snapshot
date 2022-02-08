@@ -3,9 +3,8 @@ package runner
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {

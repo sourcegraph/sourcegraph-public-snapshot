@@ -3,11 +3,10 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
@@ -81,8 +80,6 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, externalService.NamespaceUserID, externalService.NamespaceOrgID); err != nil {
-		return nil, err
-	}
+
 	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
 }

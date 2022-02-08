@@ -3,7 +3,8 @@ package apitest
 type Notebook struct {
 	ID              string
 	Title           string
-	Creator         NotebookCreator
+	Creator         NotebookUser
+	Updater         NotebookUser
 	CreatedAt       string
 	UpdatedAt       string
 	Public          bool
@@ -11,7 +12,7 @@ type Notebook struct {
 	Blocks          []NotebookBlock
 }
 
-type NotebookCreator struct {
+type NotebookUser struct {
 	Username string
 }
 

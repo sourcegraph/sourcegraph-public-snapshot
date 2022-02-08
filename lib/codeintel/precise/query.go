@@ -1,6 +1,6 @@
 package precise
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 type QueryResult struct {
 	Definitions []LocationData

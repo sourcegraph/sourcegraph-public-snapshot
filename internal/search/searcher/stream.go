@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type StreamDecoder struct {

@@ -7,13 +7,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {

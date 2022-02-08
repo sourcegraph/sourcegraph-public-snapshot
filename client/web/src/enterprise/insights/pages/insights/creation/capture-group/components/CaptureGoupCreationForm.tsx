@@ -92,7 +92,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -111,7 +111,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <>
                         Generated dynamically for each unique value from the regular expression capture group.{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener"
                         >
@@ -144,7 +144,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <small className="mt-3">
                         Explore{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
+                            to="/help/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -152,7 +152,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         </Link>{' '}
                         and learn more about{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -225,7 +225,7 @@ const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = prop
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <Link
-            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+            to="/help/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
             target="_blank"
             rel="noopener"
         >

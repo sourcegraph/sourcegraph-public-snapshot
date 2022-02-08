@@ -156,7 +156,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       <small>
         You can improve your workflow by creating custom extensions. See 
         <a
-          class=""
+          class="anchorLink"
           href="https://docs.sourcegraph.com/extensions/authoring"
           rel="noreferrer"
           target="_blank"

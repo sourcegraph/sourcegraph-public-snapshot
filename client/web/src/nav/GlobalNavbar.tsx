@@ -277,7 +277,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <WebCommandListPopoverButton
                                 {...props}
                                 location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
                                 menu={ContributableMenu.CommandPalette}
                                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
@@ -311,7 +310,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <ButtonLink className={styles.signUp} href={buildGetStartedURL('nav')} size="sm">
+                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
                                         Get started
                                     </ButtonLink>
                                 </div>

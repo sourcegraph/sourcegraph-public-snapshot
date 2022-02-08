@@ -3,10 +3,9 @@ package backend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")

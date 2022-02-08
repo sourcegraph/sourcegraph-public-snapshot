@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -40,6 +41,16 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	recipient2, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u3",
+		Password:              "p3",
+		EmailVerificationCode: "c3",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	org1, err := Orgs(db).Create(ctx, "o1", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -54,6 +65,26 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 	oi2, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oi3, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	OrgInvitations(db).Revoke(ctx, oi3.ID)
+	oi3, err = OrgInvitations(db).GetByID(ctx, oi3.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oi4, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	OrgInvitations(db).Respond(ctx, oi4.ID, recipient2.ID, false)
+	oi4, err = OrgInvitations(db).GetByID(ctx, oi4.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,6 +105,56 @@ func TestOrgInvitations(t *testing.T) {
 		}
 	})
 
+	testPending := func(t *testing.T, orgID int32, userID int32, want *OrgInvitation, errorMessageFormat string) {
+		t.Helper()
+		if oi, err := OrgInvitations(db).GetPending(ctx, orgID, userID); err != nil {
+			errorMessage := fmt.Sprintf(errorMessageFormat, orgID, userID)
+			if err.Error() == errorMessage {
+				return
+			}
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(oi, want) {
+			t.Errorf("got %+v, want %+v", oi, want)
+		}
+	}
+	t.Run("GetPending", func(t *testing.T) {
+		testPending(t, org1.ID, recipient.ID, oi1, "")
+		testPending(t, org2.ID, recipient.ID, oi2, "")
+
+		errorMessageFormat := "org invitation not found: [pending for org %d recipient %d]"
+		// was revoked, so should not be returned
+		testPending(t, org2.ID, recipient2.ID, oi3, errorMessageFormat)
+		// was responded, so should not be returned
+		testPending(t, org2.ID, recipient2.ID, oi4, errorMessageFormat)
+		// does not exist
+		testPending(t, 12345, recipient2.ID, nil, errorMessageFormat)
+	})
+
+	testPendingByID := func(t *testing.T, id int64, want *OrgInvitation, errorMessageFormat string) {
+		t.Helper()
+		if oi, err := OrgInvitations(db).GetPendingByID(ctx, id); err != nil {
+			errorMessage := fmt.Sprintf(errorMessageFormat, id)
+			if err.Error() == errorMessage {
+				return
+			}
+			t.Fatal(err)
+		} else if !reflect.DeepEqual(oi, want) {
+			t.Errorf("got %+v, want %+v", oi, want)
+		}
+	}
+	t.Run("GetPendingByID", func(t *testing.T) {
+		testPendingByID(t, oi1.ID, oi1, "")
+		testPendingByID(t, oi2.ID, oi2, "")
+
+		errorMessageFormat := "org invitation not found: [%d]"
+		// was revoked, so should not be returned
+		testPendingByID(t, oi3.ID, oi3, errorMessageFormat)
+		// was responded, so should not be returned
+		testPendingByID(t, oi4.ID, oi4, errorMessageFormat)
+		// does not exist
+		testPendingByID(t, 12345, nil, errorMessageFormat)
+	})
+
 	testListCount := func(t *testing.T, opt OrgInvitationsListOptions, want []*OrgInvitation) {
 		t.Helper()
 		if ois, err := OrgInvitations(db).List(ctx, opt); err != nil {
@@ -88,7 +169,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 	}
 	t.Run("List/Count all", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{}, []*OrgInvitation{oi1, oi2})
+		testListCount(t, OrgInvitationsListOptions{}, []*OrgInvitation{oi1, oi2, oi3, oi4})
 	})
 	t.Run("List/Count by OrgID", func(t *testing.T) {
 		testListCount(t, OrgInvitationsListOptions{OrgID: org1.ID}, []*OrgInvitation{oi1})
