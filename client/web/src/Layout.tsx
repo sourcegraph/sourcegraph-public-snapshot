@@ -40,7 +40,7 @@ import {
     CoolCodeIntel,
     CoolClickedToken,
     isCoolCodeIntelEnabled,
-    locationWithoutReferences,
+    locationWithoutViewState,
 } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
@@ -197,7 +197,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // Experimental reference panel
     const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
     const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
-        props.history.push(locationWithoutReferences(props.location))
+        props.history.push(locationWithoutViewState(props.location))
         onTokenClick(token)
     }
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
