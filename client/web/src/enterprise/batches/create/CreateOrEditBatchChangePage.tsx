@@ -220,34 +220,30 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchChange.name
     )
 
-    // The batch spec is only considered stale when its "on" statement has been modified,
-    // since this is what's relevant to the workspaces preview.
-    const batchSpecStale = useMemo(() => haveMatchingOnStatements(initialBatchSpecCode, debouncedCode) === false, [
-        initialBatchSpecCode,
-        debouncedCode,
-    ])
-
     // When we successfully submit the latest batch spec code to the backend for a new
     // workspaces preview, we follow up by refetching the batch change to get the latest
-    // batch spec.
-    const onCompletePreview = useCallback(() => {
+    // batch spec ID.
+    const onComplete = useCallback(() => {
         refetchBatchChange().then(noop).catch(noop)
     }, [refetchBatchChange])
 
+    const [workspacesConnection, setWorkspacesFilters] = useWorkspaces(batchSpec.id)
+
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
-        previewBatchSpec,
-        isLoading: isLoadingPreview,
+        preview: previewBatchSpec,
+        isInProgress: isWorkspacesPreviewInProgress,
         error: previewError,
         clearError: clearPreviewError,
         hasPreviewed,
-    } = usePreviewBatchSpec(
-        batchSpec.id,
-        isLatestBatchSpecApplied,
-        batchChange.namespace.id,
+        cancel,
+        resolutionState,
+    } = useWorkspacesPreview(batchSpec, {
+        isBatchSpecApplied: isLatestBatchSpecApplied,
+        namespaceID: batchChange.namespace.id,
         noCache,
-        onCompletePreview
-    )
+        onComplete,
+    })
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -259,12 +255,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => (isValid !== true ? INVALID_BATCH_SPEC_TOOLTIP : isLoadingPreview), [
-        isValid,
-        isLoadingPreview,
-    ])
+    const previewDisabled = useMemo(
+        () => (isValid !== true ? INVALID_BATCH_SPEC_TOOLTIP : isWorkspacesPreviewInProgress),
+        [isValid, isWorkspacesPreviewInProgress]
+    )
 
-    const { resolutionState } = useBatchSpecWorkspaceResolution(batchSpec, { fetchPolicy: 'cache-first' })
+    // The batch spec YAML code is only considered stale when its "on" statement has been
+    // modified since this is what's relevant to the workspaces preview.
+    const isBatchSpecStale = useMemo(() => haveMatchingOnStatements(initialBatchSpecCode, debouncedCode) === false, [
+        initialBatchSpecCode,
+        debouncedCode,
+    ])
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
@@ -280,10 +281,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         const disableExecution = Boolean(
             isValid !== true ||
                 previewError ||
-                isLoadingPreview ||
+                isWorkspacesPreviewInProgress ||
                 isExecuting ||
                 !hasPreviewed ||
-                batchSpecStale ||
+                isBatchSpecStale ||
                 resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
@@ -292,14 +293,22 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 ? INVALID_BATCH_SPEC_TOOLTIP
                 : !hasPreviewed
                 ? 'Preview workspaces first before you run.'
-                : batchSpecStale
+                : isBatchSpecStale
                 ? 'Update your workspaces preview before you run.'
-                : isLoadingPreview || resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
+                : isWorkspacesPreviewInProgress || resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
                 ? 'Wait for the preview to finish first.'
                 : undefined
 
         return [disableExecution, executionTooltip]
-    }, [hasPreviewed, isValid, previewError, isLoadingPreview, isExecuting, batchSpecStale, resolutionState])
+    }, [
+        hasPreviewed,
+        isValid,
+        previewError,
+        isWorkspacesPreviewInProgress,
+        isExecuting,
+        isBatchSpecStale,
+        resolutionState,
+    ])
 
     const buttons = (
         <>
