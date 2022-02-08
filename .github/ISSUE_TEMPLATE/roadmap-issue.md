@@ -2,7 +2,7 @@
 name: Roadmap issue
 about: This issue documents a high level roadmap item
 title: ''
-labels: roadmap
+labels: ''
 assignees: ''
 
 ---
