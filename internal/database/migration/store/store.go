@@ -290,15 +290,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	definitionVersion := definition.ID
-	targetVersion := definitionVersion
-	expectedCurrentVersion := definitionVersion - 1
-	if !up {
-		targetVersion = definitionVersion - 1
-		expectedCurrentVersion = definitionVersion
-	}
-
-	logID, err := s.createMigrationLog(ctx, up, expectedCurrentVersion, targetVersion, definitionVersion)
+	logID, err := s.createMigrationLog(ctx, definition.ID, up)
 	if err != nil {
 		return err
 	}
@@ -326,31 +318,20 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	return nil
 }
 
-func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int) (_ int, err error) {
+func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	assertionFailure := func(description string, args ...interface{}) error {
-		cta := "This condition should not be reachable by normal use of the migration store via the runner and indicates a bug. Please report this issue."
-		return errors.Errorf(description+"\n\n"+cta+"\n", args...)
+	targetVersion := definitionVersion
+	if !up {
+		targetVersion--
 	}
-	if currentVersion, dirty, ok, err := tx.Version(ctx); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
 		return 0, err
-	} else if dirty {
-		return 0, assertionFailure("dirty database")
-	} else if ok {
-		if currentVersion != expectedCurrentVersion {
-			return 0, assertionFailure("expected schema to have version %d, but has version %d\n", expectedCurrentVersion, currentVersion)
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-			return 0, err
-		}
 	}
-
 	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
 		return 0, err
 	}
@@ -368,7 +349,7 @@ func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrent
 		`,
 		currentMigrationLogSchemaVersion,
 		s.schemaName,
-		sourceVersion,
+		definitionVersion,
 		up,
 	)))
 	if err != nil {
