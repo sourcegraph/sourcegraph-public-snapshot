@@ -8,10 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-func TestQAJH(t *testing.T) {
-	t.Fail()
-}
-
 func TestErrorsInterface(t *testing.T) {
 	cases := []struct {
 		Err       error
