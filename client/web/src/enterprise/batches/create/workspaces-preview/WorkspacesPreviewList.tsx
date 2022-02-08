@@ -48,7 +48,6 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     isStale,
     excludeRepo,
 }) => {
-    const [filters, setFilters] = useState<WorkspacePreviewFilters>()
     const { connection, error, loading, hasNextPage, fetchMore } = useWorkspaces(batchSpecID, filters?.search ?? null)
 
     if (loading) {
@@ -58,7 +57,6 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error.message]} />}
-            <WorkspacePreviewFilterRow onFiltersChange={setFilters} />
             <ConnectionList className="list-group list-group-flush w-100">
                 {connection?.nodes?.map((node, index) => (
                     <WorkspacesPreviewListItem
@@ -86,63 +84,5 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                 </SummaryContainer>
             )}
         </ConnectionContainer>
-    )
-}
-
-export interface WorkspacePreviewFilterRowProps {
-    disabled: boolean
-    onFiltersChange: (newFilters: WorkspacePreviewFilters) => void
-}
-
-export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreviewFilterRowProps> = ({
-    disabled,
-    onFiltersChange,
-}) => {
-    const history = useHistory()
-    const searchElement = useRef<HTMLInputElement | null>(null)
-    const [search, setSearch] = useState<string | undefined>(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
-        return searchParameters.get('search') ?? undefined
-    })
-
-    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
-            event?.preventDefault()
-            const value = searchElement.current?.value
-            setSearch(value)
-
-            // Update the location, too.
-            const searchParameters = new URLSearchParams(history.location.search)
-            if (value) {
-                searchParameters.set('search', value)
-            } else {
-                searchParameters.delete('search')
-            }
-            if (history.location.search !== searchParameters.toString()) {
-                history.replace({ ...history.location, search: searchParameters.toString() })
-            }
-            // Update the filters in the parent component.
-            onFiltersChange({
-                search: value || null,
-            })
-        },
-        [history, onFiltersChange]
-    )
-
-    return (
-        <div className="w-100 row mr-1">
-            <div className="m-0 col">
-                <Form className="d-flex mb-2" onSubmit={onSubmit}>
-                    <Input
-                        disabled={disabled}
-                        className="flex-grow-1"
-                        type="search"
-                        ref={searchElement}
-                        defaultValue={search}
-                        placeholder="Search repository name"
-                    />
-                </Form>
-            </div>
-        </div>
     )
 }
