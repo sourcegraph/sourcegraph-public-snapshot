@@ -29,10 +29,12 @@ apk --no-cache add \
   make \
   pkgconfig
 
+NUMCPUS=$(grep -c '^processor' /proc/cpuinfo)
+
 # Installation
 curl "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C /tmp
 cd /tmp/ctags-$CTAGS_VERSION
 ./autogen.sh
 ./configure --program-prefix=universal- --enable-json --enable-seccomp
-make -j8
+make -j"$NUMCPUS" --load-average="$NUMCPUS"
 make install
