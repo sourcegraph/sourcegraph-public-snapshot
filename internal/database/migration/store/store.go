@@ -119,7 +119,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		"schema_migrations":              1528395834,
 		"codeintel_schema_migrations":    1000000015,
 		"codeinsights_schema_migrations": 1000000000,
-		"test_migrations_table2":         1000000000, // TODO - do better
+		"test_migrations_table_backfill": 1000000000, // used in tests
 	}
 	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
 		queries = append(queries, sqlf.Sprintf(`
