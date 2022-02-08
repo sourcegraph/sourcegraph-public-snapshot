@@ -15,8 +15,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './InviteMemberModal.module.scss'
 
 const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
-    mutation InviteUserToOrg($organization: ID!, $username: String!) {
-        inviteUserToOrganization(organization: $organization, username: $username) {
+    mutation InviteUserToOrg($organization: ID!, $username: String, $email: String) {
+        inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
             ...InviteUserToOrganizationFields
         }
     }
@@ -75,8 +75,8 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             await inviteUserToOrganization({
                 variables: {
                     organization: orgId,
-                    username: isEmail ? '' : userNameOrEmail,
-                    email: isEmail ? userNameOrEmail : '',
+                    username: isEmail ? null : userNameOrEmail,
+                    email: isEmail ? userNameOrEmail : null,
                 },
             })
             eventLogger.log('OrgMemberInvited')
