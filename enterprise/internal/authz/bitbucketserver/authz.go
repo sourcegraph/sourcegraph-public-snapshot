@@ -10,9 +10,14 @@ import (
 )
 
 // NewAuthzProviders returns the set of Bitbucket Server authz providers derived from the connections.
-// It also returns any validation problems with the config, separating these into "serious problems" and
-// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to code hosts - if desired,
+// callers should use `(*Provider).ValidateConnection` directly to get warnings related to connection
+// issues with the code host.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {

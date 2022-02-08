@@ -133,9 +133,10 @@ type Provider interface {
 	// is defined.
 	URN() string
 
-	// ValidateConnection checks the configuration and credentials of the authz provider and returns any
-	// problems.
-	ValidateConnection(ctx context.Context) (problems []string)
+	// ValidateConnection checks that the configuration and credentials of the authz provider
+	// can establish a valid connection with the provider, and returns warnings based on any
+	// issues it finds.
+	ValidateConnection(ctx context.Context) (warnings []string)
 }
 
 // ErrUnauthenticated indicates an unauthenticated request.

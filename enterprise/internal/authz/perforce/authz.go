@@ -9,11 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewAuthzProviders returns the set of Perforce authz providers derived from
-// the connections. It also returns any validation problems with the config,
-// separating these into "serious problems" and "warnings". "Serious problems"
-// are those that should make Sourcegraph set authz.allowAccessByDefault to
-// false. "Warnings" are all other validation problems.
+// NewAuthzProviders returns the set of Perforce authz providers derived from the connections.
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+// to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to code hosts - if desired,
+// callers should use `(*Provider).ValidateConnection` directly to get warnings related to connection
+// issues with the code host.
 func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, problems []string, warnings []string) {
 	for _, c := range conns {
 		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
