@@ -1,8 +1,7 @@
 import * as React from 'react'
 
+import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
-
-import { appendSubtreeQueryParameter } from '../util/url'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").

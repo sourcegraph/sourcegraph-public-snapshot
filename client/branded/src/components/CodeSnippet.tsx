@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
-import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+import { highlightCodeSafe } from '@sourcegraph/common'
 
 interface CodeSnippetProps {
     /** The code to be displayed. */

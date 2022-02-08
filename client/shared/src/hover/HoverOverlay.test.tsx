@@ -3,10 +3,10 @@ import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { subtypeOf } from '../util/types'
 
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
