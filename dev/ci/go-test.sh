@@ -108,7 +108,7 @@ echo "--- comby install"
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
 
-# Install richgo (TODO)
+# Install richgo for better output
 go install github.com/kyoh86/richgo@latest
 asdf reshim golang
 
