@@ -43,8 +43,6 @@ interface WorkspacesPreviewListProps {
     excludeRepo: (repo: string, branch: string) => void
 }
 
-const WORKSPACES_PER_PAGE_COUNT = 100
-
 export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewListProps> = ({
     batchSpecID,
     isStale,
@@ -89,46 +87,6 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
             )}
         </ConnectionContainer>
     )
-}
-
-const useWorkspaces = (
-    batchSpecID: Scalars['ID'],
-    search: string | null
-): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
-    useConnection<
-        BatchSpecWorkspacesPreviewResult,
-        BatchSpecWorkspacesPreviewVariables,
-        PreviewBatchSpecWorkspaceFields
-    >({
-        query: WORKSPACES,
-        variables: {
-            batchSpec: batchSpecID,
-            after: null,
-            first: WORKSPACES_PER_PAGE_COUNT,
-            search,
-        },
-        options: {
-            useURL: false,
-            fetchPolicy: 'cache-and-network',
-        },
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
-
-            if (!data.node) {
-                throw new Error(`Batch spec with ID ${batchSpecID} does not exist`)
-            }
-            if (data.node.__typename !== 'BatchSpec') {
-                throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchSpec`)
-            }
-            if (!data.node.workspaceResolution) {
-                throw new Error(`No workspace resolution found for batch spec with ID ${batchSpecID}`)
-            }
-            return data.node.workspaceResolution.workspaces
-        },
-    })
-
-export interface WorkspacePreviewFilters {
-    search: string | null
 }
 
 export interface WorkspacePreviewFilterRowProps {
