@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -200,6 +201,7 @@ func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err err
 
 type lockedVersionCallback func(
 	schemaVersion schemaVersion,
+	byState definitionsByState,
 ) error
 
 // withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
@@ -208,8 +210,12 @@ type lockedVersionCallback func(
 func (r *Runner) withLockedSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
-	callback lockedVersionCallback,
+	definitions []definition.Definition,
+	f lockedVersionCallback,
 ) (err error) {
+	// Take an advisory lock to determine if there are any migrator instances currently
+	// running queries unrelated to non-concurrent index creation. This will block until
+	// we are able to gain the lock.
 	unlock, err := r.pollLock(ctx, schemaContext.store)
 	if err != nil {
 		return err
@@ -217,10 +223,19 @@ func (r *Runner) withLockedSchemaState(
 		defer func() { err = unlock(err) }()
 	}
 
+	// Re-fetch the current schema of the database now that we hold the lock. This may differ
+	// from our original assumption if another migrator is running concurrently.
 	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
 	if err != nil {
 		return err
 	}
+	byState := groupByState(schemaVersion, definitions)
 
-	return callback(schemaVersion)
+	// Detect failed migrations prior to the callback
+	if err := validateSchemaState(ctx, schemaContext, byState); err != nil {
+		return err
+	}
+
+	// Invoke the callback with the current schema state
+	return f(schemaVersion, byState)
 }

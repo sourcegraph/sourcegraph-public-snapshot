@@ -2,13 +2,15 @@ package migration
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const metadataFileTemplate = `name: %s
-parent: %d
+parents: [%s]
 `
 
 const upMigrationFileTemplate = `BEGIN;
@@ -34,27 +36,23 @@ const downMigrationFileTemplate = `BEGIN;
 COMMIT;
 `
 
-// Add creates a new up/down migration file pair for the given database and
-// returns the names of the new files. If there was an error, the filesystem should remain
-// unmodified.
+// Add creates a new directory with stub migration files in the given schema and returns the
+// names of the newly created files. If there was an error, the filesystem is rolled-back.
 func Add(database db.Database, migrationName string) (up, down, metadata string, _ error) {
-	baseDir, err := migrationDirectoryForDatabase(database)
+	definitions, err := readDefinitions(database)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	// TODO: We can probably convert to migrations and use getMaxMigrationID
-	names, err := readFilenamesNamesInDirectory(baseDir)
-	if err != nil {
-		return "", "", "", err
+	leaves := definitions.Leaves()
+	parents := make([]int, 0, len(leaves))
+	for _, leaf := range leaves {
+		parents = append(parents, leaf.ID)
 	}
 
-	lastMigrationIndex, ok := parseLastMigrationIndex(names)
-	if !ok {
-		return "", "", "", errors.New("no previous migrations exist")
-	}
+	id := int(time.Now().UTC().Unix())
 
-	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex+1)
+	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, id)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -62,11 +60,20 @@ func Add(database db.Database, migrationName string) (up, down, metadata string,
 	contents := map[string]string{
 		upPath:       upMigrationFileTemplate,
 		downPath:     downMigrationFileTemplate,
-		metadataPath: fmt.Sprintf(metadataFileTemplate, migrationName, lastMigrationIndex),
+		metadataPath: fmt.Sprintf(metadataFileTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
 	}
 	if err := writeMigrationFiles(contents); err != nil {
 		return "", "", "", err
 	}
 
 	return upPath, downPath, metadataPath, nil
+}
+
+func intsToStrings(ints []int) []string {
+	strs := make([]string, 0, len(ints))
+	for _, value := range ints {
+		strs = append(strs, strconv.Itoa(value))
+	}
+
+	return strs
 }
