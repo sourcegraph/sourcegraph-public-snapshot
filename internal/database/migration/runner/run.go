@@ -2,11 +2,9 @@ package runner
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
@@ -20,7 +18,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		operationMap[operation.SchemaName] = operation
 	}
 	if len(operationMap) != len(options.Operations) {
-		return fmt.Errorf("multiple operations defined on the same schema")
+		return errors.Newf("multiple operations defined on the same schema")
 	}
 
 	numRoutines := 1
@@ -83,37 +81,38 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		}
 	}
 
-	if acquired, unlock, err := schemaContext.store.Lock(ctx); err != nil {
-		return err
-	} else if !acquired {
-		return fmt.Errorf("failed to acquire migration lock")
-	} else {
-		defer func() { err = unlock(err) }()
-	}
-
-	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
-	if err != nil {
-		return err
-	}
-	if !upgradingToLatest {
-		// Check if another instance changed the schema version before we acquired the
-		// lock. If we're not migrating to the latest schema, concurrent migrations may
-		// have unexpected behavior. We'll early exit here.
-		if schemaVersion.version != schemaContext.initialSchemaVersion.version {
-			return errMigrationContention
+	callback := func(schemaVersion schemaVersion) error {
+		if !upgradingToLatest {
+			// Check if another instance changed the schema version before we acquired the
+			// lock. If we're not migrating to the latest schema, concurrent migrations may
+			// have unexpected behavior. We'll early exit here.
+			if schemaVersion.version != schemaContext.initialSchemaVersion.version {
+				return errMigrationContention
+			}
 		}
-	}
-	if schemaVersion.dirty {
-		// The store layer will refuse to alter a dirty database. We'll return an error
-		// here instead of from the store as we can provide a bit instruction to the user
-		// at this point.
-		return errDirtyDatabase
+		if schemaVersion.dirty {
+			// The store layer will refuse to alter a dirty database. We'll return an error
+			// here instead of from the store as we can provide a bit instruction to the user
+			// at this point.
+			return errDirtyDatabase
+		}
+
+		targetVersion := operation.TargetVersion
+		gatherDefinitions := schemaContext.schema.Definitions.UpTo
+		if operation.Type != MigrationOperationTypeTargetedUp {
+			gatherDefinitions = schemaContext.schema.Definitions.DownTo
+		}
+
+		// Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
+		definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.version, targetVersion)
+		if err != nil {
+			return err
+		}
+
+		return r.applyMigrations(ctx, operation, schemaContext, definitions)
 	}
 
-	if operation.Type == MigrationOperationTypeTargetedUp {
-		return r.runSchemaUp(ctx, operation, schemaContext)
-	}
-	return r.runSchemaDown(ctx, operation, schemaContext)
+	return r.withLockedSchemaState(ctx, schemaContext, callback)
 }
 
 func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
@@ -131,32 +130,6 @@ func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperati
 	}
 
 	return nil
-}
-
-func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
-	logger.Info("Upgrading schema", "schema", schemaContext.schema.Name)
-
-	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.initialSchemaVersion.version, operation.TargetVersion)
-	if err != nil {
-		return err
-	}
-
-	return r.applyMigrations(ctx, operation, schemaContext, definitions)
-}
-
-func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
-	logger.Info("Downgrading schema", "schema", schemaContext.schema.Name)
-
-	if operation.TargetVersion == 0 {
-		operation.TargetVersion = schemaContext.initialSchemaVersion.version - 1
-	}
-
-	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.initialSchemaVersion.version, operation.TargetVersion)
-	if err != nil {
-		return err
-	}
-
-	return r.applyMigrations(ctx, operation, schemaContext, definitions)
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.

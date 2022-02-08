@@ -5,6 +5,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection } from '../site-admin/backend'
@@ -111,9 +112,9 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                                 <p>
                                                     If this is a public repository, check that this repository is
                                                     explicitly listed in an{' '}
-                                                    <a href="/site-admin/external-services">
+                                                    <Link to="/site-admin/external-services">
                                                         external service configuration
-                                                    </a>
+                                                    </Link>
                                                     .
                                                 </p>
                                             </>
@@ -122,9 +123,9 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                                             <>
                                                 As a site admin, you can add this repository to Sourcegraph to allow
                                                 users to search and view it by{' '}
-                                                <a href="/site-admin/external-services">
+                                                <Link to="/site-admin/external-services">
                                                     connecting an external service
-                                                </a>
+                                                </Link>
                                                 .
                                             </>
                                         )}

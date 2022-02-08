@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

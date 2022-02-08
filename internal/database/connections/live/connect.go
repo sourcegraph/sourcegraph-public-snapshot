@@ -3,16 +3,13 @@ package connections
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"os"
-
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func connectFrontendDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
@@ -50,7 +47,7 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, 
 	defer func() {
 		if err != nil {
 			if closeErr := db.Close(); closeErr != nil {
-				err = multierror.Append(err, closeErr)
+				err = errors.Append(err, closeErr)
 			}
 		}
 	}()
@@ -75,7 +72,7 @@ func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, obser
 			return err
 		}
 		if !shouldMigrate(validateOnly) {
-			return fmt.Errorf("database schema out of date")
+			return errors.Newf("database schema out of date")
 		}
 
 		return migrationRunner.Run(ctx, runner.Options{

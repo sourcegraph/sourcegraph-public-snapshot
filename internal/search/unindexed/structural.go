@@ -3,8 +3,9 @@ package unindexed
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -14,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"golang.org/x/sync/errgroup"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // repoData represents an object of repository revisions to search.
@@ -115,7 +116,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 	agg := streaming.NewAggregatingStream()
 	err := streamStructuralSearch(ctx, args, repos, agg)
 
-	event := agg.Get()
+	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		agg := streaming.NewAggregatingStream()
@@ -124,7 +125,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 			return err
 		}
 
-		event = agg.Get()
+		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
@@ -151,15 +152,14 @@ type StructuralSearch struct {
 	ZoektArgs    *search.ZoektParameters
 	SearcherArgs *search.SearcherParameters
 
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "StructuralSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -167,13 +167,13 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 	}()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}

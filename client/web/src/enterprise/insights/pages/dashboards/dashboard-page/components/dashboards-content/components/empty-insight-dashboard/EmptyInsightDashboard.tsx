@@ -5,7 +5,7 @@ import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
-import { getTooltipMessage, useDashboardPermissions } from '../../../../hooks/use-dashboard-permissions'
+import { getTooltipMessage, getDashboardPermissions } from '../../../../utils/get-dashboard-permissions'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
@@ -51,7 +51,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
     const { onAddInsight, dashboard, subjects } = props
-    const permissions = useDashboardPermissions(dashboard, subjects)
+    const permissions = getDashboardPermissions(dashboard, subjects)
 
     return (
         <section className={styles.emptySection}>

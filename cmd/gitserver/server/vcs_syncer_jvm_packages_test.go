@@ -12,13 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -257,4 +257,15 @@ type simpleJVMPackageDBStoreMock struct{}
 
 func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error) {
 	return []dbstore.JVMDependencyRepo{}, nil
+}
+
+// Sanity check errors.Is
+func TestIsError(t *testing.T) {
+	err := coursier.ErrNoSources{Dependency: reposource.MavenDependency{}}
+	if !errors.Is(err, coursier.ErrNoSources{}) {
+		t.Fatal("should be true")
+	}
+	if errors.Is(nil, coursier.ErrNoSources{}) {
+		t.Fatal("should be false")
+	}
 }

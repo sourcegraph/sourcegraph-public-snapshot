@@ -7,8 +7,7 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import { debounce } from 'lodash'
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -48,13 +47,12 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     dataTestId,
 }) => {
     const [inputValue, setInputValue] = useState(value)
-    const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
     const onSelect = useCallback(
         (value: string) => {
             setInputValue(value)
-            debouncedOnChange(value)
+            onChange(value)
         },
-        [debouncedOnChange, setInputValue]
+        [onChange, setInputValue]
     )
 
     const inputReference = useRef<HTMLInputElement>(null)
@@ -65,6 +63,8 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         // Only focus input on the initial render.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [inputReference])
+
+    useEffect(() => setInputValue(value), [setInputValue, value])
 
     const popoverReference = useRef<HTMLDivElement>(null)
     const onKeyDown = (event: React.KeyboardEvent): void => {
@@ -119,10 +119,12 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onChange={event => onSelect(event.target.value)}
                 onFocus={onFocus}
                 onBlur={onBlur}
+                onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
-            {/* Only show suggestions popover for the latest input value */}
-            {suggestions && value === inputValue && (
+            {/* Only show suggestions popover for the latest input value and if it does not contain an exact match.
+                This is to prevent opening the suggestions popover when a file URL is pasted into the file block. */}
+            {suggestions && value === inputValue && !suggestions.includes(inputValue) && (
                 <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (

@@ -1,12 +1,13 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { Notices } from './Notices'
 
 describe('Notices', () => {
     test('shows notices for location', () =>
         expect(
-            render(
+            renderWithBrandedContext(
                 <Notices
                     location="home"
                     settingsCascade={{
@@ -25,7 +26,7 @@ describe('Notices', () => {
 
     test('no notices', () =>
         expect(
-            render(
+            renderWithBrandedContext(
                 <Notices location="home" settingsCascade={{ subjects: [], final: { notices: null } }} />
             ).asFragment()
         ).toMatchSnapshot())

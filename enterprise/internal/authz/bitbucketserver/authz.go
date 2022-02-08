@@ -3,13 +3,11 @@ package bitbucketserver
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,11 +46,11 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	errs := new(multierror.Error)
+	errs := new(errors.MultiError)
 
 	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
 	if err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 		return nil, errs.ErrorOrNil()
 	}
 
@@ -61,7 +59,7 @@ func newAuthzProvider(
 	case idp.Username != nil:
 		p = NewProvider(cli, c.URN, pluginPerm)
 	default:
-		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
+		errs = errors.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
 
 	return p, errs.ErrorOrNil()

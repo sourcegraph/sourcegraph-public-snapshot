@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang-jwt/jwt/v4"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
@@ -88,9 +89,9 @@ func (token *oauthBearerTokenWithGitHubApp) Authenticate(r *http.Request) error 
 	// before passing to jwt-go.
 	iss := time.Now().Add(-time.Minute).Truncate(time.Second)
 	exp := iss.Add(10 * time.Minute)
-	claims := &jwt.StandardClaims{
-		IssuedAt:  iss.Unix(),
-		ExpiresAt: exp.Unix(),
+	claims := &jwt.RegisteredClaims{
+		IssuedAt:  jwt.NewNumericDate(iss),
+		ExpiresAt: jwt.NewNumericDate(exp),
 		Issuer:    token.appID,
 	}
 	bearer := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

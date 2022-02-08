@@ -3,12 +3,12 @@ package search
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Alert struct {
@@ -18,6 +18,31 @@ type Alert struct {
 	ProposedQueries []*ProposedQuery
 	// The higher the priority the more important is the alert.
 	Priority int
+}
+
+func MaxPriorityAlert(alerts ...*Alert) (max *Alert) {
+	for _, alert := range alerts {
+		if alert == nil {
+			continue
+		}
+		if max == nil || alert.Priority > max.Priority {
+			max = alert
+		}
+	}
+	return max
+}
+
+// MaxAlerter is a simple struct that provides a thread-safe way
+// to aggregate a set of alerts, leaving the highest priority alert
+type MaxAlerter struct {
+	sync.Mutex
+	*Alert
+}
+
+func (m *MaxAlerter) Add(a *Alert) {
+	m.Lock()
+	m.Alert = MaxPriorityAlert(m.Alert, a)
+	m.Unlock()
 }
 
 type ProposedQuery struct {

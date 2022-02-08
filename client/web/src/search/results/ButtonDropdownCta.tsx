@@ -4,7 +4,7 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
@@ -78,14 +78,13 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Button
-                    href={buildGetStartedURL('search-dropdown-cta', returnTo)}
+                <ButtonLink
+                    to={buildGetStartedURL('search-dropdown-cta', returnTo)}
                     onClick={onClick}
                     variant="primary"
-                    as="a"
                 >
                     Get started
-                </Button>
+                </ButtonLink>
             </DropdownMenu>
         </ButtonDropdown>
     )

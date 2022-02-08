@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -171,26 +172,6 @@ func TestVersions(t *testing.T) {
 		[]int{1003, 1004}, // expectedPendingVersions
 		[]int{1005, 1006}, // expectedFailedVersions
 	)
-}
-
-func TestLock(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(db)
-	ctx := context.Background()
-
-	t.Run("sanity test", func(t *testing.T) {
-		acquired, close, err := store.Lock(ctx)
-		if err != nil {
-			t.Fatalf("unexpected error acquiring lock: %s", err)
-		}
-		if !acquired {
-			t.Fatalf("expected lock to be acquired")
-		}
-
-		if err := close(nil); err != nil {
-			t.Fatalf("unexpected error releasing lock: %s", err)
-		}
-	})
 }
 
 func TestTryLock(t *testing.T) {
@@ -580,8 +561,8 @@ func TestIndexStatus(t *testing.T) {
 	// sessions holding advisory locks. We may happen to hit one of the earlier phases
 	// if we're quick enough, so we'll keep polling progress until we hit the target.
 	blockingPhase := "waiting for old snapshots"
-	nonblockingPhasePrefixes := make([]string, 0, len(CreateIndexConcurrentlyPhases))
-	for _, prefix := range CreateIndexConcurrentlyPhases {
+	nonblockingPhasePrefixes := make([]string, 0, len(storetypes.CreateIndexConcurrentlyPhases))
+	for _, prefix := range storetypes.CreateIndexConcurrentlyPhases {
 		if prefix == blockingPhase {
 			break
 		}

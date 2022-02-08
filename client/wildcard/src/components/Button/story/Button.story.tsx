@@ -7,6 +7,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
+import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
 
 import { ButtonVariants } from './ButtonVariants'
@@ -75,6 +76,26 @@ export const AllButtons: Story = () => (
         </Button>
         <p>Buttons can be made to look like links.</p>
         <ButtonVariants variants={['link']} />
+        <h2>Button Display</h2>
+        <Button className="mb-3" size="sm" variant="secondary" display="inline">
+            Inline
+        </Button>
+        <Button size="sm" variant="secondary" display="block">
+            Block
+        </Button>
+
+        <h2>Button Group</h2>
+        <ButtonGroup className="mb-3">
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+            <Button variant="secondary" display="block">
+                Grouped
+            </Button>
+        </ButtonGroup>
         <h2>Tooltips</h2>
         <p>Buttons can have tooltips.</p>
         <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">

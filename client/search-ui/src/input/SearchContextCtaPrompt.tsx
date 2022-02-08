@@ -4,7 +4,7 @@ import React from 'react'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
+import { Button, ProductStatusBadge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextCtaPrompt.module.scss'
 
@@ -71,16 +71,15 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
                     {buttonText}
                 </Button>
             ) : (
-                <Button
+                <ButtonLink
                     className={styles.searchContextCtaPromptButton}
-                    href={buildGetStartedURL('search-context-cta', '/user/settings/repositories')}
+                    to={buildGetStartedURL('search-context-cta', '/user/settings/repositories')}
                     onClick={onClick}
                     variant="primary"
                     size="sm"
-                    as="a"
                 >
                     Get started
-                </Button>
+                </ButtonLink>
             )}
             <Button
                 className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
