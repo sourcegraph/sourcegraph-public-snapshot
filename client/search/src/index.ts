@@ -1,7 +1,7 @@
 import { map } from 'rxjs/operators'
 
+import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import {
     fetchAutoDefinedSearchContexts,

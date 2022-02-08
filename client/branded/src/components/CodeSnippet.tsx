@@ -3,7 +3,7 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useMemo } from 'react'
 
-import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+import { highlightCodeSafe } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'
 
 import styles from './CodeSnippet.module.scss'

@@ -9,9 +9,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -356,15 +354,7 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream
 		tr.Finish()
 	}()
 
-	userID := int32(0)
-
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
-			userID = a.UID
-		}
-	}
-
-	userPrivateRepos := searchrepos.PrivateReposForUser(ctx, db, userID, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 

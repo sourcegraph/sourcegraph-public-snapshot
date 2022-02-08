@@ -1,11 +1,11 @@
 import assert from 'assert'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 

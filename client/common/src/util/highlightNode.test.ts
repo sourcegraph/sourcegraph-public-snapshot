@@ -1,4 +1,4 @@
-import * as dom from './dom'
+import * as dom from './highlightNode'
 
 describe('util/dom', () => {
     describe('highlightNode', () => {

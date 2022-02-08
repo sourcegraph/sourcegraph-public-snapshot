@@ -1141,8 +1141,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		defer fw.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
-	defer cancel()
+	ctx := r.Context()
+
+	if !req.NoTimeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
+		defer cancel()
+	}
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit

@@ -11,10 +11,12 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -674,14 +676,24 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	}, fatalErr
 }
 
-func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForUser", strconv.Itoa(int(userID)))
+// Get all private repos for the the current actor. On sourcegraph.com, those are
+// only the repos directly added by the user. Otherwise it's all repos the user has
+// access to on all connected code hosts / external services.
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
-	// Get all private repos for the the current actor. On sourcegraph.com, those are
-	// only the repos directly added by the user. Otherwise it's all repos the user has
-	// access to on all connected code hosts / external services.
-	//
+	userID := int32(0)
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			userID = a.UID
+		} else {
+			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			return nil
+		}
+	}
+	tr.LogFields(otlog.Int32("userID", userID))
+
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
 	// best to address that first.
