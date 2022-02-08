@@ -56,7 +56,7 @@ import { focusSearchPanel, registerWebviews } from './webview/commands'
 //    VS Code extension (that's why it exists, after all).
 
 export function activate(context: vscode.ExtensionContext): void {
-    const localStorageService = new LocalStorageService(context.workspaceState)
+    const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
 
     invalidateContextOnSettingsChange({ context, stateMachine })
