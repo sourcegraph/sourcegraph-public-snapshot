@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -97,7 +98,7 @@ func TestIndex(t *testing.T) {
 	fmt.Println()
 
 	tasklog := NewTaskLog()
-	err = Index(git, db, tasklog, parser.Parse, repo, head, 1)
+	err = Index(git, db, tasklog, parser.Parse, repo, head, 1, semaphore.NewWeighted(1))
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
