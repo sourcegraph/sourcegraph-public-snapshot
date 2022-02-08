@@ -4,12 +4,12 @@ import (
 	"log"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Info wraps the lower-level license.Info and exposes plan and feature information.

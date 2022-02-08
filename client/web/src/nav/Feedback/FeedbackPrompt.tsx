@@ -158,8 +158,9 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
+                        display="block"
                         variant="secondary"
-                        className={classNames('btn-block', styles.button)}
+                        className={styles.button}
                     >
                         {loading ? <LoadingSpinner /> : 'Send'}
                     </Button>
@@ -188,14 +189,18 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
             className={styles.feedbackPrompt}
             group={false}
         >
-            <DropdownToggle
+            <Button
                 tag="button"
                 caret={false}
-                className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', styles.toggle)}
+                className={classNames('text-decoration-none', styles.toggle)}
                 aria-label="Feedback"
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={DropdownToggle}
             >
                 <span>Feedback</span>
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.menu}>
                 <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>

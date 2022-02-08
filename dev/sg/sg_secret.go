@@ -2,21 +2,25 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
 	secretFlagSet      = flag.NewFlagSet("sg secret", flag.ExitOnError)
 	secretResetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
+
 	secretListFlagSet  = flag.NewFlagSet("sg secret list", flag.ExitOnError)
-	secretCommand      = &ffcli.Command{
+	secretListViewFlag = secretListFlagSet.Bool("view", false, "Display configured secrets when listing")
+
+	secretCommand = &ffcli.Command{
 		Name:       "secret",
 		ShortUsage: "sg secret <subcommand>...",
 		ShortHelp:  "Manipulate secrets stored in memory and in file",
@@ -72,6 +76,21 @@ func listSecretExec(ctx context.Context, args []string) error {
 	}
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
-	stdout.Out.WriteLine(output.Linef("", output.StyleWarning, strings.Join(keys, ", ")))
+	if *secretListViewFlag {
+		for _, key := range keys {
+			var val map[string]interface{}
+			if err := secretsStore.Get(key, &val); err != nil {
+				return errors.Newf("Get %q: %w", key, err)
+			}
+			data, err := json.MarshalIndent(val, "  ", "  ")
+			if err != nil {
+				return errors.Newf("Marshal %q: %w", key, err)
+			}
+			stdout.Out.WriteLine(output.Linef("", output.StyleYellow, "- %s:", key))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "  %s", string(data)))
+		}
+	} else {
+		stdout.Out.WriteLine(output.Linef("", output.StyleYellow, strings.Join(keys, ", ")))
+	}
 	return nil
 }

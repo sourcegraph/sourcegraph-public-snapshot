@@ -864,6 +864,8 @@ func (s *schedule) reset() {
 		s.timer.Stop()
 		s.timer = nil
 	}
+
+	log15.Debug("schedKnownRepos reset")
 	schedKnownRepos.Set(0)
 }
 

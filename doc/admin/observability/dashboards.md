@@ -2333,7 +2333,7 @@ Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign
 
 <p class="subtitle">Rate of API requests to list organisation members</p>
 
-Rate (QPS) of requests to list organisation members
+Rate (QPS) of API requests to list organisation members
 
 This panel has no related alerts.
 
@@ -2354,7 +2354,7 @@ Query: `sum(irate(src_graphql_request_duration_seconds_count{route="Organization
 
 <p class="subtitle">99 percentile latency of API requests to list organisation members</p>
 
-99 percentile of org-members latency
+99 percentile latency ofAPI requests to list organisation members
 
 This panel has no related alerts.
 
@@ -2375,7 +2375,7 @@ Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_b
 
 <p class="subtitle">Percentage of API requests to list organisation members that return an error</p>
 
-Percentage of org-members API requests that return an error
+Percentage of API requests to list organisation members that return an error
 
 This panel has no related alerts.
 
@@ -2387,6 +2387,321 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101702`
 <summary>Technical details</summary>
 
 Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: create_org_rate
+
+<p class="subtitle">Rate of API requests to create an organisation</p>
+
+Rate (QPS) of API requests to create an organisation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101710` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: create_org_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to create an organisation</p>
+
+99 percentile latency ofAPI requests to create an organisation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101711` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="CreateOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: create_org_error_rate
+
+<p class="subtitle">Percentage of API requests to create an organisation that return an error</p>
+
+Percentage of API requests to create an organisation that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101712` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="CreateOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_rate
+
+<p class="subtitle">Rate of API requests to remove organisation member</p>
+
+Rate (QPS) of API requests to remove organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101720` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to remove organisation member</p>
+
+99 percentile latency ofAPI requests to remove organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101721` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RemoveUserFromOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_error_rate
+
+<p class="subtitle">Percentage of API requests to remove organisation member that return an error</p>
+
+Percentage of API requests to remove organisation member that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101722` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_rate
+
+<p class="subtitle">Rate of API requests to invite a new organisation member</p>
+
+Rate (QPS) of API requests to invite a new organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to invite a new organisation member</p>
+
+99 percentile latency ofAPI requests to invite a new organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="InviteUserToOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_error_rate
+
+<p class="subtitle">Percentage of API requests to invite a new organisation member that return an error</p>
+
+Percentage of API requests to invite a new organisation member that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_rate
+
+<p class="subtitle">Rate of API requests to respond to an org invitation</p>
+
+Rate (QPS) of API requests to respond to an org invitation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to respond to an org invitation</p>
+
+99 percentile latency ofAPI requests to respond to an org invitation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RespondToOrganizationInvitation"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_error_rate
+
+<p class="subtitle">Percentage of API requests to respond to an org invitation that return an error</p>
+
+Percentage of API requests to respond to an org invitation that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_rate
+
+<p class="subtitle">Rate of API requests to list repositories owned by an org</p>
+
+Rate (QPS) of API requests to list repositories owned by an org
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101750` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to list repositories owned by an org</p>
+
+99 percentile latency ofAPI requests to list repositories owned by an org
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101751` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrgRepositories"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_error_rate
+
+<p class="subtitle">Percentage of API requests to list repositories owned by an org that return an error</p>
+
+Percentage of API requests to list repositories owned by an org that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101752` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgRepositories",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))*100`
 
 </details>
 
@@ -2841,6 +3156,50 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 <br />
 
+### Frontend: Ranking
+
+#### frontend: mean_position_of_clicked_search_result_6h
+
+<p class="subtitle">Mean position of clicked search result over 6h</p>
+
+The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))`
+
+</details>
+
+<br />
+
+#### frontend: distribution_of_clicked_search_result_type_over_6h_in_percent
+
+<p class="subtitle">Distribution of clicked search result type over 6h in %</p>
+
+The distribution of clicked search results by result type. At every point in time, the values should sum to 100.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)`
+
+</details>
+
+<br />
+
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
 #### frontend: mean_successful_sentinel_duration_over_1h30m
@@ -2851,7 +3210,7 @@ Mean search duration for all successful sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2872,7 +3231,7 @@ Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2893,7 +3252,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2914,7 +3273,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2935,7 +3294,7 @@ Mean search duration for successful sentinel queries, broken down by query. Usef
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102420` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102520` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2956,7 +3315,7 @@ Mean time to first result for successful streaming sentinel queries, broken down
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102421` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2977,7 +3336,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102430` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102530` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2998,7 +3357,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102431` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102531` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3019,7 +3378,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102540` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3040,7 +3399,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102450` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102550` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3061,7 +3420,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102451` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102551` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3082,7 +3441,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102460` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102560` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3103,7 +3462,7 @@ The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102470` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102570` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -13065,13 +13424,55 @@ Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__
 
 <br />
 
+#### zoekt: repos_stopped_tracking_total_aggregate
+
+<p class="subtitle">The number of repositories we stopped tracking over 5m (aggregate)</p>
+
+Repositories we stop tracking are soft-deleted during the next cleanup job.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(index_num_stopped_tracking_total[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt: repos_stopped_tracking_total_per_instance
+
+<p class="subtitle">The number of repositories we stopped tracking over 5m (per instance)</p>
+
+Repositories we stop tracking are soft-deleted during the next cleanup job.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
 #### zoekt: average_resolve_revision_duration
 
 <p class="subtitle">Average resolve revision duration over 5m</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13098,7 +13499,7 @@ this indicates repositories will not get updated indexes.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13198,9 +13599,9 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`$
 
 ### Zoekt: Indexing queue statistics
 
-#### zoekt: indexed_queue_size_aggregate
+#### zoekt: indexed_num_scheduled_jobs_aggregate
 
-<p class="subtitle"># of outstanding index jobs (aggregate)</p>
+<p class="subtitle"># scheduled index jobs (aggregate)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 
@@ -13219,9 +13620,9 @@ Query: `sum(index_queue_len)`
 
 <br />
 
-#### zoekt: indexed_queue_size_per_instance
+#### zoekt: indexed_num_scheduled_jobs_per_instance
 
-<p class="subtitle"># of outstanding index jobs (per instance)</p>
+<p class="subtitle"># scheduled index jobs (per instance)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 

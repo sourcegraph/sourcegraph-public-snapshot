@@ -8,13 +8,16 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 # Check broken links, etc., in Markdown files in doc/.
 
-echo
-echo
+set +e
+OUT=$(./dev/docsite.sh check)
+EXIT_CODE=$?
+set -e
 
-./dev/docsite.sh check || {
-  echo
-  echo Errors found in Markdown documentation files. Fix the errors in doc/ and try again.
-  echo
+echo -e "$OUT"
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo -e "$OUT" | ./dev/ci/annotate.sh -s "docsite"
   echo "^^^ +++"
-  exit 1
-}
+fi
+
+exit "$EXIT_CODE"

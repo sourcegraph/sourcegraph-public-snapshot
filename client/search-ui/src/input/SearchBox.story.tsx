@@ -13,9 +13,9 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('search-ui/search/input/SearchBox', module)
-    .addParameters({ chromatic: { viewports: [575, 700] } })
-    .addDecorator(story => <div className="w-100 d-flex">{story()}</div>)
+const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({
+    chromatic: { viewports: [575, 700], disableSnapshot: false },
+})
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -48,98 +48,69 @@ const defaultProps: SearchBoxProps = {
     platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
-add(
-    'default',
-    () => <BrandedStory>{props => <SearchBox {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>,
-    {}
-)
+add('SearchBox', () => (
+    <BrandedStory>
+        {props => (
+            <>
+                <h2>Default</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox {...defaultProps} isLightTheme={props.isLightTheme} />
+                </div>
 
-add(
-    'regexp enabled',
-    () => (
-        <BrandedStory>
-            {props => (
-                <SearchBox {...defaultProps} patternType={SearchPatternType.regexp} isLightTheme={props.isLightTheme} />
-            )}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>Regexp enabled</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox
+                        {...defaultProps}
+                        patternType={SearchPatternType.regexp}
+                        isLightTheme={props.isLightTheme}
+                    />
+                </div>
 
-add(
-    'structural enabled',
-    () => (
-        <BrandedStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    patternType={SearchPatternType.structural}
-                    isLightTheme={props.isLightTheme}
-                />
-            )}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>Structural enabled</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox
+                        {...defaultProps}
+                        patternType={SearchPatternType.structural}
+                        isLightTheme={props.isLightTheme}
+                    />
+                </div>
 
-add(
-    'case sensitivity enabled',
-    () => (
-        <BrandedStory>
-            {props => <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>Case sensitivity enabled</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
+                </div>
 
-add(
-    'with search contexts',
-    () => (
-        <BrandedStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    selectedSearchContextSpec="global"
-                />
-            )}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>With search contexts</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox
+                        {...defaultProps}
+                        showSearchContext={true}
+                        isLightTheme={props.isLightTheme}
+                        selectedSearchContextSpec="global"
+                    />
+                </div>
 
-add(
-    'with search contexts, user context selected',
-    () => (
-        <BrandedStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    selectedSearchContextSpec="@username/test-version-1.5"
-                />
-            )}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>With search contexts, user context selected</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox
+                        {...defaultProps}
+                        showSearchContext={true}
+                        isLightTheme={props.isLightTheme}
+                        selectedSearchContextSpec="@username/test-version-1.5"
+                    />
+                </div>
 
-add(
-    'with search contexts, disabled based on query',
-    () => (
-        <BrandedStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    queryState={{ query: 'hello context:global' }}
-                    selectedSearchContextSpec="@username"
-                />
-            )}
-        </BrandedStory>
-    ),
-    {}
-)
+                <h2>With search contexts, disabled based on query</h2>
+                <div className="w-100 d-flex my-2">
+                    <SearchBox
+                        {...defaultProps}
+                        showSearchContext={true}
+                        isLightTheme={props.isLightTheme}
+                        queryState={{ query: 'hello context:global' }}
+                        selectedSearchContextSpec="@username"
+                    />
+                </div>
+            </>
+        )}
+    </BrandedStory>
+))

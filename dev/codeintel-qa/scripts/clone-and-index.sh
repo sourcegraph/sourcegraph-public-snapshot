@@ -9,7 +9,7 @@ declare -A REVS=(
   [zap]='a6015e13fab9b744d96085308ce4e8f11bad1996 2aa9fa25da83bdfff756c36a91442edc9a84576c'
 
   # Each commit here is tagged as sg-test-1, sg-test-2, and sg-test-3, respectively. See CHANGES.md in the root of the
-  # repository's master branch to see a history of changes and which revisions were targetted. We specifically use replace
+  # repository's master branch to see a history of changes and which revisions were targeted. We specifically use replace
   # directives in the project root's go.mod file to target sourcegraph-testing/zap, which has no changes of its own. This
   # simulates how common forking works in the Go ecosystem (see our own use of zoekt).
   #

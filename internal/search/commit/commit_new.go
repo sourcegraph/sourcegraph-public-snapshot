@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -19,22 +21,30 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CommitSearch struct {
-	Query         gitprotocol.Node
-	RepoOpts      search.RepoOptions
-	Diff          bool
-	HasTimeFilter bool
-	Limit         int
-
-	Db database.DB
+	Query                gitprotocol.Node
+	RepoOpts             search.RepoOptions
+	Diff                 bool
+	HasTimeFilter        bool
+	Limit                int
+	CodeMonitorID        *int64
+	IncludeModifiedFiles bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
-		return err
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "CommitSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.TagFields(trace.LazyFields(j.Tags))
+
+	if err := j.ExpandUsernames(ctx, db); err != nil {
+		return nil, err
 	}
 
 	opts := j.RepoOpts
@@ -48,14 +58,15 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bounded := goroutine.NewBounded(8)
@@ -68,11 +79,12 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		}
 
 		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
+			Repo:                 repoRev.Repo.Name,
+			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Query:                j.Query,
+			IncludeDiff:          j.Diff,
+			Limit:                j.Limit,
+			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
@@ -97,7 +109,7 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		})
 	}
 
-	return bounded.Wait()
+	return nil, bounded.Wait()
 }
 
 func (j CommitSearch) Name() string {
@@ -105,6 +117,23 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
+}
+
+func (j *CommitSearch) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", j.Query),
+		trace.Stringer("repoOpts", &j.RepoOpts),
+		log.Bool("diff", j.Diff),
+		log.Bool("hasTimeFilter", j.HasTimeFilter),
+		log.Int("limit", j.Limit),
+		log.Int64("codeMonitorID", func() int64 {
+			if j.CodeMonitorID != nil {
+				return *j.CodeMonitorID
+			}
+			return 0
+		}()),
+		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+	}
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
@@ -321,6 +350,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		Repo:           repo,
 		DiffPreview:    diffPreview,
 		MessagePreview: messagePreview,
+		ModifiedFiles:  in.ModifiedFiles,
 	}
 }
 

@@ -38,6 +38,14 @@
             "pointer": true
           }
         },
+        "codeInsightsLandingPage": {
+          "description": "Enables code insights landing page layout.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
@@ -55,7 +63,7 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
           "type": "boolean",
           "default": false,
           "!go": {

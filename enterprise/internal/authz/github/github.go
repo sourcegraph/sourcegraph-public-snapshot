@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.
@@ -25,6 +24,14 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *cachedGroups
+
+	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
+	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
+	// explicitly and allow all org members to read it irrespective of repo permissions. We have
+	// this as a temporary feature flag here to guard against any regressions. This will go away as
+	// soon as we have verified our approach works and is reliable, at which point the fix will
+	// become the default behaviour.
+	enableGithubInternalRepoVisibility bool
 }
 
 type ProviderOptions struct {
@@ -81,33 +88,39 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) Validate() (problems []string) {
+func (p *Provider) Validate() []string {
 	required := p.requiredAuthScopes()
-	if len(required) > 0 {
-		scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err))
-		} else {
-			gotScopes := make(map[string]struct{})
-			for _, gotScope := range scopes {
-				gotScopes[gotScope] = struct{}{}
-			}
+	if len(required) == 0 {
+		return []string{}
+	}
 
-			// check if required scopes are satisfied
-			for _, requiredScope := range required {
-				satisfiesScope := false
-				for _, s := range requiredScope.oneOf {
-					if _, found := gotScopes[s]; found {
-						satisfiesScope = true
-						break
-					}
-				}
-				if !satisfiesScope {
-					problems = append(problems, requiredScope.message)
-				}
-			}
+	scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
+	if err != nil {
+		return []string{
+			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
 		}
 	}
+
+	gotScopes := make(map[string]struct{})
+	for _, gotScope := range scopes {
+		gotScopes[gotScope] = struct{}{}
+	}
+
+	var problems []string
+	// check if required scopes are satisfied
+	for _, requiredScope := range required {
+		satisfiesScope := false
+		for _, s := range requiredScope.oneOf {
+			if _, found := gotScopes[s]; found {
+				satisfiesScope = true
+				break
+			}
+		}
+		if !satisfiesScope {
+			problems = append(problems, requiredScope.message)
+		}
+	}
+
 	return problems
 }
 
@@ -539,7 +552,27 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
 	}
 
-	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
+	// If this repo is an internal repo, we want to allow everyone in the org to read this repo
+	// (provided the temporary feature flag is set) irrespective of the user being an admin or not.
+	isRepoInternallyVisible := false
+
+	// The visibility field on a repo is only returned if this feature flag is set. As a result
+	// there's no point in making an extra API call if this feature flag is not set explicitly.
+	if p.enableGithubInternalRepoVisibility {
+		var r *github.Repository
+		r, err = p.client.GetRepository(ctx, owner, name)
+		if err != nil {
+			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
+			// repo. Either way, we are not going to syncGroup for this repo.
+			return
+		}
+
+		if org != nil && r.Visibility == github.VisibilityInternal {
+			isRepoInternallyVisible = true
+		}
+	}
+
+	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
 	if allOrgMembersCanRead {
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.

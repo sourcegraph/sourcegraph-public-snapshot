@@ -9,7 +9,7 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import type { ExtensionAlertProps } from './repo/RepoContainer'
+import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
 import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
@@ -99,10 +99,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.NotebookCreate,
         render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <CreateNotebookPage {...props} />
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
             ) : (
-                <Redirect to={PageRoutes.Search} />
+                <Redirect to={PageRoutes.Notebooks} />
             ),
         exact: true,
     },
@@ -143,7 +143,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Welcome,
         render: props =>
             /**
-             * Welcome flow is allowed when:
+             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
              * 1. user is authenticated
              * 2. it's a DotComMode instance
              * AND
@@ -153,8 +153,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
              */
 
             !!props.authenticatedUser &&
-            window.context.sourcegraphDotComMode &&
-            (window.context.experimentalFeatures.enablePostSignupFlow ||
+            (!!new URLSearchParams(props.location.search).get('debug') ||
+                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
                 <PostSignUpPage
                     authenticatedUser={props.authenticatedUser}

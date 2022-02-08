@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type configurationPolicyResolver struct {
@@ -22,11 +22,11 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		db:                  db,
 		configurationPolicy: configurationPolicy,
-		errTracer:           op,
+		errTracer:           errTracer,
 	}
 }
 

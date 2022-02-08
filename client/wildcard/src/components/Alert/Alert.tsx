@@ -10,7 +10,6 @@ import { getAlertStyle } from './utils'
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: typeof ALERT_VARIANTS[number]
-    as?: React.ElementType
 }
 
 export const Alert = React.forwardRef(

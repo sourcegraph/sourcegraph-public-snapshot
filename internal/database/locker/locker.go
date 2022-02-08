@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"math"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // StringKey returns an int32 key based on s that can be used in Locker methods.

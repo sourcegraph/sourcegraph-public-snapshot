@@ -29,6 +29,15 @@ func Frontend() *monitoring.Container {
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
 
+	orgMetricSpec := []struct{ name, route, description string }{
+		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
+		{"create_org", "CreateOrganization", "API requests to create an organisation"},
+		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
+		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
+		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
+		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
+	}
+
 	return &monitoring.Container{
 		Name:        "frontend",
 		Title:       "Frontend",
@@ -564,37 +573,8 @@ func Frontend() *monitoring.Container {
 			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "org_members_rate",
-							Description:    "rate of API requests to list organisation members",
-							Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `Rate (QPS) of requests to list organisation members`,
-						},
-						{
-							Name:           "org_members_latency_p99",
-							Description:    "99 percentile latency of API requests to list organisation members",
-							Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `99 percentile of org-members latency`,
-						},
-						{
-							Name:           "org_members_error_rate",
-							Description:    "percentage of API requests to list organisation members that return an error",
-							Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `Percentage of org-members API requests that return an error`,
-						},
-					},
-				}},
+				Rows:   orgMetricRows(orgMetricSpec),
+			},
 			{
 				Title:  "Cloud KMS and cache",
 				Hidden: true,
@@ -644,6 +624,57 @@ func Frontend() *monitoring.Container {
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			{
+				Title:  "Ranking",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "mean_position_of_clicked_search_result_6h",
+							Description: "mean position of clicked search result over 6h",
+							Query:       "sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Targets = []sdk.Target{{
+									Expr:         o.Query,
+									LegendFormat: "{{type}}",
+								}, {
+									Expr:         "sum by (app) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (app) (rate(src_search_ranking_result_clicked_count[6h]))",
+									LegendFormat: "all",
+								}}
+								p.GraphPanel.Tooltip.Shared = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.",
+						},
+						{
+							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
+							Description: "distribution of clicked search result type over 6h in %",
+							Query:       "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"commit\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Targets = []sdk.Target{{
+									Expr:         o.Query,
+									LegendFormat: "commit",
+								}, {
+									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+									LegendFormat: "fileMatch",
+								}, {
+									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+									LegendFormat: "repo",
+								}}
+								p.GraphPanel.Tooltip.Shared = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The distribution of clicked search results by result type. At every point in time, the values should sum to 100.",
+						},
+					},
+				},
+			},
 
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
@@ -864,4 +895,45 @@ func Frontend() *monitoring.Container {
 			},
 		},
 	}
+}
+
+func orgMetricRows(orgMetricSpec []struct {
+	name        string
+	route       string
+	description string
+}) []monitoring.Row {
+	result := []monitoring.Row{}
+	for _, m := range orgMetricSpec {
+		result = append(result, monitoring.Row{
+
+			{
+				Name:           m.name + "_rate",
+				Description:    "rate of " + m.description,
+				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `Rate (QPS) of ` + m.description,
+			},
+			{
+				Name:           m.name + "_latency_p99",
+				Description:    "99 percentile latency of " + m.description,
+				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `99 percentile latency of` + m.description,
+			},
+			{
+				Name:           m.name + "_error_rate",
+				Description:    "percentage of " + m.description + " that return an error",
+				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `Percentage of ` + m.description + ` that return an error`,
+			},
+		})
+	}
+	return result
 }

@@ -30,6 +30,24 @@
 | 5 | TypeParameter | 
 | 6 | Parameter | 
 | 7 | Meta | Can be used for any purpose.
+| 8 | Local | 
+### Diagnostic
+
+Represents a diagnostic, such as a compiler error or warning, which should be
+reported for a document.
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **severity** | Severity | Should this diagnostic be reported as an error, warning, info, or hint?
+|  **code** | string | Code of this diagnostic, which might appear in the user interface.
+|  **message** | string | Message of this diagnostic.
+|  **source** | string | Human-readable string describing the source of this diagnostic, e.g. 'typescript' or 'super lint'.
+| repeated **tags** | DiagnosticTag | 
+
+
+
+
+
 ### Document
 
 Document defines the metadata about a source file on disk.
@@ -85,6 +103,7 @@ information.
 |  **symbol_roles** | int32 | (optional) Bitmask for what `SymbolRole` apply to this occurrence. See `SymbolRole` for how to read and write this field.
 | repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
 |  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
+| repeated **diagnostics** | Diagnostic | Diagnostics that have been reported for this specific range.
 
 Additional notes on **range**:
 
@@ -106,6 +125,7 @@ reduce the total payload size of an index by 50% by using `repeated int32`
 instead.  The `repeated int32` encoding is admittedly more embarrassing to
 work with in some programming languages but we hope the performance
 improvements make up for it.
+
 
 
 
@@ -148,8 +168,8 @@ interchangeably with `Symbol`. The syntax for Symbol is the following:
 ```
   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
   <package>              ::= <manager> ' ' <package-name> ' ' <version>
-  <scheme>               ::= any UTF-8 character, escape spaces with double space.
-  <manager>              ::= same as above
+  <scheme>               ::= any UTF-8, escape spaces with double space.
+  <manager>              ::= same as above, use the placeholder '.' to indicate an empty value
   <package-name>         ::= same as above
   <version>              ::= same as above
   <descriptor>           ::= <package> | <type> | <term> | <method> | <type-parameter> | <parameter> | <meta>
@@ -164,7 +184,7 @@ interchangeably with `Symbol`. The syntax for Symbol is the following:
   <method-disambiguator> ::= <simple-identifier>
   <identifier>           ::= <simple-identifier> | <escaped-identifier>
   <simple-identifier>    ::= { <identifier-character> }
-  <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
+  <identifier-character> ::= '_' | '+' | '-' | '$' | ASCII letter or digit
   <escaped-identifier>   ::= '`' { <escaped-character> } '`'
   <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
 ```

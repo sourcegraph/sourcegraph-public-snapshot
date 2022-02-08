@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -121,7 +121,13 @@ func ProvidersFromConfig(
 	}
 
 	if len(gitHubConns) > 0 {
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.SiteConfig().AuthProviders)
+		enableGithubInternalRepoVisibility := false
+		ef := cfg.SiteConfig().ExperimentalFeatures
+		if ef != nil {
+			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
+		}
+
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
@@ -186,6 +192,13 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 
 	var providers []authz.Provider
 	var problems []string
+
+	enableGithubInternalRepoVisibility := false
+	ex := siteConfig.ExperimentalFeatures
+	if ex != nil {
+		enableGithubInternalRepoVisibility = ex.EnableGithubInternalRepoVisibility
+	}
+
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
 		providers, problems, _ = github.NewAuthzProviders(
@@ -196,6 +209,7 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 				},
 			},
 			siteConfig.AuthProviders,
+			enableGithubInternalRepoVisibility,
 		)
 	case *schema.GitLabConnection:
 		providers, problems, _ = gitlab.NewAuthzProviders(

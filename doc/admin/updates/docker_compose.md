@@ -10,7 +10,7 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.35 -> 3.36.1
+## 3.35 -> 3.36
 
 No manual migration is required - follow the [standard upgrade procedure](../install/docker-compose/operations.md#upgrade) to upgrade your deployment.
 

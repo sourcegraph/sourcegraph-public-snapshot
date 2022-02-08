@@ -5,12 +5,7 @@ import { ForwardReferenceComponent } from '../../..'
 
 import styles from './CardText.module.scss'
 
-interface CardTextProps {
-    /**
-     * Used to change the element that is rendered.
-     */
-    as?: React.ElementType
-}
+interface CardTextProps {}
 
 export const CardText = React.forwardRef(({ as: Component = 'p', children, className, ...attributes }, reference) => (
     <Component ref={reference} className={classNames(styles.cardText, className)} {...attributes}>

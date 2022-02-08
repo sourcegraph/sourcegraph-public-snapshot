@@ -1,6 +1,8 @@
 import React from 'react'
 import 'storybook-addon-designs'
 
+import { Link } from '@sourcegraph/wildcard'
+
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
 
@@ -45,7 +47,7 @@ export const TextStory: React.FunctionComponent = () => (
         </p>
 
         <p>
-            Text can contain links, which <a href="/">trigger a navigation to a different page</a>.
+            Text can contain links, which <Link to="/">trigger a navigation to a different page</Link>.
         </p>
 
         <p>
@@ -54,12 +56,12 @@ export const TextStory: React.FunctionComponent = () => (
 
         <p>
             Text can be <i>idiomatic</i> with <code>{'<i>'}</code>. See{' '}
-            <a
+            <Link
                 target="__blank"
-                href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em#%3Ci%3E_vs._%3Cem%3E"
+                to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em#%3Ci%3E_vs._%3Cem%3E"
             >
                 {'<i>'} vs. {'<em>'}
-            </a>{' '}
+            </Link>{' '}
             for more info.
         </p>
 

@@ -1,6 +1,6 @@
 import React, { FC, useMemo } from 'react'
 
-import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+import { encodeURIPathComponent } from '@sourcegraph/common'
 import { Badge, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'

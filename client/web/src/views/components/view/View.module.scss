@@ -12,12 +12,11 @@
 }
 
 .header {
-    display: flex;
     margin-bottom: 0.75rem;
 }
 
 .header-content {
-    flex-grow: 1;
+    display: flex;
 }
 
 .title {
@@ -29,6 +28,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     margin-bottom: 0.25rem;
+    flex-grow: 1;
 }
 
 .action {
@@ -38,4 +38,8 @@
     // Move icons in action panel visually closer to card border
     margin-right: -0.5rem;
     margin-top: -0.25rem;
+}
+
+.subtitle {
+    flex-basis: 100%;
 }

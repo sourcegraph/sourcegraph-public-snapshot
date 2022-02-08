@@ -17,6 +17,9 @@ const config: Meta = {
 
     parameters: {
         component: Modal,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 

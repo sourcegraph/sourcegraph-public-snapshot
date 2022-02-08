@@ -49,7 +49,8 @@ RUN apk add --no-cache --verbose \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
     postgresql=12.9-r0 \
-    postgresql-contrib
+    postgresql-contrib \
+    cmake
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -102,6 +103,39 @@ COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz /
 RUN tar zxf /lib-x64.tgz --directory /
 
+# p4-fusion installation
+# Fetching p4 sources archive
+RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz && \
+    mv v1.5.tar.gz /usr/local/bin && \
+    mkdir -p /usr/local/bin/p4-fusion-src && \
+    tar -C /usr/local/bin/p4-fusion-src -xzvf /usr/local/bin/v1.5.tar.gz --strip 1
+
+# We need a specific version of OpenSSL
+RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
+
+WORKDIR /openssl-1.0.2t
+
+RUN ./config && make && make install
+
+# We also need Helix Core C++ API to build p4-fusion
+RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz && \
+    mkdir -p /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux && \
+    mv p4api.tgz /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux && \
+    tar -C /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux -xzvf /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux/p4api.tgz --strip 1
+
+WORKDIR /usr/local/bin/p4-fusion-src
+
+# Build p4-fusion
+RUN ./generate_cache.sh Release
+RUN ./build.sh
+
+WORKDIR /usr/local/bin
+# Move exe file to /usr/local/bin where other executables are located; delete src directory and archive
+RUN mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin && \
+    rm -rf /usr/local/bin/p4-fusion-src && \
+    rm /usr/local/bin/v1.5.tar.gz
+# p4-fusion installation completed here
+
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
@@ -109,6 +143,8 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
+
+WORKDIR /
 
 ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

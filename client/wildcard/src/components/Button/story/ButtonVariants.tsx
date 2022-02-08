@@ -7,7 +7,7 @@ import { BUTTON_VARIANTS } from '../constants'
 
 import styles from './ButtonVariants.module.scss'
 
-interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline' | 'as'> {
+interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline'> {
     variants: readonly typeof BUTTON_VARIANTS[number][]
     icon?: React.ComponentType<{ className?: string }>
 }

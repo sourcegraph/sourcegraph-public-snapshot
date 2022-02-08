@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 	"github.com/gen2brain/beeep"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -67,7 +67,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -99,8 +99,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
-				return nil
+				return writePrettyMarkdown(out)
 			},
 		}, {
 			Name:      "status",
@@ -124,7 +123,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				// Print a high level overview
 				printBuildOverview(build)
@@ -135,7 +134,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						// get the next update
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 						if err != nil {
-							return false, fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+							return false, errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 						}
 						done := 0
 						for _, job := range build.Jobs {
@@ -237,7 +236,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 				build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit)
 				if err != nil {
-					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
@@ -272,7 +271,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
 					*build.WebURL))
@@ -306,7 +305,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
 					if err != nil {
-						return fmt.Errorf("invalid Loki target: %w", err)
+						return errors.Newf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
 					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
@@ -371,6 +370,17 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 				return nil
 			},
+		}, {
+			Name:      "docs",
+			ShortHelp: "Render reference documentation for build pipeline types.",
+			Exec: func(ctx context.Context, args []string) error {
+				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+				out, err := run.InRoot(cmd)
+				if err != nil {
+					return err
+				}
+				return writePrettyMarkdown(out)
+			},
 		}},
 	}
 )
@@ -388,6 +398,9 @@ func printBuildOverview(build *buildkite.Build) {
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
 	stdout.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
 		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
+	if build.PullRequest != nil {
+		stdout.Out.Writef("PR:\t\thttps://github.com/sourcegraph/sourcegraph/pull/%s", *build.PullRequest.ID)
+	}
 }
 
 func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
@@ -435,6 +448,13 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
 		case "waiting", "blocked", "scheduled", "assigned":
 			style = output.StyleSuggestion
+		case "broken":
+			// State 'broken' happens when a conditional is not met, namely the 'if' block
+			// on a job. Why is it 'broken' and not 'skipped'? We don't think it be like
+			// this, but it do. Anyway, we pretend it was skipped and treat it as such.
+			// https://buildkite.com/docs/pipelines/conditionals#conditionals-and-the-broken-state
+			*job.State = "skipped"
+			fallthrough
 		case "skipped", "not_run":
 			style = output.StyleReset
 		case "running":
@@ -495,7 +515,7 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 				return nil
 			}
 		case <-time.After(30 * time.Minute):
-			return fmt.Errorf("polling timeout reached")
+			return errors.Newf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
 		}

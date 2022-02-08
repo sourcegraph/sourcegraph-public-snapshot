@@ -15,7 +15,7 @@ import * as View from '../view'
 import { ViewGrid } from './ViewGrid'
 
 export default {
-    title: 'web/views/view-grid',
+    title: 'web/views',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 
@@ -33,7 +33,7 @@ export const SimpleViewGrid: Story = () => (
             subtitle="Subtitle chart description"
             actions={
                 <>
-                    <Button className="btn-icon p-1">
+                    <Button variant="icon" className="p-1">
                         <FilterOutlineIcon size="1rem" />
                     </Button>
                     <ContextMenu />
@@ -48,7 +48,7 @@ export const SimpleViewGrid: Story = () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton className="btn btn-icon p-1">
+            <MenuButton as={Button} variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>

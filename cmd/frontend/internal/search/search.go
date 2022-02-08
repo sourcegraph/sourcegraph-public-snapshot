@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,6 +33,7 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -85,7 +86,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
-	events = batchEvents(events, 50*time.Millisecond)
 
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
@@ -138,20 +138,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	filters := &streaming.SearchFilters{}
 
+	var wgLogLatency sync.WaitGroup
+	defer wgLogLatency.Wait()
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
 		filters.Update(event)
 
 		// Truncate the event to the match limit before fetching repo metadata
-		for i, match := range event.Results {
-			if display <= 0 {
-				event.Results = event.Results[:i]
-				break
-			}
-
-			display = match.Limit(display)
-		}
+		display = event.Results.Limit(display)
 
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {
@@ -184,7 +180,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
 
-			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
+			graphqlbackend.LogSearchLatency(ctx, h.db, &wgLogLatency, &inputs, int32(time.Since(start).Milliseconds()))
 		}
 	}
 
@@ -284,15 +280,16 @@ LOOP:
 // will return the results resolver and error.
 func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan streaming.SearchEvent)
+	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+		eventsC <- event
+	})
+	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, stream)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:       a.Query,
 		Version:     a.Version,
 		PatternType: strPtr(a.PatternType),
-
-		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
-			eventsC <- event
-		}),
+		Stream:      batchedStream,
 	})
 	if err != nil {
 		close(eventsC)
@@ -309,6 +306,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 	go func() {
 		defer close(final)
 		defer close(eventsC)
+		defer batchedStream.Done()
 
 		r, err := search.Results(ctx)
 		final <- finalResult{resultsResolver: r, err: err}
@@ -623,51 +621,6 @@ func GuessSource(r *http.Request) trace.SourceType {
 	}
 
 	return trace.SourceOther
-}
-
-// batchEvents takes an event stream and merges events that come through close in time into a single event.
-// This makes downstream database and network operations more efficient by enabling batch reads.
-func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
-	results := make(chan streaming.SearchEvent)
-	go func() {
-		defer close(results)
-
-		// Send the first event without a delay
-		firstEvent, ok := <-source
-		if !ok {
-			return
-		}
-		results <- firstEvent
-
-	OUTER:
-		for {
-			// Wait for a first event
-			event, ok := <-source
-			if !ok {
-				return
-			}
-
-			// Wait up to the delay for more events to come through,
-			// and merge any that do into the first event
-			timer := time.After(delay)
-			for {
-				select {
-				case newEvent, ok := <-source:
-					if !ok {
-						// Flush the buffered event and exit
-						results <- event
-						return
-					}
-					event.Results = append(event.Results, newEvent.Results...)
-					event.Stats.Update(&newEvent.Stats)
-				case <-timer:
-					results <- event
-					continue OUTER
-				}
-			}
-		}
-	}()
-	return results
 }
 
 func repoIDs(results []result.Match) []api.RepoID {

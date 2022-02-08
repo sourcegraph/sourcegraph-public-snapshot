@@ -4,6 +4,9 @@ You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For ex
 
 Please review [the PostgreSQL](../postgres.md) documentation for a complete list of requirements.
 
+> NOTE: Only the frontend (_pgsql_) and code intelligence (_codeintel-db_) databases are supported to run externally at this time.
+
+
 ## General recommendations
 
 If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
@@ -45,7 +48,7 @@ Add the following to your `docker run` command:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.36.1</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.36.3</code></pre>
 
 ### Docker Compose
 

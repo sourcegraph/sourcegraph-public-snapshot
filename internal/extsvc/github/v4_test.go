@@ -10,12 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -643,6 +642,25 @@ query{
 			}
 		})
 	}
+}
+
+func TestRecentCommitters(t *testing.T) {
+	cli, save := newV4Client(t, "RecentCommitters")
+	t.Cleanup(save)
+
+	recentCommitters, err := cli.RecentCommitters(context.Background(), &RecentCommittersParams{
+		Owner: "sourcegraph-testing",
+		Name:  "etcd",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/RecentCommitters",
+		update("SearchRepos-Enterprise"),
+		recentCommitters,
+	)
 }
 
 func TestV4Client_SearchRepos_Enterprise(t *testing.T) {

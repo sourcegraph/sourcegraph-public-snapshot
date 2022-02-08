@@ -3,9 +3,9 @@ package compression
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoStore interface {
@@ -160,7 +161,7 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 	}
 
 	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
-	err = i.commitStore.InsertCommits(ctx, repoId, commits)
+	err = i.commitStore.InsertCommits(ctx, repoId, commits, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}

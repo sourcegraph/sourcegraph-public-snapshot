@@ -126,6 +126,30 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
+							Name:        "repos_stopped_tracking_total_aggregate",
+							Description: "the number of repositories we stopped tracking over 5m (aggregate)",
+							Query:       `sum(increase(index_num_stopped_tracking_total[5m]))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("dropped").Unit(monitoring.Number).With(func(observable monitoring.Observable, panel *sdk.Panel) {
+								panel.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+						{
+							Name:        "repos_stopped_tracking_total_per_instance",
+							Description: "the number of repositories we stopped tracking over 5m (per instance)",
+							Query:       "sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number).With(func(observable monitoring.Observable, panel *sdk.Panel) {
+								panel.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+					},
+					{
+						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
@@ -241,8 +265,8 @@ func Zoekt() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "indexed_queue_size_aggregate",
-							Description:    "# of outstanding index jobs (aggregate)",
+							Name:           "indexed_num_scheduled_jobs_aggregate",
+							Description:    "# scheduled index jobs (aggregate)",
 							Query:          "sum(index_queue_len)", // total queue size amongst all index-server replicas
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("jobs"),
@@ -250,8 +274,8 @@ func Zoekt() *monitoring.Container {
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
 						},
 						{
-							Name:           "indexed_queue_size_per_instance",
-							Description:    "# of outstanding index jobs (per instance)",
+							Name:           "indexed_num_scheduled_jobs_per_instance",
+							Description:    "# scheduled index jobs (per instance)",
 							Query:          "index_queue_len{instance=~`${instance:regex}`}",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
