@@ -2,11 +2,13 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, useQuery, GraphQLResult } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
+import { requestGraphQL } from '../../../backend/graphql'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
@@ -35,6 +37,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
+    authenticatedUser?: AuthenticatedUser
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -72,6 +75,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
+    authenticatedUser,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
@@ -271,22 +275,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return accumulator
     }, {})
 
-    const navigateToAuthProvider = useCallback(
-        (kind: ExternalServiceKind): void => {
-            const authProvider = authProvidersByKind[kind]
-
-            if (authProvider) {
-                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
-                window.location.assign(
-                    `${authProvider.authenticationURL as string}&redirect=${
-                        window.location.href
-                    }&op=createCodeHostConnection`
-                )
-            }
-        },
-        [authProvidersByKind]
-    )
-
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
         {
@@ -299,6 +287,70 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     )
 
     const useGitHubApp = data?.organizationFeatureFlagValue || false
+
+    const determineGitHubAppFromOrgs = async (orgIDs: string[]): Promise<boolean> => {
+        const orgFeatureFlagPromises = [] as Promise<GraphQLResult<OrgFeatureFlagValueResult>>[]
+
+        for (const orgID of orgIDs) {
+            const result = requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+                GET_ORG_FEATURE_FLAG_VALUE,
+                { orgID, flagName: GITHUB_APP_FEATURE_FLAG_NAME }
+            ).toPromise()
+
+            orgFeatureFlagPromises.push(result)
+        }
+
+        const orgFeatureFlagResults = await Promise.all(orgFeatureFlagPromises)
+
+        for (const featureFlagResult of orgFeatureFlagResults) {
+            const result = dataOrThrowErrors(featureFlagResult)
+
+            if (result.organizationFeatureFlagValue === true) {
+                return true
+            }
+        }
+
+        // if no feature flags were enables, GitHub App is not enabled for any orgs
+        return false
+    }
+
+    const navigateToAuthProvider = useCallback(
+        (kind: ExternalServiceKind): void => {
+            const authProvider = authProvidersByKind[kind]
+
+            if (authProvider) {
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
+                if (kind === ExternalServiceKind.GITHUB) {
+                    if (authenticatedUser) {
+                        determineGitHubAppFromOrgs(authenticatedUser.organizations.nodes.map(org => org.id))
+                            .then(enabled => {
+                                if (enabled) {
+                                    window.location.assign(
+                                        `/.auth/github/login?pc=${encodeURIComponent(
+                                            `https://github.com/::${window.context.githubAppClientID}`
+                                        )}&op=createCodeHostConnection`
+                                    )
+                                } else {
+                                    window.location.assign(
+                                        `${authProvider.authenticationURL as string}&redirect=${
+                                            window.location.href
+                                        }&op=createCodeHostConnection`
+                                    )
+                                }
+                            })
+                            .catch(error => handleError(error))
+                    }
+                } else {
+                    window.location.assign(
+                        `${authProvider.authenticationURL as string}&redirect=${
+                            window.location.href
+                        }&op=createCodeHostConnection`
+                    )
+                }
+            }
+        },
+        [authProvidersByKind, handleError, authenticatedUser]
+    )
 
     return (
         <div className="user-code-hosts-page">

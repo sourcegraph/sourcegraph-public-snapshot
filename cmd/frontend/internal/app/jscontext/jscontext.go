@@ -70,6 +70,7 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool   `json:"sourcegraphDotComMode"`
 	GitHubAppCloudSlug    string `json:"githubAppCloudSlug"`
+	GitHubAppClientID     string `json:"githubAppClientID"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -125,6 +126,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// Auth providers
 	var authProviders []authProviderInfo
 	for _, p := range providers.Providers() {
+		if p.Config().Github != nil {
+			if p.Config().Github.Hidden {
+				continue
+			}
+		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
@@ -143,8 +149,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var githubAppCloudSlug string
+	var githubAppClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
 		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
+		githubAppClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -174,6 +182,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		GitHubAppCloudSlug:    githubAppCloudSlug,
+		GitHubAppClientID:     githubAppClientID,
 
 		BillingPublishableKey: BillingPublishableKey,
 

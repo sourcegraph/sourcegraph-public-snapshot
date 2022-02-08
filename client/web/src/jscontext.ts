@@ -11,6 +11,7 @@ export interface AuthProvider {
     displayName: string
     isBuiltin: boolean
     authenticationURL?: string
+    isHidden?: boolean
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
@@ -40,6 +41,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     sourcegraphDotComMode: boolean
 
     githubAppCloudSlug: string
+
+    githubAppClientID: string
 
     /**
      * siteID is the identifier of the Sourcegraph site.
