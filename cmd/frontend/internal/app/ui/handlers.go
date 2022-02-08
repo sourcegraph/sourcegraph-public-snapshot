@@ -307,6 +307,13 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
+		if r.Method == http.MethodHead {
+			// HEAD request, respond 204
+			// TODO: set headers if needed
+			w.WriteHeader(http.StatusNoContent)
+			return nil
+		}
+
 		// Homepage redirects to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)

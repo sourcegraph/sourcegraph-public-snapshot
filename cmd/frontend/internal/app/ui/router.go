@@ -130,7 +130,7 @@ func newRouter() *mux.Router {
 	r.StrictSlash(true)
 
 	// Top-level routes.
-	r.Path("/").Methods("GET").Name(routeHome)
+	r.Path("/").Methods("GET", "HEAD").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
