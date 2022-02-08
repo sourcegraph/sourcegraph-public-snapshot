@@ -1,44 +1,106 @@
 package commit
 
 import (
+	"context"
+	"reflect"
 	"testing"
-	"testing/quick"
+	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCommitSearchResult_Limit(t *testing.T) {
-	f := func(nHighlights []int, limitInput uint32) bool {
-		cr := &result.CommitMatch{
-			MessagePreview: &result.MatchedString{
-				MatchedRanges: make([]result.Range, len(nHighlights)),
-			},
-		}
-
-		// It isn't interesting to test limit > ResultCount, so we bound it to
-		// [1, ResultCount]
-		count := cr.ResultCount()
-		limit := (int(limitInput) % count) + 1
-
-		after := cr.Limit(limit)
-		newCount := cr.ResultCount()
-
-		if after == 0 && newCount == limit {
-			return true
-		}
-
-		t.Logf("failed limit=%d count=%d => after=%d newCount=%d", limit, count, after, newCount)
-		return false
-	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error("quick check failed")
+func TestQueryToGitQuery(t *testing.T) {
+	type testCase struct {
+		name   string
+		input  query.Q
+		diff   bool
+		output protocol.Node
 	}
 
-	for nSymbols := 0; nSymbols <= 3; nSymbols++ {
-		for limit := 0; limit <= nSymbols; limit++ {
-			if !f(make([]int, nSymbols), uint32(limit)) {
-				t.Error("small exhaustive check failed")
-			}
+	cases := []testCase{{
+		name: "negated repo does not result in nil node (#26032)",
+		input: []query.Node{
+			query.Parameter{Field: query.FieldRepo, Negated: true},
+		},
+		diff:   false,
+		output: &protocol.Boolean{Value: true},
+	}, {
+		name: "expensive nodes are placed last",
+		input: []query.Node{
+			query.Pattern{Value: "a"},
+			query.Parameter{Field: query.FieldAuthor, Value: "b"},
+		},
+		diff: true,
+		output: protocol.NewAnd(
+			&protocol.AuthorMatches{Expr: "b", IgnoreCase: true},
+			&protocol.DiffMatches{Expr: "a", IgnoreCase: true},
+		),
+	}, {
+		name: "all supported nodes are converted",
+		input: []query.Node{
+			query.Parameter{Field: query.FieldAuthor, Value: "author"},
+			query.Parameter{Field: query.FieldCommitter, Value: "committer"},
+			query.Parameter{Field: query.FieldBefore, Value: "2021-09-10"},
+			query.Parameter{Field: query.FieldAfter, Value: "2021-09-08"},
+			query.Parameter{Field: query.FieldFile, Value: "file"},
+			query.Parameter{Field: query.FieldMessage, Value: "message1"},
+			query.Pattern{Value: "message2"},
+		},
+		diff: false,
+		output: protocol.NewAnd(
+			&protocol.CommitBefore{Time: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC)},
+			&protocol.CommitAfter{Time: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC)},
+			&protocol.AuthorMatches{Expr: "author", IgnoreCase: true},
+			&protocol.CommitterMatches{Expr: "committer", IgnoreCase: true},
+			&protocol.MessageMatches{Expr: "message1", IgnoreCase: true},
+			&protocol.MessageMatches{Expr: "message2", IgnoreCase: true},
+			&protocol.DiffModifiesFile{Expr: "file", IgnoreCase: true},
+		),
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			output := QueryToGitQuery(tc.input, tc.diff)
+			require.Equal(t, tc.output, output)
+		})
+	}
+}
+
+func TestExpandUsernamesToEmails(t *testing.T) {
+	users := database.NewStrictMockUserStore()
+	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
+		if want := "alice"; username != want {
+			t.Errorf("got %q, want %q", username, want)
 		}
+		return &types.User{ID: 123}, nil
+	})
+
+	userEmails := database.NewStrictMockUserEmailsStore()
+	userEmails.ListByUserFunc.SetDefaultHook(func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		if want := int32(123); opt.UserID != want {
+			t.Errorf("got %v, want %v", opt.UserID, want)
+		}
+		t := time.Now()
+		return []*database.UserEmail{
+			{Email: "alice@example.com", VerifiedAt: &t},
+			{Email: "alice@example.org", VerifiedAt: &t},
+		}, nil
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	x, err := expandUsernamesToEmails(context.Background(), db, []string{"foo", "@alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
+		t.Errorf("got %q, want %q", x, want)
 	}
 }
