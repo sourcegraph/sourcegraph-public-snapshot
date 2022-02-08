@@ -26,6 +26,7 @@ const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
         },
     })
 
