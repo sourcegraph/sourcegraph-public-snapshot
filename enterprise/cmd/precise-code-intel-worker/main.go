@@ -93,7 +93,7 @@ func main() {
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
-	uploadStore, err := lsifuploadstore.New(context.Background(), &config.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to create upload store: %s", err)
 	}
