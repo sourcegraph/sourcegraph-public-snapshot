@@ -8,11 +8,12 @@ import {
     ExternalServicesWithCollaboratorsResult,
     ExternalServicesWithCollaboratorsVariables,
     ListExternalServiceFields,
+    ListExternalServiceInvitableCollaboratorsFields,
     Maybe,
 } from '../graphql-operations'
 
 interface UseExternalServicesWithCollaboratorsResult {
-    externalServices: ListExternalServiceFields[] | undefined
+    externalServices: (ListExternalServiceFields & ListExternalServiceInvitableCollaboratorsFields)[] | undefined
     loadingServices: boolean
     errorServices: ApolloError | undefined
     refetchExternalServices: (
