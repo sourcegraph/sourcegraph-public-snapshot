@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Updater periodically re-calculates the commit and upload visibility graph for repositories
@@ -68,7 +67,7 @@ func (u *Updater) Handle(ctx context.Context) error {
 			if updateErr == nil {
 				updateErr = err
 			} else {
-				updateErr = multierror.Append(updateErr, err)
+				updateErr = errors.Append(updateErr, err)
 			}
 		}
 	}

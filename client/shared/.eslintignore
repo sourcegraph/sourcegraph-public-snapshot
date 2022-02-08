@@ -1,4 +1,5 @@
 out/
 src/schema/*
 src/schema.ts
+src/graphql/schema.ts
 src/graphql-operations.ts

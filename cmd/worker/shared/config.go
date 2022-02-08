@@ -3,9 +3,8 @@ package shared
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Config is the configuration that controls what jobs will be initialized

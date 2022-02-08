@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ExecutionLogEntryStore interface {
@@ -85,7 +85,7 @@ type Logger struct {
 
 	replacer *strings.Replacer
 
-	errs   *multierror.Error
+	errs   *errors.MultiError
 	errsMu sync.Mutex
 }
 
@@ -112,7 +112,7 @@ func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, rep
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
-		errs:     &multierror.Error{},
+		errs:     &errors.MultiError{},
 	}
 
 	go l.writeEntries()
@@ -242,7 +242,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 
 func (l *Logger) appendError(err error) {
 	l.errsMu.Lock()
-	l.errs = multierror.Append(l.errs, err)
+	l.errs = errors.Append(l.errs, err)
 	l.errsMu.Unlock()
 }
 

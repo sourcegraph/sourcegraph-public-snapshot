@@ -5,17 +5,19 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
 
+import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
@@ -61,6 +63,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+    const permissions = getDashboardPermissions(currentDashboard, subjects)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -105,8 +108,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
     return (
         <div>
-            <section className="d-flex flex-wrap align-items-center">
-                <span className={styles.dashboardSelectLabel}>Dashboard</span>
+            <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
+                <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
                     value={currentDashboard?.id}
@@ -122,10 +125,20 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
                     onSelect={handleSelect}
+                    className="mr-auto"
                 />
-            </section>
 
-            <hr className="mt-2 mb-3" />
+                <Button
+                    outline={true}
+                    variant="secondary"
+                    disabled={!permissions.isConfigurable}
+                    data-tooltip={getTooltipMessage(currentDashboard, permissions)}
+                    data-placement="bottom"
+                    onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                >
+                    Add insights
+                </Button>
+            </DashboardHeader>
 
             {currentDashboard ? (
                 <DashboardInsights

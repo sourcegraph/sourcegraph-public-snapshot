@@ -2,7 +2,7 @@ import { cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -22,7 +22,7 @@ describe('SavedSearchesPanel', () => {
     }
 
     it('should show correct mode and number of entries when clicking on "my searches" and "all searches" buttons', () => {
-        container = renderWithRouter(<SavedSearchesPanel {...defaultProps} />).container
+        container = renderWithBrandedContext(<SavedSearchesPanel {...defaultProps} />).container
         let savedSearchEntries = container.querySelectorAll('.test-saved-search-entry')
         expect(savedSearchEntries.length).toBe(2)
         const mySearchesButton = container.querySelector('.test-saved-search-panel-my-searches')!

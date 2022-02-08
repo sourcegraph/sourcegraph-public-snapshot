@@ -8,12 +8,10 @@ import (
 	"runtime"
 
 	"github.com/inconshreveable/log15"
-
-	"github.com/cockroachdb/errors"
-
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // HandlerWithErrorReturn wraps a http.HandlerFunc-like func that also

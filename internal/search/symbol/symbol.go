@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const DefaultSymbolLimit = 100
@@ -418,7 +417,7 @@ type RepoSubsetSymbolSearch struct {
 	RepoOpts         search.RepoOptions
 }
 
-func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSubsetSymbolSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -426,7 +425,7 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 	}()
 
 	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
@@ -456,29 +455,21 @@ type RepoUniverseSymbolSearch struct {
 	RepoOptions search.RepoOptions
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoUniverseSymbolSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	userID := int32(0)
-
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
-			userID = a.UID
-		}
-	}
-
-	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
 	// TODO(rvantonder): The `true` argument corresponds to notSearcherOnly,
 	// implied by global search. Separate the concerns in the symbol search
 	// function so that we don't need to pass this value.
-	return symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
+	return nil, symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
 }
 
 func (*RepoUniverseSymbolSearch) Name() string {

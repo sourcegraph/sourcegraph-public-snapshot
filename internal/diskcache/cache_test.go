@@ -63,3 +63,33 @@ func TestOpen(t *testing.T) {
 		t.Fatal("Item was not properly evicted")
 	}
 }
+
+func TestMultiKeyEviction(t *testing.T) {
+	dir, err := os.MkdirTemp("", "diskcache_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(&observation.TestContext, "test"),
+	}
+
+	f, err := store.Open(context.Background(), []string{"key1", "key2"}, func(ctx context.Context) (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader([]byte("blah"))), nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	stats, err := store.Evict(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.Evicted != 1 {
+		t.Fatal("Expected to evict 1 item, evicted", stats.Evicted)
+	}
+}

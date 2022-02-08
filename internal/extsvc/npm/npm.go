@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -132,7 +132,7 @@ func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg repo
 		return nil, err
 	}
 	if len(pkgInfo.Versions) == 0 {
-		return nil, fmt.Errorf("NPM returned empty list of versions")
+		return nil, errors.Newf("NPM returned empty list of versions")
 	}
 	versions = map[string]struct{}{}
 	for k := range pkgInfo.Versions {
@@ -208,7 +208,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (respo
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, npmError{resp.StatusCode, fmt.Errorf("%s", bodyBuffer.String())}
+		return nil, npmError{resp.StatusCode, errors.Newf("%s", bodyBuffer.String())}
 	}
 	return bodyBuffer.Bytes(), nil
 }

@@ -158,8 +158,9 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
+                        display="block"
                         variant="secondary"
-                        className={classNames('btn-block', styles.button)}
+                        className={styles.button}
                     >
                         {loading ? <LoadingSpinner /> : 'Send'}
                     </Button>

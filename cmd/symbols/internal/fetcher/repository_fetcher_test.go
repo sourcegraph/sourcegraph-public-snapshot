@@ -38,7 +38,7 @@ func TestRepositoryFetcher(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
-	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext)
+	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext)
 	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {
@@ -79,4 +79,21 @@ func consumeParseRequests(t *testing.T, ch <-chan parseRequestOrError) map[strin
 	}
 
 	return parseRequests
+}
+
+func TestBatching(t *testing.T) {
+	// When all strings fit in a single batch, they should be sent in a single batch.
+	if diff := cmp.Diff([][]string{{"foo", "bar", "baz"}}, batchByTotalLength([]string{"foo", "bar", "baz"}, 10)); diff != "" {
+		t.Errorf("unexpected batches (-want +got):\n%s", diff)
+	}
+
+	// When not all strings fit into a single batch, they should be sent in multiple batches.
+	if diff := cmp.Diff([][]string{{"foo", "bar"}, {"baz"}}, batchByTotalLength([]string{"foo", "bar", "baz"}, 7)); diff != "" {
+		t.Errorf("unexpected batches (-want +got):\n%s", diff)
+	}
+
+	// When the max is smaller than each string, they should be put into their own batches.
+	if diff := cmp.Diff([][]string{{"foo"}, {"bar"}, {"baz"}}, batchByTotalLength([]string{"foo", "bar", "baz"}, 2)); diff != "" {
+		t.Errorf("unexpected batches (-want +got):\n%s", diff)
+	}
 }

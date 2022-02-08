@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store struct {
@@ -55,6 +54,9 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 const currentMigrationLogSchemaVersion = 1
 
+// EnsureSchemaTable creates the bookeeping tables required to track this schema
+// if they do not already exist. If old versions of the tables exist, this method
+// will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -72,6 +74,39 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
+	}
+
+	minMigrationVersions := map[string]int{
+		"schema_migrations":              1528395834,
+		"codeintel_schema_migrations":    1000000015,
+		"codeinsights_schema_migrations": 1000000000,
+		"test_migrations_table_backfill": 1000000000, // used in tests
+	}
+	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
+		queries = append(queries, sqlf.Sprintf(`
+			WITH
+				schema_version AS (SELECT * FROM %s LIMIT 1),
+				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
+				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
+			INSERT INTO migration_logs (
+				migration_logs_schema_version,
+				schema,
+				version,
+				up,
+				success,
+				started_at,
+				finished_at
+			)
+			SELECT %s, %s, version, true, true, NOW(), NOW()
+			FROM generate_series(%s, (SELECT version FROM target_version)) version
+			WHERE NOT (SELECT dirty FROM schema_version)
+		`,
+			quote(s.schemaName),
+			s.schemaName,
+			currentMigrationLogSchemaVersion,
+			s.schemaName,
+			minMigrationVersion,
+		))
 	}
 
 	tx, err := s.Transact(ctx)
@@ -161,35 +196,6 @@ WHERE row_number = 1
 ORDER BY version
 `
 
-// Lock creates and holds an advisory lock. This method returns a function that should be called
-// once the lock should be released. This method accepts the current function's error output and
-// wraps any additional errors that occur on close.
-//
-// Note that we don't use the internal/database/locker package here as that uses transactionally
-// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
-func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
-	key := s.lockKey()
-
-	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
-		return false, nil, err
-	}
-
-	close := func(err error) error {
-		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-			err = multierror.Append(err, unlockErr)
-		}
-
-		return err
-	}
-
-	return true, close, nil
-}
-
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
 // and wraps any additional errors that occur on close. Calling this method when the lock was not
@@ -214,7 +220,7 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 	close := func(err error) error {
 		if locked {
 			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-				err = multierror.Append(err, unlockErr)
+				err = errors.Append(err, unlockErr)
 			}
 
 			// No-op if called more than once
@@ -309,7 +315,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 			errMsgPtr(err),
 			logID,
 		)); execErr != nil {
-			err = multierror.Append(err, execErr)
+			err = errors.Append(err, execErr)
 		}
 	}()
 

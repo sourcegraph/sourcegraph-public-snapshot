@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ParseURL parses rawurl into a URL structure. Parse first attempts to

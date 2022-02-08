@@ -5,9 +5,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GetObjectFunc func(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error)

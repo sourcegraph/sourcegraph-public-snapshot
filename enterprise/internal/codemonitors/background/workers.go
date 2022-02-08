@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -182,10 +182,10 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	)
 	if hasRepoAware {
 		newQuery = q.QueryString
-		results, err = search(ctx, newQuery, m.UserID, &m.ID)
+		results, err = search(ctx, newQuery, &m.ID)
 	} else {
 		newQuery = newQueryWithAfterFilter(q)
-		results, err = search(ctx, newQuery, m.UserID, nil)
+		results, err = search(ctx, newQuery, nil)
 	}
 	if err != nil {
 		return errors.Wrap(err, "run search")

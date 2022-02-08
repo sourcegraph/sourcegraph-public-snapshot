@@ -2,11 +2,9 @@ package runner
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
@@ -20,7 +18,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		operationMap[operation.SchemaName] = operation
 	}
 	if len(operationMap) != len(options.Operations) {
-		return fmt.Errorf("multiple operations defined on the same schema")
+		return errors.Newf("multiple operations defined on the same schema")
 	}
 
 	numRoutines := 1
