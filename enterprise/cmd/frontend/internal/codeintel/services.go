@@ -63,7 +63,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	dbStore := store.NewWithDB(db, observationContext)
 	locker := locker.NewWithDB(db, "codeintel")
 	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
-	uploadStore, err := lsifuploadstore.New(context.Background(), &config.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
