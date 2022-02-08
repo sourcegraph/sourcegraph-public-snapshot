@@ -1,8 +1,3 @@
-:root {
-    --nav-link-padding-y: 0.5rem;
-    --nav-link-padding-x: 1rem;
-}
-
 @keyframes tooltip-fade-in-out {
     0% {
         opacity: 0;
@@ -76,7 +71,17 @@
     width: 1.5rem;
 }
 
-.nav-link {
-    padding: var(--nav-link-padding-y) var(--nav-link-padding-x);
+.menu-button {
+    --link-color: var(--icon-color);
+
+    padding: 0;
     border: none;
+
+    .avatar {
+        color: var(--color-bg-1);
+    }
+
+    &:hover {
+        --link-hover-color: var(--body-color);
+    }
 }

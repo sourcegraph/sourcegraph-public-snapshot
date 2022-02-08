@@ -1,8 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 
-import { anyOf, isInstanceOf } from '../types'
-import { isExternalLink } from '../url'
+import { anyOf, isInstanceOf, isExternalLink } from '@sourcegraph/common'
 
 /**
  * Returns a click handler for link element that will make sure clicks on in-app links are handled on the client

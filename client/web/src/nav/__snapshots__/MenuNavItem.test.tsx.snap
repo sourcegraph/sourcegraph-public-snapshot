@@ -5,7 +5,7 @@ exports[`MenuNavItem add menu children 1`] = `
   <button
     aria-controls="menu--1"
     aria-haspopup="true"
-    class="btn bg-transparent menuNavItem"
+    class="bg-transparent menuNavItem"
     data-reach-menu-button=""
     id="menu-button--menu"
     type="button"

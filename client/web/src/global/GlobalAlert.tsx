@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Alert } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'

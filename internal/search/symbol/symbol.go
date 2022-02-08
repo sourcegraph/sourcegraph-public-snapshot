@@ -16,8 +16,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -464,15 +462,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 		tr.Finish()
 	}()
 
-	userID := int32(0)
-
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
-			userID = a.UID
-		}
-	}
-
-	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
