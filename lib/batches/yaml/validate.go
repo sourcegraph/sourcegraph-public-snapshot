@@ -3,13 +3,12 @@ package yaml
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
 	"github.com/ghodss/yaml"
-	"github.com/hashicorp/go-multierror"
-
-	"github.com/sourcegraph/sourcegraph/lib/batches/jsonschema"
 
 	yamlv3 "gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches/jsonschema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UnmarshalValidate validates the input, which can be YAML or JSON, against
@@ -21,13 +20,13 @@ func UnmarshalValidate(schema string, input []byte, target interface{}) error {
 		return errors.Wrapf(err, "failed to normalize JSON")
 	}
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	if err := jsonschema.Validate(schema, normalized); err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 
 	if err := json.Unmarshal(normalized, target); err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 
 	return errs.ErrorOrNil()

@@ -1,5 +1,5 @@
 import { MockedProviderProps } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
@@ -24,107 +24,85 @@ import {
 export default {
     title: 'web/search/results/sidebar/Revisions',
     component: Revisions,
-    decorators: [
-        Story => (
-            <div className={sidebarStyles.searchSidebar}>
-                <Story />
-            </div>
-        ),
-    ],
     argTypes: { onFilterClick: { action: 'onFilterClick' } },
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 } as Meta
 
-const Template: Story<RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>>> = ({ mocks, ...props }) => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider mocks={mocks}>
-                <Revisions {...props} />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+const examples: (RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string })[] = [
+    TabIndex.BRANCHES,
+    TabIndex.TAGS,
+]
+    .map(_initialTab => {
+        const tabName = _initialTab === TabIndex.BRANCHES ? 'branches' : 'tags'
+        return [
+            {
+                title: `Empty ${tabName}`,
+                ...MOCK_PROPS,
+                _initialTab,
+                mocks: EMPTY_MOCKS,
+            },
+            {
+                title: `Few results ${tabName}`,
+                ...MOCK_PROPS,
+                _initialTab,
+                mocks: FEW_RESULTS_MOCKS,
+            },
+            {
+                title: `Many results ${tabName}`,
+                ...MOCK_PROPS,
+                _initialTab,
+                mocks: DEFAULT_MOCKS,
+            },
+            {
+                title: `Search ${tabName}`,
+                ...FILTERED_MOCK_PROPS,
+                _initialTab,
+                mocks: FILTERED_MOCKS,
+            },
+            {
+                title: `Empty search ${tabName}`,
+                ...FILTERED_MOCK_PROPS,
+                _initialTab,
+                mocks: EMPTY_FILTERED_MOCKS,
+            },
+            {
+                title: `Network error ${tabName}`,
+                ...MOCK_PROPS,
+                _initialTab,
+                mocks: NETWORK_ERROR_MOCKS,
+            },
+            {
+                title: `Network error ${tabName}`,
+                ...MOCK_PROPS,
+                _initialTab,
+                mocks: GRAPHQL_ERROR_MOCKS,
+            },
+        ]
+    })
+    .flat()
 
-export const EmptyBranches = Template.bind({})
-EmptyBranches.args = {
-    ...MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: EMPTY_MOCKS,
-}
-export const EmptyTags = Template.bind({})
-EmptyTags.args = {
-    ...EmptyBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const FewResultsBranches = Template.bind({})
-FewResultsBranches.args = {
-    ...MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: FEW_RESULTS_MOCKS,
-}
-export const FewResultsTags = Template.bind({})
-FewResultsTags.args = {
-    ...FewResultsBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const ManyResultsBranches = Template.bind({})
-ManyResultsBranches.args = {
-    ...MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: DEFAULT_MOCKS,
-}
-
-export const ManyResultsTags = Template.bind({})
-ManyResultsTags.args = {
-    ...ManyResultsBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const SearchBranches = Template.bind({})
-SearchBranches.args = {
-    ...FILTERED_MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: FILTERED_MOCKS,
-}
-export const SearchTags = Template.bind({})
-SearchTags.args = {
-    ...SearchBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const EmptySearchBranches = Template.bind({})
-EmptySearchBranches.args = {
-    ...FILTERED_MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: EMPTY_FILTERED_MOCKS,
-}
-export const EmptySearchTags = Template.bind({})
-EmptySearchTags.args = {
-    ...EmptySearchBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const NetworkErrorBranches = Template.bind({})
-NetworkErrorBranches.args = {
-    ...MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: NETWORK_ERROR_MOCKS,
-}
-export const NetworkErrorTags = Template.bind({})
-NetworkErrorTags.args = {
-    ...NetworkErrorBranches.args,
-    _initialTab: TabIndex.TAGS,
-}
-
-export const GraphqlErrorBranches = Template.bind({})
-GraphqlErrorBranches.args = {
-    ...MOCK_PROPS,
-    _initialTab: TabIndex.BRANCHES,
-    mocks: GRAPHQL_ERROR_MOCKS,
-}
-export const GraphqlErrorTags = Template.bind({})
-GraphqlErrorTags.args = {
-    ...GraphqlErrorBranches.args,
-    _initialTab: TabIndex.TAGS,
+export function RevisionsSection() {
+    return (
+        <WebStory>
+            {() => (
+                <>
+                    {examples.map(({ mocks, title, ...props }) => (
+                        <div
+                            key={title}
+                            style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}
+                        >
+                            <h2>{title}</h2>
+                            <div className={sidebarStyles.searchSidebar}>
+                                <MockedTestProvider mocks={mocks}>
+                                    <Revisions {...props} />
+                                </MockedTestProvider>
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
+        </WebStory>
+    )
 }

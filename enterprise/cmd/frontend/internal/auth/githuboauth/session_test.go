@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
@@ -24,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {

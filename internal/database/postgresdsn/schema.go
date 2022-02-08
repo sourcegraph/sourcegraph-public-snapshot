@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func DSNsBySchema(schemaNames []string) (map[string]string, error) {

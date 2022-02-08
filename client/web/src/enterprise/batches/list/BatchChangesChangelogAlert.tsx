@@ -16,11 +16,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <h4>Batch Changes updates in version 3.36</h4>
                 <ul className="mb-0 pl-3">
                     <li>
-                        <Link
-                            to="https://docs.sourcegraph.com/admin/config/batch_changes#forks"
-                            rel="noopener"
-                            target="_blank"
-                        >
+                        <Link to="/help/admin/config/batch_changes#forks" rel="noopener" target="_blank">
                             Batch Changes now supports pushing changesets to forked repositories.
                         </Link>
                     </li>

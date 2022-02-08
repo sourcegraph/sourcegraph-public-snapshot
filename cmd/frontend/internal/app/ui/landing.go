@@ -3,19 +3,18 @@ package ui
 import (
 	"net/http"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")

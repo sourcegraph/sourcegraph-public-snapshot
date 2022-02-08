@@ -15,6 +15,7 @@ const { add } = storiesOf('web/batches/BatchChangeListPage', module)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
         },
     })
 

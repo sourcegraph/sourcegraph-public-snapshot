@@ -3,7 +3,7 @@ package query
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TODO(slimsag): future: It's really nasty that our GraphQL search API is like this:

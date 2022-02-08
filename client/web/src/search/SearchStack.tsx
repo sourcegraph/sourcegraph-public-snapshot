@@ -138,8 +138,12 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                     }}
                     className={styles.entry}
                 >
-                    <SearchIcon className="icon-inline text-muted mr-1" />
-                    <SyntaxHighlightedSearchQuery query={entry.query} />
+                    <div className="d-flex">
+                        <span className="flex-shrink-0">
+                            <SearchIcon className="icon-inline text-muted mr-1" />
+                        </span>
+                        <SyntaxHighlightedSearchQuery query={entry.query} />
+                    </div>
                 </Link>
             )
         case 'file':
@@ -154,8 +158,10 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                     }}
                     className={styles.entry}
                 >
-                    <div>
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" />
+                    <div className="d-flex">
+                        <span className="flex-shrink-0">
+                            <FileDocumentIcon className="icon-inline text-muted mr-1" />
+                        </span>
                         <span title={entry.path}>{shortenFilePath(entry.path)}</span>
                     </div>
                     <small className="text-muted">

@@ -80,15 +80,15 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 <h3>Setting up executors</h3>
                 <p className="mb-0">
                     Executors enable{' '}
-                    <Link to="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
+                    <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
                     </Link>{' '}
                     and{' '}
-                    <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
+                    <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
                     </Link>
                     . In order to use those features,{' '}
-                    <Link to="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/deploy_executors" rel="noopener">
                         set them up
                     </Link>
                     .

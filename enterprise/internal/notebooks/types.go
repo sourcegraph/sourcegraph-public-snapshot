@@ -46,13 +46,16 @@ type NotebookBlock struct {
 type NotebookBlocks []NotebookBlock
 
 type Notebook struct {
-	ID            int64
-	Title         string
-	Blocks        NotebookBlocks
-	Public        bool
-	CreatorUserID int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              int64
+	Title           string
+	Blocks          NotebookBlocks
+	Public          bool
+	CreatorUserID   int32
+	UpdaterUserID   int32
+	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type NotebookStar struct {

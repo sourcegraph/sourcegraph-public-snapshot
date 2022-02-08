@@ -68,7 +68,7 @@ commandsets:
 				Checks:   []string{"docker"},
 			},
 		},
-		Checks: map[string]run.Check{
+		Checks: map[string]check{
 			"docker": {
 				Name:        "docker",
 				Cmd:         "docker version",

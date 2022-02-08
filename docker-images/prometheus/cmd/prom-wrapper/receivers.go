@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

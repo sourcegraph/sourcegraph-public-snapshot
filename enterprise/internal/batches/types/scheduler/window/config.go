@@ -4,9 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -234,10 +232,10 @@ func parseConfiguration(raw *[]*schema.BatchChangeRolloutWindow) ([]Window, erro
 		return windows, nil
 	}
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for i, rawWindow := range *raw {
 		if window, err := parseWindow(rawWindow); err != nil {
-			errs = multierror.Append(errs, errors.Wrapf(err, "window %d", i))
+			errs = errors.Append(errs, errors.Wrapf(err, "window %d", i))
 		} else {
 			windows = append(windows, window)
 		}

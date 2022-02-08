@@ -6,25 +6,20 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
 
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
-
-	if err := repoStore.Create(ctx, repo, deletedRepo); err != nil {
-		t.Fatal(err)
-	}
+	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 3)
+	deletedRepo := repos[2].With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +30,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			BatchSpecID:      int64(i + 567),
 			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
 
-			RepoID: repo.ID,
+			RepoID: repos[i].ID,
 			Branch: "master",
 			Commit: "d34db33f",
 			Path:   "sub/dir/ectory",
@@ -44,28 +39,11 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				"a/b/horse.go",
 				"a/b/c.go",
 			},
-			Steps: []batcheslib.Step{
-				{
-					Run:       "complex command that changes code",
-					Container: "alpine:3",
-					Files: map[string]string{
-						"/tmp/foobar.go": "package main",
-					},
-					Outputs: map[string]batcheslib.Output{
-						"myOutput": {Value: `${{ step.stdout }}`},
-					},
-					If: `${{ eq repository.name "github.com/sourcegraph/sourcegraph" }}`,
-				},
-			},
 			OnlyFetchWorkspace: true,
 			Unsupported:        true,
 			Ignored:            true,
 			Skipped:            true,
-			CachedResultFound:  true,
-		}
-
-		if i == cap(workspaces)-1 {
-			job.RepoID = deletedRepo.ID
+			CachedResultFound:  i == 1,
 		}
 
 		workspaces = append(workspaces, job)
@@ -91,6 +69,10 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			}
 		}
 	})
+
+	if err := s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, state) VALUES (%s, %s)", workspaces[0].ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)); err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("GetByID", func(t *testing.T) {
@@ -190,6 +172,77 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				}
 			}
 		})
+
+		t.Run("ByState", func(t *testing.T) {
+			// Grab the completed one:
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 1 {
+				t.Fatalf("wrong number of results. have=%d", len(have))
+			}
+
+			if diff := cmp.Diff(have, workspaces[:1]); diff != "" {
+				t.Fatalf("invalid jobs returned: %s", diff)
+			}
+		})
+
+		t.Run("OnlyWithoutExecution", func(t *testing.T) {
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				OnlyWithoutExecution: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 1 {
+				t.Fatalf("wrong number of results. have=%d", len(have))
+			}
+
+			if diff := cmp.Diff(have, workspaces[1:2]); diff != "" {
+				t.Fatalf("invalid jobs returned: %s", diff)
+			}
+		})
+
+		t.Run("OnlyCachedOrCompleted", func(t *testing.T) {
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				OnlyCachedOrCompleted: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 2 {
+				t.Fatalf("wrong number of results. have=%d", len(have))
+			}
+
+			if diff := cmp.Diff(have, workspaces[:2]); diff != "" {
+				t.Fatalf("invalid jobs returned: %s", diff)
+			}
+		})
+
+		t.Run("TextSearch", func(t *testing.T) {
+			for i, r := range repos[:2] {
+				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					TextSearch: []search.TextSearchTerm{{Term: string(r.Name)}},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 1 {
+					t.Fatalf("wrong number of results. have=%d", len(have))
+				}
+
+				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{workspaces[i]}); diff != "" {
+					t.Fatalf("invalid jobs returned: %s", diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
@@ -256,29 +309,25 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		}{
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true},
 				wantSkipped: true,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true},
 				wantSkipped: false,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true},
 				wantSkipped: true,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: true},
-				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true},
 				wantSkipped: false,
 			},
-			{
-				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: true},
-				workspace:   &btypes.BatchSpecWorkspace{Steps: []batcheslib.Step{}},
-				wantSkipped: true,
-			},
+			// TODO: Add test that workspace with no steps to be executed is skipped properly.
 		}
 
 		for _, tt := range tests {
@@ -290,7 +339,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			}
 
 			tt.workspace.BatchSpecID = tt.batchSpec.ID
-			tt.workspace.RepoID = repo.ID
+			tt.workspace.RepoID = repos[0].ID
 			tt.workspace.Branch = "master"
 			tt.workspace.Commit = "d34db33f"
 			tt.workspace.Path = "sub/dir/ectory"
