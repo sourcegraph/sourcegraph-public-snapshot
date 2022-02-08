@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
@@ -36,24 +37,65 @@ func groupByState(schemaVersion schemaVersion, definitions []definition.Definiti
 	return states
 }
 
-// validateSchemaState inspects the given definitions grouped by state and returns an error if
-// the database is in a dirty state (i.e., contains failed migrations or pending migrations).
+// validateSchemaState inspects the given definitions grouped by state and determines if the schema
+// state should be re-queried (when `retry` is true). This function returns an error if the database
+// is in a dirty state (contains failed migrations or pending migrations without a backing query).
 func validateSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
 	byState definitionsByState,
-) error {
+) (retry bool, _ error) {
 	if len(byState.failed) > 0 {
 		// Explicit failures require administrator intervention
-		return newDirtySchemaError(schemaContext.schema.Name, byState.failed)
+		return false, newDirtySchemaError(schemaContext.schema.Name, byState.failed)
 	}
 
 	if len(byState.pending) > 0 {
-		// Explicit failures require administrator intervention
-		return newDirtySchemaError(schemaContext.schema.Name, byState.pending)
+		// We are currently holding the lock, so any migrations that are "pending" are either
+		// dead and the migrator instance has died before finishing the operation, or they're
+		// active concurrent index creation operations. We'll partition this set into those two
+		// groups and determine what to do.
+		if pendingDefinitions, failedDefinitions, err := partitionPendingMigrations(ctx, schemaContext, byState.pending); err != nil {
+			return false, err
+		} else if len(failedDefinitions) > 0 {
+			// Explicit failures require administrator intervention
+			return false, newDirtySchemaError(schemaContext.schema.Name, failedDefinitions)
+		} else if len(pendingDefinitions) > 0 {
+			return true, nil
+		}
 	}
 
-	return nil
+	return false, nil
+}
+
+// partitionPendingMigrations partitions the given migrations into two sets: the set of pending
+// migration definitions, which includes migrations with visible and active create index operation
+// running in the database, and the set of filed migration definitions, which includes migrations
+// which are marked as pending but do not appear as active.
+//
+// This function assumes that the migration advisory lock is held.
+func partitionPendingMigrations(
+	ctx context.Context,
+	schemaContext schemaContext,
+	definitions []definition.Definition,
+) (pendingDefinitions, failedDefinitions []definition.Definition, _ error) {
+	for _, definition := range definitions {
+		if definition.IsCreateIndexConcurrently {
+			tableName := definition.IndexMetadata.TableName
+			indexName := definition.IndexMetadata.IndexName
+
+			if status, ok, err := schemaContext.store.IndexStatus(ctx, tableName, indexName); err != nil {
+				return nil, nil, err
+			} else if ok && status.Phase != nil {
+				pendingDefinitions = append(pendingDefinitions, definition)
+				continue
+			}
+		}
+
+		failedDefinitions = append(failedDefinitions, definition)
+	}
+
+	return pendingDefinitions, failedDefinitions, nil
 }
 
 func extractIDs(definitions []definition.Definition) []int {
@@ -81,4 +123,14 @@ func intsToStrings(ints []int) []string {
 	}
 
 	return strs
+}
+
+func wait(ctx context.Context, duration time.Duration) error {
+	select {
+	case <-time.After(duration):
+		return nil
+
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }

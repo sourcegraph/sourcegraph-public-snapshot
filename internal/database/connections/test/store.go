@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
 // memoryStore implements runner.Store but writes to migration metadata are
@@ -59,6 +60,10 @@ func (s *memoryStore) Down(ctx context.Context, migration definition.Definition)
 
 func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
 	return f()
+}
+
+func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (storetypes.IndexStatus, bool, error) {
+	return storetypes.IndexStatus{}, false, nil
 }
 
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {

@@ -2,6 +2,8 @@ package runner
 
 import (
 	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
 func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
@@ -23,9 +25,33 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		return nil
 	}
 
-	// Take an advisory lock, then re-check the version of the database. If there are still migrations
-	// to apply from the given definitions, return an error.
-	return r.withLockedSchemaState(ctx, schemaContext, definitions, func(schemaVersion schemaVersion, byState definitionsByState) error {
+	for {
+		// Attempt to validate the given definitions. We may have to call this several times as
+		// we are unable to hold a consistent advisory lock in the presence of migrations utilizing
+		// concurrent index creation. Therefore, some invocations of this method will return with
+		// a flag to request re-invocation under a new lock.
+
+		if retry, err := r.validateDefinitions(ctx, schemaContext, definitions); err != nil {
+			return err
+		} else if !retry {
+			break
+		}
+
+		// There are active index creation operations ongoing; wait a short time before requerying
+		// the state of the migrations so we don't flood the database with constant queries to the
+		// system catalog.
+		if err := wait(ctx, indexPollInterval); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateDefinitions attempts to take an advisory lock, then re-checks the version of the database.
+// If there are still migrations to apply from the given definitions, an error is returned.
+func (r *Runner) validateDefinitions(ctx context.Context, schemaContext schemaContext, definitions []definition.Definition) (retry bool, _ error) {
+	return r.withLockedSchemaState(ctx, schemaContext, definitions, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
 		if len(byState.applied) != len(definitions) {
 			// Return an error if all expected schemas have not been applied
 			return newOutOfDateError(schemaContext, schemaVersion)
