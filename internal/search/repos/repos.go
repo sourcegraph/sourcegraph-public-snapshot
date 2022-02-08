@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -681,10 +682,14 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 
 	userID := int32(0)
 	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
 			userID = a.UID
+		} else {
+			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			return nil
 		}
 	}
+	tr.LogFields(otlog.Int32("userID", userID))
 
 	// Get all private repos for the the current actor. On sourcegraph.com, those are
 	// only the repos directly added by the user. Otherwise it's all repos the user has
