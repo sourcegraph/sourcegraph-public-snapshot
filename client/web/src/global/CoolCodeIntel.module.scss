@@ -8,13 +8,13 @@
 .hover-markdown {
     p,
     pre {
-        padding-left: 0.5em;
-        margin-bottom: 0em;
-        padding-bottom: 0em;
-        padding-top: 0em;
+        padding-left: 0.5rem;
+        margin-bottom: 0rem;
+        padding-bottom: 0rem;
+        padding-top: 0rem;
     }
     code {
-        padding-left: 0em;
+        padding-left: 0rem;
     }
 }
 
@@ -98,7 +98,7 @@
 }
 
 .chevron {
-    margin-top: 0.2em;
+    margin-top: 0.2rem;
     color: var(--icon-color);
 }
 
@@ -130,13 +130,13 @@
 
     // Sticky filename at top
     &--side-blob-filename {
-      height: $references-filter-height;
-      padding-top: 0.5em;
+        height: $references-filter-height;
+        padding-top: 0.5rem;
     }
 
     // Code needs to be smaller than 100% so it scrolls correctly
     &--side-blob-code {
-      // Subtract the space taken up by the filename
-      height: calc(100% - #{$references-filter-height});
+        // Subtract the space taken up by the filename
+        height: calc(100% - #{$references-filter-height});
     }
 }
