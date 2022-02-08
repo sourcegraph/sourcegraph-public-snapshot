@@ -54,6 +54,9 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 const currentMigrationLogSchemaVersion = 1
 
+// EnsureSchemaTable creates the bookeeping tables required to track this schema
+// if they do not already exist. If old versions of the tables exist, this method
+// will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -71,6 +74,39 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
+	}
+
+	minMigrationVersions := map[string]int{
+		"schema_migrations":              1528395834,
+		"codeintel_schema_migrations":    1000000015,
+		"codeinsights_schema_migrations": 1000000000,
+		"test_migrations_table_backfill": 1000000000, // used in tests
+	}
+	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
+		queries = append(queries, sqlf.Sprintf(`
+			WITH
+				schema_version AS (SELECT * FROM %s LIMIT 1),
+				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
+				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
+			INSERT INTO migration_logs (
+				migration_logs_schema_version,
+				schema,
+				version,
+				up,
+				success,
+				started_at,
+				finished_at
+			)
+			SELECT %s, %s, version, true, true, NOW(), NOW()
+			FROM generate_series(%s, (SELECT version FROM target_version)) version
+			WHERE NOT (SELECT dirty FROM schema_version)
+		`,
+			quote(s.schemaName),
+			s.schemaName,
+			currentMigrationLogSchemaVersion,
+			s.schemaName,
+			minMigrationVersion,
+		))
 	}
 
 	tx, err := s.Transact(ctx)
