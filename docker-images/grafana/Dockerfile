@@ -11,8 +11,8 @@ RUN ls '/generated/grafana'
 # when upgrading the Grafana version, please refer to https://docs.sourcegraph.com/dev/background-information/observability/grafana#upgrading-grafana
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
-FROM grafana/grafana:7.5.11@sha256:c6d621725df5a179bb19f8fd3c8c7bd10fee915edc98a4418d0a21011e104f9b as production
-LABEL com.sourcegraph.grafana.version=7.5.11
+FROM grafana/grafana:7.5.13@sha256:b60271d115e91d2e17615654960a5781126c74dcc3bd70e39708de27e4169d23 as production
+LABEL com.sourcegraph.grafana.version=7.5.13
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
