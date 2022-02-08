@@ -44,6 +44,13 @@ type Test struct {
 func TestRequest(t *testing.T) {
 	tests := []Test{
 		{
+			Name:         "HTTP GET",
+			Request:      httptest.NewRequest("GET", "/exec", strings.NewReader("{}")),
+			ExpectedCode: http.StatusMethodNotAllowed,
+			ExpectedBody: "",
+		},
+
+		{
 			Name:         "Command",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
@@ -108,8 +115,8 @@ func TestRequest(t *testing.T) {
 		{
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: `invalid command`,
 		},
 	}
 
