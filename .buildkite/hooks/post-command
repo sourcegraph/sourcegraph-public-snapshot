@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
 (
-    echo "--- Sending stuff to HoneyComb"
-    echo "build_id=$BUILDKITE_BUILD_ID step_id=$BUILDKITE_STEP_ID step_start=$STEP_START step_key=$BUILDKITE_STEP_KEY"
-
     exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
     BUILDEVENT_APIKEY=$CI_BUILDEVENT_API_KEY
     BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
