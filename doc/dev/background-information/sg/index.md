@@ -299,6 +299,13 @@ sg db reset-redis
 sg db add-user -name=foo
 ```
 
+### `sg wut` - Look up a term or abbreviation overheard at Sourcegraph
+
+```bash
+# Look up what 'roi' stands for
+sg wut roi
+```
+
 ## Configuration
 
 Default `sg` behaviour is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.

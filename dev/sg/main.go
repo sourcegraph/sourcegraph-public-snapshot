@@ -64,6 +64,7 @@ var (
 			opsCommand,
 			checkCommand,
 			dbCommand,
+			wutCommand,
 		},
 	}
 )
