@@ -51,6 +51,12 @@ export function createStreamSearch({
         )
             .pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
             .subscribe(searchResults => {
+                if (searchResults.state === 'error') {
+                    // Pass only primitive copied values because Error object is not cloneable
+                    const { name, message, stack } = searchResults.error
+                    searchResults.error = { name, message, stack }
+                }
+
                 stateMachine.emit({ type: 'received_search_results', searchResults })
             })
     }

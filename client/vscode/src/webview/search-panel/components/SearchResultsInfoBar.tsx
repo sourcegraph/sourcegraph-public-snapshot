@@ -5,11 +5,12 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import React, { useCallback, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 
 import { WebviewPageProps } from '../../platform/context'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
-import { BookmarkRadialGradientIcon } from './icons'
+import { BookmarkRadialGradientIcon, CodeMonitoringLogo } from './icons'
 import styles from './SearchResultsInfoBar.module.scss'
 
 // Debt: this is a fork of the web <SearchResultsInfobar>.
@@ -20,7 +21,7 @@ export interface SearchResultsInfoBarProps
     onShareResultsClick: () => void
     setShowSavedSearchForm: (status: boolean) => void
     showSavedSearchForm: boolean
-    query?: string
+    fullQuery: string
     patternType: SearchPatternType
 
     // Expand all feature
@@ -59,7 +60,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
  * informs them that this may be the case to avoid confusion.
  */
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
-    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
+    props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
         <small
             className={styles.notice}
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
@@ -81,11 +82,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         onShareResultsClick,
         stats,
         instanceURL,
+        fullQuery,
+        patternType,
     } = props
 
     const showActionButtonExperimentalVersion = !authenticatedUser
 
-    const onActionButtonClick = useCallback(
+    const onSaveSearchButtonClick = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
             setShowSavedSearchForm(!showSavedSearchForm)
@@ -93,13 +96,83 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         },
         [platformContext.telemetryService, setShowSavedSearchForm, showSavedSearchForm]
     )
-    console.log({ instanceURL })
+
+    const onCreateCodeMonitorButtonClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            platformContext.telemetryService.log('VSCECreateCodeMonitorClick')
+
+            const searchParameters = new URLSearchParams()
+            searchParameters.set('q', fullQuery)
+            searchParameters.set('trigger-query', `${fullQuery} patternType:${patternType}`)
+            const createMonitorURL = new URL(`/code-monitoring/new?${searchParameters.toString()}`, instanceURL)
+            extensionCoreAPI.openLink(createMonitorURL.href).catch(() => {
+                console.error('Error opening create code monitor link')
+            })
+        },
+        [platformContext.telemetryService, extensionCoreAPI, fullQuery, instanceURL, patternType]
+    )
+
+    const canCreateMonitorFromQuery = useMemo(() => {
+        if (!fullQuery) {
+            return false
+        }
+        const globalTypeFilterInQuery = findFilter(fullQuery, 'type', FilterKind.Global)
+        const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
+        return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
+    }, [fullQuery])
+
+    const createCodeMonitorButton = useMemo(() => {
+        const searchParameters = new URLSearchParams()
+        searchParameters.set('q', fullQuery)
+        searchParameters.set('trigger-query', `${fullQuery} patternType:${patternType}`)
+        return (
+            <li
+                className={classNames('mr-2', styles.navItem)}
+                data-tooltip={
+                    !canCreateMonitorFromQuery
+                        ? 'Code monitors only support type:diff or type:commit searches.'
+                        : undefined
+                }
+            >
+                <ExperimentalActionButton
+                    showExperimentalVersion={showActionButtonExperimentalVersion}
+                    onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
+                    className="test-save-search-link"
+                    button={
+                        <>
+                            <CodeMonitoringLogo className="icon-inline mr-1" />
+                            Monitor
+                        </>
+                    }
+                    icon={<BookmarkRadialGradientIcon />}
+                    title="Monitor code for changes"
+                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                    source="Saved"
+                    viewEventName="VSCECodeMonitorCTAShown"
+                    returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
+                    telemetryService={platformContext.telemetryService}
+                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                    instanceURL={instanceURL}
+                />
+            </li>
+        )
+    }, [
+        canCreateMonitorFromQuery,
+        fullQuery,
+        instanceURL,
+        onCreateCodeMonitorButtonClick,
+        platformContext.telemetryService,
+        showActionButtonExperimentalVersion,
+        patternType,
+    ])
+
     const saveSearchButton = useMemo(
         () => (
             <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
-                    onNonExperimentalLinkClick={onActionButtonClick}
+                    onNonExperimentalLinkClick={onSaveSearchButtonClick}
                     className="test-save-search-link"
                     button={
                         <>
@@ -111,7 +184,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
-                    viewEventName="VSCESignUpModalClick"
+                    viewEventName="VSCESaveSearchCTAShown"
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
@@ -119,7 +192,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 />
             </li>
         ),
-        [showActionButtonExperimentalVersion, onActionButtonClick, platformContext.telemetryService, instanceURL]
+        [showActionButtonExperimentalVersion, onSaveSearchButtonClick, platformContext.telemetryService, instanceURL]
     )
 
     return (
@@ -145,6 +218,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             Feedback
                         </button>
                     </li>
+                    {createCodeMonitorButton}
                     {saveSearchButton}
                     <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
                         <button
