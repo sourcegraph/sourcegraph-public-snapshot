@@ -17,7 +17,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -25,6 +25,7 @@ import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../..
 import { SearchPatternType } from '../../graphql-operations'
 import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
+import { renderBrandedToString } from '../render-branded-to-string'
 import {
     getTourOptions,
     HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
@@ -41,21 +42,22 @@ function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => 
     return (onClose: () => void): HTMLElement => {
         const container = document.createElement('div')
         container.className = featureTourStyles.featureTourStep
-        container.innerHTML = `
-            <div>
-                <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
-                ${
-                    isAuthenticatedUser
-                        ? '<a href="https://docs.sourcegraph.com/code_monitoring" target="_blank">Learn more.</a>'
-                        : ''
-                }
-            </div>
-            <div class="d-flex justify-content-end text-muted">
-                <button type="button" class="btn btn-sm">
-                    Dismiss
-                </button>
-            </div>
-        `
+        container.innerHTML = renderBrandedToString(
+            <>
+                <div>
+                    <strong>New</strong>: Create a code monitor to get notified about new search results for a query.{' '}
+                    {isAuthenticatedUser ? (
+                        <Link to="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                            Learn more.
+                        </Link>
+                    ) : null}
+                </div>
+                <div className="d-flex justify-content-end text-muted">
+                    <Button size="sm">Dismiss</Button>
+                </div>
+            </>
+        )
+
         const button = container.querySelector('button')
         button?.addEventListener('click', onClose)
         return container
@@ -161,6 +163,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const showCreateCodeMonitoringButton = props.enableCodeMonitoring && !!props.query
 
     const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
+
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
         showCreateCodeMonitoringButton &&

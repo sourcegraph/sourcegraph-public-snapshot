@@ -13,7 +13,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     Run any number of actions in response to an event
   </span>
   <div
-    class="card p-3"
+    class="card card p-3"
   >
     <div
       class="font-weight-bold"
@@ -126,7 +126,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
   >
     What other actions would you like to take? 
     <a
-      class=""
+      class="anchorLink"
       href="mailto:feedback@sourcegraph.com"
       rel="noopener"
       target="_blank"

@@ -4,7 +4,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
@@ -15,8 +15,10 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { renderBrandedToString } from '../render-branded-to-string'
 
 import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
@@ -72,11 +74,25 @@ function generateStep1(
 ): HTMLElement {
     const content = document.createElement('div')
     content.className = 'd-flex align-items-center'
-    content.innerHTML = `
-         <div class=${styles.title}>Get started</div>
-         <button type="button" data-testid="tour-language-button" class="btn btn-link p-0 ${styles.link} tour-language-button">Search a language</button>
-         <button type="button" data-testid="tour-repo-button" class="btn btn-link p-0 ${styles.link} tour-repo-button">Search a repository</button>
-     `
+    content.innerHTML = renderBrandedToString(
+        <>
+            <div className={styles.title}>Get started</div>
+            <Button
+                data-testid="tour-language-button"
+                variant="link"
+                className={classNames(styles.link, 'p-0 tour-language-button')}
+            >
+                Search a language
+            </Button>
+            <Button
+                data-testid="tour-repo-button"
+                variant="link"
+                className={classNames(styles.link, 'p-0 tour-repo-button')}
+            >
+                Search a repository
+            </Button>
+        </>
+    )
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
         eventLogger.log('OnboardingTourLanguageOptionClicked')
