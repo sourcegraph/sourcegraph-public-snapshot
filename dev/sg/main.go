@@ -211,5 +211,6 @@ func fileExists(path string) (bool, error) {
 		}
 		return false, err
 	}
+	// TODO trigger go tests
 	return true, nil
 }
