@@ -25,8 +25,8 @@ switch ($github.event_name) {
         Write-Information "Issue was $($github.event.action)"
 
         switch ($github.event.action) {
-            {'labeled', 'milestoned'} {
-                # If team label was added, add to project board
+            {'opened', 'labeled', 'milestoned'} {
+                # If team label was added or issue was just opened, add to project board
                 # If added to an iteration, update status and set "proposed by" to the event actor
                 # Idempotent, will return the item if already exists in the board (this is fine because we checked for the team label)
                 $item = $github.event.issue | Add-GitHubBetaProjectItem -ProjectNodeId $ProjectNodeId

@@ -2,7 +2,7 @@ name: Code Insights GitHub project automation
 
 on:
   issues:
-    types: [closed, reopened, milestoned, labeled]
+    types: [opened, reopened, milestoned, labeled]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 
