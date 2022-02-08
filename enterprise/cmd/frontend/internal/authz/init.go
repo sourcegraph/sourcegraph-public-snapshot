@@ -46,9 +46,16 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, _, seriousProblems, warnings :=
+		_, providers, seriousProblems, warnings :=
 			eiauthz.ProvidersFromConfig(context.Background(), cfg, extsvcStore)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Add connection validation issue
+		for _, p := range providers {
+			for _, problem := range p.ValidateConnection(ctx) {
+				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
+			}
+		}
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
 	})

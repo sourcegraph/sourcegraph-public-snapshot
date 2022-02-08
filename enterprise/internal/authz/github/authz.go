@@ -74,11 +74,6 @@ func NewAuthzProviders(
 			p.groupsCache = nil
 		}
 
-		// Check for other validation issues.
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("GitHub config for %s was invalid: %s", p.ServiceID(), problem))
-		}
-
 		// Register this provider.
 		ps = append(ps, p)
 	}

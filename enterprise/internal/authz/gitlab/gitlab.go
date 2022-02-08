@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -27,11 +26,6 @@ func NewAuthzProviders(
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
-		}
-	}
-	for _, p := range ps {
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("GitLab config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 	}
 

@@ -1,8 +1,6 @@
 package bitbucketserver
 
 import (
-	"fmt"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -26,12 +24,6 @@ func NewAuthzProviders(
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
-		}
-	}
-
-	for _, p := range ps {
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("BitbucketServer config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 	}
 

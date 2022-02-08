@@ -1,7 +1,6 @@
 package perforce
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -22,12 +21,6 @@ func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, 
 			problems = append(problems, err.Error())
 		} else if p != nil {
 			ps = append(ps, p)
-		}
-	}
-
-	for _, p := range ps {
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("Perforce config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 	}
 
