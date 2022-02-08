@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -254,8 +255,9 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 	return providers[0], nil
 }
 
-func ParseInterval(interval int) time.Duration {
-	if interval == 0 {
+func RefreshInterval() time.Duration {
+	interval := conf.Get().AuthzRefreshInterval
+	if interval <= 0 {
 		return 5 * time.Second
 	}
 	return time.Duration(interval) * time.Second

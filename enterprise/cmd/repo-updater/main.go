@@ -73,7 +73,7 @@ func enterpriseInit(
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
-		t := time.NewTicker(frontendAuthz.ParseInterval(conf.Get().AuthzRefreshInterval))
+		t := time.NewTicker(frontendAuthz.RefreshInterval())
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
 				frontendAuthz.ProvidersFromConfig(
