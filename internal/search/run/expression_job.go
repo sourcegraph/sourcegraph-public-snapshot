@@ -86,6 +86,11 @@ func (a *AndJob) Name() string {
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
 func NewOrJob(children ...Job) Job {
+	if len(children) == 0 {
+		return NewNoopJob()
+	} else if len(children) == 1 {
+		return children[0]
+	}
 	return &OrJob{
 		children: children,
 	}
@@ -168,9 +173,12 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 	}
 
 	// Send results that were only seen by some of the sources
-	stream.Send(streaming.SearchEvent{
-		Results: merger.UnsentTracked(),
-	})
+	unsentTracked := merger.UnsentTracked()
+	if len(unsentTracked) > 0 {
+		stream.Send(streaming.SearchEvent{
+			Results: unsentTracked,
+		})
+	}
 	return maxAlerter.Alert, nil
 }
 
