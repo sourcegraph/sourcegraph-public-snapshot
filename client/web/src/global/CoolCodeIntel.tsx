@@ -721,7 +721,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelC
     }
 )
 
-export function locationWithoutReferences(location: H.Location): H.LocationDescriptorObject {
+export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
     const parsedQuery = parseQueryAndHash(location.search, location.hash)
     delete parsedQuery.viewState
 
@@ -748,7 +748,7 @@ export const CoolCodeIntelResizablePanel: React.FunctionComponent<
         // Signal up that panel is closed
         props.onClose()
         // Remove 'viewState' from location
-        history.push(locationWithoutReferences(location))
+        history.push(locationWithoutViewState(location))
         // close(true)
     }, [props, history, location])
 
