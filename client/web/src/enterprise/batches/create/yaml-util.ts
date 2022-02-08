@@ -251,6 +251,18 @@ const findOnStatement = (ast: YAMLMap): YAMLNode | undefined => {
 }
 
 /**
+ * Finds and returns the value for a node within the `ast` mappings whose key is
+ * "importChangesets".
+ *
+ * @param ast the `YAMLMap` node to scan
+ */
+const findImportChangesetsStatement = (ast: YAMLMap): YAMLNode | undefined => {
+    // Find the `YAMLMapping` node with the key "importChangesets"
+    const importMapping = find(ast.mappings, mapping => mapping.key.value === 'importChangesets')
+    return importMapping?.value
+}
+
+/**
  * Checks for a valid "on: " sequence within the provided YAML AST parsed from the input
  * batch spec.
  *
@@ -340,14 +352,14 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
 }
 
 /**
- * Parses and performs a comparison between the values for the "on" statement of two
- * different batch specs, returning true if the statements match or "UNKNOWN" if the specs
- * are not able to be parsed and compared.
+ * Parses and performs a comparison between the values for the "on" and "importChangesets"
+ * statements of two different batch specs, returning true if the statements match or
+ * "UNKNOWN" if the specs are not able to be parsed and compared.
  *
  * @param spec1 the first raw batch spec YAML code to compare against `spec2`
  * @param spec2 the second raw batch spec YAML code to compare against `spec1`
  */
-export const haveMatchingOnStatements = (spec1: string, spec2: string): boolean | 'UNKNOWN' => {
+export const haveMatchingOnAndImportStatements = (spec1: string, spec2: string): boolean | 'UNKNOWN' => {
     const ast1 = load(spec1)
     const ast2 = load(spec2)
 
@@ -366,5 +378,24 @@ export const haveMatchingOnStatements = (spec1: string, spec2: string): boolean 
     const onString1 = spec1.slice(on1.startPosition, on1.endPosition)
     const onString2 = spec2.slice(on2.startPosition, on2.endPosition)
 
-    return onString1 === onString2
+    if (onString1 !== onString2) {
+        return false
+    }
+
+    // Find the value for the "importChangesets" statement for both specs
+    const import1 = findImportChangesetsStatement(ast1)
+    const import2 = findImportChangesetsStatement(ast2)
+
+    if ((import1 && !import2) || (!import1 && import2)) {
+        return false
+    }
+
+    if (!import1 || !import2) {
+        return true
+    }
+
+    const importString1 = spec1.slice(import1.startPosition, import1.endPosition)
+    const importString2 = spec2.slice(import2.startPosition, import2.endPosition)
+
+    return importString1 === importString2
 }

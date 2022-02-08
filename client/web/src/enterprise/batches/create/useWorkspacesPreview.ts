@@ -15,14 +15,18 @@ import {
     WorkspaceResolutionStatusResult,
     BatchSpecWorkspacesPreviewResult,
     BatchSpecWorkspacesPreviewVariables,
+    BatchSpecImportingChangesetsVariables,
+    BatchSpecImportingChangesetsResult,
 } from '../../../graphql-operations'
 
 import {
     CREATE_BATCH_SPEC_FROM_RAW,
+    IMPORTING_CHANGESETS,
     REPLACE_BATCH_SPEC_INPUT,
     WORKSPACES,
     WORKSPACE_RESOLUTION_STATUS,
 } from './backend'
+import { CHANGESETS_PER_PAGE_COUNT } from './workspaces-preview/useImportingChangesets'
 import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'REQUESTED' | 'CANCELED'
@@ -180,7 +184,7 @@ export const useWorkspacesPreview = (
         ]
     )
 
-    const [fetchResults] = useLazyQuery<BatchSpecWorkspacesPreviewResult, BatchSpecWorkspacesPreviewVariables>(
+    const [fetchWorkspaces] = useLazyQuery<BatchSpecWorkspacesPreviewResult, BatchSpecWorkspacesPreviewVariables>(
         WORKSPACES,
         {
             variables: {
@@ -192,6 +196,18 @@ export const useWorkspacesPreview = (
             fetchPolicy: 'cache-and-network',
         }
     )
+
+    const [fetchImportingChangesets] = useLazyQuery<
+        BatchSpecImportingChangesetsResult,
+        BatchSpecImportingChangesetsVariables
+    >(IMPORTING_CHANGESETS, {
+        variables: {
+            batchSpec: batchSpecID,
+            after: null,
+            first: CHANGESETS_PER_PAGE_COUNT,
+        },
+        fetchPolicy: 'cache-and-network',
+    })
 
     // This effect triggers on workspaces resolution job status changes from the backend
     // and updates user-facing state.
@@ -229,10 +245,11 @@ export const useWorkspacesPreview = (
             stopPolling()
             setIsInProgress(false)
             // Fetch the results of the workspace preview resolution.
-            fetchResults()
+            fetchWorkspaces()
+            fetchImportingChangesets()
             onComplete?.()
         }
-    }, [uiState, startPolling, stopPolling, onComplete, fetchResults])
+    }, [uiState, startPolling, stopPolling, onComplete, fetchWorkspaces, fetchImportingChangesets])
 
     const cancel = useCallback(() => {
         setError(undefined)

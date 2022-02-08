@@ -41,9 +41,10 @@ import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useWorkspacesPreview } from './useWorkspacesPreview'
+import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
-import { haveMatchingOnStatements } from './yaml-util'
+import { haveMatchingOnAndImportStatements } from './yaml-util'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -223,6 +224,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
+    const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
 
     // When we successfully submit the latest batch spec code to the backend for a new
     // workspaces preview, we follow up by refetching the batch change to get the latest
@@ -264,12 +266,13 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         [isValid, isWorkspacesPreviewInProgress]
     )
 
-    // The batch spec YAML code is only considered stale when its "on" statement has been
-    // modified since this is what's relevant to the workspaces preview.
-    const isBatchSpecStale = useMemo(() => haveMatchingOnStatements(initialBatchSpecCode, debouncedCode) === false, [
-        initialBatchSpecCode,
-        debouncedCode,
-    ])
+    // The batch spec YAML code is only considered stale when its "on" or
+    // "importChangesets" statement has been modified since this is what's relevant to the
+    // workspaces preview.
+    const isBatchSpecStale = useMemo(
+        () => haveMatchingOnAndImportStatements(initialBatchSpecCode, debouncedCode) === false,
+        [initialBatchSpecCode, debouncedCode]
+    )
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
@@ -365,7 +368,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                     )}
                 >
                     <WorkspacesPreview
-                        batchSpec={batchSpec}
                         previewDisabled={previewDisabled}
                         preview={() => previewBatchSpec(debouncedCode)}
                         batchSpecStale={
@@ -377,6 +379,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                         isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
                         resolutionState={resolutionState}
                         workspacesConnection={workspacesConnection}
+                        importingChangesetsConnection={importingChangesetsConnection}
                         setFilters={setFilters}
                     />
                 </div>

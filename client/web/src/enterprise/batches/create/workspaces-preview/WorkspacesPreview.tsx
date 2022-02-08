@@ -9,16 +9,13 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { Button } from '@sourcegraph/wildcard'
 
-import {
-    BatchSpecWorkspaceResolutionState,
-    EditBatchChangeFields,
-    PreviewBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
+import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 import { ResolutionState } from '../useWorkspacesPreview'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
+import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacePreviewFilters } from './useWorkspaces'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
@@ -30,11 +27,6 @@ const ON_STATEMENT = `on:
 `
 
 interface WorkspacesPreviewProps {
-    /**
-     * The existing, most recent batch spec for the batch change that will have the
-     * associated workspaces preview we want to query.
-     */
-    batchSpec: EditBatchChangeFields['currentSpec']
     /**
      * Function to submit the current input batch spec YAML to trigger a new workspaces
      * preview request.
@@ -72,12 +64,13 @@ interface WorkspacesPreviewProps {
     error?: string
     /** The current workspaces preview connection result used to render the list. */
     workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
+    /** The current importing changesets connection result used to render the list. */
+    importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
     /** Method to invoke to capture a change in the active filters applied. */
     setFilters: (filters: WorkspacePreviewFilters) => void
 }
 
 export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
-    batchSpec,
     previewDisabled,
     preview,
     batchSpecStale,
@@ -88,6 +81,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     error,
     resolutionState,
     workspacesConnection,
+    importingChangesetsConnection,
     setFilters,
 }) => {
     const { connection } = workspacesConnection
@@ -201,7 +195,10 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                         showCached={showCached}
                         cached={cachedWorkspacesPreview}
                     />
-                    <ImportingChangesetsPreviewList batchSpecID={batchSpec.id} isStale={batchSpecStale} />
+                    <ImportingChangesetsPreviewList
+                        isStale={batchSpecStale || !hasPreviewed}
+                        importingChangesetsConnection={importingChangesetsConnection}
+                    />
                 </div>
             )}
         </div>
