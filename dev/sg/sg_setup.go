@@ -296,7 +296,7 @@ asdf install golang
 			},
 			{
 				name:  "yarn",
-				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
+				check: combineChecks(checkInPath("yarn"), checkCommandExitCode("yarn --version", 0)),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
