@@ -1,8 +1,8 @@
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
+import { pluralize } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'

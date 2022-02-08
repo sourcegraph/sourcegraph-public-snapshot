@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
@@ -10,7 +10,6 @@ import {
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
     makeRepoURI,

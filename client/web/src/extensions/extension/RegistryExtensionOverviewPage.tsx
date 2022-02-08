@@ -5,10 +5,9 @@ import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 
-import { isErrorLike, isDefined } from '@sourcegraph/common'
+import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

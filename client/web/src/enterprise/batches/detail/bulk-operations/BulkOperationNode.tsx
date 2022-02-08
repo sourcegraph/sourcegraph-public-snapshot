@@ -8,8 +8,8 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Badge, AlertLink, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'

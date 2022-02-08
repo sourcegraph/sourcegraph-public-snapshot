@@ -7,6 +7,7 @@ import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 import { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -18,7 +19,6 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { TextDocumentPositionParameters } from '../api/protocol'
 import { PlatformContext, URLToFileContext } from '../platform/context'
-import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import {
     FileSpec,
     UIPositionSpec,

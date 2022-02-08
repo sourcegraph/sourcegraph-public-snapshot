@@ -1,7 +1,7 @@
 import { from, Observable } from 'rxjs'
 import { delay, filter, map, retryWhen, switchMap } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable, sha256 } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
@@ -11,8 +11,6 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { sha256 } from '@sourcegraph/shared/src/util/hashCode'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     FileSpec,
     makeRepoURI,

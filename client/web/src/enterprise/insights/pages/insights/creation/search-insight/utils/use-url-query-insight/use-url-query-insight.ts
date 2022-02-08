@@ -1,11 +1,10 @@
 import { useContext, useEffect, useMemo, useState } from 'react'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, dedupeWhitespace } from '@sourcegraph/common'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
-import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'

@@ -1,19 +1,16 @@
+import { isExternalLink } from '@sourcegraph/common'
+
 import { SearchPatternType } from '../graphql-operations'
 
 import {
     buildSearchURLQuery,
-    lprToSelectionsZeroIndexed,
     makeRepoURI,
     parseHash,
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
-    isExternalLink,
     toAbsoluteBlobURL,
-    appendSubtreeQueryParameter,
     RepoFile,
-    encodeURIPathComponent,
-    appendLineRangeQueryParameter,
     toRepoURL,
 } from './url'
 
@@ -144,14 +141,6 @@ describe('parseRepoURI', () => {
             revision: 'branch',
             filePath: 'space here.go',
         })
-    })
-})
-
-describe('encodeURIPathComponent', () => {
-    it('encodes all special characters except slashes and the plus sign', () => {
-        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
-            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
-        )
     })
 })
 
@@ -423,129 +412,6 @@ describe('buildSearchURLQuery', () => {
         ))
 })
 
-describe('lprToSelectionsZeroIndexed', () => {
-    test('converts an LPR with only a start line', () => {
-        assertDeepStrictEqual(
-            lprToSelectionsZeroIndexed({
-                line: 5,
-            }),
-            [
-                {
-                    start: {
-                        line: 4,
-                        character: 0,
-                    },
-                    end: {
-                        line: 4,
-                        character: 0,
-                    },
-                    anchor: {
-                        line: 4,
-                        character: 0,
-                    },
-                    active: {
-                        line: 4,
-                        character: 0,
-                    },
-                    isReversed: false,
-                },
-            ]
-        )
-    })
-
-    test('converts an LPR with a line and a character', () => {
-        assertDeepStrictEqual(
-            lprToSelectionsZeroIndexed({
-                line: 5,
-                character: 45,
-            }),
-            [
-                {
-                    start: {
-                        line: 4,
-                        character: 44,
-                    },
-                    end: {
-                        line: 4,
-                        character: 44,
-                    },
-                    anchor: {
-                        line: 4,
-                        character: 44,
-                    },
-                    active: {
-                        line: 4,
-                        character: 44,
-                    },
-                    isReversed: false,
-                },
-            ]
-        )
-    })
-
-    test('converts an LPR with a start and end line', () => {
-        assertDeepStrictEqual(
-            lprToSelectionsZeroIndexed({
-                line: 12,
-                endLine: 15,
-            }),
-            [
-                {
-                    start: {
-                        line: 11,
-                        character: 0,
-                    },
-                    end: {
-                        line: 14,
-                        character: 0,
-                    },
-                    anchor: {
-                        line: 11,
-                        character: 0,
-                    },
-                    active: {
-                        line: 14,
-                        character: 0,
-                    },
-                    isReversed: false,
-                },
-            ]
-        )
-    })
-
-    test('converts an LPR with a start and end line and characters', () => {
-        assertDeepStrictEqual(
-            lprToSelectionsZeroIndexed({
-                line: 12,
-                character: 30,
-                endLine: 15,
-                endCharacter: 60,
-            }),
-            [
-                {
-                    start: {
-                        line: 11,
-                        character: 29,
-                    },
-                    end: {
-                        line: 14,
-                        character: 59,
-                    },
-                    anchor: {
-                        line: 11,
-                        character: 29,
-                    },
-                    active: {
-                        line: 14,
-                        character: 59,
-                    },
-                    isReversed: false,
-                },
-            ]
-        )
-    })
-})
-
 describe('isExternalLink', () => {
     it('returns false for the same site', () => {
         jsdom.reconfigure({ url: 'https://github.com/here' })
@@ -563,30 +429,6 @@ describe('isExternalLink', () => {
     it('returns true for a different site', () => {
         jsdom.reconfigure({ url: 'https://github.com/here' })
         expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
-    })
-})
-
-describe('appendSubtreeQueryParam', () => {
-    it('appends subtree=true to urls', () => {
-        expect(appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24')).toBe(
-            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24&subtree=true'
-        )
-    })
-    it('appends subtree=true to urls with other query params', () => {
-        expect(
-            appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24')
-        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24&subtree=true')
-    })
-})
-
-describe('appendLineRangeQueryParameter', () => {
-    it('appends line range to the start of query with existing parameters', () => {
-        expect(
-            appendLineRangeQueryParameter(
-                '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test',
-                'L24:24'
-            )
-        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L24:24&test=test')
     })
 })
 

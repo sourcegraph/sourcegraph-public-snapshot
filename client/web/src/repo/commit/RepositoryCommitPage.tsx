@@ -7,7 +7,15 @@ import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLate
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    createAggregateError,
+    ErrorLike,
+    isErrorLike,
+    isDefined,
+    memoizeObservable,
+    property,
+} from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
@@ -19,8 +27,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,

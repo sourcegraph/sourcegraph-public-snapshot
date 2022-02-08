@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import * as React from 'react'
 import { useLocation } from 'react-router'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, property } from '@sourcegraph/common'
 import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
@@ -11,7 +11,6 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'

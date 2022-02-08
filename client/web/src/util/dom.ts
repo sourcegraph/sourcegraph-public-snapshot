@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, map } from 'rxjs/operators'
 
-import { observeResize } from '@sourcegraph/shared/src/util/dom'
+import { observeResize } from '@sourcegraph/common'
 import { useObservable } from '@sourcegraph/wildcard'
 
 interface ObserveQuerySelectorInit {

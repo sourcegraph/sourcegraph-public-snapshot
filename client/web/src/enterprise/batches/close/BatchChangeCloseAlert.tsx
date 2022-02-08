@@ -2,8 +2,7 @@ import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isErrorLike, asError } from '@sourcegraph/common'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
 import { Button, AlertLink, LoadingSpinner, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../graphql-operations'

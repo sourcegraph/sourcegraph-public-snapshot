@@ -8,13 +8,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
+import { isMacPlatform } from '@sourcegraph/common'
 import { QueryState } from '@sourcegraph/search'
 import { MonacoQueryInputProps } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -271,7 +271,7 @@ const useTourWithSteps = ({
                 text: generateStep({
                     tour,
                     stepNumber: 4,
-                    content: generateStepContent('Search', `(Or press ${isMacPlatform ? 'RETURN' : 'ENTER'})`),
+                    content: generateStepContent('Search', `(Or press ${isMacPlatform() ? 'RETURN' : 'ENTER'})`),
                 }),
                 when: {
                     show() {

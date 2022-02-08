@@ -1,5 +1,5 @@
+import { isMacPlatform } from '@sourcegraph/common'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
     id: 'commandPalette',
@@ -29,7 +29,7 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
 export const KEYBOARD_SHORTCUT_FUZZY_FINDER: KeyboardShortcut = {
     id: 'fuzzyFinder',
     title: 'Fuzzy search files',
-    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control'], ordered: ['k'] }],
+    keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control'], ordered: ['k'] }],
 }
 
 export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER: KeyboardShortcut = {
@@ -41,7 +41,7 @@ export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER: KeyboardShortcut = {
 export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
     id: 'copyFullQuery',
     title: 'Copy full query',
-    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
+    keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
 }
 
 /**

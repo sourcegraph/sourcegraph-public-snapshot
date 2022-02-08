@@ -1,9 +1,8 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { isNot } from '@sourcegraph/shared/src/util/types'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'

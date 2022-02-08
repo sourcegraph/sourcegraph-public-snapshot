@@ -27,7 +27,18 @@ import {
     findPositionsFromEvents,
     createHoverifier,
 } from '@sourcegraph/codeintellify'
-import { asError, isErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    isErrorLike,
+    isDefined,
+    property,
+    observeResize,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -44,13 +55,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { observeResize } from '@sourcegraph/shared/src/util/dom'
-import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
-    LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
     ModeSpec,
     UIPositionSpec,
     RepoSpec,
@@ -58,9 +65,6 @@ import {
     RevisionSpec,
     toURIWithPath,
     parseQueryAndHash,
-    toPositionOrRangeQueryParameter,
-    addLineRangeQueryParameter,
-    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 

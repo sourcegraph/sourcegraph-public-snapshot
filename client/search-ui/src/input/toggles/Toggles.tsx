@@ -4,7 +4,7 @@ import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
 import React, { useCallback } from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import {
     SearchPatternTypeProps,
     CaseSensitivityProps,
@@ -17,7 +17,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
@@ -178,7 +177,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     <CopyQueryButton
                         fullQuery={fullQuery}
                         keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                        isMacPlatform={isMacPlatform}
+                        isMacPlatform={isMacPlatform()}
                         className={classNames(styles.toggle, styles.copyQueryButton)}
                     />
                 </>

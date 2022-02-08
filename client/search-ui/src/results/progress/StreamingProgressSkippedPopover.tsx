@@ -7,10 +7,10 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Button } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'

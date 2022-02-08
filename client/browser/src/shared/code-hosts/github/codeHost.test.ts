@@ -4,7 +4,7 @@ import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
+import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'

@@ -1,5 +1,5 @@
 import { renderError } from '@sourcegraph/branded/src/components/alerts'
-import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
+import { dedupeWhitespace } from '@sourcegraph/common'
 
 import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { Validator } from '../../../../../../components/form/hooks/useField'

@@ -7,11 +7,10 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'

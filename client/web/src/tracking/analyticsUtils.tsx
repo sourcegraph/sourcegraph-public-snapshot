@@ -2,8 +2,7 @@ import { fromEvent, concat, Observable, of, merge, EMPTY } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import { isErrorLike, isFirefox } from '@sourcegraph/common'
 
 import { IS_CHROME } from '../marketing/util'
 import { observeQuerySelector } from '../util/dom'

@@ -12,7 +12,7 @@
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "*"],
+      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
     },
     "jsx": "react",
     "resolveJsonModule": true,

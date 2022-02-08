@@ -9,8 +9,7 @@ import classNames from 'classnames'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
-import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
 import { TextArea, Button, ButtonGroup, Link } from '@sourcegraph/wildcard'
 import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
 

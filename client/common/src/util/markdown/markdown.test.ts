@@ -1,6 +1,4 @@
-import { registerHighlightContributions } from '../highlight/contributions'
-
-import { renderMarkdown } from './markdown'
+import { renderMarkdown, registerHighlightContributions } from '.'
 
 registerHighlightContributions()
 

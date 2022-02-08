@@ -13,14 +13,21 @@ import {
 import * as sourcegraph from 'sourcegraph'
 
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    allOf,
+    asError,
+    combineLatestOrDefault,
+    ErrorLike,
+    isDefined,
+    isExactly,
+    isNot,
+    property,
+} from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
-import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { allOf, isExactly, isNot, property } from '../../util/types'
-import { parseRepoURI } from '../../util/url'
 import { fromHoverMerged } from '../client/types/hover'
 import { match, TextDocumentIdentifier } from '../client/types/textDocument'
 import { FlatExtensionHostAPI } from '../contract'
