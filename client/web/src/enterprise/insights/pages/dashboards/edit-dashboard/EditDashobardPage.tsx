@@ -20,7 +20,7 @@ import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/su
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from '../creation/components/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
 
