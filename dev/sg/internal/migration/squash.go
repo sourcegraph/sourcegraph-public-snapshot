@@ -54,24 +54,24 @@ func Squash(database db.Database, commit string) error {
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
-	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, newRoot)
+	files, err := makeMigrationFilenames(database, newRoot)
 	if err != nil {
 		return err
 	}
 
 	contents := map[string]string{
-		upPath:       squashedUpMigration,
-		downPath:     squashedDownMigration,
-		metadataPath: "name: 'squashed migrations'\n",
+		files.UpFile:       squashedUpMigration,
+		files.DownFile:     squashedDownMigration,
+		files.MetadataFile: "name: 'squashed migrations'\n",
 	}
 
 	if err := writeMigrationFiles(contents); err != nil {
 		return err
 	}
 
-	block.Writef("Created: %s", upPath)
-	block.Writef("Created: %s", downPath)
-	block.Writef("Created: %s", metadataPath)
+	block.Writef("Created: %s", files.UpFile)
+	block.Writef("Created: %s", files.DownFile)
+	block.Writef("Created: %s", files.MetadataFile)
 
 	// Remove the migration file pairs that were just squashed
 	filenames, err := removeAncestorsOf(database, definitions, newRoot)
@@ -97,16 +97,8 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 	if err != nil {
 		return 0, false, err
 	}
-	lines := strings.Split(output, "\n")
 
-	versions := make([]int, 0, len(lines))
-	for _, filename := range lines {
-		if version, err := strconv.Atoi(strings.Split(filename, "_")[0]); err == nil {
-			versions = append(versions, version)
-		}
-	}
-
-	ds, err = ds.Filter(versions)
+	ds, err = ds.Filter(parseVersions(strings.Split(output, "\n"), migrationsDir))
 	if err != nil {
 		return 0, false, err
 	}

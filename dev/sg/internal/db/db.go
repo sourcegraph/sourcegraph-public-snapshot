@@ -65,6 +65,12 @@ var (
 	DefaultDatabase = databases[0]
 )
 
+func Databases() []Database {
+	c := make([]Database, len(databases))
+	copy(c, databases)
+	return c
+}
+
 func DatabaseNames() []string {
 	databaseNames := make([]string, 0, len(databases))
 	for _, database := range databases {
