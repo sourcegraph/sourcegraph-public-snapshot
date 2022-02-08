@@ -29,8 +29,6 @@ type schemaContext struct {
 }
 
 type schemaVersion struct {
-	version         int
-	dirty           bool
 	appliedVersions []int
 	pendingVersions []int
 	failedVersions  []int
@@ -149,10 +147,6 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 }
 
 func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
-	version, dirty, _, err := store.Version(ctx)
-	if err != nil {
-		return schemaVersion{}, err
-	}
 	appliedVersions, pendingVersions, failedVersions, err := store.Versions(ctx)
 	if err != nil {
 		return schemaVersion{}, err
@@ -161,16 +155,12 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	logger.Info(
 		"Checked current version",
 		"schema", schemaName,
-		"version", version,
-		"dirty", dirty,
 		"appliedVersions", appliedVersions,
 		"pendingVersions", pendingVersions,
 		"failedVersions", failedVersions,
 	)
 
 	return schemaVersion{
-		version,
-		dirty,
 		appliedVersions,
 		pendingVersions,
 		failedVersions,
