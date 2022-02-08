@@ -262,6 +262,18 @@ export class Driver {
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
     }
 
+    /**
+     * TODO:
+     */
+    public async setClickGoToDefOptionFlag(isEnabled?: boolean): Promise<void> {
+        // TODO: use parameter
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        const toggleAdvancedSettingsButton = await this.page.waitForSelector('.test-toggle-advanced-settings-button')
+        await toggleAdvancedSettingsButton?.click()
+        const checkbox = await this.findElementWithText('Enable click to go to definition')
+        await checkbox?.click()
+    }
+
     public async close(): Promise<void> {
         this.subscriptions.unsubscribe()
         if (!this.keepBrowser) {

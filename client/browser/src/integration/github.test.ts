@@ -127,7 +127,7 @@ describe('GitHub', () => {
         })
     })
 
-    it('shows hover tooltips when hovering a token', async () => {
+    it.only('shows hover tooltips when hovering a token', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -165,110 +165,7 @@ describe('GitHub', () => {
             bundle: simpleHoverProvider(),
         })
 
-        await driver.page.goto(
-            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
-        )
-        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
-
-        // Pause to give codeintellify time to register listeners for
-        // tokenization (only necessary in CI, not sure why).
-        await driver.page.waitForTimeout(1000)
-
-        const lineSelector = '.js-file-line-container tr'
-
-        // Trigger tokenization of the line.
-        const lineNumber = 16
-        const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
-            timeout: 10000,
-        })
-
-        if (!line) {
-            throw new Error(`Found no line with number ${lineNumber}`)
-        }
-
-        const [token] = await line.$x('.//span[text()="CallOption"]')
-        await token.hover()
-        await driver.findElementWithText('User is hovering over CallOption', {
-            selector: ' [data-testid="hover-overlay-content"] > p',
-            fuzziness: 'contains',
-            wait: {
-                timeout: 6000,
-            },
-        })
-        await token.click()
-        await driver.page.waitForTimeout(100000)
-    })
-
-    describe('Clicking a token', () => {
-        const setEnableClickToDefinition = async (isEnabled: boolean): Promise<void> => {
-            const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
-
-            await driver.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
-            const toggleAdvancedSettingsButton = await driver.page.waitForSelector(
-                '.test-toggle-advanced-settings-button',
-                { timeout: 5000 }
-            )
-
-            await toggleAdvancedSettingsButton?.click()
-
-            const checkbox = await driver.findElementWithText('Enable click to go to definition')
-
-            await checkbox?.click()
-        }
-
-        it.only("navigates to definition if 'enable single click to go to definition' is checked in advanced settings", async () => {
-            await setEnableClickToDefinition(true)
-
-            // await driver.page.waitForSelector("[data-testid='toggle-advanced-settings-button]")?.click()
-
-            await driver.page.waitForTimeout(100000)
-
-            // await this.page.waitForSelector('.test-sourcegraph-url')
-            // await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
-            // await this.page.keyboard.press(Key.Enter)
-            // await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
-        })
-
-        it("does not navigate to definition if 'enable single click to go to definition' is not checked in advanced settings", async () => {})
-
-        it('goes to definition when  hover tooltips when hovering a token', async () => {
-            const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                pollyServer: testContext.server,
-                sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-            })
-
-            const userSettings: Settings = {
-                extensions: extensionSettings,
-            }
-            testContext.overrideGraphQL({
-                ViewerConfiguration: () => ({
-                    viewerConfiguration: {
-                        subjects: [
-                            {
-                                __typename: 'User',
-                                displayName: 'Test User',
-                                id: 'TestUserSettingsID',
-                                latestSettings: {
-                                    id: 123,
-                                    contents: JSON.stringify(userSettings),
-                                },
-                                username: 'test',
-                                viewerCanAdminister: true,
-                                settingsURL: '/users/test/settings',
-                            },
-                        ],
-                        merged: { contents: JSON.stringify(userSettings), messages: [] },
-                    },
-                }),
-                Extensions,
-            })
-
-            // Serve a mock extension with a simple hover provider
-            mockExtension({
-                id: 'simple/hover',
-                bundle: simpleHoverProvider(),
-            })
-
+        const openPageAndGetToken = async () => {
             await driver.page.goto(
                 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
             )
@@ -291,17 +188,56 @@ describe('GitHub', () => {
             }
 
             const [token] = await line.$x('.//span[text()="CallOption"]')
-            await token.hover()
-            await driver.findElementWithText('User is hovering over CallOption', {
-                selector: ' [data-testid="hover-overlay-content"] > p',
-                fuzziness: 'contains',
-                wait: {
-                    timeout: 6000,
-                },
-            })
-            await token.click()
-            await driver.page.waitForTimeout(100000)
+            return token
+        }
+
+        let token = await openPageAndGetToken()
+        // 1. Check that hover works
+        await token.hover()
+        await driver.findElementWithText('User is hovering over CallOption', {
+            selector: ' [data-testid="hover-overlay-content"] > p',
+            fuzziness: 'contains',
+            wait: {
+                timeout: 6000,
+            },
         })
+
+        // 2. Check click does not do anything
+        await token.click()
+        await driver.page.waitForTimeout(1000)
+
+        // 3. Enable click-to-def and check that it redirects
+        await driver.setClickGoToDefOptionFlag()
+        token = await openPageAndGetToken()
+        await token.hover()
+        await driver.findElementWithText('User is hovering over CallOption', {
+            selector: ' [data-testid="hover-overlay-content"] > p',
+            fuzziness: 'contains',
+            wait: {
+                timeout: 6000,
+            },
+        })
+
+        await token.click()
+
+        let isRedirected = false
+
+        testContext.server
+            .any(
+                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
+            )
+            .intercept((request, response) => {
+                response.sendStatus(200)
+                isRedirected = true
+            })
+        testContext.server.any('https://github.com/favicon.ico').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+
+        await driver.page.waitForTimeout(3000)
+        assert(isRedirected)
+
+        // TODO: try to remove above 2 URL mocks
     })
 
     describe('Pull request pages', () => {
