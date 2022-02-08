@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "STEP_START=$STEP_START"
+
 (
     echo "--- Sending stuff to HoneyComb"
     echo "build_id=$BUILDKITE_BUILD_ID step_id=$BUILDKITE_STEP_ID step_start=$STEP_START step_key=$BUILDKITE_STEP_KEY"
