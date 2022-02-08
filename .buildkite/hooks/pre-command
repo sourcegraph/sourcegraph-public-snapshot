@@ -14,13 +14,9 @@ BUILD_START_TIME=$(curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https:/
 BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
 export BUILD_START_TIME
 
-echo "BUILD_START_TIME=$BUILD_START_TIME"
-
 # Init the step
 STEP_START=$(date +'%s')
 export STEP_START
-
-echo "STEP_START=$STEP_START"
 
 # ASDF setup
 # ----------
