@@ -13,31 +13,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewJobWithOptional creates a combinator job from a required job and an
-// optional job. When run, JobWithOptional run the required job and the
-// optional job in parallel, wait for the required job to complete, then give
+// NewPriorityJob creates a combinator job from a required job and an
+// optional job. When run, PriorityJob runs the required job and the
+// optional job in parallel, waits for the required job to complete, then gives
 // the optional job a short additional amount of time (currently 100ms) before
 // canceling the optional job.
-func NewJobWithOptional(required Job, optional Job) Job {
+func NewPriorityJob(required Job, optional Job) Job {
 	if _, ok := optional.(*noopJob); ok {
 		return required
 	}
-	return &JobWithOptional{
+	return &PriorityJob{
 		required: required,
 		optional: optional,
 	}
 }
 
-type JobWithOptional struct {
+type PriorityJob struct {
 	required Job
 	optional Job
 }
 
-func (r *JobWithOptional) Name() string {
+func (r *PriorityJob) Name() string {
 	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
+func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "JobWithOptional", "")
 	defer func() {
 		tr.SetError(err)

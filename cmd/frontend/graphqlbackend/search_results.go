@@ -939,7 +939,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	job := run.NewJobWithOptional(
+	job := run.NewPriorityJob(
 		run.NewParallelJob(requiredJobs...),
 		run.NewParallelJob(optionalJobs...),
 	)
