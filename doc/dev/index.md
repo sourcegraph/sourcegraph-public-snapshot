@@ -114,7 +114,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [TypeScript](background-information/languages/typescript.md)
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
-  - [Terraform Extended Guide](background-information/languages/extended_guide/terraform.md)
 
 ### [SQL](background-information/sql/index.md)
 
