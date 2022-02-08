@@ -37,11 +37,12 @@ import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
-import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
-import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+import { useWorkspacesPreview } from './useWorkspacesPreview'
+import { useWorkspaces } from './workspaces-preview/useWorkspaces'
+import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { haveMatchingOnStatements } from './yaml-util'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
@@ -362,11 +363,18 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 >
                     <WorkspacesPreview
                         batchSpec={batchSpec}
-                        hasPreviewed={hasPreviewed}
                         previewDisabled={previewDisabled}
                         preview={() => previewBatchSpec(debouncedCode)}
-                        batchSpecStale={batchSpecStale}
+                        batchSpecStale={
+                            isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                        }
+                        hasPreviewed={hasPreviewed}
                         excludeRepo={excludeRepo}
+                        cancel={cancel}
+                        isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                        resolutionState={resolutionState}
+                        workspacesConnection={workspacesConnection}
+                        setFilters={setWorkspacesFilters}
                     />
                 </div>
             </div>
