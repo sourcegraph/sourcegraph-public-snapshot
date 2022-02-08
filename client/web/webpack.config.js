@@ -141,8 +141,8 @@ const config = {
       new WebpackManifestPlugin({
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application
-        filter: ({ isInitial }) => isInitial,
+        // Only output files that are required to run the application.
+        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
