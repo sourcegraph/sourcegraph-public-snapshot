@@ -106,7 +106,6 @@ coverage/
 out/
 client/shared/src/schema.ts
 client/shared/src/schema/*
-client/shared/src/graphql/schema.ts
 puppeteer/
 package-lock.json
 /dist
