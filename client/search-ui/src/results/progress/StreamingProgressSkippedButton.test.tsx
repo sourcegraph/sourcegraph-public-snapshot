@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 
@@ -18,6 +19,7 @@ describe('StreamingProgressSkippedButton', () => {
             },
         })
     })
+
     it('should not show if no skipped items', () => {
         const progress: Progress = {
             durationMs: 0,
@@ -25,7 +27,7 @@ describe('StreamingProgressSkippedButton', () => {
             skipped: [],
         }
 
-        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toBeInTheDocument()
         expect(screen.queryByTestId('streaming-progress-skipped-popover')).not.toBeInTheDocument()
     })
@@ -59,7 +61,7 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
         expect(screen.getByTestId('streaming-progress-skipped')).toBeInTheDocument()
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('outline-danger')
     })
@@ -103,7 +105,7 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
         expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutlineDanger')
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutlineSecondary')
     })
@@ -137,7 +139,7 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
 
         const button = screen.getByTestId('streaming-progress-skipped')
 
@@ -183,7 +185,7 @@ describe('StreamingProgressSkippedButton', () => {
 
         const onSearchAgain = sinon.spy()
 
-        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
+        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
         const toggleButton = screen.getByTestId('streaming-progress-skipped')
 
         userEvent.click(toggleButton)

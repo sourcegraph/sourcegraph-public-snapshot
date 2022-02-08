@@ -62,14 +62,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="ml-1"
                 >
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />
@@ -288,14 +288,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="ml-1"
                 >
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                   >
                     <strong>
@@ -469,14 +469,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="ml-1"
                 >
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
-                    class=""
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />

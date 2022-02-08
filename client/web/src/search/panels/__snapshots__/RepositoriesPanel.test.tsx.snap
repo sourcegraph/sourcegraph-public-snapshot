@@ -32,7 +32,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:sourcegraph"
             >
               <span
@@ -58,7 +58,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test"
             >
               <span
@@ -117,7 +117,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test"
             >
               <span
@@ -143,7 +143,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:sourcegraph"
             >
               <span
@@ -169,7 +169,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test-two"
             >
               <span
@@ -238,7 +238,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test"
             >
               <span
@@ -264,7 +264,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:sourcegraph"
             >
               <span
@@ -290,7 +290,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test-two"
             >
               <span
@@ -359,7 +359,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:test"
             >
               <span
@@ -385,7 +385,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
         >
           <small>
             <a
-              class=""
+              class="anchorLink"
               href="/search?q=repo:sourcegraph"
             >
               <span

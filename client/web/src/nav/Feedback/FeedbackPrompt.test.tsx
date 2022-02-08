@@ -4,8 +4,8 @@ import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { routes } from '../../routes'
@@ -33,7 +33,7 @@ describe('FeedbackPrompt', () => {
 
     describe('layout', () => {
         beforeEach(() => {
-            queries = renderWithRouter(
+            queries = renderWithBrandedContext(
                 <MockedTestProvider>
                     <FeedbackPrompt routes={routes} />
                 </MockedTestProvider>
@@ -105,7 +105,7 @@ describe('FeedbackPrompt', () => {
             }
 
             beforeEach(async () => {
-                queries = renderWithRouter(
+                queries = renderWithBrandedContext(
                     <MockedTestProvider mocks={[successMock]}>
                         <FeedbackPrompt routes={routes} />
                     </MockedTestProvider>
@@ -128,7 +128,7 @@ describe('FeedbackPrompt', () => {
                 },
             }
             beforeEach(async () => {
-                queries = renderWithRouter(
+                queries = renderWithBrandedContext(
                     <MockedTestProvider mocks={[errorMock]}>
                         <FeedbackPrompt routes={routes} />
                     </MockedTestProvider>

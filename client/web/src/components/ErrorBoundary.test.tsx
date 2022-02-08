@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ErrorBoundary } from './ErrorBoundary'
 
@@ -20,7 +21,7 @@ const ThrowChunkError: React.FunctionComponent = () => {
 describe('ErrorBoundary', () => {
     test('passes through if non-error', () =>
         expect(
-            render(
+            renderWithBrandedContext(
                 <ErrorBoundary location={null}>
                     <ThrowError />
                 </ErrorBoundary>
@@ -29,7 +30,7 @@ describe('ErrorBoundary', () => {
 
     test('renders error page if error', () =>
         expect(
-            render(
+            renderWithBrandedContext(
                 <ErrorBoundary location={null}>
                     <span>hello</span>
                 </ErrorBoundary>
@@ -38,7 +39,7 @@ describe('ErrorBoundary', () => {
 
     test('renders reload page if chunk error', () =>
         expect(
-            render(
+            renderWithBrandedContext(
                 <ErrorBoundary location={null}>
                     <ThrowChunkError />
                 </ErrorBoundary>

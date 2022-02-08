@@ -9,7 +9,7 @@ exports[`SiteAdminCustomerBillingLink linked billing account 1`] = `
       class="d-flex align-items-center"
     >
       <a
-        class="mr-2 d-flex align-items-center"
+        class="anchorLink mr-2 d-flex align-items-center"
         href="https://example.com"
       >
         View customer account 

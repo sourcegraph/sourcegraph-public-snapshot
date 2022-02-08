@@ -4,14 +4,14 @@ exports[`RepoFileLink renders 1`] = `
 <DocumentFragment>
   <div>
     <a
-      class=""
+      class="anchorLink"
       href="https://example.com"
     >
       my/repo
     </a>
      › 
     <a
-      class=""
+      class="anchorLink"
       href="/file?subtree=true"
     >
       my/

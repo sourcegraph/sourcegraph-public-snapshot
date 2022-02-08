@@ -5,7 +5,7 @@ import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ContentMatch } from '../search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
@@ -38,7 +38,7 @@ describe('FileMatch', () => {
     }
 
     it('renders one result container', () => {
-        const { container } = renderWithRouter(<FileMatch {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<FileMatch {...defaultProps} />)
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
@@ -74,7 +74,7 @@ describe('FileMatch', () => {
                 },
             ],
         }
-        const { container } = renderWithRouter(
+        const { container } = renderWithBrandedContext(
             <FileMatch {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')

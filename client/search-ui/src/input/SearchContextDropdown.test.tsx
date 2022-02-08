@@ -7,8 +7,8 @@ import sinon from 'sinon'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -125,7 +125,7 @@ describe('SearchContextDropdown', () => {
         })
 
         it('should display CTA on Sourcegraph.com if no repos have been added and not permanently dismissed', () => {
-            renderWithRouter(
+            renderWithBrandedContext(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
                     <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
@@ -172,7 +172,7 @@ describe('SearchContextDropdown', () => {
         })
 
         it('should not display CTA on Sourcegraph.com if dimissed', () => {
-            renderWithRouter(
+            renderWithBrandedContext(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': true }}>
                     <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
@@ -186,7 +186,7 @@ describe('SearchContextDropdown', () => {
         it('should dismiss CTA when clicking dismiss button', async () => {
             const onSettingsChanged = sinon.spy()
 
-            renderWithRouter(
+            renderWithBrandedContext(
                 <MockTemporarySettings
                     settings={{ 'search.contexts.ctaDismissed': false }}
                     onSettingsChanged={onSettingsChanged}

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ToggleRenderedFileMode } from './ToggleRenderedFileMode'
 
@@ -9,7 +9,7 @@ describe('ToggleRenderedFileMode', () => {
 
     describe('in rendered view', () => {
         it('renders link correctly', () => {
-            const renderResult = renderWithRouter(<ToggleRenderedFileMode mode="rendered" actionType="nav" />, {
+            const renderResult = renderWithBrandedContext(<ToggleRenderedFileMode mode="rendered" actionType="nav" />, {
                 route,
             })
 
@@ -20,7 +20,7 @@ describe('ToggleRenderedFileMode', () => {
 
     describe('in code view', () => {
         it('renders link correctly', () => {
-            const renderResult = renderWithRouter(<ToggleRenderedFileMode mode="code" actionType="nav" />, {
+            const renderResult = renderWithBrandedContext(<ToggleRenderedFileMode mode="code" actionType="nav" />, {
                 route: `${route}?view=code`,
             })
 
@@ -29,7 +29,7 @@ describe('ToggleRenderedFileMode', () => {
         })
 
         it('still renders link correctly when a line has been selected', () => {
-            const renderResult = renderWithRouter(<ToggleRenderedFileMode mode="code" actionType="nav" />, {
+            const renderResult = renderWithBrandedContext(<ToggleRenderedFileMode mode="code" actionType="nav" />, {
                 route: `${route}?L10&view=code`,
             })
 

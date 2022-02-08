@@ -54,7 +54,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         </h3>
         <small>
           <a
-            class="d-block mb-1"
+            class="anchorLink d-block mb-1"
             href="https://example.com"
             rel="nofollow noopener noreferrer"
             target="_blank"
@@ -68,7 +68,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
               class="icon-inline mr-1"
             />
             <a
-              class="d-block"
+              class="anchorLink d-block"
               href="https://github.com/foo/bar"
               rel="nofollow noreferrer noopener"
               target="_blank"
@@ -104,7 +104,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnOutlineSecondary btnSm"
               href="/extensions?category=Programming+languages"
             >
               Programming languages
@@ -114,7 +114,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnOutlineSecondary btnSm"
               href="/extensions?category=Other"
             >
               Other
@@ -135,7 +135,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm tag"
+              class="anchorLink btn btnOutlineSecondary btnSm tag"
               href="/extensions?query=tag%3AT1"
             >
               T1
@@ -145,7 +145,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm tag"
+              class="anchorLink btn btnOutlineSecondary btnSm tag"
               href="/extensions?query=tag%3AT2"
             >
               T2
@@ -212,7 +212,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         </h3>
         <small>
           <a
-            class="d-block mb-1"
+            class="anchorLink d-block mb-1"
             href="https://example.com"
             rel="nofollow noopener noreferrer"
             target="_blank"
@@ -226,7 +226,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
               class="icon-inline mr-1"
             />
             <a
-              class="d-block"
+              class="anchorLink d-block"
               href="https://github.com/foo/bar"
               rel="nofollow noreferrer noopener"
               target="_blank"
@@ -262,7 +262,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnOutlineSecondary btnSm"
               href="/extensions?category=Programming+languages"
             >
               Programming languages
@@ -272,7 +272,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="list-inline-item mb-2"
           >
             <a
-              class="btn btnOutlineSecondary btnSm"
+              class="anchorLink btn btnOutlineSecondary btnSm"
               href="/extensions?category=Other"
             >
               Other

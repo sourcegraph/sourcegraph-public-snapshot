@@ -1,15 +1,15 @@
-import { screen, render } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ButtonLink } from './ButtonLink'
 
 describe('<ButtonLink />', () => {
     test('renders correctly btn classes', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <ButtonLink to="http://example.com" variant="secondary" size="lg">
                 Button link
             </ButtonLink>
@@ -17,7 +17,7 @@ describe('<ButtonLink />', () => {
         expect(asFragment()).toMatchSnapshot()
     })
     test('renders correctly `disabled`', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <ButtonLink to="http://example.com" variant="secondary" size="lg" disabled={true}>
                 Button link
             </ButtonLink>
@@ -25,7 +25,7 @@ describe('<ButtonLink />', () => {
         expect(asFragment()).toMatchSnapshot()
     })
     test('renders correctly empty `to`', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <ButtonLink to={undefined} variant="secondary" size="lg">
                 Button link
             </ButtonLink>
@@ -33,7 +33,7 @@ describe('<ButtonLink />', () => {
         expect(asFragment()).toMatchSnapshot()
     })
     test('renders correctly anchor attributes', () => {
-        const { asFragment } = renderWithRouter(
+        const { asFragment } = renderWithBrandedContext(
             <ButtonLink
                 to="https://sourcegraph.com"
                 variant="secondary"
@@ -52,7 +52,7 @@ describe('<ButtonLink />', () => {
     test('Should trigger onSelect', () => {
         const onSelect = sinon.stub()
 
-        renderWithRouter(
+        renderWithBrandedContext(
             <ButtonLink
                 to=""
                 variant="secondary"

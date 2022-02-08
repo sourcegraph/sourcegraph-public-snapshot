@@ -2,8 +2,8 @@ import { cleanup, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RepositoriesPopover, BATCH_COUNT } from './RepositoriesPopover'
 import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
@@ -14,7 +14,7 @@ const repo = {
 }
 
 describe('RevisionsPopover', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
 
     const fetchMoreNodes = async () => {
         fireEvent.click(renderResult.getByText('Show more'))
@@ -24,7 +24,7 @@ describe('RevisionsPopover', () => {
     const waitForInputDebounce = () => act(() => new Promise(resolve => setTimeout(resolve, 200)))
 
     beforeEach(async () => {
-        renderResult = renderWithRouter(
+        renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={MOCK_REQUESTS}>
                 <RepositoriesPopover currentRepo={repo.id} telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>,

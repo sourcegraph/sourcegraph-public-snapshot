@@ -4,7 +4,7 @@ import { Form } from 'reactstrap'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 
@@ -25,8 +25,16 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
     const signUpURL = useMemo(() => new URL('sign-up?editor=vscode', instanceURL).href, [instanceURL])
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
 
-    const ctaButtonClassName = 'btn btn-primary font-weight-normal w-100 my-1 border-0'
-    const buttonLinkClassName = 'btn btn-sm btn-link d-block pl-0'
+    const ctaButtonProps: Partial<ButtonProps> = {
+        variant: 'primary',
+        className: 'font-weight-normal w-100 my-1 border-0',
+    }
+    const buttonLinkProps: Partial<ButtonProps> = {
+        variant: 'link',
+        size: 'sm',
+        display: 'block',
+        className: 'pl-0',
+    }
 
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
@@ -118,12 +126,12 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
                     Create an account to enhance search across your private repositories: search multiple repos & commit
                     history, monitor, save searches and more.
                 </p>
-                <button type="button" onClick={onSignUpClick} className={ctaButtonClassName}>
+                <Button onClick={onSignUpClick} {...ctaButtonProps}>
                     Create an account
-                </button>
-                <button type="button" onClick={() => setHasAccount(true)} className={buttonLinkClassName}>
+                </Button>
+                <Button onClick={() => setHasAccount(true)} {...buttonLinkProps}>
                     Have an account?
-                </button>
+                </Button>
             </>
         )
     }
@@ -152,12 +160,12 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
                     placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                 />
             </LoaderInput>
-            <button type="submit" disabled={state === 'validating'} className={ctaButtonClassName}>
+            <Button type="submit" disabled={state === 'validating'} {...ctaButtonProps}>
                 Enter access token
-            </button>
-            <button type="button" onClick={onSignUpClick} className={buttonLinkClassName}>
+            </Button>
+            <Button onClick={onSignUpClick} {...buttonLinkProps}>
                 Create an account
-            </button>
+            </Button>
         </>
     )
 }

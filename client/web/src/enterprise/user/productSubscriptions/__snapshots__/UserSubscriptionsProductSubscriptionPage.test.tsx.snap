@@ -9,7 +9,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       class="d-flex align-items-center justify-content-between"
     >
       <a
-        class="btn btnLink btnSm mb-3"
+        class="anchorLink btn btnLink btnSm mb-3"
         href="/u/subscriptions"
       >
         <svg
@@ -30,7 +30,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       Subscription 
     </h2>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
         class="cardHeader"
@@ -45,7 +45,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
         >
           No billing information is associated with this subscription. 
           <a
-            class=""
+            class="anchorLink"
             href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
           >
             Contact sales
@@ -55,7 +55,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       </div>
     </div>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
         class="cardHeader"

@@ -14,7 +14,7 @@ exports[`RouterLink renders absolute URL correctly  1`] = `
 exports[`RouterLink renders router link correctly 1`] = `
 <DocumentFragment>
   <a
-    class=""
+    class="anchorLink"
     href="/docs"
   >
     Link to docs

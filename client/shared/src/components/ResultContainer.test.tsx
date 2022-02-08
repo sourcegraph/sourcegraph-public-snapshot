@@ -4,7 +4,7 @@ import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import {
@@ -154,7 +154,7 @@ describe('ResultContainer', () => {
     }
 
     it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {
-        const { container } = renderWithRouter(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
         const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
@@ -162,7 +162,7 @@ describe('ResultContainer', () => {
     })
 
     it('expands to display all results when the expand button is clicked', () => {
-        const { container } = renderWithRouter(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
@@ -178,14 +178,14 @@ describe('ResultContainer', () => {
     })
 
     it('displays the expand label when collapsed', () => {
-        const { container } = renderWithRouter(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
         const header = getByTestId(container, 'result-container-header')
         expect(header).toBeVisible()
         expect(getByText(container, 'Show matches')).toBeVisible()
     })
 
     it('displays the collapse label when expanded', () => {
-        const { container } = renderWithRouter(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
         const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
@@ -196,14 +196,14 @@ describe('ResultContainer', () => {
     })
 
     it('displays all results by default, when allExpanded is true', () => {
-        const { container } = renderWithRouter(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
 
         const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
     it('collapses to show no results when the collapse is clicked, when allExpanded is true', () => {
-        const { container } = renderWithRouter(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
 
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)

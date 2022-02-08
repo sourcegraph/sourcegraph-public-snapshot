@@ -47,7 +47,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Tags restrict a license. Please refer to 
           <a
-            class=""
+            class="anchorLink"
             href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
           >
             How to create a license key for a new prospect or new customer

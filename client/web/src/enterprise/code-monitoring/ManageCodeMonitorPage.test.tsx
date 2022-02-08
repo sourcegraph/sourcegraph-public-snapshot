@@ -11,7 +11,7 @@ import {
     MonitorEditActionInput,
     MonitorEmailPriority,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { FetchCodeMonitorResult } from '../../graphql-operations'
 
@@ -48,7 +48,7 @@ describe('ManageCodeMonitorPage', () => {
     }
 
     test('Form is pre-loaded with code monitor data', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         expect(props.fetchCodeMonitor.calledOnce).toBe(true)
 
         const nameInput = screen.getByTestId('name-input')
@@ -63,7 +63,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Updating the form executes the update request', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         const nameInput = screen.getByTestId('name-input')
         expect(nameInput).toHaveValue('Test code monitor')
 
@@ -106,14 +106,14 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Clicking Edit in the trigger area opens the query form', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         expect(screen.queryByTestId('trigger-query-edit')).not.toBeInTheDocument()
         userEvent.click(screen.getByTestId('trigger-button'))
         expect(screen.getByTestId('trigger-query-edit')).toBeInTheDocument()
     })
 
     test('Clicking Edit in the action area opens the action form', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         expect(screen.queryByTestId('action-form-email')).not.toBeInTheDocument()
         const editTrigger = screen.getByTestId('form-action-toggle-email')
         userEvent.click(editTrigger)
@@ -121,7 +121,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         const submitButton = screen.getByTestId('submit-monitor')
         expect(submitButton).toBeDisabled()
 
@@ -131,7 +131,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         const confirmStub = sinon.stub(window, 'confirm')
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
@@ -142,7 +142,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Cancelling without any changes made does not show confirmation prompt', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         const confirmStub = sinon.stub(window, 'confirm')
         userEvent.click(screen.getByTestId('cancel-monitor'))
 
@@ -151,7 +151,7 @@ describe('ManageCodeMonitorPage', () => {
     })
 
     test('Clicking delete code monitor opens deletion confirmation modal', () => {
-        renderWithRouter(<ManageCodeMonitorPage {...props} />)
+        renderWithBrandedContext(<ManageCodeMonitorPage {...props} />)
         userEvent.click(screen.getByTestId('delete-monitor'))
         expect(screen.getByTestId('delete-modal')).toBeInTheDocument()
 

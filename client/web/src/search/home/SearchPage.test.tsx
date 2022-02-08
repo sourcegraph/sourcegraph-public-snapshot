@@ -4,7 +4,7 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -71,7 +71,7 @@ describe('SearchPage', () => {
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
-        container = renderWithRouter(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        container = renderWithBrandedContext(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
@@ -79,7 +79,7 @@ describe('SearchPage', () => {
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
-        container = renderWithRouter(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        container = renderWithBrandedContext(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
@@ -87,7 +87,7 @@ describe('SearchPage', () => {
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
-        container = renderWithRouter(
+        container = renderWithBrandedContext(
             <SearchPage {...defaultProps} isSourcegraphDotCom={true} authenticatedUser={null} />
         ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
@@ -95,7 +95,7 @@ describe('SearchPage', () => {
     })
 
     it('should not show home panels if showEnterpriseHomePanels disabled', () => {
-        container = renderWithRouter(<SearchPage {...defaultProps} />).container
+        container = renderWithBrandedContext(<SearchPage {...defaultProps} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
@@ -103,7 +103,7 @@ describe('SearchPage', () => {
     it('should show home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
-        container = renderWithRouter(<SearchPage {...defaultProps} />).container
+        container = renderWithBrandedContext(<SearchPage {...defaultProps} />).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })

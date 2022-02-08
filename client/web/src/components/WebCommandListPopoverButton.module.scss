@@ -1,0 +1,8 @@
+.button {
+    color: var(--icon-color);
+
+    &:hover {
+        // Required to overwrite .btn:hover styles with greater specificity.
+        color: var(--body-color) !important;
+    }
+}

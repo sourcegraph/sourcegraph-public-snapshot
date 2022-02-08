@@ -8,7 +8,7 @@ exports[`Notices shows notices for location 1`] = `
     class="notices"
   >
     <div
-      class="bg transparent border"
+      class="alert bg transparent border"
       data-testid="notice-alert"
     >
       <div
@@ -22,7 +22,7 @@ exports[`Notices shows notices for location 1`] = `
       </div>
     </div>
     <div
-      class="container bg transparent border"
+      class="alert container bg transparent border"
     >
       <div
         class="content"

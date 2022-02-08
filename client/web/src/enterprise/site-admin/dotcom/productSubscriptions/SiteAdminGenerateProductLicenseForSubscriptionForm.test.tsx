@@ -1,12 +1,13 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 
 describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
     test('renders', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <SiteAdminGenerateProductLicenseForSubscriptionForm subscriptionID="s" onGenerate={() => undefined} />
             ).asFragment()
         ).toMatchSnapshot()

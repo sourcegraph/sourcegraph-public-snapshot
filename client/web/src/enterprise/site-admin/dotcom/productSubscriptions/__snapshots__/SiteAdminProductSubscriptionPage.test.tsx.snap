@@ -9,7 +9,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-2"
     >
       <a
-        class="btn btnLink btnSm"
+        class="anchorLink btn btnLink btnSm"
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
@@ -32,7 +32,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </button>
     </div>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
         class="cardHeader"
@@ -87,7 +87,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               </em>
                — 
               <a
-                class=""
+                class="anchorLink"
                 href="/s"
               >
                 View as user
@@ -150,7 +150,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </table>
     </div>
     <div
-      class="mt-1"
+      class="card mt-1"
     >
       <div
         class="cardHeader d-flex align-items-center justify-content-between"
@@ -217,7 +217,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <div>
               Tags: 
               <div
-                class="mr-1"
+                class="badge secondary mr-1"
               >
                 a
               </div>
@@ -265,7 +265,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </div>
     </div>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
         class="cardHeader"

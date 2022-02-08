@@ -3,7 +3,7 @@
 exports[`ActionItem "open" command renders as link 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink test-action-item"
     href="https://example.com/bar"
     tabindex="0"
   >
@@ -15,7 +15,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink test-action-item"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"
@@ -29,7 +29,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink test-action-item"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"

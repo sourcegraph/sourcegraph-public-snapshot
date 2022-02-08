@@ -3,7 +3,7 @@
 exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
 <DocumentFragment>
   <div
-    class="test-product-certificate"
+    class="card test-product-certificate"
   >
     <div
       class="cardBody d-flex align-items-center"
@@ -68,7 +68,7 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
 exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
 <DocumentFragment>
   <div
-    class="test-product-certificate"
+    class="card test-product-certificate"
   >
     <div
       class="cardBody d-flex align-items-center"

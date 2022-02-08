@@ -50,7 +50,7 @@ const Wrapper: React.FunctionComponent<{ api: Partial<CodeInsightsBackend> }> = 
     return <CodeInsightsBackendContext.Provider value={extendedApi}>{children}</CodeInsightsBackendContext.Provider>
 }
 
-const renderWithRouter = (
+const renderWithBrandedContext = (
     component: React.ReactElement,
     { route = '/', history = createMemoryHistory({ initialEntries: [route] }), api = {} } = {}
 ) => ({
@@ -71,13 +71,13 @@ describe('DashboardsPage', () => {
     })
 
     it('should redirect to "All insights" page if no dashboardId is provided', () => {
-        const { history } = renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} />)
+        const { history } = renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} />)
 
         expect(history.location.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`)
     })
 
     it('should render dashboard not found page when id is not found', () => {
-        renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
+        renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
             api: {
                 getDashboardSubjects: () => of([]),
                 getDashboards: () => of([]),
@@ -88,7 +88,7 @@ describe('DashboardsPage', () => {
     })
 
     it('should log events', () => {
-        renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
+        renderWithBrandedContext(<DashboardsPage telemetryService={mockTelemetryService} dashboardID="foo" />, {
             api: {
                 getDashboardSubjects: () => of([]),
                 getDashboards: () => of([]),
