@@ -1,7 +1,7 @@
 // @ts-check
 
 const path = require('path')
-
+const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default;
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
@@ -86,6 +86,7 @@ const config = {
   cache: isCacheEnabled && getCacheConfig({ invalidateCacheFiles: [path.resolve(__dirname, 'babel.config.js')] }),
   optimization: {
     minimize: isProduction,
+    mergeDuplicateChunks: true,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
@@ -148,7 +149,7 @@ const config = {
         filter: ({ isInitial }) => isInitial,
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && new BundleAnalyzerPlugin(),
+    shouldAnalyze && new StatoscopeWebpackPlugin({ watchMode: true }),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&

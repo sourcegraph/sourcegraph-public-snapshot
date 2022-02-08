@@ -8,9 +8,14 @@ import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { fetchNotebook as _fetchNotebook } from './backend'
 import { NotebookContent, NotebookContentProps } from './NotebookContent'
+import {createPlatformContext} from "../../platform/context";
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
+import {createController as createExtensionsController} from "@sourcegraph/shared/src/extensions/controller";
+import { fetchHighlightedFileLineRanges, fetchRepository, resolveRevision } from '../../repo/backend'
+import {eventLogger} from "../../tracking/eventLogger";
 
 interface EmbeddedNotebookPageProps
-    extends Omit<NotebookContentProps, 'blocks' | 'onUpdateBlocks' | 'location' | 'viewerCanManage'> {
+    extends Omit<NotebookContentProps, 'telemetryService'| 'streamSearch' | 'fetchRepository' | 'resolveRevision' | 'fetchHighlightedFileLineRanges' | 'blocks' | 'onUpdateBlocks' | 'location' | 'viewerCanManage' | 'extensionsController' | 'platformContext'> {
     notebookId: string
     fetchNotebook?: typeof _fetchNotebook
 }
@@ -22,7 +27,11 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
     fetchNotebook = _fetchNotebook,
     ...props
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('EmbeddedNotebookPage'), [props.telemetryService])
+
+    const platformContext = useMemo(() => createPlatformContext(), [])
+    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+
+    useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -34,6 +43,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
             [fetchNotebook, notebookId]
         )
     )
+
 
     const location = useLocation()
     return (
@@ -51,6 +61,13 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
             {notebookOrError && notebookOrError !== LOADING && !isErrorLike(notebookOrError) && (
                 <NotebookContent
                     {...props}
+                    platformContext={platformContext}
+                    extensionsController={extensionsController}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    streamSearch={aggregateStreamingSearch}
+                    resolveRevision={resolveRevision}
+                    fetchRepository={fetchRepository}
+                    telemetryService={eventLogger}
                     location={location}
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}

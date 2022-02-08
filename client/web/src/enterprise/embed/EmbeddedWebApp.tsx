@@ -1,10 +1,8 @@
 import classNames from 'classnames'
-import React, { Suspense, useMemo } from 'react'
+import React, { Suspense } from 'react'
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
 
-import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import {SettingsCascade} from '@sourcegraph/shared/src/settings/settings';
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
@@ -16,10 +14,7 @@ import {
     WildcardThemeContext,
 } from '@sourcegraph/wildcard'
 
-import { createPlatformContext } from '../../platform/context'
-import { fetchHighlightedFileLineRanges, fetchRepository, resolveRevision } from '../../repo/backend'
 import '../../SourcegraphWebApp.scss'
-import { eventLogger } from '../../tracking/eventLogger'
 
 setLinkComponent(AnchorLink)
 
@@ -32,9 +27,9 @@ const EmbeddedNotebookPage = lazyComponent(
     'EmbeddedNotebookPage'
 )
 
+export const EMPTY_SETTINGS_CASCADE: SettingsCascade = { final: {}, subjects: [] }
+
 export const EmbeddedWebApp: React.FunctionComponent = () => {
-    const platformContext = useMemo(() => createPlatformContext(), [])
-    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
     // We only support light theme for now, but this can be made dynamic through a URL param in the embedding link.
     const isLightTheme = true
 
@@ -59,16 +54,9 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
                                         showSearchContext={false}
                                         isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                         authenticatedUser={null}
-                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                         isLightTheme={isLightTheme}
-                                        telemetryService={eventLogger}
                                         globbing={true}
                                         isMacPlatform={isMacPlatform}
-                                        resolveRevision={resolveRevision}
-                                        fetchRepository={fetchRepository}
-                                        streamSearch={aggregateStreamingSearch}
-                                        platformContext={platformContext}
-                                        extensionsController={extensionsController}
                                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                                     />
                                 )}
