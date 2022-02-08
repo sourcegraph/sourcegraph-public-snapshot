@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archive/tar"
 	"context"
 	"database/sql"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
+	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/rockskip"
@@ -53,15 +53,15 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, [
 }
 
 type RockskipConfig struct {
-	Ctags             shared.CtagsConfig
-	RepositoryFetcher shared.RepositoryFetcherConfig
+	Ctags             types.CtagsConfig
+	RepositoryFetcher types.RepositoryFetcherConfig
 	MaxRepos          int
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	return RockskipConfig{
-		Ctags:             shared.LoadCtagsConfig(baseConfig),
-		RepositoryFetcher: shared.LoadRepositoryFetcherConfig(baseConfig),
+		Ctags:             types.LoadCtagsConfig(baseConfig),
+		RepositoryFetcher: types.LoadRepositoryFetcherConfig(baseConfig),
 		MaxRepos:          baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories for Rockskip to store in Postgres, with LRU eviction"),
 	}
 }
@@ -75,8 +75,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
-	shouldRead := func(tarHeader *tar.Header) bool { return true }
-	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, config.RepositoryFetcher.MaxTotalPathsLength, observationContext, shouldRead)
+	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 
 	db := mustInitializeCodeIntelDB()
 
@@ -196,7 +195,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	return db
 }
 
-func mustCreateCtagsParser(ctagsConfig shared.CtagsConfig) ctags.Parser {
+func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
@@ -213,7 +212,7 @@ func mustCreateCtagsParser(ctagsConfig shared.CtagsConfig) ctags.Parser {
 		log.Fatalf("Failed to create new ctags parser: %s", err)
 	}
 
-	return parser
+	return symbolsParser.NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols)
 }
 
 type Gitserver struct {

@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"archive/tar"
 	"context"
 	"strings"
 	"testing"
@@ -30,15 +29,10 @@ func TestRepositoryFetcher(t *testing.T) {
 		tarContents[name] = content
 	}
 
-	// Large files are ignored
-	maxFileSize := 524288
-	tarContents["payloads.txt"] = strings.Repeat("oversized load", maxFileSize)
-
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
-	shouldRead := func(tarHeader *tar.Header) bool { return tarHeader.Size <= 524288 }
-	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext, shouldRead)
+	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext)
 	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {

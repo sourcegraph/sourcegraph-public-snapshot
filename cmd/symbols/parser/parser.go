@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"bytes"
 	"context"
 	"strings"
 	"sync"
@@ -113,24 +112,6 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 					break
 				}
 
-				length := len(parseRequestOrError.ParseRequest.Data)
-				if length == 0 {
-					// Empty file, nothing to parse
-					break
-				}
-
-				// Check to see if first 256 bytes contain a 0x00. If so, we'll assume that
-				// the file is binary and skip parsing. Otherwise, we'll have some non-zero
-				// contents that passed our filters above to parse.
-
-				m := 256
-				if length < m {
-					m = length
-				}
-				if bytes.IndexByte(parseRequestOrError.ParseRequest.Data[:m], 0x00) >= 0 {
-					break
-				}
-
 				atomic.AddUint32(&totalRequests, 1)
 				if err := p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols); err != nil {
 					log15.Error("error handling parse request", "error", err, "path", parseRequestOrError.ParseRequest.Path)
@@ -140,6 +121,13 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	}
 
 	return symbolOrErrors, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {

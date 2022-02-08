@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"archive/tar"
 	"fmt"
 	"log"
 	"os"
@@ -13,8 +12,8 @@ import (
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -24,7 +23,7 @@ import (
 
 func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, []goroutine.BackgroundRoutine, string) {
 	baseConfig := env.BaseConfig{}
-	config := LoadSqliteConfig(baseConfig)
+	config := types.LoadSqliteConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
@@ -44,28 +43,9 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, []g
 		os.Exit(0)
 	}
 
-	ctagsParserFactory := parser.NewCtagsParserFactory(
-		config.Ctags.Command,
-		config.Ctags.PatternLengthLimit,
-		config.Ctags.LogErrors,
-		config.Ctags.DebugLogs,
-	)
+	ctagsParserFactory := parser.NewCtagsParserFactory(config.Ctags)
 
 	gitserverClient := gitserver.NewClient(observationContext)
-
-	shouldRead := func(tarHeader *tar.Header) bool {
-		// We do not search large files over 512KiB
-		if tarHeader.Size > 524288 {
-			return false
-		}
-
-		// We only care about files
-		if tarHeader.Typeflag != tar.TypeReg && tarHeader.Typeflag != tar.TypeRegA {
-			return false
-		}
-
-		return true
-	}
 
 	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.NumCtagsProcesses)
 	if err != nil {
@@ -77,7 +57,7 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, []g
 		diskcache.WithObservationContext(observationContext),
 	)
 
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.RepositoryFetcher.MaxTotalPathsLength, observationContext, shouldRead)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)

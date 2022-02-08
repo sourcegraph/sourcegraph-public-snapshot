@@ -273,7 +273,7 @@ commands:
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: 'true'
+      USE_ROCKSKIP: 'false'
     watch:
       - lib
       - internal
