@@ -2,10 +2,17 @@
 
 # This script installs ctags within an alpine container.
 
-set -eux
-
 # Commit hash of github.com/universal-ctags/ctags
 CTAGS_VERSION=7c4df9d38c4fe4bb494e5f3b2279034d7d8bd7b7
+
+cleanup() {
+  cd /
+  rm -rf /tmp/ctags-$CTAGS_VERSION
+}
+
+trap cleanup EXIT
+
+set -eux
 
 apk --no-cache add \
   autoconf \
@@ -29,7 +36,3 @@ cd /tmp/ctags-$CTAGS_VERSION
 ./configure --program-prefix=universal- --enable-json --enable-seccomp
 make -j8
 make install
-
-# Cleanup
-cd /
-rm -rf /tmp/ctags-$CTAGS_VERSION
