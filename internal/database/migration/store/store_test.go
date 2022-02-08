@@ -173,10 +173,10 @@ func TestVersion(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if err := store.Exec(ctx, sqlf.Sprintf(`DELETE FROM test_migrations_table`)); err != nil {
+			if err := store.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(defaultTestTableName))); err != nil {
 				t.Fatalf("unexpected error clearing data: %s", err)
 			}
-			if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (%s, %s)`, testCase.version, testCase.dirty)); err != nil {
+			if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (%s, %s)`, quote(defaultTestTableName), testCase.version, testCase.dirty)); err != nil {
 				t.Fatalf("unexpected error inserting data: %s", err)
 			}
 
@@ -250,7 +250,7 @@ func TestVersions(t *testing.T) {
 				error_message
 			) VALUES (%s, %s, %s, %s, NOW(), %s, NOW(), %s)`,
 			currentMigrationLogSchemaVersion,
-			"test_migrations_table",
+			defaultTestTableName,
 			migrationLog.version,
 			migrationLog.up,
 			migrationLog.success,
@@ -323,7 +323,7 @@ func TestWrappedUp(t *testing.T) {
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
-	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (15, false)`)); err != nil {
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (15, false)`, quote(defaultTestTableName))); err != nil {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 
@@ -343,18 +343,18 @@ func TestWrappedUp(t *testing.T) {
 
 	logs := []migrationLog{
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
 		}, {
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
 			Success: boolPtr(true),
@@ -391,7 +391,7 @@ func TestWrappedUp(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 16,
 			Up:      true,
 			Success: boolPtr(true),
@@ -423,7 +423,7 @@ func TestWrappedUp(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 17,
 			Up:      true,
 			Success: boolPtr(false),
@@ -441,7 +441,7 @@ func TestWrappedDown(t *testing.T) {
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
-	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (14, false)`)); err != nil {
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (14, false)`, quote(defaultTestTableName))); err != nil {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 	if err := store.Exec(ctx, sqlf.Sprintf(`
@@ -486,19 +486,19 @@ func TestWrappedDown(t *testing.T) {
 
 	logs := []migrationLog{
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 12,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
 			Success: boolPtr(true),
 		},
 		{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
 			Success: boolPtr(true),
@@ -525,7 +525,7 @@ func TestWrappedDown(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      false,
 			Success: boolPtr(true),
@@ -552,7 +552,7 @@ func TestWrappedDown(t *testing.T) {
 		}
 
 		logs = append(logs, migrationLog{
-			Schema:  "test_migrations_table",
+			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      false,
 			Success: boolPtr(false),
