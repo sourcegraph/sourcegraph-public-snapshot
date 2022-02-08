@@ -17,6 +17,8 @@ var (
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 
+		"archive": {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
+
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
 		"testerror":   {},
