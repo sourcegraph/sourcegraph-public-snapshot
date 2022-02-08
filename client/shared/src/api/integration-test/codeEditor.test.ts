@@ -2,11 +2,10 @@ import { from } from 'rxjs'
 import { distinctUntilChanged, first, switchMap, take, toArray, filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, isTaggedUnionMember } from '@sourcegraph/common'
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 
-import { isTaggedUnionMember } from '../../util/types'
 import { wrapRemoteObservable } from '../client/api/common'
 
 import { assertToJSON, integrationTestContext } from './testHelpers'

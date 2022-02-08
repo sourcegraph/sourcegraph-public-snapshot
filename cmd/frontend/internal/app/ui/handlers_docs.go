@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func serveRepoDocs(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFunc {

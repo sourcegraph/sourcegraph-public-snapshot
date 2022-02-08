@@ -62,6 +62,10 @@ extend type Query {
         """
         starredByUserID: ID
         """
+        Filter to notebooks associated with a specific namespace (user or org).
+        """
+        namespace: ID
+        """
         Sort field.
         """
         orderBy: NotebooksOrderBy = NOTEBOOK_UPDATED_AT
@@ -203,6 +207,14 @@ type Notebook implements Node {
     User that created the notebook or null if the user was removed.
     """
     creator: User
+    """
+    User that last updated the notebook or null if that user was removed.
+    """
+    updater: User
+    """
+    Notebook namespace or null if the namespace (user or org) was removed.
+    """
+    namespace: Namespace
     """
     Public property controls the visibility of the notebook. A public notebook is available to
     any user on the instance. Private notebooks are only available to their creators.
@@ -356,6 +368,11 @@ input NotebookInput {
     Array of notebook blocks.
     """
     blocks: [CreateNotebookBlockInput!]!
+    """
+    Notebook namespace (user or org). Controls the visibility of the notebook
+    and who can edit the notebook. Only the notebook creator can update the namespace.
+    """
+    namespace: ID!
     """
     Public property controls the visibility of the notebook. A public notebook is available to
     any user on the instance. Private notebooks are only available to their creators.

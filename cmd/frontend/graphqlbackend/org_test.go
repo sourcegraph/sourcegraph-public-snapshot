@@ -29,7 +29,9 @@ func TestOrganization(t *testing.T) {
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
 
 	orgs := database.NewMockOrgStore()
-	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+	mockedOrg := types.Org{ID: 1, Name: "acme"}
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
@@ -144,6 +146,7 @@ func TestOrganization(t *testing.T) {
 		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
 
 		db := database.NewMockDBFrom(db)
+		db.OrgsFunc.SetDefaultReturn(orgs)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
@@ -163,6 +166,55 @@ func TestOrganization(t *testing.T) {
 				{
 					"organization": {
 						"name": "acme"
+					}
+				}
+				`,
+			},
+		})
+	})
+
+	t.Run("invited users can access org by ID on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+
+		orgInvites := database.NewMockOrgInvitationStore()
+		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
+
+		db := database.NewMockDBFrom(db)
+		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				{
+					node(id: "T3JnOjE=") {
+						__typename
+						id
+						... on Org {
+						  name
+						}
+					}
+				}
+				`,
+				ExpectedResult: `
+				{
+					"node": {
+						"__typename":"Org",
+						"id":"T3JnOjE=", "name":"acme"
 					}
 				}
 				`,

@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRun(t *testing.T) {

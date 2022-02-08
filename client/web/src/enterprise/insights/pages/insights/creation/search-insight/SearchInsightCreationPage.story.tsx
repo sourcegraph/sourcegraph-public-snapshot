@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
 import React from 'react'
@@ -20,15 +20,18 @@ import {
     DEFAULT_MOCK_CHART_CONTENT,
     getRandomDataForMock,
 } from './components/live-preview-chart/live-preview-mock-data'
-import { SearchInsightCreationPage } from './SearchInsightCreationPage'
+import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
-const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+export default {
+    title: 'web/insights/creation-ui/SearchInsightCreationPage',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
-    })
+    },
+} as Meta
 
 function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
@@ -67,9 +70,9 @@ const SUBJECTS = [
     createGlobalSubject('Global'),
 ] as SupportedInsightSubject[]
 
-add('Page', () => (
+export const SearchInsightCreationPage: Story = () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-        <SearchInsightCreationPage
+        <SearchInsightCreationPageComponent
             visibility="user_test_id"
             subjects={SUBJECTS}
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -78,4 +81,4 @@ add('Page', () => (
             onCancel={noop}
         />
     </CodeInsightsBackendContext.Provider>
-))
+)

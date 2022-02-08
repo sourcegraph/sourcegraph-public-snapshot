@@ -5,11 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Runner struct {
@@ -83,10 +81,10 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 	wg.Wait()
 	close(errorCh)
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for err := range errorCh {
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 

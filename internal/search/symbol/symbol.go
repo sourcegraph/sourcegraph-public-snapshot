@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const DefaultSymbolLimit = 100
@@ -463,15 +462,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 		tr.Finish()
 	}()
 
-	userID := int32(0)
-
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
-			userID = a.UID
-		}
-	}
-
-	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}

@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {

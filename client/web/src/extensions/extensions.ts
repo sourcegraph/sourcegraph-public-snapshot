@@ -6,12 +6,12 @@ import {
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
 import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
+import { createRecord } from './utils/createRecord'
 
 export type MinimalConfiguredRegistryExtension = Pick<
     ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,

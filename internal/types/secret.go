@@ -12,11 +12,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/fatih/structs"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

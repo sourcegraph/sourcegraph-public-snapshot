@@ -16,7 +16,8 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { memoizeObservable } from '@sourcegraph/common'
+import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -30,7 +31,6 @@ import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { memoizeObservable } from '../util/memoizeObservable'
 
 import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
@@ -367,18 +367,20 @@ export function filterAndRankItems(
 export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
-        CommandListClassProps {
+        CommandListClassProps,
+        Pick<ButtonProps, 'variant'> {
     keyboardShortcutForShow?: KeyboardShortcut
 }
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
-    buttonClassName = '',
-    buttonElement: ButtonElement = 'span',
-    buttonOpenClassName = '',
+    buttonClassName,
+    buttonElement = 'span',
+    buttonOpenClassName,
     showCaret = true,
     popoverClassName,
     popoverInnerClassName,
     keyboardShortcutForShow,
+    variant,
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -391,13 +393,13 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
         isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
 
     return (
-        <ButtonElement
+        <Button
+            as={buttonElement}
             role="button"
-            className={classNames('test-command-list-button', styles.popoverButton, buttonClassName, {
-                [buttonOpenClassName]: isOpen,
-            })}
             id={id}
             onClick={toggleIsOpen}
+            className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
+            variant={variant}
         >
             <ConsoleIcon className="icon-inline-md" />
 
@@ -421,6 +423,6 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
-        </ButtonElement>
+        </Button>
     )
 }
