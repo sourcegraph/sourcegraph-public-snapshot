@@ -29,7 +29,6 @@
    - See also [Testing Principles](../background-information/testing_principles.md) and [Continuous Integration](../background-information/continuous_integration.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
-- [Adding or changing Buildkite secrets](adding_buildkite_secrets.md)
 
 ## Executors
 
