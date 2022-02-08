@@ -676,6 +676,9 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	}, fatalErr
 }
 
+// Get all private repos for the the current actor. On sourcegraph.com, those are
+// only the repos directly added by the user. Otherwise it's all repos the user has
+// access to on all connected code hosts / external services.
 func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
@@ -691,10 +694,6 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	}
 	tr.LogFields(otlog.Int32("userID", userID))
 
-	// Get all private repos for the the current actor. On sourcegraph.com, those are
-	// only the repos directly added by the user. Otherwise it's all repos the user has
-	// access to on all connected code hosts / external services.
-	//
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
 	// best to address that first.
