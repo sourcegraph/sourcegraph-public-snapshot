@@ -312,7 +312,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             >
                 Run batch spec
             </Button>
-            <BatchSpecDownloadLink name="new-batch-spec" originalInput={code} isLightTheme={isLightTheme}>
+            <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                 or download for src-cli
             </BatchSpecDownloadLink>
             <div className="form-group">
