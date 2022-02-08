@@ -36,7 +36,12 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import { CoolCodeIntel, CoolClickedToken, isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
+import {
+    CoolCodeIntel,
+    CoolClickedToken,
+    isCoolCodeIntelEnabled,
+    locationWithoutReferences,
+} from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -191,6 +196,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // Experimental reference panel
     const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
+    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
+        props.history.push(locationWithoutReferences(props.location))
+        onTokenClick(token)
+    }
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -214,7 +223,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         isMacPlatform: isMacPlatform(),
         // Experimental reference panel
         coolCodeIntelEnabled,
-        onTokenClick: coolCodeIntelEnabled ? onTokenClick : undefined,
+        onTokenClick: coolCodeIntelEnabled ? onTokenClickRemoveViewState : undefined,
     }
 
     return (
@@ -278,7 +287,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+            {!coolCodeIntelEnabled &&
+                parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
@@ -297,6 +307,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <CoolCodeIntel
                 {...props}
                 {...themeProps}
+                onClose={() => {
+                    onTokenClick(undefined)
+                }}
                 coolCodeIntelEnabled={coolCodeIntelEnabled}
                 onTokenClick={onTokenClick}
                 clickedToken={clickedToken}
