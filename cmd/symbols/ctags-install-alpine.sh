@@ -6,7 +6,7 @@
 CTAGS_VERSION=7c4df9d38c4fe4bb494e5f3b2279034d7d8bd7b7
 
 cleanup() {
-  apk --no-cache --purge del build-deps || true
+  apk --no-cache --purge del ctags-build-deps || true
   cd /
   rm -rf /tmp/ctags-$CTAGS_VERSION
 }
@@ -16,7 +16,7 @@ trap cleanup EXIT
 set -eux
 
 apk --no-cache add \
-  --virtual build-deps \
+  --virtual ctags-build-deps \
   autoconf \
   automake \
   binutils \
