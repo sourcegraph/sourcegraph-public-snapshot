@@ -213,7 +213,11 @@ export class OrgArea extends React.Component<Props> {
                                 : of(false)
                         return flagObservable.pipe(
                             catchError((): [boolean] => [false]), // set flag to false in case of error reading it
-                            map(newMembersInviteEnabled => ({ orgOrError: state.orgOrError, newMembersInviteEnabled }))
+                            map(newMembersInviteEnabled =>
+                                !state.orgOrError
+                                    ? { newMembersInviteEnabled }
+                                    : { orgOrError: state.orgOrError, newMembersInviteEnabled }
+                            )
                         )
                     })
                 )
