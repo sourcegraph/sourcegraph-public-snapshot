@@ -4,12 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store interface {
@@ -30,7 +29,7 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		if closeErr := db.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
+			err = errors.Append(err, closeErr)
 		}
 
 		return nil, err

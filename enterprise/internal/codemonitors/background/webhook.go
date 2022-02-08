@@ -7,9 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {

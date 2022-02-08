@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
@@ -339,7 +338,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	// Complete the workspace resolution
 	var workspaces []*btypes.BatchSpecWorkspace
 	for _, repo := range rs {
-		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 		if err := bstore.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 			t.Fatal(err)
 		}

@@ -80,3 +80,22 @@ export function changelogURL(version: string): string {
     const versionAnchor = version.replace(/\./g, '-')
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
+
+export function ensureMainBranchUpToDate(): void {
+    const mainBranch = 'main'
+    const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
+    if (currentBranch !== mainBranch) {
+        console.log(
+            `Expected to be on branch ${mainBranch}, but was on ${currentBranch}. Run \`git checkout ${mainBranch}\` to switch to the main branch.`
+        )
+        process.exit(1)
+    }
+    execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
+    const { stdout } = execa.sync('git', ['status', '-uno'])
+    if (stdout.includes('Your branch is behind')) {
+        console.log(
+            `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
+        )
+        process.exit(1)
+    }
+}

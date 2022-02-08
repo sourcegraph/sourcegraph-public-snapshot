@@ -3,6 +3,7 @@ import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import { formatSearchParameters } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -11,7 +12,6 @@ import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/se
 import { FlatExtensionHostAPI } from '../api/contract'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
 import { PlatformContext } from '../platform/context'
-import { formatSearchParameters } from '../util/url'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See

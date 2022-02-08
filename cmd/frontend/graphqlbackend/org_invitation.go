@@ -15,6 +15,10 @@ type organizationInvitationResolver struct {
 	v  *database.OrgInvitation
 }
 
+func NewOrganizationInvitationResolver(db database.DB, v *database.OrgInvitation) *organizationInvitationResolver {
+	return &organizationInvitationResolver{db, v}
+}
+
 func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*organizationInvitationResolver, error) {
 	orgInvitationID, err := unmarshalOrgInvitationID(id)
 	if err != nil {
@@ -51,6 +55,9 @@ func (r *organizationInvitationResolver) Sender(ctx context.Context) (*UserResol
 }
 
 func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserResolver, error) {
+	if r.v.RecipientUserID == 0 {
+		return nil, nil
+	}
 	return UserByIDInt32(ctx, r.db, r.v.RecipientUserID)
 }
 func (r *organizationInvitationResolver) CreatedAt() DateTime { return DateTime{Time: r.v.CreatedAt} }
@@ -74,11 +81,20 @@ func (r *organizationInvitationResolver) ResponseType() *string {
 
 func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*string, error) {
 	if r.v.Pending() {
-		org, err := database.Orgs(r.db).GetByID(ctx, r.v.OrgID)
+		var url string
+		var err error
+		if orgInvitationConfigDefined() {
+			url, err = orgInvitationURL(r.v.OrgID, r.v.ID, r.v.SenderUserID, r.v.RecipientUserID, "", true)
+		} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
+			org, err := database.Orgs(r.db).GetByID(ctx, r.v.OrgID)
+			if err != nil {
+				return nil, err
+			}
+			url = orgInvitationURLLegacy(org, true)
+		}
 		if err != nil {
 			return nil, err
 		}
-		url := orgInvitationURL(org).String()
 		return &url, nil
 	}
 	return nil, nil

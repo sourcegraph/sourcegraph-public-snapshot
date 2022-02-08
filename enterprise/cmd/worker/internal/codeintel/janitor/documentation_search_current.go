@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type documentationSearchCurrentJanitor struct {
@@ -51,7 +51,7 @@ func (j *documentationSearchCurrentJanitor) Handle(ctx context.Context) (err err
 
 	if publicErr != nil {
 		if privateErr != nil {
-			return multierror.Append(publicErr, privateErr)
+			return errors.Append(publicErr, privateErr)
 		}
 
 		return publicErr
