@@ -63,6 +63,8 @@ function getExtensionCoreConfiguration(targetType) {
               path: require.resolve('path-browserify'),
               assert: require.resolve('assert'),
               util: require.resolve('util'),
+              http: require.resolve('stream-http'),
+              https: require.resolve('https-browserify')
             }
           : {},
     },
@@ -126,6 +128,8 @@ const webviewConfig = {
     fallback: {
       path: require.resolve('path-browserify'),
       process: require.resolve('process/browser'),
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify')
     },
   },
   module: {

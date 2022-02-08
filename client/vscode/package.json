@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph",
   "displayName": "Sourcegraph",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -195,5 +195,9 @@
     "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
+  },
+  "dependencies": {
+    "https-browserify": "^1.0.0",
+    "stream-http": "^3.2.0"
   }
 }
