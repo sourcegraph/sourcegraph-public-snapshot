@@ -8,7 +8,7 @@ const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default;
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const {
@@ -150,7 +150,7 @@ const config = {
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && new BundleAnalyzerPlugin(),
+    shouldAnalyze && new StatoscopeWebpackPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&
