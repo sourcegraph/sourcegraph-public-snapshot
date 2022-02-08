@@ -20,6 +20,8 @@ echo "BUILD_START_TIME=$BUILD_START_TIME"
 STEP_START=$(date +'%s')
 export STEP_START
 
+echo "STEP_START=$STEP_START"
+
 # ASDF setup
 # ----------
 
