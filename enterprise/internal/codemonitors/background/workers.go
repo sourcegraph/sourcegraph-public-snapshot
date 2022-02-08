@@ -409,10 +409,3 @@ func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr
 	}
 	return t
 }
-
-func zeroOrVal(i *int) int {
-	if i == nil {
-		return 0
-	}
-	return *i
-}
