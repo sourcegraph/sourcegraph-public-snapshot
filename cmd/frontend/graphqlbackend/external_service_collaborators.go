@@ -10,6 +10,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -22,6 +24,17 @@ import (
 // for listing collaborators to *some* of the repositories associated with this external service
 // *before* they are cloned onto Sourcegraph.
 func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([]*invitableCollaboratorResolver, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: a.UID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// SECURITY: This API should only be exposed for user-added external services, not for example by
 	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
 	//
@@ -37,7 +50,10 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	githubCfg, ok := cfg.(*schema.GitHubConnection)
 	if !ok {
-		return nil, errors.Wrap(err, "contributors API only supported with GitHub")
+		// We only support GitHub for now as that's the most popular / important.
+		// Don't return an error, just an empty list, because e.g. that's what you want if we just
+		// can't find any collaborators.
+		return []*invitableCollaboratorResolver{}, nil
 	}
 	baseURL, err := url.Parse(githubCfg.Url)
 	if err != nil {
@@ -106,14 +122,25 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		return a.After(b)
 	})
 
-	// Eliminate committers who are duplicates, don't have an email, or have a noreply@github.com
-	// email (which happens when you make edits via the web UI.)
+	// Eliminate committers who are duplicates, don't have an email, have a noreply@github.com
+	// email (which happens when you make edits via the GitHub web UI), or committers with the same
+	// email address as this authenticated user (can't invite ourselves, we already have an account.)
 	var (
 		invitable   []*invitableCollaboratorResolver
 		deduplicate = map[string]struct{}{}
 	)
 	for _, recentCommitter := range allRecentCommitters {
 		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
+			continue
+		}
+		isOurEmail := false
+		for _, email := range authUserEmails {
+			if recentCommitter.email == email.Email {
+				isOurEmail = true
+				continue
+			}
+		}
+		if isOurEmail {
 			continue
 		}
 		if _, duplicate := deduplicate[recentCommitter.email]; duplicate {
