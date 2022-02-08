@@ -181,7 +181,7 @@ func (t *TaskLog) Print() {
 }
 
 func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
-	unlock, err := onVisit(db, repo, maxRepos)
+	unlock, err := onVisit(tasklog, db, repo, maxRepos)
 	defer func() {
 		if unlock != nil {
 			err = unlock(err)
@@ -384,18 +384,20 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
+func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
 	}
 	defer tx.Rollback()
 
+	tasklog.Start("Get deletion lock")
 	_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, LOCKS_NAMESPACE, DELETION_LOCK_ID)
 	if err != nil {
 		return nil, err
 	}
 
+	tasklog.Start("Touch repo")
 	_, err = tx.Exec(`
 		INSERT INTO rockskip_repos (repo, last_accessed_at)
 		VALUES ($1, now())
@@ -407,6 +409,7 @@ func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 	}
 
 	// Have to store the repos to delete in a variable, otherwise "driver: bad connection" on tx.Exec(`SELECT pg_advisory_xact_lock(...)`)
+	tasklog.Start("List old repos")
 	reposToDelete := []string{}
 	rowsToDelete, err := tx.Query(`SELECT repo FROM rockskip_repos ORDER BY last_accessed_at DESC OFFSET $1`, maxRepos)
 	if err != nil {
@@ -429,11 +432,13 @@ func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 	}
 
 	for _, repoToDelete := range reposToDelete {
+		tasklog.Start("Lock repo")
 		_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repoToDelete)))
 		if err != nil {
 			return nil, err
 		}
 
+		tasklog.Start("Delete old repo")
 		_, err = tx.Exec(`DELETE FROM rockskip_ancestry WHERE repo = $1`, repoToDelete)
 		if err != nil {
 			return nil, err
@@ -448,11 +453,13 @@ func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 		}
 	}
 
+	tasklog.Start("Commit deletion")
 	err = tx.Commit()
 	if err != nil {
 		return nil, errors.Wrap(err, "commit transaction")
 	}
 
+	tasklog.Start("Lock repo 2")
 	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, err
