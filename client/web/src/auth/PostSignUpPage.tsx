@@ -24,7 +24,7 @@ import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
-import { StartSearching } from './welcome/StartSearching'
+import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
 import { TeamsBeta } from './welcome/TeamsBeta'
 
 interface PostSignUpPage {
@@ -152,7 +152,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
                                         <Step borderColor="orange">Teams beta</Step>
-                                        <Step borderColor="green">Start searching</Step>
+                                        <Step borderColor="green">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -201,7 +201,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             <TeamsBeta onFinish={finishWelcomeFlow} onError={onError} />
                                         </StepPanel>
                                         <StepPanel>
-                                            <StartSearching
+                                            <InviteCollaborators
                                                 className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
