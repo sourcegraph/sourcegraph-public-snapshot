@@ -161,9 +161,9 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	)
 
 	return schemaVersion{
-		appliedVersions: appliedVersions,
-		pendingVersions: pendingVersions,
-		failedVersions:  failedVersions,
+		appliedVersions,
+		pendingVersions,
+		failedVersions,
 	}, nil
 }
 
