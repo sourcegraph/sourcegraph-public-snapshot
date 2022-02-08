@@ -69,6 +69,25 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 func MakeRockskipSearchFunc(observationContext *observation.Context, config RockskipConfig) (types.SearchFunc, error) {
 	parser := mustCreateCtagsParser(config.Ctags)
 
+	var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
+		entries, err := parser.Parse(path, bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		symbols = []rockskip.Symbol{}
+		for _, entry := range entries {
+			symbols = append(symbols, rockskip.Symbol{
+				Name:   entry.Name,
+				Parent: entry.Parent,
+				Kind:   entry.Kind,
+				Line:   entry.Line,
+			})
+		}
+
+		return symbols, nil
+	}
+
 	operations := sharedobservability.NewOperations(observationContext)
 	// TODO use operations
 	_ = operations
@@ -94,25 +113,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 		// defer func() {
 		// 	endObservation(1, observation.Args{})
 		// }()
-
-		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-			entries, err := parser.Parse(path, bytes)
-			if err != nil {
-				return nil, err
-			}
-
-			symbols = []rockskip.Symbol{}
-			for _, entry := range entries {
-				symbols = append(symbols, rockskip.Symbol{
-					Name:   entry.Name,
-					Parent: entry.Parent,
-					Kind:   entry.Kind,
-					Line:   entry.Line,
-				})
-			}
-
-			return symbols, nil
-		}
 
 		fmt.Println(".")
 		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
