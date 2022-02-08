@@ -122,8 +122,17 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	}
 	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
 		queries = append(queries, sqlf.Sprintf(`
-			WITH schema_version AS (
+			WITH
+			schema_version AS (
 				SELECT * FROM %s LIMIT 1
+			),
+			min_log AS (
+				SELECT MIN(version) AS version
+				FROM migration_logs
+				WHERE schema = %s
+			),
+			target_version AS (
+				SELECT MIN(version) as version FROM schema_version UNION SELECT verison FROM min_log
 			)
 			INSERT INTO migration_logs (
 				migration_logs_schema_version,
@@ -135,14 +144,14 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 				finished_at
 			)
 			SELECT %s, %s, version, true, true, NOW(), NOW()
-			FROM generate_series(%s, (SELECT version FROM schema_version)) version
-			WHERE NOT (SELECT dirty FROM schema_version) AND NOT EXISTS (SELECT 1 FROM migration_logs WHERE schema = %s)
+			FROM generate_series(%s, (SELECT version FROM target_version)) version
+			WHERE NOT (SELECT dirty FROM schema_version)
 		`,
 			quote(s.schemaName),
+			s.schemaName,
 			currentMigrationLogSchemaVersion,
 			s.schemaName,
 			minMigrationVersion,
-			s.schemaName,
 		))
 	}
 
