@@ -30,9 +30,6 @@ func TestRepositoryFetcher(t *testing.T) {
 		tarContents[name] = content
 	}
 
-	// JSON is ignored
-	tarContents["ignored.json"] = "{}"
-
 	// Large files are ignored
 	maxFileSize := 524288
 	tarContents["payloads.txt"] = strings.Repeat("oversized load", maxFileSize)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -62,11 +61,6 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, []g
 
 		// We only care about files
 		if tarHeader.Typeflag != tar.TypeReg && tarHeader.Typeflag != tar.TypeRegA {
-			return false
-		}
-
-		// JSON files are symbol-less
-		if path.Ext(tarHeader.Name) == ".json" {
 			return false
 		}
 
