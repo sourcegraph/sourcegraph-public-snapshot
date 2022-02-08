@@ -381,8 +381,6 @@ func root(migrationDefinitions []Definition) (int, error) {
 	return roots[0], nil
 }
 
-// children constructs map from migration identifiers to the set of identifiers of all
-// dependent migrations.
 func children(migrationDefinitions []Definition) map[int][]int {
 	childMap := make(map[int][]int, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
