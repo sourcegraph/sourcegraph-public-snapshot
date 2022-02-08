@@ -22,12 +22,12 @@ linters-settings:
     include-go-root: true
     packages-with-error-message:
       # Deprecated packages
-      - io/ioutil: 'The ioutil package has been deprecated'
+      - io/ioutil: "The ioutil package has been deprecated"
       # Blacklisted error packages
-      - errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
-      - github.com/pkg/errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
-      - github.com/cockroachdb/errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
-      - github.com/hashicorp/go-multierror: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
+      - errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+      - github.com/pkg/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+      - github.com/cockroachdb/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+      - github.com/hashicorp/go-multierror: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives
