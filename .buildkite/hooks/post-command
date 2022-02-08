@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 echo "STEP_START=$STEP_START"
+echo "BUILD_START_TIME=$BUILD_START_TIME"
 
 (
     echo "--- Sending stuff to HoneyComb"
