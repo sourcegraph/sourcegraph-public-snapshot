@@ -9,6 +9,7 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
+	t.FailNow()
 	input := `
 env:
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
