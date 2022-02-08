@@ -72,7 +72,7 @@ interface WorkspacesPreviewProps {
     error?: string
     /** The current workspaces preview connection result used to render the list. */
     workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
-    /** TODO: */
+    /** Method to invoke to capture a change in the active filters applied. */
     setFilters: (filters: WorkspacePreviewFilters) => void
 }
 

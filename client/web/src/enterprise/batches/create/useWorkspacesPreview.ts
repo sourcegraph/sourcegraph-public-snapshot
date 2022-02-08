@@ -7,7 +7,6 @@ import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
-    EditBatchChangeFields,
     ReplaceBatchSpecInputResult,
     ReplaceBatchSpecInputVariables,
     Scalars,
@@ -24,7 +23,7 @@ import {
     WORKSPACES,
     WORKSPACE_RESOLUTION_STATUS,
 } from './backend'
-import { WORKSPACES_PER_PAGE_COUNT } from './workspaces-preview/useWorkspaces'
+import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'REQUESTED' | 'CANCELED'
 
@@ -64,10 +63,10 @@ interface UseWorkspacesPreviewOptions {
     namespaceID: Scalars['ID']
     /** Whether or not the batch spec should be executed with the cache disabled. */
     noCache: boolean
-    /** An optional (stable) callback to invoke when the preview is submitted. */
-    onPreview?: () => void
-    /** An optional (stable) callback to invoke when the workspaces resolution is complete. */
+    /** An optional (stable) callback to invoke when the workspaces resolution job completes. */
     onComplete?: () => void
+    /** Any filters currently applied to the workspaces connection preview. */
+    filters?: WorkspacePreviewFilters
 }
 
 export const POLLING_INTERVAL = 1000
@@ -91,9 +90,21 @@ const getBatchSpecID = ({
     return data.replaceBatchSpecInput.id
 }
 
+/**
+ * Custom hook to power the "preview" aspect of the batch spec creation workflow, i.e.
+ * submitting batch spec input YAML code, enqueing a resolution job to evaluate the
+ * workspaces that that batch spec would run over, and polling until the resolution job is
+ * complete. It will smartly determine whether or not to create a new batch spec from raw
+ * or replace an existing one depending on whether or not the most recent batch spec has
+ * already been applied. Returns an API object in order to respond trigger a new preview,
+ * monitor the resolution job progress, and handle any errors.
+ *
+ * @param batchSpecID The ID of the most recent, existing batch spec that we are replacing
+ * @param options Aspects of the batch spec and properties to configure with the preview
+ */
 export const useWorkspacesPreview = (
-    batchSpec: EditBatchChangeFields['currentSpec'],
-    { isBatchSpecApplied, namespaceID, noCache, onPreview, onComplete }: UseWorkspacesPreviewOptions
+    batchSpecID: Scalars['ID'],
+    { isBatchSpecApplied, namespaceID, noCache, onComplete, filters }: UseWorkspacesPreviewOptions
 ): UseWorkspacesPreviewResult => {
     // Track whether the user has previewed the batch spec workspaces at least once.
     const [hasPreviewed, setHasPreviewed] = useState(false)
@@ -109,6 +120,8 @@ export const useWorkspacesPreview = (
     )
 
     const [isInProgress, setIsInProgress] = useState(false)
+    // A computed state based on the state of any active workspaces resolution job as well
+    // as any actions the user has taken on this page so far.
     const [uiState, setUIState] = useState<ResolutionState>('UNSTARTED')
     const [error, setError] = useState<string>()
 
@@ -119,7 +132,7 @@ export const useWorkspacesPreview = (
         WorkspaceResolutionStatusResult,
         WorkspaceResolutionStatusVariables
     >(WORKSPACE_RESOLUTION_STATUS, {
-        variables: { batchSpec: batchSpec.id },
+        variables: { batchSpec: batchSpecID },
         fetchPolicy: 'network-only',
         onError: error => setError(error.message),
     })
@@ -140,14 +153,12 @@ export const useWorkspacesPreview = (
                     ? createBatchSpecFromRaw({
                           variables: { spec: code, namespace: namespaceID, noCache },
                       })
-                    : replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpec.id, noCache } })
+                    : replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
 
             return preview()
                 .then(result => {
                     const newBatchSpecID = getBatchSpecID(result)
                     setHasPreviewed(true)
-                    // Call the optional handler on previewing
-                    onPreview?.()
                     // Requery the workspace resolution status. A status change will
                     // re-trigger polling until the new job finishes.
                     refetchResolutionStatus({ batchSpec: newBatchSpecID })
@@ -158,13 +169,12 @@ export const useWorkspacesPreview = (
                 .catch((error: Error) => setError(error.message))
         },
         [
-            batchSpec.id,
+            batchSpecID,
             namespaceID,
             isBatchSpecApplied,
             noCache,
             createBatchSpecFromRaw,
             replaceBatchSpecInput,
-            onPreview,
             refetchResolutionStatus,
             startPolling,
         ]
@@ -174,16 +184,17 @@ export const useWorkspacesPreview = (
         WORKSPACES,
         {
             variables: {
-                batchSpec: batchSpec.id,
+                batchSpec: batchSpecID,
                 after: null,
                 first: WORKSPACES_PER_PAGE_COUNT,
-                search: null,
+                search: filters?.search ?? null,
             },
             fetchPolicy: 'cache-and-network',
         }
     )
 
-    // This effect triggers on workspaces resolution job status changes from the backend.
+    // This effect triggers on workspaces resolution job status changes from the backend
+    // and updates user-facing state.
     useEffect(() => {
         if (resolution?.state) {
             setUIState(resolution.state)
@@ -234,7 +245,6 @@ export const useWorkspacesPreview = (
         preview: previewBatchSpec,
         cancel,
         isInProgress,
-        // TODO: Type me better
         resolutionState: uiState,
         error,
         clearError: () => setError(undefined),

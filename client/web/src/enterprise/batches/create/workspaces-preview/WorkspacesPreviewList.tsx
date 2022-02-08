@@ -27,8 +27,20 @@ interface WorkspacesPreviewListProps {
      * provided repo + branch.
      */
     excludeRepo: (repo: string, branch: string) => void
-    /** Cached */
+    /**
+     * Whether or not the preview list should prefer the `cached` list over the data
+     * actively in the connection.
+     */
     showCached: boolean
+    /**
+     * We "cache" the last results of the workspaces preview so that we can continue to
+     * show them in the list while the next workspaces resolution is still in progress. We
+     * have to do this outside of Apollo Client because we continue to requery the
+     * orkspaces preview while the resolution job is still in progress, and so the results
+     * will come up empty and overwrite the previous results in the Apollo Client cache
+     * while this is happening. If data is availabled in `cached` and `showCached` is
+     * true, it will be used over the data in the connnection.
+     */
     cached?: PreviewBatchSpecWorkspaceFields[]
     /** Error */
     error?: string

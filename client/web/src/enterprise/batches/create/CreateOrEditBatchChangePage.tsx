@@ -41,7 +41,7 @@ import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useWorkspacesPreview } from './useWorkspacesPreview'
-import { useWorkspaces } from './workspaces-preview/useWorkspaces'
+import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { haveMatchingOnStatements } from './yaml-util'
 
@@ -221,14 +221,16 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchChange.name
     )
 
+    const [filters, setFilters] = useState<WorkspacePreviewFilters>()
+    const workspacesConnection = useWorkspaces(batchSpec.id, filters)
+
     // When we successfully submit the latest batch spec code to the backend for a new
     // workspaces preview, we follow up by refetching the batch change to get the latest
     // batch spec ID.
     const onComplete = useCallback(() => {
+        // We handle any error here higher up the chain, so we can ignore it.
         refetchBatchChange().then(noop).catch(noop)
     }, [refetchBatchChange])
-
-    const [workspacesConnection, setWorkspacesFilters] = useWorkspaces(batchSpec.id)
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
@@ -239,11 +241,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         hasPreviewed,
         cancel,
         resolutionState,
-    } = useWorkspacesPreview(batchSpec, {
+    } = useWorkspacesPreview(batchSpec.id, {
         isBatchSpecApplied: isLatestBatchSpecApplied,
         namespaceID: batchChange.namespace.id,
         noCache,
         onComplete,
+        filters,
     })
 
     const clearErrorsAndHandleCodeChange = useCallback(
@@ -374,7 +377,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                         isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
                         resolutionState={resolutionState}
                         workspacesConnection={workspacesConnection}
-                        setFilters={setWorkspacesFilters}
+                        setFilters={setFilters}
                     />
                 </div>
             </div>

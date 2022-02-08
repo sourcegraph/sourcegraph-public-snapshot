@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import {
     useConnection,
@@ -21,22 +19,17 @@ export interface WorkspacePreviewFilters {
 }
 
 /**
- * Custom hook to query the connection of `Workspaces` resolved to preview which repos a
- * batch spec is targeting. Manages the filters used to narrow the results in the
- * connection as well. Returns a tuple of the connection result object as well as a method
- * to invoke to change the filters applied.
+ * Custom hook to query the connection of `Workspaces` resolved to preview which
+ * repositories a batch spec is targeting.
  *
  * @param batchSpecID The id of the batch spec to query
+ * @param filters Any filters to apply to the workspaces connection preview
  */
 export const useWorkspaces = (
-    batchSpecID: Scalars['ID']
-): [
-    connection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>,
-    setFilters: (filters: WorkspacePreviewFilters) => void
-] => {
-    const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-
-    const connection = useConnection<
+    batchSpecID: Scalars['ID'],
+    filters?: WorkspacePreviewFilters
+): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
+    useConnection<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,
         PreviewBatchSpecWorkspaceFields
@@ -68,6 +61,3 @@ export const useWorkspaces = (
             return data.node.workspaceResolution.workspaces
         },
     })
-
-    return [connection, setFilters]
-}
