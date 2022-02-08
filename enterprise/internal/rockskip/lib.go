@@ -396,7 +396,7 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
+func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (_ locker.UnlockFunc, err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
