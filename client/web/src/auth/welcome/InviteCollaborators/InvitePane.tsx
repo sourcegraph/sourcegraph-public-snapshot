@@ -15,6 +15,7 @@ import { UserAvatar } from '../../../user/UserAvatar'
 
 import { InvitableCollaborator } from './InviteCollaborators'
 import styles from './InviteCollaborators.module.scss'
+import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
 
 interface Props {
     user: AuthenticatedUser
@@ -29,6 +30,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
     invitableCollaborators,
     isLoadingCollaborators,
 }) => {
+    const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
     const [query, setQuery] = useState('')
 
@@ -63,21 +65,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
             setLoadingInvites(set => new Set(set).add(person.email))
 
             try {
-                await new Promise(resolve => setTimeout(resolve, 100))
-                // TODO: actually send GraphQL request to invite via email.
-
-                // dataOrThrowErrors(
-                //     await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
-                //         gql`
-                //             mutation ResendVerificationEmail($user: ID!, $email: String!) {
-                //                 resendVerificationEmail(user: $user, email: $email) {
-                //                     alwaysNil
-                //                 }
-                //             }
-                //         `,
-                //         { user, email }
-                //     ).toPromise()
-                // )
+                await inviteEmailToSourcegraph({ variables: { email: person.email } })
 
                 setLoadingInvites(set => {
                     const removed = new Set(set)
