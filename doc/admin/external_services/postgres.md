@@ -146,12 +146,12 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ## Postgres Permissions and Database Migrations
 
-There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations).
+There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
+Currently the Code Insights database uses TimescaleDB. We do not offer support for running the Code Insights database as an external service.
 
 By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
 
-This may not be acceptable in all environments. At minimum we expect that the `PGUSER`
-and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
+This may not be acceptable in all environments. At minimum we expect that the `PGUSER` and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
 
 `ALL` privileges on the [Database object](https://www.postgresql.org/docs/current/sql-grant.html) include:
  * `SELECT`
