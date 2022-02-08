@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -674,9 +675,16 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 	}, fatalErr
 }
 
-func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForUser", strconv.Itoa(int(userID)))
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
+
+	userID := int32(0)
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a != nil {
+			userID = a.UID
+		}
+	}
 
 	// Get all private repos for the the current actor. On sourcegraph.com, those are
 	// only the repos directly added by the user. Otherwise it's all repos the user has
