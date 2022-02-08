@@ -68,6 +68,8 @@ To enable permissions syncing for Perforce depots using [Perforce permissions ta
 > - [file-level permissions are not supported](#file-level-permissions). Read on to learn more about the workaround.
 > - [the host field from protections are not supported](#known-issues-and-limitations).
 
+> NOTE: We are testing an experimental feature that will allow syncing permissions with full granularity, details [here](#experimental-support-for-path-level-permissions)
+
 Site admins should sync subdirectories of a depot using the `depots` configuration that best describe the most concrete path of your permissions boundary, which can then enforce permissions in Sourcegraph.
 
 For example, if your Perforce depot `//Sourcegraph/` has different permissions for `//Sourcegraph/Backend/` and some subdirectories of `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
@@ -114,6 +116,8 @@ write user alice * //TestDepot/.../spec/...
 
 #### File-level permissions
 
+> NOTE: See [below](#experimental-support-for-path-level-permissions) for details on experimental support for file level permissions
+
 Sourcegraph does not support file-level permissions, as allowed in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
 
 For example, consider the following output of `p4 protects -u alice`:
@@ -132,6 +136,37 @@ Since Sourcegraph uses partial matching to determine if a user has access to a r
 ### Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
+
+### Experimental support for file level permissions
+
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph insiders</span>
+
+We are working on experimental support for file / path level permissions. In order to opt in you need to enable the experimental feature in site config:
+
+```json
+{
+	"experimentalFeatures": {
+    "perforce": "enabled",
+    "subRepoPermissions": { "enabled": true }
+  }
+}
+```
+
+You also need to explicitly enable it for each Perforce code host connection in the `authorisation` section:
+
+```json
+{
+  "authorization": {
+    "subRepoPermissions": true
+  }
+}
+```
+
+Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). The mapping between Sourcegraph users and Perforce users are based on matching verified e-mail addresses.
+
+As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
+
+As a special case, if a user is not allowed to read any file included in a commit, the entire commit will be hidden.
 
 ## Add Perforce depots using `src serve-git`
 

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { Panel } from './Panel'
 import { panels, panelProps } from './Panel.fixtures'
@@ -17,7 +17,7 @@ describe('Panel', () => {
     afterEach(cleanup)
 
     it('preserves `location.pathname` and `location.hash` on tab change', async () => {
-        const renderResult = renderWithRouter(<Panel {...panelProps} />, { route })
+        const renderResult = renderWithBrandedContext(<Panel {...panelProps} />, { route })
 
         const panelToSelect = panels[2]
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })

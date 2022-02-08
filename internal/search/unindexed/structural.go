@@ -3,8 +3,9 @@ package unindexed
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -14,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"golang.org/x/sync/errgroup"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // repoData represents an object of repository revisions to search.

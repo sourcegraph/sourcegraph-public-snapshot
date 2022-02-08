@@ -20,11 +20,12 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
+import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
+import { TeamsBeta } from './welcome/TeamsBeta'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
@@ -135,7 +136,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
-                            <div className={styles.container}>
+                            <div className={styles.progress}>
                                 {hasErrors && (
                                     <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
@@ -143,16 +144,15 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     </Alert>
                                 )}
                                 <h2>Get started with Sourcegraph</h2>
-                                <p className="text-muted pb-3">
-                                    Three quick steps to add your repositories and get searching with Sourcegraph
-                                </p>
+                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
-                            <div className="mt-4 pb-3 d-flex flex-column align-items-center">
-                                <Steps initialStep={debug ? parseInt(debug, 10) : 1}>
-                                    <StepList numeric={true} className={styles.container}>
+                            <div className="mt-2 pb-3 d-flex flex-column align-items-center">
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
+                                    <StepList numeric={true} className={styles.progress}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Start searching</Step>
+                                        <Step borderColor="orange">Teams beta</Step>
+                                        <Step borderColor="green">Start searching</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -168,10 +168,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     context={context}
                                                     refetch={refetchExternalServices}
                                                 />
+                                                <Footer onFinish={finishWelcomeFlow} />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <div className={classNames('mt-5', styles.container)}>
+                                            <div className={classNames('mt-3', styles.container)}>
                                                 <h3>Add repositories</h3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
@@ -193,7 +194,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     telemetryService={telemetryService}
                                                     onError={onError}
                                                 />
+                                                <Footer onFinish={finishWelcomeFlow} isSkippable={true} />
                                             </div>
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <TeamsBeta onFinish={finishWelcomeFlow} onError={onError} />
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching
@@ -205,12 +210,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
+                                                onFinish={finishWelcomeFlow}
                                             />
                                         </StepPanel>
                                     </StepPanels>
-                                    <StepActions>
-                                        <Footer onFinish={finishWelcomeFlow} />
-                                    </StepActions>
                                 </Steps>
                             </div>
                         </div>

@@ -51,10 +51,12 @@ type NotebookResolver interface {
 	Title(ctx context.Context) string
 	Blocks(ctx context.Context) []NotebookBlockResolver
 	Creator(ctx context.Context) (*UserResolver, error)
+	Updater(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	Public(ctx context.Context) bool
 	UpdatedAt(ctx context.Context) DateTime
 	CreatedAt(ctx context.Context) DateTime
-	ViewerCanManage(ctx context.Context) bool
+	ViewerCanManage(ctx context.Context) (bool, error)
 	ViewerHasStarred(ctx context.Context) (bool, error)
 	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
 }
@@ -114,9 +116,10 @@ type DeleteNotebookArgs struct {
 }
 
 type NotebookInputArgs struct {
-	Title  string                         `json:"title"`
-	Blocks []CreateNotebookBlockInputArgs `json:"blocks"`
-	Public bool                           `json:"public"`
+	Title     string                         `json:"title"`
+	Blocks    []CreateNotebookBlockInputArgs `json:"blocks"`
+	Public    bool                           `json:"public"`
+	Namespace graphql.ID                     `json:"namespace"`
 }
 
 type CreateNotebookBlockInputArgs struct {
@@ -145,6 +148,7 @@ type ListNotebooksArgs struct {
 	Query           *string          `json:"query"`
 	CreatorUserID   *graphql.ID      `json:"creatorUserID"`
 	StarredByUserID *graphql.ID      `json:"starredByUserID"`
+	Namespace       *graphql.ID      `json:"namespace"`
 	OrderBy         NotebooksOrderBy `json:"orderBy"`
 	Descending      bool             `json:"descending"`
 }

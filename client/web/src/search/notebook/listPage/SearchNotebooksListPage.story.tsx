@@ -31,6 +31,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 viewerHasStarred: true,
                 stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user1' },
+                namespace: { id: '1' },
                 blocks: [
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                     { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
@@ -47,6 +48,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 viewerHasStarred: true,
                 stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user2' },
+                namespace: { id: '2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
             },
         ],

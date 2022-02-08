@@ -88,7 +88,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
-            {hasPreviewed && !isResolvingPreview && (
+            {hasPreviewed && !isResolvingPreview && !resolutionError && (
                 <div className="d-flex flex-column align-items-center overflow-auto w-100">
                     <WorkspacesPreviewList
                         batchSpecID={batchSpec.id}

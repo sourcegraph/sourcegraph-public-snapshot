@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CheckOptions struct {

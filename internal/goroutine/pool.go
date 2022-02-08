@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Pool worker is a function invoked by RunWorkers that sends
@@ -47,7 +47,7 @@ func RunWorkersN(n int, worker PoolWorker) (err error) {
 		if err == nil {
 			err = e
 		} else {
-			err = multierror.Append(err, e)
+			err = errors.Append(err, e)
 		}
 	}
 

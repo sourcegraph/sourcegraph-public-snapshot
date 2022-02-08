@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {

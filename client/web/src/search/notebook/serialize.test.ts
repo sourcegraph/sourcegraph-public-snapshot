@@ -1,4 +1,4 @@
-import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+import { encodeURIPathComponent } from '@sourcegraph/common'
 
 import { parseLineRange, serializeBlockInput, serializeBlocks, serializeLineRange } from './serialize'
 
