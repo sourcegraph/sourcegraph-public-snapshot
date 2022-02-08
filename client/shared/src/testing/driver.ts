@@ -255,15 +255,11 @@ export class Driver {
      * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
-        // Set URL
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
-
-        //TODO: Set option flag
-
     }
 
     public async close(): Promise<void> {
