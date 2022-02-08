@@ -62,7 +62,7 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 				// Run down to the root "squashed commits" migration. We don't go
 				// any farther than that because it would require a fresh database,
 				// and that doesn't adequately test upgrade idempotency.
-				TargetVersion: schema.Definitions.Root().ID,
+				TargetVersions: []int{schema.Definitions.Root().ID},
 			},
 		},
 	}

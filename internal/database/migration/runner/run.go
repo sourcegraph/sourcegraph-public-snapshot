@@ -44,92 +44,79 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 }
 
 // runSchema applies (or unapplies) the set of migrations required to fulfill the given operation. This
-// method will attempt to coordinate with with other concurrently running instances and may block while
+// method will attempt to coordinate with other concurrently running instances and may block while
 // attempting to acquire a lock. An error is returned only if user intervention is deemed a necessity,
 // the "dirty database" condition, or on context cancellation.
-func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
+func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
 	// upgrade and revert operations into targeted up and down operations.
-	operation, err = desugarOperation(schemaContext, operation)
+	operation, err := desugarOperation(schemaContext, operation)
 	if err != nil {
 		return err
 	}
 
-	// Determine if we are upgrading to the latest schema. There are some properties around
-	// contention which we want to accept on normal "upgrade to latest" behavior, but want to
-	// alert on when a user is downgrading or upgrading to a specific version.
-	upgradingToLatest := operation.Type == MigrationOperationTypeTargetedUp && operation.TargetVersion == 0
+	gatherDefinitions := schemaContext.schema.Definitions.Up
+	if operation.Type != MigrationOperationTypeTargetedUp {
+		gatherDefinitions = schemaContext.schema.Definitions.Down
+	}
 
-	if !upgradingToLatest {
-		// If the database is dirty, then either the last attempted migration had failed,
-		// or another migrator is currently running and holding an advisory lock. If we're
-		// not migrating to the latest schema, concurrent migrations may have unexpected
-		// behavior. In either case, we'll early exit here.
-		if schemaContext.initialSchemaVersion.dirty {
-			acquired, unlock, err := schemaContext.store.TryLock(ctx)
-			if err != nil {
-				return err
-			}
-			defer func() { err = unlock(err) }()
+	// Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
+	definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.appliedVersions, operation.TargetVersions)
+	if err != nil {
+		return err
+	}
 
-			if !acquired {
-				// Some other migration process is holding the lock
-				return errMigrationContention
-			}
+	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
+	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
+	// all migrations are applied (when migrating up) or unapplied (when migrating down).
+	if byState := groupByState(schemaContext.initialSchemaVersion, definitions); len(byState.pending)+len(byState.failed) == 0 {
+		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
+			return nil
+		}
 
-			return errDirtyDatabase
+		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
+			return nil
 		}
 	}
 
-	callback := func(schemaVersion schemaVersion) error {
-		if !upgradingToLatest {
-			// Check if another instance changed the schema version before we acquired the
-			// lock. If we're not migrating to the latest schema, concurrent migrations may
-			// have unexpected behavior. We'll early exit here.
-			if schemaVersion.version != schemaContext.initialSchemaVersion.version {
-				return errMigrationContention
-			}
-		}
-		if schemaVersion.dirty {
-			// The store layer will refuse to alter a dirty database. We'll return an error
-			// here instead of from the store as we can provide a bit instruction to the user
-			// at this point.
-			return errDirtyDatabase
-		}
-
-		targetVersion := operation.TargetVersion
-		gatherDefinitions := schemaContext.schema.Definitions.UpTo
-		if operation.Type != MigrationOperationTypeTargetedUp {
-			gatherDefinitions = schemaContext.schema.Definitions.DownTo
-		}
-
-		// Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
-		definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.version, targetVersion)
-		if err != nil {
-			return err
-		}
-
-		return r.applyMigrations(ctx, operation, schemaContext, definitions)
-	}
-
-	return r.withLockedSchemaState(ctx, schemaContext, callback)
+	return r.applyMigrations(ctx, operation, schemaContext, definitions)
 }
 
-func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
-	logger.Info(
-		"Applying migrations",
-		"schema", schemaContext.schema.Name,
-		"type", operation.Type,
-		"count", len(definitions),
-	)
+// applyMigrations attempts to take an advisory lock, then re-checks the version of the database. If there
+// are still migrations to apply from the given definitions, they are applied in-order.
+func (r *Runner) applyMigrations(
+	ctx context.Context,
+	operation MigrationOperation,
+	schemaContext schemaContext,
+	definitions []definition.Definition,
+) error {
+	up := operation.Type == MigrationOperationTypeTargetedUp
 
-	for _, definition := range definitions {
-		if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
-			return err
+	callback := func(schemaVersion schemaVersion, _ definitionsByState) error {
+		// Filter the set of definitions we still need to apply given our new view of the schema
+		definitions := filterAppliedDefinitions(schemaVersion, operation, definitions)
+		if len(definitions) == 0 {
+			return nil
 		}
+
+		logger.Info(
+			"Applying migrations",
+			"schema", schemaContext.schema.Name,
+			"up", up,
+			"count", len(definitions),
+		)
+
+		for _, definition := range definitions {
+			// Apply all other types of migrations uniformly
+			if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
-	return nil
+	return r.withLockedSchemaState(ctx, schemaContext, definitions, callback)
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.
@@ -161,4 +148,33 @@ func (r *Runner) applyMigration(
 	}
 
 	return nil
+}
+
+// filterAppliedDefinitions returns a subset of the given definition slice. A definition will be included
+// in the resulting slice if we're migrating up and the migration is not applied, or if we're migrating down
+// and the migration is applied.
+//
+// The resulting slice will have the same relative order as the input slice. This function does not alter
+// the input slice.
+func filterAppliedDefinitions(
+	schemaVersion schemaVersion,
+	operation MigrationOperation,
+	definitions []definition.Definition,
+) []definition.Definition {
+	up := operation.Type == MigrationOperationTypeTargetedUp
+	appliedVersionMap := intSet(schemaVersion.appliedVersions)
+
+	filtered := make([]definition.Definition, 0, len(definitions))
+	for _, definition := range definitions {
+		if _, ok := appliedVersionMap[definition.ID]; ok == up {
+			// Either
+			// - needs to be applied and already applied, or
+			// - needs to be unapplied and not currently applied.
+			continue
+		}
+
+		filtered = append(filtered, definition)
+	}
+
+	return filtered
 }

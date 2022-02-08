@@ -13,9 +13,9 @@ type Options struct {
 }
 
 type MigrationOperation struct {
-	SchemaName    string
-	Type          MigrationOperationType
-	TargetVersion int
+	SchemaName     string
+	Type           MigrationOperationType
+	TargetVersions []int
 }
 
 type MigrationOperationType int
@@ -30,7 +30,7 @@ const (
 func desugarOperation(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	switch operation.Type {
 	case MigrationOperationTypeUpgrade:
-		return desugarUpgrade(schemaContext, operation)
+		return desugarUpgrade(schemaContext, operation), nil
 	case MigrationOperationTypeRevert:
 		return desugarRevert(schemaContext, operation)
 	}
@@ -40,7 +40,7 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 
 // desugarUpgrade converts an "upgrade" operation into a targeted up operation. We only need to
 // identify the leaves of the current schema definition to run everything defined.
-func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
+func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
 
 	logger.Info(
@@ -49,14 +49,11 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 		"leafVersions", leafVersions,
 	)
 
-	if len(leafVersions) != 1 {
-		return MigrationOperation{}, errors.Newf("nothing to upgrade")
-	}
 	return MigrationOperation{
-		SchemaName:    operation.SchemaName,
-		Type:          MigrationOperationTypeTargetedUp,
-		TargetVersion: leafVersions[0],
-	}, nil
+		SchemaName:     operation.SchemaName,
+		Type:           MigrationOperationTypeTargetedUp,
+		TargetVersions: leafVersions,
+	}
 }
 
 // desugarRevert converts a "revert" operation into a targeted down operation. A revert operation
@@ -66,12 +63,34 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 // This function selects to undo the migration that has no applied children. Repeated application of the
 // revert operation should "pop" off the last migration applied. This function will give up if the revert
 // is ambiguous, which can happen once a migration with multiple parents has been reverted. More complex
-// down migrations can be run with an targeted down operation.
+// down migrations can be run with an explicit targeted down operation.
 func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	definitions := schemaContext.schema.Definitions
 	schemaVersion := schemaContext.initialSchemaVersion
 
-	leafVersions := []int{schemaVersion.version}
+	// Construct a map from migration version to the number of its children that are also applied
+	counts := make(map[int]int, len(schemaVersion.appliedVersions))
+	for _, version := range schemaVersion.appliedVersions {
+		counts[version] = 0
+	}
+	for _, version := range schemaVersion.appliedVersions {
+		definition, ok := definitions.GetByID(version)
+		if !ok {
+			return MigrationOperation{}, errors.Newf("unknown version %d", version)
+		}
+
+		for _, parent := range definition.Parents {
+			counts[parent]++
+		}
+	}
+
+	// Find applied migrations with no applied children
+	leafVersions := make([]int, 0, len(counts))
+	for version, numChildren := range counts {
+		if numChildren == 0 {
+			leafVersions = append(leafVersions, version)
+		}
+	}
 
 	logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
@@ -89,13 +108,10 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 			return MigrationOperation{}, errors.Newf("unknown version %d", leafVersions[0])
 		}
 
-		if len(definition.Parents) != 1 {
-			return MigrationOperation{}, errors.Newf("expected one parent")
-		}
 		return MigrationOperation{
-			SchemaName:    operation.SchemaName,
-			Type:          MigrationOperationTypeTargetedDown,
-			TargetVersion: definition.Parents[0],
+			SchemaName:     operation.SchemaName,
+			Type:           MigrationOperationTypeTargetedDown,
+			TargetVersions: definition.Parents,
 		}, nil
 
 	case 0:
