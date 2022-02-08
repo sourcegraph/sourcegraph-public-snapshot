@@ -2,7 +2,10 @@
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
+Please review [the PostgreSQL](../postgres.md) documentation for a complete list of requirements.
+
 > NOTE: Only the frontend (_pgsql_) and code intelligence (_codeintel-db_) databases are supported to run externally at this time.
+
 
 ## General recommendations
 
@@ -138,3 +141,145 @@ Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) docu
 Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc). See http://www.postgresql.org/docs/current/static/libpq-envars.html for a full list.
 
 > NOTE: On Mac/Windows, if trying to connect to a PostgreSQL server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
+
+----
+
+## Postgres Permissions and Database Migrations
+
+There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
+Currently the Code Insights database uses TimescaleDB. We do not offer support for running the Code Insights database as an external service.
+
+By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
+
+This may not be acceptable in all environments. At minimum we expect that the `PGUSER` and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
+
+`ALL` privileges on the [Database object](https://www.postgresql.org/docs/current/sql-grant.html) include:
+ * `SELECT`
+ * `INSERT`
+ * `UPDATE`
+ * `DELETE`
+ * `TRUNCATE`
+ * `REFERENCES`
+ * `TRIGGER`
+ * `CREATE`
+ * `CONNECT`
+ * `TEMPORARY`
+ * `EXECUTE`
+ * `USAGE`
+
+<!--
+When https://github.com/sourcegraph/deploy-sourcegraph/pull/4058 is merged, 
+we will want to make sure these instructions are updated to reflect any additional
+actions necessary to accomodate the migrator.
+-->
+
+----
+
+### Using restricted permissions for pgsql (frontend DB)
+
+Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+
+Update these variables to match your deployment of the Sourcegraph _frontend_ database following [the guidance from the instructions section](#instructions). This database is called `pgsql` in the Docker Compose and Kubernetes deployments.
+
+```bash
+PGHOST=psql
+PGUSER=sourcegraph
+PGPASSWORD=secret
+PGDATABASE=sourcegraph
+```
+
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the Frontend Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
+
+```sql
+# Create the application database
+CREATE DATABASE $PGDATABASE;
+
+# Create the application service user
+CREATE USER $PGUSER with encrypted password '$PGPASSWORD';
+
+# Give the application service permissions to the application database
+GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
+
+# Select the application database
+\c $PGDATABASE;
+
+# Install necessary extensions
+CREATE extension citext; 
+CREATE extension hstore; 
+CREATE extension pg_stat_statements;
+CREATE extension pg_trgm;
+CREATE extension pgcrypto; 
+CREATE extension intarray;
+```
+
+After the database is configured, Sourcegraph will attempt to run migrations. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+
+These failures must be interpreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code.
+
+**Initial Schema Creation**
+
+The first migration fails since it attempts to add `COMMENT`s to installed extensions. You may see the following error message:
+
+```
+failed to run migration for schema "frontend": failed upgrade migration 1528395834: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
+```
+
+In this case, locate the UP [migration 1528395834](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/frontend/1528395834_squashed_migrations.up.sql) and apply all SQL after the final `COMMENT ON EXTENSION` command following the [dirty database procedure](https://docs.sourcegraph.com/admin/how-to/dirty_database).
+
+**Dropping the `sg_service` role**
+
+The `sg_service` database role is a legacy role that should be removed from all Sourcegraph installations at this time. Migration `remove_sg_service_role` attempts to enforce this with a `DROP ROLE` command. The `PGUSER` does not have permissions to perform this action, therefore the migration fails. You can safely skip this migration.
+
+----
+
+### Using restricted permissions for CodeIntel DB
+
+CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+
+```bash
+CODEINTEL_PGHOST=psql2
+CODEINTEL_PGUSER=sourcegraph
+CODEINTEL_PGPASSWORD=secret
+CODEINTEL_PGDATABASE=sourcegraph-codeintel
+CODEINTEL_PGSSLMODE=require
+```
+
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the CodeIntel Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
+
+```sql
+# Create the CodeIntel database
+CREATE DATABASE $CODEINTEL_PGDATABASE;
+
+# Create the CodeIntel service user
+CREATE USER $CODEINTEL_PGUSER with encrypted password '$CODEINTEL_PGPASSWORD';
+
+# Give the CodeIntel  permissions to the application database
+GRANT ALL PRIVILEGES ON DATABASE $CODEINTEL_PGDATABASE to $CODEINTEL_PGUSER;
+
+# Select the application database
+\c $CODEINTEL_PGDATABASE;
+
+# Install necessary extensions
+CREATE extension citext; 
+CREATE extension hstore; 
+CREATE extension pg_stat_statements;
+CREATE extension pg_trgm;
+CREATE extension pgcrypto; 
+CREATE extension intarray;
+```
+After the database is configured, Sourcegraph will attempt to run migrations, this time using the CodeIntel DB. There are a few migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+
+These failures must be intepreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code. The `codeintel_schema_migrations` table should be consulted for dirty migrations in this case.
+
+**Initial CodeIntel schema creation**
+
+Like the failure in the Sourcegraph DB (pgsql) migrations, the CodeIntel initial migration attempts to `COMMENT` on an extension. Resolve this in a similar manner by executing the SQL in the `1000000015_squashed_migrations.up` migration after the `COMMENT` SQL statement.
+
+The following error is a nudge to check the `codeintel_schema_migrations` table in `$CODEINTEL_PGDATABASE`.
+
+```
+Failed to connect to codeintel database: 1 error occurred:
+	* dirty database: schema is marked as dirty but no migrator instance appears to be running
+
+The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
+```
