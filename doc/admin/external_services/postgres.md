@@ -172,7 +172,7 @@ actions necessary to accomodate the migrator.
 
 ----
 
-### Workaround for pgsql (sourcegraph)
+### Using restricted permissions for pgsql (frontend DB)
 
 Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 
@@ -229,7 +229,7 @@ The `sg_service` database role is a legacy role that should be removed from all 
 
 ----
 
-### Workaround for CodeIntel DB
+### Using restricted permissions for CodeIntel DB
 
 CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 
