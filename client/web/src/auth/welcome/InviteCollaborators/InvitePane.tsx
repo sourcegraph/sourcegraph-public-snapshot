@@ -79,7 +79,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                 setInviteError(error)
             }
         },
-        [loadingInvites, successfulInvites]
+        [loadingInvites, successfulInvites, inviteEmailToSourcegraph]
     )
     const invitePersonClicked = useCallback(
         (person: InvitableCollaborator) => async (): Promise<void> => {
