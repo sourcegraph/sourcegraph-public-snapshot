@@ -136,3 +136,4 @@ The list below designates source code exempt from the testing guidelines because
 
 - [DevX Team](https://handbook.sourcegraph.com/engineering/enablement/dev-experience) owns build and test infrastructure.
 - [Frontend Platform Team](https://handbook.sourcegraph.com/engineering/enablement/frontend-platform) owns any tests that are driven through the browser.
+- All other tests are owned by the teams responsible for the domain being tested. 
