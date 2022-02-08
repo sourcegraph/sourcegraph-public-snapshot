@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewFilterJob creates a job that filters the streamed results
@@ -33,7 +32,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 
 	var (
 		mu   sync.Mutex
-		errs = &multierror.Error{}
+		errs = &errors.MultiError{}
 	)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
@@ -41,7 +40,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
 		if err != nil {
 			mu.Lock()
-			errs = multierror.Append(err)
+			errs = errors.Append(err)
 			mu.Unlock()
 		}
 		stream.Send(event)
@@ -49,7 +48,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 
 	alert, err := s.child.Run(ctx, db, filteredStream)
 	if err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 	return alert, errs.ErrorOrNil()
 }
@@ -66,7 +65,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	}
 
 	a := actor.FromContext(ctx)
-	errs := &multierror.Error{}
+	errs := &errors.MultiError{}
 
 	// Filter matches in place
 	filtered := matches[:0]
@@ -83,7 +82,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 			}
 			perms, err := authz.ActorPermissions(ctx, checker, a, content)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 
@@ -93,7 +92,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 		case *result.CommitMatch:
 			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 			if allowed {

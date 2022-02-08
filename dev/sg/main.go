@@ -9,13 +9,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -119,9 +119,10 @@ func checkSgVersion() {
 
 	out = strings.TrimSpace(out)
 	if out != "" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "HEY! New version of sg available. Run `./dev/sg/install.sh` to install it."))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  HEY! New version of sg available. Run './dev/sg/install.sh' to install it.  "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 	}
 }
 

@@ -1,7 +1,7 @@
 package gqltestutil
 
 import (
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CreateSearchContextInput struct {

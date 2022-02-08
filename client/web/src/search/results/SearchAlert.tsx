@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Alert } from '@sourcegraph/wildcard'
 

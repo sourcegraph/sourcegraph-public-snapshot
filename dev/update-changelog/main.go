@@ -10,12 +10,10 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-
-	"github.com/cockroachdb/errors"
-
-	// "net"
 	"os"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // a semantic representation of a given change set.

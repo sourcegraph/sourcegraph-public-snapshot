@@ -575,8 +575,6 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
-	// EnableRepoUpdateIntervalJitter description: Enable a jitter of 5% in the update interval of a repo in the schedule
-	EnableRepoUpdateIntervalJitter bool `json:"enableRepoUpdateIntervalJitter,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
@@ -1212,6 +1210,19 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
+// OrganizationInvitations description: Configuration for organization invitations.
+type OrganizationInvitations struct {
+	// ExpiryTime description: Time before the invitation expires, in hours (experimental, not enforced at the moment).
+	ExpiryTime int `json:"expiryTime,omitempty"`
+	// SigningKey description: HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.
+	// More documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC
+	//
+	// If not provided, will fall back to legacy invitation to an organization.
+	//
+	// The legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.
+	SigningKey string `json:"signingKey"`
+}
+
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
 	Repos []string `json:"repos"`
@@ -1742,6 +1753,8 @@ type SiteConfiguration struct {
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
+	// OrganizationInvitations description: Configuration for organization invitations.
+	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).

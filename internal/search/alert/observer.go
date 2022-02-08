@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -22,6 +20,7 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Observer struct {
@@ -157,14 +156,14 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	}
 }
 
-// multierrorToAlert converts a multierror.Error into the highest priority alert
+// multierrorToAlert converts an error.MultiError into the highest priority alert
 // for the errors contained in it, and a new error with all the errors that could
 // not be converted to alerts.
-func (o *Observer) multierrorToAlert(ctx context.Context, me *multierror.Error) (resAlert *search.Alert, resErr error) {
+func (o *Observer) multierrorToAlert(ctx context.Context, me *errors.MultiError) (resAlert *search.Alert, resErr error) {
 	for _, err := range me.Errors {
 		alert, err := o.errorToAlert(ctx, err)
 		resAlert = maxAlertByPriority(resAlert, alert)
-		resErr = multierror.Append(resErr, err)
+		resErr = errors.Append(resErr, err)
 	}
 
 	return resAlert, resErr
@@ -189,7 +188,7 @@ func (o *Observer) Error(ctx context.Context, err error) {
 	}
 
 	// Track the unexpected error for reporting when calling Done.
-	o.err = multierror.Append(o.err, err)
+	o.err = errors.Append(o.err, err)
 }
 
 // update to alert if it is more important than our current alert.
@@ -199,7 +198,7 @@ func (o *Observer) update(alert *search.Alert) {
 	}
 }
 
-// Done returns the highest priority alert and a multierror.Error containing
+// Done returns the highest priority alert and an error.MultiError containing
 // all errors that could not be converted to alerts.
 func (o *Observer) Done() (*search.Alert, error) {
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
@@ -219,7 +218,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return nil, nil
 	}
 
-	var e *multierror.Error
+	var e *errors.MultiError
 	if errors.As(err, &e) {
 		return o.multierrorToAlert(ctx, e)
 	}

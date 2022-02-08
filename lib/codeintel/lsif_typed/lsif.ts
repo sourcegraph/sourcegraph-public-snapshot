@@ -886,7 +886,8 @@ export namespace lib.codeintel.lsif_typed {
             Method = 4,
             TypeParameter = 5,
             Parameter = 6,
-            Meta = 7
+            Meta = 7,
+            Local = 8
         }
     }
     export class SymbolInformation extends pb_1.Message {

@@ -1,7 +1,8 @@
 import * as sourcegraph from 'sourcegraph'
 
+import { renderMarkdown } from '@sourcegraph/common'
+
 import { LinkPreviewMerged } from '../../api/extension/extensionHostApi'
-import { renderMarkdown } from '../../util/markdown'
 
 /** Options for {@link applyLinkPreview}. */
 export interface ApplyLinkPreviewOptions {

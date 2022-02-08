@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Sourcer converts the given ExternalService to a Source whose yielded Repos
@@ -161,11 +159,11 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	var e *multierror.Error
+	var e *errors.MultiError
 	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
-		return (&multierror.Error{
+		return (&errors.MultiError{
 			Errors:      e.Errors,
 			ErrorFormat: sourceErrorFormatFunc,
 		}).Error()
@@ -206,13 +204,13 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 
 	var (
 		repos []*types.Repo
-		errs  *multierror.Error
+		errs  *errors.MultiError
 	)
 
 	for res := range results {
 		if res.Err != nil {
 			for _, extSvc := range res.Source.ExternalServices() {
-				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
 		}

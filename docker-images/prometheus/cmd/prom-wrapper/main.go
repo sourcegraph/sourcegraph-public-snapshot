@@ -14,7 +14,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
@@ -23,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // prom-wrapper configuration options

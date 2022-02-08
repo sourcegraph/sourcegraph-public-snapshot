@@ -5,12 +5,11 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewZipVFS downloads a zip archive from a URL (or fetches from the local cache
