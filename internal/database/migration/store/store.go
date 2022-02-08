@@ -119,21 +119,14 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		"schema_migrations":              1528395834,
 		"codeintel_schema_migrations":    1000000015,
 		"codeinsights_schema_migrations": 1000000000,
+		"test_migrations_table2":         1000000000, // TODO - do better
 	}
 	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
 		queries = append(queries, sqlf.Sprintf(`
 			WITH
-			schema_version AS (
-				SELECT * FROM %s LIMIT 1
-			),
-			min_log AS (
-				SELECT MIN(version) AS version
-				FROM migration_logs
-				WHERE schema = %s
-			),
-			target_version AS (
-				SELECT MIN(version) as version FROM schema_version UNION SELECT verison FROM min_log
-			)
+				schema_version AS (SELECT * FROM %s LIMIT 1),
+				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
+				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
 			INSERT INTO migration_logs (
 				migration_logs_schema_version,
 				schema,
