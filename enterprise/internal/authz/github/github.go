@@ -434,7 +434,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var members []*github.Collaborator
-			if group.Team == "" {
+			if group.Org != "" {
 				members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
 			} else {
 				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
