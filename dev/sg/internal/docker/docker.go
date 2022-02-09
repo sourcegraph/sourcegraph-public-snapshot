@@ -3,7 +3,6 @@ package docker
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -100,7 +99,7 @@ func getStoreProvider(serverAddress string) (string, error) {
 		return "", errors.Wrap(err, "failed to get user home directory")
 	}
 
-	data, err := ioutil.ReadFile(filepath.Join(homeDir, ".docker", "config.json"))
+	data, err := os.ReadFile(filepath.Join(homeDir, ".docker", "config.json"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read docker config")
 	}
