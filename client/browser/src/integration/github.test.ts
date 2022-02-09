@@ -206,7 +206,7 @@ describe('GitHub', () => {
             },
         })
 
-        let isRedirectedToDefinition = false
+        let hasRedirectedToDefinition = false
 
         // For some reason in test requested definition URL is different from the actual one:
         // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6' instead of
@@ -218,7 +218,7 @@ describe('GitHub', () => {
             )
             .intercept((request, response) => {
                 response.sendStatus(200)
-                isRedirectedToDefinition = true
+                hasRedirectedToDefinition = true
             })
 
         testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
@@ -266,7 +266,7 @@ describe('GitHub', () => {
         // 2. Check that token click does not do anything by default
         await token.click()
         await driver.page.waitForTimeout(1000)
-        assert(!isRedirectedToDefinition, 'Expected to not be redirected to definition')
+        assert(!hasRedirectedToDefinition, 'Expected to not be redirected to definition')
 
         // 3. Enable click-to-def setting and check that it redirects to the proper page
         await driver.setClickGoToDefOptionFlag(true)
@@ -282,7 +282,7 @@ describe('GitHub', () => {
         await token.click()
         await driver.page.waitForTimeout(1000)
 
-        assert(isRedirectedToDefinition, 'Expected to be redirected to definition')
+        assert(hasRedirectedToDefinition, 'Expected to be redirected to definition')
     })
 
     describe('Pull request pages', () => {
