@@ -31,7 +31,6 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -71,8 +70,7 @@ export interface RepoRevisionContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -109,8 +107,7 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        ExtensionAlertProps,
-        GlobalCoolCodeIntelProps {
+        ExtensionAlertProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]

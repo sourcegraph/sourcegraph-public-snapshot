@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -36,12 +36,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import {
-    CoolCodeIntel,
-    CoolClickedToken,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from './global/CoolCodeIntel'
+import { CoolCodeIntel } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -62,7 +57,7 @@ import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromURL } from './stores'
+import { setQueryStateFromURL, useExperimentalFeatures } from './stores'
 import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -194,13 +189,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     //     setTosAccepted(true)
     // }, [])
 
-    // Experimental reference panel
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
-        props.history.push(locationWithoutViewState(props.location))
-        onTokenClick(token)
-    }
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
+    const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -221,9 +210,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
-        // Experimental reference panel
-        coolCodeIntelEnabled,
-        onTokenClick: coolCodeIntelEnabled ? onTokenClickRemoveViewState : undefined,
     }
 
     return (
@@ -304,17 +290,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            {coolCodeIntelEnabled && (
-                <CoolCodeIntel
-                    {...props}
-                    {...themeProps}
-                    onClose={() => {
-                        onTokenClick(undefined)
-                    }}
-                    onTokenClick={onTokenClick}
-                    clickedToken={clickedToken}
-                />
-            )}
+            {coolCodeIntelEnabled && <CoolCodeIntel {...props} {...themeProps} />}
         </div>
     )
 }

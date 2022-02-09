@@ -9,13 +9,15 @@ import { useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
+<<<<<<< HEAD
 import { isErrorLike } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
+=======
+>>>>>>> 05306a0ca6 (Changes)
 import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import {
     RepoSpec,
@@ -65,7 +67,6 @@ import styles from './CoolCodeIntel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
 export interface GlobalCoolCodeIntelProps {
-    coolCodeIntelEnabled: boolean
     onTokenClick?: (clickedToken: CoolClickedToken) => void
 }
 
@@ -76,6 +77,7 @@ interface CoolCodeIntelProps
     clickedToken?: CoolClickedToken
 }
 
+<<<<<<< HEAD
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
@@ -90,6 +92,10 @@ export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps & { onClo
     >
         <CoolCodeIntelResizablePanel {...props} />
     </ErrorBoundary>
+=======
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => (
+    <CoolCodeIntelResizablePanel {...props} />
+>>>>>>> 05306a0ca6 (Changes)
 )
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
@@ -740,20 +746,21 @@ export function locationWithoutViewState(location: H.Location): H.LocationDescri
     return result
 }
 
-const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => {
-    let token = props.clickedToken
-
+export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
     const history = useHistory()
     const location = useLocation()
+
+    // Experimental reference panel
+    const [token, setToken] = useState<CoolClickedToken>()
 
     const [closed, close] = useState(false)
     const handlePanelClose = useCallback(() => {
         // Signal up that panel is closed
-        props.onClose()
+        setToken(undefined)
         // Remove 'viewState' from location
         history.push(locationWithoutViewState(location))
         // close(true)
-    }, [props, history, location])
+    }, [history, location])
 
     useEffect(() => {
         if (token) {
@@ -776,13 +783,6 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & 
 
     const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
 
-    const tokenSameAsUrl =
-        token &&
-        token.repoName === repoName &&
-        token.line === line &&
-        token.character === character &&
-        token.filePath === filePath
-
     const haveFileLocationAndViewState =
         line &&
         character &&
@@ -790,9 +790,8 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & 
         viewState &&
         (viewState === 'references' || viewState.startsWith('implementations_'))
 
-    // If we have info in URL, no clicked token, or the clicked token is not the
-    // same as what's in the URL, we use what's in the URL as token
-    if (haveFileLocationAndViewState && (!token || !tokenSameAsUrl)) {
+    // If we have info in URL and no clicked token, we use what's in the URL as token
+    if (haveFileLocationAndViewState && !token) {
         const urlBasedToken = {
             repoName,
             line,
@@ -803,10 +802,17 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & 
             return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
         }
 
-        token = { ...urlBasedToken, revision, commitID }
+        setToken({ ...urlBasedToken, revision, commitID })
     }
 
-    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={handlePanelClose} />
+    return (
+        <ResizableCoolCodeIntelPanel
+            {...props}
+            clickedToken={token}
+            handlePanelClose={handlePanelClose}
+            onTokenClick={setToken}
+        />
+    )
 }
 
 export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<

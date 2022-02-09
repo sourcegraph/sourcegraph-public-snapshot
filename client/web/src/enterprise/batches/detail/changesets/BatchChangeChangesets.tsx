@@ -308,7 +308,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
-                        coolCodeIntelEnabled={false}
                     />
                 )}
             </div>

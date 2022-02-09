@@ -10,6 +10,7 @@ import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../../repo/RepoContainer'
+import { useExperimentalFeatures } from '../../stores'
 
 import styles from './WebHoverOverlay.module.scss'
 
@@ -46,7 +47,8 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken, onTokenClick, coolCodeIntelEnabled } = props
+    const { onHoverShown, hoveredToken, onTokenClick } = props
+    const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length

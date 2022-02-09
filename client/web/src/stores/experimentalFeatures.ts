@@ -17,6 +17,7 @@ const defaultSettings: SettingsExperimentalFeatures = {
     showSearchContextManagement: true,
     showSearchNotebook: false,
     codeMonitoringWebHooks: false,
+    coolCodeIntel: false,
 }
 
 export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))
