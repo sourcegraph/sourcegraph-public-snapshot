@@ -49,24 +49,32 @@ switch ($github.event_name) {
 
                 # Post Slack message
 
-                $size = $item.Fields['Size 🔵']
-                $iterationTitle = $item.content.milestone.title
-                $issueUrl = $item.content.url
-
                 $stats = Find-GitHubIssue "org:sourcegraph is:issue milestone:`"$($item.content.milestone.title)`"" |
                     Get-GitHubBetaProjectItem |
                     Where-Object { $_.project.id -eq $ProjectNodeId -and $_.Fields['Status'] -ne 'Done' } |
                     ForEach-Object { $_.Fields['Size 🔵'] ?? 1 } |
                     Measure-Object -AllStats
 
-                $message = "*$proposer* proposed a new issue $($size ? "of *size $size*" : "without a size") for iteration *$($iterationTitle)*:`n" +
-                    "$issueUrl`n" +
-                    "`n" +
+                $color = if ($item.content.state -eq 'OPEN') { '#1A7F37' } else { '#8250DF' }
+
+                $message = "*$proposer* proposed a new issue for iteration <$($item.content.milestone.url)|$($item.content.milestone.title)>.`n" +
                     "There are now $($stats.Sum) points of open issues in the iteration."
 
-                Write-Information "Sending Slack message:`n$message"
-
-                Send-SlackMessage -Text $message -Username 'Iteration Bot' -IconEmoji ':robot:' -Channel $SlackChannel -Uri $SlackWebhookUri -UnfurlLinks $true
+                New-SlackMessageAttachment `
+                    -Pretext $message `
+                    -Color $color `
+                    -AuthorName $issue.content.author.login `
+                    -AuthorIcon $issue.content.author.avatarUrl `
+                    -Title "#$($item.content.number) $($item.content.title)" `
+                    -TitleLink $item.content.url `
+                    -Text $item.content.bodyText.Substring(0, [System.Math]::Min(1000, $item.content.bodyText.Length)) `
+                    -Fields @(
+                        @{ title = 'Size'; value = $item.Fields['Size 🔵']; short = $true },
+                        @{ title = 'Importance'; value = $item.Fields['Importance']; short = $true },
+                        @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true }
+                    ) |
+                    New-SlackMessage -Username 'Iteration Bot' -IconEmoji ':robot:' -Channel $SlackChannel |
+                    Send-SlackMessage -Uri $SlackWebhookUri
             }
         } else {
             # If issue was closed or reopened, update Status column
