@@ -47,6 +47,7 @@ var (
 	UndoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out)
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out)
 	validateCommand = cliutil.Validate("sg validate", makeRunner, stdout.Out)
+	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, stdout.Out)
 
 	leavesFlagSet = flag.NewFlagSet("sg migration leaves", flag.ExitOnError)
 	leavesCommand = &ffcli.Command{
@@ -86,6 +87,7 @@ var (
 			UndoCommand,
 			downToCommand,
 			validateCommand,
+			addLogCommand,
 			leavesCommand,
 			squashCommand,
 		},
@@ -97,7 +99,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
-	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory), nil
+	return cliutil.NewShim(connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory)), nil
 }
 
 func addExec(ctx context.Context, args []string) error {
