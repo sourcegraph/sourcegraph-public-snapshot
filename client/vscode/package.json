@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph",
   "displayName": "Sourcegraph",
-  "version": "2.0.0",
+  "version": "2.0.7",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -115,21 +115,21 @@
           ],
           "default": "",
           "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+        },
+        "sourcegraph.remoteUrlReplacements": {
+          "type": [
+            "object"
+          ],
+          "default": {},
+          "description": "For each item in this object, replace key with value in the remote url."
+        },
+        "sourcegraph.defaultBranch": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "Always open local files on Sourcegraph web at this default branch."
         }
-      },
-      "sourcegraph.remoteUrlReplacements": {
-        "type": [
-          "object"
-        ],
-        "default": {},
-        "description": "For each item in this object, replace key with value in the remote url."
-      },
-      "sourcegraph.defaultBranch": {
-        "type": [
-          "string"
-        ],
-        "default": "",
-        "description": "Always open local files on Sourcegraph web at this default branch."
       }
     },
     "keybindings": [
@@ -183,17 +183,17 @@
           "group": "navigation"
         }
       ]
+    },
+    "scripts": {
+      "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+      "test": "echo \"No tests exist yet\" && exit 1",
+      "package": "echo \"package script not implemented yet\" && exit 1",
+      "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+      "build": "yarn task:gulp webpack",
+      "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
+      "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
+      "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
+      "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
     }
-  },
-  "scripts": {
-    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "test": "echo \"No tests exist yet\" && exit 1",
-    "package": "echo \"package script not implemented yet\" && exit 1",
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "build": "yarn task:gulp webpack",
-    "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
-    "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
-    "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
-    "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
   }
 }
