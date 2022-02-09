@@ -260,7 +260,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		return nil, errors.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
 	}
 
-	invitation, err := r.db.OrgInvitations().GetByID(ctx, id)
+	invitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
