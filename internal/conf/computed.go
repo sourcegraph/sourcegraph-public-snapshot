@@ -39,14 +39,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	}
 }
 
-func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var config []*schema.AWSCodeCommitConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindAWSCodeCommit, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var config []*schema.BitbucketServerConnection
 	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
@@ -254,14 +246,6 @@ func APIDocsSearchIndexingEnabled() bool {
 
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
-func AndOrQueryEnabled() bool {
-	val := ExperimentalFeatures().AndOrQuery
 	if val == "" {
 		return true
 	}
