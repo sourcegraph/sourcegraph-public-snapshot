@@ -84,13 +84,6 @@ describe('GitHub', () => {
                     },
                 },
             }),
-            SiteProductVersion: () => ({
-                site: {
-                    productVersion: '129819_2022-02-08_baac612f829f',
-                    buildVersion: '129819_2022-02-08_baac612f829f',
-                    hasCodeIntelligence: true,
-                },
-            }),
         })
 
         // Ensure that the same assets are requested in all environments.
