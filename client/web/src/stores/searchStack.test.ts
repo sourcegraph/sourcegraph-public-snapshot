@@ -20,6 +20,7 @@ describe('search stack store', () => {
     })
 
     const exampleEntry: SearchStackEntry = {
+        id: 0,
         type: 'search',
         query: 'test',
         patternType: SearchPatternType.literal,
@@ -49,6 +50,7 @@ describe('search stack store', () => {
 
         it('updates an existing file entry', () => {
             const entry: SearchStackEntry = {
+                id: 0,
                 type: 'file',
                 path: 'path/to/file',
                 repo: 'test',
