@@ -15,6 +15,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 - Add "https://" URL input placeholder [#pull/30282](https://github.com/sourcegraph/sourcegraph/pull/30282), [#issues/14723](https://github.com/sourcegraph/sourcegraph/issues/14723)
 - Add filtering of browser extension dropdown duplicated URLs [#pull/30674](https://github.com/sourcegraph/sourcegraph/pull/30674), [#issues/30673](https://github.com/sourcegraph/sourcegraph/issues/30673)
+- Add tracking of inbound traffic from browser extension/code host integration [#pull/30170](https://github.com/sourcegraph/sourcegraph/pull/30170), [#issues/27082](https://github.com/sourcegraph/sourcegraph/issues/27082)
 
 ## Chrome & Firefox v22.1.25.1535, Safari v1.10
 

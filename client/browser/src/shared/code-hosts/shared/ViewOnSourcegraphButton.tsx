@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
@@ -73,10 +74,10 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
-    const url = new URL(
-        `/${rawRepoName}${revision ? `@${revision}` : ''}?utm_source=${getPlatformName()}`,
-        sourcegraphURL
-    ).href
+    const url = createURLWithUTM(new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}`, sourcegraphURL), {
+        utm_source: getPlatformName(),
+        utm_campaign: 'view-on-sourcegraph',
+    }).href
 
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)

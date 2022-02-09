@@ -5,6 +5,7 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
@@ -102,7 +103,12 @@ describe('GitLab', () => {
                             '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                         )?.href
                 ),
-                `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${driver.browserType}-extension`
+                createURLWithUTM(
+                    new URL(
+                        `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                    ),
+                    { utm_source: `${driver.browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                ).href
             )
         })
     })
