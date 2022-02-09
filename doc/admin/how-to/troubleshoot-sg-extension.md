@@ -30,7 +30,41 @@ You can upgrade an extension in your private extension registry by simpily runni
 
 The red dot indicates that either the Sourcegraph URL entered is invalid, or you are currently on a private repository. Visit our [browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#make-it-work-for-private-code) for more information about enabling Sourcegraph to work with private repositories.
 
-## Extension Specific FAQs
+## Extension Specific
+
+### VS Code Extension
+
+#### How to use the VS Code Extension with your private Sourcegraph instance
+The extension is connected to the [Sourcegraph public instance](https://sourcegraph.com/) by default. You can also add the following settings in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to connect the extension to your private instance: 
+1. `sourcegraph.url`: the instance url of your private instance 
+2. `sourcegraph.accessToken`: an access token created by your private Sourcegraph instance
+Note: If only an access token is configured, the extension will try to run searches on our public instance using the token instead of the corresponding instance. 
+
+#### How to update the Sourcegraph VS Code Extension to the latest version
+![image](https://user-images.githubusercontent.com/68532117/153280003-df575725-22c2-4a5a-b94b-2137790da039.png)
+Search for `Sourcegraph` in your VS Code Extensions Marketplace. From there you can check if an update is available for the extension.
+
+#### Sign-up Banner remains visible when a valid access token has been provided in V2
+
+A fix has been implemented in v2.0.6. Please update your extension to the latest version and restart VS Code by clicking on `Code` > `Quit Visual Studio Code`. This is to restart VS Code using the updated version of the extension.
+
+#### The `sourcegraph.defaultBranch` and `sourcegraph.remoteUrlReplacements`settings are not working in V2
+
+A fix has been implemented in v2.0.7. Please update your extension to the latest version and restart VS Code by clicking on `Code` > `Quit Visual Studio Code`. This is to restart VS Code using the updated version of the extension.
+
+#### Restarting vs Reloading VS Code
+Please note that reloading VS Code does not have the same effect as restarting (`Code` > `Quit Visual Studio Code`) the application. You must restart the application after upgrading the extension for VS Code to run in the newest version.
+
+#### Error: Could not register service workers: InvalidStateError: Failed to register a ServiceWorker: The document is in an invalid state.
+
+This error message comes from VS Code. Restarting the editor should resolve the issue as reported by a VS Code user [here](https://github.com/microsoft/vscode/issues/128649).
+
+#### Error: The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.
+
+1. It is possible that the provided Access Token is not valid for the instance that your VS Code is connected to. Please try updating both the url and access token in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to see if the issue persists.
+2. If the issue persists, try connecting using a CORS proxy or turning off your VPN. A CORS proxy might be required for instances running in version below [3.26.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-36-0). 
+
+### Sourcegraph Extensions
 
 #### Sonarqube: Error fetching Sonarqube data: Error: Forbidden
 1. Look for error messages in your browser's  `Network panel`
