@@ -109,8 +109,11 @@ export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/pos
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
 
 # Install richgo for better output
-go install github.com/kyoh86/richgo@latest
+# We are using this fork for now, until I open a PR to merge it upstream
+go install github.com/jhchabran/richgo@installable
 asdf reshim golang
+RICHGO_FORCE_CONFIG_PATH="$(pwd)/.ci-richstyle.yml)"
+export RICHGO_FORCE_CONFIG_PATH
 
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
