@@ -64,8 +64,8 @@ EOF
 
   echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
 
-  unest JEST_JUNIT_OUTPUT_DIR
-  unest JEST_JUNIT_OUTPUT_NAME
+  unset JEST_JUNIT_OUTPUT_DIR
+  unset JEST_JUNIT_OUTPUT_NAME
   return "$test_exit_code"
 }
 
