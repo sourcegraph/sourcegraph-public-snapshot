@@ -19,7 +19,15 @@ import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourceg
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, Button, RadioButton, TextArea, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import {
+    Container,
+    Button,
+    RadioButton,
+    TextArea,
+    useEventObservable,
+    Alert,
+    ProductStatusBadge,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { getExperimentalFeatures } from '../../stores'
@@ -36,12 +44,16 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
+import { Link } from '@sourcegraph/wildcard'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
 const VALIDATE_NAME_REGEXP = /^[\w./-]+$/
 
 type SelectedVisibility = 'public' | 'private'
+
+type ContextType = 'dynamic' | 'static'
 
 interface VisibilityRadioButton {
     visibility: SelectedVisibility
@@ -138,6 +150,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
+    const [contextType, setContextType] = useState<ContextType>(searchContext?.query?.length > 0 ? 'dynamic' : 'static')
     const [query, setQuery] = useState(searchContext?.query || props.query || '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
@@ -387,26 +400,33 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
                 <div>
-                    <div className="mb-1">Repositories and revisions</div>
+                    <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">
-                        Define which repositories and revisions should be included in this search context.
+                        For a dynamic set of repositories and revisions, such as for project or team repos, use a{' '}
+                        <Link
+                            target="_blank"
+                            rel="noopener"
+                            to="https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                        >
+                            search query
+                        </Link>
+                        . For a static set, use JSON configuration.
                     </div>
-                    <SearchContextRepositoriesFormArea
-                        {...props}
-                        onChange={onRepositoriesConfigChange}
-                        validateRepositories={validateRepositories}
-                        repositories={searchContext?.repositories}
-                    />
-                </div>
-                {experimentalFeatures.searchContextsQuery && (
                     <div>
-                        <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                        <div className="mb-1">Query</div>
-                        <div className="text-muted mb-3">
-                            Alternatively, define which repositories, revisions and file paths are included in this
-                            search context with a Sourcegraph search query.
-                        </div>
-
+                        <RadioButton
+                            id={`search_context_type_dynamic`}
+                            className={styles.searchContextFormTypeRadio}
+                            name="search_context_type"
+                            value="dynamic"
+                            checked={contextType === 'dynamic'}
+                            required={true}
+                            onChange={() => setContextType('dynamic')}
+                            label={
+                                <>
+                                    Search query <ProductStatusBadge status="beta" className="ml-1" />
+                                </>
+                            }
+                        />
                         <div className={styles.searchContextFormQuery}>
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
@@ -420,8 +440,41 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 preventNewLine={false}
                             />
                         </div>
+                        <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
+                            <small>
+                                Valid filters: <SyntaxHighlightedSearchQuery query="repo" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="rev" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="file" /> ,{' '}
+                                <SyntaxHighlightedSearchQuery query="lang" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="case" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="fork" />, and{' '}
+                                <SyntaxHighlightedSearchQuery query="visibility" />.{' '}
+                                <SyntaxHighlightedSearchQuery query="OR" /> and{' '}
+                                <SyntaxHighlightedSearchQuery query="AND" /> expressions are also allowed.
+                            </small>
+                        </div>
                     </div>
-                )}
+                    <div className="mt-3">
+                        <RadioButton
+                            id={`search_context_type_static`}
+                            className={styles.searchContextFormTypeRadio}
+                            name="search_context_type"
+                            value="static"
+                            checked={contextType === 'static'}
+                            required={true}
+                            onChange={() => setContextType('static')}
+                            label={<> JSON configuration </>}
+                        />
+                        <div className={styles.searchContextFormStaticConfig}>
+                            <SearchContextRepositoriesFormArea
+                                {...props}
+                                onChange={onRepositoriesConfigChange}
+                                validateRepositories={validateRepositories}
+                                repositories={searchContext?.repositories}
+                            />
+                        </div>
+                    </div>
+                </div>
             </Container>
             <div className="d-flex">
                 <Button
