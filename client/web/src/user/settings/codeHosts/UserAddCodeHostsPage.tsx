@@ -335,7 +335,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                     window.location.assign(
                                         `/.auth/github/login?pc=${encodeURIComponent(
                                             `https://github.com/::${window.context.githubAppCloudClientID}`
-                                        )}&op=createCodeHostConnection`
+                                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
                                     )
                                 } else {
                                     defaultNavigateToAuthProvider(kind)
