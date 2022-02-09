@@ -117,18 +117,28 @@ export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
     }, [newEntry, enableSearchStack])
 }
 
-export function addSearchStackEntry(): void {
+/**
+ * Adds the current value of addableEntry to the list of items.
+ * If that value is a file entry, then a hint can be provided to control whether
+ * the whole file or the line range should be added.
+ */
+export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'file' | 'range'): void {
     const { addableEntry, entries } = useSearchStackState.getState()
-    if (addableEntry) {
-        const newState = {
-            addableEntry: null,
-            entries: [...entries, { ...addableEntry, id: nextEntryID++ }],
-            canRestoreSession: entries.length === 0,
-        }
 
-        persistSession(newState.entries)
-        useSearchStackState.setState(newState)
+    let entry = newEntry
+    if (entry.type === 'file' && entry.lineRange && hint === 'file') {
+        entry = { ...entry, lineRange: null }
     }
+
+    const newState = {
+        // Clear addableEntry if that's the entry we are adding
+        addableEntry: addableEntry === newEntry ? null : addableEntry,
+        entries: [...entries, { ...entry, id: nextEntryID++ }],
+        canRestoreSession: entries.length === 0,
+    }
+
+    persistSession(newState.entries)
+    useSearchStackState.setState(newState)
 }
 
 export function restorePreviousSession(): void {

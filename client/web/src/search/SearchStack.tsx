@@ -175,7 +175,13 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
     switch (entry.type) {
         case 'search':
             return (
-                <Button variant="primary" size="sm" title="Add search" className="m-3" onClick={addSearchStackEntry}>
+                <Button
+                    variant="primary"
+                    size="sm"
+                    title="Add search"
+                    className="m-3"
+                    onClick={() => addSearchStackEntry(entry)}
+                >
                     + <SearchIcon className="icon-inline" /> Search
                 </Button>
             )
@@ -187,7 +193,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                         size="sm"
                         title="Add file"
                         className="flex-1 m-1"
-                        onClick={addSearchStackEntry}
+                        onClick={() => addSearchStackEntry(entry, 'file')}
                     >
                         + <FileDocumentIcon className="icon-inline" /> File
                     </Button>
@@ -197,7 +203,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                             size="sm"
                             title="Add line range"
                             className="flex-1 m-1"
-                            onClick={addSearchStackEntry}
+                            onClick={() => addSearchStackEntry(entry, 'range')}
                         >
                             + <CodeBracketsIcon className="icon-inline" /> Range (
                             {entry.lineRange.endLine - entry.lineRange.startLine})
