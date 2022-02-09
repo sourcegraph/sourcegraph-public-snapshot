@@ -20,7 +20,7 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-func Parse(path string, credetials credentials.Credentials) error {
+func Parse(path string, creds credentials.Credentials) error {
 
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
@@ -37,7 +37,7 @@ func Parse(path string, credetials credentials.Credentials) error {
 
 	err := kio.Pipeline{
 		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{imageFilter{credential: &credetials}},
+		Filters:               []kio.Filter{imageFilter{credentials: &creds}},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -46,7 +46,7 @@ func Parse(path string, credetials credentials.Credentials) error {
 }
 
 type imageFilter struct {
-	credential *credentials.Credentials
+	credentials *credentials.Credentials
 }
 
 var _ kio.Filter = &imageFilter{}
@@ -55,7 +55,7 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
-		if err := findImage(r, *filter.credential); err != nil {
+		if err := findImage(r, *filter.credentials); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
@@ -142,11 +142,11 @@ func updateImage(rawImage string, credential credentials.Credentials) (string, e
 		return "", err
 	}
 
-	imgRef := &ImageReference{}
-
 	// TODO Handle images without registry specified
-	imgRef.Registry = reference.Domain(ref)
-	imgRef.Credentials = &credential
+	imgRef := &ImageReference{
+		Registry:    reference.Domain(ref),
+		Credentials: &credential,
+	}
 	if nameTagged, ok := ref.(reference.NamedTagged); ok {
 		imgRef.Tag = nameTagged.Tag()
 		imgRef.Name = reference.Path(nameTagged)
