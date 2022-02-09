@@ -1152,9 +1152,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(req.Args) {
 		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid command"))
-		return
+
+		// Temporary feature flag to disable this feature in case their are any regressions.
+		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("invalid command"))
+			return
+		}
 	}
 
 	ctx := r.Context()
