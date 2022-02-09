@@ -1143,7 +1143,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	ctx := r.Context()
 
-	if !req.NoTimeout {
+	if req.EnableTimeout {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
 		defer cancel()
