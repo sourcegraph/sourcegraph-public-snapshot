@@ -227,7 +227,10 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 		return "", err
 	}
 
-	req.SetBasicAuth(options.RegistryUsername, options.RegistryPassword)
+	if options.RegistryPassword != "" && options.RegistryUsername != "" {
+		req.SetBasicAuth(options.RegistryUsername, options.RegistryPassword)
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
