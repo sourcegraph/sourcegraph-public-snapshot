@@ -3,7 +3,6 @@ package authz
 import (
 	"context"
 	"io/fs"
-	"path"
 	"strconv"
 	"time"
 
@@ -193,18 +192,15 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
-	// Rules are created including the repo name
-	toMatch := path.Join(string(content.Repo), content.Path)
-
 	// The current path needs to either be included or NOT excluded and we'll give
 	// preference to exclusion.
 	for _, rule := range rules.excludes {
-		if rule.Match(toMatch) {
+		if rule.Match(content.Path) {
 			return None, nil
 		}
 	}
 	for _, rule := range rules.includes {
-		if rule.Match(toMatch) {
+		if rule.Match(content.Path) {
 			return Read, nil
 		}
 	}

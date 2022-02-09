@@ -17,7 +17,7 @@ type RepoID int32
 // Previously, this was called RepoURI.
 type RepoName string
 
-// Repository hashed name
+// RepoHashedName is the hashed name of a repo
 type RepoHashedName string
 
 func (r RepoName) Equal(o RepoName) bool {

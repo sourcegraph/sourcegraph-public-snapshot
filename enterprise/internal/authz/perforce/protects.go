@@ -426,6 +426,20 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 					continue
 				}
 
+				// Rules should not include the depot name. We want them to be relative so that
+				// we can match even if repo name transformations have occurred, for example a
+				// repositoryPathPattern has been used. We also need to remove any `//` prefixes
+				// which are included in all Helix server rules.
+				depotString := string(depot)
+				for i := range srp.PathIncludes {
+					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], depotString)
+					srp.PathIncludes[i] = strings.TrimPrefix(srp.PathIncludes[i], "//")
+				}
+				for i := range srp.PathExcludes {
+					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], depotString)
+					srp.PathExcludes[i] = strings.TrimPrefix(srp.PathExcludes[i], "//")
+				}
+
 				// Add to repos users can access
 				perms.Exacts = append(perms.Exacts, depot)
 			}
