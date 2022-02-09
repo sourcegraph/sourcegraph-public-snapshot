@@ -198,13 +198,6 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	return searchType
 }
 
-func getBoolPtr(b *bool, def bool) bool {
-	if b == nil {
-		return def
-	}
-	return *b
-}
-
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	*run.SearchInputs

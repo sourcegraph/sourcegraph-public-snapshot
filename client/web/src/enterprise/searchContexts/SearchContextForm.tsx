@@ -411,7 +411,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         >
                             search query
                         </Link>
-                        . For a static set, use JSON configuration.
+                        . For a static set, use the JSON configuration.
                     </div>
                     <div>
                         <RadioButton
