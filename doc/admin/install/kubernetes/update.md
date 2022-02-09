@@ -91,21 +91,6 @@ To execute the database migrations independently, run the following commands in 
 
 > NOTE: These values will work for a standard deployment of Sourcegraph with all three databases running in-cluster. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables in `configure/migrator/migrator.Job.yaml` accordingly.
 
-
-1. Check the current migration versions of all three databases:
-    ```
-    # This will output the current migration version for the frontend db
-    kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM schema_migrations;"
-
-
-    # This will output the current migration version for the codeintel db
-    kubectl exec $(kubectl get pod -l app=codeintel-db -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
-
-
-    # This will output the current migration version for the codeinsights db
-    kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
-    ```
-
 1. Start the migrations (run these commands from the root of your `deploy-sourcegraph` fork):
 
     > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
@@ -136,33 +121,54 @@ To execute the database migrations independently, run the following commands in 
     ```
 
     The log output of the `migrator` container should look similar to:
+
     ```
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=frontend
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395965
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395966
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395967
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395968
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeintel
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeinsights
-    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=codeinsights migrationID=1000000025
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel appliedVersions="[1000000015 1000000016 ... 1000000024 1000000025]" pendingVersions=[1000000031] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights appliedVersions="[1000000010 1000000011 ... 1000000015 1000000016]" pendingVersions=[1000000031] failedVersions=[]
+
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=frontend leafVersions=[1528395972]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=frontend up=true count=21
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395952 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395953 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked progress of index creation" tableName=repo indexName=repo_hashed_name_idx exists=false isValid=false in-progress=false
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Creating index concurrently" schema=frontend migrationID=1528395954 tableName=repo indexName=repo_hashed_name_idx
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=frontend up=true count=18
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395955 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395956 up=true
+    ...
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395971 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395972 up=true
+    
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=codeintel leafVersions=[1000000030]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel appliedVersions="[1000000015 1000000016 ... 1000000024 1000000025]" pendingVersions=[1000000031] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=codeintel up=true count=5
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000026 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000027 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000028 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000029 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000030 up=true
+
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=codeinsights leafVersions=[1000000018]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights appliedVersions="[1000000010 1000000011 ... 1000000015 1000000016]" pendingVersions=[1000000031] failedVersions=[]
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=codeinsights up=true count=2
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeinsights migrationID=1000000017 up=true
+    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeinsights migrationID=1000000018 up=true
+
+    migrator exited with code 0
     ```
 
 If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ### Migrating Without Code Insights
+
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the migration process will fail. To work around this, the `configure/migrator/migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file.
 
-1. Duplicate the `migrator` job manifest and rename one to `migrator-codeintel` and one to `migrator-frontend`.
-1. Modify the `migrator-codeintel` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "codeintel"]`
-1. Modify the `migrator-frontend` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "frontend"]`
+1. Modify the `migrator` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "frontend,codeintel"]`
 
-You should now be able to apply both jobs and continue the migration and upgrade process as normal.
+You should now be able to apply the job and continue the migration and upgrade process as normal.
 
 ### Troubleshooting
 
