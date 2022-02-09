@@ -19,8 +19,8 @@ export interface WorkspacePreviewFilters {
 }
 
 /**
- * Custom hook to query the connection of `Workspaces` resolved to preview which
- * repositories a batch spec is targeting.
+ * Custom hook that wraps `useConnection` to resolve the workspaces for the batch spec
+ * with the ID and filters provided.
  *
  * @param batchSpecID The id of the batch spec to query
  * @param filters Any filters to apply to the workspaces connection preview

@@ -143,6 +143,17 @@ export const useWorkspacesPreview = (
 
     const resolution = useMemo(() => getResolution(data), [data])
 
+    const stop = useCallback(() => {
+        stopPolling()
+        setIsInProgress(false)
+    }, [stopPolling])
+
+    const cancel = useCallback(() => {
+        setError(undefined)
+        stop()
+        setUIState('CANCELED')
+    }, [stop])
+
     const previewBatchSpec = useCallback(
         (code: string) => {
             // Update state
@@ -234,29 +245,19 @@ export const useWorkspacesPreview = (
             uiState === BatchSpecWorkspaceResolutionState.ERRORED ||
             uiState === BatchSpecWorkspaceResolutionState.FAILED
         ) {
-            // Report new workspace resolution worker errors back to the parent.
-            // setError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
             // We can stop polling if the workspace resolution fails.
-            stopPolling()
-            setIsInProgress(false)
+            stop()
         } else if (uiState === BatchSpecWorkspaceResolutionState.COMPLETED) {
             setError(undefined)
-            // We can stop polling once the workspace resolution is complete.
-            stopPolling()
-            setIsInProgress(false)
+            // We can stop polling once the workspace resolution completes.
+            stop()
             // Fetch the results of the workspace preview resolution.
             fetchWorkspaces()
             fetchImportingChangesets()
+            // Call the optional `onComplete` handler.
             onComplete?.()
         }
-    }, [uiState, startPolling, stopPolling, onComplete, fetchWorkspaces, fetchImportingChangesets])
-
-    const cancel = useCallback(() => {
-        setError(undefined)
-        stopPolling()
-        setIsInProgress(false)
-        setUIState('CANCELED')
-    }, [stopPolling])
+    }, [uiState, startPolling, stop, onComplete, fetchWorkspaces, fetchImportingChangesets])
 
     return {
         preview: previewBatchSpec,

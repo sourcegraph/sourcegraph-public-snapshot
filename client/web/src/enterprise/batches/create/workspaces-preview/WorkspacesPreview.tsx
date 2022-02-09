@@ -144,7 +144,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     ) : (
         <>
             <h4 className={styles.instruction}>
-                {hasPreviewed ? 'Modify your' : 'Use an'} <span className="text-monospace">on:</span> statement to
+                {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
                 <Button
                     className={styles.toggleExampleButton}
