@@ -52,10 +52,10 @@ func TestGetActionJobMetadata(t *testing.T) {
 	triggerJobID := triggerJobs[0].ID
 
 	var (
-		wantNumResults = 42
-		wantQuery      = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
+		wantResults = make(cmtypes.CommitSearchResults, 42)
+		wantQuery   = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 	)
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, make(cmtypes.CommitSearchResults, wantNumResults))
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantResults)
 	require.NoError(t, err)
 
 	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)
@@ -68,7 +68,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	want := &ActionJobMetadata{
 		Description: testDescription,
 		Query:       wantQuery,
-		NumResults:  &wantNumResults,
+		Results:     wantResults,
 		MonitorID:   fixtures.monitor.ID,
 	}
 	require.Equal(t, want, got)

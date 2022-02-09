@@ -264,7 +264,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error 
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, len(m.Results))
 	if err != nil {
 		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
@@ -317,7 +317,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		MonitorURL:         codeMonitorURL,
 		Query:              m.Query,
 		QueryURL:           searchURL,
-		NumResults:         zeroOrVal(m.NumResults),
+		NumResults:         len(m.Results),
 	}
 
 	return sendWebhookNotification(ctx, w.URL, args)
@@ -356,7 +356,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		MonitorURL:         codeMonitorURL,
 		Query:              m.Query,
 		QueryURL:           searchURL,
-		NumResults:         zeroOrVal(m.NumResults),
+		NumResults:         len(m.Results),
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)
@@ -408,11 +408,4 @@ func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr
 		return time.Now()
 	}
 	return t
-}
-
-func zeroOrVal(i *int) int {
-	if i == nil {
-		return 0
-	}
-	return *i
 }
