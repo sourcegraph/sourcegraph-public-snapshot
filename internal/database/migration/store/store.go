@@ -124,27 +124,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	return nil
 }
 
-func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, err error) {
-	ctx, endObservation := s.operations.version.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.Query(ctx, sqlf.Sprintf(`SELECT version, dirty FROM %s`, quote(s.schemaName)))
-	if err != nil {
-		return 0, false, false, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		if err := rows.Scan(&version, &dirty); err != nil {
-			return 0, false, false, err
-		}
-
-		return version, dirty, true, nil
-	}
-
-	return 0, false, false, nil
-}
-
 // Versions returns three sets of migration versions that, together, describe the current schema
 // state. These states describe, respectively, the identifieers of all applied, pending, and failed
 // migrations.

@@ -145,54 +145,6 @@ func TestEnsureTableBackfills(t *testing.T) {
 	t.Run("nothing to insert", runTest(n)) // n migration logs
 }
 
-func TestVersion(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(db)
-	ctx := context.Background()
-
-	if err := store.EnsureSchemaTable(ctx); err != nil {
-		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
-	}
-
-	t.Run("empty", func(*testing.T) {
-		if _, _, ok, err := store.Version(ctx); err != nil {
-			t.Fatalf("unexpected error querying version: %s", err)
-		} else if ok {
-			t.Fatalf("unexpected version")
-		}
-	})
-
-	testCases := []struct {
-		name    string
-		version int
-		dirty   bool
-	}{
-		{"clean", 25, false},
-		{"dirty", 32, true},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			if err := store.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(defaultTestTableName))); err != nil {
-				t.Fatalf("unexpected error clearing data: %s", err)
-			}
-			if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s VALUES (%s, %s)`, quote(defaultTestTableName), testCase.version, testCase.dirty)); err != nil {
-				t.Fatalf("unexpected error inserting data: %s", err)
-			}
-
-			if version, dirty, ok, err := store.Version(ctx); err != nil {
-				t.Fatalf("unexpected error querying version: %s", err)
-			} else if !ok {
-				t.Fatalf("expected a version to be found")
-			} else if version != testCase.version {
-				t.Fatalf("unexpected version. want=%d have=%d", testCase.version, version)
-			} else if dirty != testCase.dirty {
-				t.Fatalf("unexpected dirty flag. want=%v have=%v", testCase.dirty, dirty)
-			}
-		})
-	}
-}
-
 func TestVersions(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)

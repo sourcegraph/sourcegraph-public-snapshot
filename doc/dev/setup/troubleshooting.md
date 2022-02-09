@@ -25,27 +25,12 @@ This means the `frontend` server failed to start, for some reason. Look through
 the previous logs for possible explanations, such as failure to contact the
 `redis` server, or database migrations failing.
 
-## Database migration failures
 
-While developing Sourcegraph, you may run into:
 
-`frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, then run `dev/db/migrate.sh <db_name> up` where the database name is either `frontend` or `codeintel`.
 
-If you get something like `error: Dirty database version 1514702776. Fix and force version.`, you need to roll things back and start from scratch.
 
-```bash
-dev/db/migrate.sh <db_name> drop
-dev/db/migrate.sh <db_name> up
-```
 
-If you receive errors while migrating, try dropping the database
-
-```bash
-dev/db/drop-entire-local-database-and-redis.sh
-dev/db/migrate.sh <db_name> up
-```
 
 ## Internal Server Error
 
@@ -185,6 +170,7 @@ If files do not normally have group permissions in your environment
    ```
 
 ## Installing `sg` with Windows Subsystem for Linux (WSL2)
+
 When trying to install `sg` with the pre-built binaries on WSL2 you may run into this error message: `failed to set max open files: invalid argument`. The default configuration of WSL2 does not allow the user to modify the number of open files by default [which `sg` requires](https://github.com/sourcegraph/sourcegraph/blob/379369e3d92c9b28d5891d3251922c7737ed810b/dev/sg/main.go#L75:L90) to start. To work around this you can modify the file limits for your given session with `sudo prlimit --nofile=20000 --pid $$; ulimit -n 20000` then re-run the installation script.
 
 Note: this change will be reverted when your session ends. You will need to reset these limits every time you open a new session and want to use `sg`.

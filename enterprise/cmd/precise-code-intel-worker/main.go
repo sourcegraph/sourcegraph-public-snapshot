@@ -156,7 +156,7 @@ func mustInitializeDB() *sql.DB {
 
 	ctx := context.Background()
 	go func() {
-		for range time.NewTicker(5 * time.Second).C {
+		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
