@@ -8,7 +8,7 @@ import commandExists from 'command-exists'
 import execa from 'execa'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
@@ -441,6 +441,11 @@ export interface CreatedChangeset {
 }
 
 export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
+    // Overwriting `process.env` may not be a good practice,
+    // but it's the easiest way to avoid making changes all over the place
+    const dockerHubCredential = await getContainerRegistryCredential('index.docker.io')
+    process.env.CR_USERNAME = dockerHubCredential.username
+    process.env.CR_PASSWORD = dockerHubCredential.password
     for (const command of options.requiredCommands) {
         try {
             await commandExists(command)
