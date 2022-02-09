@@ -163,3 +163,4 @@ annotations/
 
 # Buildkite analytics files
 jest-junit.xml
+mocha-junit.xml
