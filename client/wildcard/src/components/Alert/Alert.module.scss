@@ -188,13 +188,13 @@
 }
 
 .alert-note {
-    --alert-icon-block-width: 0rem;
+    --alert-icon-block-width: 0;
     --alert-border-color: var(--border-color);
     --alert-content-padding: 0.75rem;
     --alert-background-color: var(--subtle-bg);
 
-    &:after,
-    &:before {
+    &::after,
+    &::before {
         display: none;
     }
 }
