@@ -170,11 +170,13 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 	notebook.Public = notebookInput.Public
 	notebook.Blocks = blocks
 	notebook.UpdaterUserID = user.ID
-	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	var namespaceUserID, namespaceOrgID int32
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &namespaceUserID, &namespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
-
+	notebook.NamespaceUserID = namespaceUserID
+	notebook.NamespaceOrgID = namespaceOrgID
 	// Current user has to have write permissions for both the old and the new namespace.
 	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
