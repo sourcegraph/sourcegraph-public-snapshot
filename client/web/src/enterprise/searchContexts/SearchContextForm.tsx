@@ -382,7 +382,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         <RadioButton
                             key={radio.visibility}
                             id={`visibility_${index}`}
-                            className={styles.searchContextFormVisibilityRadio}
+                            className={styles.searchContextFormRadio}
                             name="visibility"
                             value={radio.visibility}
                             checked={visibility === radio.visibility}
@@ -416,7 +416,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div>
                         <RadioButton
                             id="search_context_type_dynamic"
-                            className={styles.searchContextFormTypeRadio}
+                            className={styles.searchContextFormRadio}
                             name="search_context_type"
                             value="dynamic"
                             checked={contextType === 'dynamic'}
@@ -443,13 +443,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
                             <small>
-                                Valid filters: <SyntaxHighlightedSearchQuery query="repo" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="rev" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="file" /> ,{' '}
-                                <SyntaxHighlightedSearchQuery query="lang" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="case" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="fork" />, and{' '}
-                                <SyntaxHighlightedSearchQuery query="visibility" />.{' '}
+                                Valid filters: <SyntaxHighlightedSearchQuery query="repo:" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="rev:" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="file:" /> ,{' '}
+                                <SyntaxHighlightedSearchQuery query="lang:" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="case:" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="fork:" />, and{' '}
+                                <SyntaxHighlightedSearchQuery query="visibility:" />.{' '}
                                 <SyntaxHighlightedSearchQuery query="OR" /> and{' '}
                                 <SyntaxHighlightedSearchQuery query="AND" /> expressions are also allowed.
                             </small>
@@ -458,7 +458,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div className="mt-3">
                         <RadioButton
                             id="search_context_type_static"
-                            className={styles.searchContextFormTypeRadio}
+                            className={styles.searchContextFormRadio}
                             name="search_context_type"
                             value="static"
                             checked={contextType === 'static'}

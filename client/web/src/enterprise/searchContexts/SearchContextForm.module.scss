@@ -28,7 +28,7 @@
         }
     }
 
-    &__visibility-radio {
+    &__radio {
         margin-top: 0.2rem;
         width: 0.875rem;
         height: 0.875rem;
@@ -36,12 +36,6 @@
 
     &__visibility-title {
         cursor: pointer;
-    }
-
-    &__type-radio {
-        margin-top: 0.2rem;
-        width: 0.875rem;
-        height: 0.875rem;
     }
 
     &__query {
