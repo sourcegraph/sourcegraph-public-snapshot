@@ -12,22 +12,16 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
-import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
+import { getExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
-const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
-const CreateNotebookPage = lazyComponent(
-    () => import('./notebooks/createPage/CreateNotebookPage'),
-    'CreateNotebookPage'
-)
-const NotebooksListPage = lazyComponent(() => import('./notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
 const InstallGitHubAppSuccessPage = lazyComponent(
     () => import('./org/settings/codeHosts/InstallGitHubAppSuccessPage'),
     'InstallGitHubAppSuccessPage'
@@ -89,44 +83,6 @@ export const routes: readonly LayoutRouteProps<any>[] = ([
 
             return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
-        exact: true,
-    },
-    {
-        path: PageRoutes.SearchNotebook,
-        render: () => <Redirect to={PageRoutes.Notebooks} />,
-        exact: true,
-    },
-    {
-        path: PageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Redirect to={PageRoutes.Notebooks} />
-            ),
-        exact: true,
-    },
-    {
-        path: PageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
-
-            return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
-        },
-        exact: true,
-    },
-    {
-        path: PageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <NotebooksListPage {...props} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            ),
         exact: true,
     },
     {

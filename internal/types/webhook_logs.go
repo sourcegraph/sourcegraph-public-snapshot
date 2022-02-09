@@ -11,6 +11,7 @@ type WebhookLog struct {
 	ID                int64
 	ReceivedAt        time.Time
 	ExternalServiceID *int64
+	WebhookID         *int32
 	StatusCode        int
 	Request           *EncryptableWebhookLogMessage
 	Response          *EncryptableWebhookLogMessage

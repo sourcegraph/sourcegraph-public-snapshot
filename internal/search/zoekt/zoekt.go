@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -94,6 +95,9 @@ type Options struct {
 	// GlobalSearch is true if we are doing a search were we skip computing
 	// NumRepos and instead rely on zoekt.
 	GlobalSearch bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features search.Features
 }
 
 func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
@@ -103,6 +107,17 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		SpanContext:  spanContext,
 		MaxWallTime:  defaultTimeout,
 		ChunkMatches: true,
+	}
+
+	if limit := int(o.FileMatchLimit); o.Features.Ranking && limit < 1000 {
+		// It is hard to think up general stats here based on limit. So
+		// instead we only run the ranking code path if the limit is
+		// reasonably small. This is fine while we experiment.
+		searchOpts.ShardMaxMatchCount = 1000
+		searchOpts.TotalMaxMatchCount = 10000
+		searchOpts.MaxDocDisplayCount = limit
+		searchOpts.FlushWallTime = 500 * time.Millisecond
+		return searchOpts
 	}
 
 	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {

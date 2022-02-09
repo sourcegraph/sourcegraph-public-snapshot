@@ -135,7 +135,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 })}
             </SearchSidebarSection>
 
-            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
+            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages" minItems={2}>
                 {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
             </SearchSidebarSection>
 
@@ -143,7 +143,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 sectionId={SectionID.REPOSITORIES}
                 header="Repositories"
                 searchOptions={{ ariaLabel: 'Find repositories', noResultText: getRepoFilterNoResultText }}
-                minItems={1}
+                minItems={2}
             >
                 {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
             </SearchSidebarSection>

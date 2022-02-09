@@ -167,7 +167,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 	q.Set("code", code)
 	q.Set("email", email)
 	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_email_verification", txemail.Message{
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
@@ -216,7 +216,7 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, logger log.Log
 		return err
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_account_update", txemail.Message{
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
 		Data: struct {

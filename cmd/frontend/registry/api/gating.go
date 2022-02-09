@@ -84,8 +84,7 @@ func ExtensionRegistryListAllowedExtensions() map[string]bool {
 }
 
 func ExtensionRegistryWriteEnabled() error {
-	cfg := conf.Get()
-	if cfg.ExperimentalFeatures == nil || cfg.ExperimentalFeatures.EnableLegacyExtensions == nil || *cfg.ExperimentalFeatures.EnableLegacyExtensions == false {
+	if !conf.ExperimentalFeatures().EnableLegacyExtensions {
 		return errors.Errorf("Extensions are disabled. See https://docs.sourcegraph.com/extensions/deprecation")
 	}
 

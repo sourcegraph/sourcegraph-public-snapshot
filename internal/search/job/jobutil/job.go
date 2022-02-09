@@ -728,6 +728,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		Typ:            typ,
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
+		Features:       *b.features,
 	}
 
 	switch typ {
@@ -760,6 +761,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
+			Features:       *b.features,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
@@ -768,6 +770,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Typ:               typ,
 			FileMatchLimit:    b.fileMatchLimit,
 			Select:            b.selector,
+			Features:          *b.features,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)

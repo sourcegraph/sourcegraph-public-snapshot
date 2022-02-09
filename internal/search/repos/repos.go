@@ -709,7 +709,6 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 		false, // not using zoekt, don't need indexing
 		&patternInfo,
 		time.Hour,         // depend on context for timeout
-		nil,               // not using zoekt, don't need indexing
 		search.Features{}, // not using any search features
 		onMatches,
 	)

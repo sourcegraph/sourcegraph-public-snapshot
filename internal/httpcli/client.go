@@ -110,9 +110,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
 	}
-	if len(middleware) > 0 {
-		mw = append(mw, middleware...)
-	}
+	mw = append(mw, middleware...)
 
 	return NewFactory(
 		NewMiddleware(mw...),
@@ -156,9 +154,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 	mw := []Middleware{
 		ContextErrorMiddleware,
 	}
-	if len(middleware) > 0 {
-		mw = append(mw, middleware...)
-	}
+	mw = append(mw, middleware...)
 
 	return NewFactory(
 		NewMiddleware(mw...),
