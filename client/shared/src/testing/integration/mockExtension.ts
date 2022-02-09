@@ -99,11 +99,11 @@ export function setupExtensionMocking({
 // Commonly mocked extensions.
 
 /**
- * A simple hover provider extension.
+ * A simple hover and defintion providers extension.
  * Shows the token that the user is hovering over in the hover overlay.
- * Used to verify that the correct document and position info reaches the extension.
+ * Used to verify that the correct document and position info reaches the extension and click to definition functionality works as expected.
  */
-export const simpleHoverProvider = (provideDefinition?: any) => (): void => {
+export const simpleHoverAndDefinitionProviders = (): void => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
