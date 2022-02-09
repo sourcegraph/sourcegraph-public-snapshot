@@ -7,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/peterbourgon/ff/v3/ffcli"

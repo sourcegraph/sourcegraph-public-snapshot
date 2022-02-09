@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -13,7 +14,18 @@ import (
 	"github.com/docker/docker-credential-helpers/credentials"
 )
 
-func getStoreProvider() (string, error) {
+func getStoreProvider(serverAddress string) (string, error) {
+	// sanitize the server address for Docker Hub
+	if serverAddress == "" ||
+		serverAddress == "https://index.docker.io" ||
+		serverAddress == "https://registry-1.docker.io" ||
+		serverAddress == "https://registry.docker.io" ||
+		serverAddress == "https://docker.io" ||
+		serverAddress == "https://registry.hub.docker.com" ||
+		serverAddress == "https://index.docker.io/v2/" {
+		serverAddress = "https://index.docker.io/v1/"
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -29,15 +41,24 @@ func getStoreProvider() (string, error) {
 		return "", err
 	}
 
-	if config.CredentialsStore != "" {
+	if serverAddress == "https://index.docker.io/v1/" && config.CredentialsStore != "" {
 		return config.CredentialsStore, nil
 	}
 
-	return "", errors.New("failed to find store provider")
+	url, err := url.Parse(serverAddress)
+	if err != nil {
+		return "", errors.Newf("failed to parse server address %s", serverAddress)
+	}
+
+	if config.CredentialHelpers[url.Host] != "" {
+		return config.CredentialHelpers[url.Host], nil
+	}
+
+	return "", errors.Newf("failed to find store provider or credential helper for %s", serverAddress)
 }
 
 func GetCredentialsFromStore(serverAddress string) (*credentials.Credentials, error) {
-	provider, err := getStoreProvider()
+	provider, err := getStoreProvider(serverAddress)
 	if err != nil {
 		return nil, err
 	}
