@@ -310,7 +310,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             }
         }
 
-        // if no feature flags were enables, GitHub App is not enabled for any orgs
+        // if no feature flags were enabled, GitHub App is not enabled for any orgs
         return false
     }
 
