@@ -7,6 +7,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import {
     Scalars,
@@ -27,10 +28,10 @@ import {
     useEventObservable,
     Alert,
     ProductStatusBadge,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { getExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -44,8 +45,6 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
-import { Link } from '@sourcegraph/wildcard'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
@@ -143,14 +142,15 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         platformContext,
     } = props
     const history = useHistory()
-    const experimentalFeatures = getExperimentalFeatures()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
-    const [contextType, setContextType] = useState<ContextType>(searchContext?.query?.length > 0 ? 'dynamic' : 'static')
+    const [contextType, setContextType] = useState<ContextType>(
+        searchContext ? (searchContext.query.length > 0 ? 'dynamic' : 'static') : 'dynamic'
+    )
     const [query, setQuery] = useState(searchContext?.query || props.query || '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
@@ -271,9 +271,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 description,
                                 public: visibility === 'public',
                                 namespace: selectedNamespace.id,
-                                query,
+                                query: contextType === 'dynamic' ? query : '',
                             },
-                            repositoryRevisionsArray
+                            contextType === 'static' ? repositoryRevisionsArray : []
                         ).pipe(
                             startWith(LOADING),
                             catchError(error => [asError(error)]),
@@ -296,6 +296,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 selectedNamespace,
                 history,
                 searchContext,
+                contextType,
             ]
         )
     )
@@ -414,7 +415,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     </div>
                     <div>
                         <RadioButton
-                            id={`search_context_type_dynamic`}
+                            id="search_context_type_dynamic"
                             className={styles.searchContextFormTypeRadio}
                             name="search_context_type"
                             value="dynamic"
@@ -456,7 +457,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     </div>
                     <div className="mt-3">
                         <RadioButton
-                            id={`search_context_type_static`}
+                            id="search_context_type_static"
                             className={styles.searchContextFormTypeRadio}
                             name="search_context_type"
                             value="static"
