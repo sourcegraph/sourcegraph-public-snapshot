@@ -30,15 +30,6 @@ describe('Search Stack', () => {
             expect(screen.queryByRole('button', { name: 'Open search session' })).not.toBeInTheDocument()
         })
 
-        it('does not render anything if there is no previous session', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-            useSearchStackState.setState({ canRestoreSession: false })
-
-            renderSearchStack()
-
-            expect(screen.queryByRole('button', { name: 'Open search session' })).not.toBeInTheDocument()
-        })
-
         it('renders something if a previous session can be restored', () => {
             useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({ canRestoreSession: true })
