@@ -27,12 +27,13 @@ if (!$currentMilestone) {
     return
 }
 
-Write-Information "Milestone ending today: $($currentMilestone.Title)"
+$items = Get-GitHubBetaProjectItem -ProjectNodeId $ProjectNodeId | Where-Object { $_.Content -and $_.Content.Milestone }
 
-$currentIterationItems = Find-GitHubIssue "org:sourcegraph milestone:`"$($currentMilestone.Title)`"" |
-    Get-GitHubBetaProjectItem |
-    Where-Object { $_.project.id -eq $ProjectNodeId }
+Write-Information "$($items.Count) items in project"
 
+$byIteration = $items | Group-Object -Property { $_.Content.Milestone.Title } -AsHashTable
+
+$currentIterationItems = $byIteration[$currentMilestone.Title]
 $finishedItems = $currentIterationItems | Where-Object { $_.Fields['Status'] -eq 'Done' }
 $notSized = $currentIterationItems | Where-Object { !$_.Fields['Size 🔵'] }
 
