@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -29,9 +27,8 @@ type Config struct {
 	Commit      string
 	BuildNumber int
 
-	// ChangedFiles is the list of files that have changed since the
-	// merge-base with origin/main.
-	ChangedFiles changed.Files
+	// Diff denotes what has changed since the merge-base with origin/main.
+	Diff changed.Diff
 
 	// MustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
 	// in the branch. If empty, then no check is enforced.
@@ -63,7 +60,10 @@ func NewConfig(now time.Time) Config {
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
 		// evaluates what type of pipeline run this is
-		runType = computeRunType(tag, branch)
+		runType = computeRunType(tag, branch, map[string]string{
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	)
@@ -125,7 +125,7 @@ func NewConfig(now time.Time) Config {
 		Version:           tag,
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
-		ChangedFiles:      changedFiles,
+		Diff:              changed.ParseDiff(changedFiles),
 		BuildNumber:       buildNumber,
 
 		// get flags from commit message
@@ -160,7 +160,7 @@ func (c Config) ensureCommit() error {
 			found = true
 			break
 		}
-		errs = multierror.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
+		errs = errors.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
 	}
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.Branch, c.Commit, strings.Join(c.MustIncludeCommit, ", "))

@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -8,7 +7,7 @@ import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -23,8 +22,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
@@ -299,7 +297,8 @@ export const Panel = React.memo<Props>(props => {
                     </small>
                     <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn-icon ml-2', styles.dismissButton)}
+                        variant="icon"
+                        className={classNames('ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"

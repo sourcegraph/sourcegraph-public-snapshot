@@ -1,8 +1,6 @@
 package gqltestutil
 
-import (
-	"github.com/cockroachdb/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // GitBlob returns blob content of the file in given repository at given revision.
 func (c *Client) GitBlob(repoName, revision, filePath string) (string, error) {

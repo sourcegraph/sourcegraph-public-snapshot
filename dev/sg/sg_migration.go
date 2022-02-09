@@ -25,12 +25,22 @@ import (
 var (
 	migrationAddFlagSet          = flag.NewFlagSet("sg migration add", flag.ExitOnError)
 	migrationAddDatabaseNameFlag = migrationAddFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
-	migrationAddCommand          = &ffcli.Command{
+	addCommand                   = &ffcli.Command{
 		Name:       "add",
 		ShortUsage: fmt.Sprintf("sg migration add [-db=%s] <name>", db.DefaultDatabase.Name),
 		ShortHelp:  "Add a new migration file",
 		FlagSet:    migrationAddFlagSet,
 		Exec:       migrationAddExec,
+		LongHelp:   cliutil.ConstructLongHelp(),
+	}
+
+	migrationRevertFlagSet = flag.NewFlagSet("sg migration revert", flag.ExitOnError)
+	revertCommand          = &ffcli.Command{
+		Name:       "revert",
+		ShortUsage: "sg migration revert <commit>",
+		ShortHelp:  "Revert the migrations defined on the given commit",
+		FlagSet:    migrationRevertFlagSet,
+		Exec:       migrationRevertExec,
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
@@ -41,7 +51,7 @@ var (
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
-	migrationSquashCommand          = &ffcli.Command{
+	squashCommand                   = &ffcli.Command{
 		Name:       "squash",
 		ShortUsage: fmt.Sprintf("sg migration squash [-db=%s] <current-release>", db.DefaultDatabase.Name),
 		ShortHelp:  "Collapse migration files from historic releases together",
@@ -60,12 +70,13 @@ var (
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
-			migrationAddCommand,
+			addCommand,
+			revertCommand,
 			upCommand,
 			upToCommand,
 			UndoCommand,
 			downToCommand,
-			migrationSquashCommand,
+			squashCommand,
 		},
 	}
 )
@@ -89,36 +100,29 @@ func migrationAddExec(ctx context.Context, args []string) error {
 	}
 
 	var (
-		databaseName  = *migrationAddDatabaseNameFlag
-		migrationName = args[0]
-		database, ok  = db.DatabaseByName(databaseName)
+		databaseName = *migrationAddDatabaseNameFlag
+		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, metadataFile, err := migration.Add(database, migrationName)
-	if err != nil {
-		return err
-	}
-
-	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up query file: %s", upFile)
-	block.Writef("Down query file: %s", downFile)
-	block.Writef("Metadata file: %s", metadataFile)
-	block.Close()
-
-	return nil
+	return migration.Add(database, args[0])
 }
 
-// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
-// as a non-squashed file.
-//
-// A squash distance of 1 will allow one minor downgrade.
-// A squash distance of 2 will allow two minor downgrades.
-// etc
-const minimumMigrationSquashDistance = 2
+func migrationRevertExec(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No commit specified"))
+		return flag.ErrHelp
+	}
+	if len(args) != 1 {
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	return migration.Revert(db.Databases(), args[0])
+}
 
 func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
@@ -131,23 +135,39 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	}
 
 	var (
-		databaseName  = *migrationSquashDatabaseNameFlag
-		migrationName = args[0]
-		database, ok  = db.DatabaseByName(databaseName)
+		databaseName = *migrationSquashDatabaseNameFlag
+		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
-	currentVersion, err := semver.NewVersion(migrationName)
+	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
+	commit, err := findTargetSquashCommit(args[0])
 	if err != nil {
 		return err
 	}
-
-	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
-	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
 	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
 
 	return migration.Squash(database, commit)
+}
+
+// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
+// as a non-squashed file.
+//
+// A squash distance of 1 will allow one minor downgrade.
+// A squash distance of 2 will allow two minor downgrades.
+// etc
+const minimumMigrationSquashDistance = 2
+
+// findTargetSquashCommit constructs the git version tag that is `minimumMIgrationSquashDistance` minor
+// releases ago.
+func findTargetSquashCommit(migrationName string) (string, error) {
+	currentVersion, err := semver.NewVersion(migrationName)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1), nil
 }

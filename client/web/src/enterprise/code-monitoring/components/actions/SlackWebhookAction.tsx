@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Button, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { ActionProps } from '../FormActionArea'
 
@@ -68,14 +68,14 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
         >
             <Alert variant="info" className="mt-4">
                 Go to{' '}
-                <a href="https://api.slack.com/apps" target="_blank" rel="noopener">
+                <Link to="https://api.slack.com/apps" target="_blank" rel="noopener">
                     Slack
-                </a>{' '}
+                </Link>{' '}
                 to create a webhook URL.
                 <br />
-                <a href="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
+                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
                     Read more about how to set up Slack webhooks in the docs.
-                </a>
+                </Link>
             </Alert>
             <div className="form-group">
                 <label htmlFor="code-monitor-slack-webhook-url">Webhook URL</label>

@@ -8,9 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadMeta struct {

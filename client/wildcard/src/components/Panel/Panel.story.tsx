@@ -106,10 +106,11 @@ export const WithChildren: Story = props => {
                     <div className="align-items-center d-flex mr-2">
                         <Button
                             onClick={closePanel}
-                            className={classNames('btn-icon ml-2')}
+                            className={classNames('ml-2')}
                             title="Close panel"
                             data-tooltip="Close panel"
                             data-placement="left"
+                            variant="icon"
                         >
                             <CloseIcon className="icon-inline" />
                         </Button>

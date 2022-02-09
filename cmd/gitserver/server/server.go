@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -1141,8 +1141,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		defer fw.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
-	defer cancel()
+	ctx := r.Context()
+
+	if !req.NoTimeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
+		defer cancel()
+	}
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit

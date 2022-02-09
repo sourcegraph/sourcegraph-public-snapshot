@@ -13,14 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type projectResult struct {

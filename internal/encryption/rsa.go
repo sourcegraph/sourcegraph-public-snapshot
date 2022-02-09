@@ -6,9 +6,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MockGenerateRSAKey can be used in tests to speed up key generation.

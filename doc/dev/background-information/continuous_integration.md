@@ -164,15 +164,14 @@ For most basic PR checks, see [Developing PR checks](#developing-pr-checks) for 
 
 For more advanced usage for specific run types, see [Developing run types](#developing-run-types).
 
+#### Caching build artefacts
+
+For caching artefacts to speed up builds, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
+
 #### Developing PR checks
 
-To create a new check that can run on pull requests on relevant files, check the [`changed.Files`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/changed.go) type to see if a relevant `affectsXyz` check already exists.
-
-```sgquery
-Affects type:symbol select:symbol.function repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/changed
-```
-
-If not, you can define a new one on the `changed.Files` type.
+To create a new check that can run on pull requests on relevant files, check the [`changed.Diff`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/diff.go) type to see if a relevant `Diff` type already exists.
+If not, you can define a new one on the `Diff` type and update the `ParseDiff` function.
 
 Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
 Make sure to follow the best practices outlined in docstring.
@@ -210,6 +209,12 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+
+#### Feature Flags
+
+Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`. 
+
+- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type). 
 
 ## GitHub Actions
 

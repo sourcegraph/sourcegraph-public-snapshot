@@ -3,12 +3,10 @@ import { BehaviorSubject, combineLatest, from, Observable, Subscription } from '
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
-import { hashCode } from '../../util/hashCode'
-import { memoizeObservable } from '../../util/memoizeObservable'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
 import { Contributions } from '../protocol'

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
-	"github.com/cockroachdb/errors"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

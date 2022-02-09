@@ -6,8 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch

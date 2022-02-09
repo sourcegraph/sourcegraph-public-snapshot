@@ -45,7 +45,14 @@ import {
     MaybeLoadingResult,
     DiffPart,
 } from '@sourcegraph/codeintellify'
-import { asError, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    asObservable,
+    isDefined,
+    isInstanceOf,
+    property,
+    registerHighlightContributions,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -60,7 +67,6 @@ import {
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
@@ -68,8 +74,6 @@ import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/not
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
-import { isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     UIPositionSpec,

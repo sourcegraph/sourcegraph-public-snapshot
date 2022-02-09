@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadRequestOptions struct {

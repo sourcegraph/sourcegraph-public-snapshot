@@ -7,7 +7,9 @@ import { mockAuthenticatedUser } from '../../testing/util'
 
 import { EmailAction, EmailActionProps } from './EmailAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 const defaultProps: EmailActionProps = {
     action: undefined,

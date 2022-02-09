@@ -6,9 +6,9 @@ import { BrowserRouter } from 'react-router-dom'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
+import { registerHighlightContributions } from '@sourcegraph/common'
 
 import { NotificationType } from '../api/extension/extensionHostApi'
-import { registerHighlightContributions } from '../highlight/contributions'
 
 import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
 import { commonProps, FIXTURE_ACTIONS, FIXTURE_CONTENT, FIXTURE_SEMANTIC_BADGE } from './HoverOverlay.fixtures'

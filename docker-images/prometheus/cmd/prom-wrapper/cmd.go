@@ -5,8 +5,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {

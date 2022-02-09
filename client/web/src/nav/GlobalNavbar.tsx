@@ -26,7 +26,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { ProductStatusBadge, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, useObservable, Button, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -277,7 +277,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <WebCommandListPopoverButton
                                 {...props}
                                 location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
                                 menu={ContributableMenu.CommandPalette}
                                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
@@ -311,9 +310,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <Button className={styles.signUp} href={buildGetStartedURL('nav')} size="sm" as="a">
+                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
                                         Get started
-                                    </Button>
+                                    </ButtonLink>
                                 </div>
                             </NavAction>
                         </>

@@ -99,10 +99,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.NotebookCreate,
         render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <CreateNotebookPage {...props} />
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
             ) : (
-                <Redirect to={PageRoutes.Search} />
+                <Redirect to={PageRoutes.Notebooks} />
             ),
         exact: true,
     },

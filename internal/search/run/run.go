@@ -48,6 +48,6 @@ func (inputs SearchInputs) MaxResults() int {
 // timeout). Calling Run on a job object runs a search.
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/run -i Job -o job_mock_test.go
 type Job interface {
-	Run(context.Context, database.DB, streaming.Sender) error
+	Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error)
 	Name() string
 }

@@ -3,8 +3,9 @@ import '../../polyfills'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 
+import { hasProperty } from '@sourcegraph/common'
+
 import { isEndpointPair } from '../../platform/context'
-import { hasProperty } from '../../util/types'
 
 import { startExtensionHost } from './extensionHost'
 

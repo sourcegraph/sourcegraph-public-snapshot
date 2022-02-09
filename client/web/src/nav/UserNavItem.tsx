@@ -10,7 +10,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } f
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, AnchorLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ThemePreference } from '../stores/themeState'
@@ -191,14 +191,14 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                     {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
                         <div className="text-wrap">
                             <small>
-                                <a
-                                    href="https://caniuse.com/#feat=prefers-color-scheme"
+                                <Link
+                                    to="https://caniuse.com/#feat=prefers-color-scheme"
                                     className="text-warning"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
                                     Your browser does not support the system theme.
-                                </a>
+                                </Link>
                             </small>
                         </div>
                     )}
@@ -231,25 +231,25 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 </button>
 
                 {props.authenticatedUser.session?.canSignOut && (
-                    <a href="/-/sign-out" className="dropdown-item">
+                    <AnchorLink to="/-/sign-out" className="dropdown-item">
                         Sign out
-                    </a>
+                    </AnchorLink>
                 )}
                 <DropdownItem divider={true} />
                 {props.showDotComMarketing && (
-                    <a href="https://about.sourcegraph.com" target="_blank" rel="noopener" className="dropdown-item">
+                    <Link to="https://about.sourcegraph.com" target="_blank" rel="noopener" className="dropdown-item">
                         About Sourcegraph <OpenInNewIcon className="icon-inline" />
-                    </a>
+                    </Link>
                 )}
                 {codeHostIntegrationMessaging === 'browser-extension' && (
-                    <a
-                        href="https://docs.sourcegraph.com/integration/browser_extension"
+                    <Link
+                        to="https://docs.sourcegraph.com/integration/browser_extension"
                         target="_blank"
                         rel="noopener"
                         className="dropdown-item"
                     >
                         Browser extension <OpenInNewIcon className="icon-inline" />
-                    </a>
+                    </Link>
                 )}
             </DropdownMenu>
         </ButtonDropdown>
