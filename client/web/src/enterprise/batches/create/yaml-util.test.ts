@@ -1,4 +1,4 @@
-import { excludeRepo, haveMatchingOnAndImportStatements } from './yaml-util'
+import { excludeRepo, haveMatchingWorkspaces } from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -293,12 +293,12 @@ describe('Batch spec yaml utils', () => {
         })
     })
 
-    describe('haveMatchingOnAndImportStatements', () => {
+    describe('haveMatchingWorkspaces', () => {
         it('should return the correct comparison result for a pair of batch specs', () => {
             for (const { spec1, spec2, matches } of SAMPLE_COMPARISON_SPECS) {
                 // Order shouldn't matter
-                expect(haveMatchingOnAndImportStatements(spec1, spec2)).toEqual(matches)
-                expect(haveMatchingOnAndImportStatements(spec2, spec1)).toEqual(matches)
+                expect(haveMatchingWorkspaces(spec1, spec2)).toEqual(matches)
+                expect(haveMatchingWorkspaces(spec2, spec1)).toEqual(matches)
             }
         })
     })

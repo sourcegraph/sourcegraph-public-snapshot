@@ -44,7 +44,6 @@ import { useWorkspacesPreview } from './useWorkspacesPreview'
 import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
-import { haveMatchingOnAndImportStatements } from './yaml-util'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -266,13 +265,16 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         [isValid, isWorkspacesPreviewInProgress]
     )
 
-    // The batch spec YAML code is only considered stale when its "on" or
-    // "importChangesets" statement has been modified since this is what's relevant to the
-    // workspaces preview.
-    const isBatchSpecStale = useMemo(
-        () => haveMatchingOnAndImportStatements(initialBatchSpecCode, debouncedCode) === false,
-        [initialBatchSpecCode, debouncedCode]
-    )
+    // The batch spec YAML code is considered stale if any part of it changes. This is
+    // because of a current limitation of the backend where we need to re-submit the batch
+    // spec code and wait for the new workspaces preview to finish resolving before we can
+    // execute, or else the execution will use an older batch spec. We will address this
+    // when we implement the "auto-saving" feature and decouple previewing workspaces from
+    // updating the batch spec code.
+    const isBatchSpecStale = useMemo(() => initialBatchSpecCode !== debouncedCode, [
+        initialBatchSpecCode,
+        debouncedCode,
+    ])
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)

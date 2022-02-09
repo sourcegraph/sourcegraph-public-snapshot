@@ -263,6 +263,18 @@ const findImportChangesetsStatement = (ast: YAMLMap): YAMLNode | undefined => {
 }
 
 /**
+ * Finds and returns the value for a node within the `ast` mappings whose key is
+ * "workspaces".
+ *
+ * @param ast the `YAMLMap` node to scan
+ */
+const findWorkspacesStatement = (ast: YAMLMap): YAMLNode | undefined => {
+    // Find the `YAMLMapping` node with the key "workspaces"
+    const workspacesMapping = find(ast.mappings, mapping => mapping.key.value === 'workspaces')
+    return workspacesMapping?.value
+}
+
+/**
  * Checks for a valid "on: " sequence within the provided YAML AST parsed from the input
  * batch spec.
  *
@@ -352,14 +364,17 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
 }
 
 /**
- * Parses and performs a comparison between the values for the "on" and "importChangesets"
- * statements of two different batch specs, returning true if the statements match or
- * "UNKNOWN" if the specs are not able to be parsed and compared.
+ * Parses and performs a comparison between the values for the "on", "importChangesets",
+ * and "workspaces" statements of two different batch specs, returning true if the
+ * statements match or "UNKNOWN" if the specs are not able to be parsed and compared.
+ *
+ * TODO: These checks will eventually move to the backend when we persist the results of a
+ * preview from one batch spec to another.
  *
  * @param spec1 the first raw batch spec YAML code to compare against `spec2`
  * @param spec2 the second raw batch spec YAML code to compare against `spec1`
  */
-export const haveMatchingOnAndImportStatements = (spec1: string, spec2: string): boolean | 'UNKNOWN' => {
+export const haveMatchingWorkspaces = (spec1: string, spec2: string): boolean | 'UNKNOWN' => {
     const ast1 = load(spec1)
     const ast2 = load(spec2)
 
@@ -390,12 +405,29 @@ export const haveMatchingOnAndImportStatements = (spec1: string, spec2: string):
         return false
     }
 
-    if (!import1 || !import2) {
+    if (import1 && import2) {
+        const importString1 = spec1.slice(import1.startPosition, import1.endPosition)
+        const importString2 = spec2.slice(import2.startPosition, import2.endPosition)
+
+        if (importString1 !== importString2) {
+            return false
+        }
+    }
+
+    // Find the value for the "workspaces" statement for both specs
+    const workspaces1 = findWorkspacesStatement(ast1)
+    const workspaces2 = findWorkspacesStatement(ast2)
+
+    if ((workspaces1 && !workspaces2) || (!workspaces1 && workspaces2)) {
+        return false
+    }
+
+    if (!workspaces1 || !workspaces2) {
         return true
     }
 
-    const importString1 = spec1.slice(import1.startPosition, import1.endPosition)
-    const importString2 = spec2.slice(import2.startPosition, import2.endPosition)
+    const workspacesString1 = spec1.slice(workspaces1.startPosition, workspaces1.endPosition)
+    const workspacesString2 = spec2.slice(workspaces2.startPosition, workspaces2.endPosition)
 
-    return importString1 === importString2
+    return workspacesString1 === workspacesString2
 }
