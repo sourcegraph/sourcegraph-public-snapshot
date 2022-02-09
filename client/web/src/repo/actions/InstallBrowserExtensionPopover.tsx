@@ -113,7 +113,6 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                                 to="/help/integration/browser_extension"
                                 {...linkProps}
                                 variant="primary"
-                                as={ButtonLink}
                             >
                                 Install browser extension
                             </ButtonLink>

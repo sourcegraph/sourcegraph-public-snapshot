@@ -5,7 +5,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
@@ -39,12 +39,8 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => (
-    <>
-        <div className="p-4">{story()}</div>
-        <style>{webStyles}</style>
-    </>
-)
+const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+
 const config: Meta = {
     title: 'shared/ActionItem',
     decorators: [decorator],

@@ -102,9 +102,13 @@ export const WebHoverOverlay: React.FunctionComponent<
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
-            actionItemClassName="btn btn-sm btn-secondary border-0"
+            actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}
+            actionItemStyleProps={{
+                actionItemSize: 'sm',
+                actionItemVariant: 'secondary',
+            }}
         />
     )
 }
