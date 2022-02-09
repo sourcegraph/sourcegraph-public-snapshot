@@ -206,7 +206,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 />
             </FormGroup>
 
-            {dashboardReferenceCount && dashboardReferenceCount > 1 && (
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 

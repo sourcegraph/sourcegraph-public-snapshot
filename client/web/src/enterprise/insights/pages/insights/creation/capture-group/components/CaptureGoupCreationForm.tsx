@@ -189,7 +189,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 />
             </FormGroup>
 
-            {dashboardReferenceCount && dashboardReferenceCount > 1 && (
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
