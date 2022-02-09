@@ -2,13 +2,12 @@ name: Code Insights GitHub project automation
 
 on:
   issues:
-    types: [opened, closed, reopened, milestoned, labeled]
+    types: [closed, reopened]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 
 jobs:
-  update-project-items:
-    name: Update project items
+  update-status:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,4 +29,4 @@ jobs:
 
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
 
-            ./.github/workflows/update-project-items.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -TeamLabel 'team/code-insights'
+            ./.github/workflows/update-project-item-statuses.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -TeamLabel 'team/code-insights'
