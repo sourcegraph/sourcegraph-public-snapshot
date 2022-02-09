@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
@@ -840,7 +841,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				UseFullDeadline: args.UseFullDeadline,
 			}
 
-			addJob(true, &unindexed.StructuralSearch{
+			addJob(true, &structural.StructuralSearch{
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
