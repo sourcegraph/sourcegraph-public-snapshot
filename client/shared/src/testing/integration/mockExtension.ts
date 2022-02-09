@@ -99,7 +99,7 @@ export function setupExtensionMocking({
 // Commonly mocked extensions.
 
 /**
- * A simple hover and defintion providers extension.
+ * A simple hover provider extension.
  * Shows the token that the user is hovering over in the hover overlay.
  * Used to verify that the correct document and position info reaches the extension.
  */
