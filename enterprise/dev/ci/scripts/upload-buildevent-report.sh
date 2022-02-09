@@ -7,5 +7,5 @@
   export BUILDEVENT_DATASET
 
   traceURL=$(buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
-  echo "$traceURL" | ./dev/ci/annotate.sh -m -s "Build trace" -t info
+  echo "$traceURL" | ./enterprise/dev/ci/scripts/annotate.sh -m -s "Build trace" -t info
 )

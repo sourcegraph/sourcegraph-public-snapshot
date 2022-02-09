@@ -14,7 +14,7 @@ if [ -z "$DIFF" ]; then
   exit 0
 else
   echo "ERROR: gofmt check failed:"
-  echo -e "$DIFF" | ./dev/ci/annotate.sh -s "gofmt"
+  echo -e "$DIFF" | ./enterprise/dev/ci/scripts/annotate.sh -s "gofmt"
   echo "^^^ +++"
   exit 1
 fi

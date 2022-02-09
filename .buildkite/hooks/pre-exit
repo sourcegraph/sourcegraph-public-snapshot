@@ -26,5 +26,5 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
     done
 
     # Non-zero exit code and not a soft fail: upload the logs.
-    ./enterprise/dev/upload-build-logs.sh
+    ./enterprise/dev/ci/scripts/upload-build-logs.sh
 fi
