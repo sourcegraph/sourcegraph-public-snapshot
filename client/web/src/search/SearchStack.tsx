@@ -3,7 +3,9 @@ import { LocationDescriptor } from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchStackIcon from 'mdi-react/LayersSearchIcon'
+import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
+import TrashIcon from 'mdi-react/TrashCanIcon'
 import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
@@ -23,6 +25,7 @@ import {
     SearchEntry,
     SearchStackEntry,
     removeSearchStackEntry,
+    removeAllSearchStackEntries,
 } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
@@ -33,6 +36,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const history = useHistory()
 
     const [open, setOpen] = useState(initialOpen)
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
@@ -65,7 +69,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
         history.push(location)
     }, [entries, history])
 
-    if (!enableSearchStack || (entries.length === 0 && !canRestore)) {
+    if (!enableSearchStack) {
         return null
     }
 
@@ -97,32 +101,58 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                             <li key={index}>{renderSearchEntry(entry)}</li>
                         ))}
                     </ul>
-                    {(canRestore || entries.length > 0) && (
+                    {confirmRemoveAll && (
                         <div className="p-2">
-                            {canRestore && (
-                                <Button
-                                    className="w-100 mb-1"
-                                    onClick={restorePreviousSession}
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    Restore previous session
+                            <p>Are you sure you want to delete all entries?</p>
+                            <div className="d-flex justify-content-between">
+                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                    Cancel
                                 </Button>
-                            )}
-                            {entries.length > 0 && (
                                 <Button
-                                    className="w-100"
-                                    onClick={createNotebook}
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => {
+                                        removeAllSearchStackEntries()
+                                        setConfirmRemoveAll(false)
+                                    }}
                                 >
-                                    Create Notebook
+                                    Yes, delete
                                 </Button>
-                            )}
+                            </div>
                         </div>
                     )}
+                    <div className="p-2">
+                        {canRestore && (
+                            <Button
+                                className="w-100 mb-1"
+                                onClick={restorePreviousSession}
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Restore previous session
+                            </Button>
+                        )}
+                        <div className="d-flex justify-content-between align-items-center">
+                            <Button
+                                onClick={createNotebook}
+                                variant="primary"
+                                size="sm"
+                                disabled={entries.length === 0}
+                            >
+                                <NotebookPlusIcon className="icon-inline" /> Create Notebook
+                            </Button>
+                            <Button
+                                aria-label="Remove all entries"
+                                title="Remove all entries"
+                                variant="icon"
+                                className="text-muted"
+                                disabled={entries.length === 0}
+                                onClick={() => setConfirmRemoveAll(true)}
+                            >
+                                <TrashIcon className="icon-inline" />
+                            </Button>
+                        </div>
+                    </div>
                 </>
             )}
         </div>
@@ -159,7 +189,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                     onClick={() => removeSearchStackEntry(entry)}
                 >
                     <CloseIcon className="icon-inline" />
-                </Button>{' '}
+                </Button>
             </span>
         </div>
         {children}
