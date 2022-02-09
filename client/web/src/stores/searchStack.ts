@@ -115,15 +115,8 @@ function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchSta
             entries: [...state.entries, entry],
             canRestoreSession: state.entries.length === 0,
         }
-        // We store search stack data in both local and session storage: This
-        // feature should really be considered to be session related but at the
-        // same time we want to make it possible to restore information from the
-        // previous session (e.g. in case the page was accidentally closed).
-        // Storing the entries in local storage allows us to do that (see
-        // useSearchStackState above).
-        const serializedEntries = JSON.stringify(newState.entries)
-        localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
-        sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
+
+        persistSession(newState.entries)
 
         return newState
     })
@@ -138,6 +131,26 @@ export function restorePreviousSession(): void {
     }
 }
 
+export function removeSearchStackEntry(entryToDelete: SearchStackEntry): void {
+    useSearchStackState.setState(currentState => {
+        const entries = currentState.entries.filter(entry => entry !== entryToDelete)
+        persistSession(entries)
+        return { entries }
+    })
+}
+
 function restoreSession(storage: Storage): SearchStackEntry[] {
     return JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+}
+
+function persistSession(entries: SearchStackEntry[]): void {
+    // We store search stack data in both local and session storage: This
+    // feature should really be considered to be session related but at the
+    // same time we want to make it possible to restore information from the
+    // previous session (e.g. in case the page was accidentally closed).
+    // Storing the entries in local storage allows us to do that (see
+    // useSearchStackState above).
+    const serializedEntries = JSON.stringify(entries)
+    localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
+    sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
 }
