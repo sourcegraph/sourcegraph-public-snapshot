@@ -30,6 +30,8 @@ See the "checks:" in the configuration file.`,
 	}
 )
 
+// NOTE: These checkFuncs are also used by `sg doctor`, so make sure that when
+// you change something here `sg setup` still works as expected.
 var checkFuncs = map[string]dependencyCheck{
 	"postgres": anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
 	"redis":    retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
