@@ -80,6 +80,59 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
     return false
 }
 
+/**
+ * A helper function to replicate browser behavior when clicking on links.
+ * A very common interaction is to open links in a new in the _background_ via
+ * CTRL/CMD + click or middle click.
+ * Unfortunately `window.open` doesn't give us much control over how the new
+ * window/tab should be opened, and the behavior is inconcistent between
+ * browsers.
+ * In order to replicate the standard behvior as much as possible this function
+ * dynamically creates an `<a>` element and triggers a click event on it.
+ */
+function openLink(
+    url: string,
+    event: Pick<MouseEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>,
+    button: 'primary' | 'middle'
+): void {
+    const link = document.createElement('a')
+    link.href = url
+    link.style.display = 'none'
+    const clickEvent = new window.MouseEvent('click', {
+        bubbles: false,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        // Regarding middle click: Setting "button: 1:" doesn't seem to suffice:
+        // Firefox doesn't react to the event at all, Chromium opens the tab in
+        // the foreground. So in order to simulate a middle click, we set
+        // ctrlKey and metaKey to `true` instead.
+        ctrlKey: button === 'middle' ? true : event.ctrlKey,
+        metaKey: button === 'middle' ? true : event.metaKey,
+        view: window,
+    })
+
+    // It looks the link has to be part of the document, otherwise Firefox won't
+    // trigger the default behavior (it works without appending in Chromium).
+    document.body.append(link)
+    link.dispatchEvent(clickEvent)
+    link.remove()
+}
+
+/**
+ * Since we are not using a real link anymore, we have to simulate opening
+ * the file in a new tab when the search result is clicked on with the
+ * middle mouse button.
+ * This handler is bound to the `mouseup` event because the `auxclick`
+ * (https://w3c.github.io/uievents/#event-type-auxclick) event is not
+ * support by all browsers yet (https://caniuse.com/?search=auxclick)
+ */
+function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>): void {
+    const href = event.currentTarget.getAttribute('data-href')
+    if (href && event.button === 1) {
+        openLink(href, event, 'middle')
+    }
+}
+
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
@@ -166,7 +219,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
                     if (event.ctrlKey || event.metaKey || event.shiftKey) {
-                        window.open(href, '_blank')
+                        openLink(href, event, 'primary')
                     } else {
                         history.push(href)
                     }
@@ -220,6 +273,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.itemClickable
                                 )}
                                 onClick={navigateToFile}
+                                onMouseUp={navigateToFileOnMiddleMouseButtonClick}
                                 onKeyDown={navigateToFile}
                                 data-testid="file-match-children-item"
                                 tabIndex={0}

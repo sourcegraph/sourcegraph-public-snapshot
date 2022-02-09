@@ -104,6 +104,14 @@ ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad61335
 RUN tar zxf /lib-x64.tgz --directory /
 
 # p4-fusion installation
+RUN apk add --no-cache \
+    --virtual p4-build-deps \
+    g++ \
+    gcc \
+    perl \
+    cmake \
+    make
+
 # Fetching p4 sources archive
 RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz && \
     mv v1.5.tar.gz /usr/local/bin && \
@@ -134,6 +142,8 @@ WORKDIR /usr/local/bin
 RUN mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin && \
     rm -rf /usr/local/bin/p4-fusion-src && \
     rm /usr/local/bin/v1.5.tar.gz
+
+RUN apk --no-cache --purge del p4-build-deps
 # p4-fusion installation completed here
 
 # hadolint ignore=DL3022

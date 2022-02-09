@@ -1,9 +1,12 @@
 import classNames from 'classnames'
+import { LocationDescriptor } from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchStackIcon from 'mdi-react/LayersSearchIcon'
+import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useCallback, useState } from 'react'
+import TrashIcon from 'mdi-react/TrashCanIcon'
+import React, { useCallback, useState, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -16,7 +19,14 @@ import { Button, Link } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
-import { useSearchStackState, restorePreviousSession, SearchEntry, SearchStackEntry } from '../stores/searchStack'
+import {
+    useSearchStackState,
+    restorePreviousSession,
+    SearchEntry,
+    SearchStackEntry,
+    removeSearchStackEntry,
+    removeAllSearchStackEntries,
+} from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
 import { serializeBlocks } from './notebook/serialize'
@@ -26,9 +36,12 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const history = useHistory()
 
     const [open, setOpen] = useState(initialOpen)
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
+
+    const reversedEntries = useMemo(() => [...entries].reverse(), [entries])
 
     const createNotebook = useCallback(() => {
         const location = {
@@ -58,7 +71,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
         history.push(location)
     }, [entries, history])
 
-    if (!enableSearchStack || (entries.length === 0 && !canRestore)) {
+    if (!enableSearchStack) {
         return null
     }
 
@@ -86,48 +99,114 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
             {open && (
                 <>
                     <ul>
-                        {entries.map((entry, index) => (
-                            <li key={index}>{renderSearchEntry(entry)}</li>
+                        {reversedEntries.map(entry => (
+                            <li key={entry.id}>{renderSearchEntry(entry)}</li>
                         ))}
                     </ul>
-                    {(canRestore || entries.length > 0) && (
+                    {confirmRemoveAll && (
                         <div className="p-2">
-                            {canRestore && (
-                                <Button
-                                    className="w-100 mb-1"
-                                    onClick={restorePreviousSession}
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    Restore previous session
+                            <p>Are you sure you want to delete all entries?</p>
+                            <div className="d-flex justify-content-between">
+                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                    Cancel
                                 </Button>
-                            )}
-                            {entries.length > 0 && (
                                 <Button
-                                    className="w-100"
-                                    onClick={createNotebook}
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => {
+                                        removeAllSearchStackEntries()
+                                        setConfirmRemoveAll(false)
+                                    }}
                                 >
-                                    Create Notebook
+                                    Yes, delete
                                 </Button>
-                            )}
+                            </div>
                         </div>
                     )}
+                    <div className="p-2">
+                        {canRestore && (
+                            <Button
+                                className="w-100 mb-1"
+                                onClick={restorePreviousSession}
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Restore previous session
+                            </Button>
+                        )}
+                        <div className="d-flex justify-content-between align-items-center">
+                            <Button
+                                onClick={createNotebook}
+                                variant="primary"
+                                size="sm"
+                                disabled={entries.length === 0}
+                            >
+                                <NotebookPlusIcon className="icon-inline" /> Create Notebook
+                            </Button>
+                            <Button
+                                aria-label="Remove all entries"
+                                title="Remove all entries"
+                                variant="icon"
+                                className="text-muted"
+                                disabled={entries.length === 0}
+                                onClick={() => setConfirmRemoveAll(true)}
+                            >
+                                <TrashIcon className="icon-inline" />
+                            </Button>
+                        </div>
+                    </div>
                 </>
             )}
         </div>
     )
 }
 
+interface SearchStackEntryComponentProps {
+    entry: SearchStackEntry
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptor<any>
+    children?: React.ReactElement
+}
+
+const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryComponentProps> = ({
+    icon,
+    title,
+    location,
+    children,
+    entry,
+}) => (
+    <div className={styles.entry}>
+        <div className="d-flex">
+            <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
+            <Link to={location} className={classNames(styles.entry, 'flex-1 p-0')}>
+                {title}
+            </Link>
+            <span className="ml-1">
+                <Button
+                    aria-label="Remove entry"
+                    title="Remove entry"
+                    variant="icon"
+                    className="text-muted"
+                    onClick={() => removeSearchStackEntry(entry)}
+                >
+                    <CloseIcon className="icon-inline" />
+                </Button>
+            </span>
+        </div>
+        {children}
+    </div>
+)
+
 function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
     switch (entry.type) {
         case 'search':
             return (
-                <Link
-                    to={{
+                <SearchStackEntryComponent
+                    entry={entry}
+                    icon={<SearchIcon className="icon-inline" />}
+                    title={<SyntaxHighlightedSearchQuery query={entry.query} />}
+                    location={{
                         pathname: '/search',
                         search: buildSearchURLQuery(
                             entry.query,
@@ -136,39 +215,27 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                             entry.searchContext
                         ),
                     }}
-                    className={styles.entry}
-                >
-                    <div className="d-flex">
-                        <span className="flex-shrink-0">
-                            <SearchIcon className="icon-inline text-muted mr-1" />
-                        </span>
-                        <SyntaxHighlightedSearchQuery query={entry.query} />
-                    </div>
-                </Link>
+                />
             )
         case 'file':
             return (
-                <Link
-                    to={{
+                <SearchStackEntryComponent
+                    entry={entry}
+                    icon={<FileDocumentIcon className="icon-inline" />}
+                    title={<span title={entry.path}>{shortenFilePath(entry.path)}</span>}
+                    location={{
                         pathname: toPrettyBlobURL({
                             repoName: entry.repo,
                             revision: entry.revision,
                             filePath: entry.path,
                         }),
                     }}
-                    className={styles.entry}
                 >
-                    <div className="d-flex">
-                        <span className="flex-shrink-0">
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />
-                        </span>
-                        <span title={entry.path}>{shortenFilePath(entry.path)}</span>
-                    </div>
                     <small className="text-muted">
                         <RepoIcon repoName={entry.repo} className="icon-inline text-muted mr-1" />
                         {entry.repo}
                     </small>
-                </Link>
+                </SearchStackEntryComponent>
             )
     }
 }
