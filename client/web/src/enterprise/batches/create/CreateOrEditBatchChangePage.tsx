@@ -191,6 +191,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     isLightTheme,
     settingsCascade,
 }) => {
+    ;<animated.h4 className="overflow-hidden" style={headerStyle}>
+        Library
+    </animated.h4>
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange

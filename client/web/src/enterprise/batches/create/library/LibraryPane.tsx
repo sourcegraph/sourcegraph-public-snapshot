@@ -103,9 +103,9 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
             ) : null}
             <animated.div style={containerStyle} className="d-flex flex-column mr-1">
                 <div className="d-flex align-items-center justify-content-center pb-1">
-                    <animated.h5 className="overflow-hidden" style={headerStyle}>
+                    <animated.h4 className="overflow-hidden" style={headerStyle}>
                         Library
-                    </animated.h5>
+                    </animated.h4>
                     <div className={styles.collapseButton}>
                         <Button
                             className="p-0"
