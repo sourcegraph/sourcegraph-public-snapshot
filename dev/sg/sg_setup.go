@@ -191,7 +191,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+			{name: "git", check: checkFuncs["git"], instructionsCommands: `brew install git`},
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
@@ -207,7 +207,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 			},
 			{
 				name:                 "docker",
-				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
+				check:                checkFuncs["docker"],
 				instructionsCommands: `brew install --cask docker`,
 			},
 		},
@@ -349,7 +349,7 @@ asdf install nodejs
 				//
 				// Because only the latest error is returned, it's better to finish with the real check
 				// for error message clarity.
-				check: anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
+				check: checkFuncs["postgres"],
 				instructionsComment: `` +
 					`Sourcegraph requires the PostgreSQL database to be running.
 
@@ -376,7 +376,7 @@ createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 			},
 			{
 				name:  "psql",
-				check: checkInPath("psql"),
+				check: checkFuncs["psql"],
 				instructionsComment: `` +
 					`psql, the PostgreSQL CLI client, needs to be available in your $PATH.
 
@@ -393,7 +393,7 @@ If you used another method, make sure psql is available.`,
 		dependencies: []*dependency{
 			{
 				name:  "Connection to Redis",
-				check: retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
+				check: checkFuncs["redis"],
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running.
 					We recommend installing it with Homebrew and starting it as a system service.`,
