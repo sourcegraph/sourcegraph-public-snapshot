@@ -256,25 +256,31 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
-                    switchMap(parseRepositories),
-                    switchMap(repositoriesOrError => {
-                        if (repositoriesOrError.type === 'errors') {
-                            return throwError(createAggregateError(repositoriesOrError.errors))
+                    switchMap(() => {
+                        const partialInput = {
+                            name,
+                            description,
+                            public: visibility === 'public',
+                            namespace: selectedNamespace.id,
                         }
-                        return of(repositoriesOrError.repositories)
+                        if (contextType === 'static') {
+                            return parseRepositories().pipe(
+                                switchMap(repositoriesOrError => {
+                                    if (repositoriesOrError.type === 'errors') {
+                                        return throwError(createAggregateError(repositoriesOrError.errors))
+                                    }
+                                    return of(repositoriesOrError.repositories)
+                                }),
+                                map(repositories => ({ input: { ...partialInput, query: '' }, repositories }))
+                            )
+                        }
+                        if (query.trim().length === 0) {
+                            return throwError(new Error('Search query has to be non-empty.'))
+                        }
+                        return of({ input: { ...partialInput, query }, repositories: [] })
                     }),
-                    switchMap(repositoryRevisionsArray =>
-                        onSubmit(
-                            searchContext?.id,
-                            {
-                                name,
-                                description,
-                                public: visibility === 'public',
-                                namespace: selectedNamespace.id,
-                                query: contextType === 'dynamic' ? query : '',
-                            },
-                            contextType === 'static' ? repositoryRevisionsArray : []
-                        ).pipe(
+                    switchMap(({ input, repositories }) =>
+                        onSubmit(searchContext?.id, input, repositories).pipe(
                             startWith(LOADING),
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
@@ -411,13 +417,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         >
                             search query
                         </Link>
-                        . For a static set, use the JSON configuration.
+                        . For a static set, use tjhe JSON configuration.
                     </div>
                     <div>
                         <RadioButton
-                            id="search_context_type_dynamic"
+                            id="search-context-type-dynamic"
                             className={styles.searchContextFormRadio}
-                            name="search_context_type"
+                            name="search-context-type"
                             value="dynamic"
                             checked={contextType === 'dynamic'}
                             required={true}
@@ -428,7 +434,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 </>
                             }
                         />
-                        <div className={styles.searchContextFormQuery}>
+                        <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
@@ -457,9 +463,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     </div>
                     <div className="mt-3">
                         <RadioButton
-                            id="search_context_type_static"
+                            id="search-context-type-static"
                             className={styles.searchContextFormRadio}
-                            name="search_context_type"
+                            name="search-context-type"
                             value="static"
                             checked={contextType === 'static'}
                             required={true}
