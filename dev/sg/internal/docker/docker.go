@@ -8,7 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/docker/docker-credential-helpers/client"
 	"github.com/docker/docker-credential-helpers/credentials"
 )
@@ -96,17 +97,17 @@ func getStoreProvider(serverAddress string) (string, error) {
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to get user home directory")
 	}
 
 	data, err := ioutil.ReadFile(filepath.Join(homeDir, ".docker", "config.json"))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to read docker config")
 	}
 
 	var config ConfigFile
 	if err := json.Unmarshal(data, &config); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to parse docker config")
 	}
 
 	if serverAddress == "https://index.docker.io/v1/" && config.CredentialsStore != "" {
@@ -115,14 +116,14 @@ func getStoreProvider(serverAddress string) (string, error) {
 
 	url, err := url.Parse(serverAddress)
 	if err != nil {
-		return "", errors.Newf("failed to parse server address %s", serverAddress)
+		return "", errors.Wrapf(err, "failed to parse server address %s", serverAddress)
 	}
 
 	if config.CredentialHelpers[url.Host] != "" {
 		return config.CredentialHelpers[url.Host], nil
 	}
 
-	return "", errors.Newf("failed to find store provider or credential helper for %s", serverAddress)
+	return "", errors.Errorf("failed to find store provider or credential helper for %s", serverAddress)
 }
 
 func GetCredentialsFromStore(serverAddress string) (*credentials.Credentials, error) {
