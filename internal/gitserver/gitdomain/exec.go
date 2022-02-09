@@ -25,8 +25,6 @@ var (
 
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r"},
 		"ls-files":     {"--with-tree", "-z"},
-		"rm":           {},
-		"checkout":     {},
 		"for-each-ref": {"--format"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
 		"merge-base":   {"--"},
