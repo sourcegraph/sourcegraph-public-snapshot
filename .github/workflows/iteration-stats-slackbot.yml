@@ -3,7 +3,6 @@ name: Code Insights iteration stats Slack bot
 on:
   schedule:
     # Every Friday 5pm PST (Saturday 1am UTC)
-    # Note: script will exit if there is no iteration ending that day (every 2 weeks, but cron doesn't support that)
     - cron: 0 1 * * 6
 
 jobs:
@@ -18,12 +17,13 @@ jobs:
           SLACK_WEBHOOK_URI: ${{ secrets.INSIGHTS_ITERATION_SLACKBOT_WEBHOOK_URI }}
         with:
           script: |
-            $global:InformationPreference = 'Continue'
-            $global:ProgressPreference = 'SilentlyContinue'
+            $InformationPreference = 'Continue'
+            $ProgressPreference = 'SilentlyContinue'
+            $ErrorActionPreference = 'Stop'
             Set-StrictMode -Version 3.0
 
-            Install-Module PSGitHub -Force -ErrorAction Stop
-            Install-Module PSSlack -Force -ErrorAction Stop
+            Install-Module PSGitHub -Force
+            Install-Module PSSlack -Force
 
             if (!$env:GITHUB_TOKEN) {
               throw "No GITHUB_TOKEN env var provided"
@@ -31,4 +31,4 @@ jobs:
 
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
 
-            ./.github/workflows/post-iteration-stats.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -SlackChannel '#code-insights-internal' -SlackWebhookUri $env:SLACK_WEBHOOK_URI
+            ./.github/workflows/post-iteration-stats.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -SlackChannel '#code-insights-planning' -SlackWebhookUri $env:SLACK_WEBHOOK_URI
