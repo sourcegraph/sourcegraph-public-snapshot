@@ -60,6 +60,9 @@ switch ($github.event_name) {
                 $message = "*$proposer* proposed a new issue for iteration <$($item.content.milestone.url)|$($item.content.milestone.title)>.`n" +
                     "There are now $($stats.Sum) points of open issues in the iteration."
 
+                # Plain text fallback for contexts without formatting capability, e.g. push notifications
+                $fallback = "*$proposer* proposed a new issue for iteration $($item.content.milestone.title): #$($item.content.number) $($item.content.title). There are now $($stats.Sum) points of open issues in the iteration."
+
                 New-SlackMessageAttachment `
                     -Pretext $message `
                     -Color $color `
@@ -72,7 +75,8 @@ switch ($github.event_name) {
                         @{ title = 'Size'; value = $item.Fields['Size 🔵']; short = $true },
                         @{ title = 'Importance'; value = $item.Fields['Importance']; short = $true },
                         @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true }
-                    ) |
+                    ) `
+                    -Fallback $fallback |
                     New-SlackMessage -Username 'Iteration Bot' -IconEmoji ':robot:' -Channel $SlackChannel |
                     Send-SlackMessage -Uri $SlackWebhookUri
             }
