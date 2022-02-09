@@ -216,4 +216,4 @@ func (e *noopJob) Run(context.Context, database.DB, streaming.Sender) (*search.A
 	return nil, nil
 }
 
-func (e *noopJob) Name() string { return "EmptyJob" }
+func (e *noopJob) Name() string { return "NoopJob" }
