@@ -7,8 +7,8 @@ URL="${1:-"http://localhost:7080"}"
 
 function integration_test() {
   export MOCHA_JUNIT_OUTPUT_DIR=$(mktemp -d)
-  export MOCHA_FILE=$MOCHA_JUNIT_OUTPUT_DIR/mocha-junit.xml
-  trap 'rm -f "$MOCHA_JUNIT_OUTPUT_DIR"' EXIT
+  export MOCHA_FILE="$MOCHA_JUNIT_OUTPUT_DIR/mocha-junit.xml"
+  trap 'rm -Rf "$MOCHA_JUNIT_OUTPUT_DIR"' EXIT
 
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
@@ -22,8 +22,9 @@ function integration_test() {
   set -eo pipefail # resume being strict about errors
 
   # escape xml output properly for JSON
+  set +x
   local quoted_xml
-  quoted_xml="$(jq -R -s '.' $MOCHA_FILE)"
+  quoted_xml="$(jq -R -s '.' "$MOCHA_FILE")"
 
   local data
   data=$(
@@ -52,6 +53,7 @@ EOF
     --data-binary @-
 
   echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  set -x
 
   return "$test_exit_code"
 }

@@ -14,8 +14,8 @@ echo "--- test"
 
 function yarn_test() {
   export JEST_JUNIT_OUTPUT_NAME="jest-junit.xml"
-  export JEST_JUNIT_OUTPUT_DIR=$(mktemp -d) 
-  trap 'rm -f "$JEST_JUNIT_OUTPUT_NAME"' EXIT
+  export JEST_JUNIT_OUTPUT_DIR=$(mktemp -d)
+  trap 'rm -Rf "$JEST_JUNIT_OUTPUT_DIR"' EXIT
 
   set +eo pipefail # so we still get the result if the test failed
   local test_exit_code
@@ -32,7 +32,7 @@ function yarn_test() {
 
   # escape xml output properly for JSON
   local quoted_xml
-  quoted_xml="$(jq -R -s '.' $JEST_JUNIT_OUTPUT_DIR/$JEST_JUNIT_OUTPUT_NAME)"
+  quoted_xml="$(jq -R -s '.' "$JEST_JUNIT_OUTPUT_DIR/$JEST_JUNIT_OUTPUT_NAME")"
 
   local data
   data=$(
