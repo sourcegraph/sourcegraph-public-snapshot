@@ -1,4 +1,4 @@
-name: Code Insights GitHub project automation
+name: "[OPTIONAL/DOESN'T BLOCK MERGING] Code Insights GitHub project automation"
 
 on:
   issues:
