@@ -118,8 +118,8 @@ func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.Re
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
-WHERE user_id = %s
-  AND repo_id = %s
+WHERE repo_id = %s
+  AND user_id = %s
   AND version = %s
 `, userID, repoID, SubRepoPermsVersion)
 
