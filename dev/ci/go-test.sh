@@ -112,7 +112,7 @@ export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in som
 # We are using this fork for now, until I open a PR to merge it upstream
 go install github.com/jhchabran/richgo@installable
 asdf reshim golang
-RICHGO_FORCE_CONFIG_PATH="$(pwd)/.ci-richstyle.yml)"
+RICHGO_FORCE_CONFIG_PATH="$(pwd)/.ci-richstyle.yml"
 export RICHGO_FORCE_CONFIG_PATH
 
 # We have multiple go.mod files and go list doesn't recurse into them.
