@@ -46,10 +46,10 @@ function hasBom(buf) {
 /**
  * Creates a new EventSource object
  *
- * @param {string} url the URL to which to connect
- * @param {Object} [eventSourceInitDict] extra init params. See README for details.
+ * @param url the URL to which to connect
+ * @param [eventSourceInitDict] extra init params. See README for details.
  * @api public
- **/
+ */
 function EventSource(url, eventSourceInitDict) {
   let readyState = EventSource.CONNECTING
   Object.defineProperty(this, 'readyState', {
@@ -104,11 +104,11 @@ function EventSource(url, eventSourceInitDict) {
   var reconnectUrl = null
 
   function connect() {
-    const options = parse(url)
+    const streamApi = url.replace('search/stream?q=', '.api/search/stream?q=')
+    const options = parse(streamApi)
+
     let isSecure = options.protocol === 'https:'
     options.headers = {
-      'Cache-Control': 'no-cache',
-      Accept: 'text/event-stream',
       ...fixedHeaders,
     }
     if (lastEventId) {
@@ -139,7 +139,7 @@ function EventSource(url, eventSourceInitDict) {
       isSecure = proxy.protocol === 'https:'
 
       options.protocol = isSecure ? 'https:' : 'http:'
-      options.path = url
+      options.path = streamApi
       options.headers.Host = options.host
       options.hostname = proxy.hostname
       options.host = proxy.host
@@ -164,7 +164,6 @@ function EventSource(url, eventSourceInitDict) {
     if (eventSourceInitDict && eventSourceInitDict.withCredentials !== undefined) {
       options.withCredentials = eventSourceInitDict.withCredentials
     }
-
     request = (isSecure ? https : http).request(options, res => {
       self.connectionInProgress = false
       // Handle HTTP errors
@@ -361,7 +360,7 @@ EventSource.prototype.constructor = EventSource // make stacktraces readable
     /**
      * Returns the current listener
      *
-     * @returns {Mixed} the set function or undefined
+     * @returns the set function or undefined
      * @api private
      */
     get: function get() {
@@ -372,8 +371,8 @@ EventSource.prototype.constructor = EventSource // make stacktraces readable
     /**
      * Start listening for events
      *
-     * @param {Function} listener the listener
-     * @returns {Mixed} the set function or undefined
+     * @param listener the listener
+     * @returns the set function or undefined
      * @api private
      */
     set: function set(listener) {
@@ -407,8 +406,8 @@ EventSource.prototype.close = function () {
 /**
  * Emulates the W3C Browser based WebSocket interface using addEventListener.
  *
- * @param {string} type A string representing the event type to listen out for
- * @param {Function} listener callback
+ * @param type A string representing the event type to listen out for
+ * @param listener callback
  * @see https://developer.mozilla.org/en/DOM/element.addEventListener
  * @see http://dev.w3.org/html5/websockets/#the-websocket-interface
  * @api public
@@ -424,7 +423,7 @@ EventSource.prototype.addEventListener = function addEventListener(type, listene
 /**
  * Emulates the W3C Browser based WebSocket interface using dispatchEvent.
  *
- * @param {Event} event An event to be dispatched
+ * @param event An event to be dispatched
  * @see https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent
  * @api public
  */
@@ -440,8 +439,8 @@ EventSource.prototype.dispatchEvent = function dispatchEvent(event) {
 /**
  * Emulates the W3C Browser based WebSocket interface using removeEventListener.
  *
- * @param {string} type A string representing the event type to remove
- * @param {Function} listener callback
+ * @param type A string representing the event type to remove
+ * @param listener callback
  * @see https://developer.mozilla.org/en/DOM/element.removeEventListener
  * @see http://dev.w3.org/html5/websockets/#the-websocket-interface
  * @api public

@@ -31,6 +31,7 @@
     "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
+  "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
       {
@@ -198,6 +199,7 @@
   },
   "dependencies": {
     "https-browserify": "^1.0.0",
+    "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0"
   }
 }
