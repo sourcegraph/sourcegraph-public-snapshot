@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/distribution/distribution/v3/reference"
+	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/opencontainers/go-digest"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -19,17 +20,7 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-type Options struct {
-	RegistryUsername string
-	RegistryPassword string
-}
-
-var (
-	options Options
-)
-
-func Parse(path string, _options Options) error {
-	options = _options
+func Parse(path string, credetials credentials.Credentials) error {
 
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
@@ -46,7 +37,7 @@ func Parse(path string, _options Options) error {
 
 	err := kio.Pipeline{
 		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{imageFilter{}},
+		Filters:               []kio.Filter{imageFilter{credential: &credetials}},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -54,15 +45,17 @@ func Parse(path string, _options Options) error {
 	return err
 }
 
-type imageFilter struct{}
+type imageFilter struct {
+	credential *credentials.Credentials
+}
 
 var _ kio.Filter = &imageFilter{}
 
 // Filter implements kio.Filter (notably different from yaml.Filter)
 // Analogous to http://www.linfo.org/filters.html
-func (imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
+func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
-		if err := findImage(r); err != nil {
+		if err := findImage(r, *filter.credential); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
@@ -78,7 +71,7 @@ var conventionalInitContainerPaths = [][]string{
 	{"spec", "template", "spec", "initContainers"},
 }
 
-func findImage(r *yaml.RNode) error {
+func findImage(r *yaml.RNode, credential credentials.Credentials) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
 		return errors.Newf("%v: %s", err, r.GetName())
@@ -104,7 +97,7 @@ func findImage(r *yaml.RNode) error {
 		if err != nil {
 			return err
 		}
-		updatedImage, err := updateImage(s)
+		updatedImage, err := updateImage(s, credential)
 		if err != nil {
 			return err
 		}
@@ -125,10 +118,11 @@ func findImage(r *yaml.RNode) error {
 }
 
 type ImageReference struct {
-	Registry string        // index.docker.io
-	Name     string        // sourcegraph/frontend
-	Digest   digest.Digest // sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc
-	Tag      string        // insiders
+	Registry    string // index.docker.io
+	Credentials *credentials.Credentials
+	Name        string        // sourcegraph/frontend
+	Digest      digest.Digest // sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc
+	Tag         string        // insiders
 }
 
 type imageRepository struct {
@@ -142,7 +136,7 @@ func (image ImageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
 
-func updateImage(rawImage string) (string, error) {
+func updateImage(rawImage string, credential credentials.Credentials) (string, error) {
 	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImage))
 	if err != nil {
 		return "", err
@@ -152,6 +146,7 @@ func updateImage(rawImage string) (string, error) {
 
 	// TODO Handle images without registry specified
 	imgRef.Registry = reference.Domain(ref)
+	imgRef.Credentials = &credential
 	if nameTagged, ok := ref.(reference.NamedTagged); ok {
 		imgRef.Tag = nameTagged.Tag()
 		imgRef.Name = reference.Path(nameTagged)
@@ -227,8 +222,8 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 		return "", err
 	}
 
-	if options.RegistryPassword != "" && options.RegistryUsername != "" {
-		req.SetBasicAuth(options.RegistryUsername, options.RegistryPassword)
+	if i.imageRef.Credentials.Username != "" && i.imageRef.Credentials.Secret != "" {
+		req.SetBasicAuth(i.imageRef.Credentials.Username, i.imageRef.Credentials.Secret)
 	}
 
 	resp, err := http.DefaultClient.Do(req)

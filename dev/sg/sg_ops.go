@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
+	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -65,8 +66,10 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
+	var dockerCredentials *credentials.Credentials
+	var err error
 	if *opsUpdateImagesContainerRegistryUsernameFlag == "" || *opsUpdateImagesContainerRegistryPasswordFlag == "" {
-		dockerCredentials, err := docker.GetCredentialsFromStore("https://index.docker.io/v1/")
+		dockerCredentials, err = docker.GetCredentialsFromStore("https://index.docker.io/v1/")
 		if err != nil {
 			// We do not want any error handling here, just fallback to anonymous requests
 			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
@@ -77,10 +80,5 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 			opsUpdateImagesContainerRegistryPasswordFlag = &dockerCredentials.Secret
 		}
 	}
-	return images.Parse(
-		args[0],
-		images.Options{
-			RegistryUsername: *opsUpdateImagesContainerRegistryUsernameFlag,
-			RegistryPassword: *opsUpdateImagesContainerRegistryPasswordFlag,
-		})
+	return images.Parse(args[0], *dockerCredentials)
 }
