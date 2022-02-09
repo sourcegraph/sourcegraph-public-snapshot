@@ -18,4 +18,5 @@ or follow the [IANA specification for Redis URLs](https://www.iana.org/assignmen
 
 If using Docker for Desktop, `host.docker.internal` will resolve to the host IP address.
 
-
+## Kubernetes Redis
+See our documentation for Kubernetes [here](../install/kubernetes/configure.md#configure-custom-redis)
