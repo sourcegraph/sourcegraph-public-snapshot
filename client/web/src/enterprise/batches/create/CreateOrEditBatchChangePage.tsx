@@ -355,7 +355,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                     {/* <animated.h4 className=“overflow-hidden” style={headerStyle}>
                         Library
                     </animated.h4>                    */}
-                    <h4>Batch Specification</h4>
+                    <h4 className={styles.header}>Batch specification</h4>
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
