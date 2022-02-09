@@ -130,7 +130,7 @@ describe('GitHub', () => {
         })
     })
 
-    it.only("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
+    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
