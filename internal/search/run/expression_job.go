@@ -161,7 +161,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 		})
 	}
 
-	err := g.Wait().ErrorOrNil()
+	err = g.Wait().ErrorOrNil()
 	if err = errors.Ignore(err, errors.IsContextCanceled); err != nil {
 		return maxAlerter.Alert, err
 	}

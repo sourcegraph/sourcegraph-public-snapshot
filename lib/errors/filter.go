@@ -4,6 +4,10 @@ import (
 	"context"
 )
 
+// Ignore filters out any errors that match pred. This applies
+// recursively to MultiErrors, filtering out any child errors
+// that match `pred`, or returning `nil` if all of the child
+// errors match `pred`.
 func Ignore(err error, pred ErrorPredicate) error {
 	// If the error (or any wrapped error) is a multierror,
 	// filter its children.
