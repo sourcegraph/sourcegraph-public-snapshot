@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
@@ -25,7 +26,8 @@ import (
 )
 
 const (
-	ciLogsOutStdout = "stdout"
+	ciLogsOutTerminal = "terminal"
+	ciLogsOutJSON     = "json"
 )
 
 var (
@@ -37,8 +39,8 @@ var (
 	ciLogsJobOverwriteStateFlag = ciLogsFlagSet.String("overwrite-state", "", "State to overwrite the job state metadata")
 	ciLogsJobQueryFlag          = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 	ciLogsBuildFlag             = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
-	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutStdout,
-		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutTerminal,
+		fmt.Sprintf("Output format: either 'terminal', 'json', or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
@@ -291,7 +293,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				switch *ciLogsOutFlag {
-				case ciLogsOutStdout:
+				case ciLogsOutTerminal:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
@@ -301,6 +303,23 @@ From there, you can start exploring logs with the Grafana explore panel.
 						block.Close()
 					}
 					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+				case ciLogsOutJSON:
+					for _, log := range logs {
+						if *ciLogsJobOverwriteStateFlag != "" {
+							failed := *ciLogsJobOverwriteStateFlag
+							log.JobMeta.State = &failed
+						}
+						stream, err := loki.NewStreamFromJobLogs(log)
+						if err != nil {
+							return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						b, err := json.MarshalIndent(stream, "", "\t")
+						if err != nil {
+							return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						stdout.Out.Write(string(b))
+					}
 
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
