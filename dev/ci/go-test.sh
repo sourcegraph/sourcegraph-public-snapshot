@@ -108,6 +108,9 @@ echo "--- comby install"
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
 
+# Disable GraphQL logs which are wildly noisy
+export NO_GRAPHQL_LOG=true
+
 # Install richgo for better output
 # We are using this fork for now, until I open a PR to merge it upstream
 go install github.com/jhchabran/richgo@installable
