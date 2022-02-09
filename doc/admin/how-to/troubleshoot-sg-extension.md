@@ -32,7 +32,13 @@ The red dot indicates that either the Sourcegraph URL entered is invalid, or you
 
 ## Extension Specific
 
-### VS Code Extensions
+### VS Code Extension
+
+#### How to use the VS Code Extension with your private Sourcegraph instance
+The extension is connected to the [Sourcegraph public instance](https://sourcegraph.com/) by default. You can also add the following settings in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to connect the extension to your private instance: 
+1. `sourcegraph.url`: the instance url of your private instance 
+2. `sourcegraph.accessToken`: an access token created by your private Sourcegraph instance
+Note: If only an access token is configured, the extension will try to run searches on our public instance using the token instead of the corresponding instance. 
 
 #### How to update the Sourcegraph VS Code Extension to the latest version
 ![image](https://user-images.githubusercontent.com/68532117/153280003-df575725-22c2-4a5a-b94b-2137790da039.png)
