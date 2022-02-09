@@ -12,6 +12,6 @@ INSERT INTO series_points (SELECT * FROM series_points_timescale);
 DROP TABLE series_points_timescale CASCADE;
 
 -- Last, remove the extension
-DROP EXTENSION timescaledb;
+DROP EXTENSION IF EXISTS timescaledb;
 
 COMMIT;
