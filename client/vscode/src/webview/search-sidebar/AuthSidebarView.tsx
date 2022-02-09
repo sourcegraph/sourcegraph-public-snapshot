@@ -10,6 +10,8 @@ import { WebviewPageProps } from '../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
 
+const SIDEBAR_UTM_PARAMS = 'utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
+
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
@@ -22,7 +24,9 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
 
     const [hasAccount, setHasAccount] = useState(false)
 
-    const signUpURL = useMemo(() => new URL('sign-up?editor=vscode', instanceURL).href, [instanceURL])
+    const signUpURL = useMemo(() => new URL('sign-up?editor=vscode&' + SIDEBAR_UTM_PARAMS, instanceURL).href, [
+        instanceURL,
+    ])
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
 
     const ctaButtonProps: Partial<ButtonProps> = {
@@ -99,7 +103,11 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
             </p>
             <div>
                 <p className="mb-0">Learn more:</p>
-                <a href="http://sourcegraph.com/" className="my-0" onClick={() => onLinkClick('Sourcegraph')}>
+                <a
+                    href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
+                    className="my-0"
+                    onClick={() => onLinkClick('Sourcegraph')}
+                >
                     Sourcegraph.com
                 </a>
                 <br />
@@ -127,7 +135,7 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
                     history, monitor, save searches and more.
                 </p>
                 <Button onClick={onSignUpClick} {...ctaButtonProps}>
-                    Create an account
+                    Create account
                 </Button>
                 <Button onClick={() => setHasAccount(true)} {...buttonLinkProps}>
                     Have an account?
@@ -140,8 +148,11 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
         <>
             <p>Sign in by entering an access token created through your user settings on {instanceHostname}.</p>
             <p>
-                See our <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">user docs</a> for a
-                video guide on how to create an access token.
+                See our{' '}
+                <a href={'https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token?' + SIDEBAR_UTM_PARAMS}>
+                    user docs
+                </a>{' '}
+                for a video guide on how to create an access token.
             </p>
             {state === 'failure' && (
                 <Alert variant="danger">
