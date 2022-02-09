@@ -604,15 +604,14 @@ func parseBranchesContaining(lines []string) []string {
 // branch and tag of the given repository.
 func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ map[string][]gitdomain.RefDescription, err error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
-		args := append(make([]string, 0, 3), "for-each-ref")
-		if refPrefix == "refs/tags/" {
-			args = append(args, "--format=%(*objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
-		} else {
-			args = append(args, "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
-		}
-		args = append(args, refPrefix)
+		format := strings.Join([]string{
+			derefField("objectname"),
+			"%(refname)",
+			"%(HEAD)",
+			derefField("creatordate:iso8601-strict"),
+		}, "%00")
 
-		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd := gitserver.DefaultClient.Command("git", "for-each-ref", "--format="+format, refPrefix)
 		cmd.Repo = repo
 
 		out, err := cmd.CombinedOutput(ctx)
@@ -620,7 +619,7 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 			return nil, err
 		}
 
-		return parseRefDescriptions(strings.Split(string(out), "\n"))
+		return parseRefDescriptions(out)
 	}
 
 	aggregate := make(map[string][]gitdomain.RefDescription)
@@ -638,6 +637,10 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 		return filterRefDescriptions(ctx, repo, aggregate, checker), nil
 	}
 	return aggregate, nil
+}
+
+func derefField(field string) string {
+	return "%(if)%(*" + field + ")%(then)%(*" + field + ")%(else)%(" + field + ")%(end)"
 }
 
 func filterRefDescriptions(ctx context.Context,
@@ -660,34 +663,37 @@ var refPrefixes = map[string]gitdomain.RefType{
 }
 
 // parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. Each line should conform to the format
-// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
+// method to a map from commits to RefDescription objects. The output is expected to be a series
+// of lines each conforming to  `%(objectname)%00%(refname)%00%(HEAD)%00%(creatordate)`, where
 //
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription, error) {
+func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
+	lines := bytes.Split(out, []byte("\n"))
 	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
+
+lineLoop:
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
 			continue
 		}
 
-		parts := strings.SplitN(line, ":", 4)
+		parts := bytes.SplitN(line, []byte("\x00"), 4)
 		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref %q`, string(line))
 		}
 
-		commit := parts[0]
-		isDefaultBranch := parts[2] == "*"
+		commit := string(parts[0])
+		isDefaultBranch := string(parts[2]) == "*"
 
 		var name string
 		var refType gitdomain.RefType
 		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(parts[1], prefix) {
-				name = parts[1][len(prefix):]
+			if strings.HasPrefix(string(parts[1]), prefix) {
+				name = string(parts[1])[len(prefix):]
 				refType = typ
 				break
 			}
@@ -696,9 +702,16 @@ func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
-		createdDate, err := time.Parse(time.RFC3339, parts[3])
+		createdDate, err := time.Parse(time.RFC3339, string(parts[3]))
 		if err != nil {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		}
+
+		// Check for duplicates before adding it to the slice
+		for _, candidate := range refDescriptions[commit] {
+			if candidate.Name == name && candidate.Type == refType && candidate.IsDefaultBranch == isDefaultBranch {
+				continue lineLoop
+			}
 		}
 
 		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
