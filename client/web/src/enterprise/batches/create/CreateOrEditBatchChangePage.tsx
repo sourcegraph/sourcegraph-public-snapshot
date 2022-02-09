@@ -191,9 +191,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     isLightTheme,
     settingsCascade,
 }) => {
-    ;<animated.h4 className="overflow-hidden" style={headerStyle}>
-        Library
-    </animated.h4>
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
@@ -355,6 +352,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
+                    {/* <animated.h4 className=“overflow-hidden” style={headerStyle}>
+                        Library
+                    </animated.h4>                    */}
+                    <h4>Batch Specification</h4>
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
