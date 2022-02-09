@@ -1116,11 +1116,11 @@
             },
             "clientID": {
               "type": "string",
-              "description": "The Client ID of the GitHub App, accessible from https://github.com/settings/apps ."
+              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
             },
             "clientSecret": {
               "type": "string",
-              "description": "The Client Secret of the GitHub App, accessible from https://github.com/settings/apps ."
+              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
             }
           }
         }
@@ -1545,7 +1545,7 @@
           "type": "boolean"
         },
         "hidden": {
-          "description": "Hides the configured provider from regular use, useful for experimental auth setups.",
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
           "default": false,
           "type": "boolean"
         }

@@ -686,7 +686,7 @@ type GitHubAuthProvider struct {
 	// ClientSecret description: The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
 	ClientSecret string `json:"clientSecret"`
 	DisplayName  string `json:"displayName,omitempty"`
-	// Hidden description: Hides the configured provider from regular use, useful for experimental auth setups.
+	// Hidden description: Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.
 	Hidden bool   `json:"hidden,omitempty"`
 	Type   string `json:"type"`
 	// Url description: URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.
@@ -870,9 +870,9 @@ type GitLabWebhook struct {
 type GithubAppCloud struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
 	AppID string `json:"appID,omitempty"`
-	// ClientID description: The Client ID of the GitHub App, accessible from https://github.com/settings/apps .
+	// ClientID description: The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
 	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret description: The Client Secret of the GitHub App, accessible from https://github.com/settings/apps .
+	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps .
 	ClientSecret string `json:"clientSecret,omitempty"`
 	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
 	PrivateKey string `json:"privateKey,omitempty"`

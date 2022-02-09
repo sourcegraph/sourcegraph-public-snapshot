@@ -68,9 +68,9 @@ type JSContext struct {
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode bool   `json:"sourcegraphDotComMode"`
-	GitHubAppCloudSlug    string `json:"githubAppCloudSlug"`
-	GitHubAppClientID     string `json:"githubAppClientID"`
+	SourcegraphDotComMode  bool   `json:"sourcegraphDotComMode"`
+	GitHubAppCloudSlug     string `json:"githubAppCloudSlug"`
+	GitHubAppCloudClientID string `json:"githubAppCloudClientID"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -126,10 +126,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// Auth providers
 	var authProviders []authProviderInfo
 	for _, p := range providers.Providers() {
-		if p.Config().Github != nil {
-			if p.Config().Github.Hidden {
-				continue
-			}
+		if p.Config().Github != nil && p.Config().Github.Hidden {
+			continue
 		}
 		info := p.CachedInfo()
 		if info != nil {
@@ -149,10 +147,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var githubAppCloudSlug string
-	var githubAppClientID string
+	var githubAppCloudClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
 		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
-		githubAppClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
+		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -180,9 +178,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		GitHubAppCloudSlug:    githubAppCloudSlug,
-		GitHubAppClientID:     githubAppClientID,
+		SourcegraphDotComMode:  envvar.SourcegraphDotComMode(),
+		GitHubAppCloudSlug:     githubAppCloudSlug,
+		GitHubAppCloudClientID: githubAppCloudClientID,
 
 		BillingPublishableKey: BillingPublishableKey,
 

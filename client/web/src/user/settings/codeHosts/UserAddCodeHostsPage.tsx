@@ -327,7 +327,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                 if (enabled) {
                                     window.location.assign(
                                         `/.auth/github/login?pc=${encodeURIComponent(
-                                            `https://github.com/::${window.context.githubAppClientID}`
+                                            `https://github.com/::${window.context.githubAppCloudClientID}`
                                         )}&op=createCodeHostConnection`
                                     )
                                 } else {
