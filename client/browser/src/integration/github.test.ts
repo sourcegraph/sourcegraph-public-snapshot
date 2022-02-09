@@ -4,10 +4,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import {
-    setupExtensionMocking,
-    simpleHoverAndDefinitionProviders,
-} from '@sourcegraph/shared/src/testing/integration/mockExtension'
+import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -165,7 +162,48 @@ describe('GitHub', () => {
         // Serve a mock extension with a simple hover provider
         mockExtension({
             id: 'simple/hover',
-            bundle: simpleHoverAndDefinitionProviders,
+            bundle: function extensionBundle(): void {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+
+                function activate(context: sourcegraph.ExtensionContext): void {
+                    context.subscriptions.add(
+                        sourcegraph.languages.registerHoverProvider(['*'], {
+                            provideHover: (document, position) => {
+                                const range = document.getWordRangeAtPosition(position)
+                                const token = document.getText(range)
+                                if (!token) {
+                                    return null
+                                }
+                                return {
+                                    contents: {
+                                        value: `User is hovering over ${token}`,
+                                        kind: sourcegraph.MarkupKind.Markdown,
+                                    },
+                                    range,
+                                }
+                            },
+                        })
+                    )
+
+                    context.subscriptions.add(
+                        sourcegraph.languages.registerDefinitionProvider(['*'], {
+                            provideDefinition: () =>
+                                new sourcegraph.Location(
+                                    new URL(
+                                        'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+                                    ),
+                                    new sourcegraph.Range(
+                                        new sourcegraph.Position(4, 5),
+                                        new sourcegraph.Position(5, 14)
+                                    )
+                                ),
+                        })
+                    )
+                }
+
+                exports.activate = activate
+            },
         })
 
         let isRedirectedToDefinition = false

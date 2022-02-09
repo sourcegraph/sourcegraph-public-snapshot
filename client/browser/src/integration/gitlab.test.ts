@@ -2,10 +2,7 @@ import assert from 'assert'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import {
-    setupExtensionMocking,
-    simpleHoverAndDefinitionProviders,
-} from '@sourcegraph/shared/src/testing/integration/mockExtension'
+import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -148,7 +145,7 @@ describe('GitLab', () => {
         // Serve a mock extension with a simple hover provider
         mockExtension({
             id: 'simple/hover',
-            bundle: simpleHoverAndDefinitionProviders,
+            bundle: simpleHoverProvider,
         })
 
         await driver.page.goto(
