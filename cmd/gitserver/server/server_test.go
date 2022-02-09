@@ -116,7 +116,13 @@ func TestRequest(t *testing.T) {
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: `invalid command`,
+			ExpectedBody: "invalid command",
+		},
+		{
+			Name:         "BadCommand",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "invalid command",
 		},
 	}
 

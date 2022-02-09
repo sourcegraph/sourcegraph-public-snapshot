@@ -1151,7 +1151,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(req.Args) {
-		log15.Warn(fmt.Sprintf("Server.exec: bad command %q", req.Args))
+		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte("invalid command"))
 		return
