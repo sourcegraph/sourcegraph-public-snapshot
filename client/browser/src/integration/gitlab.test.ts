@@ -62,6 +62,9 @@ describe('GitLab', () => {
                     name: rawRepoName,
                 },
             }),
+            ResolveRawRepoName: ({ repoName }) => ({
+                repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
+            }),
             BlobContent: () => ({
                 repository: {
                     commit: {

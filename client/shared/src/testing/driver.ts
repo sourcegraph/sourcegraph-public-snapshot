@@ -263,15 +263,20 @@ export class Driver {
     }
 
     /**
-     * TODO:
+     * Sets 'Enable click to go to definition' option flag value.
      */
-    public async setClickGoToDefOptionFlag(isEnabled?: boolean): Promise<void> {
-        // TODO: use parameter
+    public async setClickGoToDefOptionFlag(isEnabled: boolean): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
         const toggleAdvancedSettingsButton = await this.page.waitForSelector('.test-toggle-advanced-settings-button')
         await toggleAdvancedSettingsButton?.click()
         const checkbox = await this.findElementWithText('Enable click to go to definition')
-        await checkbox?.click()
+        if (!checkbox) {
+            throw new Error("'Enable click to go to definition' checkbox not found.")
+        }
+        const isChecked = await checkbox.$eval('input', input => (input as HTMLInputElement).checked)
+        if (isEnabled !== isChecked) {
+            await checkbox.click()
+        }
     }
 
     public async close(): Promise<void> {

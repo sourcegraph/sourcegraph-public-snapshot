@@ -127,7 +127,7 @@ describe('GitHub', () => {
         })
     })
 
-    it.only('shows hover tooltips when hovering a token', async () => {
+    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -165,6 +165,25 @@ describe('GitHub', () => {
             bundle: simpleHoverProvider(),
         })
 
+        let isRedirectedToDefinition = false
+
+        // For some reason in test requested definition URL is different from the actual one:
+        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6' instead of
+        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6'.
+        // The former URL is returns 404 page so for test sake we intercept such requests and track the fact of redirect.
+        testContext.server
+            .get(
+                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
+            )
+            .intercept((request, response) => {
+                response.sendStatus(200)
+                isRedirectedToDefinition = true
+            })
+
+        testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+
         const openPageAndGetToken = async () => {
             await driver.page.goto(
                 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
@@ -192,7 +211,8 @@ describe('GitHub', () => {
         }
 
         let token = await openPageAndGetToken()
-        // 1. Check that hover works
+
+        // 1. Check that hovering a token shows code intel popup.
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: ' [data-testid="hover-overlay-content"] > p',
@@ -202,12 +222,13 @@ describe('GitHub', () => {
             },
         })
 
-        // 2. Check click does not do anything
+        // 2. Check that token click does not do anything by default
         await token.click()
         await driver.page.waitForTimeout(1000)
+        assert(!isRedirectedToDefinition, 'Expected to not be redirected to definition')
 
-        // 3. Enable click-to-def and check that it redirects
-        await driver.setClickGoToDefOptionFlag()
+        // 3. Enable click-to-def setting and check that it redirects to the proper page
+        await driver.setClickGoToDefOptionFlag(true)
         token = await openPageAndGetToken()
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
@@ -217,27 +238,10 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
-
         await token.click()
-
-        let isRedirected = false
-
-        testContext.server
-            .any(
-                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
-            )
-            .intercept((request, response) => {
-                response.sendStatus(200)
-                isRedirected = true
-            })
-        testContext.server.any('https://github.com/favicon.ico').intercept((request, response) => {
-            response.sendStatus(200)
-        })
-
         await driver.page.waitForTimeout(3000)
-        assert(isRedirected)
 
-        // TODO: try to remove above 2 URL mocks
+        assert(isRedirectedToDefinition, 'Expected to be redirected to definition')
     })
 
     describe('Pull request pages', () => {
