@@ -10,10 +10,11 @@ export const CodeInsightDashboardsVisibility: React.FunctionComponent<CodeInsigh
     const { dashboardCount, ...attributes } = props
 
     return (
-        <Alert variant="secondary" {...attributes}>
-            <span className="font-weight-bold">This insight is included in {dashboardCount} other dashboards.</span>
-            <br />
-            <span>Changes to this insight will be shared across all instances of this insight.</span>
+        <Alert variant="note" {...attributes}>
+            <h4 className="mt-0">This insight is included in {dashboardCount} other dashboards.</h4>
+            <span className="text-muted">
+                Changes to this insight will be shared across all instances of this insight.
+            </span>
         </Alert>
     )
 }
