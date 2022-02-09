@@ -150,7 +150,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     ])
 
     const onUpdateVisibility = useCallback(
-        (isPublic: boolean) => setUpdateQueue(queue => queue.concat([{ public: isPublic }])),
+        (isPublic: boolean, namespace: string) =>
+            setUpdateQueue(queue => queue.concat([{ public: isPublic, namespace }])),
         [setUpdateQueue]
     )
 
@@ -199,6 +200,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
+                                    namespace={notebookOrError.namespace}
                                     onUpdateVisibility={onUpdateVisibility}
                                     deleteNotebook={deleteNotebook}
                                     starsCount={notebookOrError.stars.totalCount}

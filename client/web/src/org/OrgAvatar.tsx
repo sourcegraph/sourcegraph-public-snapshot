@@ -7,12 +7,13 @@ export interface OrgAvatarProps {
     /** The organization's name. */
     org: string
 
-    size?: 'md' | 'lg'
+    size?: 'sm' | 'md' | 'lg'
 
     className?: string
 }
 
 const avatarSizeClasses: Record<NonNullable<OrgAvatarProps['size']>, string> = {
+    sm: styles.orgAvatarSm,
     md: styles.orgAvatarMd,
     lg: styles.orgAvatarLg,
 }

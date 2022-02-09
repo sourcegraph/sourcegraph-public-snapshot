@@ -34,7 +34,9 @@ const notebooksFragment = gql`
             username
         }
         namespace {
+            __typename
             id
+            namespaceName
         }
         createdAt
         updatedAt
