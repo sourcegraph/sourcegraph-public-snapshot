@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 set -e
 
 if [[ -z "$BUILDKITE" ]]; then
