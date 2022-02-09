@@ -4,7 +4,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
+import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -31,17 +31,13 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
-        const URLS_TO_MOCK = [
-            'https://collector.github.com/*path',
-            'https://api.github.com/_private/browser/*',
-            'https://github.com/*path/find-definition',
-        ]
         // Requests to other origins that we need to ignore to prevent breaking tests.
-        for (const urlToMock of URLS_TO_MOCK) {
-            testContext.server.any(urlToMock).intercept((request, response) => {
-                response.sendStatus(200)
-            })
-        }
+        testContext.server.get('https://collector.githubapp.com/*').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+        testContext.server.any('https://api.github.com/_private/browser/*').intercept((request, response) => {
+            response.sendStatus(200)
+        })
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
@@ -71,9 +67,6 @@ describe('GitHub', () => {
                 repository: {
                     name: rawRepoName,
                 },
-            }),
-            ResolveRawRepoName: ({ repoName }) => ({
-                repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
             }),
             BlobContent: () => ({
                 repository: {
@@ -126,7 +119,7 @@ describe('GitHub', () => {
         })
     })
 
-    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
+    it('shows hover tooltips when hovering a token', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -161,98 +154,31 @@ describe('GitHub', () => {
         // Serve a mock extension with a simple hover provider
         mockExtension({
             id: 'simple/hover',
-            bundle: function extensionBundle(): void {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
-
-                function activate(context: sourcegraph.ExtensionContext): void {
-                    context.subscriptions.add(
-                        sourcegraph.languages.registerHoverProvider(['*'], {
-                            provideHover: (document, position) => {
-                                const range = document.getWordRangeAtPosition(position)
-                                const token = document.getText(range)
-                                if (!token) {
-                                    return null
-                                }
-                                return {
-                                    contents: {
-                                        value: `User is hovering over ${token}`,
-                                        kind: sourcegraph.MarkupKind.Markdown,
-                                    },
-                                    range,
-                                }
-                            },
-                        })
-                    )
-
-                    context.subscriptions.add(
-                        sourcegraph.languages.registerDefinitionProvider(['*'], {
-                            provideDefinition: () =>
-                                new sourcegraph.Location(
-                                    new URL(
-                                        'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
-                                    ),
-                                    new sourcegraph.Range(
-                                        new sourcegraph.Position(4, 5),
-                                        new sourcegraph.Position(5, 14)
-                                    )
-                                ),
-                        })
-                    )
-                }
-
-                exports.activate = activate
-            },
+            bundle: simpleHoverProvider,
         })
 
-        let hasRedirectedToDefinition = false
+        await driver.page.goto(
+            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+        )
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
-        // For some reason in test requested definition URL is different from the actual one:
-        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6' instead of
-        // 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6'.
-        // The former URL is returns 404 page so for test sake we intercept such requests and track the fact of redirect.
-        testContext.server
-            .get(
-                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go/blob/HEAD/#L5:6'
-            )
-            .intercept((request, response) => {
-                response.sendStatus(200)
-                hasRedirectedToDefinition = true
-            })
+        // Pause to give codeintellify time to register listeners for
+        // tokenization (only necessary in CI, not sure why).
+        await driver.page.waitForTimeout(1000)
 
-        testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
-            response.sendStatus(200)
+        const lineSelector = '.js-file-line-container tr'
+
+        // Trigger tokenization of the line.
+        const lineNumber = 16
+        const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+            timeout: 10000,
         })
 
-        const openPageAndGetToken = async () => {
-            await driver.page.goto(
-                'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
-            )
-            await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
-
-            // Pause to give codeintellify time to register listeners for
-            // tokenization (only necessary in CI, not sure why).
-            await driver.page.waitForTimeout(1000)
-
-            const lineSelector = '.js-file-line-container tr'
-
-            // Trigger tokenization of the line.
-            const lineNumber = 16
-            const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
-                timeout: 10000,
-            })
-
-            if (!line) {
-                throw new Error(`Found no line with number ${lineNumber}`)
-            }
-
-            const [token] = await line.$x('.//span[text()="CallOption"]')
-            return token
+        if (!line) {
+            throw new Error(`Found no line with number ${lineNumber}`)
         }
 
-        let token = await openPageAndGetToken()
-
-        // 1. Check that hovering a token shows code intel popup.
+        const [token] = await line.$x('//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: ' [data-testid="hover-overlay-content"] > p',
@@ -261,27 +187,6 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
-
-        // 2. Check that token click does not do anything by default
-        await token.click()
-        await driver.page.waitForTimeout(1000)
-        assert(!hasRedirectedToDefinition, 'Expected to not be redirected to definition')
-
-        // 3. Enable click-to-def setting and check that it redirects to the proper page
-        await driver.setClickGoToDefOptionFlag(true)
-        token = await openPageAndGetToken()
-        await token.hover()
-        await driver.findElementWithText('User is hovering over CallOption', {
-            selector: ' [data-testid="hover-overlay-content"] > p',
-            fuzziness: 'contains',
-            wait: {
-                timeout: 6000,
-            },
-        })
-        await token.click()
-        await driver.page.waitForTimeout(1000)
-
-        assert(hasRedirectedToDefinition, 'Expected to be redirected to definition')
     })
 
     describe('Pull request pages', () => {

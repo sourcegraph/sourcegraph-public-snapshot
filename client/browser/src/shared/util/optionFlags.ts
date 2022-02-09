@@ -15,7 +15,6 @@ export type OptionFlagKey =
     | 'allowErrorReporting'
     | 'experimentalLinkPreviews'
     | 'experimentalTextFieldCompletion'
-    | 'clickToGoToDefinition'
 
 export interface OptionFlagDefinition {
     label: string
@@ -42,10 +41,6 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
         key: 'experimentalLinkPreviews',
         label: 'Experimental link previews',
     },
-    {
-        key: 'clickToGoToDefinition',
-        label: 'Enable click to go to definition',
-    },
 ]
 
 const optionFlagDefaults: OptionFlagValues = {
@@ -53,7 +48,6 @@ const optionFlagDefaults: OptionFlagValues = {
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
-    clickToGoToDefinition: false,
 }
 
 const assignOptionFlagValues = (values: OptionFlagValues): OptionFlagWithValue[] =>
