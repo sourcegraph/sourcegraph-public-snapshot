@@ -176,6 +176,7 @@ func startExec(ctx context.Context, args []string) error {
 	ok, err := run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s", err))
+		return nil
 	}
 
 	if !ok {
@@ -183,34 +184,31 @@ func startExec(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	// No funcs, early exit
-	if len(funcs) == 0 {
-		return nil
-	}
-
-	ctx, err = usershell.Context(ctx)
-	if err != nil {
-		return err
-	}
-
-	var failedchecks []string
-	for _, check := range funcs {
-		// TODO: Formatting here is duplicated from run.Checks
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
-
-		if err := check.Func(ctx); err != nil {
-			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
-
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
-
-			failedchecks = append(failedchecks, check.Name)
-		} else {
-			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
+	if len(funcs) > 0 {
+		ctx, err = usershell.Context(ctx)
+		if err != nil {
+			return err
 		}
-	}
 
-	if len(failedchecks) != 0 {
-		return errors.Newf("failed checks: %s", strings.Join(failedchecks, ", "))
+		var failedchecks []string
+		for _, check := range funcs {
+			// TODO: Formatting here is duplicated from run.Checks
+			p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
+
+			if err := check.Func(ctx); err != nil {
+				p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
+
+				stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
+
+				failedchecks = append(failedchecks, check.Name)
+			} else {
+				p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
+			}
+		}
+
+		if len(failedchecks) != 0 {
+			return errors.Newf("failed checks: %s", strings.Join(failedchecks, ", "))
+		}
 	}
 
 	cmds := make([]run.Command, 0, len(set.Commands))
@@ -225,6 +223,7 @@ func startExec(ctx context.Context, args []string) error {
 
 	if len(cmds) == 0 {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
+		return nil
 	}
 
 	levelOverrides := logLevelOverrides()
