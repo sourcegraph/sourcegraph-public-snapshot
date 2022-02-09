@@ -129,7 +129,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 </Link>
                 <p className="mb-0">
                     <Button
-                        className="p-0 shadow-none font-weight-normal test-toggle-advanced-settings-button"
+                        className="p-0 shadow-none font-weight-normal"
                         onClick={toggleAdvancedSettings}
                         variant="link"
                         size="sm"
