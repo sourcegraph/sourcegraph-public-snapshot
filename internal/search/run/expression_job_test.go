@@ -57,11 +57,8 @@ func TestAndJob(t *testing.T) {
 				_, err := j.Run(context.Background(), nil, s)
 				require.NoError(t, err)
 
-				// we should wait ~10ms for all parallel subexpressions to complete
-				require.WithinDuration(t, start.Add(10*time.Millisecond), time.Now(), 3*time.Millisecond)
-
-				// event should be streamed ~immediately
-				require.Less(t, eventTime.Sub(start), time.Millisecond)
+				// event should be streamed ~immediately (definitely before the jobs exit)
+				require.Less(t, eventTime.Sub(start), 5*time.Millisecond)
 			})
 		}
 	})
@@ -109,7 +106,7 @@ func TestOrJob(t *testing.T) {
 				})
 				_, err := j.Run(context.Background(), nil, s)
 				require.NoError(t, err)
-				require.Less(t, eventTime.Sub(start), time.Millisecond)
+				require.Less(t, eventTime.Sub(start), 5*time.Millisecond)
 			})
 		}
 	})
