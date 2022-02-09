@@ -63,8 +63,8 @@ switch ($github.event_name) {
                 New-SlackMessageAttachment `
                     -Pretext $message `
                     -Color $color `
-                    -AuthorName $issue.content.author.login `
-                    -AuthorIcon $issue.content.author.avatarUrl `
+                    -AuthorName $item.content.author.login `
+                    -AuthorIcon $item.content.author.avatarUrl `
                     -Title "#$($item.content.number) $($item.content.title)" `
                     -TitleLink $item.content.url `
                     -Text $item.content.bodyText.Substring(0, [System.Math]::Min(1000, $item.content.bodyText.Length)) `
