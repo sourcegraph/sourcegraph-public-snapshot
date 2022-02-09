@@ -302,16 +302,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         const orgFeatureFlagResults = await Promise.all(orgFeatureFlagPromises)
 
-        for (const featureFlagResult of orgFeatureFlagResults) {
-            const result = dataOrThrowErrors(featureFlagResult)
-
-            if (result.organizationFeatureFlagValue === true) {
-                return true
-            }
-        }
-
-        // if no feature flags were enabled, GitHub App is not enabled for any orgs
-        return false
+        return orgFeatureFlagResults.map(dataOrThrowErrors).some(result => result.organizationFeatureFlagValue === true)
     }
 
     const defaultNavigateToAuthProvider = useCallback(
