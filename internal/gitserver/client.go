@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -38,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -163,8 +162,8 @@ type Client interface {
 	// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
 	// will be false and the error will be nil.
 	//
-	// If multiple errors occurred, an incomplete result is returned along with a
-	// *multierror.Error.
+	// If multiple errors occurred, an incomplete result is returned along with an
+	// error.errors.
 	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
 
 	// ReposStats will return a map of the ReposStats for each gitserver in a
@@ -392,6 +391,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
+		NoTimeout:      c.NoTimeout,
 	}
 	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
 	if err != nil {
@@ -529,6 +529,7 @@ type Cmd struct {
 	Repo           api.RepoName // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
+	NoTimeout      bool
 }
 
 func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
@@ -583,6 +584,10 @@ func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
 func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
+}
+
+func (c *Cmd) DisableTimeout() {
+	c.NoTimeout = true
 }
 
 func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
@@ -901,7 +906,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}(op{req: req})
 	}
 
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	res := protocol.RepoCloneProgressResponse{
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 	}
@@ -910,7 +915,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		o := <-ch
 
 		if o.err != nil {
-			err = multierror.Append(err, o.err)
+			err = errors.Append(err, o.err)
 			continue
 		}
 
@@ -971,7 +976,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		}(op{req: req})
 	}
 
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	res := protocol.RepoInfoResponse{
 		Results: make(map[api.RepoName]*protocol.RepoInfo),
 	}
@@ -980,7 +985,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		o := <-ch
 
 		if o.err != nil {
-			err = multierror.Append(err, o.err)
+			err = errors.Append(err, o.err)
 			continue
 		}
 
@@ -998,7 +1003,7 @@ func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	for _, addr := range c.addrs() {
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
-			allErr = multierror.Append(allErr, err)
+			allErr = errors.Append(allErr, err)
 		} else {
 			stats[addr] = stat
 		}

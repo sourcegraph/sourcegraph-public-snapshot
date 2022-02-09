@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BranchLocker interface {

@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store struct {
@@ -55,6 +54,9 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 
 const currentMigrationLogSchemaVersion = 1
 
+// EnsureSchemaTable creates the bookeeping tables required to track this schema
+// if they do not already exist. If old versions of the tables exist, this method
+// will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -74,6 +76,39 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
 	}
 
+	minMigrationVersions := map[string]int{
+		"schema_migrations":              1528395834,
+		"codeintel_schema_migrations":    1000000015,
+		"codeinsights_schema_migrations": 1000000000,
+		"test_migrations_table_backfill": 1000000000, // used in tests
+	}
+	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
+		queries = append(queries, sqlf.Sprintf(`
+			WITH
+				schema_version AS (SELECT * FROM %s LIMIT 1),
+				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
+				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
+			INSERT INTO migration_logs (
+				migration_logs_schema_version,
+				schema,
+				version,
+				up,
+				success,
+				started_at,
+				finished_at
+			)
+			SELECT %s, %s, version, true, true, NOW(), NOW()
+			FROM generate_series(%s, (SELECT version FROM target_version)) version
+			WHERE NOT (SELECT dirty FROM schema_version)
+		`,
+			quote(s.schemaName),
+			s.schemaName,
+			currentMigrationLogSchemaVersion,
+			s.schemaName,
+			minMigrationVersion,
+		))
+	}
+
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -87,27 +122,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	}
 
 	return nil
-}
-
-func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, err error) {
-	ctx, endObservation := s.operations.version.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.Query(ctx, sqlf.Sprintf(`SELECT version, dirty FROM %s`, quote(s.schemaName)))
-	if err != nil {
-		return 0, false, false, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		if err := rows.Scan(&version, &dirty); err != nil {
-			return 0, false, false, err
-		}
-
-		return version, dirty, true, nil
-	}
-
-	return 0, false, false, nil
 }
 
 // Versions returns three sets of migration versions that, together, describe the current schema
@@ -185,7 +199,7 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 	close := func(err error) error {
 		if locked {
 			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-				err = multierror.Append(err, unlockErr)
+				err = errors.Append(err, unlockErr)
 			}
 
 			// No-op if called more than once
@@ -255,15 +269,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	definitionVersion := definition.ID
-	targetVersion := definitionVersion
-	expectedCurrentVersion := definitionVersion - 1
-	if !up {
-		targetVersion = definitionVersion - 1
-		expectedCurrentVersion = definitionVersion
-	}
-
-	logID, err := s.createMigrationLog(ctx, up, expectedCurrentVersion, targetVersion, definitionVersion)
+	logID, err := s.createMigrationLog(ctx, definition.ID, up)
 	if err != nil {
 		return err
 	}
@@ -280,7 +286,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 			errMsgPtr(err),
 			logID,
 		)); execErr != nil {
-			err = multierror.Append(err, execErr)
+			err = errors.Append(err, execErr)
 		}
 	}()
 
@@ -291,31 +297,20 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	return nil
 }
 
-func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int) (_ int, err error) {
+func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	assertionFailure := func(description string, args ...interface{}) error {
-		cta := "This condition should not be reachable by normal use of the migration store via the runner and indicates a bug. Please report this issue."
-		return errors.Errorf(description+"\n\n"+cta+"\n", args...)
+	targetVersion := definitionVersion
+	if !up {
+		targetVersion--
 	}
-	if currentVersion, dirty, ok, err := tx.Version(ctx); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
 		return 0, err
-	} else if dirty {
-		return 0, assertionFailure("dirty database")
-	} else if ok {
-		if currentVersion != expectedCurrentVersion {
-			return 0, assertionFailure("expected schema to have version %d, but has version %d\n", expectedCurrentVersion, currentVersion)
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-			return 0, err
-		}
 	}
-
 	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
 		return 0, err
 	}
@@ -333,7 +328,7 @@ func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrent
 		`,
 		currentMigrationLogSchemaVersion,
 		s.schemaName,
-		sourceVersion,
+		definitionVersion,
 		up,
 	)))
 	if err != nil {

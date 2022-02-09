@@ -5,11 +5,11 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/plan"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // productPlan implements the GraphQL type ProductPlan.

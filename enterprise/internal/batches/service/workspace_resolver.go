@@ -9,9 +9,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoRevision describes a repository on a branch at a fixed revision.
@@ -136,7 +135,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	for _, on := range batchSpec.On {
 		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
-			errs = multierror.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
+			errs = errors.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
 			continue
 		}
 
@@ -195,10 +194,10 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 		close(results)
 	}(&wg)
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for result := range results {
 		if result.err != nil {
-			errs = multierror.Append(errs, result.err)
+			errs = errors.Append(errs, result.err)
 			continue
 		}
 
@@ -521,7 +520,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 
 			result, err := findForRepoRev(repoRev)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				return
 			}
 
@@ -556,7 +555,7 @@ func findWorkspaces(
 ) ([]*RepoWorkspace, error) {
 	// Pre-compile all globs.
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for _, conf := range spec.Workspaces {
 		in := conf.In
 		// Empty `in` should fall back to matching all, instead of nothing.
@@ -565,7 +564,7 @@ func findWorkspaces(
 		}
 		g, err := glob.Compile(in)
 		if err != nil {
-			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
+			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
 		}
 		workspaceMatchers[conf] = g
 	}

@@ -56,8 +56,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -68,6 +66,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -203,11 +202,11 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.
 type ErrCollector struct {
-	multi       *multierror.Error
+	multi       *errors.MultiError
 	extraFields []log.Field
 }
 
-func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &multierror.Error{}} }
+func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &errors.MultiError{}} }
 
 func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
 	if err != nil && *err != nil {

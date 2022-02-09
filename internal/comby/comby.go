@@ -12,11 +12,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const combyPath = "comby"

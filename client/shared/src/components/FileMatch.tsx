@@ -3,13 +3,12 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { pluralize } from '../util/strings'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'

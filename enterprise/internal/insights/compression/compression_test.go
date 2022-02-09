@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/hexops/autogold"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestFilterFrames(t *testing.T) {

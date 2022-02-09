@@ -2,6 +2,10 @@
 
 This document contains tips for writing unit tests for Go code.
 
+## Conventions
+
+- **Naming tests in Go code.** We strive to follow the same naming convention for Go test functions as described for [naming example functions in the Go testing package](https://golang.org/pkg/testing/#hdr-Examples).
+
 ## Organizing code and refactoring for testability
 
 If you find yourself having a difficult time testing a piece of Go code, it is likely due to one of the following factors:
@@ -76,7 +80,7 @@ If you need to test interactions with an external HTTP API, take a look at the `
 
 We use the Go's stdlib `"testing"` package to drive unit tests and assertions. Here are some tips when writing tests:
 
-#### Handling unexpected errors
+### Handling unexpected errors
 
 An unexpected error value in a test should be met with an immediate failure. This prevents the test from emitting spurious errors, as either the function's remaining results will be zero-values, or there was a failure to perform a specific side-effect that the remainder of the test may rely on having occurred.
 
@@ -91,7 +95,7 @@ func TestSprocket(t *testing.T) {
 }
 ```
 
-#### Asserting expected complex values
+### Asserting expected complex values
 
 Expected values that are not simple scalars (really, anything not comparable with `==`) should use [go-cmp](https://github.com/google/go-cmp/cmp) to create a highly-readable diff string.
 
@@ -144,7 +148,7 @@ For an example usage of a mock clock, see the [TestRetry](https://sourcegraph.co
 
 When testing code that depends on a database connection, you may want to test how your code interacts with a real database, or you may want to mock out the database calls to speed up tests and isolate the logic being tested.
 
-#### Testing with a mocked database
+### Testing with a mocked database
 
 Helpers for mocking out a database can be found in the `internal/database` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `database` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
 
@@ -172,7 +176,7 @@ Note that, in order for the mock repo store to be used in the tested function, w
 
 Additionally, you might see instances of global database mocks around the codebase, like `database.Mocks.Repos.Get = func() []*types.Repo { ... }`. These global mocks are deprecated, and will be removed in time. Prefer the injected database mocks to the global mocks.
 
-#### Testing with a real database
+### Testing with a real database
 
 If you would like to run your test against a real database instance, look no further than the `internal/database/dbtest` package. To get a handle to a freshly migrated database, just call `dbtest.NewDB(t)`. This will return a new `*sql.DB` handle that points to a clean database instance that will only be used for the current test, so you don't have to worry about conflicts with other tests, and your tests can run in parallel.
 

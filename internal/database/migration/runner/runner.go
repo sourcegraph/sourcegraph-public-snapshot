@@ -5,10 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Runner struct {
@@ -30,8 +29,6 @@ type schemaContext struct {
 }
 
 type schemaVersion struct {
-	version         int
-	dirty           bool
 	appliedVersions []int
 	pendingVersions []int
 	failedVersions  []int
@@ -82,10 +79,10 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 	wg.Wait()
 	close(errorCh)
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for err := range errorCh {
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 
@@ -150,10 +147,6 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 }
 
 func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
-	version, dirty, _, err := store.Version(ctx)
-	if err != nil {
-		return schemaVersion{}, err
-	}
 	appliedVersions, pendingVersions, failedVersions, err := store.Versions(ctx)
 	if err != nil {
 		return schemaVersion{}, err
@@ -162,16 +155,12 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	logger.Info(
 		"Checked current version",
 		"schema", schemaName,
-		"version", version,
-		"dirty", dirty,
 		"appliedVersions", appliedVersions,
 		"pendingVersions", pendingVersions,
 		"failedVersions", failedVersions,
 	)
 
 	return schemaVersion{
-		version,
-		dirty,
 		appliedVersions,
 		pendingVersions,
 		failedVersions,
@@ -202,27 +191,52 @@ func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err err
 
 type lockedVersionCallback func(
 	schemaVersion schemaVersion,
+	byState definitionsByState,
+	earlyUnlock unlockFunc,
 ) error
+
+type unlockFunc func(err error) error
 
 // withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
 // database. The resulting schema state is passed to the given function. The advisory lock
-// will be released on function exit.
+// will be released on function exit, but the callback may explicitly release the lock earlier.
+//
+// This method returns a true-valued flag if it should be re-invoked by the caller.
 func (r *Runner) withLockedSchemaState(
 	ctx context.Context,
 	schemaContext schemaContext,
-	callback lockedVersionCallback,
-) (err error) {
+	definitions []definition.Definition,
+	f lockedVersionCallback,
+) (retry bool, _ error) {
+	// Take an advisory lock to determine if there are any migrator instances currently
+	// running queries unrelated to non-concurrent index creation. This will block until
+	// we are able to gain the lock.
 	unlock, err := r.pollLock(ctx, schemaContext.store)
 	if err != nil {
-		return err
+		return false, err
 	} else {
 		defer func() { err = unlock(err) }()
 	}
 
+	// Re-fetch the current schema of the database now that we hold the lock. This may differ
+	// from our original assumption if another migrator is running concurrently.
 	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
 	if err != nil {
-		return err
+		return false, err
+	}
+	byState := groupByState(schemaVersion, definitions)
+
+	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
+	// instances to finish their current work.
+	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
+		return false, err
+	} else if retry {
+		// An index is currently being created. WE return true here to flag to the caller that
+		// we should wait a small time, then be re-invoked. We don't want to take any action
+		// here while the other proceses is working.
+		return true, nil
 	}
 
-	return callback(schemaVersion)
+	// Invoke the callback with the current schema state
+	return false, f(schemaVersion, byState, unlock)
 }

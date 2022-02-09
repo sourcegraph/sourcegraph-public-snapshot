@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

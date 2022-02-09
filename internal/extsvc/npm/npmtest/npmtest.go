@@ -5,10 +5,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type MockClient struct {

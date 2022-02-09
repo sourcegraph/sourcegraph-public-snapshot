@@ -3,8 +3,6 @@ package run
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAndJob creates a job that will run each of its child jobs and only
@@ -38,7 +37,7 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 	}()
 
 	var (
-		g           multierror.Group
+		g           errors.Group
 		maxAlerter  search.MaxAlerter
 		limitHit    atomic.Bool
 		sentResults atomic.Bool
@@ -87,6 +86,11 @@ func (a *AndJob) Name() string {
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
 func NewOrJob(children ...Job) Job {
+	if len(children) == 0 {
+		return NewNoopJob()
+	} else if len(children) == 1 {
+		return children[0]
+	}
 	return &OrJob{
 		children: children,
 	}
@@ -132,7 +136,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 
 	var (
 		maxAlerter search.MaxAlerter
-		g          multierror.Group
+		g          errors.Group
 		sem        = semaphore.NewWeighted(16)
 		merger     = result.NewMerger(len(j.children))
 	)
@@ -169,9 +173,12 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 	}
 
 	// Send results that were only seen by some of the sources
-	stream.Send(streaming.SearchEvent{
-		Results: merger.UnsentTracked(),
-	})
+	unsentTracked := merger.UnsentTracked()
+	if len(unsentTracked) > 0 {
+		stream.Send(streaming.SearchEvent{
+			Results: unsentTracked,
+		})
+	}
 	return maxAlerter.Alert, nil
 }
 

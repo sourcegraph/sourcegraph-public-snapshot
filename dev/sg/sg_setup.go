@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -296,7 +296,7 @@ asdf install golang
 			},
 			{
 				name:  "yarn",
-				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
+				check: combineChecks(checkInPath("yarn"), checkCommandExitCode("yarn --version", 0)),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 

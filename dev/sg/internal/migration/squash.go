@@ -8,19 +8,19 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -31,7 +31,12 @@ const (
 )
 
 func Squash(database db.Database, commit string) error {
-	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(database, commit)
+	definitions, err := readDefinitions(database)
+	if err != nil {
+		return err
+	}
+
+	newRoot, ok, err := selectNewRootMigration(database, definitions, commit)
 	if err != nil {
 		return err
 	}
@@ -39,14 +44,8 @@ func Squash(database db.Database, commit string) error {
 		return errors.Newf("no migrations exist at commit %s", commit)
 	}
 
-	// Run migrations up to last migration index and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, lastMigrationIndex)
-	if err != nil {
-		return err
-	}
-
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeMigrationFilesUpToIndex(database, lastMigrationIndex)
+	// Run migrations up to the new selected root and dump the database into a single migration file pair
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot})
 	if err != nil {
 		return err
 	}
@@ -55,35 +54,43 @@ func Squash(database db.Database, commit string) error {
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
-	}
-
-	// Write the replacement migration pair
-	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex)
+	files, err := makeMigrationFilenames(database, newRoot)
 	if err != nil {
 		return err
 	}
 
 	contents := map[string]string{
-		upPath:       squashedUpMigration,
-		downPath:     squashedDownMigration,
-		metadataPath: "name: 'squashed_migrations'\n",
+		files.UpFile:       squashedUpMigration,
+		files.DownFile:     squashedDownMigration,
+		files.MetadataFile: "name: 'squashed migrations'\n",
 	}
+
 	if err := writeMigrationFiles(contents); err != nil {
 		return err
 	}
 
-	block.Writef("Created: %s", upPath)
-	block.Writef("Created: %s", downPath)
-	block.Writef("Created: %s", metadataPath)
+	block.Writef("Created: %s", files.UpFile)
+	block.Writef("Created: %s", files.DownFile)
+	block.Writef("Created: %s", files.MetadataFile)
+
+	// Remove the migration file pairs that were just squashed
+	filenames, err := removeAncestorsOf(database, definitions, newRoot)
+	if err != nil {
+		return err
+	}
+
+	for _, filename := range filenames {
+		block.Writef("Deleted: %s", filename)
+	}
+
 	return nil
 }
 
-// lastMigrationIndexAtCommit returns the index of the last migration for the given database
-// available at the given commit. This function returns a false-valued flag if no migrations
-// exist at the given commit.
-func lastMigrationIndexAtCommit(database db.Database, commit string) (int, bool, error) {
+// selectNewRootMigration selects the most recently defined migration that dominates the leaf
+// migrations of the schema at the given commit. This ensures that whenever we squash migrations,
+// we do so between a portion of the graph with a single entry and a single exit, which can
+// be easily collapsible into one file that can replace an existing migration node in-place.
+func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (int, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
@@ -91,14 +98,23 @@ func lastMigrationIndexAtCommit(database db.Database, commit string) (int, bool,
 		return 0, false, err
 	}
 
-	lastMigrationIndex, ok := parseLastMigrationIndex(strings.Split(output, "\n"))
-	return lastMigrationIndex, ok, nil
+	ds, err = ds.Filter(parseVersions(strings.Split(output, "\n"), migrationsDir))
+	if err != nil {
+		return 0, false, err
+	}
+
+	id, ok := ds.LeafDominator()
+	if !ok {
+		return 0, false, nil
+	}
+
+	return id.ID, true, nil
 }
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index. This function will launch a daemon Postgres container,
 // migrate a fresh database up to the given migration index, then dump and sanitize the contents.
-func generateSquashedMigrations(database db.Database, migrationIndex int) (up, down string, err error) {
+func generateSquashedMigrations(database db.Database, targetVersions []int) (up, down string, err error) {
 	postgresDSN := fmt.Sprintf(
 		"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
 		squasherContainerExposedPort,
@@ -113,7 +129,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 		err = teardown(err)
 	}()
 
-	if err := runTargetedUpMigrations(database, migrationIndex, postgresDSN); err != nil {
+	if err := runTargetedUpMigrations(database, targetVersions, postgresDSN); err != nil {
 		return "", "", err
 	}
 
@@ -126,7 +142,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 }
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
-func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDSN string) (err error) {
+func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -145,9 +161,9 @@ func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDS
 	options := runner.Options{
 		Operations: []runner.MigrationOperation{
 			{
-				SchemaName:    database.Name,
-				Type:          runner.MigrationOperationTypeTargetedUp,
-				TargetVersion: targetVersion,
+				SchemaName:     database.Name,
+				Type:           runner.MigrationOperationTypeTargetedUp,
+				TargetVersions: targetVersions,
 			},
 		},
 	}
@@ -178,7 +194,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			squasherContainerName,
 		}
 		if _, killErr := run.DockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
+			err = errors.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
 		}
 
 		return err
@@ -303,30 +319,38 @@ outer:
 	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
 }
 
-// removeMigrationFilesUpToIndex removes migration files for the given database falling on
-// or before the given migration index. This method returns the names of the files that were
-// removed.
-func removeMigrationFilesUpToIndex(database db.Database, targetIndex int) ([]string, error) {
+// removeAncestorsOf removes all migrations that are an ancestor of the given target version.
+// This method returns the names of the files that were removed.
+func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetVersion int) ([]string, error) {
+	allDefinitions := ds.All()
+
+	allIDs := make([]int, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		allIDs = append(allIDs, definition.ID)
+	}
+
+	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
+	if err != nil {
+		return nil, err
+	}
+
+	keep := make(map[int]struct{}, len(properDescendants))
+	for _, definition := range properDescendants {
+		keep[definition.ID] = struct{}{}
+	}
+
+	// Gather the set of filtered that are NOT a proper descendant of the given target version.
+	// This will leave us with the ancestors of the target version (including itself).
+	filtered := make([]string, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		if _, ok := keep[definition.ID]; !ok {
+			filtered = append(filtered, strconv.Itoa(definition.ID))
+		}
+	}
+
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return nil, err
-	}
-
-	names, err := readFilenamesNamesInDirectory(baseDir)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := names[:0]
-	for _, name := range names {
-		index, ok := parseMigrationIndex(name)
-		if !ok {
-			continue
-		}
-
-		if index <= targetIndex {
-			filtered = append(filtered, name)
-		}
 	}
 
 	for _, name := range filtered {

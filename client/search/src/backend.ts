@@ -1,12 +1,11 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import {
     EventLogsDataResult,
