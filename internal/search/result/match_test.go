@@ -3,10 +3,12 @@ package result
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -147,4 +149,34 @@ func TestSelect(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestKeyEquality(t *testing.T) {
+	time1 := time.Now()
+	time2 := time1
+	time3 := time1.Add(10 * time.Second)
+
+	cases := []struct {
+		match1   Match
+		match2   Match
+		areEqual bool
+	}{{
+		match1:   &CommitMatch{Commit: gitdomain.Commit{ID: "test", Author: gitdomain.Signature{Date: time1}}},
+		match2:   &CommitMatch{Commit: gitdomain.Commit{ID: "test", Author: gitdomain.Signature{Date: time2}}},
+		areEqual: true,
+	}, {
+		match1:   &CommitMatch{Commit: gitdomain.Commit{ID: "test", Author: gitdomain.Signature{Date: time1}}},
+		match2:   &CommitMatch{Commit: gitdomain.Commit{ID: "test", Author: gitdomain.Signature{Date: time3}}},
+		areEqual: false,
+	}, {
+		match1:   &CommitMatch{Commit: gitdomain.Commit{ID: "test1"}},
+		match2:   &CommitMatch{Commit: gitdomain.Commit{ID: "test2"}},
+		areEqual: false,
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			require.Equal(t, tc.areEqual, tc.match1.Key() == tc.match2.Key())
+		})
+	}
 }
