@@ -31,9 +31,10 @@ export default {
 } as ComponentMeta<typeof SearchStack>
 
 const mockEntries: SearchStackEntry[] = [
-    { type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
-    { type: 'file', path: 'path/to/file1', repo: 'my/repo', revision: 'master', lineRange: null },
+    { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
+    { id: 1, type: 'file', path: 'path/to/file1', repo: 'my/repo', revision: 'master', lineRange: null },
     {
+        id: 2,
         type: 'file',
         path: 'path/to/a/really/deeply/nested/file/that/should/be/abbreviated/somehow',
         repo: 'github.com/sourcegraph/sourcegraph',
@@ -41,6 +42,7 @@ const mockEntries: SearchStackEntry[] = [
         lineRange: { startLine: 10, endLine: 11 },
     },
     {
+        id: 3,
         type: 'search',
         query: 'file:ts$ a really long search query that should wrap',
         caseSensitive: false,
@@ -85,6 +87,7 @@ SearchStackEmptyWithoutRestore.args = {
 export const SearchStackManyEntries = Template.bind({})
 SearchStackManyEntries.args = {
     entries: Array.from({ length: 50 }, (_element, index) => ({
+        id: index,
         type: 'search',
         query: `TODO${index}`,
         caseSensitive: false,

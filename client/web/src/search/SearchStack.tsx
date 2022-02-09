@@ -6,7 +6,7 @@ import SearchStackIcon from 'mdi-react/LayersSearchIcon'
 import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TrashIcon from 'mdi-react/TrashCanIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -40,6 +40,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
+
+    const reversedEntries = useMemo(() => [...entries].reverse(), [entries])
 
     const createNotebook = useCallback(() => {
         const location = {
@@ -97,8 +99,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
             {open && (
                 <>
                     <ul>
-                        {entries.map((entry, index) => (
-                            <li key={index}>{renderSearchEntry(entry)}</li>
+                        {reversedEntries.map(entry => (
+                            <li key={entry.id}>{renderSearchEntry(entry)}</li>
                         ))}
                     </ul>
                     {confirmRemoveAll && (

@@ -11,6 +11,10 @@ import { useExperimentalFeatures } from './experimentalFeatures'
 
 export interface SearchEntry {
     type: 'search'
+    /**
+     * The ID is primarily used to let the UI uniquily identifiy each entry.
+     */
+    id: number
     query: string
     caseSensitive: boolean
     searchContext?: string
@@ -19,6 +23,10 @@ export interface SearchEntry {
 
 export interface FileEntry {
     type: 'file'
+    /**
+     * The ID is primarily used to let the UI uniquily identifiy each entry.
+     */
+    id: number
     path: string
     repo: string
     revision: string
@@ -26,14 +34,19 @@ export interface FileEntry {
 }
 
 export type SearchStackEntry = SearchEntry | FileEntry
-
-const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
+export type SearchStackEntryInput = Omit<SearchEntry, 'id'> | Omit<FileEntry, 'id'>
 
 export interface SearchStackStore {
     entries: SearchStackEntry[]
     previousEntries: SearchStackEntry[]
     canRestoreSession: boolean
 }
+
+const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
+/**
+ * Uniquly identifies each entry.
+ */
+let nextEntryID = 0
 
 /**
  * Hook to get the search stack's current state. Used by the SearchStack
@@ -64,7 +77,7 @@ export const useSearchStackState = create<SearchStackStore>(() => {
  * - A file entry is considered the same if the repo and the path are the same
  * (revison and line range are updated)
  */
-export function useSearchStack(newEntry: SearchStackEntry | null): void {
+export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
     useEffect(() => {
         if (enableSearchStack && newEntry) {
@@ -98,7 +111,7 @@ export function useSearchStack(newEntry: SearchStackEntry | null): void {
     }, [newEntry, enableSearchStack])
 }
 
-function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchStackEntry) => boolean): void {
+function addSearchStackEntry(entry: SearchStackEntryInput, update?: (entry: SearchStackEntry) => boolean): void {
     useSearchStackState.setState(state => {
         if (update) {
             const existingEntry = state.entries.find(update)
@@ -112,7 +125,7 @@ function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchSta
             }
         }
         const newState = {
-            entries: [...state.entries, entry],
+            entries: [...state.entries, { ...entry, id: nextEntryID++ }],
             canRestoreSession: state.entries.length === 0,
         }
 
@@ -145,7 +158,12 @@ export function removeAllSearchStackEntries(): void {
 }
 
 function restoreSession(storage: Storage): SearchStackEntry[] {
-    return JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+    return (
+        JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+            // We always "re-id" restored entries. This makes things easier (no need
+            // to track which IDs have already been used)
+            .map((entry: SearchStackEntry) => ({ ...entry, id: nextEntryID++ }))
+    )
 }
 
 function persistSession(entries: SearchStackEntry[]): void {
