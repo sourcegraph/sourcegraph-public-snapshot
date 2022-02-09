@@ -1190,7 +1190,7 @@ type OnRepository struct {
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
-	// AllowSignup description: Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.
+	// AllowSignup description: Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.
 	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ClientID description: The client ID for the OpenID Connect client for this site.
 	//
