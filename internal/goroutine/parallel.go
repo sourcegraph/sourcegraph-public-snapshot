@@ -3,7 +3,7 @@ package goroutine
 import (
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Parallel calls each of the given functions in a goroutine. This method
@@ -32,7 +32,7 @@ func Parallel(fns ...func() error) (err error) {
 		if err == nil {
 			err = retValue
 		} else {
-			err = multierror.Append(err, retValue)
+			err = errors.Append(err, retValue)
 		}
 	}
 

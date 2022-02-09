@@ -2,17 +2,16 @@ package bk
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -79,7 +78,7 @@ func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 	}
 	config, err := buildkite.NewTokenConfig(token, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to init buildkite config: %w", err)
+		return nil, errors.Newf("failed to init buildkite config: %w", err)
 	}
 	return &Client{bk: buildkite.NewClient(config.Client())}, nil
 }
@@ -209,7 +208,7 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			}
 		}
 		if job == nil {
-			return nil, fmt.Errorf("no job matching query %q found in build %d", opts.JobQuery, build)
+			return nil, errors.Newf("no job matching query %q found in build %d", opts.JobQuery, build)
 		}
 		if !hasState(job, opts.State) {
 			return []*JobLogs{}, nil

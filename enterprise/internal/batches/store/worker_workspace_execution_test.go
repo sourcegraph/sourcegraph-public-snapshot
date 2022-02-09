@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -18,6 +17,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
@@ -38,7 +38,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
 	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 		t.Fatal(err)
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
 	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}

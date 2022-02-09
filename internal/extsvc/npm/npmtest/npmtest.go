@@ -2,12 +2,12 @@ package npmtest
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type MockClient struct {
@@ -30,7 +30,7 @@ func (m *MockClient) AvailablePackageVersions(_ context.Context, pkg reposource.
 		}
 	}
 	if len(versions) == 0 {
-		return nil, fmt.Errorf("No version for package: %s", pkg.PackageSyntax())
+		return nil, errors.Newf("No version for package: %s", pkg.PackageSyntax())
 	}
 	return versions, err
 }
@@ -43,7 +43,7 @@ func (m *MockClient) DoesDependencyExist(ctx context.Context, dep reposource.NPM
 func (m *MockClient) FetchTarball(_ context.Context, dep reposource.NPMDependency) (closer io.ReadSeekCloser, err error) {
 	path, found := m.TarballMap[dep.PackageManagerSyntax()]
 	if !found {
-		return nil, fmt.Errorf("Unknown dependency: %s", dep.PackageManagerSyntax())
+		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
 	}
 	return os.Open(path)
 }

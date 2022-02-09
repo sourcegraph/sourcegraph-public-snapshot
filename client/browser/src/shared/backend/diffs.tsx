@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import {
     FileDiffConnectionFields,

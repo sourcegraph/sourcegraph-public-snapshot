@@ -10,7 +10,7 @@ Existing APIs for code hosts and editors don't make this easy or possible.
 
 The APIs of code hosts and review tools don't generally provide the necessary hooks to customize the code/diff view and other parts of the UI and workflow. Commit statuses, bot comments, and pipelines are fantastic, but they are solving other problems. Developers need more information and code actions while viewing and reviewing code (just as they do while editing code), and that means providing deeper extensibility.
 
-Even if a single code host implemented a comprehensive extension API, it would be tied to that single code host. Extensions would only be usable by a fraction of developers unless the author created separate extensions for many popular code hosts: GitHub, GitHub Enterprise, Bitbucket, Bitbucket Server, GitLab, Phabricator, etc.
+Even if a single code host implemented a comprehensive extension API, it would be tied to that single code host. Extensions would only be usable by a fraction of developers unless the author created separate extensions for many popular code hosts: GitHub, GitHub Enterprise, Bitbucket, Bitbucket Server, Bitbucket Data Center, GitLab, Phabricator, etc.
 
 ## The state of extension APIs for editors
 

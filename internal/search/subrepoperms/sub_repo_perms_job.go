@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewFilterJob creates a job that filters the streamed results
@@ -27,12 +27,12 @@ type subRepoPermsFilterJob struct {
 	child run.Job
 }
 
-func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
 	checker := authz.DefaultSubRepoPermsChecker
 
 	var (
 		mu   sync.Mutex
-		errs = &multierror.Error{}
+		errs = &errors.MultiError{}
 	)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
@@ -40,17 +40,17 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
 		if err != nil {
 			mu.Lock()
-			errs = multierror.Append(err)
+			errs = errors.Append(err)
 			mu.Unlock()
 		}
 		stream.Send(event)
 	})
 
-	err := s.child.Run(ctx, db, filteredStream)
+	alert, err := s.child.Run(ctx, db, filteredStream)
 	if err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
-	return errs.ErrorOrNil()
+	return alert, errs.ErrorOrNil()
 }
 
 func (s *subRepoPermsFilterJob) Name() string {
@@ -65,7 +65,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	}
 
 	a := actor.FromContext(ctx)
-	errs := &multierror.Error{}
+	errs := &errors.MultiError{}
 
 	// Filter matches in place
 	filtered := matches[:0]
@@ -82,7 +82,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 			}
 			perms, err := authz.ActorPermissions(ctx, checker, a, content)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 
@@ -92,7 +92,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 		case *result.CommitMatch:
 			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 			if allowed {

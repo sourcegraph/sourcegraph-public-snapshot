@@ -67,7 +67,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
-- [Security Patterns](background-information/security_patterns.md)
 
 ### [Architecture](background-information/architecture/index.md)
 
@@ -102,6 +101,12 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
 - [Code host connections on local dev environment](background-information/code-host.md)
+- [Testing](#testing)
+  - [Testing principles and guidelines](background-information/testing_principles.md)
+  - [Continuous integration](background-information/continuous_integration.md)
+  - [How to write and run tests](how-to/testing.md)
+    - [Testing Go code](background-information/languages/testing_go_code.md)
+    - [Testing web code](background-information/testing_web_code.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -110,27 +115,17 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
 
-#### [Extended guides](background-information/languages/extended_guide/index.md)
-
-- [Terraform Extended Guide](background-information/languages/extended_guide/terraform.md)
-
-
 ### [SQL](background-information/sql/index.md)
 
+- [Using PostgreSQL](background-information/postgresql.md)
 - [Migrations](background-information/sql/migrations.md)
 - High-performance guides
   - [Batch operations](background-information/sql/batch_operations.md)
   - [Materialized cache](background-information/sql/materialized_cache.md)
 
-### Testing
-
-- [Continuous Integration](background-information/continuous_integration.md)
-- [Testing Principles](background-information/testing_principles.md)
-- [Testing Go code](background-information/languages/testing_go_code.md)
-- [Testing web code](background-information/testing_web_code.md)
-
 ### Security
 
+- [Security Patterns](background-information/security_patterns.md)
 - [Security policy](https://about.sourcegraph.com/security/)
 - [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 - [CSRF security model](security/csrf_security_model.md)
@@ -139,7 +134,6 @@ Clarification and discussion about key concepts, architecture, and development s
 
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
-- [Using PostgreSQL](background-information/postgresql.md)
 
 ### Other
 
@@ -161,23 +155,25 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
 - [How to use feature flags](how-to/use_feature_flags.md)
 
-### Implementing Sourcegraph
+### Observability
+
+- [How to find monitoring](how-to/find_monitoring.md)
+- [How to add monitoring](how-to/add_monitoring.md)
+
+### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
-- [Observability](background-information/observability/index.md)
-  - [How to find monitoring](how-to/find_monitoring.md)
-  - [How to add monitoring](how-to/add_monitoring.md)
-
-### Testing Sourcegraph & CI
-
-- [How to write and run tests](how-to/testing.md)
-- [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
-- [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
-- [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
 
 ### Executors
 
 - [How to deploy a new executor image](how-to/deploy_executor_image.md)
+
+### Testing
+
+- [How to write and run tests](how-to/testing.md)
+- Testing against code hosts
+  - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
+  - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
 
 ## [Contributing](./contributing/index.md)
 

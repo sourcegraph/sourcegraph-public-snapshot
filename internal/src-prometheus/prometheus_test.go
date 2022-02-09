@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // test detection of "prometheus unavailable"

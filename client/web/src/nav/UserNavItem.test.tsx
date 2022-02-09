@@ -4,7 +4,7 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { ThemePreference } from '../stores/themeState'
@@ -70,7 +70,7 @@ describe('UserNavItem', () => {
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
-        const renderResult = renderWithRouter(
+        const renderResult = renderWithBrandedContext(
             <UserNavItem
                 showRepositorySection={true}
                 isLightTheme={true}
