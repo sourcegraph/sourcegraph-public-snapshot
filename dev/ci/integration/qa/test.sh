@@ -25,8 +25,10 @@ curl -f http://localhost:7080/healthz
 echo "--- TEST: Running tests"
 
 function qa_test() {
-  export MOCHA_JUNIT_OUTPUT_DIR=$(mktemp -d)
-  export MOCHA_FILE="$MOCHA_JUNIT_OUTPUT_DIR/mocha-junit.xml"
+  MOCHA_JUNIT_OUTPUT_DIR=$(mktemp -d)
+  export MOCHA_JUNIT_OUTPUT_DIR
+  MOCHA_FILE="$MOCHA_JUNIT_OUTPUT_DIR/mocha-junit.xml"
+  export MOCHA_FILE
   trap 'rm -Rf "$MOCHA_JUNIT_OUTPUT_DIR"' EXIT
 
   set +eo pipefail # so we still get the result if the test failed
@@ -74,7 +76,10 @@ EOF
 
   echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
 
+  unset MOCHA_JUNIT_OUTPUT_DIR
+  unset MOCHA_FILE
   set -x
+
   return "$test_exit_code"
 }
 

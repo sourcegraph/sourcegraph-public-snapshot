@@ -13,8 +13,10 @@ cd "$1"
 echo "--- test"
 
 function yarn_test() {
-  export JEST_JUNIT_OUTPUT_NAME="jest-junit.xml"
-  export JEST_JUNIT_OUTPUT_DIR=$(mktemp -d)
+  JEST_JUNIT_OUTPUT_NAME="jest-junit.xml"
+  export JEST_JUNIT_OUTPUT_NAME
+  JEST_JUNIT_OUTPUT_DIR=$(mktemp -d)
+  export JEST_JUNIT_OUTPUT_DIR
   trap 'rm -Rf "$JEST_JUNIT_OUTPUT_DIR"' EXIT
 
   set +eo pipefail # so we still get the result if the test failed
@@ -62,6 +64,8 @@ EOF
 
   echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
 
+  unest JEST_JUNIT_OUTPUT_DIR
+  unest JEST_JUNIT_OUTPUT_NAME
   return "$test_exit_code"
 }
 
