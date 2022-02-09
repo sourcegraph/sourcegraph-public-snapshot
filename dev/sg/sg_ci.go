@@ -27,6 +27,7 @@ import (
 
 const (
 	ciLogsOutTerminal = "terminal"
+	ciLogsOutSimple   = "simple"
 	ciLogsOutJSON     = "json"
 )
 
@@ -40,7 +41,7 @@ var (
 	ciLogsJobQueryFlag          = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 	ciLogsBuildFlag             = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
 	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutTerminal,
-		fmt.Sprintf("Output format: either 'terminal', 'json', or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+		fmt.Sprintf("Output format: either 'terminal', 'simple', 'json', or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
@@ -293,13 +294,17 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				switch *ciLogsOutFlag {
-				case ciLogsOutTerminal:
+				case ciLogsOutTerminal, ciLogsOutSimple:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
 						block := stdout.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
-						block.Write(bkTimestamp.ReplaceAllString(*log.Content, ""))
+						content := bkTimestamp.ReplaceAllString(*log.Content, "")
+						if *ciLogsOutFlag == ciLogsOutSimple {
+							content = bk.CleanANSI(content)
+						}
+						block.Write(content)
 						block.Close()
 					}
 					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
