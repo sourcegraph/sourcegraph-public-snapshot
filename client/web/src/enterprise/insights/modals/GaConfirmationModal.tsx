@@ -84,8 +84,11 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
                 </p>
 
                 <p>
-                    Questions? Learn more about the <Link to="#">Code Insights limited access</Link> or{' '}
-                    <Link to="mailto:support@sourcegraph.com">contact us directly</Link>.
+                    Questions? Learn more about the{' '}
+                    <Link to="https://docs.sourcegraph.com/code_insights/references/license">
+                        Code Insights limited access
+                    </Link>{' '}
+                    or <Link to="mailto:support@sourcegraph.com">contact us directly</Link>.
                 </p>
             </div>
 
