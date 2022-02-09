@@ -73,6 +73,8 @@ changesetTemplate:
 
 If even that doesn't work, then we can at least exclude the possibility that _only_ something with _your batch spec_ is wrong.
 
+> NOTE: You can use the `-keep-logs` flag on the `apply` and `prievew` commands in order to get more information about why a particular batch change is behaving the way it is.
+
 ### Does it work with a single repository? Five? Ten?
 
 Debugging large batch changes that make changes in hundreds of repositories is hard.
