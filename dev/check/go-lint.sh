@@ -15,7 +15,7 @@ export GO111MODULE=on
 
 config_file="$(pwd)/.golangci.yml"
 lint_script="$(pwd)/dev/golangci-lint.sh"
-annotate_script="$(pwd)/dev/ci/annotate.sh"
+annotate_script="$(pwd)/enterprise/dev/ci/scripts/annotate.sh"
 
 run() {
   LINTER_ARG=${1}
