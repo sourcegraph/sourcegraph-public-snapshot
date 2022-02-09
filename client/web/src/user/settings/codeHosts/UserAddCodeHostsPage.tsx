@@ -314,6 +314,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return false
     }
 
+    const defaultNavigateToAuthProvider = useCallback(
+        (kind: ExternalServiceKind): void => {
+            const authProvider = authProvidersByKind[kind]
+
+            if (authProvider) {
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
+                window.location.assign(
+                    `${authProvider.authenticationURL as string}&redirect=${
+                        window.location.href
+                    }&op=createCodeHostConnection`
+                )
+            }
+        },
+        [authProvidersByKind]
+    )
+
     const navigateToAuthProvider = useCallback(
         (kind: ExternalServiceKind): void => {
             const authProvider = authProvidersByKind[kind]
@@ -331,21 +347,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         )}&op=createCodeHostConnection`
                                     )
                                 } else {
-                                    window.location.assign(
-                                        `${authProvider.authenticationURL as string}&redirect=${
-                                            window.location.href
-                                        }&op=createCodeHostConnection`
-                                    )
+                                    defaultNavigateToAuthProvider(kind)
                                 }
                             })
                             .catch(error => handleError(error))
                     }
                 } else {
-                    window.location.assign(
-                        `${authProvider.authenticationURL as string}&redirect=${
-                            window.location.href
-                        }&op=createCodeHostConnection`
-                    )
+                    defaultNavigateToAuthProvider(kind)
                 }
             }
         },
