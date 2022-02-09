@@ -92,7 +92,7 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Please take a look at our troubleshooting docs for common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
 ## Uninstallation
 
