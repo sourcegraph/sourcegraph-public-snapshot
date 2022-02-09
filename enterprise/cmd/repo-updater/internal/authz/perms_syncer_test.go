@@ -82,7 +82,8 @@ func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Accoun
 func (p *mockProvider) ServiceType() string { return p.serviceType }
 func (p *mockProvider) ServiceID() string   { return p.serviceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
-func (*mockProvider) Validate() []string    { return nil }
+
+func (*mockProvider) ValidateConnection(context.Context) []string { return nil }
 
 func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)

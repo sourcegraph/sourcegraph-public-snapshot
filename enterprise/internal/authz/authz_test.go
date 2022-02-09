@@ -46,7 +46,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) Validate() []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
