@@ -130,7 +130,7 @@ describe('GitHub', () => {
         })
     })
 
-    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
+    it.only("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -242,7 +242,7 @@ describe('GitHub', () => {
             },
         })
         await token.click()
-        await driver.page.waitForTimeout(3000)
+        await driver.page.waitForTimeout(1000)
 
         assert(isRedirectedToDefinition, 'Expected to be redirected to definition')
     })
