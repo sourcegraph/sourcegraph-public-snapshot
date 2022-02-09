@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/cockroachdb/errors"
 	"github.com/docker/cli/cli/config/configfile"
@@ -13,10 +14,12 @@ import (
 )
 
 func getStoreProvider() (string, error) {
-	// TODO:
-	// This is a hack to get the store provider.
-	// It may not work with Windows.
-	data, err := ioutil.ReadFile(fmt.Sprintf("%s/.docker/config.json", os.Getenv("HOME")))
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	data, err := ioutil.ReadFile(filepath.Join(homeDir, ".docker", "config.json"))
 	if err != nil {
 		return "", err
 	}
