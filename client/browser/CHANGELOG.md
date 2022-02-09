@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Make **Single click to definition** an advanced setting: [#pull/30540](https://github.com/sourcegraph/sourcegraph/pull/30540), [#issues/#30437](https://github.com/sourcegraph/sourcegraph/issues/30437)
+
 ## Chrome & Firefox v22.1.25.1535, Safari v1.10
 
 - Add extra field to log browser extension version [#issues/27845](https://github.com/sourcegraph/sourcegraph/issues/27845), [pull/27902](https://github.com/sourcegraph/sourcegraph/pull/27902)
