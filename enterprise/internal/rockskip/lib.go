@@ -93,6 +93,16 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
+type Status struct {
+	TaskLog   *TaskLog
+	Repo      string
+	Commit    string
+	HeldLocks map[string]struct{}
+	BlockedOn string
+	Indexed   int
+	Total     int
+}
+
 type TaskLog struct {
 	currentName  string
 	currentStart time.Time
@@ -152,6 +162,12 @@ func (t *TaskLog) Reset() {
 }
 
 func (t *TaskLog) Print() {
+	fmt.Println(t)
+}
+
+func (t *TaskLog) String() string {
+	var s strings.Builder
+
 	t.Continue(t.currentName)
 
 	var total time.Duration = 0
@@ -160,7 +176,7 @@ func (t *TaskLog) Print() {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Printf("Tasks (%.0fs total): ", total.Seconds())
+	fmt.Fprintf(&s, "Tasks (%.0fs total): ", total.Seconds())
 
 	type kv struct {
 		Key   string
@@ -177,13 +193,14 @@ func (t *TaskLog) Print() {
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("%s %d%% %dx, ", kv.Key, kv.Value.Duration*100/total, kv.Value.Count)
+		fmt.Fprintf(&s, "%s %d%% %dx, ", kv.Key, kv.Value.Duration*100/total, kv.Value.Count)
 	}
-	fmt.Println()
+
+	return s.String()
 }
 
-func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
-	unlock, err := onVisit(tasklog, db, repo, maxRepos)
+func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted, status *Status) (err error) {
+	unlock, err := onVisit(tasklog, db, repo, maxRepos, status)
 	defer func() {
 		if unlock != nil {
 			err = unlock(err)
@@ -224,8 +241,14 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 	}
 
 	tasklog.Start("Acquire semaphore")
+	status.BlockedOn = "MAX_CONCURRENTLY_INDEXING semaphore"
 	sem.Acquire(context.Background(), 1)
-	defer sem.Release(1)
+	status.BlockedOn = ""
+	status.HeldLocks["MAX_CONCURRENTLY_INDEXING semaphore"] = struct{}{}
+	defer func() {
+		sem.Release(1)
+		delete(status.HeldLocks, "MAX_CONCURRENTLY_INDEXING semaphore")
+	}()
 
 	fmt.Println("Indexing", missingCount, "commits")
 
@@ -396,18 +419,34 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (_ locker.UnlockFunc, err error) {
+func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *Status) (_ locker.UnlockFunc, err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
 	}
 	defer tx.Rollback()
 
+	txLocks := []string{}
+	clearTxLocks := func() {
+		for _, lock := range txLocks {
+			delete(status.HeldLocks, lock)
+		}
+	}
+	defer clearTxLocks()
+	addTxLock := func(lock string) {
+		status.HeldLocks[lock] = struct{}{}
+		txLocks = append(txLocks, lock)
+	}
+
 	tasklog.Start("Get deletion lock")
+	deletionLock := "deletion lock"
+	status.BlockedOn = deletionLock
 	_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, LOCKS_NAMESPACE, DELETION_LOCK_ID)
+	status.BlockedOn = ""
 	if err != nil {
 		return nil, err
 	}
+	addTxLock(deletionLock)
 
 	tasklog.Start("Touch repo")
 	_, err = tx.Exec(`
@@ -445,10 +484,14 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (_ locker.
 
 	for _, repoToDelete := range reposToDelete {
 		tasklog.Start("Lock repo")
+		repoLock := fmt.Sprintf("repo lock %s", repoToDelete)
+		status.BlockedOn = repoLock
 		_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repoToDelete)))
+		status.BlockedOn = ""
 		if err != nil {
 			return nil, err
 		}
+		addTxLock(repoLock)
 
 		tasklog.Start("Delete old repo")
 		_, err = tx.Exec(`DELETE FROM rockskip_ancestry WHERE repo = $1`, repoToDelete)
@@ -467,21 +510,27 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int) (_ locker.
 
 	tasklog.Start("Commit deletion")
 	err = tx.Commit()
+	clearTxLocks()
 	if err != nil {
 		return nil, errors.Wrap(err, "commit transaction")
 	}
 
 	tasklog.Start("Lock repo 2")
+	repoLock := fmt.Sprintf("repo lock %s", repo)
+	status.BlockedOn = repoLock
 	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+	status.BlockedOn = ""
 	if err != nil {
 		return nil, err
 	}
+	status.HeldLocks[repoLock] = struct{}{}
 
 	repoUnlock := func(err error) error {
 		_, err2 := db.Exec(`SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err != nil || err2 != nil {
 			return multierror.Append(err, err2)
 		}
+		delete(status.HeldLocks, repoLock)
 		return nil
 	}
 

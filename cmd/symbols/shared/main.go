@@ -30,7 +30,7 @@ import (
 
 const addr = ":3184"
 
-func Main(setup func(observationContext *observation.Context) (types.SearchFunc, []goroutine.BackgroundRoutine, string)) {
+func Main(setup func(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string)) {
 	routines := []goroutine.BackgroundRoutine{}
 
 	// Set up Google Cloud Profiler when running in Cloud
@@ -49,7 +49,7 @@ func Main(setup func(observationContext *observation.Context) (types.SearchFunc,
 		},
 	}
 	// Run setup
-	searchFunc, newRoutines, ctagsBinary := setup(observationContext)
+	searchFunc, handleStatus, newRoutines, ctagsBinary := setup(observationContext)
 	routines = append(routines, newRoutines...)
 
 	// Initialization
@@ -69,7 +69,7 @@ func Main(setup func(observationContext *observation.Context) (types.SearchFunc,
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(api.NewHandler(searchFunc, ctagsBinary), conf.DefaultClient()))),
+		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
 	})
 	routines = append(routines, server)
 

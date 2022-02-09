@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -39,19 +40,53 @@ func main() {
 	}
 }
 
-func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, []goroutine.BackgroundRoutine, string) {
+func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string) {
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
 
-	searchFunc, err := MakeRockskipSearchFunc(observationContext, config)
+	requestToStatus := RequestToStatus{}
+	searchFunc, err := MakeRockskipSearchFunc(observationContext, config, requestToStatus)
 	if err != nil {
 		log.Fatalf("Failed to create rockskip search function: %s", err)
 	}
 
-	return searchFunc, nil, config.Ctags.Command
+	return searchFunc, handleStatus(requestToStatus), nil, config.Ctags.Command
+}
+
+type RequestToStatus = map[RequestId]*rockskip.Status
+type RequestId = int
+
+func handleStatus(requestToStatus RequestToStatus) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "This is the symbols service status page.")
+		fmt.Fprintln(w, "")
+
+		if len(requestToStatus) == 0 {
+			fmt.Fprintln(w, "No requests in flight.")
+			return
+		}
+
+		fmt.Fprintln(w, "Here's all in-flight requests:")
+		fmt.Fprintln(w, "")
+
+		for _, status := range requestToStatus {
+			fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
+			fmt.Fprintf(w, "    %s\n", status.TaskLog)
+			blockedOn := status.BlockedOn
+			if blockedOn != "" {
+				fmt.Fprintf(w, "    blocked on %s\n", blockedOn)
+			}
+			// TODO avoid concurrent read/write with a RWLock
+			for name := range status.HeldLocks {
+				fmt.Fprintf(w, "    holding %s\n", name)
+			}
+			fmt.Fprintln(w)
+		}
+	}
 }
 
 type RockskipConfig struct {
@@ -70,7 +105,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, config RockskipConfig) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, config RockskipConfig, requestToStatus RequestToStatus) (types.SearchFunc, error) {
 	operations := sharedobservability.NewOperations(observationContext)
 	// TODO use operations
 	_ = operations
@@ -83,7 +118,12 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 
 	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
+	requestCount := 0
+
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
+		requestCount++
+		requestId := requestCount
+
 		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		// 	otlog.String("repo", string(args.Repo)),
 		// 	otlog.String("commitID", string(args.CommitID)),
@@ -114,6 +154,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 		}()
 
 		tasklog := rockskip.NewTaskLog()
+
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
 			for {
@@ -161,7 +202,18 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, config Rock
 			return symbols, nil
 		}
 
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
+		status := rockskip.Status{
+			TaskLog:   tasklog,
+			Repo:      string(args.Repo),
+			Commit:    string(args.CommitID),
+			HeldLocks: map[string]struct{}{},
+			BlockedOn: "",
+			Indexed:   -1,
+			Total:     -1,
+		}
+		requestToStatus[requestId] = &status
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem, &status)
+		delete(requestToStatus, requestId)
 		cancel()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")

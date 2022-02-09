@@ -15,12 +15,16 @@ import (
 
 func NewHandler(
 	searchFunc types.SearchFunc,
+	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
+	if handleStatus != nil {
+		mux.HandleFunc("/status", handleStatus)
+	}
 	return mux
 }
 
