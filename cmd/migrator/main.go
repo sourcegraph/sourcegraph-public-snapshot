@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/prometheus/client_golang/prometheus"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -40,7 +41,23 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	command := cliutil.Flags(appName, newRunFunc(), out)
+	runnerFactory := newRunnerFactory()
+	rootFlagSet := flag.NewFlagSet(appName, flag.ExitOnError)
+	command := &ffcli.Command{
+		Name:       appName,
+		ShortUsage: fmt.Sprintf("%s <command>", appName),
+		ShortHelp:  "Validates and runs schema migrations",
+		FlagSet:    rootFlagSet,
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		Subcommands: []*ffcli.Command{
+			cliutil.Up(appName, runnerFactory, out),
+			cliutil.UpTo(appName, runnerFactory, out),
+			cliutil.DownTo(appName, runnerFactory, out),
+			cliutil.Validate(appName, runnerFactory, out),
+		},
+	}
 
 	if err := command.Parse(args); err != nil {
 		return err
@@ -49,7 +66,7 @@ func mainErr(ctx context.Context, args []string) error {
 	return command.Run(ctx)
 }
 
-func newRunFunc() cliutil.RunFunc {
+func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -57,26 +74,16 @@ func newRunFunc() cliutil.RunFunc {
 	}
 	operations := store.NewOperations(observationContext)
 
-	return func(ctx context.Context, options runner.Options) error {
-		schemaNameMap := make(map[string]struct{})
-		for _, operation := range options.Operations {
-			schemaNameMap[operation.SchemaName] = struct{}{}
-		}
-
-		schemaNames := make([]string, 0, len(schemaNameMap))
-		for schemaName := range schemaNameMap {
-			schemaNames = append(schemaNames, schemaName)
-		}
-
+	return func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 		}
 
-		return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run(ctx, options)
+		return connections.RunnerFromDSNs(dsns, appName, storeFactory), nil
 	}
 }

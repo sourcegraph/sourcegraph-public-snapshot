@@ -9,15 +9,14 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
+func Validate(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
+		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s validate", commandName), flag.ExitOnError)
+		schemaNameFlag = flagSet.String("db", "all", `The target schema(s) to validate. Comma-separated values are accepted. Supply "all" (the default) to validate all schemas.`)
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -36,28 +35,18 @@ func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Co
 		}
 		sort.Strings(schemaNames)
 
-		operations := []runner.MigrationOperation{}
-		for _, schemaName := range schemaNames {
-			operations = append(operations, runner.MigrationOperation{
-				SchemaName: schemaName,
-				Type:       runner.MigrationOperationTypeUpgrade,
-			})
-		}
-
 		r, err := factory(ctx, schemaNames)
 		if err != nil {
 			return err
 		}
 
-		return r.Run(ctx, runner.Options{
-			Operations: operations,
-		})
+		return r.Validate(ctx, schemaNames...)
 	}
 
 	return &ffcli.Command{
-		Name:       "up",
-		ShortUsage: fmt.Sprintf("%s up [-db=<schema>]", commandName),
-		ShortHelp:  "Apply all migrations",
+		Name:       "validate",
+		ShortUsage: fmt.Sprintf("%s validate [-db=<schema>]", commandName),
+		ShortHelp:  "Validate the current schema",
 		FlagSet:    flagSet,
 		Exec:       exec,
 		LongHelp:   ConstructLongHelp(),

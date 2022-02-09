@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Undo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
+func Undo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
 		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s undo", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
+		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -28,7 +28,12 @@ func Undo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			return flag.ErrHelp
 		}
 
-		return run(ctx, runner.Options{
+		r, err := factory(ctx, []string{*schemaNameFlag})
+		if err != nil {
+			return err
+		}
+
+		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
 					SchemaName: *schemaNameFlag,
