@@ -36,6 +36,16 @@ type schemaVersion struct {
 
 type visitFunc func(ctx context.Context, schemaContext schemaContext) error
 
+// Store returns the store associated with the given schema.
+func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
+	if factory, ok := r.storeFactories[schemaName]; ok {
+		return factory(ctx)
+
+	}
+
+	return nil, errors.Newf("unknown store %q", schemaName)
+}
+
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
 // concurrently. Errors from each invocation are collected and returned. An error from one
