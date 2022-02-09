@@ -1140,6 +1140,11 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	s.exec(w, r, &req)
 }
 
+var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_exec_blocked_command_received",
+	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
+})
+
 func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
@@ -1151,6 +1156,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(req.Args) {
+		blockedCommandExecutedCounter.Inc()
+
 		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
 
 		// Temporary feature flag to disable this feature in case their are any regressions.
