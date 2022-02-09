@@ -44,7 +44,7 @@ describe('ActivationChecklist', () => {
             expect(component.asFragment()).toMatchSnapshot()
         }
     })
-    test('render 1/1 complete', () => {
+    test.skip('render 1/1 complete', () => {
         const component = renderWithBrandedContext(
             <ActivationChecklist
                 steps={[
