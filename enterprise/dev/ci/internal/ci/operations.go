@@ -656,7 +656,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	vulnerabilityExitCode := 27
 
 	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %s", app),
 			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
@@ -669,10 +669,11 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
-			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
-		}
-
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
+			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", "trivy", bk.AnnotationOpts{
+				Type:          bk.AnnotationTypeWarning,
+				Markdown:      true,
+				CustomContext: "Docker image security scan",
+			}))
 	}
 }
 

@@ -11,3 +11,4 @@ echo "Running git fetch... done"
 
 # Link the trace-script so we can have pretty steps in the buildkite ui
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
+ln -s "$(pwd)/enterprise/dev/ci/scripts/annotated-command.sh" an 2>/dev/null || true

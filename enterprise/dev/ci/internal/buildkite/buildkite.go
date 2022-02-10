@@ -240,15 +240,54 @@ func RawCmd(command string) StepOpt {
 	}
 }
 
+func tracedCmd(command string) string {
+	// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+	// see the underlying command even if prefixed by the tracing script.
+	return fmt.Sprintf("./tr %s", command)
+}
+
 // Cmd adds a command step with added instrumentation for testing purposes.
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
-		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
-		// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
-		// see the underlying command even if prefixed by the tracing script.
-		tracedCmd := fmt.Sprintf("./tr %s", command)
-		step.Command = append(step.Command, tracedCmd)
+		step.Command = append(step.Command, tracedCmd(command))
 	}
+}
+
+type AnnotationType string
+
+const (
+	AnnotationTypeSuccess AnnotationType = "success"
+	AnnotationTypeInfo    AnnotationType = "info"
+	AnnotationTypeWarning AnnotationType = "warning"
+	AnnotationTypeError   AnnotationType = "error"
+)
+
+type AnnotationOpts struct {
+	Type     AnnotationType
+	Markdown bool
+
+	CustomContext string
+}
+
+func AnnotatedCmd(command string, annotationName string, opts AnnotationOpts) StepOpt {
+	var annotateOpts string
+
+	if opts.Type == "" {
+		annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
+	} else {
+		annotateOpts += fmt.Sprintf(" -t %s", opts.Type)
+	}
+
+	if opts.Markdown {
+		annotateOpts += " -m"
+	}
+
+	if opts.CustomContext != "" {
+		annotateOpts += fmt.Sprintf(" -c %q", opts.CustomContext)
+	}
+
+	return RawCmd(fmt.Sprintf("./an %q %q %q", tracedCmd(command), annotationName, annotateOpts))
 }
 
 func Trigger(pipeline string) StepOpt {
