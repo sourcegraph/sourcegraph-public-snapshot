@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -394,7 +393,7 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
 			// that org, then he does not have access to further information about the org. Instead of returning an error
 			// (which would prevent the user from viewing the notebook) we return an empty namespace.
-			if envvar.SourcegraphDotComMode() && strings.Contains(err.Error(), "org not found") {
+			if envvar.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
 				return nil, nil
 			}
 			return nil, err

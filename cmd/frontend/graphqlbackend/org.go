@@ -85,7 +85,7 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 				}
 			}
 			if !hasAccess {
-				return nil, errors.Newf("org not found: %d", orgID)
+				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
 			}
 		}
 	}

@@ -89,20 +89,13 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
         getSelectedTabFromLocation(location.search, authenticatedUser)
     )
 
-    const setTab = useCallback(
-        (tab: NotebooksTab) => {
-            setSelectedTab(tab)
-            setSelectedLocationTab(location, history, tab)
-        },
-        [location, history]
-    )
-
     const onSelectTab = useCallback(
         (tab: NotebooksTab, logName: string) => {
-            setTab(tab)
+            setSelectedTab(tab)
+            setSelectedLocationTab(location, history, tab)
             telemetryService.log(logName)
         },
-        [setTab, telemetryService]
+        [history, location, setSelectedTab, telemetryService]
     )
 
     const filters: FilteredConnectionFilter[] = [
