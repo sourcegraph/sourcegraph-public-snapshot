@@ -6,9 +6,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type testError struct{}
+
+func (t *testError) Error() string { return "testError" }
+
 func TestIgnore(t *testing.T) {
 	testError1 := New("test1")
 	testError2 := New("test2")
+	testError3 := &testError{}
 
 	cases := []struct {
 		input error
@@ -16,39 +21,46 @@ func TestIgnore(t *testing.T) {
 		check func(*testing.T, error)
 	}{{
 		input: testError1,
-		pred:  func(err error) bool { return Is(err, testError2) },
+		pred:  IsPred(testError2),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError1)
 		},
 	}, {
 		input: testError1,
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.NoError(t, err)
 		},
 	}, {
 		input: Append(testError1, testError2),
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 		},
 	}, {
 		input: Append(testError1, testError2, testError1),
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 		},
 	}, {
 		input: Append(testError1, testError1),
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.NoError(t, err)
 		},
 	}, {
+		input: Append(testError1, testError3),
+		pred:  HasTypePred(testError3),
+		check: func(t *testing.T, err error) {
+			require.ErrorIs(t, err, testError1)
+			require.False(t, HasType(err, testError3))
+		},
+	}, {
 		input: Wrap(Append(testError1, testError2), "wrapped"),
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
@@ -56,7 +68,7 @@ func TestIgnore(t *testing.T) {
 		},
 	}, {
 		input: Wrap(testError1, "wrapped"),
-		pred:  func(err error) bool { return Is(err, testError1) },
+		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.NoError(t, err)
 		},
@@ -72,7 +84,7 @@ func TestIgnore(t *testing.T) {
 			Wrap(Append(testError1, testError2), "wrapped1"),
 			Wrap(Append(testError1, testError2), "wrapped2"),
 		),
-		pred: func(err error) bool { return Is(err, testError1) },
+		pred: IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
