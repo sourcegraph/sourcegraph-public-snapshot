@@ -98,7 +98,7 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
                 deleteNotebookStar={deleteNotebookStar}
                 telemetryService={telemetryService}
             />
-            {authenticatedUser && namespace && selectedShareOption && (
+            {authenticatedUser && viewerCanManage && namespace && selectedShareOption && (
                 <>
                     <Button variant="primary" onClick={toggleShareModal} className="d-flex align-items-center">
                         {shareIcon} Share

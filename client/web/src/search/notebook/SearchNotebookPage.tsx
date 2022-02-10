@@ -234,7 +234,15 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                         <CheckCircleIcon
                                             className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                         />
-                                        <span>Last updated&nbsp;</span>
+                                        <span>
+                                            Last updated{' '}
+                                            {latestNotebook.updater && (
+                                                <span>
+                                                    by <strong>@{latestNotebook.updater.username}</strong>
+                                                </span>
+                                            )}
+                                            &nbsp;
+                                        </span>
                                         <Timestamp date={latestNotebook.updatedAt} />
                                     </>
                                 )}
