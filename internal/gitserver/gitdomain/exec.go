@@ -14,14 +14,14 @@ var (
 		"remote": {"-v"},
 		"diff":   append([]string{}, gitCommonAllowlist...),
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged"},
+		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
 		"rev-list":     {"--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
-		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r"},
+		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
@@ -42,6 +42,7 @@ var (
 		"--all-match", "--invert-grep", "--extended-regexp",
 		"--no-color", "--decorate", "--no-patch", "--exclude",
 		"--no-merges",
+		"--no-renames",
 		"--full-index",
 		"--find-copies",
 		"--find-renames",
@@ -49,6 +50,7 @@ var (
 		"--after",
 		"--date.order",
 		"-s",
+		"-100",
 	}
 )
 
