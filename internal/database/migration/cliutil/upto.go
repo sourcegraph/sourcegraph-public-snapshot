@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func UpTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
+func UpTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
 		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s upto", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
+		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
 		targetsFlag    = flagSet.String("target", "", "The migration to apply. Comma-separated values are accepted.")
 	)
 
@@ -47,7 +47,12 @@ func UpTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			versions = append(versions, version)
 		}
 
-		return run(ctx, runner.Options{
+		r, err := factory(ctx, []string{*schemaNameFlag})
+		if err != nil {
+			return err
+		}
+
+		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
 					SchemaName:     *schemaNameFlag,
