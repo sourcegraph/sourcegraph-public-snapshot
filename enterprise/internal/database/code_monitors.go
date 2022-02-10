@@ -63,8 +63,8 @@ type CodeMonitorStore interface {
 	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)
 	ListWebhookActions(context.Context, ListActionsOpts) ([]*WebhookAction, error)
 
-	UpdateSlackWebhookAction(_ context.Context, id int64, enabled bool, url string) (*SlackWebhookAction, error)
-	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*SlackWebhookAction, error)
+	UpdateSlackWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
+	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
 	DeleteSlackWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error)
 	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)

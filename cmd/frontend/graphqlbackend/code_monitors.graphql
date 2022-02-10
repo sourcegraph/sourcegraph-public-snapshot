@@ -395,6 +395,10 @@ type MonitorSlackWebhook implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
+    """
     The endpoint the Slack webhook event will be sent to
     """
     url: String!
@@ -599,6 +603,10 @@ input MonitorSlackWebhookInput {
     Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
     """
     The URL that will receive a payload when the action is triggered.
     """
