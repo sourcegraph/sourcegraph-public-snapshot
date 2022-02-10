@@ -7,13 +7,12 @@ import (
 	"io"
 	"sync"
 
-	uploadstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	uploadstore "github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore)
-// used for unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/uploadstore) used for
+// unit testing.
 type MockStore struct {
 	// ComposeFunc is an instance of a mock function object controlling the
 	// behavior of the method Compose.

@@ -17,7 +17,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +28,7 @@ type s3Store struct {
 	client                       s3API
 	uploader                     s3Uploader
 	bucketLifecycleConfiguration *s3types.BucketLifecycleConfiguration
-	operations                   *operations
+	operations                   *Operations
 }
 
 var _ Store = &s3Store{}
@@ -42,16 +41,8 @@ type S3Config struct {
 	SessionToken    string
 }
 
-func (c *S3Config) load(parent *env.BaseConfig) {
-	c.Region = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_REGION", "us-east-1", "The target AWS region.")
-	c.Endpoint = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://minio:9000", "The target AWS endpoint.")
-	c.AccessKeyID = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE", "An AWS access key associated with a user with access to S3.")
-	c.SecretAccessKey = parent.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "An AWS secret key associated with a user with access to S3.")
-	c.SessionToken = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN", "An optional AWS session token associated with a user with access to S3.")
-}
-
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
-func newS3FromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
+func newS3FromConfig(ctx context.Context, config Config, operations *Operations) (Store, error) {
 	cfg, err := s3ClientConfig(ctx, config.S3)
 	if err != nil {
 		return nil, err
@@ -63,7 +54,7 @@ func newS3FromConfig(ctx context.Context, config *Config, operations *operations
 	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, s3BucketLifecycleConfiguration(config.Backend, config.TTL), operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, operations *operations) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, operations *Operations) *s3Store {
 	return &s3Store{
 		bucket:                       bucket,
 		manageBucket:                 manageBucket,
@@ -99,7 +90,7 @@ const maxZeroReads = 3
 var errNoDownloadProgress = errors.New("no download progress")
 
 func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -158,7 +149,7 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 }
 
 func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, endObservation := s.operations.upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -177,7 +168,7 @@ func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64,
 }
 
 func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, endObservation := s.operations.compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("destination", destination),
 		log.String("sources", strings.Join(sources, ", ")),
 	}})
@@ -266,7 +257,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
-	ctx, endObservation := s.operations.delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -373,6 +364,7 @@ func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3types.
 		},
 	}
 
+	// This rule doesn't work on minio, so we have to skip it there.
 	if backend != "minio" {
 		rules = append(rules, s3types.LifecycleRule{
 			ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),

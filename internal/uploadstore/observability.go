@@ -7,33 +7,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-	get     *observation.Operation
-	upload  *observation.Operation
-	compose *observation.Operation
-	delete  *observation.Operation
+type Operations struct {
+	Get     *observation.Operation
+	Upload  *observation.Operation
+	Compose *observation.Operation
+	Delete  *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func NewOperations(observationContext *observation.Context, domain, storeName string) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_uploadstore",
+		fmt.Sprintf("%s_%s", domain, storeName),
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.uploadstore.%s", name),
+			Name:              fmt.Sprintf("%s.%s.%s", domain, storeName, name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
 	}
 
-	return &operations{
-		get:     op("Get"),
-		upload:  op("Upload"),
-		compose: op("Compose"),
-		delete:  op("Delete"),
+	return &Operations{
+		Get:     op("Get"),
+		Upload:  op("Upload"),
+		Compose: op("Compose"),
+		Delete:  op("Delete"),
 	}
 }
