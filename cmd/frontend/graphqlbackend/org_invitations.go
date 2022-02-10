@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -120,7 +121,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 
 	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(conf.SiteConfig().OrganizationInvitations.SigningKey), nil
+		return base64.StdEncoding.DecodeString(conf.SiteConfig().OrganizationInvitations.SigningKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 
 	if err != nil {
@@ -426,7 +427,11 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32) (strin
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(config.SigningKey))
+	key, err := base64.StdEncoding.DecodeString(config.SigningKey)
+	if err != nil {
+		return "", err
+	}
+	tokenString, err := token.SignedString(key)
 	if err != nil {
 		return "", err
 	}
