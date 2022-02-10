@@ -49,8 +49,6 @@ var (
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 	ciStatusBuildFlag  = ciStatusFlagSet.String("build", "", "Override branch detection with a specific build number")
 
-	ciDryRunFlagSet = flag.NewFlagSet("sg ci dry-run", flag.ExitOnError)
-
 	ciBuildFlagSet       = flag.NewFlagSet("sg ci build", flag.ExitOnError)
 	ciBuildCommitFlag    = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
 	ciBuildForcePushFlag = ciBuildFlagSet.Bool("force", false, "force push to any remote branches")
@@ -293,6 +291,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
+			ShortUsage: fmt.Sprintf("sg ci build %s", getBuildTypes()),
 		}, {
 			Name:      "logs",
 			ShortHelp: "Get logs from CI builds.",
@@ -434,19 +433,20 @@ From there, you can start exploring logs with the Grafana explore panel.
 				return writePrettyMarkdown(out)
 			},
 		},
-			{
-				Name:      "dry-run",
-				ShortHelp: "Create a main-dry-run branch for the current branch.",
-				LongHelp: `Create a main-dry-run branch for the current branch. This will generate a pipeline similar to the main branch. This is useful
-for testing a branch against the full test suite before merging to main.`,
-				Exec: func(ctx context.Context, args []string) error {
-					return nil
-				},
-				FlagSet: ciDryRunFlagSet,
-			},
 		},
 	}
 )
+
+func getBuildTypes() string {
+	sb := strings.Builder{}
+	sb.WriteString("[")
+	for _, rt := range runtype.RunTypes(runtype.RunTypeFilter{PrefixOnly: true}) {
+		sb.WriteString(strings.TrimSuffix(rt.Matcher().Branch, "/"))
+		sb.WriteString("|")
+	}
+	sb.WriteString("]")
+	return sb.String()
+}
 
 func allLinesPrefixed(lines []string, match string) bool {
 	for _, l := range lines {
