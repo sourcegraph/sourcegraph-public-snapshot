@@ -267,7 +267,9 @@ type AnnotationOpts struct {
 	Type     AnnotationType
 	Markdown bool
 
-	CustomContext string
+	// MultiJobContext indicates that this annotation will accept input from multiple jobs
+	// under this context name.
+	MultiJobContext string
 }
 
 func AnnotatedCmd(command string, annotationName string, opts AnnotationOpts) StepOpt {
@@ -283,8 +285,8 @@ func AnnotatedCmd(command string, annotationName string, opts AnnotationOpts) St
 		annotateOpts += " -m"
 	}
 
-	if opts.CustomContext != "" {
-		annotateOpts += fmt.Sprintf(" -c %q", opts.CustomContext)
+	if opts.MultiJobContext != "" {
+		annotateOpts += fmt.Sprintf(" -c %q", opts.MultiJobContext)
 	}
 
 	return RawCmd(fmt.Sprintf("./an %q %q %q", tracedCmd(command), annotationName, annotateOpts))

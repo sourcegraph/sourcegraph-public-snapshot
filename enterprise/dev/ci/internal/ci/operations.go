@@ -122,7 +122,9 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.Cmd("./dev/check/docsite.sh"))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", "docsite", bk.AnnotationOpts{
+			Type: bk.AnnotationTypeError,
+		}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
@@ -669,10 +671,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
-			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", "trivy", bk.AnnotationOpts{
-				Type:          bk.AnnotationTypeWarning,
-				Markdown:      true,
-				CustomContext: "Docker image security scan",
+			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", "trivy-scan-high-critical", bk.AnnotationOpts{
+				Type:            bk.AnnotationTypeWarning,
+				Markdown:        true,
+				MultiJobContext: "docker-security-scans",
 			}))
 	}
 }
