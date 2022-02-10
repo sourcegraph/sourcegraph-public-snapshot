@@ -1,8 +1,13 @@
 import { camelCase } from 'lodash'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
-import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
-import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
+import {
+    InsightExecutionType,
+    InsightType,
+    InsightTypePrefix,
+    SearchBasedInsight,
+    SearchBasedInsightSeries,
+} from '../../../../../core/types'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
@@ -38,6 +43,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             visibility: rawInsight.visibility,
             step: { [rawInsight.step]: +rawInsight.stepValue },
             filters: { includeRepoRegexp: '', excludeRepoRegexp: '' },
+            dashboardReferenceCount: rawInsight.dashboardReferenceCount,
         }
     }
 
@@ -52,5 +58,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
+        dashboardReferenceCount: rawInsight.dashboardReferenceCount,
     }
 }

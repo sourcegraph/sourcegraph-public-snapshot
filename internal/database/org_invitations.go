@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -18,13 +19,15 @@ import (
 type OrgInvitation struct {
 	ID              int64
 	OrgID           int32
-	SenderUserID    int32 // the sender of the invitation
-	RecipientUserID int32 // the recipient of the invitation
+	SenderUserID    int32  // the sender of the invitation
+	RecipientUserID int32  // the recipient of the invitation
+	RecipientEmail  string // the email of the recipient in case we do not have a user id
 	CreatedAt       time.Time
 	NotifiedAt      *time.Time
 	RespondedAt     *time.Time
 	ResponseType    *bool // accepted (true), rejected (false), no response (nil)
 	RevokedAt       *time.Time
+	IsVerifiedEmail bool // returns true if the current user has verified email that matches the invite
 }
 
 // Pending reports whether the invitation is pending (i.e., can be responded to by the recipient
@@ -37,7 +40,7 @@ type OrgInvitationStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) OrgInvitationStore
 	Transact(context.Context) (OrgInvitationStore, error)
-	Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error)
+	Create(ctx context.Context, orgID, senderUserID, recipientUserID int32, email string) (*OrgInvitation, error)
 	GetByID(context.Context, int64) (*OrgInvitation, error)
 	GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error)
 	GetPendingByID(ctx context.Context, id int64) (*OrgInvitation, error)
@@ -87,16 +90,28 @@ func (err OrgInvitationNotFoundError) Error() string {
 	return fmt.Sprintf("org invitation not found: %v", err.args)
 }
 
-func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error) {
+func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, recipientUserID int32, email string) (*OrgInvitation, error) {
 	t := &OrgInvitation{
 		OrgID:           orgID,
 		SenderUserID:    senderUserID,
 		RecipientUserID: recipientUserID,
+		RecipientEmail:  email,
 	}
+
+	var column, value string
+	if recipientUserID > 0 {
+		column = "recipient_user_id"
+		value = strconv.FormatInt(int64(recipientUserID), 10)
+	}
+	if email != "" {
+		column = "recipient_email"
+		value = email
+	}
+
 	if err := s.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO org_invitations(org_id, sender_user_id, recipient_user_id) VALUES($1, $2, $3) RETURNING id, created_at",
-		orgID, senderUserID, recipientUserID,
+		fmt.Sprintf("INSERT INTO org_invitations(org_id, sender_user_id, %s) VALUES($1, $2, $3) RETURNING id, created_at", column),
+		orgID, senderUserID, value,
 	).Scan(&t.ID, &t.CreatedAt); err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.ConstraintName == "org_invitations_singleflight" {
@@ -185,7 +200,7 @@ func (s *orgInvitationStore) List(ctx context.Context, opt OrgInvitationsListOpt
 
 func (s *orgInvitationStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*OrgInvitation, error) {
 	q := sqlf.Sprintf(`
-SELECT id, org_id, sender_user_id, recipient_user_id, created_at, notified_at, responded_at, response_type, revoked_at FROM org_invitations
+SELECT id, org_id, sender_user_id, recipient_user_id, recipient_email, created_at, notified_at, responded_at, response_type, revoked_at FROM org_invitations
 WHERE (%s) AND deleted_at IS NULL
 ORDER BY id ASC
 %s`,
@@ -202,7 +217,7 @@ ORDER BY id ASC
 	var results []*OrgInvitation
 	for rows.Next() {
 		var t OrgInvitation
-		if err := rows.Scan(&t.ID, &t.OrgID, &t.SenderUserID, &t.RecipientUserID, &t.CreatedAt, &t.NotifiedAt, &t.RespondedAt, &t.ResponseType, &t.RevokedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.OrgID, &t.SenderUserID, &dbutil.NullInt32{N: &t.RecipientUserID}, &dbutil.NullString{S: &t.RecipientEmail}, &t.CreatedAt, &t.NotifiedAt, &t.RespondedAt, &t.ResponseType, &t.RevokedAt); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)
@@ -243,7 +258,7 @@ func (s *orgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id in
 // which the recipient was invited. If the recipient user ID given is incorrect, an
 // OrgInvitationNotFoundError error is returned.
 func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
-	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
+	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$2 WHERE id=$1 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, accept).Scan(&orgID); err == sql.ErrNoRows {
 		return 0, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
 		return 0, err

@@ -112,10 +112,8 @@ func TestTimeoutJob(t *testing.T) {
 			return nil, ctx.Err()
 		})
 		timeoutJob := NewTimeoutJob(10*time.Millisecond, timeoutWaiter)
-		start := time.Now()
 		_, err := timeoutJob.Run(context.Background(), nil, nil)
 		require.ErrorIs(t, err, context.DeadlineExceeded)
-		require.WithinDuration(t, time.Now(), start.Add(10*time.Millisecond), 5*time.Millisecond)
 	})
 
 	t.Run("early return returns early", func(t *testing.T) {
@@ -128,7 +126,7 @@ func TestTimeoutJob(t *testing.T) {
 				return nil, ctx.Err()
 			}
 		})
-		timeoutJob := NewTimeoutJob(20*time.Millisecond, timeoutWaiter)
+		timeoutJob := NewTimeoutJob(time.Second, timeoutWaiter)
 		start := time.Now()
 		_, err := timeoutJob.Run(context.Background(), nil, nil)
 		require.NoError(t, err)
@@ -152,7 +150,7 @@ func TestParallelJob(t *testing.T) {
 		start := time.Now()
 		_, err := parallelJob.Run(context.Background(), nil, nil)
 		require.NoError(t, err)
-		require.WithinDuration(t, time.Now(), start.Add(10*time.Millisecond), 5*time.Millisecond)
+		require.WithinDuration(t, time.Now(), start.Add(20*time.Millisecond), 10*time.Millisecond)
 	})
 
 	t.Run("errors are aggregated", func(t *testing.T) {
@@ -210,7 +208,7 @@ func TestPriorityJob(t *testing.T) {
 		job := NewPriorityJob(required, optional)
 		_, err := job.Run(context.Background(), nil, nil)
 		require.ErrorIs(t, err, context.Canceled)
-		require.WithinDuration(t, time.Now(), start.Add(100*time.Millisecond), 10*time.Millisecond)
+		require.WithinDuration(t, time.Now(), start.Add(100*time.Millisecond), 40*time.Millisecond)
 	})
 
 	t.Run("optional job has some time to complete", func(t *testing.T) {
@@ -229,7 +227,7 @@ func TestPriorityJob(t *testing.T) {
 		job := NewPriorityJob(required, optional)
 		_, err := job.Run(context.Background(), nil, nil)
 		require.NoError(t, err, context.Canceled)
-		require.WithinDuration(t, time.Now(), start.Add(50*time.Millisecond), 10*time.Millisecond)
+		require.WithinDuration(t, time.Now(), start.Add(50*time.Millisecond), 30*time.Millisecond)
 	})
 
 	t.Run("NewPriorityJob", func(t *testing.T) {

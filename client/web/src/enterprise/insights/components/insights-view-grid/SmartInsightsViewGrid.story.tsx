@@ -38,6 +38,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -48,6 +49,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -65,6 +67,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -75,6 +78,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -106,6 +110,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -116,6 +121,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -126,6 +132,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
 ]
 

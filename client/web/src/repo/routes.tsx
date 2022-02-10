@@ -211,6 +211,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                     <>
                                         <InstallIntegrationsAlert
                                             codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                                            page="file"
                                             externalURLs={repo.externalURLs}
                                             onExtensionAlertDismissed={onExtensionAlertDismissed}
                                         />
