@@ -70,7 +70,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
 2. Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
 3. Navigate to `Code preferences`, then click `Settings`.
-4. Search for `Sourcegraph`, and enter the newly generated access token and Sourcegraph instance URL. 
+4. Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL. 
 
 
 ## Keyboard Shortcuts:
