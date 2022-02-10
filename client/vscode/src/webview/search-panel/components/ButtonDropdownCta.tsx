@@ -54,7 +54,12 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDropdownOpen])
 
-    const signUpURL = new URL(`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`, instanceURL)
+    const signUpURL = new URL(
+        `/sign-up?src=${source}&returnTo=${encodeURIComponent(
+            returnTo
+        )}&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`,
+        instanceURL
+    )
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
