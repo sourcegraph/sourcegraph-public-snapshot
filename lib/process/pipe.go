@@ -3,12 +3,13 @@ package process
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os/exec"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PipeOutput reads stdout/stderr output of the given command into the two
