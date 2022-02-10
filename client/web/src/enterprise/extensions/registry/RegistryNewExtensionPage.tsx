@@ -2,67 +2,30 @@ import classNames from 'classnames'
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { concat, Observable, Subject, Subscription } from 'rxjs'
+import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
-import { mutateGraphQL } from '../../../backend/graphql'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
-import { ModalPage } from '../../../components/ModalPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { RegistryPublisher, toExtensionID } from '../../../extensions/extension/extension'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 
-import { queryViewerRegistryPublishers } from './backend'
+import { createExtension, queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import styles from './RegistryNewExtensionPage.module.scss'
-
-function createExtension(
-    publisher: Scalars['ID'],
-    name: string
-): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
-    return mutateGraphQL(
-        gql`
-            mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
-                extensionRegistry {
-                    createExtension(publisher: $publisher, name: $name) {
-                        extension {
-                            id
-                            extensionID
-                            url
-                        }
-                    }
-                }
-            }
-        `,
-        { publisher, name }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.extensionRegistry ||
-                !data.extensionRegistry.createExtension ||
-                (errors && errors.length > 0)
-            ) {
-                throw createAggregateError(errors)
-            }
-            return data.extensionRegistry.createExtension
-        })
-    )
-}
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, BreadcrumbSetters {
     authenticatedUser: AuthenticatedUser
@@ -161,22 +124,24 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             }
 
             return (
-                <>
-                    <PageTitle title="New extension" />
-                    <ModalPage className="mt-4">
-                        <h2 className="mb-4">
-                            <PuzzleIcon className="icon-inline" /> New extension
-                        </h2>
-                        <div className="mb-3">
-                            <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
-                                Learn more
-                            </Link>{' '}
-                            about authoring Sourcegraph extensions{' '}
-                            <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
-                                <HelpCircleOutline className="icon-inline" />
-                            </Link>
-                        </div>
-                        <Form onSubmit={this.onSubmit}>
+                <div className="container col-8">
+                    <PageTitle title="Create new extension" />
+                    <PageHeader
+                        path={[{ icon: PuzzleOutlineIcon, to: '/extensions' }, { text: 'Create extension' }]}
+                        description={
+                            <>
+                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
+                                    Learn more
+                                </Link>{' '}
+                                about authoring Sourcegraph extensions{' '}
+                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
+                                    <HelpCircleOutline className="icon-inline" />
+                                </Link>
+                            </>
+                        }
+                    />
+                    <Form onSubmit={this.onSubmit} className="my-4 pb-5">
+                        <Container className="mb-4">
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}
                                 publishersOrError={this.state.publishersOrError}
@@ -189,7 +154,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 onChange={this.onNameChange}
                             />
                             {extensionID && (
-                                <div className="form-group d-flex flex-wrap align-items-baseline">
+                                <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
                                     <label
                                         htmlFor="extension-registry-create-extension-page__extensionID"
                                         className="mr-1 mb-0 mt-1"
@@ -204,28 +169,28 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     </code>
                                 </div>
                             )}
-                            <Button
-                                type="submit"
-                                disabled={
-                                    isErrorLike(this.state.publishersOrError) ||
-                                    this.state.publishersOrError === 'loading' ||
-                                    this.state.creationOrError === 'loading'
-                                }
-                                variant="primary"
-                            >
-                                {this.state.creationOrError === 'loading' ? (
-                                    <LoadingSpinner />
-                                ) : (
-                                    <AddIcon className="icon-inline" />
-                                )}{' '}
-                                Create extension
-                            </Button>
-                        </Form>
-                        {isErrorLike(this.state.creationOrError) && (
-                            <ErrorAlert className="mt-3" error={this.state.creationOrError} />
-                        )}
-                    </ModalPage>
-                </>
+                            {isErrorLike(this.state.creationOrError) && (
+                                <ErrorAlert className="mt-3" error={this.state.creationOrError} />
+                            )}
+                        </Container>
+                        <Button
+                            type="submit"
+                            disabled={
+                                isErrorLike(this.state.publishersOrError) ||
+                                this.state.publishersOrError === 'loading' ||
+                                this.state.creationOrError === 'loading'
+                            }
+                            variant="primary"
+                        >
+                            {this.state.creationOrError === 'loading' ? (
+                                <LoadingSpinner />
+                            ) : (
+                                <AddIcon className="icon-inline" />
+                            )}{' '}
+                            Create extension
+                        </Button>
+                    </Form>
+                </div>
             )
         }
 
