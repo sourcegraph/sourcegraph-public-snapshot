@@ -7,6 +7,7 @@ import (
 	"math"
 	"net"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,10 +29,10 @@ var (
 		Help:    "Maximum size of result reordering buffer for a request.",
 		Buckets: prometheus.ExponentialBuckets(4, 2, 10),
 	}, nil)
-	metricIgnoredError = promauto.NewCounter(prometheus.CounterOpts{
+	metricIgnoredError = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_zoekt_ignored_error_total",
 		Help: "Total number of errors ignored from Zoekt.",
-	})
+	}, []string{"reason"})
 	// temporary metric so we can check if we are encountering non-empty
 	// queues once streaming is complete.
 	metricFinalQueueSize = promauto.NewCounter(prometheus.CounterOpts{
@@ -522,13 +523,45 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
 func canIgnoreError(ctx context.Context, err error) bool {
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) {
-		metricIgnoredError.Inc()
-		if span := trace.TraceFromContext(ctx); span != nil {
-			span.LogFields(otlog.String("ignored.error", err.Error()))
-		}
-		return dnsErr.IsNotFound
+	reason := canIgnoreErrorReason(err)
+	if reason == "" {
+		return false
 	}
-	return false
+
+	metricIgnoredError.WithLabelValues(reason).Inc()
+	if span := trace.TraceFromContext(ctx); span != nil {
+		span.LogFields(
+			otlog.String("ignored.reason", reason),
+			otlog.String("ignored.error", err.Error()))
+	}
+
+	return true
+}
+
+func canIgnoreErrorReason(err error) string {
+	// Please only add very specific error checks here. An error can be added
+	// here if we see it correlated with rollouts on sourcegraph.com.
+	// Additionally you should be able to justify why it is related to races
+	// between service discovery and us trying to dial.
+
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+		return "dns-not-found"
+	}
+
+	var opErr *net.OpError
+	if errors.As(err, &opErr) && opErr.Op == "dial" {
+		if opErr.Timeout() {
+			return "dial-timeout"
+		}
+		// ugly to do this, but is the most robust way. go's net tests do the
+		// same check. example:
+		//
+		//   dial tcp 10.164.51.47:6070: connect: connection refused
+		if strings.Contains(opErr.Err.Error(), "connection refused") {
+			return "dial-refused"
+		}
+	}
+
+	return ""
 }
