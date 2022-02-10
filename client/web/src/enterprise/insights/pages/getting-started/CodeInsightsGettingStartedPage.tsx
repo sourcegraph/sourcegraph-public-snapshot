@@ -19,7 +19,7 @@ export const CodeInsightsGettingStartedPage: React.FunctionComponent<CodeInsight
 
     return (
         <main className="pb-5">
-            <DynamicCodeInsightExample />
+            <DynamicCodeInsightExample telemetryService={telemetryService} />
             <CodeInsightsExamples className={styles.section} />
             <CodeInsightsTemplates className={styles.section} />
             <CodeInsightsLearnMore className={styles.section} />

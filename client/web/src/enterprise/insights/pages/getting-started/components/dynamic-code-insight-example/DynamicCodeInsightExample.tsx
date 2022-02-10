@@ -3,14 +3,18 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useContext, useMemo } from 'react'
 import { noop } from 'rxjs'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
 
+import * as View from '../../../../../../views'
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
 import { useForm } from '../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { InsightType } from '../../../../core/types'
+import { useCodeInsightViewPings } from '../../../../pings/use-code-insight-view-pings'
 import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../insights/creation/search-insight'
 import { getQueryPatternTypeFilter } from '../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
 import { SearchInsightLivePreview } from '../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
@@ -42,9 +46,11 @@ const createExampleDataSeries = (query: string): EditableDataSeries[] => [
     },
 ]
 
-interface DynamicCodeInsightExampleProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+    const { telemetryService, ...otherProps } = props
+
     const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
 
     const form = useForm<CodeInsightExampleFormValues>({
@@ -75,8 +81,14 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         repositories.meta.setState(state => ({ ...state, value: repository }))
     }
 
+    const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
+        telemetryService,
+        viewType: InsightType.SearchBased,
+        pingEventPrefix: 'GettingStartedPageDemo',
+    })
+
     return (
-        <Card {...props} className={classNames(styles.wrapper, props.className)}>
+        <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"
@@ -88,7 +100,17 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     disabled={!hasValidLivePreview}
                     isAllReposMode={false}
                     className={styles.chart}
-                />
+                >
+                    {data => (
+                        <View.Content
+                            onMouseEnter={trackMouseEnter}
+                            onMouseLeave={trackMouseLeave}
+                            onDatumLinkClick={trackDatumClicks}
+                            content={[data]}
+                            layout={View.ChartViewContentLayout.ByContentSize}
+                        />
+                    )}
+                </SearchInsightLivePreview>
 
                 <FormInput
                     title="Data series search query"

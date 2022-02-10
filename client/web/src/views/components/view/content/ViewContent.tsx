@@ -15,7 +15,7 @@ import styles from './ViewContent.module.scss'
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
-export interface ViewContentProps {
+export interface ViewContentProps extends React.HTMLAttributes<HTMLElement> {
     content: View['content']
     alert?: React.ReactNode
     layout?: ChartViewContentLayout
@@ -36,10 +36,10 @@ export interface ViewContentProps {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, alert, layout, className, onDatumLinkClick } = props
+    const { content, alert, layout, className, onDatumLinkClick, ...attributes } = props
 
     return (
-        <div className={classNames(styles.viewContent, className)}>
+        <div {...attributes} className={classNames(styles.viewContent, className)}>
             {content.map((content, index) =>
                 // TODO Remove markup content support
                 isMarkupContent(content) ? (
