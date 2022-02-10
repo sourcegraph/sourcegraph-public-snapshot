@@ -599,25 +599,28 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 	gitCommands := []string{
 		"touch file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:01Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:01Z",
 		"touch file2",
 		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:02Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:02Z",
 		"echo foo > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-		"echo asdf > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-		"echo bar > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit5 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:03Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:03Z",
 		"echo asdf > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit6 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-		"echo baz > file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:04Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:04Z",
+		"echo bar > file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit5 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"echo asdf2 > file2",
 		"git add file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit -m commit6 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"echo bazz > file1",
+		"git add file1",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit7 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+		"echo bazz > file2",
+		"git add file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit8 --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
 	}
 
 	tests := map[string]struct {
@@ -635,28 +638,29 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 			},
 			wantCommits: []*gitdomain.Commit{
 				{
-					ID:        "de572ce747251015fc2da81d96914d7ff324b5a0",
+					ID:        "61dbc35f719c53810904a2d359309d4e1e98a6be",
 					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Parents: []api.CommitID{
-						"4f402509d4af7553a58e28c8defcdaa8fa77223a",
-					},
-					Message: "commit6",
+					Message:   "commit7",
+					Parents:   []api.CommitID{"66566c8aa223f3e1b94ebe09e6cdb14c3a5bfb36"},
 				},
 				{
-					ID:        "8712255b8f196c3d67177b620bf5b59ac1685dc1",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Parents: []api.CommitID{
-						"688bdb72a0e678fbaf0ce9aaae987519b36a6d39",
-					},
-					Message: "commit3",
-				},
-				{
-					ID:        "b606157aa1a9bbfd4b593bdec36d630ad17ac251",
+					ID:        "2e6b2c94293e9e339f781b2a2f7172e15460f88c",
 					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Message:   "commit1",
+					Parents: []api.CommitID{
+						"9a7ec70986d657c4c86d6ac476f0c5181ece509a",
+					},
+					Message: "commit5",
+				},
+				{
+					ID:        "9a7ec70986d657c4c86d6ac476f0c5181ece509a",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Message:   "commit4",
+					Parents: []api.CommitID{
+						"f3fa8cf6ec56d0469402523385d6ca4b7cb222d8",
+					},
 				},
 			},
 			noAccessPaths: []string{"file2"},
@@ -672,11 +676,9 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 				return
 			}
 
-			if len(commits) != len(test.wantCommits) {
-				t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
+			if diff := cmp.Diff(test.wantCommits, commits); diff != "" {
+				t.Fatal(diff)
 			}
-
-			checkCommits(t, label, commits, test.wantCommits)
 		})
 	}
 }
