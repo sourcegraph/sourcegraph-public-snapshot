@@ -4,7 +4,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
-- [Bitbucket Server](#bitbucket-server)
+- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server)
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -193,27 +193,27 @@ because Sourcegraph usernames are mutable.
 
 <br />
 
-## Bitbucket Server
+## Bitbucket Server / Bitbucket Data Center
 
-Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
+Enforcing Bitbucket Server / Bitbucket Data Center permissions can be configured via the `authorization` setting in its configuration.
 
 > WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
 
 ### Prerequisites
 
-1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
+1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server / Bitbucket Data Center. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server / Bitbucket Data Center with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
 1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [site config](../config/site_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
 
 ### Setup
 
-This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Sourcegraph Bitbucket Server configuration with `authorization` settings. It assumes the above prerequisites are met.
+This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server / Bitbucket Data Center* and configuring the Sourcegraph Bitbucket Server / Bitbucket Data Center configuration with `authorization` settings. It assumes the above prerequisites are met.
 
 As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks).
 
 <img src="https://imgur.com/Hg4bzOf.png" width="800">
 
-Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.example.com`) and click **Create new link**. Click **Continue** even if Bitbucket Server warns you about the given URL not responding.
+Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.example.com`) and click **Create new link**. Click **Continue** even if Bitbucket Server / Bitbucket Data Center warns you about the given URL not responding.
 
 <img src="https://imgur.com/x6vFKIL.png" width="800">
 
@@ -237,7 +237,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 <img src="https://imgur.com/1qxEAye.png" width="800">
 
-Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* connection. Add the following settings:
+Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
 
 ```json
 {
@@ -258,7 +258,7 @@ Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field an
 
 ### Fast permission sync with Bitbucket Server plugin
 
-By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
+By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server / Bitbucket Data Center permissions on larger instances.
 
 <br />
 
@@ -266,7 +266,7 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 <span class="badge badge-note">Sourcegraph 3.17+</span>
 
-Sourcegraph syncs permissions in the background by default to better handle repository permissions at scale for [GitHub](#github), [GitLab](#gitlab), and [Bitbucket Server](#bitbucket-server) code hosts. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
+Sourcegraph syncs permissions in the background by default to better handle repository permissions at scale for [GitHub](#github), [GitLab](#gitlab), and [Bitbucket Server / Bitbucket Data Center](#bitbucket-server) code hosts. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
 
 Sourcegraph's background permissions syncing is a 2-way sync that combines data from both types of sync for each configured code host to populate the database tables Sourcegraph uses as its source-of-truth for what repositories a user has access to:
 

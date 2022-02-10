@@ -5,19 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-
-	otlog "github.com/opentracing/opentracing-go/log"
-
-	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -28,9 +20,12 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A global limiter on number of concurrent searcher searches.
@@ -60,7 +55,7 @@ func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRe
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, searcherArgs, stream, zoektArgs.UnindexedRepos(), false)
+		return CallSearcherOverRepos(ctx, searcherArgs, stream, zoektArgs.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
@@ -212,8 +207,8 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	return fms, nil
 }
 
-// callSearcherOverRepos calls searcher on searcherRepos.
-func callSearcherOverRepos(
+// CallSearcherOverRepos calls searcher on searcherRepos.
+func CallSearcherOverRepos(
 	ctx context.Context,
 	args *search.SearcherParameters,
 	stream streaming.Sender,
@@ -315,7 +310,7 @@ type RepoSubsetTextSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSubsetTextSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -323,7 +318,7 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 	}()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
@@ -352,22 +347,14 @@ type RepoUniverseTextSearch struct {
 	UserID      int32
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	userID := int32(0)
-
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a != nil {
-			userID = a.UID
-		}
-	}
-
-	userPrivateRepos := searchrepos.PrivateReposForUser(ctx, db, userID, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -375,7 +362,7 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream
 	g.Go(func() error {
 		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
 	})
-	return g.Wait()
+	return nil, g.Wait()
 }
 
 func (*RepoUniverseTextSearch) Name() string {

@@ -1,35 +1,23 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { Button } from './Button'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 
 describe('Button', () => {
     it('renders a simple button correctly', () => {
-        const { container } = render(<Button>Hello world</Button>)
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <button
-              class="btn"
-              type="button"
-            >
-              Hello world
-            </button>
-        `)
+        const { asFragment } = renderWithBrandedContext(<Button>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('supports rendering as different elements', () => {
-        const { container } = render(<Button as="a">I am a link</Button>)
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <a
-              class="btn"
-            >
-              I am a link
-            </a>
-        `)
+        const { asFragment } = renderWithBrandedContext(<Button as="a">I am a link</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('renders a special tooltip sibling if the button is disabled and has a tooltip', () => {
-        const { container } = render(
+        const { container } = renderWithBrandedContext(
             <Button data-tooltip="I am the tooltip" disabled={true}>
                 Disabled
             </Button>
@@ -56,12 +44,12 @@ describe('Button', () => {
     })
 
     it.each(BUTTON_VARIANTS)("Renders variant '%s' correctly", variant => {
-        const { container } = render(<Button variant={variant}>Hello world</Button>)
-        expect(container.firstChild).toMatchSnapshot()
+        const { asFragment } = renderWithBrandedContext(<Button variant={variant}>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it.each(BUTTON_SIZES)("Renders size '%s' correctly", size => {
-        const { container } = render(<Button size={size}>Hello world</Button>)
-        expect(container.firstChild).toMatchSnapshot()
+        const { asFragment } = renderWithBrandedContext(<Button size={size}>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 })

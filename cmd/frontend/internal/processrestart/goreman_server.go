@@ -4,7 +4,7 @@ import (
 	"net/rpc"
 	"os"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // usingGoremanServer is whether we are running goreman in cmd/server.

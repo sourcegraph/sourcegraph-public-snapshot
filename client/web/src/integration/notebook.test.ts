@@ -73,6 +73,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             public: true,
             viewerCanManage: true,
             viewerHasStarred: true,
+            namespace: {
+                id: '1',
+            },
             stars: {
                 totalCount: 123,
             },
@@ -93,6 +96,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             public: notebook.public,
             viewerCanManage: true,
             viewerHasStarred: true,
+            namespace: {
+                id: '2',
+            },
             stars: {
                 totalCount: 123,
             },

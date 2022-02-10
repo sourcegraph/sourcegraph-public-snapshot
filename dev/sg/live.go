@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/mod/semver"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 

@@ -143,9 +143,6 @@ func TestPermissionLevels(t *testing.T) {
 		ws := &btypes.BatchSpecWorkspace{
 			BatchSpecID: batchSpecID,
 			RepoID:      repo.ID,
-			Steps: []batcheslib.Step{
-				{Container: "alpine:3", Run: "echo lol"},
-			},
 		}
 		if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 			t.Fatal(err)

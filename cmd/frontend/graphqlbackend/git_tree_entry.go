@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var metricLabels = []string{"origin"}

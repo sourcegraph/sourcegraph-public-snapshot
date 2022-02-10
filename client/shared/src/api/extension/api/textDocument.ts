@@ -2,8 +2,8 @@ import * as sourcegraph from 'sourcegraph'
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 
-import { PrefixSumComputer } from '../../../util/prefixSumComputer'
-import { getWordAtText } from '../../../util/wordHelpers'
+import { PrefixSumComputer } from './utils/prefixSumComputer'
+import { getWordAtText } from './utils/wordHelpers'
 
 /** @internal */
 export class ExtensionDocument implements sourcegraph.TextDocument {

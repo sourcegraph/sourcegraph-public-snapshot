@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -43,20 +44,21 @@ func TestTransformRecord(t *testing.T) {
 		UserID:          123,
 		NamespaceUserID: 123,
 		RawSpec:         "horse",
-		Spec:            &batcheslib.BatchSpec{},
+		Spec: &batcheslib.BatchSpec{
+			Steps: []batcheslib.Step{
+				{Run: "echo lol >> readme.md", Container: "alpine:3"},
+				{Run: "echo more lol >> readme.md", Container: "alpine:3"},
+			},
+		},
 	}
 
 	workspace := &btypes.BatchSpecWorkspace{
-		BatchSpecID:      batchSpec.ID,
-		ChangesetSpecIDs: []int64{},
-		RepoID:           5678,
-		Branch:           "refs/heads/base-branch",
-		Commit:           "d34db33f",
-		Path:             "a/b/c",
-		Steps: []batcheslib.Step{
-			{Run: "echo lol >> readme.md", Container: "alpine:3"},
-			{Run: "echo more lol >> readme.md", Container: "alpine:3"},
-		},
+		BatchSpecID:        batchSpec.ID,
+		ChangesetSpecIDs:   []int64{},
+		RepoID:             5678,
+		Branch:             "refs/heads/base-branch",
+		Commit:             "d34db33f",
+		Path:               "a/b/c",
 		FileMatches:        []string{"a/b/c/foobar.go"},
 		OnlyFetchWorkspace: true,
 		StepCacheResults: map[int]btypes.StepCacheResult{
@@ -85,21 +87,22 @@ func TestTransformRecord(t *testing.T) {
 	store.DatabaseDBFunc.SetDefaultReturn(db)
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
-		Spec: batchSpec.Spec,
-		Workspace: batcheslib.Workspace{
-			Repository: batcheslib.WorkspaceRepo{
-				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
-				Name: "github.com/sourcegraph/sourcegraph",
-			},
-			Branch: batcheslib.WorkspaceBranch{
-				Name:   workspace.Branch,
-				Target: batcheslib.Commit{OID: workspace.Commit},
-			},
-			Path:               workspace.Path,
-			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-			Steps:              workspace.Steps,
-			SearchResultPaths:  workspace.FileMatches,
+		BatchChangeAttributes: template.BatchChangeAttributes{
+			Name:        batchSpec.Spec.Name,
+			Description: batchSpec.Spec.Description,
 		},
+		Repository: batcheslib.WorkspaceRepo{
+			ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
+			Name: "github.com/sourcegraph/sourcegraph",
+		},
+		Branch: batcheslib.WorkspaceBranch{
+			Name:   workspace.Branch,
+			Target: batcheslib.Commit{OID: workspace.Commit},
+		},
+		Path:               workspace.Path,
+		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+		Steps:              batchSpec.Spec.Steps,
+		SearchResultPaths:  workspace.FileMatches,
 	}
 
 	marshaledInput, err := json.Marshal(&wantInput)

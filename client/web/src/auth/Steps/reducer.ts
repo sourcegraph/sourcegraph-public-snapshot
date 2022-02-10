@@ -1,8 +1,9 @@
 import { State, Action } from './context'
 
-export const initialState = (initialStep: number): State => ({
+export const initialState = (initialStep: number, totalSteps: number): State => ({
     current: initialStep,
     initialStep,
+    totalSteps,
     steps: {
         [initialStep]: {
             index: initialStep,

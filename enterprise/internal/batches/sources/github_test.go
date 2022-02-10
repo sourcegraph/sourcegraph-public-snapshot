@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

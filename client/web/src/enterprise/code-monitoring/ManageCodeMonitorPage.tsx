@@ -95,7 +95,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
-                        <Link to="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                        <Link to="/help/code_monitoring" target="_blank" rel="noopener">
                             Learn more
                         </Link>
                     </>

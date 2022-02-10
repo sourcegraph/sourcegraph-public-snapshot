@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

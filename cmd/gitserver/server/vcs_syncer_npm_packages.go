@@ -11,7 +11,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -405,6 +405,9 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 	if !commonSuperfluousDirectory {
 		log15.Warn("found npm tarball which doesn't have all files in one top-level directory", "label", tgzReadSeeker.name)
 	}
+	// Post-condition: if commonSuperfluousDirectory is true
+	// then for all files in the tarball, the path (in header.Name)
+	// has at least one path separator.
 
 	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
@@ -415,18 +418,18 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 			if err == io.EOF {
 				return nil
 			}
-			name := header.Name
-			if commonSuperfluousDirectory {
-				name = strings.SplitN(name, string(os.PathSeparator), 2)[1]
-			}
-			cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(name, destinationDir)
-			if isPotentiallyMalicious {
-				continue
-			}
 			switch header.Typeflag {
 			case tar.TypeDir:
 				continue // We will create directories later; empty directories don't matter for git.
 			case tar.TypeReg:
+				name := header.Name
+				if commonSuperfluousDirectory {
+					name = strings.SplitN(name, string(os.PathSeparator), 2)[1]
+				}
+				cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(name, destinationDir)
+				if isPotentiallyMalicious {
+					continue
+				}
 				err = copyTarFileEntry(header, tarReader, cleanedOutputPath)
 				if err != nil {
 					return err

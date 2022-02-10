@@ -45,7 +45,15 @@ import {
     MaybeLoadingResult,
     DiffPart,
 } from '@sourcegraph/codeintellify'
-import { asError, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    asObservable,
+    isDefined,
+    isInstanceOf,
+    property,
+    registerHighlightContributions,
+    isExternalLink,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -60,7 +68,6 @@ import {
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
@@ -68,8 +75,7 @@ import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/not
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
-import { isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
     UIPositionSpec,
@@ -87,6 +93,7 @@ import { observeStorageKey } from '../../../browser-extension/web-extension-api/
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
+import { TrackAnchorClick } from '../../components/TrackAnchorClick'
 import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
@@ -551,23 +558,52 @@ function initCodeIntelligence({
         public componentDidUpdate(): void {
             containerComponentUpdates.next()
         }
+        /**
+         * Intercept all link clicks and append UTM markers to any external URLs
+         */
+        private handleHoverLinkClick = (event: React.MouseEvent): void => {
+            const element = event.target as HTMLAnchorElement
+            if (!isExternalLink(element.href)) {
+                return
+            }
+
+            const newHref = createURLWithUTM(new URL(element.href), {
+                utm_source: getPlatformName(),
+                utm_campaign: 'hover',
+            }).href
+
+            if (element.getAttribute('target') === '_blank') {
+                window.open(newHref, '_blank', element.getAttribute('rel') ?? undefined)
+            } else {
+                window.location.href = newHref
+            }
+
+            event.preventDefault()
+        }
         public render(): JSX.Element | null {
             const hoverOverlayProps = this.getHoverOverlayProps()
-            return hoverOverlayProps ? (
-                <HoverOverlay
-                    {...hoverOverlayProps}
-                    {...codeHost.hoverOverlayClassProps}
-                    className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
-                    telemetryService={telemetryService}
-                    isLightTheme={this.state.isLightTheme}
-                    hoverRef={this.nextOverlayElement}
-                    extensionsController={extensionsController}
-                    platformContext={platformContext}
-                    location={H.createLocation(window.location)}
-                    onAlertDismissed={onHoverAlertDismissed}
-                    useBrandedLogo={true}
-                />
-            ) : null
+
+            if (!hoverOverlayProps) {
+                return null
+            }
+
+            return (
+                <TrackAnchorClick onClick={this.handleHoverLinkClick}>
+                    <HoverOverlay
+                        {...hoverOverlayProps}
+                        {...codeHost.hoverOverlayClassProps}
+                        className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
+                        telemetryService={telemetryService}
+                        isLightTheme={this.state.isLightTheme}
+                        hoverRef={this.nextOverlayElement}
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                        location={H.createLocation(window.location)}
+                        onAlertDismissed={onHoverAlertDismissed}
+                        useBrandedLogo={true}
+                    />
+                </TrackAnchorClick>
+            )
         }
         private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
@@ -1434,9 +1470,10 @@ function initializeSearchEnhancement(
     mutations: Observable<MutationRecordLike[]>
 ): Subscription {
     const { searchViewResolver, resultViewResolver, onChange } = searchEnhancement
-    const searchURL = new URL('/search', sourcegraphURL)
-    searchURL.searchParams.append('utm_source', getPlatformName())
-    searchURL.searchParams.append('utm_campaign', 'global-search')
+    const searchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {
+        utm_source: getPlatformName(),
+        utm_campaign: 'global-search',
+    })
 
     const searchView = mutations.pipe(
         trackViews([searchViewResolver]),

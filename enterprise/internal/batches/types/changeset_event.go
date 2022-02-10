@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetEventUpdateMismatchError struct {

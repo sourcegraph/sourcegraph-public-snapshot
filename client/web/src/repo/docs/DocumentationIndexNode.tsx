@@ -170,8 +170,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                     )}
                     {styleAsExpandable && (
                         <Button
+                            variant="icon"
                             className={classNames(
-                                'd-flex flex-shrink-0 mr-1 btn-icon',
+                                'd-flex flex-shrink-0 mr-1',
                                 styles.documentationIndexNodeExpandButton
                             )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
