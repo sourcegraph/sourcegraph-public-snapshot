@@ -83,6 +83,7 @@ type MonitorAction interface {
 type MonitorEmailResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	Priority() string
 	Header() string
 	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
@@ -165,10 +166,11 @@ type CreateActionArgs struct {
 }
 
 type CreateActionEmailArgs struct {
-	Enabled    bool
-	Priority   string
-	Recipients []graphql.ID
-	Header     string
+	Enabled        bool
+	IncludeResults bool
+	Priority       string
+	Recipients     []graphql.ID
+	Header         string
 }
 
 type CreateActionWebhookArgs struct {
