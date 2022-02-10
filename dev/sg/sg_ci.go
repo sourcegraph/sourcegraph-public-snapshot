@@ -47,6 +47,7 @@ var (
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 	ciStatusBuildFlag  = ciStatusFlagSet.String("build", "", "Override branch detection with a specific build number")
+	ciStatusViewFlag   = ciStatusFlagSet.Bool("view", false, "Open build page in browser")
 
 	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
 	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
@@ -130,6 +131,12 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				// Print a high level overview
 				printBuildOverview(build)
+
+				if *ciStatusViewFlag {
+					if err := open.URL(*build.WebURL); err != nil {
+						writeWarningLinef("failed to open build in browser: %s", err)
+					}
+				}
 
 				if *ciStatusWaitFlag && build.FinishedAt == nil {
 					pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
