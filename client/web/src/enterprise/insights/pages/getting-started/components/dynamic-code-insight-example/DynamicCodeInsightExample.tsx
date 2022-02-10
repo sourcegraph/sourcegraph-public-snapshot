@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { FormInput } from '../../../../components/form/form-input/FormInput'
@@ -87,6 +87,21 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         pingEventPrefix: 'GettingStartedPageDemo',
     })
 
+    const debouncedQuery = useDebounce(query.input.value, 1000)
+    const debouncedRepositories = useDebounce(repositories.input.value, 1000)
+
+    useEffect(() => {
+        telemetryService.log('GettingStartedPageDemoQueryModification')
+    }, [debouncedQuery, telemetryService])
+
+    useEffect(() => {
+        telemetryService.log('GettingStartedPageDemoRepositoriesModification')
+    }, [debouncedRepositories, telemetryService])
+
+    const handleGetStartedClick = (): void => {
+        telemetryService.log('GettingStartedPageDemoCTAClick')
+    }
+
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
@@ -158,7 +173,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     <li>Track code smells, ownership, and configurations</li>
                 </ul>
 
-                <Button variant="primary" as={Link} to="/insights/create">
+                <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
                     <PlusIcon className="icon-inline" /> Create your first insight
                 </Button>
 
