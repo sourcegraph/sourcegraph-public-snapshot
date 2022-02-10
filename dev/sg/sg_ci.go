@@ -242,7 +242,7 @@ This is useful when:
 				}
 				if rt != runtype.PullRequest {
 					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
-					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", branch)))
+					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s", commit, branch)))
 					force := *ciBuildForcePushFlag
 					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch)}
 					if force {
