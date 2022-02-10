@@ -738,27 +738,11 @@ export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelP
     console.log('Current reference stack:')
     console.log(JSON.stringify(history.entries, null, 2))
 
-    // Experimental reference panel
-    const [token, setToken] = useState<CoolClickedToken>()
-
-    const [closed, close] = useState(false)
     const handlePanelClose = useCallback(() => {
-        // Signal up that panel is closed
-        setToken(undefined)
         // Remove 'viewState' from location
         props.globalHistory.push(locationWithoutViewState(location))
         // close(true)
     }, [props.globalHistory, location])
-
-    useEffect(() => {
-        if (token) {
-            close(false)
-        }
-    }, [token])
-
-    if (closed) {
-        return null
-    }
 
     const { hash, pathname, search } = location
     const { line, character } = parseQueryAndHash(search, hash)
@@ -778,14 +762,7 @@ export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelP
         filePath,
     }
 
-    return (
-        <CoolCodeIntelPanelUrlBased
-            {...props}
-            {...urlBasedToken}
-            handlePanelClose={handlePanelClose}
-            onTokenClick={setToken}
-        />
-    )
+    return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
 }
 
 export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
