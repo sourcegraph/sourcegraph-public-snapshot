@@ -10,6 +10,15 @@ export const FETCH_REFERENCES_QUERY = gql`
         }
     }
 
+    fragment LocationConnectionFields on LocationConnection {
+        nodes {
+            ...LocationFields
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+
     fragment GitBlobFields on GitBlob {
         path
         content
@@ -32,6 +41,13 @@ export const FETCH_REFERENCES_QUERY = gql`
         }
     }
 
+    fragment HoverFields on Hover {
+        markdown {
+            html
+            text
+        }
+    }
+
     query CoolCodeIntelReferences(
         $repository: String!
         $commit: String!
@@ -46,31 +62,16 @@ export const FETCH_REFERENCES_QUERY = gql`
                 blob(path: $path) {
                     lsif {
                         references(line: $line, character: $character, after: $after, filter: $filter) {
-                            nodes {
-                                ...LocationFields
-                            }
-                            pageInfo {
-                                endCursor
-                            }
+                            ...LocationConnectionFields
                         }
                         implementations(line: $line, character: $character, after: $after, filter: $filter) {
-                            nodes {
-                                ...LocationFields
-                            }
-                            pageInfo {
-                                endCursor
-                            }
+                            ...LocationConnectionFields
                         }
                         definitions(line: $line, character: $character, filter: $filter) {
-                            nodes {
-                                ...LocationFields
-                            }
+                            ...LocationConnectionFields
                         }
                         hover(line: $line, character: $character) {
-                            markdown {
-                                html
-                                text
-                            }
+                            ...HoverFields
                         }
                     }
                 }
