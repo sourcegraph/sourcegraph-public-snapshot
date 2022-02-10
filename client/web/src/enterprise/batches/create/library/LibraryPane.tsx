@@ -51,10 +51,12 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
     const [containerStyle, animateContainer] = useSpring(() => ({
         width: collapsed ? BUTTON_WIDTH : CONTENT_WIDTH,
     }))
+
     const [headerStyle, animateHeader] = useSpring(() => ({
         opacity: collapsed ? 0 : 1,
         width: collapsed ? '0rem' : CONTENT_WIDTH,
     }))
+
     const [contentStyle, animateContent] = useSpring(() => ({
         display: collapsed ? 'none' : 'block',
         opacity: collapsed ? 0 : 1,
@@ -103,9 +105,9 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
             ) : null}
             <animated.div style={containerStyle} className="d-flex flex-column mr-1">
                 <div className="d-flex align-items-center justify-content-center pb-1">
-                    <animated.h5 className="overflow-hidden" style={headerStyle}>
+                    <animated.h4 className={styles.header} style={headerStyle}>
                         Library
-                    </animated.h5>
+                    </animated.h4>
                     <div className={styles.collapseButton}>
                         <Button
                             className="p-0"

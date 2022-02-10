@@ -166,7 +166,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
 
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
-            <h3 className={styles.header}>
+            <h4 className={styles.header}>
                 Workspaces preview{' '}
                 {(batchSpecStale || !hasPreviewed) && shouldShowConnection && (
                     <WarningIcon
@@ -174,7 +174,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                         data-tooltip="The workspaces previewed below may not be up-to-date."
                     />
                 )}
-            </h3>
+            </h4>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             <div className="d-flex flex-column align-items-center w-100 mb-3">
                 {error && <ErrorAlert error={error} className="w-100 mb-0" />}
