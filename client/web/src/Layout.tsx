@@ -290,7 +290,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            {coolCodeIntelEnabled && <CoolCodeIntel {...props} {...themeProps} />}
+            {coolCodeIntelEnabled && <CoolCodeIntel {...props} {...themeProps} globalHistory={props.history} />}
         </div>
     )
 }

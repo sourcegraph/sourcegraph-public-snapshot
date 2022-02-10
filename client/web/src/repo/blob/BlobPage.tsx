@@ -352,10 +352,8 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     extensionsController={props.extensionsController}
                     settingsCascade={props.settingsCascade}
                     onHoverShown={props.onHoverShown}
-                    history={props.history}
                     isLightTheme={isLightTheme}
                     telemetryService={props.telemetryService}
-                    location={props.location}
                     disableStatusBar={false}
                 />
             )}

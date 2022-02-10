@@ -82,6 +82,8 @@ export const FETCH_REFERENCES_QUERY = gql`
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
+        content
+        url
         highlight(disableTimeout: false) {
             aborted
             html

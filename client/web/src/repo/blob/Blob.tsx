@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import { Remote } from 'comlink'
-import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -86,8 +86,6 @@ export interface BlobProps
         ExtensionsControllerProps,
         ThemeProps,
         GlobalCoolCodeIntelProps {
-    location: H.Location
-    history: H.History
     className: string
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
@@ -170,7 +168,9 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
+    const location = useLocation()
+    const history = useHistory()
+    const { isLightTheme, extensionsController, blobInfo, platformContext } = props
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -322,7 +322,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
+                            history.push({
                                 ...location,
                                 search: formatSearchParameters(
                                     addLineRangeQueryParameter(new URLSearchParams(location.search), query)
@@ -332,7 +332,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier, props.history, location]
+            [codeViewElements, hoverifier, history, location]
         )
     )
 
@@ -611,7 +611,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => props.history.push(url)}
+                        location={location}
+                        nav={url => {
+                            console.log('Pushing', url, 'to history!')
+                            history.push(url)
+                        }}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}
