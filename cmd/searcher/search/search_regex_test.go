@@ -174,7 +174,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	}
 
 	ctx := context.Background()
-	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit)
+	path, _, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}
