@@ -340,8 +340,12 @@ func isRequestForSingleCommit(opt CommitsOptions) bool {
 // originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
 // the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
 func getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
+	// We want to place an upper bound on the number of times we loop here so that we
+	// don't hit pathological conditions where a lot of filtering has been applied.
+	const maxIterations = 5
+
 	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
-	for {
+	for i := 0; i < maxIterations; i++ {
 		if uint(len(totalCommits)) == opt.N {
 			break
 		}
