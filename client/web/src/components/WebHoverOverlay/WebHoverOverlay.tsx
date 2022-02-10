@@ -21,14 +21,12 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-export const WebHoverOverlay: React.FunctionComponent<
-    HoverOverlayProps &
-        HoverThresholdProps &
-        GlobalCoolCodeIntelProps & {
-            hoveredTokenElement?: HTMLElement
-            nav?: (url: string) => void
-        }
-> = props => {
+interface Props extends HoverOverlayProps, HoverThresholdProps, GlobalCoolCodeIntelProps {
+    hoveredTokenElement?: HTMLElement
+    nav?: (url: string) => void
+}
+
+export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {

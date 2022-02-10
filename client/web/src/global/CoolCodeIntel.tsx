@@ -44,6 +44,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
@@ -66,20 +67,26 @@ export interface GlobalCoolCodeIntelProps {
 
 export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
-interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'> {
+interface CoolCodeIntelProps
+    extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar' | 'coolCodeIntelEnabled'> {
     clickedToken?: CoolClickedToken
 }
 
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel !== false
+    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
-export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => {
-    if (!props.coolCodeIntelEnabled) {
-        return null
-    }
-
-    return <CoolCodeIntelResizablePanel {...props} />
-}
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => (
+    <ErrorBoundary
+        location={null}
+        render={error => (
+            <div>
+                <pre>{JSON.stringify(error)}</pre>
+            </div>
+        )}
+    >
+        <CoolCodeIntelResizablePanel {...props} />
+    </ErrorBoundary>
+)
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
 
@@ -156,9 +163,9 @@ interface LocationGroup {
 }
 
 export const ReferencesList: React.FunctionComponent<
-    {
+    CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+    }
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
     const [filter, setFilter] = useState<string | undefined>(undefined)
@@ -220,12 +227,12 @@ export const ReferencesList: React.FunctionComponent<
 }
 
 export const SideReferences: React.FunctionComponent<
-    {
+    CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
         filter: string | undefined
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+    }
 > = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
@@ -289,7 +296,7 @@ interface LSIFLocationResult {
 }
 
 export const SideReferencesLists: React.FunctionComponent<
-    {
+    CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
@@ -301,7 +308,7 @@ export const SideReferencesLists: React.FunctionComponent<
             __typename?: 'Hover'
             markdown: { __typename?: 'Markdown'; html: string; text: string }
         }>
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+    }
 > = props => {
     const { references, definitions, implementations, hover } = props
     const references_: Location[] = useMemo(() => references.nodes.map(buildLocation), [references])
@@ -376,9 +383,9 @@ export const SideReferencesLists: React.FunctionComponent<
 }
 
 export const SideBlob: React.FunctionComponent<
-    {
+    CoolCodeIntelProps & {
         activeLocation: Location
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+    }
 > = props => {
     const { data, error, loading } = useQuery<
         CoolCodeIntelHighlightedBlobResult,
@@ -438,6 +445,7 @@ export const SideBlob: React.FunctionComponent<
                     props.onTokenClick(token)
                 }
             }}
+            coolCodeIntelEnabled={true}
             disableStatusBar={true}
             wrapCode={true}
             className={styles.referencesSideBlobCode}
@@ -548,7 +556,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
 
     return (
         <>
-            <button
+            <Button
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
@@ -563,7 +571,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
                 <span>
                     <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
                 </span>
-            </button>
+            </Button>
 
             <Collapse id={repoReferenceGroup.repoName} isOpen={isOpen}>
                 {repoReferenceGroup.referenceGroups.map(group => (
@@ -589,7 +597,7 @@ const ReferenceGroup: React.FunctionComponent<{
     filter: string | undefined
 }> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
-    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
     let highlighted = [group.path]
     if (filter !== undefined) {
@@ -598,7 +606,7 @@ const ReferenceGroup: React.FunctionComponent<{
 
     return (
         <div className="ml-4">
-            <button
+            <Button
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
@@ -622,7 +630,7 @@ const ReferenceGroup: React.FunctionComponent<{
                     )}{' '}
                     ({group.locations.length} references)
                 </span>
-            </button>
+            </Button>
 
             <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
                 <ul className="list-unstyled pl-3 py-1 mb-0">
@@ -643,7 +651,7 @@ const ReferenceGroup: React.FunctionComponent<{
                                         to={reference.url}
                                         className={styles.referenceLink}
                                     >
-                                        <span>
+                                        <span className={styles.referenceLinkLineNumber}>
                                             {reference.range?.start?.line}
                                             {': '}
                                         </span>
