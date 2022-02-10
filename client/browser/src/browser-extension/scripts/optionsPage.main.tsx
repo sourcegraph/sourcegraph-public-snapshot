@@ -215,7 +215,7 @@ const Options: React.FunctionComponent = () => {
 
     return (
         <ThemeWrapper>
-            <WildcardThemeProvider>
+            <WildcardThemeProvider isBranded={true}>
                 <OptionsPage
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
