@@ -4,13 +4,13 @@ package usagestats
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func GetGrowthStatistics(ctx context.Context, db database.DB) (*types.GrowthStatistics, error) {
-	// TODO: Fix query
 	const q = `
 -- source: internal/usagestats/growth.go:GetGrowthStatistics
 WITH all_usage_by_user_and_month AS (
@@ -76,42 +76,41 @@ SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('
 }
 
 func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
-	const query = `
+	// aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
+	// values of the user_id and anonymous_user_id fields (assumed in scope) int a unified value.
+	const aggregatedUserIDQueryFragment = `
+CASE WHEN user_id = 0
+  -- It's faster to group by an int rather than text, so we convert
+  -- the anonymous_user_id to an int, rather than the user_id to text.
+  THEN ('x' || substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+  ELSE user_id
+END
+`
+
+	const q = `
  -- source: internal/usagestats/growth.go:GetCTAUsage
- WITH data_by_month AS (
+ WITH events_for_today AS (
      SELECT name,
-            user_id,
-            DATE_TRUNC('month', timestamp) AS month,
+            ` + aggregatedUserIDQueryFragment + ` AS user_id,
+            DATE_TRUNC('day', timestamp) AS day,
             argument->>'page' AS page
-       FROM event_logs
-      WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
-        AND argument->>'page' IN ('file', 'search')
-        AND DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', $1::timestamp)
+      FROM event_logs
+     WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
+       AND argument->>'page' IN ('file', 'search')
+       AND DATE_TRUNC('day', timestamp) = DATE_TRUNC('day', $1::timestamp)
  )
- WITH data_by_month_and_user AS (
-     SELECT name,
-            user_id,
-            DATE_TRUNC('month', timestamp) AS month,
-            argument->>'page' AS page
-       FROM event_logs
-      WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
-        AND argument->>'page' IN ('file', 'search')
-        AND DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', $1::timestamp)
-      GROUP BY user_id
- )
- SELECT COUNT(*) FILTER (
+ SELECT day, COUNT(DISTINCT user_id) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
                     AND page = 'file') AS user_count_who_saw_bext_cta_on_file_page,
-        COUNT(*) FILTER (
+        COUNT(DISTINCT user_id) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
                     AND page = 'file') AS user_count_who_clicked_bext_cta_on_file_page,
-        COUNT(*) FILTER (
+        COUNT(DISTINCT user_id) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
                     AND page = 'search') AS user_count_who_saw_bext_cta_on_search_page,
-        COUNT(*) FILTER (
+        COUNT(DISTINCT user_id) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'search') AS user_count_who_clicked_bext_cta_on_search_page
-   FROM data_by_month_and_user,
+                    AND page = 'search') AS user_count_who_clicked_bext_cta_on_search_page,
         COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
                     AND page = 'file') AS bext_cta_displays_on_file_page,
@@ -124,9 +123,11 @@ func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
         COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
                     AND page = 'search') AS bext_cta_clicks_on_search_page
-   FROM data_by_month
+   FROM events_for_today
 `
+
 	var (
+		day                                    time.Time
 		userCountWhoSawBextCtaOnFilePage       int32
 		userCountWhoClickedBextCtaOnFilePage   int32
 		userCountWhoSawBextCtaOnSearchPage     int32
@@ -136,7 +137,9 @@ func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
 		bextCtaDisplaysOnSearchPage            int32
 		bextCtaClicksOnSearchPage              int32
 	)
-	if err := db.QueryRowContext(ctx, query, timeNow()).Scan(
+	now := timeNow()
+	if err := db.QueryRowContext(ctx, q, now).Scan(
+		day,
 		&userCountWhoSawBextCtaOnFilePage,
 		&userCountWhoClickedBextCtaOnFilePage,
 		&userCountWhoSawBextCtaOnSearchPage,
@@ -150,7 +153,8 @@ func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
 	}
 
 	return &types.CTAUsage{
-		BrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+		DailyBrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+			StartTime:             day,
 			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnFilePage, EventCount: bextCtaDisplaysOnFilePage},
 			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnSearchPage, EventCount: bextCtaDisplaysOnSearchPage},
 			ClickedOnFilePage:     types.UserAndEventCount{UserCount: userCountWhoClickedBextCtaOnFilePage, EventCount: bextCtaClicksOnFilePage},

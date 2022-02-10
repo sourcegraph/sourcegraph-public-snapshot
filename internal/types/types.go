@@ -1045,6 +1045,7 @@ type UserAndEventCount struct {
 // FileAndSearchPageUserAndEventCounts represents the number of events triggered
 // on the "search result" and "file" pages in a given time frame.
 type FileAndSearchPageUserAndEventCounts struct {
+	StartTime             time.Time
 	DisplayedOnFilePage   UserAndEventCount
 	DisplayedOnSearchPage UserAndEventCount
 	ClickedOnFilePage     UserAndEventCount
@@ -1054,7 +1055,7 @@ type FileAndSearchPageUserAndEventCounts struct {
 // CTAUsage represents the total number of CTAs displayed and clicked
 // on the "search result" and "file" pages over the current month.
 type CTAUsage struct {
-	BrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users
