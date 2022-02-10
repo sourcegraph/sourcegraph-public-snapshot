@@ -250,7 +250,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateWebhookActionFunc: &CodeMonitorStoreCreateWebhookActionFunc{
-			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+			defaultHook: func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 				return nil, nil
 			},
 		},
@@ -440,7 +440,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
-			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+			defaultHook: func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 				return nil, nil
 			},
 		},
@@ -512,7 +512,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateWebhookActionFunc: &CodeMonitorStoreCreateWebhookActionFunc{
-			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+			defaultHook: func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.CreateWebhookAction")
 			},
 		},
@@ -702,7 +702,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
-			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+			defaultHook: func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.UpdateWebhookAction")
 			},
 		},
@@ -2228,24 +2228,24 @@ func (c CodeMonitorStoreCreateSlackWebhookActionFuncCall) Results() []interface{
 // CreateWebhookAction method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateWebhookActionFunc struct {
-	defaultHook func(context.Context, int64, bool, string) (*WebhookAction, error)
-	hooks       []func(context.Context, int64, bool, string) (*WebhookAction, error)
+	defaultHook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)
+	hooks       []func(context.Context, int64, bool, bool, string) (*WebhookAction, error)
 	history     []CodeMonitorStoreCreateWebhookActionFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateWebhookAction delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*WebhookAction, error) {
-	r0, r1 := m.CreateWebhookActionFunc.nextHook()(v0, v1, v2, v3)
-	m.CreateWebhookActionFunc.appendCall(CodeMonitorStoreCreateWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockCodeMonitorStore) CreateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 bool, v4 string) (*WebhookAction, error) {
+	r0, r1 := m.CreateWebhookActionFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.CreateWebhookActionFunc.appendCall(CodeMonitorStoreCreateWebhookActionFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CreateWebhookAction
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)) {
 	f.defaultHook = hook
 }
 
@@ -2254,7 +2254,7 @@ func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreCreateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+func (f *CodeMonitorStoreCreateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2263,7 +2263,7 @@ func (f *CodeMonitorStoreCreateWebhookActionFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAction, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 		return r0, r1
 	})
 }
@@ -2271,12 +2271,12 @@ func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAc
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreCreateWebhookActionFunc) PushReturn(r0 *WebhookAction, r1 error) {
-	f.PushHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.PushHook(func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*WebhookAction, error) {
+func (f *CodeMonitorStoreCreateWebhookActionFunc) nextHook() func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2321,7 +2321,10 @@ type CodeMonitorStoreCreateWebhookActionFuncCall struct {
 	Arg2 bool
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 bool
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *WebhookAction
@@ -2333,7 +2336,7 @@ type CodeMonitorStoreCreateWebhookActionFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeMonitorStoreCreateWebhookActionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6470,24 +6473,24 @@ func (c CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall) Results() []interfa
 // UpdateWebhookAction method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreUpdateWebhookActionFunc struct {
-	defaultHook func(context.Context, int64, bool, string) (*WebhookAction, error)
-	hooks       []func(context.Context, int64, bool, string) (*WebhookAction, error)
+	defaultHook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)
+	hooks       []func(context.Context, int64, bool, bool, string) (*WebhookAction, error)
 	history     []CodeMonitorStoreUpdateWebhookActionFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateWebhookAction delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*WebhookAction, error) {
-	r0, r1 := m.UpdateWebhookActionFunc.nextHook()(v0, v1, v2, v3)
-	m.UpdateWebhookActionFunc.appendCall(CodeMonitorStoreUpdateWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockCodeMonitorStore) UpdateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 bool, v4 string) (*WebhookAction, error) {
+	r0, r1 := m.UpdateWebhookActionFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.UpdateWebhookActionFunc.appendCall(CodeMonitorStoreUpdateWebhookActionFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the UpdateWebhookAction
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)) {
 	f.defaultHook = hook
 }
 
@@ -6496,7 +6499,7 @@ func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, bool, string) (*WebhookAction, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6505,7 +6508,7 @@ func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAction, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 		return r0, r1
 	})
 }
@@ -6513,12 +6516,12 @@ func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAc
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushReturn(r0 *WebhookAction, r1 error) {
-	f.PushHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.PushHook(func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreUpdateWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*WebhookAction, error) {
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) nextHook() func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6563,7 +6566,10 @@ type CodeMonitorStoreUpdateWebhookActionFuncCall struct {
 	Arg2 bool
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 bool
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *WebhookAction
@@ -6575,7 +6581,7 @@ type CodeMonitorStoreUpdateWebhookActionFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeMonitorStoreUpdateWebhookActionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

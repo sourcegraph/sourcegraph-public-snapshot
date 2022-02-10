@@ -92,6 +92,7 @@ type MonitorEmailResolver interface {
 type MonitorWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -171,8 +172,9 @@ type CreateActionEmailArgs struct {
 }
 
 type CreateActionWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type CreateActionSlackWebhookArgs struct {
