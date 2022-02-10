@@ -1218,7 +1218,7 @@ type OpenIDConnectAuthProvider struct {
 type OrganizationInvitations struct {
 	// ExpiryTime description: Time before the invitation expires, in hours (experimental, not enforced at the moment).
 	ExpiryTime int `json:"expiryTime,omitempty"`
-	// SigningKey description: HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.
+	// SigningKey description: Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.
 	// More documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC
 	//
 	// If not provided, will fall back to legacy invitation to an organization.
