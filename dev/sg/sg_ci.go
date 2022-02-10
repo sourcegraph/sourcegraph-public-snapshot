@@ -45,6 +45,8 @@ var (
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 	ciStatusBuildFlag  = ciStatusFlagSet.String("build", "", "Override branch detection with a specific build number")
 
+	ciDryRunFlagSet = flag.NewFlagSet("sg ci dry-run", flag.ExitOnError)
+
 	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
 	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
 )
@@ -67,7 +69,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs|docs]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs|dry-run]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -381,7 +383,29 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 				return writePrettyMarkdown(out)
 			},
-		}},
+		},
+			{
+				Name:      "dry-run",
+				ShortHelp: "Create a main-dry-run branch for the current branch.",
+				LongHelp: `Create a main-dry-run branch for the current branch. This will generate a pipeline similar to the main branch. This is useful
+for testing a branch against the full test suite before merging to main.`,
+				Exec: func(ctx context.Context, args []string) error {
+					branch, _, err := getCIBranch()
+					if err != nil {
+						return err
+					}
+					dryRunBranch := fmt.Sprintf("main-dry-run/%s", branch)
+					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", dryRunBranch)))
+					gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("HEAD:%s", dryRunBranch))
+					if err != nil {
+						return err
+					}
+					stdout.Out.WriteLine(output.Line("", output.StylePending, gitOutput))
+					return nil
+				},
+				FlagSet: ciDryRunFlagSet,
+			},
+		},
 	}
 )
 
