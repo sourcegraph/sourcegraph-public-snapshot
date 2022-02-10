@@ -11,6 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -47,8 +51,9 @@ var (
 
 	ciDryRunFlagSet = flag.NewFlagSet("sg ci dry-run", flag.ExitOnError)
 
-	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
-	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
+	ciBuildFlagSet       = flag.NewFlagSet("sg ci build", flag.ExitOnError)
+	ciBuildCommitFlag    = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
+	ciBuildForcePushFlag = ciBuildFlagSet.Bool("force", false, "force push to any remote branches")
 )
 
 // get branch from flag or git
@@ -218,8 +223,30 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 				}
 
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
+				var rt runtype.RunType
+				if len(args) == 0 {
+					rt = runtype.PullRequest
+				} else {
+					rt = runtype.Compute("", fmt.Sprintf("%s/", args[0]), nil, runtype.RunTypeFilter{PrefixOnly: true})
+					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", branch)))
+					force := *ciBuildForcePushFlag
+					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:%s", commit, branch)}
+					if force {
+						gitArgs = append(gitArgs, "--force")
+					}
+					log15.Info("gitarsg", "a", gitArgs)
+					gitOutput, err := run.GitCmd(gitArgs...)
+					if err != nil {
+						return err
+					}
+					stdout.Out.WriteLine(output.Line("", output.StyleSuccess, gitOutput))
+				}
+				log15.Info("runtype", "rt", rt)
+				if rt != runtype.PullRequest {
+					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
+				}
 
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 				// simple check to see if commit is in origin, this is non blocking but
 				// we ask for confirmation to double check.
 				remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
@@ -236,10 +263,20 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 				}
 
-				build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit)
-				if err != nil {
-					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+				pipeline := "sourcegraph"
+				var build *buildkite.Build
+				if rt != runtype.PullRequest {
+					build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
+					if err != nil {
+						return errors.Wrap(err, "GetMostRecentBuild")
+					}
+				} else {
+					build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
+					if err != nil {
+						return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+					}
 				}
+
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
@@ -390,17 +427,6 @@ From there, you can start exploring logs with the Grafana explore panel.
 				LongHelp: `Create a main-dry-run branch for the current branch. This will generate a pipeline similar to the main branch. This is useful
 for testing a branch against the full test suite before merging to main.`,
 				Exec: func(ctx context.Context, args []string) error {
-					branch, _, err := getCIBranch()
-					if err != nil {
-						return err
-					}
-					dryRunBranch := fmt.Sprintf("main-dry-run/%s", branch)
-					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", dryRunBranch)))
-					gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("HEAD:%s", dryRunBranch))
-					if err != nil {
-						return err
-					}
-					stdout.Out.WriteLine(output.Line("", output.StylePending, gitOutput))
 					return nil
 				},
 				FlagSet: ciDryRunFlagSet,
