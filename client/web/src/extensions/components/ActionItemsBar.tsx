@@ -12,16 +12,15 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
 
+import { LocalStorageSubject } from '@sourcegraph/common'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
-import { Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -328,7 +327,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                         data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
                         className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                         onSelect={toggle}
-                        buttonLinkRef={toggleReference}
+                        ref={toggleReference}
                     >
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner />

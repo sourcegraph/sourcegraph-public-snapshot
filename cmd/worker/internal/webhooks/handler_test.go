@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHandler(t *testing.T) {

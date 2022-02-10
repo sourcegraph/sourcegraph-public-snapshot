@@ -6,8 +6,47 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
+
+func TestMaxPriorityAlert(t *testing.T) {
+	t.Run("no alerts", func(t *testing.T) {
+		require.Equal(t, (*Alert)(nil), MaxPriorityAlert())
+	})
+
+	t.Run("nil alert", func(t *testing.T) {
+		require.Equal(t, (*Alert)(nil), MaxPriorityAlert(nil))
+	})
+
+	t.Run("one alert", func(t *testing.T) {
+		a1 := Alert{Title: "test1"}
+		require.Equal(t, &a1, MaxPriorityAlert(&a1))
+	})
+
+	t.Run("equal priority alerts", func(t *testing.T) {
+		a1 := Alert{Title: "test1"}
+		a2 := Alert{Title: "test2"}
+		require.Equal(t, &a1, MaxPriorityAlert(&a1, &a2))
+	})
+
+	t.Run("higher priority alerts", func(t *testing.T) {
+		a1 := Alert{Title: "test1"}
+		a2 := Alert{Title: "test2", Priority: 2}
+		require.Equal(t, &a2, MaxPriorityAlert(&a1, &a2))
+	})
+
+	t.Run("nil and non-nil", func(t *testing.T) {
+		a1 := Alert{Title: "test1"}
+		require.Equal(t, &a1, MaxPriorityAlert(nil, &a1))
+	})
+
+	t.Run("non-nil and nil", func(t *testing.T) {
+		a1 := Alert{Title: "test1"}
+		require.Equal(t, &a1, MaxPriorityAlert(&a1, nil))
+	})
+}
 
 func TestSearchPatternForSuggestion(t *testing.T) {
 	cases := []struct {

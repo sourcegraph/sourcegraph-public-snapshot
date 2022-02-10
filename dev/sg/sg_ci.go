@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 	"github.com/gen2brain/beeep"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -21,11 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
-	ciLogsOutStdout = "stdout"
+	ciLogsOutTerminal = "terminal"
+	ciLogsOutSimple   = "simple"
+	ciLogsOutJSON     = "json"
 )
 
 var (
@@ -37,8 +40,8 @@ var (
 	ciLogsJobOverwriteStateFlag = ciLogsFlagSet.String("overwrite-state", "", "State to overwrite the job state metadata")
 	ciLogsJobQueryFlag          = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 	ciLogsBuildFlag             = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
-	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutStdout,
-		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutTerminal,
+		fmt.Sprintf("Output format: either 'terminal', 'simple', 'json', or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
@@ -67,7 +70,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -99,8 +102,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
-				return nil
+				return writePrettyMarkdown(out)
 			},
 		}, {
 			Name:      "status",
@@ -124,7 +126,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				// Print a high level overview
 				printBuildOverview(build)
@@ -135,7 +137,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						// get the next update
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 						if err != nil {
-							return false, fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+							return false, errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 						}
 						done := 0
 						for _, job := range build.Jobs {
@@ -237,7 +239,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 				build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit)
 				if err != nil {
-					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
@@ -272,7 +274,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
 					*build.WebURL))
@@ -292,21 +294,42 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				switch *ciLogsOutFlag {
-				case ciLogsOutStdout:
+				case ciLogsOutTerminal, ciLogsOutSimple:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
 						block := stdout.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
-						block.Write(bkTimestamp.ReplaceAllString(*log.Content, ""))
+						content := bkTimestamp.ReplaceAllString(*log.Content, "")
+						if *ciLogsOutFlag == ciLogsOutSimple {
+							content = bk.CleanANSI(content)
+						}
+						block.Write(content)
 						block.Close()
 					}
 					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
 
+				case ciLogsOutJSON:
+					for _, log := range logs {
+						if *ciLogsJobOverwriteStateFlag != "" {
+							failed := *ciLogsJobOverwriteStateFlag
+							log.JobMeta.State = &failed
+						}
+						stream, err := loki.NewStreamFromJobLogs(log)
+						if err != nil {
+							return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						b, err := json.MarshalIndent(stream, "", "\t")
+						if err != nil {
+							return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						stdout.Out.Write(string(b))
+					}
+
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
 					if err != nil {
-						return fmt.Errorf("invalid Loki target: %w", err)
+						return errors.Newf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
 					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
@@ -370,6 +393,17 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				return nil
+			},
+		}, {
+			Name:      "docs",
+			ShortHelp: "Render reference documentation for build pipeline types.",
+			Exec: func(ctx context.Context, args []string) error {
+				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+				out, err := run.InRoot(cmd)
+				if err != nil {
+					return err
+				}
+				return writePrettyMarkdown(out)
 			},
 		}},
 	}
@@ -505,7 +539,7 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 				return nil
 			}
 		case <-time.After(30 * time.Minute):
-			return fmt.Errorf("polling timeout reached")
+			return errors.Newf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
 		}

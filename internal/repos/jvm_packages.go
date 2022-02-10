@@ -2,10 +2,8 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,7 +47,7 @@ type JVMPackagesRepoStore interface {
 func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error) {
 	var c schema.JVMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Newf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newJVMPackagesSource(svc, &c)
 }

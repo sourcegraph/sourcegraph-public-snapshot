@@ -3,8 +3,9 @@ import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 
+import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Link } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import styles from './StreamingProgressCount.module.scss'
@@ -53,10 +54,10 @@ export const StreamingProgressCount: React.FunctionComponent<
         </small>
         {showTrace && progress.trace && (
             <small className="d-flex ml-2">
-                <a href={progress.trace}>
+                <Link to={progress.trace}>
                     <ClipboardPulseOutlineIcon className="mr-2 icon-inline" />
                     View trace
-                </a>
+                </Link>
             </small>
         )}
     </>

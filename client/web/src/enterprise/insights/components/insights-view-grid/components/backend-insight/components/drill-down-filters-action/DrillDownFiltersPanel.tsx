@@ -47,6 +47,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             <PopoverTrigger
                 as={Button}
                 ref={targetButtonReference}
+                variant="icon"
                 type="button"
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
                 className={classNames('btn-icon p-1', styles.filterButton, {

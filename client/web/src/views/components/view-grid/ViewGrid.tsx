@@ -10,7 +10,7 @@ import {
     WidthProvider,
 } from 'react-grid-layout'
 
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import { isFirefox } from '@sourcegraph/common'
 
 import styles from './ViewGrid.module.scss'
 

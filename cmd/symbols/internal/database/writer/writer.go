@@ -4,8 +4,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DatabaseWriter interface {
@@ -90,17 +89,6 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-// The maximum number of paths when doing incremental indexing. Diffs with more paths than this will
-// not be incrementally indexed, and instead we will process all symbols.
-const maxTotalPaths = 999
-
-// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
-// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
-// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that.
-// 100KB seems safe.
-const maxTotalPathsLength = 100000
-
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
@@ -114,20 +102,6 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 
 	// Paths to modify in the database
 	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
-
-	// Too many entries
-	if len(addedModifiedOrDeletedPaths) > maxTotalPaths {
-		return false, nil
-	}
-
-	totalPathsLength := 0
-	for _, path := range addedModifiedOrDeletedPaths {
-		totalPathsLength += len(path)
-	}
-	// Argument lists too long
-	if totalPathsLength > maxTotalPathsLength {
-		return false, nil
-	}
 
 	if err := copyFile(newestDBFile, dbFile); err != nil {
 		return false, err

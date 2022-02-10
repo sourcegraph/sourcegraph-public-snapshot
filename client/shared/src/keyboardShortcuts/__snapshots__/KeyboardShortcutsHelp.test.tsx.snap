@@ -42,7 +42,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
               </h4>
               <button
                 aria-label="Close"
-                class="btn btn-icon"
+                class="btn btnIcon"
                 type="button"
               >
                 <svg

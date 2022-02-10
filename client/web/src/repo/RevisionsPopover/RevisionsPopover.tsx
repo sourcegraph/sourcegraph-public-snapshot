@@ -1,10 +1,9 @@
-import { Tab, TabList, TabPanel, TabPanels } from '@reach/tabs'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -90,11 +89,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                         </Tab>
                     ))}
                 </TabList>
-                <Button
-                    onClick={props.togglePopover}
-                    className={classNames('btn-icon', styles.tabsClose)}
-                    aria-label="Close"
-                >
+                <Button onClick={props.togglePopover} variant="icon" className={styles.tabsClose} aria-label="Close">
                     <CloseIcon className="icon-inline" />
                 </Button>
             </div>

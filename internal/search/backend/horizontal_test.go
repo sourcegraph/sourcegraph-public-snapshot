@@ -10,10 +10,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHorizontalSearcher(t *testing.T) {

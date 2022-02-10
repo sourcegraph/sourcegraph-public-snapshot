@@ -144,7 +144,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             </div>
             <div className="flex mt-1">
                 <Button
-                    className={classNames('mr-2')}
+                    className="mr-2"
                     variant="secondary"
                     outline={!isSendTestEmailButtonDisabled}
                     disabled={isSendTestEmailButtonDisabled}

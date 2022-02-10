@@ -17,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GitDir is an absolute path to a GIT_DIR.

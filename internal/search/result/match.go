@@ -45,8 +45,11 @@ const (
 	rankRepoMatch   = 3
 )
 
-// Key is a sorting or deduplicating key for a Match.
-// It contains all the identifying information for the Match.
+// Key is a sorting or deduplicating key for a Match. It contains all the
+// identifying information for the Match. Keys must be comparable by struct
+// equality. If two matches have keys that are equal by struct equality, they
+// will be treated as the same result for the purpose of deduplication/merging
+// in and/or queries.
 type Key struct {
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
@@ -60,7 +63,7 @@ type Key struct {
 	// NOTE(@camdencheek): this should probably use committer date,
 	// but the CommitterField on our CommitMatch type is possibly null,
 	// so using AuthorDate here preserves previous sorting behavior.
-	AuthorDate *time.Time
+	AuthorDate time.Time
 
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
@@ -84,12 +87,8 @@ func (k Key) Less(other Key) bool {
 		return k.Rev < other.Rev
 	}
 
-	if k.AuthorDate != nil && other.AuthorDate != nil {
-		return k.AuthorDate.Before(*other.AuthorDate)
-	} else if k.AuthorDate != nil {
-		return true
-	} else if other.AuthorDate != nil {
-		return false
+	if !k.AuthorDate.Equal(other.AuthorDate) {
+		return k.AuthorDate.Before(other.AuthorDate)
 	}
 
 	if k.Commit != other.Commit {

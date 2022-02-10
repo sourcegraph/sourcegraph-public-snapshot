@@ -112,9 +112,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/custom-forms';
 @import 'bootstrap/scss/input-group';
 
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/tabs/styles';
-
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';

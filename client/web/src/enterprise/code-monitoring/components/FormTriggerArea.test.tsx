@@ -4,7 +4,7 @@ import React from 'react'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { FormTriggerArea } from './FormTriggerArea'
 
@@ -20,7 +20,7 @@ describe('FormTriggerArea', () => {
     })
 
     test('Correct checkboxes shown when query does not fulfill requirements', () => {
-        const { asFragment } = renderWithRouter(
+        const { asFragment } = renderWithBrandedContext(
             <FormTriggerArea
                 query="test repo:test"
                 triggerCompleted={false}
@@ -100,7 +100,7 @@ describe('FormTriggerArea', () => {
 
     for (const testCase of testCases) {
         test(`Correct checkboxes checked for query '${testCase.query}'`, () => {
-            renderWithRouter(
+            renderWithBrandedContext(
                 <FormTriggerArea
                     query={testCase.query}
                     triggerCompleted={false}
@@ -146,7 +146,7 @@ describe('FormTriggerArea', () => {
 
     test('Append patternType:literal if no patternType is present', () => {
         const onQueryChange = sinon.spy()
-        renderWithRouter(
+        renderWithBrandedContext(
             <FormTriggerArea
                 query=""
                 triggerCompleted={false}
@@ -169,7 +169,7 @@ describe('FormTriggerArea', () => {
 
     test('Do not append patternType:literal if patternType is present', () => {
         const onQueryChange = sinon.spy()
-        renderWithRouter(
+        renderWithBrandedContext(
             <FormTriggerArea
                 query=""
                 triggerCompleted={false}

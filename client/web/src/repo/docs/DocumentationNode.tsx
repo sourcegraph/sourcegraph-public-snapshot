@@ -6,10 +6,10 @@ import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Observable } from 'rxjs'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { AnchorLink, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
@@ -156,14 +156,13 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                         <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
                                         API docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
-                                        <a
-                                            // eslint-disable-next-line react/jsx-no-target-blank
+                                        <Link
                                             target="_blank"
                                             rel="noopener"
-                                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                         >
                                             Learn more
-                                        </a>
+                                        </Link>
                                     </span>
                                     {/*
                             TODO(apidocs): add support for indicating time the API docs were updated

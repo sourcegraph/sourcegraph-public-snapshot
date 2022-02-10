@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import { uniq } from 'lodash'
+import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable } from 'rxjs'
@@ -143,6 +143,12 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
+/**
+ * Returns unique URLs
+ */
+const uniqURLs = (urls: (string | undefined)[]): string[] =>
+    uniq(urls.filter(value => !!value).map(value => trimEnd(value, '/')))
+
 const Options: React.FunctionComponent = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl)
     const [previousSourcegraphUrl, setPreviousSourcegraphUrl] = useState(sourcegraphUrl)
@@ -185,9 +191,7 @@ const Options: React.FunctionComponent = () => {
             storage.sync
                 .set({
                     sourcegraphURL: url,
-                    previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url, sourcegraphUrl]).filter(
-                        value => !!value
-                    ) as string[],
+                    previouslyUsedURLs: uniqURLs([...(previouslyUsedUrls || []), url, sourcegraphUrl]),
                 })
                 .catch(console.error)
         },
@@ -215,7 +219,7 @@ const Options: React.FunctionComponent = () => {
                 <OptionsPage
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
-                    suggestedSourcegraphUrls={previouslyUsedUrls || []}
+                    suggestedSourcegraphUrls={uniqURLs(previouslyUsedUrls || [])}
                     onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
                     version={version}
                     validateSourcegraphUrl={validateSourcegraphUrl}

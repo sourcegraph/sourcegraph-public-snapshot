@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -105,16 +105,15 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                             </Button>
                         )}
                         {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
-                            <Button
-                                href={this.props.node.remoteURL}
+                            <ButtonLink
+                                to={this.props.node.remoteURL}
                                 className="text-info ml-1"
                                 title={`View extension on ${this.props.node.registryName}`}
                                 variant="link"
                                 size="sm"
-                                as="a"
                             >
                                 Visit
-                            </Button>
+                            </ButtonLink>
                         )}
                         {this.props.node.viewerCanAdminister && (
                             <Button

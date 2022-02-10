@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // JSONValue implements the JSONValue scalar type. In GraphQL queries, it is represented the JSON

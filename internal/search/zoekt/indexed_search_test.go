@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -325,14 +325,12 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			got := agg.Get()
-
-			gotFm, err := matchesToFileMatches(got.Results)
+			gotFm, err := matchesToFileMatches(agg.Results)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(&tt.wantCommon, &got.Stats, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(&tt.wantCommon, &agg.Stats, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}
 

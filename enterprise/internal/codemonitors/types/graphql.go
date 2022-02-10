@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CommitSearchResults []CommitSearchResult

@@ -6,16 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DBDashboardStore struct {

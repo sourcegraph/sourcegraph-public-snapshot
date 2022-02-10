@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 /**
  * Displays a warning in debug mode (which is on for local dev) that generated license keys aren't
@@ -15,8 +15,8 @@ export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: 
     window.context?.debug ? (
         <Alert className={className} variant="warning">
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}
-            <a href="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
+            <Link to="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
                 Use Sourcegraph.com to generate valid license keys.
-            </a>
+            </Link>
         </Alert>
     ) : null

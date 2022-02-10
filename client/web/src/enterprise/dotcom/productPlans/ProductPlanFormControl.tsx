@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { RadioButton, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { RadioButton, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 
@@ -105,9 +105,9 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                             </div>
                         ))}
                     </div>
-                    <a href="https://about.sourcegraph.com/pricing" className="small">
+                    <Link to="https://about.sourcegraph.com/pricing" className="small">
                         Compare plans
-                    </a>
+                    </Link>
                 </>
             )}
         </div>

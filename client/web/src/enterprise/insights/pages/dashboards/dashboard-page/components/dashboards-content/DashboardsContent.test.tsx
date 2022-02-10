@@ -5,8 +5,9 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import { AuthenticatedUser } from '../../../../../../../auth'
 import { InsightsDashboardsResult } from '../../../../../../../graphql-operations'
@@ -132,9 +133,11 @@ const mocks: MockedResponse[] = [
     },
 ]
 
-const renderDashboardsContent = (dashboardID: string = 'foo'): RenderWithRouterResult & { user: UserEvent } => ({
+const renderDashboardsContent = (
+    dashboardID: string = 'foo'
+): RenderWithBrandedContextResult & { user: UserEvent } => ({
     user: userEvent,
-    ...renderWithRouter(
+    ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
                 <DashboardsContent dashboardID={dashboardID} telemetryService={mockTelemetryService} />
@@ -143,7 +146,7 @@ const renderDashboardsContent = (dashboardID: string = 'foo'): RenderWithRouterR
     ),
 })
 
-const triggerDashboardMenuItem = async (screen: RenderWithRouterResult & { user: UserEvent }, name: RegExp) => {
+const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
     const { user } = screen
     const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /Dashboard options/ }))
     user.click(dashboardMenu)
@@ -158,6 +161,7 @@ const triggerDashboardMenuItem = async (screen: RenderWithRouterResult & { user:
 
 beforeEach(() => {
     jest.clearAllMocks()
+    window.IntersectionObserver = MockIntersectionObserver
 })
 
 describe('DashboardsContent', () => {
@@ -204,8 +208,9 @@ describe('DashboardsContent', () => {
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add insights/ }))
 
-        await triggerDashboardMenuItem(screen, /Add or remove insights/)
+        userEvent.click(addInsightsButton)
 
         const addInsightHeader = await waitFor(() =>
             screen.getByRole('heading', { name: /Add insight to Global Dashboard/ })

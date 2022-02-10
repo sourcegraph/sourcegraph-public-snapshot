@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepository(t *testing.T) {

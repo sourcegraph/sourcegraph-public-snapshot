@@ -2,7 +2,7 @@
 
 The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser) Sourcegraph
 browser extension adds code intelligence to files and diffs on GitHub, GitHub
-Enterprise, GitLab, Phabricator, and Bitbucket Server.
+Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 
 <p>
   <a target="_blank" href="https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack" style="display:flex;align-items:center">
@@ -80,7 +80,7 @@ To install this search engine shortcut manually, and for more information, see "
 </video>
 
 - [GitHub.com](https://github.com/) - no action required.
-- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
+- GitHub Enterprise, GitLab, Bitbucket Server, Bitbucket Data and Phabricator - you need to grant the extension permissions first.
 
 To grant these permissions:
 
