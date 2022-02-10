@@ -31,7 +31,6 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
     public isCodeInsightsLicensed = () => of(false)
 }
 const api = new CodeInsightExampleBackend({} as any)
-const fetchSiteUpdateCheck = () => of({ productVersion: '3.37.0' })
 
 const Story: Meta = {
     title: 'web/insights/GaConfirmationModal',
@@ -50,7 +49,7 @@ export const BetaModalUI: React.FunctionComponent = () => {
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
                     <h2>Some content</h2>
-                    <GaConfirmationModal fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
+                    <GaConfirmationModal />
                 </div>
             </TemporarySettingsContext.Provider>
         </CodeInsightsBackendContext.Provider>

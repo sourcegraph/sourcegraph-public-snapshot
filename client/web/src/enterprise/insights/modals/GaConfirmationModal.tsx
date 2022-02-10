@@ -1,6 +1,5 @@
 import React, { useContext, useMemo, useRef } from 'react'
 import { useHistory } from 'react-router'
-import { Observable } from 'rxjs'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, useAutoFocus, Modal, Link, useObservable } from '@sourcegraph/wildcard'
@@ -10,20 +9,13 @@ import { CodeInsightsBackendContext } from '../core/backend/code-insights-backen
 import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'
 import styles from './GaConfirmationModal.module.scss'
 
-export interface GaConfirmationModalProps {
-    fetchSiteUpdateCheck: () => Observable<{ productVersion: string }>
-}
-
-export const GaConfirmationModal: React.FunctionComponent<GaConfirmationModalProps> = ({ fetchSiteUpdateCheck }) => {
+export const GaConfirmationModal: React.FunctionComponent = () => {
     const history = useHistory()
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
     const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
-    const site = useObservable(useMemo(() => fetchSiteUpdateCheck(), [fetchSiteUpdateCheck]))
     const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
 
-    const isSourcegraph3_37_x = site?.productVersion.startsWith('3.37')
-
-    const showConfirmationModal = isSourcegraph3_37_x && !isLicensed && !isGaAccepted
+    const showConfirmationModal = !isLicensed && !isGaAccepted
 
     if (!showConfirmationModal) {
         return null
@@ -85,10 +77,8 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
 
                 <p>
                     Questions? Learn more about the{' '}
-                    <Link to="https://docs.sourcegraph.com/code_insights/references/license">
-                        Code Insights limited access
-                    </Link>{' '}
-                    or <Link to="mailto:support@sourcegraph.com">contact us directly</Link>.
+                    <Link to="/help/code_insights/references/license">Code Insights limited access</Link> or{' '}
+                    <Link to="mailto:support@sourcegraph.com">contact us directly</Link>.
                 </p>
             </div>
 
