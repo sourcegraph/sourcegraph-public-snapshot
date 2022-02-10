@@ -10,6 +10,7 @@ import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -117,17 +118,7 @@ interface Location {
             oid: string
         }
     }
-    range?: {
-        start: {
-            line: number
-            character: number
-        }
-        end: {
-            line: number
-            character: number
-        }
-    }
-
+    range?: Range
     url: string
     lines: string[]
 }
@@ -167,8 +158,8 @@ export const ReferencesList: React.FunctionComponent<
         clickedToken: CoolClickedToken
     }
 > = props => {
-    const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
-    const [filter, setFilter] = useState<string | undefined>(undefined)
+    const [activeLocation, setActiveLocation] = useState<Location>()
+    const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
     useEffect(() => {
