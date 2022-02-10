@@ -105,7 +105,7 @@ func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) 
 const totalErroredQuery = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
 SELECT
-	count(repo.name)
+	count(*)
 FROM repo
 	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
 	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
