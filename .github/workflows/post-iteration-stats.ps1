@@ -20,16 +20,16 @@ param(
 $todayInPST = [TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::Today, 'Pacific Standard Time').Date
 
 $currentMilestone = Get-GitHubMilestone -Owner sourcegraph -RepositoryName sourcegraph -State open |
-    Where-Object { $_.Title -like 'Insights iteration*' -and $_.DueOn.Date -eq $todayInPST }
+    Where-Object { $_.Title -like 'Insights iteration*' -and $todayInPST -le $_.DueOn.Date -and $todayInPST -ge $_.DueOn.Date.AddDays(-11) }
 
 if (!$currentMilestone) {
-    Write-Warning "No milestone found that ends today ($($todayInPST.ToLongDateString()))"
+    Write-Warning "No current milestone found for today ($($todayInPST.ToLongDateString()))"
     return
 }
 
-Write-Information "Milestone ending today: $($currentMilestone.Title)"
+Write-Information "Current milestone for today: $($currentMilestone.Title)"
 
-$currentIterationItems = Find-GitHubIssue "org:sourcegraph milestone:`"$($currentMilestone.Title)`"" |
+$currentIterationItems = Find-GitHubIssue "org:sourcegraph is:issue milestone:`"$($currentMilestone.Title)`"" |
     Get-GitHubBetaProjectItem |
     Where-Object { $_.project.id -eq $ProjectNodeId }
 
@@ -60,7 +60,7 @@ $notFinished = $currentIterationItems | Where-Object { $_.Fields['Status'] -ne '
 $message = "
 Beep bop, this is your friendly iteration bot, with some fresh stats to help with our next iteration planning! :spiral_calendar_pad:
 
-*$($currentMilestone.Title) (ending today)*
+*$($currentMilestone.Title) (current)*
 Sum of finished issues: :large_blue_circle: *$($stats.Sum)* | :desktop_computer: Frontend: $($frontendStats.Sum) | :database: Backend: $($backendStats.Sum)
 _$($stats.Count) issues, average size $($stats.Average.ToString('#.##')), smallest $($stats.Minimum), largest $($stats.Maximum)_
 
