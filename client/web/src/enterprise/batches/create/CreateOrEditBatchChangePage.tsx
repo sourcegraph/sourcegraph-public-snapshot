@@ -352,10 +352,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    {/* <animated.h4 className=“overflow-hidden” style={headerStyle}>
-                        Library
-                    </animated.h4>                    */}
-                    <h4 className={styles.header}>Batch specification</h4>
+                    <h4 className={styles.header}>Batch spec</h4>
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
