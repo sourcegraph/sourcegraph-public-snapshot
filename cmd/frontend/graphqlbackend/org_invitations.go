@@ -69,6 +69,9 @@ type orgInvitationClaims struct {
 
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
+func (r *schemaResolver) toOrganizationInvitation(entry *database.OrgInvitation) *organizationInvitationResolver {
+	return &organizationInvitationResolver{db: r.db, v: entry}
+}
 
 func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, error) {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
@@ -107,6 +110,39 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 	}
 
 	return false, nil
+}
+
+func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
+	Organization graphql.ID
+}) ([]*organizationInvitationResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
+	// invited to.
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+		return nil, err
+	}
+
+	pendingInvites, err := r.db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var invitations []*organizationInvitationResolver
+	for _, invitation := range pendingInvites {
+		invitations = append(invitations, r.toOrganizationInvitation(invitation))
+	}
+
+	return invitations, nil
 }
 
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
