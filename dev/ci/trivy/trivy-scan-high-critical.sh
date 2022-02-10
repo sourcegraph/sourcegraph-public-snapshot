@@ -56,7 +56,7 @@ create_annotation() {
   local file
   file="$(basename "${path}")"
 
-  cat <<EOF >>./annotations/trivy-scan-high-critical
+  cat <<EOF >./annotations/trivy-scan-high-critical
 - **${imageName}** high/critical CVE(s): [${file}](artifact://${file})
 EOF
 

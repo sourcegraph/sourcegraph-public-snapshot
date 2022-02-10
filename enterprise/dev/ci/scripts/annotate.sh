@@ -17,12 +17,14 @@ if [ $# -eq 0 ]; then
 fi
 
 TYPE='error'
+SECTION=''
 MARKDOWN='false'
 CUSTOM_CONTEXT=''
 
 while getopts 't:s:c:m' flag; do
   case "${flag}" in
     t) TYPE="${OPTARG}" ;;
+    s) SECTION="${OPTARG}" ;;
     c) CUSTOM_CONTEXT="${OPTARG}" ;;
     m) MARKDOWN='true' ;;
     *)
@@ -66,6 +68,10 @@ while IFS= read -r line; do
     BODY=$(printf "%s\n%s" "$BODY" "$line")
   fi
 done
+
+if [ -n "$SECTION" ]; then
+  printf "**%s**\n" "$SECTION" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+fi
 
 if [ "$MARKDOWN" = true ]; then
   printf "%s\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append

@@ -16,7 +16,7 @@ set -e
 echo -e "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo -e "$OUT" >>./annotations/docsite
+  echo -e "$OUT" >./annotations/docsite
   echo "^^^ +++"
 fi
 
