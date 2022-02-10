@@ -61,16 +61,6 @@ func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeu
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
-	defer cancel()
-
-	wrapError := func(err error, message string) error {
-		if errors.Is(err, context.DeadlineExceeded) {
-			err = errors.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
-		}
-
-		return errors.Wrap(err, message)
-	}
 
 	start := time.Now()
 	defer func() {
@@ -106,7 +96,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
-		return wrapError(err, "failed to prepare workspace")
+		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	defer func() {
 		_ = os.RemoveAll(workingDirectory)
@@ -163,14 +153,14 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 
 	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
-		return wrapError(err, "failed to write virtual machine files")
+		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx); err != nil {
-		return wrapError(err, "failed to setup virtual machine")
+		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
@@ -195,7 +185,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
-			return wrapError(err, "failed to perform docker step")
+			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
 
@@ -212,7 +202,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
-			return wrapError(err, "failed to perform src-cli step")
+			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}
 
