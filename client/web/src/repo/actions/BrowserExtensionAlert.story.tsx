@@ -19,6 +19,6 @@ const config: Meta = {
 export default config
 
 export const BrowserExtensionAlertDefault: Story = () => (
-    <BrowserExtensionAlert onAlertDismissed={action('onAlertDismissed')} />
+    <BrowserExtensionAlert page="search" onAlertDismissed={action('onAlertDismissed')} />
 )
 BrowserExtensionAlertDefault.storyName = 'BrowserExtensionAlert'

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 
@@ -7,13 +7,19 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props {
     className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
 }
 
-export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ className, onAlertDismissed }) => {
+export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('InstallBrowserExtensionCTAShown')
-    }, [])
+        eventLogger.log('InstallBrowserExtensionCTAShown', args, args)
+    }, [args])
+
+    const onBrowserExtensionClick = useCallback((): void => {
+        eventLogger.log('InstallBrowserExtensionCTAClicked', args, args)
+    }, [args])
 
     return (
         <CtaAlert
@@ -30,8 +36,4 @@ export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ classNam
             onClose={onAlertDismissed}
         />
     )
-}
-
-const onBrowserExtensionClick = (): void => {
-    eventLogger.log('InstallBrowserExtensionCTAClicked')
 }

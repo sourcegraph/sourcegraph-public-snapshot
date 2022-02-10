@@ -31,6 +31,7 @@ const NativeIntegrationAlertWrapper: React.FunctionComponent<{ serviceKind: Exte
 }) => (
     <NativeIntegrationAlert
         onAlertDismissed={onAlertDismissed}
+        page="search"
         externalURLs={[
             {
                 url: '',
