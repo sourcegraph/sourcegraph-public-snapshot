@@ -5,8 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os/exec"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PipeOutput reads stdout/stderr output of the given command into the two
@@ -28,8 +31,9 @@ func PipeOutput(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.
 func PipeOutputUnbuffered(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
 	return pipeOutputWithCopy(ctx, c, stdoutWriter, stderrWriter, func(w io.Writer, r io.Reader) {
 		_, err := io.Copy(w, r)
-		if err != nil {
-			panic(fmt.Sprintf("failed to pipe output: %s", err))
+		// We can ignore ErrClosed because we get that if a process crashes
+		if err != nil && !errors.Is(err, fs.ErrClosed) {
+			panic(err)
 		}
 	})
 }

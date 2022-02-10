@@ -1,36 +1,23 @@
-import React, { useCallback, useRef, useState } from 'react'
-import { useHistory } from 'react-router'
+import React from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import {
-    useConnection,
-    UseConnectionResult,
-} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
     ConnectionList,
-    ConnectionLoading,
+    SummaryContainer,
     ConnectionSummary,
     ShowMoreButton,
-    SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Input } from '@sourcegraph/wildcard'
 
-import {
-    Scalars,
-    PreviewBatchSpecWorkspaceFields,
-    BatchSpecWorkspacesPreviewResult,
-    BatchSpecWorkspacesPreviewVariables,
-} from '../../../../graphql-operations'
-import { WORKSPACES } from '../backend'
+import { Connection } from '../../../../components/FilteredConnection'
+import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
-import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
+import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
-    batchSpecID: Scalars['ID']
+    workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
     /**
      * Whether or not the workspaces in this list are up-to-date with the current batch
      * spec input YAML in the editor.
@@ -41,28 +28,40 @@ interface WorkspacesPreviewListProps {
      * provided repo + branch.
      */
     excludeRepo: (repo: string, branch: string) => void
+    /**
+     * Whether or not the preview list should prefer the `cached` list over the data
+     * actively in the connection.
+     */
+    showCached: boolean
+    /**
+     * We "cache" the last results of the workspaces preview so that we can continue to
+     * show them in the list while the next workspaces resolution is still in progress. We
+     * have to do this outside of Apollo Client because we continue to requery the
+     * orkspaces preview while the resolution job is still in progress, and so the results
+     * will come up empty and overwrite the previous results in the Apollo Client cache
+     * while this is happening. If data is availabled in `cached` and `showCached` is
+     * true, it will be used over the data in the connnection.
+     */
+    cached?: Connection<PreviewBatchSpecWorkspaceFields>
+    /** Error */
+    error?: string
 }
 
-const WORKSPACES_PER_PAGE_COUNT = 100
-
 export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewListProps> = ({
-    batchSpecID,
     isStale,
     excludeRepo,
+    showCached,
+    cached,
+    workspacesConnection: { connection, hasNextPage, fetchMore },
+    error,
 }) => {
-    const [filters, setFilters] = useState<WorkspacePreviewFilters>()
-    const { connection, error, loading, hasNextPage, fetchMore } = useWorkspaces(batchSpecID, filters?.search ?? null)
-
-    if (loading) {
-        return <PreviewLoadingSpinner className="my-4" />
-    }
+    const connectionOrCached = showCached && cached ? cached : connection
 
     return (
         <ConnectionContainer className="w-100">
-            {error && <ConnectionError errors={[error.message]} />}
-            <WorkspacePreviewFilterRow onFiltersChange={setFilters} />
+            {error && <ConnectionError errors={[error]} />}
             <ConnectionList className="list-group list-group-flush w-100">
-                {connection?.nodes?.map((node, index) => (
+                {connectionOrCached?.nodes?.map((node, index) => (
                     <WorkspacesPreviewListItem
                         key={`${node.repository.id}-${node.branch.id}`}
                         item={node}
@@ -72,13 +71,12 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                     />
                 ))}
             </ConnectionList>
-            {loading && <ConnectionLoading />}
-            {connection && (
+            {connectionOrCached && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
                         noSummaryIfAllNodesVisible={true}
                         first={WORKSPACES_PER_PAGE_COUNT}
-                        connection={connection}
+                        connection={connectionOrCached}
                         noun="workspace"
                         pluralNoun="workspaces"
                         hasNextPage={hasNextPage}
@@ -88,100 +86,5 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                 </SummaryContainer>
             )}
         </ConnectionContainer>
-    )
-}
-
-const useWorkspaces = (
-    batchSpecID: Scalars['ID'],
-    search: string | null
-): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
-    useConnection<
-        BatchSpecWorkspacesPreviewResult,
-        BatchSpecWorkspacesPreviewVariables,
-        PreviewBatchSpecWorkspaceFields
-    >({
-        query: WORKSPACES,
-        variables: {
-            batchSpec: batchSpecID,
-            after: null,
-            first: WORKSPACES_PER_PAGE_COUNT,
-            search,
-        },
-        options: {
-            useURL: false,
-            fetchPolicy: 'cache-and-network',
-        },
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
-
-            if (!data.node) {
-                throw new Error(`Batch spec with ID ${batchSpecID} does not exist`)
-            }
-            if (data.node.__typename !== 'BatchSpec') {
-                throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchSpec`)
-            }
-            if (!data.node.workspaceResolution) {
-                throw new Error(`No workspace resolution found for batch spec with ID ${batchSpecID}`)
-            }
-            return data.node.workspaceResolution.workspaces
-        },
-    })
-
-export interface WorkspacePreviewFilters {
-    search: string | null
-}
-
-export interface WorkspacePreviewFilterRowProps {
-    onFiltersChange: (newFilters: WorkspacePreviewFilters) => void
-}
-
-export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreviewFilterRowProps> = ({
-    onFiltersChange,
-}) => {
-    const history = useHistory()
-    const searchElement = useRef<HTMLInputElement | null>(null)
-    const [search, setSearch] = useState<string | undefined>(() => {
-        const searchParameters = new URLSearchParams(history.location.search)
-        return searchParameters.get('search') ?? undefined
-    })
-
-    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
-            event?.preventDefault()
-            const value = searchElement.current?.value
-            setSearch(value)
-
-            // Update the location, too.
-            const searchParameters = new URLSearchParams(history.location.search)
-            if (value) {
-                searchParameters.set('search', value)
-            } else {
-                searchParameters.delete('search')
-            }
-            if (history.location.search !== searchParameters.toString()) {
-                history.replace({ ...history.location, search: searchParameters.toString() })
-            }
-            // Update the filters in the parent component.
-            onFiltersChange({
-                search: value || null,
-            })
-        },
-        [history, onFiltersChange]
-    )
-
-    return (
-        <div className="row no-gutters mr-1">
-            <div className="m-0 col">
-                <Form className="d-flex mb-2" onSubmit={onSubmit}>
-                    <Input
-                        className="flex-grow-1"
-                        type="search"
-                        ref={searchElement}
-                        defaultValue={search}
-                        placeholder="Search repository name"
-                    />
-                </Form>
-            </div>
-        </div>
     )
 }

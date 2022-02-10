@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import { LocationDescriptor } from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
+import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchStackIcon from 'mdi-react/LayersSearchIcon'
 import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
@@ -12,6 +13,7 @@ import { useHistory } from 'react-router-dom'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -26,6 +28,8 @@ import {
     SearchStackEntry,
     removeSearchStackEntry,
     removeAllSearchStackEntries,
+    SearchStackEntryInput,
+    addSearchStackEntry,
 } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
@@ -37,6 +41,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
     const [open, setOpen] = useState(initialOpen)
     const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
+    const addableEntry = useSearchStackState(state => state.addableEntry)
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
@@ -98,6 +103,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
             </div>
             {open && (
                 <>
+                    {addableEntry && <AddEntryButton entry={addableEntry} />}
                     <ul>
                         {reversedEntries.map(entry => (
                             <li key={entry.id}>{renderSearchEntry(entry)}</li>
@@ -161,6 +167,53 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     )
 }
 
+interface AddEntryButtonProps {
+    entry: SearchStackEntryInput
+}
+
+const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry }) => {
+    switch (entry.type) {
+        case 'search':
+            return (
+                <Button
+                    variant="primary"
+                    size="sm"
+                    title="Add search"
+                    className="m-3"
+                    onClick={() => addSearchStackEntry(entry)}
+                >
+                    + <SearchIcon className="icon-inline" /> Search
+                </Button>
+            )
+        case 'file':
+            return (
+                <span className="d-flex m-2">
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        title="Add file"
+                        className="flex-1 m-1"
+                        onClick={() => addSearchStackEntry(entry, 'file')}
+                    >
+                        + <FileDocumentIcon className="icon-inline" /> File
+                    </Button>
+                    {entry.lineRange && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            title="Add line range"
+                            className="flex-1 m-1"
+                            onClick={() => addSearchStackEntry(entry, 'range')}
+                        >
+                            + <CodeBracketsIcon className="icon-inline" /> Range (
+                            {entry.lineRange.endLine - entry.lineRange.startLine})
+                        </Button>
+                    )}
+                </span>
+            )
+    }
+}
+
 interface SearchStackEntryComponentProps {
     entry: SearchStackEntry
     icon: React.ReactElement
@@ -221,8 +274,19 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
             return (
                 <SearchStackEntryComponent
                     entry={entry}
-                    icon={<FileDocumentIcon className="icon-inline" />}
-                    title={<span title={entry.path}>{shortenFilePath(entry.path)}</span>}
+                    icon={
+                        entry.lineRange ? (
+                            <CodeBracketsIcon className="icon-inline" />
+                        ) : (
+                            <FileDocumentIcon className="icon-inline" />
+                        )
+                    }
+                    title={
+                        <span title={entry.path}>
+                            {fileName(entry.path)}
+                            {entry.lineRange ? ` ${formatLineRange(entry.lineRange)}` : ''}
+                        </span>
+                    }
                     location={{
                         pathname: toPrettyBlobURL({
                             repoName: entry.repo,
@@ -254,22 +318,14 @@ function toSearchQuery(entry: SearchEntry): string {
     return query
 }
 
-/**
- * This function takes a file path and shortens any path segment to the first
- * character, except for the first and last segment and any segment that
- * contains less than five characters.
- *
- * Example: path/to/deeply/nested/file => path/to/d/n/file
- */
-function shortenFilePath(path: string): string {
+function fileName(path: string): string {
     const parts = path.split('/')
-    if (parts.length === 1) {
-        return path
+    return parts[parts.length - 1]
+}
+
+function formatLineRange(lineRange: IHighlightLineRange): string {
+    if (lineRange.startLine === lineRange.endLine - 1) {
+        return `L${lineRange.startLine}`
     }
-    return [parts[0]]
-        .concat(
-            parts.slice(1, -1).map(part => (part.length < 5 ? part : part[0])),
-            parts[parts.length - 1]
-        )
-        .join('/')
+    return `L${lineRange.startLine}:${lineRange.endLine}`
 }

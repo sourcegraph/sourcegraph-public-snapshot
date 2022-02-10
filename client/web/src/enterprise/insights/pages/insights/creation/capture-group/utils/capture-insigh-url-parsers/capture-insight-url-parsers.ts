@@ -40,6 +40,7 @@ export function decodeCaptureInsightURL(queryParameters: string): CaptureGroupFo
                 groupSearchQuery: groupSearchQuery ?? '',
                 step: 'days',
                 stepValue: '8',
+                dashboardReferenceCount: 0,
             }
         }
 

@@ -37,6 +37,11 @@ export type SearchStackEntry = SearchEntry | FileEntry
 export type SearchStackEntryInput = Omit<SearchEntry, 'id'> | Omit<FileEntry, 'id'>
 
 export interface SearchStackStore {
+    /**
+     * If a page/component has information that can be added to the search
+     * stack, it should set this value.
+     */
+    addableEntry: SearchStackEntryInput | null
     entries: SearchStackEntry[]
     previousEntries: SearchStackEntry[]
     canRestoreSession: boolean
@@ -62,6 +67,7 @@ export const useSearchStackState = create<SearchStackStore>(() => {
     const entriesFromPreviousSession = restoreSession(localStorage)
 
     return {
+        addableEntry: null,
         entries: entriesFromSession,
         previousEntries: entriesFromPreviousSession,
         canRestoreSession: entriesFromSession.length === 0 && entriesFromPreviousSession.length > 0,
@@ -81,58 +87,58 @@ export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
     useEffect(() => {
         if (enableSearchStack && newEntry) {
-            switch (newEntry.type) {
-                case 'file':
-                    addSearchStackEntry(
-                        newEntry,
-                        existingEntry =>
-                            existingEntry.type === 'file' &&
-                            existingEntry.repo === newEntry.repo &&
-                            existingEntry.path === newEntry.path
-                    )
-                    break
+            let entry: SearchStackEntryInput = newEntry
+
+            switch (entry.type) {
                 case 'search': {
                     // `query` most likely contains a 'context' filter that we don't
                     // want to show (this information is kept separately in
                     // `searchContext`).
-                    let processedQuery = newEntry.query
-                    const contextFilter = findFilter(newEntry.query, FilterType.context, FilterKind.Global)
+                    let processedQuery = entry.query
+                    const contextFilter = findFilter(entry.query, FilterType.context, FilterKind.Global)
                     if (contextFilter) {
-                        processedQuery = omitFilter(newEntry.query, contextFilter)
+                        processedQuery = omitFilter(entry.query, contextFilter)
                     }
-                    addSearchStackEntry(
-                        { ...newEntry, query: processedQuery },
-                        existingEntry => existingEntry.type === 'search' && existingEntry.query === processedQuery
-                    )
+                    entry = { ...entry, query: processedQuery }
                     break
                 }
             }
+            useSearchStackState.setState({ addableEntry: entry })
+
+            // We have to "remove" the entry if the component unmounts.
+            return () => {
+                const currentState = useSearchStackState.getState()
+                if (currentState.addableEntry === newEntry) {
+                    useSearchStackState.setState({ addableEntry: null })
+                }
+            }
         }
+        return // without this typescript complains
     }, [newEntry, enableSearchStack])
 }
 
-function addSearchStackEntry(entry: SearchStackEntryInput, update?: (entry: SearchStackEntry) => boolean): void {
-    useSearchStackState.setState(state => {
-        if (update) {
-            const existingEntry = state.entries.find(update)
-            if (existingEntry) {
-                const entriesCopy = [...state.entries]
-                const index = entriesCopy.indexOf(existingEntry)
-                entriesCopy[index] = { ...existingEntry, ...entry }
-                // If the list contains more than one entry we disable restoring from
-                // the previous session
-                return { entries: entriesCopy, canRestoreSession: entriesCopy.length <= 1 }
-            }
-        }
-        const newState = {
-            entries: [...state.entries, { ...entry, id: nextEntryID++ }],
-            canRestoreSession: state.entries.length === 0,
-        }
+/**
+ * Adds the current value of addableEntry to the list of items.
+ * If that value is a file entry, then a hint can be provided to control whether
+ * the whole file or the line range should be added.
+ */
+export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'file' | 'range'): void {
+    const { addableEntry, entries } = useSearchStackState.getState()
 
-        persistSession(newState.entries)
+    let entry = newEntry
+    if (entry.type === 'file' && entry.lineRange && hint === 'file') {
+        entry = { ...entry, lineRange: null }
+    }
 
-        return newState
-    })
+    const newState = {
+        // Clear addableEntry if that's the entry we are adding
+        addableEntry: addableEntry === newEntry ? null : addableEntry,
+        entries: [...entries, { ...entry, id: nextEntryID++ }],
+        canRestoreSession: entries.length === 0,
+    }
+
+    persistSession(newState.entries)
+    useSearchStackState.setState(newState)
 }
 
 export function restorePreviousSession(): void {

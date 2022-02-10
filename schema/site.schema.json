@@ -370,6 +370,11 @@
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
           "default": false
+        },
+        "enableGitServerCommandExecFilter": {
+          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -1299,7 +1304,7 @@
           "default": 48
         },
         "signingKey": {
-          "description": "HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
           "type": "string"
         }
       }
@@ -1373,6 +1378,11 @@
           "description": "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
           "type": "string",
           "pattern": "^[^<@]"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },

@@ -33,6 +33,17 @@ switch ($github.event_name) {
         Write-Information "Issue was $($github.event.action)"
 
         if ($github.event.action -in 'opened', 'labeled', 'milestoned') {
+            # If issue was labeled, make sure to only consider the team label being added (don't send a Slack message for every label added).
+            if ($github.event.action -eq 'labeled' -and $github.event.label.name -ne $TeamLabel) {
+                Write-Information "Labeled with non-team label ($($github.event.label.name)), exiting."
+                return
+            }
+            # If issue was milestoned, make sure to only consider iteration milestones
+            if ($github.event.action -eq 'milestoned' -and $github.event.issue.milestone.title -notmatch "iteration") {
+                Write-Information "Milestoned with non-iteration milestone ($($github.event.issue.milestone.title)), exiting."
+                return
+            }
+
             # If team label was added or issue was just opened, add to project board
             # If added to an iteration, update status and set "proposed by" to the event actor
             # Idempotent, will return the item if already exists in the board (this is fine because we checked for the team label)
@@ -74,7 +85,8 @@ switch ($github.event_name) {
                     -Fields @(
                         @{ title = 'Size'; value = $item.Fields['Size 🔵']; short = $true },
                         @{ title = 'Importance'; value = $item.Fields['Importance']; short = $true },
-                        @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true }
+                        @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true },
+                        @{ title = 'Assignee'; value = $item.content.assignees | ForEach-Object login | Join-String -Separator ', '; short = $true }
                     ) `
                     -Fallback $fallback |
                     New-SlackMessage -Username 'Iteration Bot' -IconEmoji ':robot:' -Channel $SlackChannel |
