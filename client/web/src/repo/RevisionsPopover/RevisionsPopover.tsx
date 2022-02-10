@@ -80,11 +80,19 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
             defaultIndex={tabIndex}
             onChange={handleTabsChange}
         >
-            <TabList wrapperClassName={styles.tabs} actions={(
-                <Button onClick={props.togglePopover} variant="icon" className={styles.tabsClose} aria-label="Close">
-                    <CloseIcon className="icon-inline" />
-                </Button>
-            )}>
+            <TabList
+                wrapperClassName={styles.tabs}
+                actions={
+                    <Button
+                        onClick={props.togglePopover}
+                        variant="icon"
+                        className={styles.tabsClose}
+                        aria-label="Close"
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </Button>
+                }
+            >
                 {TABS.map(({ label, id }) => (
                     <Tab key={id} data-tab-content={id}>
                         <span className="tablist-wrapper--tab-label">{label}</span>

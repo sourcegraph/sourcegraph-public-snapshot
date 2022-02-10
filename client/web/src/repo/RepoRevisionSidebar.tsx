@@ -89,17 +89,19 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         onChange={setPersistedTabIndex}
                         lazy={true}
                     >
-                        <TabList actions={(
-                            <Button
-                                onClick={() => handleSidebarToggle(false)}
-                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Hide sidebar"
-                                data-tooltip="Hide sidebar"
-                                data-placement="right"
-                            >
-                                <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
-                            </Button>
-                        )}>
+                        <TabList
+                            actions={
+                                <Button
+                                    onClick={() => handleSidebarToggle(false)}
+                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                    title="Hide sidebar"
+                                    data-tooltip="Hide sidebar"
+                                    data-placement="right"
+                                >
+                                    <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
+                                </Button>
+                            }
+                        >
                             <Tab data-tab-content="files">
                                 <span className="tablist-wrapper--tab-label">Files</span>
                             </Tab>
