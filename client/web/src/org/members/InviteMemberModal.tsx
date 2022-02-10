@@ -39,7 +39,7 @@ export interface InviteMemberModalProps {
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
     const { orgName, orgId, onInviteSent, onDismiss } = props
-    const emailPattern = useRef(new RegExp(/^\w+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
+    const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite teammate to ${orgName}`
