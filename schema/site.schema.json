@@ -370,6 +370,11 @@
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
           "default": false
+        },
+        "enableGitServerCommandExecFilter": {
+          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
