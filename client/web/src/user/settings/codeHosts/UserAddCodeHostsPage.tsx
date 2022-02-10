@@ -331,7 +331,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
                 if (kind === ExternalServiceKind.GITHUB && authenticatedUser) {
                     try {
-                        isEnabled = await determineGitHubAppFromOrgs(authenticatedUser.organizations.nodes.map(org => org.id))
+                        isEnabled = await determineGitHubAppFromOrgs(
+                            authenticatedUser.organizations.nodes.map(org => org.id)
+                        )
                     } catch (error) {
                         handleError(error)
                     }
