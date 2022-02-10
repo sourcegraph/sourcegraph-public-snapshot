@@ -43,7 +43,7 @@ func mockDefaultSiteConfig() {
 
 func TestCreateJWT(t *testing.T) {
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1, 1, "foo@bar.baz")
+		_, err := createInvitationJWT(1, 1, 1)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -54,7 +54,7 @@ func TestCreateJWT(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3, 4, "")
+		token, err := createInvitationJWT(1, 2, 3)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func TestCreateJWT(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "4" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
@@ -129,7 +129,7 @@ func TestOrgInvitationURL(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "foo@bar.baz" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
@@ -162,11 +162,15 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgInvitations := database.NewMockOrgInvitationStore()
 	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	t.Run("Falls back to legacy URL if site settings not provided", func(t *testing.T) {
 		RunTests(t, []*Test{
@@ -196,14 +200,14 @@ func TestInviteUserToOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Returns invitation URL in the response", func(t *testing.T) {
+	t.Run("Returns invitation URL in the response for username invitation", func(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+				mutation InviteUserToOrganization($organization: ID!, $username: String) {
 					inviteUserToOrganization(organization: $organization, username: $username) {
 						sentInvitationEmail
 						invitationURL
@@ -217,7 +221,71 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImF1ZCI6WyIyIl0sImV4cCI6MTYxMTk2NDgwMH0.Dze7dKGqabpxRxsNz86pvH9BUVsB2cCQdoaJ0EeurGhfnm8GvdhiKHuSbThiBtxS1sHreBxij3WaDZ2KxZe6LQ",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
+						"sentInvitationEmail": false
+					}
+				}
+				`,
+			},
+		})
+	})
+
+	t.Run("Fails for email invitation if feature flag is not enabled", func(t *testing.T) {
+		mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				mutation InviteUserToOrganization($organization: ID!, $email: String) {
+					inviteUserToOrganization(organization: $organization, email: $email) {
+						sentInvitationEmail
+						invitationURL
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"organization": string(MarshalOrgID(1)),
+					"email":        "foo@bar.baz",
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Message: "inviting by email is not supported for this organization",
+						Path:    []interface{}{"inviteUserToOrganization"},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("Returns invitation URL in the response for email invitation", func(t *testing.T) {
+		mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
+
+		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+		defer func() {
+			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+		}()
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				mutation InviteUserToOrganization($organization: ID!, $email: String) {
+					inviteUserToOrganization(organization: $organization, email: $email) {
+						sentInvitationEmail
+						invitationURL
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"organization": string(MarshalOrgID(1)),
+					"email":        "foo@bar.baz",
+				},
+				ExpectedResult: `
+				{
+					"inviteUserToOrganization": {
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
 						"sentInvitationEmail": false
 					}
 				}
@@ -290,7 +358,7 @@ func TestInvitationByToken(t *testing.T) {
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1, 2, "")
+		token, err := createInvitationJWT(1, 1, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -319,6 +387,201 @@ func TestInvitationByToken(t *testing.T) {
 						}
 					}
 				}`,
+			},
+		})
+	})
+}
+
+func TestRespondToOrganizationInvitation(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2}, nil)
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+
+	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+		if userID == 1 {
+			return &types.OrgMembership{}, nil
+		}
+
+		return nil, &database.ErrOrgMemberNotFound{}
+	})
+
+	orgs := database.NewMockOrgStore()
+	orgName := "acme"
+	mockedOrg := types.Org{ID: 1, Name: orgName}
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
+	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
+		return int32(id), nil
+	})
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
+
+	t.Run("User is able to decline an invitation", func(t *testing.T) {
+		invitationID := int64(1)
+		orgID := int32(1)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
+					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id":       string(marshalOrgInvitationID(invitationID)),
+					"response": "REJECT",
+				},
+				ExpectedResult: `{
+					"respondToOrganizationInvitation": {
+						"alwaysNil": null
+					}
+				}`,
+			},
+		})
+
+		respondCalls := orgInvitations.RespondFunc.History()
+		lastRespondCall := respondCalls[len(respondCalls)-1]
+		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != false {
+			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		}
+		memberCalls := orgMembers.CreateFunc.History()
+		if len(memberCalls) > 0 {
+			t.Fatalf("db.OrgMembers.Create should not have been called, but got %d calls", len(memberCalls))
+		}
+	})
+
+	t.Run("User is able to accept a user invitation", func(t *testing.T) {
+		invitationID := int64(2)
+		orgID := int32(2)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
+					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id":       string(marshalOrgInvitationID(invitationID)),
+					"response": "ACCEPT",
+				},
+				ExpectedResult: `{
+					"respondToOrganizationInvitation": {
+						"alwaysNil": null
+					}
+				}`,
+			},
+		})
+
+		respondCalls := orgInvitations.RespondFunc.History()
+		lastRespondCall := respondCalls[len(respondCalls)-1]
+		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != true {
+			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		}
+		memberCalls := orgMembers.CreateFunc.History()
+		lastMemberCall := memberCalls[len(memberCalls)-1]
+		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
+			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
+		}
+	})
+
+	t.Run("User is able to accept an email invitation", func(t *testing.T) {
+		invitationID := int64(3)
+		orgID := int32(3)
+		email := "foo@bar.baz"
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+
+		userEmails := database.NewMockUserEmailsStore()
+		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
+					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id":       string(marshalOrgInvitationID(invitationID)),
+					"response": "ACCEPT",
+				},
+				ExpectedResult: `{
+					"respondToOrganizationInvitation": {
+						"alwaysNil": null
+					}
+				}`,
+			},
+		})
+
+		respondCalls := orgInvitations.RespondFunc.History()
+		lastRespondCall := respondCalls[len(respondCalls)-1]
+		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != true {
+			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		}
+		memberCalls := orgMembers.CreateFunc.History()
+		lastMemberCall := memberCalls[len(memberCalls)-1]
+		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
+			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
+		}
+	})
+
+	t.Run("Fails if email on the invitation does not match user email", func(t *testing.T) {
+		invitationID := int64(3)
+		orgID := int32(3)
+		email := "foo@bar.baz"
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+
+		userEmails := database.NewMockUserEmailsStore()
+		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "something@else.invalid", UserID: 2}}, nil)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
+					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id":       string(marshalOrgInvitationID(invitationID)),
+					"response": "ACCEPT",
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Message: "your email addresses [something@else.invalid] do not match the email address on the invitation.",
+						Path:    []interface{}{"respondToOrganizationInvitation"},
+					},
+				},
 			},
 		})
 	})

@@ -26,6 +26,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var EMAIL_INVITES_FF = "org-email-invites"
+var SIGNING_KEY_MESSAGE = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+
 func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = db.Users().GetByUsername(ctx, username)
 	if err != nil {
@@ -66,6 +69,45 @@ type orgInvitationClaims struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
+func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, error) {
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: user.ID,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	containsEmail := func(userEmails []*database.UserEmail, email string) *database.UserEmail {
+		for _, userEmail := range userEmails {
+			if email == userEmail.Email {
+				return userEmail
+			}
+		}
+
+		return nil
+	}
+
+	emailMatch := containsEmail(emails, inviteEmail)
+	if emailMatch == nil {
+		var emailAddresses []string
+		for _, userEmail := range emails {
+			emailAddresses = append(emailAddresses, userEmail.Email)
+		}
+		return false, errors.Newf("your email addresses %v do not match the email address on the invitation.", emailAddresses)
+	} else if emailMatch.VerifiedAt == nil {
+		// set email address as verified if not already
+		// db.UserEmails().SetVerified(ctx, user.ID, inviteEmail, true)
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
@@ -93,6 +135,13 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 		if invite.RecipientUserID > 0 && invite.RecipientUserID != actor.UID {
 			return nil, database.NewOrgInvitationNotFoundError(claims.InvitationID)
 		}
+		if invite.RecipientEmail != "" {
+			willVerify, err := checkEmail(ctx, r.db, invite.RecipientEmail)
+			if err != nil {
+				return nil, err
+			}
+			invite.IsVerifiedEmail = !willVerify
+		}
 
 		return NewOrganizationInvitationResolver(r.db, invite), nil
 	} else {
@@ -105,9 +154,10 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	Username     *string
 	Email        *string
 }) (*inviteUserToOrganizationResult, error) {
-	if (args.Email != nil && *args.Email != "") || args.Username == nil {
-		return nil, errors.New("inviting by email is not implemented yet")
+	if args.Email == nil && args.Username == nil {
+		return nil, errors.New("either username or email must be defined")
 	}
+
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
@@ -116,6 +166,12 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// invited to.
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
+	}
+	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
+	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EMAIL_INVITES_FF)
+	// return error if feature flag is not enabled and we got an email as an argument
+	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
+		return nil, errors.New("inviting by email is not supported for this organization")
 	}
 
 	// Create the invitation.
@@ -127,17 +183,36 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if err != nil {
 		return nil, err
 	}
-	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+
+	// sending invitation to user ID or email
+	var recipientID int32
+	var recipientEmail string
+	if args.Username != nil {
+		recipient, userEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+		if err != nil {
+			return nil, err
+		}
+		recipientID = recipient.ID
+		recipientEmail = userEmail
+	}
+	hasConfig := orgInvitationConfigDefined()
+	if args.Email != nil {
+		// we only support new URL schema for email invitations
+		if !hasConfig {
+			return nil, errors.New(SIGNING_KEY_MESSAGE)
+		}
+		recipientEmail = *args.Email
+	}
+
+	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail)
 	if err != nil {
 		return nil, err
 	}
-	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipient.ID)
-	if err != nil {
-		return nil, err
-	}
+
+	// create invitation URL
 	var invitationURL string
-	if orgInvitationConfigDefined() {
-		invitationURL, err = orgInvitationURL(org.ID, invitation.ID, sender.ID, recipient.ID, recipientEmail, false)
+	if args.Email != nil || hasConfig {
+		invitationURL, err = orgInvitationURL(org.ID, invitation.ID, sender.ID, recipientID, recipientEmail, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
 	}
@@ -185,8 +260,28 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		return nil, errors.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
 	}
 
-	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
-	// invitation is otherwise invalid), so we do not need to separately perform that check.
+	invitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Mark the email as verified if needed
+	if invitation.RecipientEmail != "" {
+		// 🚨 SECURITY: This fails if the org invitation's recipient email is not the one given
+		shouldMarkAsVerified, err := checkEmail(ctx, r.db, invitation.RecipientEmail)
+		if err != nil {
+			return nil, err
+		}
+		if shouldMarkAsVerified && accept {
+			// ignore errors here as this is a best-effort action
+			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+		}
+	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
+		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
+		return nil, database.NewOrgInvitationNotFoundError(id)
+	}
+
+	// 🚨 SECURITY: This fails if the invitation is invalid
 	orgID, err := r.db.OrgInvitations().Respond(ctx, id, a.UID, accept)
 	if err != nil {
 		return nil, err
@@ -298,7 +393,7 @@ func orgInvitationURLLegacy(org *types.Org, relative bool) string {
 }
 
 func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string, relative bool) (string, error) {
-	token, err := createInvitationJWT(orgID, invitationID, senderID, recipientID, recipientEmail)
+	token, err := createInvitationJWT(orgID, invitationID, senderID)
 	if err != nil {
 		return "", err
 	}
@@ -309,13 +404,9 @@ func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipient
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), nil
 }
 
-func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string) (string, error) {
+func createInvitationJWT(orgID int32, invitationID int64, senderID int32) (string, error) {
 	if !orgInvitationConfigDefined() {
-		return "", errors.New("signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration.")
-	}
-	aud := recipientEmail
-	if aud == "" {
-		aud = strconv.FormatInt(int64(recipientID), 10)
+		return "", errors.New(SIGNING_KEY_MESSAGE)
 	}
 	config := conf.SiteConfig().OrganizationInvitations
 
@@ -326,7 +417,6 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Audience:  jwt.ClaimStrings{aud},
 			Issuer:    globals.ExternalURL().String(),
 			ExpiresAt: jwt.NewNumericDate(timeNow().Add(expiryTime * time.Hour)), // TODO: store expiry in DB
 			Subject:   strconv.FormatInt(int64(orgID), 10),
@@ -370,22 +460,37 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 
 	var fromName string
 	if sender.DisplayName != "" {
-		fromName = sender.DisplayName
+		fromName = fmt.Sprintf("%s (@%s)", sender.DisplayName, sender.Username)
 	} else {
-		fromName = sender.Username
+		fromName = fmt.Sprintf("@%s", sender.Username)
 	}
+
+	var orgName string
+	if org.DisplayName != nil {
+		orgName = *org.DisplayName
+	} else {
+		orgName = org.Name
+	}
+
+	var expiry = 2
 
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
-			FromName string
-			OrgName  string
-			URL      string
+			FromName        string
+			FromDisplayName string
+			FromUserName    string
+			OrgName         string
+			InvitationUrl   string
+			ExpiryDays      int
 		}{
-			FromName: fromName,
-			OrgName:  org.Name,
-			URL:      invitationURL,
+			FromName:        fromName,
+			FromDisplayName: sender.DisplayName,
+			FromUserName:    sender.Username,
+			OrgName:         orgName,
+			InvitationUrl:   invitationURL,
+			ExpiryDays:      expiry,
 		},
 	})
 }
@@ -395,16 +500,60 @@ var emailTemplates = txemail.MustValidate(txtypes.Templates{
 	Text: `
 {{.FromName}} invited you to join the {{.OrgName}} organization on Sourcegraph.
 
-To accept the invitation, follow this link:
+New to Sourcegraph? Sourcegraph helps your team to learn and understand your codebase quickly, and share code via links, speeding up team collaboration even while apart.
 
-  {{.URL}}
+Visit this link in your browser to accept the invite: {{.InvitationUrl}}
+
+This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
+
+
+To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
+To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
+
+Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
 `,
 	HTML: `
-<p>
-  <strong>{{.FromName}}</strong> invited you to join the
-  <strong>{{.OrgName}}</strong> organization on Sourcegraph.
-</p>
-
-<p><strong><a href="{{.URL}}">Join {{.OrgName}}</a></strong></p>
+<html>
+<head>
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <style>
+    body { color: #343a4d; background: #fff; padding: 20px; font-size: 16px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji; }
+    .logo { height: 34px; margin-bottom: 15px; }
+    a { color: #0b70db; text-decoration: none; background-color: transparent; }
+    a:hover { color: #0c7bf0; text-decoration: underline; }
+    a.btn { display: inline-block; color: #fff; background-color: #0b70db; padding: 8px 16px; border-radius: 3px; font-weight: 600; }
+    a.btn:hover { color: #fff; background-color: #0864c6; text-decoration:none; }
+    .smaller { font-size: 14px; }
+    small { color: #5e6e8c; font-size: 12px; }
+    .mtm { margin-top: 10px; }
+    .mtl { margin-top: 20px; }
+    .mtxl { margin-top: 30px; }
+  </style>
+</head>
+<body style="font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;">
+  <img class="logo" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light-small.png" alt="Sourcegraph logo">
+  <p>
+    <strong>{{.FromDisplayName}}</strong> (@{{.FromUserName}}) invited you to join the <strong>{{.OrgName}}</strong> organization on Sourcegraph.
+  </p>
+  <p class="mtxl">
+    <strong>New to Sourcegraph?</strong> Sourcegraph helps your team to learn and understand your codebase quickly, and share code via links, speeding up team collaboration even while apart.
+  </p>
+  <p>
+    <a class="btn mtm" href="{{.InvitationUrl}}">Accept invite</a>
+  </p>
+  <p class="smaller">Or visit this link in your browser: <a href="{{.InvitationUrl}}">{{.InvitationUrl}}</a></p>
+  <small>
+  <p class="mtl">
+    This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
+  </p>
+  <p class="mtl">
+    <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
+    <a href="https://about.sourcegraph.com/privacy">Privacy</a>
+  </p>
+  <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
+  </small>
+</body>
+</html>
 `,
 })
