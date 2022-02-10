@@ -1,10 +1,13 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { QueryResult } from '@apollo/client'
+
+
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
-import { FetchFeatureFlagsResult } from '../graphql-operations'
+import { FetchFeatureFlagsResult, OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
 
 import { getOverrideKey } from './lib/getOverrideKey'
 
@@ -59,6 +62,46 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
             return result
         })
     )
+}
+
+export type OrgFlagOverride = {
+    namespace: string
+    flagName: string
+    value: boolean
+}
+
+/**
+ * Fetches all organization feature flag overrides for the current user
+ */
+export function fetchOrgOverrides(): {data: OrgFlagOverride[], loading: boolean} {
+    const { data, loading } = useQuery<OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables>(
+        gql`query OrgFeatureFlagOverrides {
+            organizationFeatureFlagOverrides {
+                namespace { id },
+                targetFlag {
+                    ... on FeatureFlagBoolean {
+                        name
+                    }
+                    ... on FeatureFlagRollout {
+                        name
+                    }
+                },
+                value
+            }
+        }`, {fetchPolicy: 'cache-and-network'}
+    )
+
+    if (!data) {
+        return {data: [], loading}
+    }
+
+    return {data: data?.organizationFeatureFlagOverrides.map(value => {
+        return {
+            namespace: atob(value.namespace.id),
+            flagName: value.targetFlag.name,
+            value: value.value
+        }
+    }), loading}
 }
 
 export interface FeatureFlagProps {

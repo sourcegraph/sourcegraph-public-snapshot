@@ -159,6 +159,20 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 	return result, nil
 }
 
+func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
+	user, err := backend.CurrentUser(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	flags, err := database.FeatureFlags(r.db).GetOrgOverridesForUser(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return overridesToResolvers(r.db, flags), nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
