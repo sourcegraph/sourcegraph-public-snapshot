@@ -56,8 +56,8 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	UpdateWebhookAction(_ context.Context, id int64, enabled bool, url string) (*WebhookAction, error)
-	CreateWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*WebhookAction, error)
+	UpdateWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error)
+	CreateWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*WebhookAction, error)
 	DeleteWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountWebhookActions(ctx context.Context, monitorID int64) (int, error)
 	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)

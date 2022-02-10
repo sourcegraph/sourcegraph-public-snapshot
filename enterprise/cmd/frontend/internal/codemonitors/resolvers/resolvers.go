@@ -254,7 +254,7 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.Webhook != nil:
-			_, err := r.db.CodeMonitors().CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.URL)
+			_, err := r.db.CodeMonitors().CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.IncludeResults, a.Webhook.URL)
 			if err != nil {
 				return err
 			}
@@ -545,7 +545,7 @@ func (r *Resolver) updateWebhookAction(ctx context.Context, args graphqlbackend.
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
 	return err
 }
 
@@ -1090,6 +1090,10 @@ func (m *monitorWebhook) ID() graphql.ID {
 
 func (m *monitorWebhook) Enabled() bool {
 	return m.WebhookAction.Enabled
+}
+
+func (m *monitorWebhook) IncludeResults() bool {
+	return m.WebhookAction.IncludeResults
 }
 
 func (m *monitorWebhook) URL() string {

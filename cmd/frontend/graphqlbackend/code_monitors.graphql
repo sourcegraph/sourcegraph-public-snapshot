@@ -364,6 +364,10 @@ type MonitorWebhook implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
+    """
     The endpoint the webhook event will be sent to
     """
     url: String!
@@ -589,6 +593,10 @@ input MonitorWebhookInput {
     Whether the webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
     """
     The URL that will receive a payload when the action is triggered.
     """
