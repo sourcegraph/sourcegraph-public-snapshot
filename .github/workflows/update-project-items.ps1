@@ -74,7 +74,8 @@ switch ($github.event_name) {
                     -Fields @(
                         @{ title = 'Size'; value = $item.Fields['Size 🔵']; short = $true },
                         @{ title = 'Importance'; value = $item.Fields['Importance']; short = $true },
-                        @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true }
+                        @{ title = 'Labels'; value = $item.content.labels | ForEach-Object name | Join-String -Separator ', '; short = $true },
+                        @{ title = 'Assignee'; value = $item.content.assignees | ForEach-Object login | Join-String -Separator ', '; short = $true }
                     ) `
                     -Fallback $fallback |
                     New-SlackMessage -Username 'Iteration Bot' -IconEmoji ':robot:' -Channel $SlackChannel |
