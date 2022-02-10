@@ -264,7 +264,7 @@ func testGCSClient(client gcsAPI, manageBucket bool) Store {
 }
 
 func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {
-	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, newOperations(&observation.TestContext))
+	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, NewOperations(&observation.TestContext, "test", "brittlestore"))
 }
 
 type nopCloser struct {

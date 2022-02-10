@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,7 +28,7 @@ type Store interface {
 	Delete(ctx context.Context, key string) error
 }
 
-var storeConstructors = map[string]func(ctx context.Context, config *Config, operations *operations) (Store, error){
+var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Store, error){
 	"s3":    newS3FromConfig,
 	"minio": newS3FromConfig,
 	"gcs":   newGCSFromConfig,
@@ -38,8 +37,8 @@ var storeConstructors = map[string]func(ctx context.Context, config *Config, ope
 // CreateLazy initialize a new store from the given configuration that is initialized
 // on it first method call. If initialization fails, all methods calls will return a
 // the initialization error.
-func CreateLazy(ctx context.Context, config *Config, observationContext *observation.Context) (Store, error) {
-	store, err := create(ctx, config, observationContext)
+func CreateLazy(ctx context.Context, config Config, ops *Operations) (Store, error) {
+	store, err := create(ctx, config, ops)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +47,13 @@ func CreateLazy(ctx context.Context, config *Config, observationContext *observa
 }
 
 // create creates but does not initialize a new store from the given configuration.
-func create(ctx context.Context, config *Config, observationContext *observation.Context) (Store, error) {
+func create(ctx context.Context, config Config, ops *Operations) (Store, error) {
 	newStore, ok := storeConstructors[config.Backend]
 	if !ok {
 		return nil, errors.Errorf("unknown upload store backend '%s'", config.Backend)
 	}
 
-	store, err := newStore(ctx, config, newOperations(observationContext))
+	store, err := newStore(ctx, normalizeConfig(config), ops)
 	if err != nil {
 		return nil, err
 	}
