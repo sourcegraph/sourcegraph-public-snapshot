@@ -66,13 +66,13 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
 }
 
 export type OrgFlagOverride = {
-    namespace: string
+    orgID: string
     flagName: string
     value: boolean
 }
 
 /**
- * Fetches all organization feature flag overrides for the current user
+ * Fetches all feature flag overrides for organizations that the current user is a member of
  */
 export function fetchOrgOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
     const { data, loading } = useQuery<OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables>(
@@ -104,7 +104,7 @@ export function fetchOrgOverrides(): { data: OrgFlagOverride[]; loading: boolean
     return {
         data: data?.organizationFeatureFlagOverrides.map(value => {
             return {
-                namespace: atob(value.namespace.id),
+                orgID: atob(value.namespace.id).split(':')[1],
                 flagName: value.targetFlag.name,
                 value: value.value,
             }
