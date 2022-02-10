@@ -30,6 +30,6 @@ $$
             DROP EXTENSION IF EXISTS timescaledb;
         END IF;
     END
-$$
+$$;
 
 COMMIT;
