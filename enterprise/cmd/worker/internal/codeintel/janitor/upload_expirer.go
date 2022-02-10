@@ -226,7 +226,11 @@ func (e *uploadExpirer) handleUploads(
 		}
 	}
 
-	e.metrics.numUploadsExpired.Add(float64(len(expiredUploadIDs)))
+	if count := len(expiredUploadIDs); count > 0 {
+		log15.Info("Expiring codeintel uploads", "count", count)
+		e.metrics.numUploadsExpired.Add(float64(count))
+	}
+
 	return err
 }
 
