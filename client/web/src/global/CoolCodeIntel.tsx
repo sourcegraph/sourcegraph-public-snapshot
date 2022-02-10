@@ -303,25 +303,24 @@ const SideReferencesLists: React.FunctionComponent<
         hover: Maybe<HoverFields>
     }
 > = props => {
-    const { references, definitions, implementations, hover } = props
-    const references_: Location[] = useMemo(() => references.nodes.map(buildLocation), [references])
-    const defs: Location[] = useMemo(() => definitions.nodes.map(buildLocation), [definitions])
-    const impls: Location[] = useMemo(() => implementations.nodes.map(buildLocation), [implementations])
+    const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
+    const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
+    const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
 
     return (
         <>
-            {hover && (
+            {props.hover && (
                 <Markdown
                     className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
+                    dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
             <CardHeader>
-                <h4 className="py-1 px-1 mb-0">Definitions</h4>
+                <h4 className="p-1 mb-0">Definitions</h4>
             </CardHeader>
-            {defs.length > 0 ? (
+            {definitions.length > 0 ? (
                 <LocationsList
-                    locations={defs}
+                    locations={definitions}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
                     filter={props.filter}
@@ -338,11 +337,11 @@ const SideReferencesLists: React.FunctionComponent<
                 </p>
             )}
             <CardHeader>
-                <h4 className="py-1 px-1 mb-0">References</h4>
+                <h4 className="p-1 mb-0">References</h4>
             </CardHeader>
-            {references_.length > 0 ? (
+            {references.length > 0 ? (
                 <LocationsList
-                    locations={references_}
+                    locations={references}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
                     filter={props.filter}
@@ -358,13 +357,13 @@ const SideReferencesLists: React.FunctionComponent<
                     )}
                 </p>
             )}
-            {impls.length > 0 && (
+            {implementations.length > 0 && (
                 <>
                     <CardHeader>
-                        <h4 className="py-1 px-1 mb-0">Implementations</h4>
+                        <h4 className="p-1 mb-0">Implementations</h4>
                     </CardHeader>
                     <LocationsList
-                        locations={impls}
+                        locations={implementations}
                         activeLocation={props.activeLocation}
                         setActiveLocation={props.setActiveLocation}
                         filter={props.filter}
@@ -411,7 +410,14 @@ const SideBlob: React.FunctionComponent<
 
     // If we received an error before we had received any data
     if (error && !data) {
-        throw new Error(error.message)
+        return (
+            <div>
+                <p className="text-danger">
+                    Loading <code>{props.activeLocation.resource.path}</code> failed:
+                </p>
+                <pre>{error.message}</pre>
+            </div>
+        )
     }
 
     // If there weren't any errors and we just didn't receive any data
@@ -479,47 +485,50 @@ const buildFileURL = (location: Location): string => {
     return path
 }
 
+const getLineContent = (location: Location): string => {
+    const range = location.range
+    if (range !== undefined) {
+        return location.lines[range.start?.line].trim()
+    }
+    return ''
+}
+
 const LocationsList: React.FunctionComponent<{
     locations: Location[]
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     filter: string | undefined
 }> = ({ locations, activeLocation, setActiveLocation, filter }) => {
-    const byFile: Record<string, Location[]> = {}
-    for (const location of locations) {
-        if (byFile[location.resource.path] === undefined) {
-            byFile[location.resource.path] = []
+    const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
+        const byFile: Record<string, Location[]> = {}
+        for (const location of locations) {
+            if (byFile[location.resource.path] === undefined) {
+                byFile[location.resource.path] = []
+            }
+            byFile[location.resource.path].push(location)
         }
-        byFile[location.resource.path].push(location)
-    }
 
-    const locationGroups: LocationGroup[] = []
-    Object.keys(byFile).map(path => {
-        const references = byFile[path]
-        const repoName = references[0].resource.repository.name
-        locationGroups.push({ path, locations: references, repoName })
-    })
+        const locationsGroups: LocationGroup[] = []
+        Object.keys(byFile).map(path => {
+            const references = byFile[path]
+            const repoName = references[0].resource.repository.name
+            locationsGroups.push({ path, locations: references, repoName })
+        })
 
-    const byRepo: Record<string, LocationGroup[]> = {}
-    for (const group of locationGroups) {
-        if (byRepo[group.repoName] === undefined) {
-            byRepo[group.repoName] = []
+        const byRepo: Record<string, LocationGroup[]> = {}
+        for (const group of locationsGroups) {
+            if (byRepo[group.repoName] === undefined) {
+                byRepo[group.repoName] = []
+            }
+            byRepo[group.repoName].push(group)
         }
-        byRepo[group.repoName].push(group)
-    }
-    const repoLocationGroups: RepoLocationGroup[] = []
-    Object.keys(byRepo).map(repoName => {
-        const referenceGroups = byRepo[repoName]
-        repoLocationGroups.push({ repoName, referenceGroups })
-    })
-
-    const getLineContent = (location: Location): string => {
-        const range = location.range
-        if (range !== undefined) {
-            return location.lines[range.start?.line].trim()
-        }
-        return ''
-    }
+        const repoLocationGroups: RepoLocationGroup[] = []
+        Object.keys(byRepo).map(repoName => {
+            const referenceGroups = byRepo[repoName]
+            repoLocationGroups.push({ repoName, referenceGroups })
+        })
+        return repoLocationGroups
+    }, [locations])
 
     return (
         <>
@@ -545,7 +554,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
     filter: string | undefined
 }> = ({ repoReferenceGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
-    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
     return (
         <>
