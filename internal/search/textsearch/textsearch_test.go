@@ -1,4 +1,4 @@
-package unindexed
+package textsearch
 
 import (
 	"context"
