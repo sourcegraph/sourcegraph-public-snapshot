@@ -70,7 +70,7 @@ EOF
   echo "$data" | curl \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
-    --header "Authorization: Token token=\"J6giCC8KZFYoVnvgojYu1ESG\";" \
+    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_FRONTEND_E2E_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
 
@@ -82,5 +82,7 @@ EOF
 
   return "$test_exit_code"
 }
+
+BUILDKITE_ANALYTICS_FRONTEND_E2E_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_FRONTEND_E2E_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
 qa_test
