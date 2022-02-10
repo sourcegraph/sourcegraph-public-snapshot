@@ -227,7 +227,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				} else {
 					rt = runtype.Compute("", fmt.Sprintf("%s/", args[0]), nil, runtype.RunTypeFilter{PrefixOnly: true})
 				}
-				log15.Info("runtype", "rt", rt)
 				if rt != runtype.PullRequest {
 					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
 					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", branch)))
@@ -236,7 +235,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					if force {
 						gitArgs = append(gitArgs, "--force")
 					}
-					log15.Info("gitarsg", "a", gitArgs)
 					gitOutput, err := run.GitCmd(gitArgs...)
 					if err != nil {
 						return err
