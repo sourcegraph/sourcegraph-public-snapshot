@@ -1,9 +1,6 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { QueryResult } from '@apollo/client'
-
-
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
