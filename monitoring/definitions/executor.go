@@ -24,7 +24,7 @@ func Executor() *monitoring.Container {
 			{
 				Label: "Compute instance",
 				Name:  "instance",
-				Query: "label_values(node_exporter_build_info{job=\"sourcegraph-code-intel-indexer-nodes\"}, instance)",
+				Query: "label_values(node_exporter_build_info{job=\"sourcegraph-executor-nodes\"}, instance)",
 			},
 		},
 		Groups: []monitoring.Group{
