@@ -14,10 +14,6 @@ BEGIN;
 -- Note: This data is by design reproducible, so there is no risk of permanent data loss here. Any and all data
 -- will be queued and regenerated as soon as code insights starts up.
 
--- Drop all Timescale chunks prior to now. This will reduce a bloated number of partitions caused by old
--- data generation patterns. This is a Timescale specific thing.
-SELECT drop_chunks('series_points', CURRENT_TIMESTAMP::DATE);
-
 -- Clean up the remaining records if any exist.
 TRUNCATE series_points CASCADE;
 
@@ -29,3 +25,5 @@ TRUNCATE commit_index_metadata;
 -- Update all of the underlying insights that may have been synced to reset metadata and rebuild their data.
 update insight_series set created_at = current_timestamp, backfill_queued_at = null, next_recording_after = date_trunc('month', current_date) + interval '1 month';
 COMMIT;
+
+-- This file used to contain TimescaleDB specific migrations that have seen been deprecated.
