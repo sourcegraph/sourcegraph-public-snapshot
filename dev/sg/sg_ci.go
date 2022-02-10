@@ -228,9 +228,13 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					rt = runtype.PullRequest
 				} else {
 					rt = runtype.Compute("", fmt.Sprintf("%s/", args[0]), nil, runtype.RunTypeFilter{PrefixOnly: true})
+				}
+				log15.Info("runtype", "rt", rt)
+				if rt != runtype.PullRequest {
+					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
 					stdout.Out.WriteLine(output.Line("", output.StylePending, fmt.Sprintf("Pushing to main-dry-branch:%s", branch)))
 					force := *ciBuildForcePushFlag
-					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:%s", commit, branch)}
+					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch)}
 					if force {
 						gitArgs = append(gitArgs, "--force")
 					}
@@ -240,10 +244,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						return err
 					}
 					stdout.Out.WriteLine(output.Line("", output.StyleSuccess, gitOutput))
-				}
-				log15.Info("runtype", "rt", rt)
-				if rt != runtype.PullRequest {
-					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
 				}
 
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
@@ -266,10 +266,22 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				pipeline := "sourcegraph"
 				var build *buildkite.Build
 				if rt != runtype.PullRequest {
-					build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
-					if err != nil {
-						return errors.Wrap(err, "GetMostRecentBuild")
+					updateTicker := time.NewTicker(1 * time.Second)
+					for i := 0; i < 30; i++ {
+						// attempt to fetch the new build - it might take some time for the hooks so we will
+						// retry up to 30 times (roughly 30 seconds)
+						if build != nil && build.Commit != nil && *build.Commit == commit {
+							break
+						}
+						select {
+						case <-updateTicker.C:
+							build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
+							if err != nil {
+								return errors.Wrap(err, "GetMostRecentBuild")
+							}
+						}
 					}
+
 				} else {
 					build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
 					if err != nil {
