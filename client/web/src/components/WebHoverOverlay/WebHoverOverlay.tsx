@@ -93,7 +93,9 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
                         return
                     }
 
+                    console.log(coolCodeIntelEnabled, onTokenClick, hoveredToken)
                     if (coolCodeIntelEnabled && onTokenClick !== undefined && hoveredToken !== undefined) {
+                        console.log('Calling ontoken click inside web hover!')
                         onTokenClick(hoveredToken)
                     } else {
                         const actionType = action === definitionAction ? 'definition' : 'reference'
@@ -120,6 +122,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     return (
         <HoverOverlay
             {...propsToUse}
+            actionsOrError={null}
             className={styles.webHoverOverlay}
             actionItemClassName="btn btn-sm btn-secondary border-0"
             onAlertDismissed={onAlertDismissed}

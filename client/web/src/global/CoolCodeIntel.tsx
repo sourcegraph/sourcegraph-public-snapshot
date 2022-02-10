@@ -70,12 +70,16 @@ export interface GlobalCoolCodeIntelProps {
     onTokenClick?: (clickedToken: CoolClickedToken) => void
 }
 
-export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
+<<<<<<< HEAD
 interface CoolCodeIntelProps
     extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar' | 'coolCodeIntelEnabled'> {
     clickedToken?: CoolClickedToken
 }
+=======
+interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'> {}
+>>>>>>> 531a7362e7 (Fix callback)
 
 <<<<<<< HEAD
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -105,15 +109,21 @@ type CoolCodeIntelTabID = 'references' | 'token' | 'definition'
 interface CoolCodeIntelTab {
     id: CoolCodeIntelTabID
     label: string
-    component: React.ComponentType<CoolCodeIntelProps>
+    component: React.ComponentType<CoolCodePanelTabProps>
 }
 
-export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+interface CoolCodePanelTabProps extends CoolCodeIntelProps {
+    clickedToken?: CoolClickedToken
+}
+
+export const ReferencesPanel: React.FunctionComponent<CoolCodePanelTabProps> = props => {
     if (!props.clickedToken) {
         return null
     }
 
-    return <ReferencesList clickedToken={props.clickedToken} {...props} />
+    console.log('references panel', props)
+
+    return <ReferencesList {...props} />
 }
 
 interface Location {
@@ -162,6 +172,7 @@ interface LocationGroup {
     locations: Location[]
 }
 
+<<<<<<< HEAD
 export const ReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
@@ -169,6 +180,13 @@ export const ReferencesList: React.FunctionComponent<
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location>()
     const [filter, setFilter] = useState<string>()
+=======
+interface ReferencesListProps extends CoolCodePanelTabProps {}
+
+export const ReferencesList: React.FunctionComponent<ReferencesListProps> = props => {
+    const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
+    const [filter, setFilter] = useState<string | undefined>(undefined)
+>>>>>>> 531a7362e7 (Fix callback)
     const debouncedFilter = useDebounce(filter, 150)
 
     useEffect(() => {
@@ -228,6 +246,7 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
+<<<<<<< HEAD
 export const SideReferences: React.FunctionComponent<
     CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
@@ -236,6 +255,15 @@ export const SideReferences: React.FunctionComponent<
         filter: string | undefined
     }
 > = props => {
+=======
+interface SideReferencesProps extends ReferencesListProps {
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+}
+
+export const SideReferences: React.FunctionComponent<SideReferencesProps> = props => {
+>>>>>>> 531a7362e7 (Fix callback)
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
@@ -297,6 +325,7 @@ export const SideReferences: React.FunctionComponent<
     )
 }
 
+<<<<<<< HEAD
 const SideReferencesLists: React.FunctionComponent<
     CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
@@ -312,6 +341,29 @@ const SideReferencesLists: React.FunctionComponent<
     const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
     const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
     const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
+=======
+interface LSIFLocationResult {
+    __typename?: 'LocationConnection'
+    nodes: ({ __typename?: 'Location' } & LocationFields)[]
+    pageInfo: { __typename?: 'PageInfo'; endCursor: Maybe<string> }
+}
+
+interface SideReferencesListsProps extends SideReferencesProps {
+    references: LSIFLocationResult
+    definitions: Omit<LSIFLocationResult, 'pageInfo'>
+    implementations: LSIFLocationResult
+    hover: Maybe<{
+        __typename?: 'Hover'
+        markdown: { __typename?: 'Markdown'; html: string; text: string }
+    }>
+}
+
+export const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
+    const { references, definitions, implementations, hover } = props
+    const references_: Location[] = useMemo(() => references.nodes.map(buildLocation), [references])
+    const defs: Location[] = useMemo(() => definitions.nodes.map(buildLocation), [definitions])
+    const impls: Location[] = useMemo(() => implementations.nodes.map(buildLocation), [implementations])
+>>>>>>> 531a7362e7 (Fix callback)
 
     return (
         <>
@@ -380,11 +432,19 @@ const SideReferencesLists: React.FunctionComponent<
     )
 }
 
+<<<<<<< HEAD
 const SideBlob: React.FunctionComponent<
     CoolCodeIntelProps & {
         activeLocation: Location
     }
 > = props => {
+=======
+interface SideBlobProps extends CoolCodePanelTabProps {
+    activeLocation: Location
+}
+
+export const SideBlob: React.FunctionComponent<SideBlobProps> = props => {
+>>>>>>> 531a7362e7 (Fix callback)
     const { data, error, loading } = useQuery<
         CoolCodeIntelHighlightedBlobResult,
         CoolCodeIntelHighlightedBlobVariables
@@ -446,7 +506,10 @@ const SideBlob: React.FunctionComponent<
         <Blob
             {...props}
             onTokenClick={(token: CoolClickedToken) => {
+                console.log('Called with', token)
+                console.log(props.onTokenClick)
                 if (props.onTokenClick) {
+                    console.log('calling onTokenClick!!')
                     props.onTokenClick(token)
                 }
             }}
@@ -677,19 +740,23 @@ const ReferenceGroup: React.FunctionComponent<{
 
 const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
-const ResizableCoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
-    props => (
-        <Resizable
-            className={styles.resizablePanel}
-            handlePosition="top"
-            defaultSize={350}
-            storageKey="panel-size"
-            element={<CoolCodeIntelPanel {...props} />}
-        />
-    )
-)
+interface ResizableCoolCodeIntelPanelProps extends CoolCodeIntelPanelProps, CoolCodePanelTabProps {}
 
-const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(props => {
+export const ResizableCoolCodeIntelPanel = React.memo<ResizableCoolCodeIntelPanelProps>(props => (
+    <Resizable
+        className={styles.resizablePanel}
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<CoolCodeIntelPanel {...props} />}
+    />
+))
+
+interface CoolCodeIntelPanelProps extends CoolCodeIntelProps {
+    handlePanelClose: (closed: boolean) => void
+}
+
+export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
@@ -799,7 +866,14 @@ export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelP
             filePath,
         }
         if (commitID === undefined || revision === undefined) {
-            return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
+            return (
+                <CoolCodeIntelPanelUrlBased
+                    {...props}
+                    {...urlBasedToken}
+                    handlePanelClose={handlePanelClose}
+                    onTokenClick={setToken}
+                />
+            )
         }
 
         setToken({ ...urlBasedToken, revision, commitID })
