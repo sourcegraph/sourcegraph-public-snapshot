@@ -4,7 +4,7 @@ import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
 import { defer, Observable, of, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -23,7 +23,7 @@ import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
-import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
+import { MutationRecordLike, querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -423,7 +423,7 @@ export interface GithubCodeHost extends CodeHost {
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
-    enhanceSearchPage: (sourcegraphURL: string) => Subscription
+    enhanceSearchPage: (sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>) => Subscription
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
@@ -488,14 +488,29 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
     return queryParameters.join('+')
 }
 
+const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
+    let element = document.querySelector<HTMLElement>(`#${id}`)
+
+    if (element) {
+        return element
+    }
+
+    element = document.createElement('div')
+    element.setAttribute('id', id)
+    element.classList.add(...className.split(/\s/gi))
+
+    return element
+}
+
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
-function enhanceSearchPage(sourcegraphURL: string): Subscription {
+function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>): Subscription {
     if (!isSearchPage()) {
         return new Subscription()
     }
 
+    // TODO: cleanup button on unsubscribe
     const renderSourcegraphButton = ({
         container,
         className = '',
@@ -543,8 +558,7 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
             )
 
             if (pageSearchInput && pageSearchFormSubmitButton) {
-                const buttonContainer = document.createElement('div')
-                buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
+                const buttonContainer = queryByIdOrCreate('pageSearchFormSourcegraphButton', 'ml-2 d-none d-md-block')
                 pageSearchFormSubmitButton.after(buttonContainer)
 
                 renderSourcegraphButton({
@@ -568,8 +582,10 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
             )
 
             if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
-                const buttonContainer = document.createElement('div')
-                buttonContainer.classList.add('ml-auto', 'd-none', 'd-lg-block')
+                const buttonContainer: HTMLElement = queryByIdOrCreate(
+                    'headerSearchInputSourcegraphButton',
+                    'ml-auto d-none d-lg-block'
+                )
 
                 if (emptyResultsContainer) {
                     buttonContainer.classList.add('mt-2')
@@ -587,32 +603,22 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
             }
         }
 
-        let mutationObserver: MutationObserver
-        const subscription = new Subscription(() => mutationObserver?.disconnect())
-        subscription.add(
-            new Observable(subscriber => {
-                mutationObserver = new MutationObserver(mutations => subscriber.next(mutations))
-                mutationObserver.observe(document, { subtree: true, childList: true })
-            })
-                .pipe(
-                    startWith(undefined),
-                    map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
-                    filter(Boolean),
-                    distinctUntilChanged(),
-                    filter(() => {
-                        const githubResultType = getGithubResultType()
-                        return (
-                            githubResultType === 'repositories' ||
-                            githubResultType === 'commits' ||
-                            githubResultType === 'code' ||
-                            (githubResultType === '' && isGlobalSearchPage())
-                        )
-                    })
-                )
-                .subscribe(() => renderSearchResultsPageButtons())
-        )
-
-        return subscription
+        return mutations
+            .pipe(
+                map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
+                filter(Boolean),
+                distinctUntilChanged(),
+                filter(() => {
+                    const githubResultType = getGithubResultType()
+                    return (
+                        githubResultType === 'repositories' ||
+                        githubResultType === 'commits' ||
+                        githubResultType === 'code' ||
+                        (githubResultType === '' && isGlobalSearchPage())
+                    )
+                })
+            )
+            .subscribe(() => renderSearchResultsPageButtons())
     }
 
     /* Simple and advanced search pages */
@@ -621,8 +627,7 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
     const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
 
     if (searchInputContainer && inputElement) {
-        const buttonContainer = document.createElement('div')
-        buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
+        const buttonContainer = queryByIdOrCreate('searchInputSourcegraphButton', 'ml-0 ml-md-2 mt-2 mt-md-0')
         searchInputContainer?.append(buttonContainer)
 
         renderSourcegraphButton({
