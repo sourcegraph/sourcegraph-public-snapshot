@@ -261,7 +261,50 @@ func (s *Store) CalculateVisibleUploads(
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
+) error {
+	return s.calculateVisibleUploadsInternal(
+		ctx,
+		repositoryID,
+		commitGraph,
+		refDescriptions,
+		maxAgeForNonStaleBranches,
+		maxAgeForNonStaleTags,
+		dirtyToken,
+		sqlf.Sprintf("transaction_timestamp()"),
+	)
+}
+
+func (s *Store) calculateVisibleUploadsWithTime(
+	ctx context.Context,
+	repositoryID int,
+	commitGraph *gitdomain.CommitGraph,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
+	dirtyToken int,
 	now time.Time,
+) error {
+	return s.calculateVisibleUploadsInternal(
+		ctx,
+		repositoryID,
+		commitGraph,
+		refDescriptions,
+		maxAgeForNonStaleBranches,
+		maxAgeForNonStaleTags,
+		dirtyToken,
+		sqlf.Sprintf("%s", now),
+	)
+}
+
+func (s *Store) calculateVisibleUploadsInternal(
+	ctx context.Context,
+	repositoryID int,
+	commitGraph *gitdomain.CommitGraph,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
+	dirtyToken int,
+	now *sqlf.Query,
 ) (err error) {
 	ctx, trace, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{

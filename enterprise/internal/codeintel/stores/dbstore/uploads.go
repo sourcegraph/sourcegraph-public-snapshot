@@ -294,6 +294,11 @@ type GetUploadsOptions struct {
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int
+
+	// InCommitGraph ensures that the repository commit graph was updated strictly
+	// after this upload was processed. This condition helps us filter out new uploads
+	// that we might later mistake for unreachable.
+	InCommitGraph bool
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -308,6 +313,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
 		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		log.Bool("inCommitGraph", opts.InCommitGraph),
 		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
@@ -321,7 +327,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	conds := make([]*sqlf.Query, 0, 11)
+	conds := make([]*sqlf.Query, 0, 12)
 	cteDefinitions := make([]cteDefinition, 0, 2)
 
 	if opts.RepositoryID != 0 {
@@ -371,6 +377,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
+	}
+	if opts.InCommitGraph {
+		conds = append(conds, sqlf.Sprintf("u.finished_at < (SELECT updated_at FROM lsif_dirty_repositories ldr WHERE ldr.repository_id = u.repository_id)"))
 	}
 	if opts.LastRetentionScanBefore != nil {
 		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))

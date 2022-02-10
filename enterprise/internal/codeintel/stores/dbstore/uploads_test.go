@@ -292,21 +292,21 @@ func TestGetUploads(t *testing.T) {
 
 	insertUploads(t, db,
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		Upload{ID: 2, UploadedAt: t2, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
 		Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
 		Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "lsif-tsc"},
 		Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		Upload{ID: 7, UploadedAt: t7, Root: "sub1/", Indexer: "lsif-tsc"},
-		Upload{ID: 8, UploadedAt: t8, Indexer: "lsif-tsc"},
+		Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-tsc"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		Upload{ID: 10, UploadedAt: t10, Root: "sub1/", Indexer: "lsif-tsc"},
-		Upload{ID: 11, UploadedAt: t11, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-tsc"},
 
 		// Deleted duplicates
-		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "deleted"},
-		Upload{ID: 13, UploadedAt: t2, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
-		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "deleted"},
+		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
+		Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
@@ -322,6 +322,13 @@ func TestGetUploads(t *testing.T) {
 		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
+	if err := store.Exec(ctx, sqlf.Sprintf(
+		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
+		50,
+		t5,
+	)); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 
 	type testCase struct {
 		repositoryID   int
@@ -332,6 +339,7 @@ func TestGetUploads(t *testing.T) {
 		dependentOf    int
 		uploadedBefore *time.Time
 		uploadedAfter  *time.Time
+		inCommitGraph  bool
 		oldestFirst    bool
 		expectedIDs    []int
 	}
@@ -350,6 +358,7 @@ func TestGetUploads(t *testing.T) {
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
+		{inCommitGraph: true, expectedIDs: []int{10, 11}},
 		{dependencyOf: 7, expectedIDs: []int{8}},
 		{dependentOf: 7, expectedIDs: []int{10}},
 		{dependencyOf: 8, expectedIDs: []int{}},
@@ -382,6 +391,7 @@ func TestGetUploads(t *testing.T) {
 				DependentOf:    testCase.dependentOf,
 				UploadedBefore: testCase.uploadedBefore,
 				UploadedAfter:  testCase.uploadedAfter,
+				InCommitGraph:  testCase.inCommitGraph,
 				OldestFirst:    testCase.oldestFirst,
 				Limit:          3,
 				Offset:         lo,
@@ -1145,7 +1155,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 		}
 
 		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+		if err := store.calculateVisibleUploadsWithTime(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
 			t.Fatalf("unexpected error updating commit graph: %s", err)
 		}
 	}
