@@ -233,7 +233,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if len(args) == 0 {
 					rt = runtype.PullRequest
 				} else {
-					rt = runtype.Compute("", fmt.Sprintf("%s/", args[0]), nil, runtype.RunTypeFilter{PrefixOnly: true})
+					rt = runtype.Compute("", fmt.Sprintf("%s/%s", args[0], branch), nil)
 				}
 				if rt != runtype.PullRequest {
 					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
@@ -297,7 +297,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
-			ShortUsage: fmt.Sprintf("sg ci build %s", getBuildTypes()),
+			ShortUsage: fmt.Sprintf("sg ci build [%s]", strings.Join(getAllowedBuildTypeArgs(), "|")),
 		}, {
 			Name:      "logs",
 			ShortHelp: "Get logs from CI builds.",
@@ -464,15 +464,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 	}
 )
 
-func getBuildTypes() string {
-	sb := strings.Builder{}
-	sb.WriteString("[")
+func getAllowedBuildTypeArgs() []string {
+	var results []string
 	for _, rt := range runtype.RunTypes(runtype.RunTypeFilter{PrefixOnly: true}) {
-		sb.WriteString(strings.TrimSuffix(rt.Matcher().Branch, "/"))
-		sb.WriteString("|")
+		results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
 	}
-	sb.WriteString("]")
-	return sb.String()
+	return results
 }
 
 func allLinesPrefixed(lines []string, match string) bool {

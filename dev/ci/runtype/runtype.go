@@ -50,9 +50,9 @@ type RunTypeFilter struct {
 }
 
 // Compute determines what RunType matches the given parameters.
-func Compute(tag, branch string, env map[string]string, args RunTypeFilter) RunType {
+func Compute(tag, branch string, env map[string]string) RunType {
 	for runType := PullRequest + 1; runType < None; runType += 1 {
-		if runType.Matcher().Matches(tag, branch, env) && computeFilter(args, runType) {
+		if runType.Matcher().Matches(tag, branch, env) {
 			return runType
 		}
 	}
@@ -60,7 +60,7 @@ func Compute(tag, branch string, env map[string]string, args RunTypeFilter) RunT
 	return PullRequest
 }
 
-func computeFilter(args RunTypeFilter, runType RunType) bool {
+func runTimeFilter(args RunTypeFilter, runType RunType) bool {
 	if args.PrefixOnly {
 		return runType.Matcher().isPrefixMatcher()
 	}
@@ -72,7 +72,7 @@ func computeFilter(args RunTypeFilter, runType RunType) bool {
 func RunTypes(args RunTypeFilter) []RunType {
 	var results []RunType
 	for runType := PullRequest + 1; runType < None; runType += 1 {
-		if computeFilter(args, runType) {
+		if runTimeFilter(args, runType) {
 			results = append(results, runType)
 		}
 	}
