@@ -32,8 +32,21 @@ func Ignore(err error, pred ErrorPredicate) error {
 	return err
 }
 
+// ErrorPredicate is a function type that returns whether an error matches a given condition
 type ErrorPredicate func(error) bool
 
-func IsContextCanceled(err error) bool {
-	return Is(err, context.Canceled)
+// HasTypePred returns an ErrorPredicate that returns true for errors that unwrap to an error with the same type as target
+func HasTypePred(target error) ErrorPredicate {
+	return func(err error) bool {
+		return HasType(err, target)
+	}
 }
+
+// IsPred returns an ErrorPredicate that returns true for errors that uwrap to the target error
+func IsPred(target error) ErrorPredicate {
+	return func(err error) bool {
+		return Is(err, target)
+	}
+}
+
+var IsContextCanceled = IsPred(context.Canceled)
