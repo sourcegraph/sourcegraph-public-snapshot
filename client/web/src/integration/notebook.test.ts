@@ -378,4 +378,18 @@ describe('Search Notebook', () => {
         )
         expect(titleText).toEqual('Notebook Title Edited')
     })
+
+    it('Should open the share dialog, switch the share option, and close the dialog', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="share-notebook-button"]', { visible: true })
+
+        await driver.page.click('[data-testid="share-notebook-button"]')
+        await driver.page.waitForSelector('[data-testid="share-notebook-options-dropdown-toggle"]', { visible: true })
+
+        await driver.page.click('[data-testid="share-notebook-options-dropdown-toggle"]')
+        await driver.page.waitForSelector('[data-testid="share-notebook-option-test-true"]')
+        await driver.page.click('[data-testid="share-notebook-option-test-true"]')
+
+        await driver.page.click('[data-testid="share-notebook-done-button"]')
+    })
 })

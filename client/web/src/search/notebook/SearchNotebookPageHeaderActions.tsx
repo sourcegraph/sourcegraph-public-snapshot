@@ -23,7 +23,7 @@ import {
     deleteNotebookStar as _deleteNotebookStar,
 } from './backend'
 import { DeleteNotebookModal } from './DeleteNotebookModal'
-import { ShareOption } from './NotebookVisibilitySettingsDropdown'
+import { ShareOption } from './NotebookShareOptionsDropdown'
 import styles from './SearchNotebookPageHeaderActions.module.scss'
 import { ShareNotebookModal } from './ShareNotebookModal'
 
@@ -100,7 +100,12 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
             />
             {authenticatedUser && viewerCanManage && namespace && selectedShareOption && (
                 <>
-                    <Button variant="primary" onClick={toggleShareModal} className="d-flex align-items-center">
+                    <Button
+                        variant="primary"
+                        onClick={toggleShareModal}
+                        className="d-flex align-items-center"
+                        data-testid="share-notebook-button"
+                    >
                         {shareIcon} Share
                     </Button>
                     <ShareNotebookModal

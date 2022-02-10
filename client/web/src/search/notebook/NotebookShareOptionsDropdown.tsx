@@ -11,7 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
 
-import styles from './NotebookVisibilitySettingsDropdown.module.scss'
+import styles from './NotebookShareOptionsDropdown.module.scss'
 
 export interface ShareOption {
     namespaceType: 'User' | 'Org'
@@ -92,7 +92,11 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
 
     return (
         <Dropdown isOpen={isOpen} toggle={toggleOpen}>
-            <DropdownToggle className={styles.button} outline={true}>
+            <DropdownToggle
+                className={styles.button}
+                outline={true}
+                data-testid="share-notebook-options-dropdown-toggle"
+            >
                 <span className="d-flex align-items-center">
                     <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
                 </span>
@@ -104,6 +108,7 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
                         key={`${option.namespaceId}-${option.isPublic}`}
                         className="d-flex align-items-center"
                         onClick={() => onSelectShareOption(option)}
+                        data-testid={`share-notebook-option-${option.namespaceName}-${option.isPublic}`}
                     >
                         <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
                     </DropdownItem>

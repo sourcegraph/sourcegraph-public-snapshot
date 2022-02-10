@@ -6,7 +6,7 @@ import { Modal, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
-import { NotebookShareOptionsDropdown, ShareOption } from './NotebookVisibilitySettingsDropdown'
+import { NotebookShareOptionsDropdown, ShareOption } from './NotebookShareOptionsDropdown'
 import styles from './ShareNotebookModal.module.scss'
 
 interface ShareNotebookModalProps extends TelemetryProps {
@@ -96,7 +96,7 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
                 <Button className="mr-1" variant="secondary" outline={true} size="sm" onClick={toggleModal}>
                     Cancel
                 </Button>
-                <Button variant="primary" size="sm" onClick={onDoneClick}>
+                <Button variant="primary" size="sm" onClick={onDoneClick} data-testid="share-notebook-done-button">
                     Done
                 </Button>
             </div>
