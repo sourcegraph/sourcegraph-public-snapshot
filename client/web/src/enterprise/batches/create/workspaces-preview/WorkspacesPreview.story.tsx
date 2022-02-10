@@ -13,9 +13,9 @@ import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacesPreview } from './WorkspacesPreview'
 import { mockImportingChangesets, mockWorkspaces } from './WorkspacesPreview.mock'
 
-const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module).addDecorator(story => (
-    <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
-))
+const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module)
+    .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
+    .addParameters({ chromatic: { disableSnapshots: true } })
 
 const EMPTY_RESOLUTION_CONNECTION: UseConnectionResult<PreviewBatchSpecWorkspaceFields> = {
     connection: {
