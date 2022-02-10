@@ -27,6 +27,7 @@ type WebhookAction struct {
 const updateWebhookActionQuery = `
 UPDATE cm_webhooks
 SET enabled = %s,
+    include_results = %s,
 	url = %s,
 	changed_by = %s,
 	changed_at = %s
