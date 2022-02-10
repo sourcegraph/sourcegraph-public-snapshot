@@ -12,10 +12,11 @@ import (
 )
 
 type SlackWebhookAction struct {
-	ID      int64
-	Monitor int64
-	Enabled bool
-	URL     string
+	ID             int64
+	Monitor        int64
+	Enabled        bool
+	URL            string
+	IncludeResults bool
 
 	CreatedBy int32
 	CreatedAt time.Time
@@ -157,6 +158,7 @@ var slackWebhookActionColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_slack_webhooks.monitor"),
 	sqlf.Sprintf("cm_slack_webhooks.enabled"),
 	sqlf.Sprintf("cm_slack_webhooks.url"),
+	sqlf.Sprintf("cm_slack_webhooks.include_results"),
 	sqlf.Sprintf("cm_slack_webhooks.created_by"),
 	sqlf.Sprintf("cm_slack_webhooks.created_at"),
 	sqlf.Sprintf("cm_slack_webhooks.changed_by"),
@@ -184,6 +186,7 @@ func scanSlackWebhookAction(scanner dbutil.Scanner) (*SlackWebhookAction, error)
 		&w.Monitor,
 		&w.Enabled,
 		&w.URL,
+		&w.IncludeResults,
 		&w.CreatedBy,
 		&w.CreatedAt,
 		&w.ChangedBy,
