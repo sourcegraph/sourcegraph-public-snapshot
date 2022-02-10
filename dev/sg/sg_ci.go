@@ -246,7 +246,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					stdout.Out.WriteLine(output.Line("", output.StyleSuccess, gitOutput))
 				}
 
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 				// simple check to see if commit is in origin, this is non blocking but
 				// we ask for confirmation to double check.
 				remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
@@ -267,6 +266,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				var build *buildkite.Build
 				if rt != runtype.PullRequest {
 					updateTicker := time.NewTicker(1 * time.Second)
+					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Polling for build for branch %q at %q...", branch, commit))
 					for i := 0; i < 30; i++ {
 						// attempt to fetch the new build - it might take some time for the hooks so we will
 						// retry up to 30 times (roughly 30 seconds)
@@ -283,6 +283,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 
 				} else {
+					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 					build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
 					if err != nil {
 						return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
