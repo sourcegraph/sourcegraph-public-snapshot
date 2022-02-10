@@ -5,7 +5,14 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { setAct } from '../__mocks__/zustand'
 
 import { useExperimentalFeatures } from './experimentalFeatures'
-import { restorePreviousSession, SearchStackEntry, useSearchStack, useSearchStackState } from './searchStack'
+import {
+    removeAllSearchStackEntries,
+    removeSearchStackEntry,
+    restorePreviousSession,
+    SearchStackEntry,
+    useSearchStack,
+    useSearchStackState,
+} from './searchStack'
 
 describe('search stack store', () => {
     beforeAll(() => {
@@ -13,6 +20,7 @@ describe('search stack store', () => {
     })
 
     const exampleEntry: SearchStackEntry = {
+        id: 0,
         type: 'search',
         query: 'test',
         patternType: SearchPatternType.literal,
@@ -42,6 +50,7 @@ describe('search stack store', () => {
 
         it('updates an existing file entry', () => {
             const entry: SearchStackEntry = {
+                id: 0,
                 type: 'file',
                 path: 'path/to/file',
                 repo: 'test',
@@ -64,5 +73,21 @@ describe('search stack store', () => {
         const state = useSearchStackState.getState()
         expect(state.entries).toEqual([exampleEntry])
         expect(state.canRestoreSession).toBe(false)
+    })
+
+    it('removes individual entries', () => {
+        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry }] })
+        removeSearchStackEntry(exampleEntry)
+
+        const state = useSearchStackState.getState()
+        expect(state.entries).toHaveLength(1)
+    })
+
+    it('removes all entries', () => {
+        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry }] })
+        removeAllSearchStackEntries()
+
+        const state = useSearchStackState.getState()
+        expect(state.entries).toHaveLength(0)
     })
 })

@@ -89,7 +89,7 @@ SET
 }
 
 // UpsertWithSpec will upsert sub repo permissions data using the provided
-// external repo spec to map to out internal repo id. If there is no mapping,
+// external repo spec to map to our internal repo id. If there is no mapping,
 // nothing is written.
 func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
@@ -118,8 +118,8 @@ func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.Re
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
-WHERE user_id = %s
-  AND repo_id = %s
+WHERE repo_id = %s
+  AND user_id = %s
   AND version = %s
 `, userID, repoID, SubRepoPermsVersion)
 

@@ -19,3 +19,4 @@ To automatically join all users on your instance to a specific organization, cre
   // ...
 }
 ```
+> NOTE: Users will not be automatically populated to the org immediately after adding `auth.userOrgMap` to your site config json. Instead the org will be populated with all users upon the creation of any new user.
