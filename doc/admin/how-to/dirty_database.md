@@ -29,18 +29,7 @@ If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [leg
 
 The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
 
-## TL;DR Steps to resolve
-
-_These steps pertain to the frontend database (pgsql) and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
-
-1. **Check the schema version in `psql` using the following query: `SELECT * FROM schema_migrations;`. If it's dirty, note the version number.**
-2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)** 
-   * _Note: migrations in this directory are specific to the `pgsql` frontend database, learn about other databases in the [detailed steps to resolution](#detailed-steps-to-resolve)_
-3. **Run the code there explicitly.**
-4. **Manually clear the dirty flag on the `schema_migrations` table.**
-5. **Start up again and the remaining migrations should succeed, otherwise repeat.**
-
-## Detailed Steps to resolve
+## Steps to resolve
 
 ### 1. Identify incomplete migration
 
