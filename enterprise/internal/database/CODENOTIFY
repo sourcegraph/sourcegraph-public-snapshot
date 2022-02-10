@@ -1,3 +1,4 @@
 # See https://github.com/sourcegraph/codenotify for documentation.
 
-**/* @unknwon
+external_services* @unknwon
+perms_store* @unknwon
