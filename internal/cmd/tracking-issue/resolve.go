@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

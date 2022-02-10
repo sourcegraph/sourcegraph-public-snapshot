@@ -1,9 +1,9 @@
 package markdown
 
 import (
-	"regexp"
 	"sync"
 
+	"github.com/grafana/regexp"
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
 )

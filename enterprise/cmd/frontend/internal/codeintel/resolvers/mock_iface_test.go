@@ -4,9 +4,10 @@ package resolvers
 
 import (
 	"context"
-	"regexp"
 	"sync"
 	"time"
+
+	"github.com/grafana/regexp"
 
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"

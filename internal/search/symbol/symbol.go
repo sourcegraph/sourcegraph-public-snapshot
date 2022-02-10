@@ -3,7 +3,6 @@ package symbol
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"regexp/syntax"
 	"sort"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
