@@ -44,7 +44,7 @@
 .reference-link {
     color: inherit;
 
-    span {
+    &--line-number {
         font-family: monospace;
         color: var(--primary);
     }

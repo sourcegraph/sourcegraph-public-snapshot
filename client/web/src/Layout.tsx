@@ -201,6 +201,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         onTokenClick(token)
     }
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
+    console.log(coolCodeIntelEnabled)
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -304,16 +305,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            <CoolCodeIntel
-                {...props}
-                {...themeProps}
-                onClose={() => {
-                    onTokenClick(undefined)
-                }}
-                coolCodeIntelEnabled={coolCodeIntelEnabled}
-                onTokenClick={onTokenClick}
-                clickedToken={clickedToken}
-            />
+            {coolCodeIntelEnabled && (
+                <CoolCodeIntel
+                    {...props}
+                    {...themeProps}
+                    onClose={() => {
+                        onTokenClick(undefined)
+                    }}
+                    onTokenClick={onTokenClick}
+                    clickedToken={clickedToken}
+                />
+            )}
         </div>
     )
 }
