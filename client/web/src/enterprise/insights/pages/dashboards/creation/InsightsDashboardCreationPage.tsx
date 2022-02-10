@@ -16,7 +16,7 @@ import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from './components/InsightsDashboardCreationContent'
 import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}

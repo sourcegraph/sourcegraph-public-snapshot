@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
@@ -42,7 +43,7 @@ func main() {
 	// the stateless agents queue, in order to observe its stability.
 	if buildkite.FeatureFlags.StatelessBuild {
 		// We do not want to trigger any deployment.
-		config.RunType = ci.MainDryRun
+		config.RunType = runtype.MainDryRun
 	}
 
 	pipeline, err := ci.GeneratePipeline(config)
@@ -108,11 +109,11 @@ func renderPipelineDocs(w io.Writer) {
 	fmt.Fprintln(w, "\n## Run types")
 
 	// Introduce pull request builds first
-	fmt.Fprintf(w, "\n### %s\n\n", ci.PullRequest.String())
+	fmt.Fprintf(w, "\n### %s\n\n", runtype.PullRequest.String())
 	fmt.Fprintln(w, "The default run type.")
 	changed.ForEachDiffType(func(diff changed.Diff) {
 		pipeline, err := ci.GeneratePipeline(ci.Config{
-			RunType: ci.PullRequest,
+			RunType: runtype.PullRequest,
 			Diff:    diff,
 		})
 		if err != nil {
@@ -125,7 +126,7 @@ func renderPipelineDocs(w io.Writer) {
 	})
 
 	// Introduce the others
-	for rt := ci.PullRequest + 1; rt < ci.None; rt += 1 {
+	for rt := runtype.PullRequest + 1; rt < runtype.None; rt += 1 {
 		fmt.Fprintf(w, "\n### %s\n\n", rt.String())
 		if m := rt.Matcher(); m == nil {
 			fmt.Fprintln(w, "No matcher defined")
@@ -151,7 +152,7 @@ func renderPipelineDocs(w io.Writer) {
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
 			pipeline, err := ci.GeneratePipeline(ci.Config{
-				RunType: ci.PullRequest,
+				RunType: runtype.PullRequest,
 				Diff:    changed.All,
 				Branch:  m.Branch,
 			})

@@ -86,6 +86,11 @@ func (a *AndJob) Name() string {
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
 func NewOrJob(children ...Job) Job {
+	if len(children) == 0 {
+		return NewNoopJob()
+	} else if len(children) == 1 {
+		return children[0]
+	}
 	return &OrJob{
 		children: children,
 	}
@@ -156,21 +161,18 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 		})
 	}
 
-	// TODO(@camdencheek): errors.Is isn't good enough here since a single
-	// backend that returns a context.Canceled error will make the multierror
-	// return true for errors.Is(err, context.Canceled). Ideally, we have some
-	// sort of multi-error filter that can filter out any context.Canceled and
-	// leave us with whatever errors are left. Note that this is true of anywhere
-	// we check the type of an aggregated error. This is neither a new nor a
-	// unique problem.
-	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+	err = g.Wait().ErrorOrNil()
+	if err = errors.Ignore(err, errors.IsContextCanceled); err != nil {
 		return maxAlerter.Alert, err
 	}
 
 	// Send results that were only seen by some of the sources
-	stream.Send(streaming.SearchEvent{
-		Results: merger.UnsentTracked(),
-	})
+	unsentTracked := merger.UnsentTracked()
+	if len(unsentTracked) > 0 {
+		stream.Send(streaming.SearchEvent{
+			Results: unsentTracked,
+		})
+	}
 	return maxAlerter.Alert, nil
 }
 

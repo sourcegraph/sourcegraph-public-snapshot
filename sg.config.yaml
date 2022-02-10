@@ -338,7 +338,7 @@ commands:
         -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
       fi
     env:
-      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION in all places (including outside this repo)
+      DOCSITE_VERSION: v1.8.6 # Update DOCSITE_VERSION in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -974,7 +974,7 @@ tests:
     cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
-    cmd: yarn --cwd client/browser test-integration
+    cmd: POLLYJS_MODE=replay yarn --cwd client/browser test-integration
 
   bext-e2e:
     cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
@@ -992,4 +992,4 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.8.6 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)

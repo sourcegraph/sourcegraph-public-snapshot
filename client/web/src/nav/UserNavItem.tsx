@@ -39,6 +39,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
+    openByDefault?: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -93,7 +94,16 @@ const showKeyboardShortcutsHelp = (): void => {
  * authenticated viewers.
  */
 export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
-    const { themePreference, onThemePreferenceChange, isExtensionAlertAnimating, codeHostIntegrationMessaging } = props
+    const {
+        themePreference,
+        onThemePreferenceChange,
+        isExtensionAlertAnimating,
+        codeHostIntegrationMessaging,
+        openByDefault,
+    } = props
+
+    const [isOpen, setIsOpen] = useState(() => !!openByDefault)
+    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -115,7 +125,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     const targetID = 'target-user-avatar'
 
     return (
-        <Menu>
+        <Menu isOpen={isOpen} onOpenChange={toggleIsOpen}>
             {({ isExpanded }) => (
                 <>
                     <MenuButton

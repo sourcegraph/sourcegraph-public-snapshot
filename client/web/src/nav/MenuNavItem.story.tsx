@@ -26,7 +26,7 @@ add(
     () => (
         <WebStory>
             {() => (
-                <MenuNavItem>
+                <MenuNavItem openByDefault={true}>
                     <BatchChangesNavItem />
                     <InsightsNavItem />
                     <CodeMonitoringNavItem />

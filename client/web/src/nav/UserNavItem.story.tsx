@@ -55,6 +55,7 @@ add(
                         ['browser-extension', 'native-integration'] as const,
                         'browser-extension'
                     )}
+                    openByDefault={true}
                 />
             )}
         </WebStory>
@@ -110,6 +111,7 @@ add(
                         ['browser-extension', 'native-integration'] as const,
                         'browser-extension'
                     )}
+                    openByDefault={true}
                 />
             )}
         </WebStory>
