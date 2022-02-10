@@ -99,6 +99,7 @@ type MonitorWebhookResolver interface {
 type MonitorSlackWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -175,8 +176,9 @@ type CreateActionWebhookArgs struct {
 }
 
 type CreateActionSlackWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type ToggleCodeMonitorArgs struct {

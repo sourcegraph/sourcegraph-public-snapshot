@@ -38,6 +38,7 @@ function convertEmailAction(action: IMonitorEmail, authenticatedUserId: Authenti
 function convertSlackWebhookAction(action: IMonitorSlackWebhook): IMonitorSlackWebhookInput {
     return {
         enabled: action.enabled,
+        includeResults: action.includeResults,
         url: action.url,
     }
 }

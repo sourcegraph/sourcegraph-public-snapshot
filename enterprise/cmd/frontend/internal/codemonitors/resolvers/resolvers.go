@@ -259,7 +259,7 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.SlackWebhook != nil:
-			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.URL)
+			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
 			if err != nil {
 				return err
 			}
@@ -556,7 +556,7 @@ func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbac
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
 	return err
 }
 
@@ -1142,6 +1142,10 @@ func (m *monitorSlackWebhook) ID() graphql.ID {
 
 func (m *monitorSlackWebhook) Enabled() bool {
 	return m.SlackWebhookAction.Enabled
+}
+
+func (m *monitorSlackWebhook) IncludeResults() bool {
+	return m.SlackWebhookAction.IncludeResults
 }
 
 func (m *monitorSlackWebhook) URL() string {

@@ -27,6 +27,7 @@ type SlackWebhookAction struct {
 const updateSlackWebhookActionQuery = `
 UPDATE cm_slack_webhooks
 SET enabled = %s,
+	include_results = %s,
 	url = %s,
 	changed_by = %s,
 	changed_at = %s
@@ -34,11 +35,12 @@ WHERE id = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int64, enabled bool, url string) (*SlackWebhookAction, error) {
+func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error) {
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateSlackWebhookActionQuery,
 		enabled,
+		includeResults,
 		url,
 		a.UID,
 		s.Now(),
@@ -52,18 +54,19 @@ func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int6
 
 const createSlackWebhookActionQuery = `
 INSERT INTO cm_slack_webhooks
-(monitor, enabled, url, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s)
+(monitor, enabled, include_results, url, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*SlackWebhookAction, error) {
+func (s *codeMonitorStore) CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		createSlackWebhookActionQuery,
 		monitorID,
 		enabled,
+		includeResults,
 		url,
 		a.UID,
 		now,
