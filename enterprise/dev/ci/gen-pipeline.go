@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/runtype"
 )
 
 var preview bool

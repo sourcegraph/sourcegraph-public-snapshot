@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
