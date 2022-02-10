@@ -111,6 +111,11 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         setRepoToShow(null)
     }, [context.submittedSearchQueryState.queryState])
 
+    // Track sidebar + keyboard shortcut search submissions
+    useEffect(() => {
+        platformContext.telemetryService.log('VSCESearchSubmitted')
+    }, [platformContext, context.submittedSearchQueryState.queryState.query])
+
     const onSubmit = useCallback(
         (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
