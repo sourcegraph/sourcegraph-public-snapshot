@@ -10,7 +10,7 @@ import (
 // customization options. A default panel can be instantiated with the `Panel()` constructor,
 // and further customized using `ObservablePanel.With(ObservablePanelOption)`.
 type ObservablePanel struct {
-	options []ObservablePanelOption
+	options []ObservablePanelOption  
 
 	// panelType defines the type of panel
 	panelType PanelType

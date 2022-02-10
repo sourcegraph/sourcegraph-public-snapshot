@@ -5,8 +5,8 @@ set -x
 cmd=$1
 include_names=$2
 shift 2
-# shellcheck disable=SC2124
-annotate_opts="$@"
+
+annotate_opts="$@"   
 
 annotation_dir="./annotations"
 rm -rf $annotation_dir

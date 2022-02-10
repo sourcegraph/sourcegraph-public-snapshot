@@ -95,7 +95,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
 - [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
-- [Exposing services](background-information/exposing-services.md)
+- [Exposing services](background-asdfasdf/exposing-services.md)
 - [Developing a store](background-information/basestore.md)
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
