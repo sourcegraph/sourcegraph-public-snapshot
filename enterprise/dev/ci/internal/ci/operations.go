@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
@@ -687,15 +688,15 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(TaggedRelease, ImagePatch, ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				images = append(images, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
-			if app == "server" && c.RunType.Is(ReleaseBranch) {
+			if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
 				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
-			if c.RunType.Is(MainBranch) {
+			if c.RunType.Is(runtype.MainBranch) {
 				images = append(images, fmt.Sprintf("%s:insiders", image))
 			}
 		}

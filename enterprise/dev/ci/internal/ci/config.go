@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +19,7 @@ import (
 type Config struct {
 	// RunType indicates what kind of pipeline run should be generated, based on various
 	// bits of metadata
-	RunType RunType
+	RunType runtype.RunType
 
 	// Build metadata
 	Time        time.Time
@@ -60,7 +61,7 @@ func NewConfig(now time.Time) Config {
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
 		// evaluates what type of pipeline run this is
-		runType = computeRunType(tag, branch, map[string]string{
+		runType = runtype.Compute(tag, branch, map[string]string{
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 		})
@@ -80,7 +81,7 @@ func NewConfig(now time.Time) Config {
 	var changedFiles []string
 	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		if runType.Is(MainBranch) {
+		if runType.Is(runtype.MainBranch) {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
 			diffCommand = append(diffCommand, "@^")
 		} else {
@@ -99,12 +100,12 @@ func NewConfig(now time.Time) Config {
 
 	// special tag adjustments based on run type
 	switch {
-	case runType.Is(TaggedRelease):
+	case runType.Is(runtype.TaggedRelease):
 		// This tag is used for publishing versioned releases.
 		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		tag = strings.TrimPrefix(tag, "v")
-	case runType.Is(MainBranch):
+	case runType.Is(runtype.MainBranch):
 		// This tag is used for deploying continuously. Only ever generate this on the
 		// main branch.
 		tag = fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
@@ -112,7 +113,7 @@ func NewConfig(now time.Time) Config {
 		// Encode branch inside build tag by default.
 		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format("2006-01-02"), commit)
 	}
-	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
+	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
 		// Add additional patch suffix
 		tag = tag + "_patch"
 	}

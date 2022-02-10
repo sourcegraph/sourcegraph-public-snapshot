@@ -1,4 +1,4 @@
-package ci
+package runtype
 
 import (
 	"strings"
@@ -45,7 +45,8 @@ const (
 	None
 )
 
-func computeRunType(tag, branch string, env map[string]string) RunType {
+// Compute determines what RunType matches the given parameters.
+func Compute(tag, branch string, env map[string]string) RunType {
 	for runType := PullRequest + 1; runType < None; runType += 1 {
 		if runType.Matcher().Matches(tag, branch, env) {
 			return runType

@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -61,7 +62,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.RunType.Is(ReleaseBranch) {
+	if c.RunType.Is(runtype.ReleaseBranch) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
 	}
 
@@ -112,7 +113,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
-	case PullRequest:
+	case runtype.PullRequest:
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
@@ -121,10 +122,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
-	case ReleaseNightly:
+	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case BackendIntegrationTests:
+	case runtype.BackendIntegrationTests:
 		ops.Append(
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			backendIntegrationTests(c.candidateImageTag()))
@@ -132,7 +133,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Run default set of PR checks as well
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
-	case BextReleaseBranch:
+	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
@@ -142,7 +143,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
-	case BextNightly:
+	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
@@ -152,7 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionE2ESteps)
 
-	case ImagePatch:
+	case runtype.ImagePatch:
 		// only build candidate image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
 		patchImage := c.Branch[20:]
@@ -171,7 +172,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
-	case ImagePatchNoTest:
+	case runtype.ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
 		ops = operations.NewSet(
@@ -179,13 +180,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			publishFinalDockerImage(c, app))
 
-	case CandidatesNoTest:
+	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
-	case ExecutorPatchNoTest:
+	case runtype.ExecutorPatchNoTest:
 		ops = operations.NewSet(
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
@@ -203,10 +204,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
-		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch)
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch) {
 			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
@@ -221,7 +222,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
 
@@ -248,9 +249,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(MainBranch, ReleaseBranch) {
+		if c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch) {
 			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}
@@ -272,7 +273,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Add a notify block
-	if c.RunType.Is(MainBranch) {
+	if c.RunType.Is(runtype.MainBranch) {
 		ctx := context.Background()
 
 		// Slack client for retriving Slack profile data, not for making the request - for

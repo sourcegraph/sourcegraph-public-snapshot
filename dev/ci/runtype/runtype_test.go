@@ -1,4 +1,4 @@
-package ci
+package runtype
 
 import (
 	"testing"
@@ -63,7 +63,7 @@ func TestComputeRunType(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeRunType(tt.args.tag, tt.args.branch, tt.args.env)
+			got := Compute(tt.args.tag, tt.args.branch, tt.args.env)
 			assert.Equal(t, tt.want.String(), got.String())
 		})
 	}
