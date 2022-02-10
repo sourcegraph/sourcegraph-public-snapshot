@@ -72,7 +72,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs|docs|dry-run]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
