@@ -35,7 +35,7 @@ func Ignore(err error, pred ErrorPredicate) error {
 // ErrorPredicate is a function type that returns whether an error matches a given condition
 type ErrorPredicate func(error) bool
 
-// HasTypePred returns an ErrorPredicatehat returns true for errors that unwrap to an error with the same type as target
+// HasTypePred returns an ErrorPredicate that returns true for errors that unwrap to an error with the same type as target
 func HasTypePred(target error) ErrorPredicate {
 	return func(err error) bool {
 		return HasType(err, target)
