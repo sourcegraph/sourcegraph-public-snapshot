@@ -16934,7 +16934,7 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 			},
 		},
 		CreateFunc: &OrgInvitationStoreCreateFunc{
-			defaultHook: func(context.Context, int32, int32, int32) (*OrgInvitation, error) {
+			defaultHook: func(context.Context, int32, int32, int32, string) (*OrgInvitation, error) {
 				return nil, nil
 			},
 		},
@@ -17002,7 +17002,7 @@ func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
 			},
 		},
 		CreateFunc: &OrgInvitationStoreCreateFunc{
-			defaultHook: func(context.Context, int32, int32, int32) (*OrgInvitation, error) {
+			defaultHook: func(context.Context, int32, int32, int32, string) (*OrgInvitation, error) {
 				panic("unexpected invocation of MockOrgInvitationStore.Create")
 			},
 		},
@@ -17215,24 +17215,24 @@ func (c OrgInvitationStoreCountFuncCall) Results() []interface{} {
 // OrgInvitationStoreCreateFunc describes the behavior when the Create
 // method of the parent MockOrgInvitationStore instance is invoked.
 type OrgInvitationStoreCreateFunc struct {
-	defaultHook func(context.Context, int32, int32, int32) (*OrgInvitation, error)
-	hooks       []func(context.Context, int32, int32, int32) (*OrgInvitation, error)
+	defaultHook func(context.Context, int32, int32, int32, string) (*OrgInvitation, error)
+	hooks       []func(context.Context, int32, int32, int32, string) (*OrgInvitation, error)
 	history     []OrgInvitationStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockOrgInvitationStore) Create(v0 context.Context, v1 int32, v2 int32, v3 int32) (*OrgInvitation, error) {
-	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3)
-	m.CreateFunc.appendCall(OrgInvitationStoreCreateFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockOrgInvitationStore) Create(v0 context.Context, v1 int32, v2 int32, v3 int32, v4 string) (*OrgInvitation, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.CreateFunc.appendCall(OrgInvitationStoreCreateFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockOrgInvitationStore instance is invoked and the hook queue is
 // empty.
-func (f *OrgInvitationStoreCreateFunc) SetDefaultHook(hook func(context.Context, int32, int32, int32) (*OrgInvitation, error)) {
+func (f *OrgInvitationStoreCreateFunc) SetDefaultHook(hook func(context.Context, int32, int32, int32, string) (*OrgInvitation, error)) {
 	f.defaultHook = hook
 }
 
@@ -17240,7 +17240,7 @@ func (f *OrgInvitationStoreCreateFunc) SetDefaultHook(hook func(context.Context,
 // Create method of the parent MockOrgInvitationStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *OrgInvitationStoreCreateFunc) PushHook(hook func(context.Context, int32, int32, int32) (*OrgInvitation, error)) {
+func (f *OrgInvitationStoreCreateFunc) PushHook(hook func(context.Context, int32, int32, int32, string) (*OrgInvitation, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17249,7 +17249,7 @@ func (f *OrgInvitationStoreCreateFunc) PushHook(hook func(context.Context, int32
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *OrgInvitationStoreCreateFunc) SetDefaultReturn(r0 *OrgInvitation, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, int32, int32) (*OrgInvitation, error) {
+	f.SetDefaultHook(func(context.Context, int32, int32, int32, string) (*OrgInvitation, error) {
 		return r0, r1
 	})
 }
@@ -17257,12 +17257,12 @@ func (f *OrgInvitationStoreCreateFunc) SetDefaultReturn(r0 *OrgInvitation, r1 er
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *OrgInvitationStoreCreateFunc) PushReturn(r0 *OrgInvitation, r1 error) {
-	f.PushHook(func(context.Context, int32, int32, int32) (*OrgInvitation, error) {
+	f.PushHook(func(context.Context, int32, int32, int32, string) (*OrgInvitation, error) {
 		return r0, r1
 	})
 }
 
-func (f *OrgInvitationStoreCreateFunc) nextHook() func(context.Context, int32, int32, int32) (*OrgInvitation, error) {
+func (f *OrgInvitationStoreCreateFunc) nextHook() func(context.Context, int32, int32, int32, string) (*OrgInvitation, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17307,6 +17307,9 @@ type OrgInvitationStoreCreateFuncCall struct {
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int32
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *OrgInvitation
@@ -17318,7 +17321,7 @@ type OrgInvitationStoreCreateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c OrgInvitationStoreCreateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

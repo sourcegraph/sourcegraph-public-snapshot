@@ -72,8 +72,13 @@ func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, 
 }
 
 func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
+	return orgByIDInt32WithForcedAccess(ctx, db, orgID, false)
+}
+
+func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
 	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
+	//              And all invited users by email
+	if !forceAccess && envvar.SourcegraphDotComMode() {
 		err := backend.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false

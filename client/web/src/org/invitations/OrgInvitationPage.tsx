@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
@@ -5,7 +6,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -15,8 +16,11 @@ import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
+import styles from './OrgInvitationPage.module.scss'
+
 interface Props extends RouteComponentProps<{ token: string }> {
     authenticatedUser: AuthenticatedUser
+    className?: string
 }
 
 interface RespondToOrgInvitationResult {
@@ -47,16 +51,18 @@ interface InviteVariables {
 export const INVITATION_BY_TOKEN = gql`
     query InvitationByToken($token: String!) {
         invitationByToken(token: $token) {
-            id
             createdAt
-            sender {
-                username
-                displayName
-                avatarURL
-            }
+            id
+            isVerifiedEmail
             organization {
-                name
                 displayName
+                name
+            }
+            recipientEmail
+            sender {
+                avatarURL
+                displayName
+                username
             }
         }
     }
@@ -65,7 +71,7 @@ export const INVITATION_BY_TOKEN = gql`
 /**
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
-export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, history, match }) => {
+export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, className, history, match }) => {
     const token = match.params.token
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
@@ -81,6 +87,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     const data = inviteData?.invitationByToken
     const orgName = data?.organization.name
     const sender = data?.sender
+    const orgDisplayName = data?.organization.displayName || orgName
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<
         RespondToOrgInvitationResult,
@@ -116,37 +123,58 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     }, [authenticatedUser.username, data?.id, history, respondToInvitation])
 
     const loading = inviteLoading || respondLoading
-    const error = inviteError || respondError
+    const error = inviteError?.message || respondError?.message
 
     return (
         <>
-            <PageTitle title={`Invitation to Organization - ${'Hello'}`} />
+            <PageTitle title={`Invitation to Organization ${orgName || ''}`} />
             {orgName && sender && (
-                <ModalPage icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}>
-                    <Form className="text-center">
-                        <h3>
-                            You've been invited to join the {data.organization.displayName || orgName} organization.
-                        </h3>
-                        <p className="mt-3">
+                <ModalPage
+                    className={classNames(styles.orgInvitationPage, className)}
+                    icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
+                >
+                    <Form className="text-center pr-4 pl-4 pb-4">
+                        <h3>You've been invited to join the {orgDisplayName} organization.</h3>
+                        <div className="mt-4">
                             <UserAvatar className="mr-2" user={sender} size={24} />
-                            <small className="text-muted">
+                            <span>
                                 Invited by{' '}
                                 <Link to={userURL(sender.username)}>{sender.displayName || `@${sender.username}`}</Link>
-                                {sender.displayName && <>(@{sender.username})</>}
-                            </small>
-                        </p>
+                                {sender.displayName && <span className="text-muted">(@{sender.username})</span>}
+                            </span>
+                        </div>
+                        {data.isVerifiedEmail === false && data.recipientEmail && (
+                            <div className="mt-4 mb-4">
+                                This invite was sent to <strong>{data.recipientEmail}</strong>. Joining the{' '}
+                                {orgDisplayName} organization will add this as a verified email on your account.
+                            </div>
+                        )}
                         <div className="mt-4 mb-4">
                             <Button className="mr-sm-2" disabled={loading} onClick={acceptInvitation} variant="primary">
-                                Join {orgName}
+                                Join {orgDisplayName}
                             </Button>
                             <Button disabled={loading} onClick={declineInvitation} variant="secondary">
                                 Decline
                             </Button>
                         </div>
+                        {data.isVerifiedEmail === false && data.recipientEmail && (
+                            <small className="mt-4 text-muted">
+                                <AnchorLink to="/-/sign-out">Or sign out and create a new account</AnchorLink>
+                                <br />
+                                to join the {orgDisplayName} organization
+                            </small>
+                        )}
                     </Form>
                 </ModalPage>
             )}
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+                <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
+                    <h3>You've been invited to join an organization.</h3>
+                    <Alert variant="danger" className="mt-3">
+                        Error: {error}
+                    </Alert>
+                </ModalPage>
+            )}
             {loading && <LoadingSpinner />}
         </>
     )
