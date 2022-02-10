@@ -36,17 +36,33 @@ func canonicalizeDocuments(state *State) {
 		sort.Ints(v)
 	}
 
+	canonicalIDs := make(map[int]int, len(state.DocumentData))
 	for documentID, uri := range state.DocumentData {
 		// Choose canonical document alphabetically
 		if canonicalID := documentIDs[uri][0]; documentID != canonicalID {
+			canonicalIDs[documentID] = canonicalID
+		}
+	}
+
+	for documentID, canonicalID := range canonicalIDs {
+		if true {
 			// Move ranges and diagnostics into the canonical document
 			state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
 			state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
+		}
+	}
 
+	for documentID, canonicalID := range canonicalIDs {
+		if true {
+			// Replace references to each document with the canonical reference
 			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, documentID, canonicalID)
+		}
+	}
 
+	for documentID := range canonicalIDs {
+		if true {
 			// Remove non-canonical document
 			delete(state.DocumentData, documentID)
 			state.Contains.Delete(documentID)
