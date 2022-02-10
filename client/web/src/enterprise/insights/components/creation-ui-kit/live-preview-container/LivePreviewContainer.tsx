@@ -4,7 +4,6 @@ import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
@@ -65,7 +64,6 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
                 ) : (
                     <LineChartSettingsContext.Provider value={LINE_CHART_SETTINGS}>
                         <View.Content
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
                             content={[dataOrError ?? defaultMock]}
                             layout={ChartViewContentLayout.ByContentSize}
                             className={classNames({ [styles.chartWithMock]: !dataOrError })}
