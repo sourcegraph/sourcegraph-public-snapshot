@@ -43,6 +43,7 @@ import {
     useDebounce,
     Button,
     useObservable,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -167,6 +168,8 @@ export const ReferencesList: React.FunctionComponent<
         setFilter(undefined)
     }, [props.clickedToken])
 
+    // We create an in-memory history here so we don't modify the browser
+    // location. This panel is detached from the URL state.
     const history = useMemo(() => H.createMemoryHistory(), [])
 
     const onReferenceClick = (location: Location | undefined): void => {
@@ -178,8 +181,8 @@ export const ReferencesList: React.FunctionComponent<
 
     return (
         <>
-            <input
-                className={classNames('form-control px-2', styles.referencesFilter)}
+            <Input
+                className={classNames('px-2', styles.referencesFilter)}
                 type="text"
                 placeholder="Filter by filename..."
                 value={filter === undefined ? '' : filter}
@@ -232,7 +235,8 @@ export const SideReferences: React.FunctionComponent<
                 repository: props.clickedToken.repoName,
                 commit: props.clickedToken.commitID,
                 path: props.clickedToken.filePath,
-                // ATTENTION: Off by one ahead!!!!
+                // On the backend the line/character are 0-indexed, but what we
+                // get from hoverifier is 1-indexed.
                 line: props.clickedToken.line - 1,
                 character: props.clickedToken.character - 1,
                 after: null,
@@ -259,7 +263,12 @@ export const SideReferences: React.FunctionComponent<
 
     // If we received an error before we had received any data
     if (error && !data) {
-        throw new Error(error.message)
+        return (
+            <div>
+                <p className="text-danger">Loading references failed:</p>
+                <pre>{error.message}</pre>
+            </div>
+        )
     }
 
     // If there weren't any errors and we just didn't receive any data
@@ -286,7 +295,7 @@ interface LSIFLocationResult {
     pageInfo: { __typename?: 'PageInfo'; endCursor: Maybe<string> }
 }
 
-export const SideReferencesLists: React.FunctionComponent<
+const SideReferencesLists: React.FunctionComponent<
     CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
         setActiveLocation: (location: Location | undefined) => void
@@ -373,7 +382,7 @@ export const SideReferencesLists: React.FunctionComponent<
     )
 }
 
-export const SideBlob: React.FunctionComponent<
+const SideBlob: React.FunctionComponent<
     CoolCodeIntelProps & {
         activeLocation: Location
     }
@@ -660,65 +669,60 @@ const ReferenceGroup: React.FunctionComponent<{
 
 const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
-export const ResizableCoolCodeIntelPanel = React.memo<
-    CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }
->(props => (
-    <Resizable
-        className={styles.resizablePanel}
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<CoolCodeIntelPanel {...props} />}
-    />
-))
-
-export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
-    props => {
-        const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-        const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-        return (
-            <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
-                <div
-                    className={classNames(
-                        'tablist-wrapper d-flex justify-content-between sticky-top',
-                        styles.panelHeader
-                    )}
-                >
-                    <TabList>
-                        <div className="d-flex w-100">
-                            {TABS.map(({ label, id }) => (
-                                <Tab key={id}>
-                                    <span className="tablist-wrapper--tab-label" role="none">
-                                        {label}
-                                    </span>
-                                </Tab>
-                            ))}
-                        </div>
-                    </TabList>
-                    <div className="align-items-center d-flex">
-                        <Button
-                            onClick={() => props.handlePanelClose(true)}
-                            className={classNames('btn-icon ml-2', styles.dismissButton)}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                        >
-                            <CloseIcon className="icon-inline" />
-                        </Button>
-                    </div>
-                </div>
-                <TabPanels>
-                    {TABS.map(tab => (
-                        <TabPanel key={tab.id}>
-                            <tab.component {...props} />
-                        </TabPanel>
-                    ))}
-                </TabPanels>
-            </Tabs>
-        )
-    }
+const ResizableCoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
+    props => (
+        <Resizable
+            className={styles.resizablePanel}
+            handlePosition="top"
+            defaultSize={350}
+            storageKey="panel-size"
+            element={<CoolCodeIntelPanel {...props} />}
+        />
+    )
 )
+
+const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(props => {
+    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
+    return (
+        <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
+            <div
+                className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.panelHeader)}
+            >
+                <TabList>
+                    <div className="d-flex w-100">
+                        {TABS.map(({ label, id }) => (
+                            <Tab key={id}>
+                                <span className="tablist-wrapper--tab-label" role="none">
+                                    {label}
+                                </span>
+                            </Tab>
+                        ))}
+                    </div>
+                </TabList>
+                <div className="align-items-center d-flex">
+                    <Button
+                        onClick={() => props.handlePanelClose(true)}
+                        className={classNames('btn-icon ml-2', styles.dismissButton)}
+                        title="Close panel"
+                        data-tooltip="Close panel"
+                        data-placement="left"
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </Button>
+                </div>
+            </div>
+            <TabPanels>
+                {TABS.map(tab => (
+                    <TabPanel key={tab.id}>
+                        <tab.component {...props} />
+                    </TabPanel>
+                ))}
+            </TabPanels>
+        </Tabs>
+    )
+})
 
 export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
     const parsedQuery = parseQueryAndHash(location.search, location.hash)
@@ -734,9 +738,7 @@ export function locationWithoutViewState(location: H.Location): H.LocationDescri
     return result
 }
 
-export const CoolCodeIntelResizablePanel: React.FunctionComponent<
-    CoolCodeIntelProps & { onClose: () => void }
-> = props => {
+const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => {
     let token = props.clickedToken
 
     const history = useHistory()
