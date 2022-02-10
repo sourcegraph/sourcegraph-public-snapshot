@@ -27,6 +27,7 @@ type EmailAction struct {
 const updateActionEmailFmtStr = `
 UPDATE cm_emails
 SET enabled = %s,
+    include_results = %s,
 	priority = %s,
 	header = %s,
 	changed_by = %s,
@@ -36,9 +37,10 @@ RETURNING %s;
 `
 
 type EmailActionArgs struct {
-	Enabled  bool
-	Priority string
-	Header   string
+	Enabled        bool
+	IncludeResults bool
+	Priority       string
+	Header         string
 }
 
 func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args *EmailActionArgs) (*EmailAction, error) {
@@ -46,6 +48,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
 		args.Enabled,
+		args.IncludeResults,
 		args.Priority,
 		args.Header,
 		a.UID,
@@ -60,8 +63,8 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 
 const createActionEmailFmtStr = `
 INSERT INTO cm_emails
-(monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+(monitor, enabled, include_results, priority, header, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -72,6 +75,7 @@ func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int6
 		createActionEmailFmtStr,
 		monitorID,
 		args.Enabled,
+		args.IncludeResults,
 		args.Priority,
 		args.Header,
 		a.UID,

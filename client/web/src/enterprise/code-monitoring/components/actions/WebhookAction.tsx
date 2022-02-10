@@ -35,6 +35,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                 id: action ? action.id : '',
                 url,
                 enabled: webhookEnabled,
+                includeResults: false,
             })
         },
         [action, setAction, url, webhookEnabled]

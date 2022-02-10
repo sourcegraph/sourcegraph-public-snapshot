@@ -242,9 +242,10 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 		switch {
 		case a.Email != nil:
 			e, err := r.db.CodeMonitors().CreateEmailAction(ctx, monitorID, &edb.EmailActionArgs{
-				Enabled:  a.Email.Enabled,
-				Priority: a.Email.Priority,
-				Header:   a.Email.Header,
+				Enabled:        a.Email.Enabled,
+				IncludeResults: a.Email.IncludeResults,
+				Priority:       a.Email.Priority,
+				Header:         a.Email.Header,
 			})
 			if err != nil {
 				return err
@@ -528,9 +529,10 @@ func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.Ed
 	}
 
 	e, err := r.db.CodeMonitors().UpdateEmailAction(ctx, emailID, &edb.EmailActionArgs{
-		Enabled:  args.Update.Enabled,
-		Priority: args.Update.Priority,
-		Header:   args.Update.Header,
+		Enabled:        args.Update.Enabled,
+		IncludeResults: args.Update.IncludeResults,
+		Priority:       args.Update.Priority,
+		Header:         args.Update.Header,
 	})
 	if err != nil {
 		return err
@@ -1030,6 +1032,10 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 
 func (m *monitorEmail) Enabled() bool {
 	return m.EmailAction.Enabled
+}
+
+func (m *monitorEmail) IncludeResults() bool {
+	return m.EmailAction.IncludeResults
 }
 
 func (m *monitorEmail) Priority() string {

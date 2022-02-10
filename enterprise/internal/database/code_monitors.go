@@ -169,14 +169,16 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 
 	actions := []*EmailActionArgs{
 		{
-			Enabled:  true,
-			Priority: "NORMAL",
-			Header:   "test header 1",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "NORMAL",
+			Header:         "test header 1",
 		},
 		{
-			Enabled:  true,
-			Priority: "CRITICAL",
-			Header:   "test header 2",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "CRITICAL",
+			Header:         "test header 2",
 		},
 	}
 
@@ -199,9 +201,10 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 
 	for _, a := range actions {
 		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
-			Enabled:  a.Enabled,
-			Priority: a.Priority,
-			Header:   a.Header,
+			Enabled:        a.Enabled,
+			IncludeResults: a.IncludeResults,
+			Priority:       a.Priority,
+			Header:         a.Header,
 		})
 		if err != nil {
 			return nil, err
