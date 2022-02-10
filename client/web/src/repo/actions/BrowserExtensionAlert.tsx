@@ -7,13 +7,14 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props {
     className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
 }
 
-export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ className, onAlertDismissed }) => {
+export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
     useEffect(() => {
-        eventLogger.log('InstallBrowserExtensionCTAShown')
-    }, [])
+        eventLogger.log('InstallBrowserExtensionCTAShown', undefined, { page })
+    }, [page])
 
     return (
         <CtaAlert
@@ -23,7 +24,7 @@ export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ classNam
                 label: 'Learn more about the extension',
                 href:
                     'https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=inproduct-cta&utm_medium=direct_traffic&utm_source=search-results-cta&utm_term=null&utm_content=install-browser-exten',
-                onClick: onBrowserExtensionClick,
+                onClick: () => onBrowserExtensionClick(page),
             }}
             icon={<ExtensionRadialGradientIcon />}
             className={className}
@@ -32,6 +33,6 @@ export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ classNam
     )
 }
 
-const onBrowserExtensionClick = (): void => {
-    eventLogger.log('InstallBrowserExtensionCTAClicked')
+const onBrowserExtensionClick = (page: 'search' | 'file'): void => {
+    eventLogger.log('InstallBrowserExtensionCTAClicked', undefined, { page })
 }

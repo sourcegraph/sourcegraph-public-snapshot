@@ -319,7 +319,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const [showSidebar, setShowSidebar] = useState(false)
 
     const onSignUpClick = (): void => {
-        telemetryService.log('SignUpPLGSearchCTA_1_Search')
+        telemetryService.log('SignUpPLGSearchCTA_1_Search', undefined, { page: 'search' })
     }
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
@@ -423,10 +423,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )}
                 {ctaToDisplay === 'browser' && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
+                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
                 )}
                 {ctaToDisplay === 'ide' && (
-                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
+                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
                 )}
                 <StreamingSearchResultsList
                     {...props}

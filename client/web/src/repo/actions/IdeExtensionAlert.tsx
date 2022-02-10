@@ -9,13 +9,14 @@ import styles from './IdeExtensionAlert.module.scss'
 
 interface Props {
     className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
 }
 
-export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, onAlertDismissed }) => {
+export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
     useEffect(() => {
-        eventLogger.log('InstallIDEExtensionCTAShown')
-    }, [])
+        eventLogger.log('InstallIDEExtensionCTAShown', undefined, { page })
+    }, [page])
 
     return (
         <CtaAlert
@@ -25,7 +26,7 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, o
                 label: 'Learn more about IDE extensions',
                 href:
                     'https://docs.sourcegraph.com/integration/editor?utm_medium=inproduct&utm_source=search-results&utm_campaign=inproduct-cta&utm_term=null',
-                onClick: onIDEExtensionClick,
+                onClick: () => onIDEExtensionClick(page),
             }}
             icon={
                 <div className={`d-flex flex-row ${styles.icons}`}>
@@ -41,6 +42,6 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, o
     )
 }
 
-const onIDEExtensionClick = (): void => {
-    eventLogger.log('InstallIDEExtensionCTAClicked')
+const onIDEExtensionClick = (page: 'search' | 'file'): void => {
+    eventLogger.log('InstallIDEExtensionCTAClicked', undefined, { page })
 }

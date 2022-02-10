@@ -11,6 +11,7 @@ import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 export interface NativeIntegrationAlertProps {
     className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
     externalURLs: ExternalLinkFields[]
 }
@@ -25,12 +26,13 @@ const supportedServiceTypes = new Set<string>([
 
 export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAlertProps> = ({
     className,
+    page,
     onAlertDismissed,
     externalURLs,
 }) => {
     useEffect(() => {
-        eventLogger.log('NativeIntegrationInstallShown')
-    }, [])
+        eventLogger.log('NativeIntegrationInstallShown', undefined, { page })
+    }, [page])
 
     const externalLink = externalURLs.find(link => link.serviceKind && supportedServiceTypes.has(link.serviceKind))
     if (!externalLink) {
@@ -55,7 +57,7 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
                     </AlertLink>
                 </>
             }
-            cta={{ label: 'Try it out', href: externalLink.url, onClick: installLinkClickHandler }}
+            cta={{ label: 'Try it out', href: externalLink.url, onClick: () => installLinkClickHandler(page) }}
             icon={<ExtensionRadialGradientIcon />}
             className={className}
             onClose={onAlertDismissed}
@@ -63,6 +65,6 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
     )
 }
 
-const installLinkClickHandler = (): void => {
-    eventLogger.log('NativeIntegrationInstallClicked')
+const installLinkClickHandler = (page: 'search' | 'file'): void => {
+    eventLogger.log('NativeIntegrationInstallClicked', undefined, { page })
 }
