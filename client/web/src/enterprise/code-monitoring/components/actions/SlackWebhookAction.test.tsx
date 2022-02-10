@@ -42,7 +42,13 @@ describe('SlackWebhookAction', () => {
             <SlackWebhookAction
                 {...props}
                 setAction={setActionSpy}
-                action={{ __typename: 'MonitorSlackWebhook', enabled: true, includeResults: false, id: '1', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorSlackWebhook',
+                    enabled: true,
+                    includeResults: false,
+                    id: '1',
+                    url: 'https://example.com',
+                }}
             />
         )
 
@@ -70,7 +76,13 @@ describe('SlackWebhookAction', () => {
         const { getByTestId } = render(
             <SlackWebhookAction
                 {...props}
-                action={{ __typename: 'MonitorSlackWebhook', enabled: true, includeResults: false, id: '2', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorSlackWebhook',
+                    enabled: true,
+                    includeResults: false,
+                    id: '2',
+                    url: 'https://example.com',
+                }}
                 setAction={setActionSpy}
             />
         )
@@ -86,7 +98,13 @@ describe('SlackWebhookAction', () => {
         const { getByTestId } = render(
             <SlackWebhookAction
                 {...props}
-                action={{ __typename: 'MonitorSlackWebhook', enabled: false, includeResults: false, id: '5', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorSlackWebhook',
+                    enabled: false,
+                    includeResults: false,
+                    id: '5',
+                    url: 'https://example.com',
+                }}
                 setAction={setActionSpy}
             />
         )

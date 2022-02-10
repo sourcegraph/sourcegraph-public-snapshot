@@ -42,7 +42,13 @@ describe('WebhookAction', () => {
             <WebhookAction
                 {...props}
                 setAction={setActionSpy}
-                action={{ __typename: 'MonitorWebhook', enabled: true, includeResults: false, id: '1', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorWebhook',
+                    enabled: true,
+                    includeResults: false,
+                    id: '1',
+                    url: 'https://example.com',
+                }}
             />
         )
 
@@ -70,7 +76,13 @@ describe('WebhookAction', () => {
         const { getByTestId } = render(
             <WebhookAction
                 {...props}
-                action={{ __typename: 'MonitorWebhook', enabled: true, includeResults: false, id: '2', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorWebhook',
+                    enabled: true,
+                    includeResults: false,
+                    id: '2',
+                    url: 'https://example.com',
+                }}
                 setAction={setActionSpy}
             />
         )
@@ -86,7 +98,13 @@ describe('WebhookAction', () => {
         const { getByTestId } = render(
             <WebhookAction
                 {...props}
-                action={{ __typename: 'MonitorWebhook', enabled: false, includeResults: false, id: '5', url: 'https://example.com' }}
+                action={{
+                    __typename: 'MonitorWebhook',
+                    enabled: false,
+                    includeResults: false,
+                    id: '5',
+                    url: 'https://example.com',
+                }}
                 setAction={setActionSpy}
             />
         )
