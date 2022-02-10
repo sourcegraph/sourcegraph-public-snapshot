@@ -65,7 +65,7 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
     )
 }
 
-export type OrgFlagOverride = {
+export interface OrgFlagOverride {
     orgID: string
     flagName: string
     value: boolean
@@ -102,13 +102,11 @@ export function useFlagsOverrides(): { data: OrgFlagOverride[]; loading: boolean
     }
 
     return {
-        data: data?.organizationFeatureFlagOverrides.map(value => {
-            return {
-                orgID: value.namespace.id,
-                flagName: value.targetFlag.name,
-                value: value.value,
-            }
-        }),
+        data: data?.organizationFeatureFlagOverrides.map(value => ({
+            orgID: value.namespace.id,
+            flagName: value.targetFlag.name,
+            value: value.value,
+        })),
         loading,
     }
 }
