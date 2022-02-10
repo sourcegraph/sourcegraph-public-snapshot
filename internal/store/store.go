@@ -107,7 +107,7 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, cacheHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -124,7 +124,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
+		return "", false, errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
 	largeFilePatterns := conf.Get().SearchLargeFiles
@@ -137,16 +137,19 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
 	type result struct {
-		path string
-		err  error
+		path     string
+		err      error
+		cacheHit bool
 	}
 	resC := make(chan result, 1)
 	go func() {
 		start := time.Now()
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
+		cacheHit := true
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
+			cacheHit = false
 			return s.fetch(ctx, repo, commit, largeFilePatterns)
 		})
 		var path string
@@ -159,18 +162,18 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		if err != nil {
 			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
 		}
-		resC <- result{path, err}
+		resC <- result{path, err, cacheHit}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return "", false, ctx.Err()
 
 	case res := <-resC:
 		if res.err != nil {
-			return "", res.err
+			return "", false, res.err
 		}
-		return res.path, nil
+		return res.path, res.cacheHit, nil
 	}
 }
 

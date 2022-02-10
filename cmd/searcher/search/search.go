@@ -197,9 +197,16 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	defer cancel()
 
 	getZf := func() (string, *store.ZipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
+		start := time.Now()
+		path, cacheHit, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
 		if err != nil {
 			return "", nil, err
+		}
+		duration := time.Since(start).Seconds()
+		if cacheHit {
+			zipAccess.WithLabelValues("true").Observe(duration)
+		} else {
+			zipAccess.WithLabelValues("false").Observe(duration)
 		}
 		zf, err := s.Store.ZipCache.Get(path)
 		return path, zf, err
@@ -265,6 +272,11 @@ var (
 		Name: "searcher_service_request_total",
 		Help: "Number of returned search requests.",
 	}, []string{"code"})
+	zipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "searcher_service_zip_access_duration",
+		Help:    "Observes the duration to access the zip file for searching.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"cache_hit"})
 )
 
 type badRequestError struct{ msg string }
