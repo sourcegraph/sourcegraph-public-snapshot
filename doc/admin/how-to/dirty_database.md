@@ -70,30 +70,3 @@ Sourcegraph's migration files take for form of `sql` files following the snake c
    * You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
 
 2. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again starting from the [Identify incomplete migration](#1-identify-incomplete-migration) step.**
-
-## Additional Information
-
-### `CREATE_INDEX_CONCURRENTLY`
-Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs a query to create a table index as a background process ([learn more here](https://www.postgresql.org/docs/12/sql-createindex.html)). If one of these migrations fails to complete, the database will register that a table index has been created, however the index will be unusable. If you use `\d <table name>` you will see the index for the table, but there will be nothing to tell you the indexing operation has failed. This database state can lead to poor search query performance, with searches attempting to utilize the incomplete table index.
-
-To resolve this, you will then need to run the migration that creates the relevant index again, replacing `CREATE INDEX CONCURRENTLY` with `REINDEX CONCURRENTLY`. You can also drop and recreate the index.
-
-To discover if such a damaged index exists by run the following query:
-
-```sql
-SELECT
-    current_database() AS datname,
-    pc.relname AS relname,
-    1 AS count
-FROM pg_class pc
-JOIN pg_index pi ON pi.indexrelid = pc.oid
-WHERE
-    NOT indisvalid AND
-    NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
-```
-Additionally Grafana will alert you of an index is in this state. _The Grafana alert can be found under it's database's charts._ Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
-
-## Further resources
-
-* [Sourcegraph - Upgrading Sourcegraph to a new version](https://docs.sourcegraph.com/admin/updates)
-* [Migrations README.md](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/README.md) (Note some of the info contained here pertains to running Sourcegraphs development environment and should not be used on production instances)
