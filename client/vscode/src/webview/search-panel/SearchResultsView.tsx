@@ -413,7 +413,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {!authenticatedUser && (
+                    {isSourcegraphDotCom && !authenticatedUser && (
                         <SearchPageCta
                             icon={<SearchBetaIcon />}
                             ctaTitle="Sign up to add your public and private repositories and access other features"
