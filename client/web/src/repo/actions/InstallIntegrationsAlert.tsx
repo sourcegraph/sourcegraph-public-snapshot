@@ -15,7 +15,7 @@ export interface ExtensionAlertProps {
 }
 
 interface InstallIntegrationsAlertProps
-    extends Pick<NativeIntegrationAlertProps, 'externalURLs' | 'className'>,
+    extends Pick<NativeIntegrationAlertProps, 'externalURLs' | 'className' | 'page'>,
         ExtensionAlertProps {
     codeHostIntegrationMessaging: 'native-integration' | 'browser-extension'
 }
@@ -32,6 +32,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
     codeHostIntegrationMessaging,
     externalURLs,
     className,
+    page,
     onExtensionAlertDismissed,
 }) => {
     const displayBrowserExtensionCTABasedOnCadence = usePersistentCadence(CADENCE_KEY, DISPLAY_CADENCE)
@@ -103,17 +104,18 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             return (
                 <NativeIntegrationAlert
                     className={className}
+                    page={page}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={externalURLs}
                 />
             )
         }
 
-        return <BrowserExtensionAlert className={className} onAlertDismissed={onAlertDismissed} />
+        return <BrowserExtensionAlert className={className} page={page} onAlertDismissed={onAlertDismissed} />
     }
 
     if (ctaToDisplay === 'ide') {
-        return <IDEExtensionAlert className={className} onAlertDismissed={onAlertDismissed} />
+        return <IDEExtensionAlert className={className} page={page} onAlertDismissed={onAlertDismissed} />
     }
 
     return null

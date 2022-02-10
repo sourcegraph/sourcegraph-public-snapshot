@@ -6,10 +6,12 @@ import { setAct } from '../__mocks__/zustand'
 
 import { useExperimentalFeatures } from './experimentalFeatures'
 import {
+    addSearchStackEntry,
     removeAllSearchStackEntries,
     removeSearchStackEntry,
     restorePreviousSession,
     SearchStackEntry,
+    SearchStackEntryInput,
     useSearchStack,
     useSearchStackState,
 } from './searchStack'
@@ -19,12 +21,16 @@ describe('search stack store', () => {
         setAct(act)
     })
 
-    const exampleEntry: SearchStackEntry = {
-        id: 0,
+    const exampleEntryInput: SearchStackEntryInput = {
         type: 'search',
         query: 'test',
         patternType: SearchPatternType.literal,
         caseSensitive: false,
+    }
+
+    const exampleEntry: SearchStackEntry = {
+        ...exampleEntryInput,
+        id: 0,
     }
 
     describe('adding entries (via useSearchStack)', () => {
@@ -34,35 +40,24 @@ describe('search stack store', () => {
 
         it('adds a new entry', () => {
             renderHook(() => useSearchStack(exampleEntry))
+            addSearchStackEntry(exampleEntry)
             expect(useSearchStackState.getState().entries).toEqual([exampleEntry])
         })
 
-        it('updates an existing query entry', () => {
-            const { rerender } = renderHook(({ entry }: { entry: SearchStackEntry }) => useSearchStack(entry), {
-                initialProps: { entry: exampleEntry },
-            })
-            rerender({ entry: { ...exampleEntry, caseSensitive: true } })
-
-            const { entries } = useSearchStackState.getState()
-            expect(entries).toHaveLength(1)
-            expect(entries[0]).toHaveProperty('caseSensitive', true)
+        it('adds a new entry as file', () => {
+            addSearchStackEntry(
+                { type: 'file', path: 'path/', lineRange: { startLine: 0, endLine: 1 }, repo: 'repo', revision: 'rev' },
+                'file'
+            )
+            expect(useSearchStackState.getState().entries[0]).toHaveProperty('lineRange', null)
         })
 
-        it('updates an existing file entry', () => {
-            const entry: SearchStackEntry = {
-                id: 0,
-                type: 'file',
-                path: 'path/to/file',
-                repo: 'test',
-                revision: 'master',
-                lineRange: null,
-            }
-            const { rerender } = renderHook(({ entry }: { entry: SearchStackEntry }) => useSearchStack(entry), {
-                initialProps: { entry },
-            })
-            rerender({ entry: { ...entry, lineRange: { startLine: 10, endLine: 11 } } })
-
-            expect(useSearchStackState.getState().entries).toHaveLength(1)
+        it('adds a new entry as line range', () => {
+            addSearchStackEntry(
+                { type: 'file', path: 'path/', lineRange: { startLine: 0, endLine: 1 }, repo: 'repo', revision: 'rev' },
+                'range'
+            )
+            expect(useSearchStackState.getState().entries[0]).toHaveProperty('lineRange', { startLine: 0, endLine: 1 })
         })
     })
 

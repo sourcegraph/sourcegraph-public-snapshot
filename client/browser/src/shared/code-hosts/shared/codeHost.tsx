@@ -102,7 +102,7 @@ import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLo
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
-import { observeSendTelemetry } from '../../util/optionFlags'
+import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
@@ -496,6 +496,9 @@ function initCodeIntelligence({
             this.subscription.add(
                 hoverifier.hoverStateUpdates
                     .pipe(
+                        withLatestFrom(observeOptionFlag('clickToGoToDefinition')),
+                        filter(([, clickToGoToDefinition]) => clickToGoToDefinition),
+                        map(([hoverState]) => hoverState),
                         switchMap(({ hoveredTokenElement: token, hoverOverlayProps }) => {
                             if (token === undefined) {
                                 return EMPTY
@@ -1543,7 +1546,7 @@ export function injectCodeIntelligenceToCodeHost(
     const hideActions = codeHost.type === 'gerrit'
 
     const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
-        reactDOMRender(<WildcardThemeProvider>{element}</WildcardThemeProvider>, container)
+        reactDOMRender(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>, container)
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises

@@ -130,7 +130,7 @@ require (
 	github.com/slack-go/slack v0.10.1
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20210923201916-00b9c039141c
+	github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20211011105148-2e30f7bacbe1
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
