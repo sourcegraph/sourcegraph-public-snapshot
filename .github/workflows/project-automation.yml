@@ -2,7 +2,8 @@ name: "[OPTIONAL/DOESN'T BLOCK MERGING] Code Insights GitHub project automation"
 
 on:
   issues:
-    types: [opened, closed, reopened, milestoned, labeled]
+    # Note: labeled/milestoned is also triggered when opening a new issue with labels/milestone
+    types: [closed, reopened, milestoned, labeled]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 

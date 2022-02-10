@@ -32,7 +32,7 @@ switch ($github.event_name) {
 
         Write-Information "Issue was $($github.event.action)"
 
-        if ($github.event.action -in 'opened', 'labeled', 'milestoned') {
+        if ($github.event.action -in 'labeled', 'milestoned') {
             # If issue was labeled, make sure to only consider the team label being added (don't send a Slack message for every label added).
             if ($github.event.action -eq 'labeled' -and $github.event.label.name -ne $TeamLabel) {
                 Write-Information "Labeled with non-team label ($($github.event.label.name)), exiting."
@@ -44,12 +44,12 @@ switch ($github.event_name) {
                 return
             }
 
-            # If team label was added or issue was just opened, add to project board
+            # If team label was added, add to project board
             # If added to an iteration, update status and set "proposed by" to the event actor
             # Idempotent, will return the item if already exists in the board (this is fine because we checked for the team label)
             $item = [pscustomobject]$github.event.issue | Add-GitHubBetaProjectItem -ProjectNodeId $ProjectNodeId
 
-            if ($item.content.milestone) {
+            if ($github.event.issue.milestone) {
                 $proposer = $github.event.sender.login
                 Write-Information "Updating issue as 'Proposed for iteration' by @$proposer"
 
