@@ -78,6 +78,8 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 			// Temporary: We shouldn't need both these checks but we're continuing to see the
 			// error in production logs which implies `Is` is not matching.
 			if errors.Is(err, coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+				// We can't do anything and it's leading to increases in our
+				// src_repoupdater_sched_error alert firing more often.
 				continue
 			}
 			return err
