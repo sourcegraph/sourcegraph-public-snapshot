@@ -322,29 +322,29 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     )
 
     const navigateToAuthProvider = useCallback(
-        (kind: ExternalServiceKind): void => {
+        async (kind: ExternalServiceKind): Promise<void> => {
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
                 eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
-                if (kind === ExternalServiceKind.GITHUB) {
-                    if (authenticatedUser) {
-                        determineGitHubAppFromOrgs(authenticatedUser.organizations.nodes.map(org => org.id))
-                            .then(enabled => {
-                                if (enabled) {
-                                    window.location.assign(
-                                        `/.auth/github/login?pc=${encodeURIComponent(
-                                            `https://github.com/::${window.context.githubAppCloudClientID}`
-                                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
-                                    )
-                                } else {
-                                    defaultNavigateToAuthProvider(kind)
-                                }
-                            })
-                            .catch(error => handleError(error))
+                let isEnabled = false
+
+                if (kind === ExternalServiceKind.GITHUB && authenticatedUser) {
+                    try {
+                        isEnabled = await determineGitHubAppFromOrgs(authenticatedUser.organizations.nodes.map(org => org.id))
+                    } catch (error) {
+                        handleError(error)
                     }
-                } else {
+                }
+
+                if (!isEnabled) {
                     defaultNavigateToAuthProvider(kind)
+                } else {
+                    window.location.assign(
+                        `/.auth/github/login?pc=${encodeURIComponent(
+                            `https://github.com/::${window.context.githubAppCloudClientID}`
+                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
+                    )
                 }
             }
         },
