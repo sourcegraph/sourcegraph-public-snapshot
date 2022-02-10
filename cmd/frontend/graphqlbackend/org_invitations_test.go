@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/base64"
 	"strings"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ func mockTimeNow() {
 }
 
 func mockSiteConfigSigningKey() string {
-	signingKey := "foo"
+	signingKey := "Zm9v"
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			OrganizationInvitations: &schema.OrganizationInvitations{
@@ -65,7 +66,7 @@ func TestCreateJWT(t *testing.T) {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
 			}
 
-			return []byte(signingKey), nil
+			return base64.StdEncoding.DecodeString(signingKey)
 		})
 
 		if err != nil {
@@ -115,7 +116,7 @@ func TestOrgInvitationURL(t *testing.T) {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
 			}
 
-			return []byte(signingKey), nil
+			return base64.StdEncoding.DecodeString(signingKey)
 		})
 
 		if err != nil {
