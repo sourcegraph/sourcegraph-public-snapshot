@@ -74,12 +74,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanManage: true,
             viewerHasStarred: true,
             namespace: {
+                __typename: 'User',
                 id: '1',
+                namespaceName: 'user1',
             },
             stars: {
                 totalCount: 123,
             },
             creator: { __typename: 'User', username: 'user1' },
+            updater: { __typename: 'User', username: 'user1' },
             blocks: [
                 { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                 { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
@@ -97,12 +100,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanManage: true,
             viewerHasStarred: true,
             namespace: {
-                id: '2',
+                __typename: 'User',
+                id: '1',
+                namespaceName: 'user1',
             },
             stars: {
                 totalCount: 123,
             },
             creator: { __typename: 'User', username: 'user1' },
+            updater: { __typename: 'User', username: 'user1' },
             blocks: notebook.blocks.map(block => {
                 switch (block.type) {
                     case NotebookBlockType.MARKDOWN:
