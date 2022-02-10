@@ -72,22 +72,16 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 		return err
 	}
 
-	noDepsCounter := 0
 	for _, dependency := range dependencies {
 		_, err := coursier.FetchSources(ctx, s.Config, dependency)
 		if err != nil {
 			// Temporary: We shouldn't need both these checks but we're continuing to see the
 			// error in production logs which implies `Is` is not matching.
 			if errors.Is(err, coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
-				// Non fatal
-				noDepsCounter++
 				continue
 			}
 			return err
 		}
-	}
-	if noDepsCounter == len(dependencies) {
-		return errors.Errorf("all dependencies are missing sources")
 	}
 
 	return nil
