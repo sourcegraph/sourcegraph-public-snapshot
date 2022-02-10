@@ -35,7 +35,7 @@ func TestAllowSignup(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 				if test.shouldAllowSignup != op.CreateIfNotExist {
-					t.Fatalf("Expected %v to equal %v", op.CreateIfNotExist, test.shouldAllowSignup)
+					t.Fatalf("op.CreateIfNotExist: want %v got %v\n", test.shouldAllowSignup, op.CreateIfNotExist)
 				}
 				return 0, "", nil
 			}
@@ -47,7 +47,7 @@ func TestAllowSignup(t *testing.T) {
 			}, oidc: &oidcProvider{}}
 			_, _, err := getOrCreateUser(context.Background(), database.NewStrictMockDB(), p, &oidc.IDToken{}, &oidc.UserInfo{Email: "foo@bar.com", EmailVerified: true}, &userClaims{})
 			if err != nil {
-				t.Fatal(err)
+				t.Errorf("err: expected nil, got %v\n", err)
 			}
 		})
 	}
