@@ -175,9 +175,9 @@ const webviewConfig = {
   },
 }
 
-module.exports = function (targetType) {
-  if (targetType) {
-    return Promise.all([getExtensionCoreConfiguration(targetType), webviewConfig])
+module.exports = function () {
+  if (process.env.TARGET_TYPE) {
+    return Promise.all([getExtensionCoreConfiguration(process.env.TARGET_TYPE), webviewConfig])
   }
 
   // If target type isn't specified, build both.

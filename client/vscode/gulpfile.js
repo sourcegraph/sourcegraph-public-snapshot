@@ -38,10 +38,8 @@ const logWebpackStats = stats => {
   log(stats.toString(WEBPACK_STATS_OPTIONS))
 }
 
-const targetType = ['webworker', 'node'].includes(process.env.TARGET_TYPE) ? process.env.targetType : undefined
-
 async function webpack() {
-  const webpackConfig = await createWebpackConfig(targetType)
+  const webpackConfig = await createWebpackConfig()
   const compiler = createWebpackCompiler(webpackConfig)
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
@@ -54,7 +52,7 @@ async function webpack() {
 }
 
 async function watchWebpack() {
-  const webpackConfig = await createWebpackConfig(targetType)
+  const webpackConfig = await createWebpackConfig()
   const compiler = createWebpackCompiler(webpackConfig)
   compiler.hooks.watchRun.tap('Notify', () => log('Webpack compiling...'))
   await new Promise(() => {
