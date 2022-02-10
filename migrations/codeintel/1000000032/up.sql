@@ -6,11 +6,11 @@ CREATE TABLE rockskip_repos (
 );
 
 CREATE TABLE rockskip_ancestry (
-    commit_id   VARCHAR(40) PRIMARY KEY,
+    commit_id   VARCHAR(40),
     repo        TEXT        NOT NULL REFERENCES rockskip_repos(repo),
     height      INTEGER     NOT NULL,
     ancestor_id VARCHAR(40) NOT NULL,
-    UNIQUE (repo, commit_id)
+    PRIMARY KEY (repo, commit_id)
 );
 
 CREATE TABLE rockskip_blobs (
