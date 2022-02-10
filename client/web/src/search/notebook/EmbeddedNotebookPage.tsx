@@ -3,26 +3,39 @@ import React, { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { fetchNotebook as _fetchNotebook } from './backend'
+import { createPlatformContext } from '../../platform/context'
+import { fetchHighlightedFileLineRanges, fetchRepository, resolveRevision } from '../../repo/backend'
+import { eventLogger } from '../../tracking/eventLogger'
+
+import { fetchNotebook } from './backend'
 import { NotebookContent, NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
-    extends Omit<NotebookContentProps, 'blocks' | 'onUpdateBlocks' | 'location' | 'viewerCanManage'> {
+    extends Pick<
+        NotebookContentProps,
+        | 'isLightTheme'
+        | 'searchContextsEnabled'
+        | 'showSearchContext'
+        | 'isSourcegraphDotCom'
+        | 'authenticatedUser'
+        | 'settingsCascade'
+    > {
     notebookId: string
-    fetchNotebook?: typeof _fetchNotebook
 }
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageProps> = ({
-    notebookId,
-    fetchNotebook = _fetchNotebook,
-    ...props
-}) => {
-    useEffect(() => props.telemetryService.logViewEvent('EmbeddedNotebookPage'), [props.telemetryService])
+export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageProps> = ({ notebookId, ...props }) => {
+    useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
+
+    const platformContext = useMemo(() => createPlatformContext(), [])
+    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+    const isMacPlatformMemoized = useMemo(() => isMacPlatform(), [])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -31,7 +44,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [fetchNotebook, notebookId]
+            [notebookId]
         )
     )
 
@@ -55,6 +68,15 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}
                     viewerCanManage={false}
+                    globbing={true}
+                    isMacPlatform={isMacPlatformMemoized}
+                    fetchRepository={fetchRepository}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    resolveRevision={resolveRevision}
+                    streamSearch={aggregateStreamingSearch}
+                    telemetryService={eventLogger}
+                    platformContext={platformContext}
+                    extensionsController={extensionsController}
                 />
             )}
         </div>

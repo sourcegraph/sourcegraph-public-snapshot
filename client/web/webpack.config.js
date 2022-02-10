@@ -35,6 +35,7 @@ const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
+const isEmbedDevelopment = isDevelopment && process.env.EMBED_DEVELOPMENT === 'true'
 
 /** Allow overriding default Webpack naming behavior for debugging */
 const useNamedChunks = process.env.WEBPACK_USE_NAMED_CHUNKS === 'true'
@@ -60,6 +61,7 @@ const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace 
 )
 
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
+const isEmbedEntrypointEnabled = isEnterpriseBuild && (isProduction || isEmbedDevelopment)
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const styleLoader = isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader
@@ -110,8 +112,8 @@ const config = {
     // strict superset of the OSS entrypoint.
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
-    // iframes on 3rd party sites.
-    embed: path.join(enterpriseDirectory, 'embed', 'main.tsx'),
+    // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
+    ...(isEmbedEntrypointEnabled && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {
     path: path.join(ROOT_PATH, 'ui', 'assets'),
