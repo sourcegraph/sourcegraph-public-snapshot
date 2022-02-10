@@ -6,7 +6,6 @@
 
 .search-box {
     background-color: var(--vscode-editorWidget-background);
-    border-color: var(--vscode-editorWidget-border);
 
     &:first-child {
         border-top-left-radius: 0;
@@ -14,12 +13,9 @@
     }
 
     // Override for search context separator
-    --border-color-2: var(--vscode-editorWidget-border);
+    --border-color-2: var(--vscode-textLink-foreground);
     // For button hover background
     --color-bg-2: var(--vscode-input-background);
-    &:first-child {
-        border-left-color: var(--vscode-editorWidget-border);
-    }
 
     .btn:hover {
         background-color: var(--vscode-input-background);
