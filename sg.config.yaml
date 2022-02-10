@@ -974,7 +974,7 @@ tests:
     cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
-    cmd: yarn --cwd client/browser test-integration
+    cmd: POLLYJS_MODE=replay yarn --cwd client/browser test-integration
 
   bext-e2e:
     cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts

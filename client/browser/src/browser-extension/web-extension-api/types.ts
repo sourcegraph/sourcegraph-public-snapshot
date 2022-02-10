@@ -33,6 +33,11 @@ export interface FeatureFlags {
      * Support completion in text fields (such as on GitHub issues).
      */
     experimentalTextFieldCompletion: boolean
+
+    /**
+     * Token single click takes user to variable definition.
+     */
+    clickToGoToDefinition: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
@@ -40,6 +45,7 @@ export const featureFlagDefaults: FeatureFlags = {
     sendTelemetry: true,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
+    clickToGoToDefinition: false,
 }
 
 interface SourcegraphURL {
