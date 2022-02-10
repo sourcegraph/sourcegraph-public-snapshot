@@ -122,7 +122,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             )}
 
             {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
-                <CodeInsightDashboardsVisibility className="mt-5 mb-1" dashboardCount={dashboardReferenceCount} />
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
             <hr className={styles.formSeparator} />
