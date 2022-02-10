@@ -1,5 +1,6 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import DomainIcon from 'mdi-react/DomainIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import React, { useState, useCallback, useMemo } from 'react'
@@ -20,21 +21,22 @@ export interface ShareOption {
 }
 
 interface NotebookShareOptionsDropdownProps extends TelemetryProps {
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser
     selectedShareOption: ShareOption
     onSelectShareOption: (shareOption: ShareOption) => void
 }
 
-const ShareOptionComponent: React.FunctionComponent<Omit<ShareOption, 'namespaceId'>> = ({
-    namespaceType,
-    namespaceName,
-    isPublic,
-}) => {
+const ShareOptionComponent: React.FunctionComponent<
+    Omit<ShareOption, 'namespaceId'> & { isSourcegraphDotCom: boolean }
+> = ({ isSourcegraphDotCom, namespaceType, namespaceName, isPublic }) => {
     if (namespaceType === 'User') {
         if (isPublic) {
+            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
+            const publicText = isSourcegraphDotCom ? 'Public' : 'Instance'
             return (
                 <>
-                    <WebIcon className="mr-2" size="1.15rem" /> Public
+                    <PublicIcon className="mr-2" size="1.15rem" /> {publicText}
                 </>
             )
         }
@@ -52,6 +54,7 @@ const ShareOptionComponent: React.FunctionComponent<Omit<ShareOption, 'namespace
 }
 
 export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShareOptionsDropdownProps> = ({
+    isSourcegraphDotCom,
     telemetryService,
     authenticatedUser,
     selectedShareOption,
@@ -91,7 +94,7 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
         <Dropdown isOpen={isOpen} toggle={toggleOpen}>
             <DropdownToggle className={styles.button} outline={true}>
                 <span className="d-flex align-items-center">
-                    <ShareOptionComponent {...selectedShareOption} />
+                    <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
                 </span>
                 <span className="ml-5">{isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}</span>
             </DropdownToggle>
@@ -102,7 +105,7 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
                         className="d-flex align-items-center"
                         onClick={() => onSelectShareOption(option)}
                     >
-                        <ShareOptionComponent {...option} />
+                        <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
                     </DropdownItem>
                 ))}
             </DropdownMenu>

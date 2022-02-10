@@ -2,10 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
@@ -389,6 +391,12 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 	if r.notebook.NamespaceOrgID != 0 {
 		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.notebook.NamespaceOrgID))
 		if err != nil {
+			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
+			// that org, then he does not have access to further information about the org. Instead of returning an error
+			// (which would prevent the user from viewing the notebook) we return an empty namespace.
+			if envvar.SourcegraphDotComMode() && strings.Contains(err.Error(), "org not found") {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil

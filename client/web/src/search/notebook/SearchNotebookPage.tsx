@@ -196,6 +196,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             ]}
                             actions={
                                 <SearchNotebookPageHeaderActions
+                                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                                     authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}

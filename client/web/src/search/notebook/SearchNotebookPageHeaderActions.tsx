@@ -1,8 +1,11 @@
 import classNames from 'classnames'
+import DomainIcon from 'mdi-react/DomainIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
-import React, { useCallback, useState } from 'react'
+import WebIcon from 'mdi-react/WebIcon'
+import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -12,6 +15,7 @@ import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { NotebookFields } from '../../graphql-operations'
+import { OrgAvatar } from '../../org/OrgAvatar'
 
 import {
     deleteNotebook as _deleteNotebook,
@@ -19,10 +23,12 @@ import {
     deleteNotebookStar as _deleteNotebookStar,
 } from './backend'
 import { DeleteNotebookModal } from './DeleteNotebookModal'
+import { ShareOption } from './NotebookVisibilitySettingsDropdown'
 import styles from './SearchNotebookPageHeaderActions.module.scss'
-import { ShareNotebookDropdown } from './ShareNotebookDropdown'
+import { ShareNotebookModal } from './ShareNotebookModal'
 
 export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     namespace: NotebookFields['namespace']
     notebookId: string
@@ -37,6 +43,7 @@ export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
 }
 
 export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNotebookPageHeaderActionsProps> = ({
+    isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
     viewerCanManage,
@@ -49,35 +56,75 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
-}) => (
-    <div className="d-flex align-items-center">
-        <NotebookStarsButton
-            disabled={authenticatedUser === null}
-            notebookId={notebookId}
-            starsCount={starsCount}
-            viewerHasStarred={viewerHasStarred}
-            createNotebookStar={createNotebookStar}
-            deleteNotebookStar={deleteNotebookStar}
-            telemetryService={telemetryService}
-        />
-        {authenticatedUser && namespace && (
-            <ShareNotebookDropdown
-                isPublic={isPublic}
-                telemetryService={telemetryService}
-                authenticatedUser={authenticatedUser}
-                namespace={namespace}
-                onUpdateVisibility={onUpdateVisibility}
-            />
-        )}
-        {viewerCanManage && (
-            <NotebookSettingsDropdown
+}) => {
+    const [showShareModal, setShowShareModal] = useState(false)
+    const toggleShareModal = useCallback(() => setShowShareModal(show => !show), [setShowShareModal])
+    const [selectedShareOption, setSelectedShareOption] = useState<ShareOption | null>(
+        namespace
+            ? {
+                  namespaceType: namespace.__typename,
+                  namespaceId: namespace.id,
+                  namespaceName: namespace.namespaceName,
+                  isPublic,
+              }
+            : null
+    )
+
+    const shareIcon = useMemo(() => {
+        if (!selectedShareOption) {
+            return <></>
+        }
+        if (selectedShareOption.namespaceType === 'User') {
+            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
+            return selectedShareOption.isPublic ? (
+                <PublicIcon className="mr-1" size="1.15rem" />
+            ) : (
+                <LockIcon className="mr-1" size="1.15rem" />
+            )
+        }
+        return (
+            <OrgAvatar org={selectedShareOption.namespaceName} className="d-inline-flex mr-1" size="sm" light={true} />
+        )
+    }, [selectedShareOption, isSourcegraphDotCom])
+
+    return (
+        <div className="d-flex align-items-center">
+            <NotebookStarsButton
+                disabled={authenticatedUser === null}
                 notebookId={notebookId}
-                deleteNotebook={deleteNotebook}
+                starsCount={starsCount}
+                viewerHasStarred={viewerHasStarred}
+                createNotebookStar={createNotebookStar}
+                deleteNotebookStar={deleteNotebookStar}
                 telemetryService={telemetryService}
             />
-        )}
-    </div>
-)
+            {authenticatedUser && namespace && selectedShareOption && (
+                <>
+                    <Button variant="primary" onClick={toggleShareModal} className="d-flex align-items-center">
+                        {shareIcon} Share
+                    </Button>
+                    <ShareNotebookModal
+                        isOpen={showShareModal}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        toggleModal={toggleShareModal}
+                        telemetryService={telemetryService}
+                        authenticatedUser={authenticatedUser}
+                        selectedShareOption={selectedShareOption}
+                        setSelectedShareOption={setSelectedShareOption}
+                        onUpdateVisibility={onUpdateVisibility}
+                    />
+                </>
+            )}
+            {viewerCanManage && (
+                <NotebookSettingsDropdown
+                    notebookId={notebookId}
+                    deleteNotebook={deleteNotebook}
+                    telemetryService={telemetryService}
+                />
+            )}
+        </div>
+    )
+}
 
 interface NotebookSettingsDropdownProps extends TelemetryProps {
     notebookId: string
