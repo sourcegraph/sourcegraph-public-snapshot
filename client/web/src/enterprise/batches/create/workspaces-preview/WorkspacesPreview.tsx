@@ -29,15 +29,16 @@ const ON_STATEMENT = `on:
 
 const WAITING_MESSAGES = [
     'Hang tight while we look for matching workspaces...',
-    'Still searching, this should just take a moment or two more...',
+    'Still searching, this should just take a moment or two...',
     '*elevator music* (Still looking for matching workspaces...)',
-    "This is getting embarrassing, but we're still searching...",
+    'The search continues...',
     'Reticulating splines... (Still looking for matching workspaces...)',
     "So, how's your day? (Still looking for matching workspaces...)",
     'Are you staying hydrated? (Still looking for matching workspaces...)',
     "Hold your horses, we're still not done yet...",
 ]
 
+/* The time to wait until we display the next waiting message, in seconds. */
 const WAITING_MESSAGE_INTERVAL = 10
 
 interface WorkspacesPreviewProps {
