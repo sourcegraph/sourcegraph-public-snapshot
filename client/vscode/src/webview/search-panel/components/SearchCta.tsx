@@ -30,7 +30,7 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
         </div>
         <a
             className={classNames('btn', styles.btn)}
-            href="https://sourcegraph.com/sign-up?editor=vscode"
+            href="https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up"
             onClick={onClickAction}
         >
             <span className={styles.text}>{buttonText}</span>
