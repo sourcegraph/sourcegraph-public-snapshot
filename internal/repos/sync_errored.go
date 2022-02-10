@@ -20,6 +20,11 @@ var erroredRepoGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Help: "Counts number of repos with non empty_last errors which have been synced.",
 })
 
+var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "src_repoupdater_syncer_total_errored_repos",
+	Help: "Total number of repos with last error currently.",
+})
+
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *rate.Limiter) {
 	for {
 		log15.Info("running worker for SyncReposWithLastErrors", "time", time.Now())
@@ -39,6 +44,7 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 // Dot com mode.
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.Limiter) error {
 	erroredRepoGauge.Set(0)
+	s.setTotalErroredRepos(ctx)
 	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
@@ -52,4 +58,13 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 		return nil
 	})
 	return err
+}
+
+func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
+	totalErrored, err := s.Store.GitserverReposStore.TotalErroredCloudDefaultRepos(ctx)
+	if err != nil {
+		log15.Error("error fetching count of total errored repos", "err", err)
+		return
+	}
+	totalErroredRepos.Set(float64(totalErrored))
 }

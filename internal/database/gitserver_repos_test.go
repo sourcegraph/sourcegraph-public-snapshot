@@ -217,6 +217,14 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 					t.Fatalf("expected repo %s got %s instead", fr.Name, tc.expectedReposFound[i])
 				}
 			}
+
+			total, err := GitserverRepos(db).TotalErroredCloudDefaultRepos(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if total != len(tc.expectedReposFound) {
+				t.Fatalf("expected %d total errored repos, got %d instead", len(tc.expectedReposFound), total)
+			}
 		})
 	}
 }
