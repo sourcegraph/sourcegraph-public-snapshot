@@ -67,12 +67,10 @@ func canonicalizeDocuments(state *State) {
 func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
 	for _, documentRanges := range definitionReferenceData {
 		for documentID, canonicalID := range canonicalIDs {
-			if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
-				// Move definition/reference data into the canonical document
+			// Remove references to non-canonical document...
+			if rangeIDs := documentRanges.Pop(documentID); rangeIDs != nil {
+				// ...and move existing definition/reference data into the canonical document
 				documentRanges.SetUnion(canonicalID, rangeIDs)
-
-				// Remove references to non-canonical document
-				documentRanges.Delete(documentID)
 			}
 		}
 	}
