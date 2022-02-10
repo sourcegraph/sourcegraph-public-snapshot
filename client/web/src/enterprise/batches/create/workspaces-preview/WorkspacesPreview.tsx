@@ -35,6 +35,7 @@ const WAITING_MESSAGES = [
     'Reticulating splines... (Still looking for matching workspaces...)',
     "So, how's your day? (Still looking for matching workspaces...)",
     'Are you staying hydrated? (Still looking for matching workspaces...)',
+    "Hold your horses, we're still not done yet...",
 ]
 
 const WAITING_MESSAGE_INTERVAL = 10
