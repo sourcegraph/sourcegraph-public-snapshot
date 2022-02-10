@@ -21,6 +21,7 @@ export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFo
                 visibility: '',
                 step: 'days',
                 stepValue: '8',
+                dashboardReferenceCount: 0,
             }
         }
 

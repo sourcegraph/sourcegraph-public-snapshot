@@ -4,7 +4,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
+import {
+    CodeInsightDashboardsVisibility,
+    CodeInsightTimeStepPicker,
+    VisibilityPicker,
+} from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
@@ -27,6 +31,7 @@ interface CreationSearchInsightFormProps {
     submitted: boolean
     className?: string
     isFormClearActive?: boolean
+    dashboardReferenceCount?: number
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
@@ -81,6 +86,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         step,
         className,
         isFormClearActive,
+        dashboardReferenceCount,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -199,6 +205,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
+
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
 
             <hr className="my-4 w-100" />
 

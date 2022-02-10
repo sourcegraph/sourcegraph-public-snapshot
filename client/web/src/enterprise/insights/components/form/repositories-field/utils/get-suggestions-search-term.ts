@@ -1,4 +1,4 @@
-import { getSanitizedRepositories } from '../../../creation-ui-kit/sanitizers/repositories'
+import { getSanitizedRepositories } from '../../../creation-ui-kit'
 
 interface SuggestionsSearchTermInput {
     value: string

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
+import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
@@ -104,6 +104,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 step={step}
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
+                dashboardReferenceCount={initialValue?.dashboardReferenceCount}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 onEditSeriesRequest={editRequest}

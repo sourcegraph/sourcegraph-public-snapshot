@@ -53,6 +53,7 @@ export function parseInsightFromSubject(
                 visibility: subject.subject.id,
                 type: InsightExecutionType.Runtime,
                 viewType: type,
+                dashboardReferenceCount: 0,
                 ...insightConfiguration,
             }
         }
@@ -64,6 +65,7 @@ export function parseInsightFromSubject(
                 id: insightId,
                 visibility: subject.subject.id,
                 type: InsightExecutionType.Runtime,
+                dashboardReferenceCount: 0,
                 viewType: type,
                 ...insightConfiguration,
                 series: insightConfiguration.series?.map((line, index) => ({
@@ -88,6 +90,7 @@ export function parseInsightFromSubject(
             type: InsightExecutionType.Backend,
             step: { months: 1 },
             viewType: type,
+            dashboardReferenceCount: 0,
             ...insightConfiguration,
             series: insightConfiguration.series?.map((line, index) => ({
                 id: `${line.name}-${index}`,

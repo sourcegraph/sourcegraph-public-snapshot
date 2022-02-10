@@ -1,16 +1,7 @@
 import { gql } from '@apollo/client'
 
-export const INSIGHT_VIEW_FRAGMENT = gql`
-    fragment InsightViewNode on InsightView {
-        id
-        defaultFilters {
-            includeRepoRegex
-            excludeRepoRegex
-        }
-        appliedFilters {
-            includeRepoRegex
-            excludeRepoRegex
-        }
+const INSIGHT_VIEW_SERIES_FRAGMENT = gql`
+    fragment InsightViewSeries on InsightView {
         presentation {
             __typename
             ... on LineChartInsightViewPresentation {
@@ -46,9 +37,23 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
     }
 `
 
+export const INSIGHT_VIEW_FRAGMENT = gql`
+    fragment InsightViewNode on InsightView {
+        id
+        appliedFilters {
+            includeRepoRegex
+            excludeRepoRegex
+        }
+        dashboardReferenceCount
+        ...InsightViewSeries
+    }
+
+    ${INSIGHT_VIEW_SERIES_FRAGMENT}
+`
+
 /**
  * GQL query for getting all insight views that are accessible for a user.
- * Note that this query doesn't contains any chart data series points.
+ * Note that this query doesn't contain any chart data series points.
  * Insight model in this case contains only meta and presentation chart data.
  */
 export const GET_INSIGHTS_GQL = gql`
