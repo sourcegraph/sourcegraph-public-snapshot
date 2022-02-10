@@ -52,6 +52,8 @@ import {
     CoolCodeIntelHighlightedBlobVariables,
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
+    HoverFields,
+    LocationConnectionFields,
     LocationFields,
     Maybe,
 } from '../graphql-operations'
@@ -289,25 +291,16 @@ export const SideReferences: React.FunctionComponent<
     )
 }
 
-interface LSIFLocationResult {
-    __typename?: 'LocationConnection'
-    nodes: ({ __typename?: 'Location' } & LocationFields)[]
-    pageInfo: { __typename?: 'PageInfo'; endCursor: Maybe<string> }
-}
-
 const SideReferencesLists: React.FunctionComponent<
     CoolCodeIntelProps & {
         clickedToken: CoolClickedToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
         filter: string | undefined
-        references: LSIFLocationResult
-        definitions: Omit<LSIFLocationResult, 'pageInfo'>
-        implementations: LSIFLocationResult
-        hover: Maybe<{
-            __typename?: 'Hover'
-            markdown: { __typename?: 'Markdown'; html: string; text: string }
-        }>
+        references: LocationConnectionFields
+        definitions: Omit<LocationConnectionFields, 'pageInfo'>
+        implementations: LocationConnectionFields
+        hover: Maybe<HoverFields>
     }
 > = props => {
     const { references, definitions, implementations, hover } = props
