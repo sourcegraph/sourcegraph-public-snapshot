@@ -106,7 +106,7 @@ export class EventLogger implements VsceTelemetryService {
             userCookieID: this.getAnonymousUserID(),
             referrer: 'VSCE',
             url: uri || '',
-            source: EventSource.WEB,
+            source: EventSource.BACKEND,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
             deviceID: this.getAnonymousUserID(),
