@@ -3,7 +3,7 @@
 # Convenience script for https://buildkite.com/docs/agent/v3/cli-annotate
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-set -ex
+set -e
 
 print_usage() {
   printf "Usage:"
