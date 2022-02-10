@@ -12,15 +12,16 @@ import (
 )
 
 type EmailAction struct {
-	ID        int64
-	Monitor   int64
-	Enabled   bool
-	Priority  string
-	Header    string
-	CreatedBy int32
-	CreatedAt time.Time
-	ChangedBy int32
-	ChangedAt time.Time
+	ID             int64
+	Monitor        int64
+	Enabled        bool
+	Priority       string
+	Header         string
+	IncludeResults bool
+	CreatedBy      int32
+	CreatedAt      time.Time
+	ChangedBy      int32
+	ChangedAt      time.Time
 }
 
 const updateActionEmailFmtStr = `
@@ -189,6 +190,7 @@ var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.enabled"),
 	sqlf.Sprintf("cm_emails.priority"),
 	sqlf.Sprintf("cm_emails.header"),
+	sqlf.Sprintf("cm_emails.include_results"),
 	sqlf.Sprintf("cm_emails.created_by"),
 	sqlf.Sprintf("cm_emails.created_at"),
 	sqlf.Sprintf("cm_emails.changed_by"),
@@ -217,6 +219,7 @@ func scanEmail(scanner dbutil.Scanner) (*EmailAction, error) {
 		&m.Enabled,
 		&m.Priority,
 		&m.Header,
+		&m.IncludeResults,
 		&m.CreatedBy,
 		&m.CreatedAt,
 		&m.ChangedBy,

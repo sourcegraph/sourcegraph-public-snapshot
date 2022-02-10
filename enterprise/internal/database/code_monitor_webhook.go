@@ -12,10 +12,11 @@ import (
 )
 
 type WebhookAction struct {
-	ID      int64
-	Monitor int64
-	Enabled bool
-	URL     string
+	ID             int64
+	Monitor        int64
+	Enabled        bool
+	URL            string
+	IncludeResults bool
 
 	CreatedBy int32
 	CreatedAt time.Time
@@ -157,6 +158,7 @@ var webhookActionColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_webhooks.monitor"),
 	sqlf.Sprintf("cm_webhooks.enabled"),
 	sqlf.Sprintf("cm_webhooks.url"),
+	sqlf.Sprintf("cm_webhooks.include_results"),
 	sqlf.Sprintf("cm_webhooks.created_by"),
 	sqlf.Sprintf("cm_webhooks.created_at"),
 	sqlf.Sprintf("cm_webhooks.changed_by"),
@@ -184,6 +186,7 @@ func scanWebhookAction(scanner dbutil.Scanner) (*WebhookAction, error) {
 		&w.Monitor,
 		&w.Enabled,
 		&w.URL,
+		&w.IncludeResults,
 		&w.CreatedBy,
 		&w.CreatedAt,
 		&w.ChangedBy,
