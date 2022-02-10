@@ -724,7 +724,14 @@ importers:
     specifiers: {}
 
   client/storybook:
-    specifiers: {}
+    specifiers:
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/web': workspace:*
+      '@sourcegraph/wildcard': workspace:*
+    dependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/web': link:../web
+      '@sourcegraph/wildcard': link:../wildcard
 
   client/stylelint-plugin-sourcegraph:
     specifiers: {}

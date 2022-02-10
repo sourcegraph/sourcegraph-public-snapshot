@@ -1,4 +1,3 @@
 packages:
   - "lib/codeintel/lsif_typed"
   - "client/*"
-  - "client/sandboxes/*"

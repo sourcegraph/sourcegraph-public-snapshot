@@ -306,16 +306,16 @@ commands:
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: pnpm install --no-progress
 
   enterprise-web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: pnpm --no-progress
     env:
       ENTERPRISE: 1
 
   web-standalone-http:
-    cmd: yarn workspace @sourcegraph/web serve:dev --color
+    cmd: pnpm serve:dev --color --filter @sourcegraph/web
     install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true

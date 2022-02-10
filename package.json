@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.7.0",
-    "yarn": "^1.22.4"
+    "pnpm": "^6.29.1"
   },
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
@@ -31,12 +31,12 @@
     "test-lighthouse": "SOURCEGRAPH_API_URL=https://sourcegraph.com lhci collect && lhci open",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
-    "storybook": "pnpm run -w @sourcegraph/storybook run start",
+    "storybook": "pnpm run start  --filter @sourcegraph/storybook",
     "storybook:dll": "yarn workspace @sourcegraph/storybook run start:dll",
     "storybook:branded": "yarn workspace @sourcegraph/branded run storybook",
     "storybook:browser": "yarn workspace @sourcegraph/browser run storybook",
     "storybook:shared": "yarn workspace @sourcegraph/shared run storybook",
-    "storybook:web": "pnpm run -w @sourcegraph/web run storybook",
+    "storybook:web": "pnpm run storybook --filter @sourcegraph/web",
     "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
     "build-storybook": "yarn workspace @sourcegraph/storybook run build",
