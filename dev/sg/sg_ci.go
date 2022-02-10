@@ -466,8 +466,10 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 func getAllowedBuildTypeArgs() []string {
 	var results []string
-	for _, rt := range runtype.RunTypes(runtype.RunTypeFilter{PrefixOnly: true}) {
-		results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
+	for _, rt := range runtype.RunTypes() {
+		if rt.Matcher().IsPrefixMatcher() {
+			results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
+		}
 	}
 	return results
 }

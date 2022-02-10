@@ -45,10 +45,6 @@ const (
 	None
 )
 
-type RunTypeFilter struct {
-	PrefixOnly bool
-}
-
 // Compute determines what RunType matches the given parameters.
 func Compute(tag, branch string, env map[string]string) RunType {
 	for runType := PullRequest + 1; runType < None; runType += 1 {
@@ -60,21 +56,11 @@ func Compute(tag, branch string, env map[string]string) RunType {
 	return PullRequest
 }
 
-func runTimeFilter(args RunTypeFilter, runType RunType) bool {
-	if args.PrefixOnly {
-		return runType.Matcher().isPrefixMatcher()
-	}
-
-	return true
-}
-
-// RunTypes returns all runtypes that match the provided filter predicates.
-func RunTypes(args RunTypeFilter) []RunType {
+// RunTypes returns all runtypes.
+func RunTypes() []RunType {
 	var results []RunType
 	for runType := PullRequest + 1; runType < None; runType += 1 {
-		if runTimeFilter(args, runType) {
-			results = append(results, runType)
-		}
+		results = append(results, runType)
 	}
 	return results
 }
@@ -239,6 +225,6 @@ func (m *RunTypeMatcher) Matches(tag, branch string, env map[string]string) bool
 	return false
 }
 
-func (m *RunTypeMatcher) isPrefixMatcher() bool {
+func (m *RunTypeMatcher) IsPrefixMatcher() bool {
 	return m.Branch != "" && !m.BranchExact && !m.BranchRegexp
 }
