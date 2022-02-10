@@ -22,9 +22,13 @@ func Executor() *monitoring.Container {
 				Options: []string{"batches", "codeintel"},
 			},
 			{
-				Label: "Compute instance",
-				Name:  "instance",
-				Query: "label_values(node_exporter_build_info{job=\"sourcegraph-executor-nodes\"}, instance)",
+				Label:        "Compute instance",
+				Name:         "instance",
+				OptionsQuery: "label_values(node_exporter_build_info{job=\"sourcegraph-executor-nodes\"}, instance)",
+
+				// The options query can generate a massive result set that can cause issues.
+				// shared.NewNodeExporterGroup filters by job as well so this is safe to use
+				WildcardAllValue: true,
 			},
 		},
 		Groups: []monitoring.Group{
