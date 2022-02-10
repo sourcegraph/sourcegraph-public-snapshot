@@ -44,12 +44,10 @@ func canonicalizeDocuments(state *State) {
 		}
 	}
 
-	for documentID, canonicalID := range canonicalIDs {
-		// Replace references to each document with the canonical reference
-		canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
-		canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
-		canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, documentID, canonicalID)
-	}
+	// Replace references to each document with the canonical references
+	canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, canonicalIDs)
 
 	for documentID, canonicalID := range canonicalIDs {
 		// Move ranges and diagnostics into the canonical document
@@ -63,17 +61,19 @@ func canonicalizeDocuments(state *State) {
 	}
 }
 
-// canonicalizeDocumentsInDefinitionReferences moves definition or reference result data from the
-// given document to the given canonical document and removes all references to the non-canonical
-// document.
-func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, documentID, canonicalID int) {
-	for _, documentRanges := range definitionReferenceData {
-		if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
-			// Move definition/reference data into the canonical document
-			documentRanges.SetUnion(canonicalID, rangeIDs)
+// canonicalizeDocumentsInDefinitionReferences moves definition, reference, and implementation result
+// data from a document to its canonical document (if they differ) and removes all references to the
+// non-canonical document.
+func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
+	for documentID, canonicalID := range canonicalIDs {
+		for _, documentRanges := range definitionReferenceData {
+			if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
+				// Move definition/reference data into the canonical document
+				documentRanges.SetUnion(canonicalID, rangeIDs)
 
-			// Remove references to non-canonical document
-			documentRanges.Delete(documentID)
+				// Remove references to non-canonical document
+				documentRanges.Delete(documentID)
+			}
 		}
 	}
 }
