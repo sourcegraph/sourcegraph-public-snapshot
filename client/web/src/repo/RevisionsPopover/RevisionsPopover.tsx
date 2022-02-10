@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
@@ -81,18 +80,25 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
             defaultIndex={tabIndex}
             onChange={handleTabsChange}
         >
-            <div className={classNames('tablist-wrapper', styles.tabs)}>
-                <TabList>
-                    {TABS.map(({ label, id }) => (
-                        <Tab key={id} data-tab-content={id}>
-                            <span className="tablist-wrapper--tab-label">{label}</span>
-                        </Tab>
-                    ))}
-                </TabList>
-                <Button onClick={props.togglePopover} variant="icon" className={styles.tabsClose} aria-label="Close">
-                    <CloseIcon className="icon-inline" />
-                </Button>
-            </div>
+            <TabList
+                wrapperClassName={styles.tabs}
+                actions={
+                    <Button
+                        onClick={props.togglePopover}
+                        variant="icon"
+                        className={styles.tabsClose}
+                        aria-label="Close"
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </Button>
+                }
+            >
+                {TABS.map(({ label, id }) => (
+                    <Tab key={id} data-tab-content={id}>
+                        <span className="tablist-wrapper--tab-label">{label}</span>
+                    </Tab>
+                ))}
+            </TabList>
             <TabPanels>
                 {TABS.map(tab => (
                     <TabPanel key={tab.id}>

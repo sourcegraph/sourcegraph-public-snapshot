@@ -4,13 +4,11 @@
 }
 
 .tabs {
-    display: flex;
-    justify-content: space-between;
     padding-left: 1rem;
     padding-right: 1rem;
     margin-top: 0.25rem;
+}
 
-    &-close {
-        color: var(--icon-color);
-    }
+.tabs-close {
+    color: var(--icon-color);
 }
