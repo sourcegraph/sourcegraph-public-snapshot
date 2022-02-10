@@ -126,7 +126,7 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, u.maxAgeForNonStaleBranches, u.maxAgeForNonStaleTags, dirtyToken, time.Now()); err != nil {
+	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, u.maxAgeForNonStaleBranches, u.maxAgeForNonStaleTags, dirtyToken); err != nil {
 		return errors.Wrap(err, "dbstore.CalculateVisibleUploads")
 	}
 
