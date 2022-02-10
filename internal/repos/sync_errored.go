@@ -61,7 +61,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 }
 
 func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
-	totalErrored, err := s.Store.GitserverReposStore.TotalErroredRepos(ctx)
+	totalErrored, err := s.Store.GitserverReposStore.TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
 		log15.Error("error fetching count of total errored repos", "err", err)
 		return

@@ -25,7 +25,7 @@ type GitserverRepoStore interface {
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
-	TotalErroredRepos(ctx context.Context) (int, error)
+	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -84,9 +84,9 @@ INSERT INTO
 	return errors.Wrap(err, "creating GitserverRepo")
 }
 
-// TotalErroredRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
+// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
 // counting repos with an associated cloud_default external service.
-func (s *gitserverRepoStore) TotalErroredRepos(ctx context.Context) (int, error) {
+func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(totalErroredQuery))
 	if err != nil {
 		return 0, errors.Wrap(err, "fetching count of total errored repos")
@@ -103,11 +103,11 @@ func (s *gitserverRepoStore) TotalErroredRepos(ctx context.Context) (int, error)
 }
 
 const totalErroredQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredRepos
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
 SELECT
 	count(repo.name)
 FROM repo
-	LEFT JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
 	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
 	INNER JOIN external_services es on esr.external_service_id = es.id
 WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
@@ -151,7 +151,7 @@ SELECT
 	repo.name,
 	gr.last_error
 FROM repo
-	LEFT JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
 	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
 	INNER JOIN external_services es on esr.external_service_id = es.id
 WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True

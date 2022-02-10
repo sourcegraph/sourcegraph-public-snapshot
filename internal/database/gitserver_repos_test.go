@@ -218,7 +218,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 				}
 			}
 
-			total, err := GitserverRepos(db).TotalErroredRepos(ctx)
+			total, err := GitserverRepos(db).TotalErroredCloudDefaultRepos(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
