@@ -4,7 +4,11 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
-import { FetchFeatureFlagsResult, OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
+import {
+    FetchFeatureFlagsResult,
+    OrgFeatureFlagOverridesResult,
+    OrgFeatureFlagOverridesVariables,
+} from '../graphql-operations'
 
 import { getOverrideKey } from './lib/getOverrideKey'
 
@@ -70,35 +74,43 @@ export type OrgFlagOverride = {
 /**
  * Fetches all organization feature flag overrides for the current user
  */
-export function fetchOrgOverrides(): {data: OrgFlagOverride[], loading: boolean} {
+export function fetchOrgOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
     const { data, loading } = useQuery<OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables>(
-        gql`query OrgFeatureFlagOverrides {
-            organizationFeatureFlagOverrides {
-                namespace { id },
-                targetFlag {
-                    ... on FeatureFlagBoolean {
-                        name
+        gql`
+            query OrgFeatureFlagOverrides {
+                organizationFeatureFlagOverrides {
+                    namespace {
+                        id
                     }
-                    ... on FeatureFlagRollout {
-                        name
+                    targetFlag {
+                        ... on FeatureFlagBoolean {
+                            name
+                        }
+                        ... on FeatureFlagRollout {
+                            name
+                        }
                     }
-                },
-                value
+                    value
+                }
             }
-        }`, {fetchPolicy: 'cache-and-network'}
+        `,
+        { fetchPolicy: 'cache-and-network' }
     )
 
     if (!data) {
-        return {data: [], loading}
+        return { data: [], loading }
     }
 
-    return {data: data?.organizationFeatureFlagOverrides.map(value => {
-        return {
-            namespace: atob(value.namespace.id),
-            flagName: value.targetFlag.name,
-            value: value.value
-        }
-    }), loading}
+    return {
+        data: data?.organizationFeatureFlagOverrides.map(value => {
+            return {
+                namespace: atob(value.namespace.id),
+                flagName: value.targetFlag.name,
+                value: value.value,
+            }
+        }),
+        loading,
+    }
 }
 
 export interface FeatureFlagProps {
