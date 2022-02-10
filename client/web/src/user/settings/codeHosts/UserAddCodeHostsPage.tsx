@@ -25,6 +25,7 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud
 
 import { CodeHostItem } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
+import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
@@ -326,6 +327,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
+            {console.log(useFlagsOverrides())}
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">

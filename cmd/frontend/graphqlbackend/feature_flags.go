@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -160,12 +161,13 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 }
 
 func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	user, err := backend.CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
+	actor := actor.FromContext(ctx)
+
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
 	}
 
-	flags, err := database.FeatureFlags(r.db).GetOrgOverridesForUser(ctx, user.ID)
+	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, actor.UID)
 	if err != nil {
 		return nil, err
 	}

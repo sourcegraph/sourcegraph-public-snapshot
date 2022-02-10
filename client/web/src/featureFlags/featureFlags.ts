@@ -74,7 +74,7 @@ export type OrgFlagOverride = {
 /**
  * Fetches all feature flag overrides for organizations that the current user is a member of
  */
-export function fetchOrgOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
+export function useFlagsOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
     const { data, loading } = useQuery<OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables>(
         gql`
             query OrgFeatureFlagOverrides {
@@ -104,7 +104,7 @@ export function fetchOrgOverrides(): { data: OrgFlagOverride[]; loading: boolean
     return {
         data: data?.organizationFeatureFlagOverrides.map(value => {
             return {
-                orgID: atob(value.namespace.id).split(':')[1],
+                orgID: value.namespace.id,
                 flagName: value.targetFlag.name,
                 value: value.value,
             }
