@@ -40,8 +40,24 @@ describe('search stack store', () => {
 
         it('adds a new entry', () => {
             renderHook(() => useSearchStack(exampleEntry))
-            addSearchStackEntry()
+            addSearchStackEntry(exampleEntry)
             expect(useSearchStackState.getState().entries).toEqual([exampleEntry])
+        })
+
+        it('adds a new entry as file', () => {
+            addSearchStackEntry(
+                { type: 'file', path: 'path/', lineRange: { startLine: 0, endLine: 1 }, repo: 'repo', revision: 'rev' },
+                'file'
+            )
+            expect(useSearchStackState.getState().entries[0]).toHaveProperty('lineRange', null)
+        })
+
+        it('adds a new entry as line range', () => {
+            addSearchStackEntry(
+                { type: 'file', path: 'path/', lineRange: { startLine: 0, endLine: 1 }, repo: 'repo', revision: 'rev' },
+                'range'
+            )
+            expect(useSearchStackState.getState().entries[0]).toHaveProperty('lineRange', { startLine: 0, endLine: 1 })
         })
     })
 
