@@ -1145,7 +1145,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 		}
 
 		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+		if err := store.calculateVisibleUploadsWithTime(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
 			t.Fatalf("unexpected error updating commit graph: %s", err)
 		}
 	}
