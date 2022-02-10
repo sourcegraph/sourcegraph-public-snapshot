@@ -277,12 +277,10 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						if build != nil && build.Commit != nil && *build.Commit == commit {
 							break
 						}
-						select {
-						case <-updateTicker.C:
-							build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
-							if err != nil {
-								return errors.Wrap(err, "GetMostRecentBuild")
-							}
+						<-updateTicker.C
+						build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
+						if err != nil {
+							return errors.Wrap(err, "GetMostRecentBuild")
 						}
 					}
 
