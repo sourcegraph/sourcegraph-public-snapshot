@@ -235,6 +235,9 @@ sg ci logs --build 123456
 sg ci build 
 # Manually trigger a build on the CI on the current branch, but with a specific commit
 sg ci build --commit my-commit
+
+# Create and push a main-dry-run branch from the HEAD of the current branch.
+sg ci dry-run
 ```
 
 ### `sg teammate` - Get current time or open their handbook page
