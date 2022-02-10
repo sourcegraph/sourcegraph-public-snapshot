@@ -5,9 +5,20 @@ This document will take you through how to resolve a 'dirty database' error. Dur
 The error will look something like this:
 
 ```log
-ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
+INFO[02-08|00:40:55] Checked current version schema=frontend appliedVersions="[1528395834 1528395835 1528395836 ... 1528395969 1528395970 1528395971]" pendingVersions=[1528395947] failedVersions=[]
+error: 1 error occurred:
+	* dirty database: schema "frontend" marked the following migrations as failed: 1528395947
+
+The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
-Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
+
+Or like this, if using a Sourcegraph instance older than 3.37.0:
+
+```log
+ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395947. Fix and force version.
+```
+
+Resolving this error requires manually attempting to run the migrations that are marked as pending or failed.
 
 If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3.37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
 
