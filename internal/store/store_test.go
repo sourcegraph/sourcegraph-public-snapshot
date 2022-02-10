@@ -44,7 +44,7 @@ func TestPrepareZip(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			<-startPrepareZip
-			_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
+			_, _, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
 			prepareZipErr <- err
 		}()
 	}
@@ -78,7 +78,7 @@ func TestPrepareZip(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
+	_, _, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
 	if err != nil {
 		t.Fatal("expected PrepareZip to succeed:", err)
 	}
@@ -91,7 +91,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, _, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if !errors.Is(err, fetchErr) {
 		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
@@ -111,7 +111,7 @@ func TestPrepareZip_errHeader(t *testing.T) {
 		}
 		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 	}
-	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, _, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if have, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); have != want {
 		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", err)
 	}
