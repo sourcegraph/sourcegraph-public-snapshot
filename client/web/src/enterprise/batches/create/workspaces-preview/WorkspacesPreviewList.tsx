@@ -10,6 +10,7 @@ import {
     ShowMoreButton,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
+import { Connection } from '../../../../components/FilteredConnection'
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
 import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
@@ -41,7 +42,7 @@ interface WorkspacesPreviewListProps {
      * while this is happening. If data is availabled in `cached` and `showCached` is
      * true, it will be used over the data in the connnection.
      */
-    cached?: PreviewBatchSpecWorkspaceFields[]
+    cached?: Connection<PreviewBatchSpecWorkspaceFields>
     /** Error */
     error?: string
 }
@@ -54,30 +55,13 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     workspacesConnection: { connection, hasNextPage, fetchMore },
     error,
 }) => {
-    if (showCached) {
-        return (
-            <ConnectionContainer className="w-100">
-                {error && <ConnectionError errors={[error]} />}
-                <ConnectionList className="list-group list-group-flush w-100">
-                    {cached?.map((node, index) => (
-                        <WorkspacesPreviewListItem
-                            key={`${node.repository.id}-${node.branch.id}`}
-                            item={node}
-                            isStale={isStale}
-                            exclude={excludeRepo}
-                            variant={index % 2 === 0 ? 'light' : 'dark'}
-                        />
-                    ))}
-                </ConnectionList>
-            </ConnectionContainer>
-        )
-    }
+    const connectionOrCached = showCached && cached ? cached : connection
 
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
             <ConnectionList className="list-group list-group-flush w-100">
-                {connection?.nodes?.map((node, index) => (
+                {connectionOrCached?.nodes?.map((node, index) => (
                     <WorkspacesPreviewListItem
                         key={`${node.repository.id}-${node.branch.id}`}
                         item={node}
@@ -87,12 +71,12 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                     />
                 ))}
             </ConnectionList>
-            {connection && (
+            {connectionOrCached && (
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
                         noSummaryIfAllNodesVisible={true}
                         first={WORKSPACES_PER_PAGE_COUNT}
-                        connection={connection}
+                        connection={connectionOrCached}
                         noun="workspace"
                         pluralNoun="workspaces"
                         hasNextPage={hasNextPage}

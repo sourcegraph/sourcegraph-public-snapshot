@@ -9,6 +9,7 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { Button } from '@sourcegraph/wildcard'
 
+import { Connection } from '../../../../components/FilteredConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 import { ResolutionState } from '../useWorkspacesPreview'
 
@@ -96,15 +97,17 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     // workspaces preview while the resolution job is still in progress, and so the
     // results will come up empty and overwrite the previous results in the Apollo Client
     // cache while this is happening.
-    const [cachedWorkspacesPreview, setCachedWorkspacesPreview] = useState<PreviewBatchSpecWorkspaceFields[]>()
+    const [cachedWorkspacesPreview, setCachedWorkspacesPreview] = useState<
+        Connection<PreviewBatchSpecWorkspaceFields>
+    >()
 
     // We copy the results from `connection` to `cachedWorkspacesPreview` whenever a
     // resolution job completes.
     useEffect(() => {
         if (resolutionState === BatchSpecWorkspaceResolutionState.COMPLETED && connection?.nodes.length) {
-            setCachedWorkspacesPreview(connection.nodes)
+            setCachedWorkspacesPreview(connection)
         }
-    }, [resolutionState, connection?.nodes])
+    }, [resolutionState, connection])
 
     // We will instruct `WorkspacesPreviewList` to show the cached results instead of
     // whatever is in `connection` if we know the workspaces preview resolution is
@@ -112,7 +115,8 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     const showCached = useMemo(
         () =>
             Boolean(
-                cachedWorkspacesPreview?.length && (isWorkspacesPreviewInProgress || resolutionState === 'CANCELED')
+                cachedWorkspacesPreview?.nodes.length &&
+                    (isWorkspacesPreviewInProgress || resolutionState === 'CANCELED')
             ),
         [cachedWorkspacesPreview, isWorkspacesPreviewInProgress, resolutionState]
     )
