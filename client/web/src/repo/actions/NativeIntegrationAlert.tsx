@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AlertLink } from '@sourcegraph/wildcard'
@@ -30,9 +30,14 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
     onAlertDismissed,
     externalURLs,
 }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('NativeIntegrationInstallShown', undefined, { page })
-    }, [page])
+        eventLogger.log('NativeIntegrationInstallShown', args, args)
+    }, [args])
+
+    const installLinkClickHandler = useCallback((): void => {
+        eventLogger.log('NativeIntegrationInstallClicked', args, args)
+    }, [args])
 
     const externalLink = externalURLs.find(link => link.serviceKind && supportedServiceTypes.has(link.serviceKind))
     if (!externalLink) {
@@ -57,14 +62,10 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
                     </AlertLink>
                 </>
             }
-            cta={{ label: 'Try it out', href: externalLink.url, onClick: () => installLinkClickHandler(page) }}
+            cta={{ label: 'Try it out', href: externalLink.url, onClick: installLinkClickHandler }}
             icon={<ExtensionRadialGradientIcon />}
             className={className}
             onClose={onAlertDismissed}
         />
     )
-}
-
-const installLinkClickHandler = (page: 'search' | 'file'): void => {
-    eventLogger.log('NativeIntegrationInstallClicked', undefined, { page })
 }

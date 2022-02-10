@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 
@@ -14,10 +14,14 @@ interface Props {
 }
 
 export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('InstallIDEExtensionCTAShown', undefined, { page })
-    }, [page])
+        eventLogger.log('InstallIDEExtensionCTAShown', args, args)
+    }, [args])
 
+    const onIDEExtensionClick = useCallback((): void => {
+        eventLogger.log('InstallIDEExtensionCTAClicked', args, args)
+    }, [args])
     return (
         <CtaAlert
             title="The power of Sourcegraph in your IDE"
@@ -26,7 +30,7 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, p
                 label: 'Learn more about IDE extensions',
                 href:
                     'https://docs.sourcegraph.com/integration/editor?utm_medium=inproduct&utm_source=search-results&utm_campaign=inproduct-cta&utm_term=null',
-                onClick: () => onIDEExtensionClick(page),
+                onClick: onIDEExtensionClick,
             }}
             icon={
                 <div className={`d-flex flex-row ${styles.icons}`}>
@@ -40,8 +44,4 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, p
             onClose={onAlertDismissed}
         />
     )
-}
-
-const onIDEExtensionClick = (page: 'search' | 'file'): void => {
-    eventLogger.log('InstallIDEExtensionCTAClicked', undefined, { page })
 }
