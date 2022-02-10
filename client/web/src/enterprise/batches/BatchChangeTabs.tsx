@@ -111,7 +111,7 @@ export const BatchChangeTabList: React.FunctionComponent = ({ children }) => (
         <TabList
             className={classNames(
                 styles.batchChangeTabList,
-                'nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap'
+                'nav d-inline-flex d-sm-flex flex-nowrap text-nowrap'
             )}
         >
             {children}
