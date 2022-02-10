@@ -65,8 +65,8 @@ func canonicalizeDocuments(state *State) {
 // data from a document to its canonical document (if they differ) and removes all references to the
 // non-canonical document.
 func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
-	for documentID, canonicalID := range canonicalIDs {
-		for _, documentRanges := range definitionReferenceData {
+	for _, documentRanges := range definitionReferenceData {
+		for documentID, canonicalID := range canonicalIDs {
 			if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
 				// Move definition/reference data into the canonical document
 				documentRanges.SetUnion(canonicalID, rangeIDs)
