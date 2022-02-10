@@ -10,7 +10,6 @@ import { Page } from '../../../components/Page'
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
-import styles from './CodeInsightsRootPage.module.scss'
 import { DashboardPageContent } from './dashboards/dashboard-page/DashboardsPage'
 import { CodeInsightsGettingStartedPage } from './getting-started/CodeInsightsGettingStartedPage'
 
@@ -80,7 +79,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
             />
 
             <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange}>
-                <TabList className={styles.tabs}>
+                <TabList>
                     <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
 
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
