@@ -5,11 +5,16 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -31,6 +36,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -117,6 +124,63 @@ func main() {
 				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 				if err != nil {
 					return "", err
+				}
+
+				if svc.Kind == extsvc.KindGitHub {
+					parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+					if err != nil {
+						return "", errors.Wrap(err, "parse config")
+					}
+
+					c := parsed.(*schema.GitHubConnection)
+					if c.GithubAppInstallationID != "" {
+						dotcomConfig := conf.SiteConfig().Dotcom
+						if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+							return "", errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
+						}
+
+						pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+						if err != nil {
+							return "", errors.Wrap(err, "decode private key")
+						}
+
+						auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+						if err != nil {
+							return "", errors.Wrap(err, "new authenticator with GitHub App")
+						}
+
+						apiURL, err := url.Parse("https://api.github.com")
+						if err != nil {
+							return "", errors.Wrap(err, "parse api.github.com")
+						}
+						client := github.NewV3Client(apiURL, auther, nil)
+
+						installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+						if err != nil {
+							return "", errors.Wrap(err, "parse installation ID")
+						}
+
+						ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+						defer cancel()
+
+						// TODO(cloud-saas): Cache the installation access token until it expires.
+						token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
+						if err != nil {
+							return "", errors.Wrap(err, "create app installation access token")
+						}
+						if token.Token == nil {
+							return "", errors.New("empty token returned")
+						}
+
+						fmt.Println("GetRemoteURLFunc new token:", *token.Token)
+						c.Token = *token.Token
+						config, err := json.Marshal(c)
+						if err != nil {
+							return "", errors.Wrap(err, "marshal config")
+						}
+						svc.Config = string(config)
+						fmt.Println("GetRemoteURLFunc svc.Config:", svc.Config)
+					}
 				}
 
 				return repos.CloneURL(svc.Kind, svc.Config, r)
