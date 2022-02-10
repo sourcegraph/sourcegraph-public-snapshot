@@ -283,12 +283,16 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) (commits []*gitdomain.Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 	wrappedCommits, err := getWrappedCommits(ctx, repo, opt)
 	if err != nil {
 		return nil, err
 	}
+
 	filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
 
 	if needMoreCommits(filtered, wrappedCommits, opt, checker) {
 		return getMoreCommits(ctx, repo, opt, checker, filtered)
