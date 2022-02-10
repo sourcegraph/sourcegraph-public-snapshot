@@ -1,6 +1,8 @@
 # How to troubleshoot a dirty database
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
+> NOTE: If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3_37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
+
+This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'fdirty database' error.
 
 The error will look something like this:
 
@@ -12,15 +14,7 @@ error: 1 error occurred:
 The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
 
-Or like this, if using a Sourcegraph instance older than 3.37.0:
-
-```log
-ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395947. Fix and force version.
-```
-
 Resolving this error requires manually attempting to run the migrations that are marked as pending or failed.
-
-If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3.37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
 
 ## Prerequisites
 
