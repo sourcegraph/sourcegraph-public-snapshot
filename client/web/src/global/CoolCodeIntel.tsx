@@ -182,7 +182,7 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <>
             <Input
-                className={classNames('px-2', styles.referencesFilter)}
+                className={classNames('py-0 my-0', styles.referencesFilter)}
                 type="text"
                 placeholder="Filter by filename..."
                 value={filter === undefined ? '' : filter}
