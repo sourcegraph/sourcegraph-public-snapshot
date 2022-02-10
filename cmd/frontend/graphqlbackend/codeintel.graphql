@@ -370,22 +370,31 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     indexIntermediateCommits: Boolean!
 }
 
+"""
+A retention policy match candidate.
+"""
 type CodeIntelligenceRetentionPolicyMatch {
+    """
+    The actual retention policy.
+    """
     configurationPolicy: CodeIntelligenceConfigurationPolicy!
 
+    """
+    Whether the retention policy matches the upload or not. False values may be returned
+    if non-matching policies are requested for inclusion.
+    """
     matches: Boolean!
 
+    """
+    A list of commits that are visible to this upload for which this retention policy applies.
+    It is empty if the policy applies directly to the commit associated with the upload.
+    """
     protectingCommits: [String!]
 }
 
-type CodeIntelligenceRetentionByReference {
-    referencingUploads: [LSIFUpload!]!
-
-    total: Int!
-}
-
-union CodeIntelligenceRetentionReasons = CodeIntelligenceRetentionPolicyMatch | CodeIntelligenceRetentionByReference
-
+"""
+A list of code intelligence retention policy match candidates.
+"""
 type CodeIntelligenceRetentionPolicyMatchesConnection {
     """
     A list of code intelligence retention policies matches.
@@ -1159,6 +1168,10 @@ type LSIFUpload implements Node {
     """
     associatedIndex: LSIFIndex
 
+    """
+    The list of retention policies, optionally filtered by only ones that match/apply to this upload and/or
+    by name substring match.
+    """
     retentionPolicyOverview(
         matchesOnly: Boolean!
 
@@ -1171,7 +1184,7 @@ type LSIFUpload implements Node {
         When specified, indicates that this request should be paginated and
         to fetch results starting at this cursor.
         A future request can be made for more results by passing in the
-        'LocationConnection.pageInfo.endCursor' that is returned.
+        'CodeIntelligenceRetentionPolicyMatchesConnection.pageInfo.endCursor' that is returned.
         """
         after: String
 
