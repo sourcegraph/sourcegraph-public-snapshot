@@ -82,7 +82,7 @@ const getFilters = (withDrafts = false): FilteredConnectionFilter[] => [
         id: 'status',
         label: 'Status',
         type: 'radio',
-        values: [OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER, ALL_FILTER],
+        values: [ALL_FILTER, OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER],
     },
 ]
 
