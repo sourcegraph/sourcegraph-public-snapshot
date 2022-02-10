@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
