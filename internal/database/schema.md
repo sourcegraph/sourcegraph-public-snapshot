@@ -1640,7 +1640,7 @@ Referenced by:
  id                | bigint                   |           | not null | nextval('org_invitations_id_seq'::regclass)
  org_id            | integer                  |           | not null | 
  sender_user_id    | integer                  |           | not null | 
- recipient_user_id | integer                  |           | not null | 
+ recipient_user_id | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  notified_at       | timestamp with time zone |           |          | 
  responded_at      | timestamp with time zone |           |          | 
@@ -1657,6 +1657,7 @@ Indexes:
 Check constraints:
     "check_atomic_response" CHECK ((responded_at IS NULL) = (response_type IS NULL))
     "check_single_use" CHECK (responded_at IS NULL AND response_type IS NULL OR revoked_at IS NULL)
+    "either_user_id_or_email_defined" CHECK ((recipient_user_id IS NULL) <> (recipient_email IS NULL))
 Foreign-key constraints:
     "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
