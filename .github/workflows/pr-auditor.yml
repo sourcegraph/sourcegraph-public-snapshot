@@ -14,5 +14,5 @@ jobs:
 
       - run: ./dev/pr-auditor/check-pr.sh
         env:
-          GITHUB_EVENT_PATH: $GITHUB_EVENT_PATH
+          GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
