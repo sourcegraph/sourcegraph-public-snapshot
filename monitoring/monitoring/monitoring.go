@@ -495,11 +495,15 @@ const (
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
 	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
 	ObservableOwnerDevOps          ObservableOwner = "devops"
+	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
 func (o ObservableOwner) toMarkdown() string {
 	var slug string
+
+	team := upperFirst(string(o))
+
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
 	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
@@ -512,12 +516,17 @@ func (o ObservableOwner) toMarkdown() string {
 		slug = "cloud/devops"
 	case ObservableOwnerSearchCore:
 		slug = "search/core"
+	case ObservableOwnerCloudSaaS:
+		slug = "cloud/saas"
+		team = "Cloud Software-as-a-Service"
 	default:
 		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	return fmt.Sprintf("[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
-		upperFirst(string(o)), slug)
+	return fmt.Sprintf(
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
+		team, slug,
+	)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
