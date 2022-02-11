@@ -430,17 +430,18 @@ Foreign-key constraints:
 
 # Table "public.cm_emails"
 ```
-   Column   |           Type           | Collation | Nullable |                Default                
-------------+--------------------------+-----------+----------+---------------------------------------
- id         | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- enabled    | boolean                  |           | not null | 
- priority   | cm_email_priority        |           | not null | 
- header     | text                     |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                Default                
+-----------------+--------------------------+-----------+----------+---------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ priority        | cm_email_priority        |           | not null | 
+ header          | text                     |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_emails_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -526,16 +527,17 @@ Foreign-key constraints:
 
 # Table "public.cm_slack_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                    Default                    
-------------+--------------------------+-----------+----------+-----------------------------------------------
- id         | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                    Default                    
+-----------------+--------------------------+-----------+----------+-----------------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_slack_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_slack_webhooks_monitor" btree (monitor)
@@ -592,16 +594,17 @@ Referenced by:
 
 # Table "public.cm_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                 Default                 
-------------+--------------------------+-----------+----------+-----------------------------------------
- id         | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                 Default                 
+-----------------+--------------------------+-----------+----------+-----------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_webhooks_monitor" btree (monitor)
