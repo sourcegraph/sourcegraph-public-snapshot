@@ -116,7 +116,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     return (
         <HoverOverlay
             {...propsToUse}
-            actionsOrError={null}
+            {...(coolCodeIntelEnabled && { actionsOrError: null })}
             className={styles.webHoverOverlay}
             actionItemClassName="btn btn-sm btn-secondary border-0"
             onAlertDismissed={onAlertDismissed}
