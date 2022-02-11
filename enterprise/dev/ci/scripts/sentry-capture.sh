@@ -4,7 +4,7 @@ function capture {
   (
     set +x
     # Run the command and capture the output
-    # shellcheck disable=SC2124
+
     local command=$@
     # shellcheck disable=SC2068
     trace=$($@ 2>&1)
