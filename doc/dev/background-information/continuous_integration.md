@@ -213,6 +213,32 @@ For more details about best practices and additional features and capabilities, 
 
 For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
+#### Performance
+
+##### Tracing
+
+Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [HoneyComb.io](https://honeycomb.io).
+
+Individual commands are tracked from the perspective of a given step: 
+
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6OTQ="
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
+
+##### Test Analytics
+
+Buildkite released in beta a new tool to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
+This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness. 
+
+Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating 
+from its historical duration or flakiness. 
+
+In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI. 
+
+
+
 ### Buildkite infrastructure
 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
