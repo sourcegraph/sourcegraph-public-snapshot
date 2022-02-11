@@ -1,4 +1,4 @@
-package check
+package main
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ func TestCheckVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		err := Version(tt.cmd, tt.haveVersion, tt.constraint)
+		err := checkVersion(tt.cmd, tt.haveVersion, tt.constraint)
 
 		if tt.wantErr != "" {
 			if err != nil {
