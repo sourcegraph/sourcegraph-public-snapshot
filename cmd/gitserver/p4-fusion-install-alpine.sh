@@ -20,14 +20,14 @@ apk add --no-cache libstdc++
 
 # Build dependencies
 apk add --no-cache \
-    --virtual p4-build-deps \
-    wget \
-    g++ \
-    gcc \
-    perl \
-    bash \
-    cmake \
-    make
+  --virtual p4-build-deps \
+  wget \
+  g++ \
+  gcc \
+  perl \
+  bash \
+  cmake \
+  make
 
 # Fetching p4 sources archive
 wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz
