@@ -203,8 +203,9 @@ func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, e
 
 	if mentionUserID != "" {
 		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
-	} else if err != nil {
-		n.Message = err.Error()
+	}
+	if err != nil {
+		n.Message = strings.Join([]string{n.Message, err.Error()}, " ")
 	}
 	p.Notify = append(p.Notify, slackNotifier{
 		Slack: n,

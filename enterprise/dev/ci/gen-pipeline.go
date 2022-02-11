@@ -22,11 +22,14 @@ import (
 var preview bool
 var wantYaml bool
 var docs bool
+var overrideRunType int
 
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
 	flag.BoolVar(&wantYaml, "yaml", false, "Use YAML instead of JSON")
 	flag.BoolVar(&docs, "docs", false, "Render generated documentation")
+	// For testing purposes
+	flag.IntVar(&overrideRunType, "overrideRunType", -1, "Override inferred run type")
 }
 
 //go:generate sh -c "cd ../../../ && echo '<!-- DO NOT EDIT: generated via: go generate ./enterprise/dev/ci -->\n' > doc/dev/background-information/ci/reference.md"
@@ -46,6 +49,9 @@ func main() {
 	if buildkite.FeatureFlags.StatelessBuild {
 		// We do not want to trigger any deployment.
 		config.RunType = runtype.MainDryRun
+	}
+	if overrideRunType > -1 {
+		config.RunType = runtype.RunType(overrideRunType)
 	}
 
 	pipeline, err := ci.GeneratePipeline(config)
