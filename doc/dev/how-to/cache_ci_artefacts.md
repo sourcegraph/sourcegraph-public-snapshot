@@ -1,19 +1,12 @@
 # How to cache CI artefacts
 
-This guide documents how to cache build artefacts in order to speed up build times on Buildkite. 
+This guide documents how to cache build artefacts in order to speed up build times in Sourcegraph's [Buildkite CI pipelines](../background-information/continuous_integration.md#buildkite-pipelines).
 
-## Understanding how agents are working
+> NOTE: Before getting started, we recommend familiarize yourself with [Pipeline development](../background-information/continuous_integration.md#pipeline-development) and [Buildkite infrastructure](../background-information/continuous_integration.md#buildkite-infrastructure).
 
-Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
-In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs. 
+## The need for caching
 
-When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
-
-This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions. 
-
-## The need for caching 
-
-Because the agents starts with a blank slate means that all dependencies and binaries have to rebuild on each job. This is the price to pay for complete isolation from one job to the other.
+Because [Buildkite agents are stateless](../background-information/continuous_integration.md#buildkite-infrastructure) and start with a blank slate, this means that all dependencies and binaries have to rebuild on each job. This is the price to pay for complete isolation from one job to the other.
 
 A common strategy to address this problem of having to rebuild everything is to store objects that are commonly reused accross jobs and to download them again rather than rebuilding everything from scratch. 
 
@@ -29,11 +22,11 @@ In order to determine what we can cache and when to do it, we need to make sure 
 
 ## How to write a step that caches an artefact?
 
-In the [CI pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/dev/ci), when defining a step you can use the `buildkite.Cache()` function to define what needs to be cached and under which key to store it. 
+In the [CI pipeline generator](../background-information/continuous_integration.md#pipeline-development), when defining a step you can use the `buildkite.Cache()` function to define what needs to be cached and under which key to store it. 
 
 For example: we want to cache the `node_modules` folder to avoid dowloading again all dependencies for the front-end. 
 
-```
+```go
 // Browser extension unit tests
 pipeline.AddStep(":jest::chrome: Test browser extension",
   bk.Cache(&buildkite.CacheOptions{

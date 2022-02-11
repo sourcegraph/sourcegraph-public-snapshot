@@ -1,4 +1,6 @@
-# Continuous integration <span class="badge badge-note">SOC2/GN-105</span> <span class="badge badge-note">SOC2/GN-106</span>
+# Continuous integration
+
+<span class="badge badge-note">SOC2/GN-105</span> <span class="badge badge-note">SOC2/GN-106</span>
 
 Sourcegraph uses a continuous integration and delivery tool, [Buildkite](#buildkite-pipelines), to help ensure a [consistent](#pipeline-health) build, test and deploy process. Software changes are systematically required to complete all steps within the continuous integration tool workflow prior to production deployment, in addition to being [peer reviewed](pull_request_reviews.md).
 
@@ -8,7 +10,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 
 ## Buildkite pipelines
 
-[Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph).
+[Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes to GitHub.
 Pipeline steps are generated using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
 
 To see what checks will get run against your current branch, use [`sg`](../setup/quickstart.md):
@@ -17,12 +19,14 @@ To see what checks will get run against your current branch, use [`sg`](../setup
 sg ci preview
 ```
 
-To learn about making changes to our Buildkite pipelines, see [Pipeline development](#pipeline-development).
-
-### Pipeline types
-
 A complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](ci/reference.md).
 You can also see these docs locally with `sg ci docs`.
+
+You can also request builds for your changes for you builds using `sg ci build`.
+
+To learn about making changes to our Buildkite pipelines, see [Pipeline development](#pipeline-development).
+
+### Pipeline steps
 
 #### Soft failures
 
@@ -52,12 +56,7 @@ All other failures are hard failures.
 #### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
-
-Trivy will perform scans upon commits to the following branches:
-
-1. `main`
-2. branches prefixed by `main-dry-run/`
-3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
+Refer to our [Pipeline reference](ci/reference.md) to see what pipelines Trivy checks run in.
 
 If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
 
@@ -140,62 +139,68 @@ Also see [Buildkite infrastructure](#buildkite-infrastructure).
 ### Pipeline development
 
 The source code of the pipeline generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
+Internally, the pipeline generator determines what gets run over contributions based on:
 
-To test the rendering of the entire pipeline, you can run `env BUILDKITE_BRANCH=TESTBRANCH go run ./enterprise/dev/ci/gen-pipeline.go` and inspect the YAML output. To change the behaviour set the relevant `BUILDKITE_` environment variables.
+1. [Run types](#run-types), determined by branch naming conventions, tags, and environment variables
+2. [Diff types](#diff-types), determined by what files have been changed in a given branch
+
+The above factors are then used to determine the appropriate [operations](#operations), composed of [step options](#step-options), that translate into steps in the resulting pipeline.
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
-#### Pipeline operations
+#### Run types
 
-[Pipeline steps](#pipeline-steps) are defined as [`Operation`s](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations/operations.go) that apply changes to the given pipeline, such as adding steps and components.
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTU5"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-```sgquery
-(:[_] *bk.Pipeline) patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/operations\.go
-```
+#### Diff types
 
-Within an `Operation` you will typically create one or more steps on a pipeline with `AddStep`, which can be configured with options of type `SteptOpt`.
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTYw"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-```sqquery
-(:[_]) StepOpt patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/buildkite/buildkite\.go
-```
+#### Operations
 
-Operations are then added to a pipeline from [`GeneratePipeline`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/pipeline%5C.go+GeneratePipeline&patternType=literal).
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTYx"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-For most basic PR checks, see [Developing PR checks](#developing-pr-checks) for how to create your own steps!
+##### Developing PR checks
 
-For more advanced usage for specific run types, see [Developing run types](#developing-run-types).
-
-#### Caching build artefacts
-
-For caching artefacts to speed up builds, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
-
-#### Developing PR checks
-
-To create a new check that can run on pull requests on relevant files, check the [`changed.Diff`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/diff.go) type to see if a relevant `Diff` type already exists.
-If not, you can define a new one on the `Diff` type and update the `ParseDiff` function.
+To create a new check that can run on pull requests on relevant files, refer to how [diff types](#diff-types) work to get started.
 
 Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
 Make sure to follow the best practices outlined in docstring.
 
 For more advanced pipelines, see [Run types](#run-types).
 
-#### Developing run types
+##### Caching build artefacts
 
-There are a variety of run types available based on branch prefixes. These generate special-purpose pipelines. For example, the `main-dry-run/` prefix is used to generate a pipeline similar to the default `main` branch. See [`RunType`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/runtype.go) for the various run types available, and examples for how to add more.
+For caching artefacts in steps to speed up operations, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
-[`GeneratePipeline`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/pipeline%5C.go+GeneratePipeline&patternType=literal) can leverage `RunType` when generating pipelines, for example:
+#### Step options
 
-```sgquery
-RunType.Is(:[_]) OR case :[_]: patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/pipeline\.go
-```
+> NOTE: Coming soon!
 
-For simple PR checks, see [Creating PR checks](#creating-pr-checks).
+### Buildkite infrastructure
 
-#### Buildkite infrastructure
+Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
+In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
+
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+
+This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
 
 Also see [Flaky infrastructure](#flaky-infrastructure), [Continous integration infrastructure](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/ci), and the [Continuous integration changelog](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/ci/changelog).
 
-##### Pipeline setup
+#### Pipeline setup
 
 To set up Buildkite to use the rendered pipeline, add the following step in the [pipeline settings](https://buildkite.com/sourcegraph/sourcegraph/settings):
 
@@ -203,7 +208,7 @@ To set up Buildkite to use the rendered pipeline, add the following step in the 
 go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 ```
 
-##### Managing secrets
+#### Managing secrets
 
 The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
 
@@ -211,7 +216,7 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
-#### Feature Flags
+#### Feature flags
 
 Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`. 
 
