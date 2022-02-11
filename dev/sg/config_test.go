@@ -68,13 +68,6 @@ commandsets:
 				Checks:   []string{"docker"},
 			},
 		},
-		Checks: map[string]check{
-			"docker": {
-				Name:        "docker",
-				Cmd:         "docker version",
-				FailMessage: "Failed to run 'docker version'. Please make sure Docker is running.",
-			},
-		},
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
