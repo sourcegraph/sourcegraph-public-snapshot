@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -326,6 +327,35 @@ func serveSignIn(db database.DB) handlerFunc {
 		common.Title = brandNameSubtitle("Sign in")
 
 		return renderTemplate(w, "app.html", common)
+	}
+}
+
+func serveEmbed(db database.DB) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		flagSet := featureflag.FromContext(r.Context())
+		if enabled := flagSet["enable-embed-route"]; !enabled {
+			w.WriteHeader(http.StatusNotFound)
+			return nil
+		}
+
+		// 🚨 SECURITY: Removing the `X-Frame-Options` header allows embedding the `/embed` route in an iframe.
+		// The embedding is safe because the `/embed` route serves the `embed` JS bundle instead of the
+		// regular Sourcegraph (web) app bundle (see `client/web/webpack.config.js` for the entrypoint definitions).
+		// It contains only the components needed to render the embedded content, and it should not include sensitive pages, like the sign-in page.
+		// The embed bundle also has its own React router that only recognizes specific routes (e.g., for embedding a notebook).
+		//
+		// Any changes to this function could have security implications. Please consult the security team before making changes.
+		w.Header().Del("X-Frame-Options")
+
+		common, err := newCommon(w, r, db, "", index, serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+
+		return renderTemplate(w, "embed.html", common)
 	}
 }
 

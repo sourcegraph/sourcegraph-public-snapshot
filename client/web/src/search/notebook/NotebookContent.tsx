@@ -14,7 +14,7 @@ import { SearchNotebook } from './SearchNotebook'
 
 import { Block, BlockInit } from '.'
 
-interface NotebookContentProps
+export interface NotebookContentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,

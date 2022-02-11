@@ -19,6 +19,9 @@ import (
 //go:embed app.html
 var appHTML string
 
+//go:embed embed.html
+var embedHTML string
+
 //go:embed error.html
 var errorHTML string
 
@@ -101,6 +104,8 @@ func doLoadTemplate(path string) (*template.Template, error) {
 	switch path {
 	case "app.html":
 		data = appHTML
+	case "embed.html":
+		data = embedHTML
 	case "error.html":
 		data = errorHTML
 	default:
