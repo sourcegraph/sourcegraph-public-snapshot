@@ -255,8 +255,11 @@ func Cmd(command string) StepOpt {
 type AnnotationType string
 
 const (
-	AnnotationTypeSuccess AnnotationType = "success"
-	AnnotationTypeInfo    AnnotationType = "info"
+	// We opt not to allow 'success' and 'info' type annotations for now to encourage
+	// steps to only provide annotations that help debug failure cases. In the future
+	// we can revisit this if there is a need.
+	// AnnotationTypeSuccess AnnotationType = "success"
+	// AnnotationTypeInfo    AnnotationType = "info"
 	AnnotationTypeWarning AnnotationType = "warning"
 	AnnotationTypeError   AnnotationType = "error"
 )
@@ -266,6 +269,8 @@ type AnnotatedCmdOpts struct {
 	// Type indicates the type annotations from this command should be uploaded as.
 	// Commands that upload annotations of different levels will create separate
 	// annotations.
+	//
+	// If no annotation type is provided, the annotation is created as an error annotation.
 	Type AnnotationType
 
 	// IncludeNames indicates whether the file names of found annotations should be

@@ -123,9 +123,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
-			Type: bk.AnnotationTypeError,
-		}))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
@@ -140,7 +138,6 @@ func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc Linters",
 		withYarnCache(),
 		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
-			Type:         bk.AnnotationTypeError,
 			IncludeNames: true,
 		}))
 }
