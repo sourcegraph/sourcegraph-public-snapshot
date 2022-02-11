@@ -164,7 +164,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		if FeatureFlags.StatelessBuild {
 			step.Agents["queue"] = "job"
 		} else {
-			step.Agents["queue"] = "standard"
+			step.Agents["queue"] = "job"
 		}
 	}
 
