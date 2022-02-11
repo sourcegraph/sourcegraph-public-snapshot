@@ -27,6 +27,9 @@ type response struct {
 			Rows        [][]interface{}
 		}
 	}
+	Errors []struct {
+		Message string
+	}
 }
 
 func main() {
@@ -70,6 +73,11 @@ func main() {
 	var unmarshaledResp response
 	if err := json.Unmarshal(respBody, &unmarshaledResp); err != nil {
 		panic(err)
+	}
+
+	if len(unmarshaledResp.Errors) > 0 {
+		fmt.Printf("%#v\n", unmarshaledResp.Errors)
+		return
 	}
 
 	t := gotabulate.Create(unmarshaledResp.Data.Execute.Rows)

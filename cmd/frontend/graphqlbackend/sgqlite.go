@@ -136,14 +136,19 @@ type searchModule struct {
 func (m *searchModule) EponymousOnlyModule() {}
 
 const (
-	COL_RESULT_TYPE        = 0
-	COL_REPO_ID            = 1
-	COL_REPO_NAME          = 2
-	COL_FILE_NAME          = 3
-	COL_COMMIT_OID         = 4
-	COL_COMMIT_MESSAGE     = 5
-	COL_COMMIT_AUTHOR_NAME = 6
-	COL_QUERY              = 7
+	COL_RESULT_TYPE            = 0
+	COL_REPO_ID                = 1
+	COL_REPO_NAME              = 2
+	COL_FILE_NAME              = 3
+	COL_COMMIT_OID             = 4
+	COL_COMMIT_MESSAGE         = 5
+	COL_COMMIT_AUTHOR_NAME     = 6
+	COL_COMMIT_AUTHOR_EMAIL    = 7
+	COL_COMMIT_AUTHOR_DATE     = 8
+	COL_COMMIT_COMMITTER_NAME  = 9
+	COL_COMMIT_COMMITTER_EMAIL = 10
+	COL_COMMIT_COMMITTER_DATE  = 11
+	COL_QUERY                  = 12
 )
 
 func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
@@ -160,6 +165,11 @@ func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTa
 			commit_oid TEXT,
 			commit_message TEXT,
 			commit_author_name TEXT,
+			commit_author_email TEXT,
+			commit_author_date TEXT,
+			commit_committer_name TEXT,
+			commit_committer_email TEXT,
+			commit_committer_date TEXT,
 			query HIDDEN TEXT
 		)`, args[0]))
 	if err != nil {
@@ -263,6 +273,41 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 	case COL_COMMIT_AUTHOR_NAME:
 		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
 			c.ResultText(string(commitMatch.Commit.Author.Name))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_AUTHOR_EMAIL:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
+			c.ResultText(string(commitMatch.Commit.Author.Email))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_AUTHOR_DATE:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
+			c.ResultText(string(commitMatch.Commit.Author.Date.Format(time.RFC3339)))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_COMMITTER_NAME:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok && commitMatch.Commit.Committer != nil {
+			c.ResultText(string(commitMatch.Commit.Committer.Name))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_COMMITTER_EMAIL:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok && commitMatch.Commit.Committer != nil {
+			c.ResultText(string(commitMatch.Commit.Committer.Email))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_COMMITTER_DATE:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok && commitMatch.Commit.Committer != nil {
+			c.ResultText(string(commitMatch.Commit.Committer.Date.Format(time.RFC3339)))
 		} else {
 			// null if not a result.CommitMatch
 			c.ResultNull()
