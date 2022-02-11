@@ -19,7 +19,7 @@ const config: Meta = {
         },
         chromatic: {
             enableDarkMode: true,
-            viewports: [400, 400],
+            viewports: [400],
         },
     },
 }
