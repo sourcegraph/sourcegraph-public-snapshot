@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
@@ -26,6 +26,20 @@ import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 const ON_STATEMENT = `on:
   - repositoriesMatchingQuery: repo:my-org/.*
 `
+
+const WAITING_MESSAGES = [
+    'Hang tight while we look for matching workspaces...',
+    'Still searching, this should just take a moment or two...',
+    '*elevator music* (Still looking for matching workspaces...)',
+    'The search continues...',
+    'Reticulating splines... (Still looking for matching workspaces...)',
+    "So, how's your day? (Still looking for matching workspaces...)",
+    'Are you staying hydrated? (Still looking for matching workspaces...)',
+    "Hold your horses, we're still not done yet...",
+]
+
+/* The time to wait until we display the next waiting message, in seconds. */
+const WAITING_MESSAGE_INTERVAL = 10
 
 interface WorkspacesPreviewProps {
     /**
@@ -121,13 +135,24 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
         [cachedWorkspacesPreview, isWorkspacesPreviewInProgress, resolutionState]
     )
 
+    // We time the preview so that we can show a changing message to the user the longer
+    // they have to wait.
+    const { time, start, stop, isRunning } = useStopwatch(false)
+    useEffect(() => {
+        if (isWorkspacesPreviewInProgress) {
+            start()
+        } else {
+            stop()
+        }
+    }, [isWorkspacesPreviewInProgress, start, stop])
+
     const ctaButton = isWorkspacesPreviewInProgress ? (
-        <Button className="mt-3 mb-2" variant="secondary" onClick={cancel}>
+        <Button className="mt-2 mb-2" variant="secondary" onClick={cancel}>
             Cancel
         </Button>
     ) : (
         <Button
-            className="mt-3 mb-2"
+            className="mt-2 mb-2"
             variant="success"
             disabled={!!previewDisabled}
             data-tooltip={typeof previewDisabled === 'string' ? previewDisabled : undefined}
@@ -142,7 +167,20 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     const exampleStyle = useSpring({ height: exampleOpen ? '6.5rem' : '0rem', opacity: exampleOpen ? 1 : 0 })
 
     const ctaInstructions = isWorkspacesPreviewInProgress ? (
-        <h4 className={styles.instruction}>Hang tight while we look for matching workspaces...</h4>
+        // We render all of the waiting messages at once on top of each other so that we
+        // can animate from one to the next.
+        <div className={styles.waitingMessageContainer}>
+            {WAITING_MESSAGES.map((message, index) => {
+                const active =
+                    Math.floor((isRunning ? time.seconds : 0) / WAITING_MESSAGE_INTERVAL) % WAITING_MESSAGES.length ===
+                    index
+                return (
+                    <CTAInstruction active={active} key={message}>
+                        {message}
+                    </CTAInstruction>
+                )
+            })}
+        </div>
     ) : batchSpecStale ? (
         <h4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</h4>
     ) : (
@@ -159,7 +197,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 </Button>
             </h4>
             <animated.div style={exampleStyle} className={styles.onExample}>
-                <CodeSnippet className="w-100 mt-3" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                <CodeSnippet className="w-100 mt-2" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
             </animated.div>
         </>
     )
@@ -206,5 +244,16 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 </div>
             )}
         </div>
+    )
+}
+
+const CTAInstruction: React.FunctionComponent<{ active: boolean }> = ({ active, children }) => {
+    // We use 3rem for the height, which is intentionally bigger than the parent (2rem) so
+    // that if text is forced to wrap, it isn't cut off.
+    const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })
+    return (
+        <animated.h4 className={classNames(styles.instruction, styles.waitingText)} style={style}>
+            {children}
+        </animated.h4>
     )
 }
