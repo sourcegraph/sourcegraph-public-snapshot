@@ -43,6 +43,20 @@ And a little complicated; there's also the following reasons:
 3. C`,
 			},
 		},
+		{
+			name:     "inline test plan",
+			bodyFile: "testdata/pull_request_body/inline-plan.md",
+			want: checkResult{
+				TestPlan: `This is a plan!
+Quite lengthy
+
+And a little complicated; there's also the following reasons:
+
+1. A
+2. B
+3. C`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

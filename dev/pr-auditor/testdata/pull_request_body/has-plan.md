@@ -2,7 +2,7 @@
 
 ---
 
-### Test plan
+### Test Plan
 
 <!-- blah blah -->
 

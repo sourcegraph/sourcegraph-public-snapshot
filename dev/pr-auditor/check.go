@@ -21,7 +21,10 @@ func (r checkResult) HasTestPlan() bool {
 	return r.TestPlan != ""
 }
 
-var markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+var (
+	testPlanDividerRegexp = regexp.MustCompile("(?m)(^#+ Test [pP]lan)|(^Test [pP]lan:)")
+	markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+)
 
 type checkOpts struct {
 	ValidateReviews bool
@@ -43,7 +46,7 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	}
 
 	// Parse test plan data from body
-	sections := strings.Split(pr.Body, "# Test plan")
+	sections := testPlanDividerRegexp.Split(pr.Body, 2)
 	if len(sections) < 2 {
 		return checkResult{
 			Reviewed: reviewed,
