@@ -51,8 +51,8 @@ func canonicalizeDocuments(state *State) {
 
 	for documentID, canonicalID := range canonicalIDs {
 		// Move ranges and diagnostics into the canonical document
-		state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
-		state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
+		state.Contains.UnionIDSet(canonicalID, state.Contains.Get(documentID))
+		state.Diagnostics.UnionIDSet(canonicalID, state.Diagnostics.Get(documentID))
 
 		// Remove non-canonical documents
 		delete(state.DocumentData, documentID)
@@ -70,7 +70,7 @@ func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferen
 			// Remove references to non-canonical document...
 			if rangeIDs := documentRanges.Pop(documentID); rangeIDs != nil {
 				// ...and move existing definition/reference data into the canonical document
-				documentRanges.SetUnion(canonicalID, rangeIDs)
+				documentRanges.UnionIDSet(canonicalID, rangeIDs)
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func canonicalizeReferenceResults(state *State) {
 
 			// Copy data from the referenced to the referencing set
 			state.ReferenceData[nextID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-				state.ReferenceData[id].SetUnion(documentID, rangeIDs)
+				state.ReferenceData[id].UnionIDSet(documentID, rangeIDs)
 			})
 		}
 	}
@@ -118,7 +118,7 @@ func canonicalizeResultSets(state *State) {
 	}
 
 	for resultSetID := range state.ResultSetData {
-		state.Monikers.SetUnion(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
+		state.Monikers.UnionIDSet(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
 	}
 }
 
@@ -138,7 +138,7 @@ func canonicalizeRanges(state *State) {
 		}
 
 		state.RangeData[rangeID] = rangeData
-		state.Monikers.SetUnion(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
+		state.Monikers.UnionIDSet(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
 	}
 }
 
@@ -179,7 +179,7 @@ func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int
 		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
 	}
 
-	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
+	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
 	return item
 }
 
@@ -203,7 +203,7 @@ func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextIt
 		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
 	}
 
-	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
+	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
 	return item
 }
 
