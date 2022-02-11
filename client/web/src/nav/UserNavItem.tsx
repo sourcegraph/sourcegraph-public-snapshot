@@ -40,6 +40,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
     openByDefault?: boolean
+    position?: Position
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -100,6 +101,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         openByDefault,
+        position = Position.bottomEnd,
     } = props
 
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
@@ -165,11 +167,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             </Tooltip>
                         )}
                     </MenuButton>
-                    <MenuList
-                        position={Position.bottomEnd}
-                        className={styles.dropdownMenu}
-                        aria-label="User. Open menu"
-                    >
+                    <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
                         <MenuHeader>
                             Signed in as <strong>@{props.authenticatedUser.username}</strong>
                         </MenuHeader>
