@@ -1,8 +1,7 @@
-import React, { useContext, useMemo, useRef } from 'react'
-import { useHistory } from 'react-router'
+import React, { useContext, useMemo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, useAutoFocus, Modal, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 
@@ -10,7 +9,6 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {
-    const history = useHistory()
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
     const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
     const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
@@ -25,20 +23,15 @@ export const GaConfirmationModal: React.FunctionComponent = () => {
         setGaAccepted(true)
     }
 
-    const handleDismiss = (): void => {
-        history.push('/')
-    }
-
     return (
         <Modal position="center" aria-label="Code Insights Ga information" containerClassName={styles.overlay}>
-            <GaConfirmationModalContent onAccept={handleAccept} onDismiss={handleDismiss} />
+            <GaConfirmationModalContent onAccept={handleAccept} />
         </Modal>
     )
 }
 
 interface GaConfirmationModalContentProps {
     onAccept: () => void
-    onDismiss: () => void
 }
 
 /**
@@ -47,14 +40,11 @@ interface GaConfirmationModalContentProps {
  * on CI.
  */
 export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationModalContentProps> = props => {
-    const { onAccept, onDismiss } = props
-    const dismissButtonReference = useRef<HTMLButtonElement>(null)
-
-    useAutoFocus({ autoFocus: true, reference: dismissButtonReference })
+    const { onAccept } = props
 
     return (
         <>
-            <h1 className={styles.title}>Code Insights is now Generally Available</h1>
+            <h1 className={styles.title}>Code Insights is Generally Available</h1>
 
             <div className={styles.mediaHeroContent}>
                 <ThreeLineChart className={styles.chart} />
@@ -63,30 +53,25 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
             </div>
 
             <div className={styles.textContent}>
-                <p>Code Insights are officially out of beta!</p>
-
                 <p>
-                    You will keep full access to Code Insights while on this Sourcegraph version as a Free Trial. After
-                    this period, you will either need to purchase Code Insights to continue full functionality or you
-                    will only be able to use a limited number of Code Insights.
+                    Code Insights is a new analytics product that transforms your code into a queryable database so you
+                    can create customizable, visual dashboards to understand your codebase at a high level.
                 </p>
 
                 <p>
-                    Contact your admin or reach out to us to upgrade your licence for unlimited insights and dashboards.
+                    Code Insights is now Generally Available. You can create unlimited insights and dashboards while on
+                    this version of Sourcegraph. In the next version upgrade, you will either need to purchase Code
+                    Insights to continue using its full functionality, or you can use{' '}
+                    <Link to="/help/code_insights/references/license">a limited number of insights for free</Link>.
                 </p>
 
                 <p>
-                    Questions? Learn more about the{' '}
-                    <Link to="/help/code_insights/references/license">Code Insights limited access</Link> or{' '}
-                    <Link to="mailto:support@sourcegraph.com">contact us directly</Link>.
+                    Reach out to your Sourcegraph admin or account team to purchase Code Insights. Questions? Please
+                    <Link to="mailto:support@sourcegraph.com">contact us</Link>.
                 </p>
             </div>
 
             <footer className={styles.actions}>
-                <Button ref={dismissButtonReference} variant="secondary" outline={true} onClick={onDismiss}>
-                    Maybe later
-                </Button>
-
                 <Button variant="primary" onClick={onAccept}>
                     Understood, let’s go!
                 </Button>
