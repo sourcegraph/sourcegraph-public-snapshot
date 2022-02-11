@@ -44,7 +44,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
     const handleTabChange = (index: number): void => {
         const template = TEMPLATE_SECTIONS[index]
 
-        telemetryService.log('GetStartedTabClick', { tabName: template.title }, { tabName: template.title })
+        telemetryService.log('InsightsGetStartedTabClick', { tabName: template.title }, { tabName: template.title })
     }
 
     return (
@@ -93,7 +93,7 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
 
     const handleShowMoreButtonClick = (): void => {
         setAllVisible(!allVisible)
-        telemetryService.log('GetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
+        telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
     }
 
     return (
@@ -129,7 +129,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
             : [{ query: template.templateValues.groupSearchQuery }]
 
     const handleUseTemplateLinkClick = (): void => {
-        telemetryService.log('GetStartedTemplateClick')
+        telemetryService.log('InsightGetStartedTemplateClick')
     }
 
     return (
@@ -182,7 +182,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
         })
 
         event.preventDefault()
-        telemetryService.log('GetStartedTemplateCopy')
+        telemetryService.log('InsightGetStartedTemplateCopyClick')
     }
 
     return (

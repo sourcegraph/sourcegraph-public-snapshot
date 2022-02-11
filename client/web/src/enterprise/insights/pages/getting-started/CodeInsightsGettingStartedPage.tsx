@@ -14,7 +14,7 @@ export const CodeInsightsGettingStartedPage: React.FunctionComponent<CodeInsight
     const { telemetryService } = props
 
     useEffect(() => {
-        telemetryService.logViewEvent('CodeInsightsGettingStartedPage')
+        telemetryService.logViewEvent('InsightsGetStartedPage')
     }, [telemetryService])
 
     return (

@@ -17,7 +17,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMor
     })
 
     const handleLinkClick = (): void => {
-        telemetryService.log('GetStartedDocsClicks')
+        telemetryService.log('InsightsGetStartedDocsClicks')
     }
 
     return (

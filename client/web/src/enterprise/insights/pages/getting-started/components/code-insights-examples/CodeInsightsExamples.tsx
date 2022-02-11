@@ -21,9 +21,9 @@ import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsight
 
 import styles from './CodeInsightsExamples.module.scss'
 
-export interface CodeInsightsExamples extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
+export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples> = props => {
+export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
     const { telemetryService, ...otherProps } = props
     return (
         <section {...otherProps}>
@@ -100,7 +100,7 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
     })
 
     const handleTemplateLinkClick = (): void => {
-        telemetryService.log('GetStartedBigTemplateClick')
+        telemetryService.log('InsightsGetStartedBigTemplateClick')
     }
 
     return (

@@ -84,7 +84,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         viewType: InsightType.SearchBased,
-        pingEventPrefix: 'GettingStartedPage',
+        pingEventPrefix: 'InsightsGetStartedPage',
     })
 
     const debouncedQuery = useDebounce(query.input.value, 1000)
@@ -92,18 +92,18 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
-            telemetryService.log('GettingStartedPageQueryModification')
+            telemetryService.log('InsightsGetStartedPageQueryModification')
         }
     }, [debouncedQuery, telemetryService])
 
     useEffect(() => {
         if (debouncedRepositories !== INITIAL_INSIGHT_VALUES.repositories) {
-            telemetryService.log('GettingStartedPageRepositoriesModification')
+            telemetryService.log('InsightsGetStartedPageRepositoriesModification')
         }
     }, [debouncedRepositories, telemetryService])
 
     const handleGetStartedClick = (): void => {
-        telemetryService.log('GettingStartedPagePrimaryCTAClick')
+        telemetryService.log('InsightsGetStartedPrimaryCTAClick')
     }
 
     return (
