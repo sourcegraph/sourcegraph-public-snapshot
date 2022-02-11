@@ -108,10 +108,11 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		stateDescription = "No test plan detected - please provide one!"
 	default:
 		prState = "success"
+		stateDescription = "All pre-merge checks passed!"
 	}
 	owner, repo := payload.Repository.GetOwnerAndName()
-	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.Ref, &github.RepoStatus{
-		Context:     github.String("pr-auditor"),
+	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
+		Context:     github.String("pr-auditor / pre-merge"),
 		State:       github.String(prState),
 		Description: github.String(stateDescription),
 	})

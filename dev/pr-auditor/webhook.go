@@ -44,4 +44,5 @@ func (r *RepositoryPayload) GetOwnerAndName() (string, string) {
 type RefPayload struct {
 	// e.g. 'main'
 	Ref string `json:"ref"`
+	SHA string `json:"sha"`
 }
