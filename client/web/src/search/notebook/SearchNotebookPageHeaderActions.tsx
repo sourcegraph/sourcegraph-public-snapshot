@@ -6,12 +6,21 @@ import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useEventObservable } from '@sourcegraph/wildcard'
+import {
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    Button,
+    useEventObservable,
+    MenuList,
+    MenuHeader,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { NotebookFields } from '../../graphql-operations'
@@ -141,26 +150,28 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     deleteNotebook,
     telemetryService,
 }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
-
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
 
     return (
         <>
-            <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-                <Button tag="button" outline={true} as={DropdownToggle}>
+            <Menu>
+                <MenuButton outline={true}>
                     <DotsHorizontalIcon />
-                </Button>
-                <DropdownMenu right={true}>
-                    <DropdownItem disabled={true}>Settings</DropdownItem>
-                    <DropdownItem divider={true} />
-                    <DropdownItem className="btn-danger" onClick={() => setShowDeleteModal(true)}>
+                </MenuButton>
+                <MenuList position={Position.bottomEnd}>
+                    <MenuHeader>Settings</MenuHeader>
+                    <MenuDivider />
+                    <MenuItem
+                        as={Button}
+                        variant="danger"
+                        className={styles.dangerMenuItem}
+                        onSelect={() => setShowDeleteModal(true)}
+                    >
                         Delete notebook
-                    </DropdownItem>
-                </DropdownMenu>
-            </ButtonDropdown>
+                    </MenuItem>
+                </MenuList>
+            </Menu>
             <DeleteNotebookModal
                 notebookId={notebookId}
                 isOpen={showDeleteModal}

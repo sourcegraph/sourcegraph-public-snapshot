@@ -1,4 +1,5 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
@@ -58,7 +59,6 @@ describe('UserNavItem', () => {
                         isLightTheme={true}
                         onThemePreferenceChange={() => undefined}
                         themePreference={ThemePreference.Light}
-                        location={history.location}
                         authenticatedUser={USER}
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}
@@ -70,13 +70,12 @@ describe('UserNavItem', () => {
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
-        const renderResult = renderWithBrandedContext(
+        renderWithBrandedContext(
             <UserNavItem
                 showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
                 themePreference={ThemePreference.Light}
-                location={history.location}
                 authenticatedUser={USER}
                 showDotComMarketing={true}
                 isExtensionAlertAnimating={false}
@@ -90,8 +89,8 @@ describe('UserNavItem', () => {
         // Prevent console.error cause by "Not implemented: navigation (except hash changes)"
         // https://github.com/jsdom/jsdom/issues/2112
         sinon.stub(console, 'error')
-        const singOutLink = await renderResult.findByText('Sign out')
-        singOutLink.click()
+        userEvent.click(screen.getByRole('button'))
+        userEvent.click(await screen.findByText('Sign out'))
 
         expect(history.entries.length).toBe(1)
         expect(history.entries.find(({ pathname }) => pathname.includes('sign-out'))).toBe(undefined)
