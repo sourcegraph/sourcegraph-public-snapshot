@@ -1,13 +1,12 @@
 package process
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 	"os/exec"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,26 +18,7 @@ import (
 // WaitGroup after waiting for the *exec.Cmd to finish.
 //
 // See this issue for more details: https://github.com/golang/go/issues/21922
-func PipeOutput(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
-	return pipeOutputWithCopy(ctx, c, stdoutWriter, stderrWriter, func(w io.Writer, r io.Reader) {
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			fmt.Fprintln(w, scanner.Text())
-		}
-	})
-}
-
-func PipeOutputUnbuffered(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
-	return pipeOutputWithCopy(ctx, c, stdoutWriter, stderrWriter, func(w io.Writer, r io.Reader) {
-		_, err := io.Copy(w, r)
-		// We can ignore ErrClosed because we get that if a process crashes
-		if err != nil && !errors.Is(err, fs.ErrClosed) {
-			panic(err)
-		}
-	})
-}
-
-func pipeOutputWithCopy(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer, fn copyFunc) (*sync.WaitGroup, error) {
+func PipeOutputUnbuffered(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -59,19 +39,22 @@ func pipeOutputWithCopy(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWr
 		stderrPipe.Close()
 	}()
 
-	wg := &sync.WaitGroup{}
+	eg := &errgroup.Group{}
 
-	readIntoBuf := func(w io.Writer, r io.Reader) {
-		defer wg.Done()
-
-		fn(w, r)
+	readIntoBuf := func(w io.Writer, r io.Reader) error {
+		_, err := io.Copy(w, r)
+		// We can ignore ErrClosed because we get that if a process crashes
+		if err != nil && !errors.Is(err, fs.ErrClosed) {
+			return err
+		}
+		return nil
 	}
 
-	wg.Add(2)
-	go readIntoBuf(stdoutWriter, stdoutPipe)
-	go readIntoBuf(stderrWriter, stderrPipe)
-
-	return wg, nil
+	eg.Go(func() error {
+		return readIntoBuf(stdoutWriter, stdoutPipe)
+	})
+	eg.Go(func() error {
+		return readIntoBuf(stderrWriter, stderrPipe)
+	})
+	return eg, nil
 }
-
-type copyFunc func(w io.Writer, r io.Reader)
