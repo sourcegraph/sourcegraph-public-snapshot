@@ -1,7 +1,7 @@
 import { Meta } from '@storybook/react'
 import React from 'react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 
@@ -12,4 +12,4 @@ export default {
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 
-export const StandardExample = () => <CodeInsightsExamples telemetryService={NOOP_TELEMETRY_SERVICE}/>
+export const StandardExample = () => <CodeInsightsExamples telemetryService={NOOP_TELEMETRY_SERVICE} />
