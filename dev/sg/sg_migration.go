@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -117,22 +118,21 @@ var filesystemSchemas = []*schemas.Schema{
 }
 
 func mustResolveSchema(name string) *schemas.Schema {
-	if root, err := root.RepositoryRoot(); err == nil {
-		schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(root, "migrations")), name)
-		if err != nil {
-			panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+	repositoryRoot, err := root.RepositoryRoot()
+	if err != nil {
+		if errors.Is(err, root.ErrNotInsideSourcegraph) {
+			panic(fmt.Sprintf("sg migration command use the migrations defined on the local filesystem: %s", err))
 		}
 
-		return schema
+		panic(err.Error())
 	}
 
-	for _, schema := range schemas.Schemas {
-		if schema.Name == name {
-			return schema
-		}
+	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
+	if err != nil {
+		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
 	}
 
-	panic(fmt.Sprintf("unknown schema %q", name))
+	return schema
 }
 
 func addExec(ctx context.Context, args []string) error {
