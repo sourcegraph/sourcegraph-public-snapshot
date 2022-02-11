@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 
@@ -9,14 +9,19 @@ import styles from './IdeExtensionAlert.module.scss'
 
 interface Props {
     className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
 }
 
-export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, onAlertDismissed }) => {
+export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('InstallIDEExtensionCTAShown')
-    }, [])
+        eventLogger.log('InstallIDEExtensionCTAShown', args, args)
+    }, [args])
 
+    const onIDEExtensionClick = useCallback((): void => {
+        eventLogger.log('InstallIDEExtensionCTAClicked', args, args)
+    }, [args])
     return (
         <CtaAlert
             title="The power of Sourcegraph in your IDE"
@@ -39,8 +44,4 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, o
             onClose={onAlertDismissed}
         />
     )
-}
-
-const onIDEExtensionClick = (): void => {
-    eventLogger.log('InstallIDEExtensionCTAClicked')
 }

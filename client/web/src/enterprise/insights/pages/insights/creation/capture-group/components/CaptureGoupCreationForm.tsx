@@ -5,7 +5,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
+import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
@@ -28,6 +28,7 @@ interface CaptureGroupCreationFormProps {
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
 
+    dashboardReferenceCount?: number
     isFormClearActive?: boolean
     className?: string
 
@@ -45,6 +46,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         step,
         stepValue,
         mode,
+        dashboardReferenceCount,
         className,
         isFormClearActive,
         onFormReset,
@@ -186,6 +188,10 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
+
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
 
             <hr className="my-4 w-100" />
 

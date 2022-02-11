@@ -19,9 +19,10 @@ sg ci preview
 
 To learn about making changes to our Buildkite pipelines, see [Pipeline development](#pipeline-development).
 
-### Pipeline steps
+### Pipeline types
 
-A complete reference of all available pipeline steps is not yet available ([#30203](https://github.com/sourcegraph/sourcegraph/issues/30203)). This section contains a high-level documentation about what runs in our pipeline.
+A complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](ci/reference.md).
+You can also see these docs locally with `sg ci docs`.
 
 #### Soft failures
 

@@ -2,7 +2,8 @@ name: "[OPTIONAL/DOESN'T BLOCK MERGING] Code Insights GitHub project automation"
 
 on:
   issues:
-    types: [opened, closed, reopened, milestoned, labeled]
+    # Note: labeled/milestoned is also triggered when opening a new issue with labels/milestone
+    types: [closed, reopened, milestoned, labeled]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 
@@ -33,4 +34,9 @@ jobs:
 
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
 
-            ./.github/workflows/update-project-items.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -TeamLabel 'team/code-insights' -SlackChannel '#code-insights-planning' -SlackWebhookUri $env:SLACK_WEBHOOK_URI
+            ./.github/workflows/update-project-items.ps1 `
+              -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' `
+              -TeamLabel 'team/code-insights' `
+              -TeamIterationMilestonePattern '^Insights iteration' `
+              -SlackChannel '#code-insights-planning' `
+              -SlackWebhookUri $env:SLACK_WEBHOOK_URI

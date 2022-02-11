@@ -15,8 +15,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './InviteMemberModal.module.scss'
 
 const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
-    mutation InviteUserToOrg($organization: ID!, $username: String!) {
-        inviteUserToOrganization(organization: $organization, username: $username) {
+    mutation InviteUserToOrg($organization: ID!, $username: String, $email: String) {
+        inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
             ...InviteUserToOrganizationFields
         }
     }
@@ -39,7 +39,7 @@ export interface InviteMemberModalProps {
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
     const { orgName, orgId, onInviteSent, onDismiss } = props
-    const emailPattern = useRef(new RegExp(/^\w+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
+    const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite teammate to ${orgName}`
@@ -75,8 +75,8 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             await inviteUserToOrganization({
                 variables: {
                     organization: orgId,
-                    username: isEmail ? '' : userNameOrEmail,
-                    email: isEmail ? userNameOrEmail : '',
+                    username: isEmail ? null : userNameOrEmail,
+                    email: isEmail ? userNameOrEmail : null,
                 },
             })
             eventLogger.log('OrgMemberInvited')

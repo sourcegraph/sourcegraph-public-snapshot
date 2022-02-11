@@ -33,6 +33,7 @@ describe('decodeSearchInsightUrl', () => {
             step: 'days',
             stepValue: '8',
             visibility: '',
+            dashboardReferenceCount: 0,
         })
     })
 })
@@ -60,6 +61,7 @@ describe('encodeSearchInsightUrl', () => {
             step: 'days',
             stepValue: '8',
             visibility: '',
+            dashboardReferenceCount: 0,
         })
     })
 })
