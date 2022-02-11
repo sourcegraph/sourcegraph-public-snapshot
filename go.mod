@@ -29,7 +29,10 @@ require (
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )
 
-require github.com/stretchr/testify v1.7.0
+require (
+	github.com/grafana/regexp v0.0.0-20220202152315-e74e38789280
+	github.com/stretchr/testify v1.7.0
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -39,7 +42,6 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/grafana/regexp v0.0.0-20220202152315-e74e38789280 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
