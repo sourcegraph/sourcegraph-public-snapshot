@@ -1,6 +1,5 @@
 import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
-import { BackendInsight, InsightType } from '../../../../types'
-import { SearchBasedInsightSeries } from '../../../../types/insight/search-insight'
+import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createLineChartContentFromIndexedSeries } from '../../../utils/create-line-chart-content'
 
