@@ -750,7 +750,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			// We should still touch the repo perms so that we don't keep scheduling the repo
 			// for permissions syncs on a tight interval.
 			if err = s.permsStore.TouchRepoPermissions(ctx, int32(repoID)); err != nil {
-				log15.Warn("Error touching permissions for UnImplemented authz provider", "err", err)
+				log15.Warn("Error touching permissions for unimplemented authz provider", "err", err)
 			}
 
 			return nil
