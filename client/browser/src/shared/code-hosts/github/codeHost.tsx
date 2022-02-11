@@ -38,6 +38,8 @@ import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
+import { getPlatformName } from '../../util/context'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -426,7 +428,7 @@ export interface GithubCodeHost extends CodeHost {
     enhanceSearchPage: (sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>) => Subscription
 }
 
-export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
+export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
 
 const isGlobalSearchPage = (): boolean => window.location.pathname.startsWith('/search')
 const isAdvancedSearchPage = (): boolean => window.location.pathname.startsWith('/search/advanced')
@@ -515,12 +517,14 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
         container,
         className = '',
         getSearchQuery,
+        utmCampaign
     }: {
         container: HTMLElement
         className?: string
+        utmCampaign: string
         getSearchQuery: () => string[]
     }): void => {
-        const sourcegraphSearchURL = new URL('/search', sourcegraphURL)
+        const sourcegraphSearchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {utm_source: getPlatformName(), utm_campaign: utmCampaign})
 
         render(
             <SourcegraphIconButton
@@ -533,7 +537,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                 onClick={event => {
                     const searchQuery = buildSourcegraphQuery(getSearchQuery())
 
-                    // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
+                    // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be correctly parsed by sourcegraph search page.
                     ;(event.target as HTMLAnchorElement).href = `${sourcegraphSearchURL.href}${
                         searchQuery ? `?q=${searchQuery}` : ''
                     }`
@@ -563,6 +567,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
                 renderSourcegraphButton({
                     container: buttonContainer,
+                    utmCampaign: 'github-search-results-page',
                     getSearchQuery: () => pageSearchInput.value.split(' ').map(substring => substring.trim()),
                 })
             }
@@ -598,6 +603,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                 renderSourcegraphButton({
                     container: buttonContainer,
                     className: emptyResultsContainer ? '' : 'btn-sm',
+                    utmCampaign: 'github-search-results-page',
                     getSearchQuery: () => headerSearchInput.value.split(' ').map(substring => substring.trim()),
                 })
             }
@@ -632,6 +638,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
         renderSourcegraphButton({
             container: buttonContainer,
+            utmCampaign: `github-${isAdvancedSearchPage() ? 'advanced' : 'simple'}-search-page`,
             getSearchQuery: () => inputElement.value.split(' ').map(substring => substring.trim()),
         })
     }
