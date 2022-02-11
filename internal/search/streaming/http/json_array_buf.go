@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 )
 
 // JSONArrayBuf builds up a JSON array by marshalling per item. Once the array
@@ -55,6 +56,7 @@ func (j *JSONArrayBuf) Append(v interface{}) error {
 
 // Flush writes and resets the buffer if there is data to write.
 func (j *JSONArrayBuf) Flush() error {
+	fmt.Printf("FLUSH\n")
 	if j.buf.Len() == 0 {
 		return nil
 	}

@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -281,20 +282,23 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 
 func structuralSearchZoektFileMatch(ctx context.Context, pattern, rule string, languages []string, repo api.RepoName, fm *zoekt.FileMatch, s matchSender) error {
 	args := comby.Args{
-		Input:         comby.FileContent(fm.Content),
-		Matcher:       toMatcher(languages, filepath.Ext(fm.FileName)),
 		MatchTemplate: pattern,
 		Rule:          rule,
 		ResultKind:    comby.MatchOnly,
+		Matcher:       toMatcher(languages, filepath.Ext(fm.FileName)),
 	}
 
-	matches, err := comby.Matches(ctx, args)
-	if err != nil {
-		return err
-	}
+	for _, lm := range fm.LineMatches {
+		args.Input = comby.FileContent(lm.Line)
+		matches, err := comby.Matches(ctx, args)
+		if err != nil {
+			return err
+		}
 
-	for _, m := range matches {
-		s.Send(toFileMatch(m))
+		for _, m := range matches {
+			fmt.Printf("comby match: %+v\n", m)
+			s.Send(toFileMatch(m))
+		}
 	}
 
 	return nil

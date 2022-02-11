@@ -122,7 +122,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	// Choose sensible values for k when we generalize this.
 	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
-	searchOpts.Whole = true
 
 	// TODO(@camdencheek) TODO(@rvantonder) handle "timeout:..." values in this context.
 	if useFullDeadline {
@@ -153,7 +152,9 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	client := getZoektClient(endpoints)
 	return client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(sr *zoekt.SearchResult) {
-		matches <- sr.Files
+		if len(sr.Files) > 0 {
+			matches <- sr.Files
+		}
 	}))
 }
 

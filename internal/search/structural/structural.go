@@ -106,6 +106,8 @@ func retryStructuralSearch(ctx context.Context, args *search.SearcherParameters,
 }
 
 func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
+	return streamStructuralSearch(ctx, args, repos, stream)
+
 	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
