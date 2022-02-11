@@ -21,7 +21,7 @@
 ## Usage
 
 ```
-Usage of 'src batch remote remote':
+Usage of 'src batch remote':
   -allow-unsupported
     	Allow unsupported code hosts.
   -clear-cache
