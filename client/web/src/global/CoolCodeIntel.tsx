@@ -5,7 +5,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { MemoryRouter, useHistory, useLocation } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -27,6 +27,7 @@ import {
     formatSearchParameters,
     addLineRangeQueryParameter,
     lprToRange,
+    removeSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Tab,
@@ -74,21 +75,15 @@ interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 
     externalLocation: H.Location
 }
 
-export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = ({ globalHistory, ...props }) => {
-    const location = useLocation()
-    const { viewState } = parseQueryAndHash(location.search, location.hash)
-
-    // If we don't have '#tab=...' in the URL, we don't need to show the panel.
-    if (!viewState) {
-        return null
-    }
-
-    return (
-        <MemoryRouter initialEntries={[location]}>
-            <CoolCodeIntelResizablePanel {...props} globalHistory={globalHistory} />
-        </MemoryRouter>
-    )
-}
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => (
+    <MemoryRouter
+        // Force router to remount the Panel when external location changes
+        key={`${props.externalLocation.pathname}${props.externalLocation.search}`}
+        initialEntries={[props.externalLocation]}
+    >
+        <CoolCodeIntelResizablePanel {...props} />
+    </MemoryRouter>
+)
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
 
@@ -299,10 +294,7 @@ export const SideReferencesLists: React.FunctionComponent<SideReferencesListsPro
                 <h4 className="p-1 mb-0">Definitions</h4>
             </CardHeader>
             {definitions.length > 0 ? (
-                <LocationsList
-                    locations={definitions}
-                    filter={props.filter}
-                />
+                <LocationsList locations={definitions} filter={props.filter} />
             ) : (
                 <p className="text-muted my-1 pl-2">
                     {props.filter ? (
@@ -318,10 +310,7 @@ export const SideReferencesLists: React.FunctionComponent<SideReferencesListsPro
                 <h4 className="p-1 mb-0">References</h4>
             </CardHeader>
             {references.length > 0 ? (
-                <LocationsList
-                    locations={references}
-                    filter={props.filter}
-                />
+                <LocationsList locations={references} filter={props.filter} />
             ) : (
                 <p className="text-muted pl-2">
                     {props.filter ? (
@@ -411,37 +400,18 @@ export const SideBlob: React.FunctionComponent<SideBlobProps> = props => {
     }
 
     return (
-<<<<<<< HEAD
-        <Blob
-            {...props}
-            onTokenClick={(token: CoolClickedToken) => {
-                console.log('Called with', token)
-                console.log(props.onTokenClick)
-                if (props.onTokenClick) {
-                    console.log('calling onTokenClick!!')
-                    props.onTokenClick(token)
-                }
-            }}
-            coolCodeIntelEnabled={true}
-            disableStatusBar={true}
-            wrapCode={true}
-            className={styles.referencesSideBlobCode}
-            blobInfo={{
-                content: props.activeLocation.resource.content,
-                html,
-                filePath: props.activeLocation.resource.path,
-                repoName: props.activeLocation.resource.repository.name,
-                commitID: props.activeLocation.resource.commit.oid,
-                revision: props.activeLocation.resource.commit.oid,
-                mode: 'lspmode',
-            }}
-        />
-=======
         <>
             <CardHeader className={classNames('pl-1', styles.referencesSideBlobFilename)}>
                 <h4>
                     {props.clickedToken.filePath}{' '}
-                    <Link to={url}>
+                    <Link
+                        to={url}
+                        onClick={event => {
+                            event.preventDefault()
+                            // We need to break out of the MemoryRouter to update actual URL
+                            props.externalHistory.push(url)
+                        }}
+                    >
                         <OpenInAppIcon className="icon-inline" />
                     </Link>
                 </h4>
@@ -462,12 +432,12 @@ export const SideBlob: React.FunctionComponent<SideBlobProps> = props => {
                 }}
             />
         </>
->>>>>>> d0166ba981 (Run everything through a memory router)
     )
 }
 
 const buildFileURL = (location: Location): string => {
-    const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
+    // Note: Potential bug - what if the user is on repoName/-/blob URL? Active style will break.
+    const path = `/${location.resource.repository.name}@${location.resource.commit.oid}/-/blob/${location.resource.path}`
     const range = location.range
 
     if (range !== undefined) {
@@ -475,13 +445,10 @@ const buildFileURL = (location: Location): string => {
             appendLineRangeQueryParameter(
                 path,
                 toPositionOrRangeQueryParameter({
-                    range: {
-                        // ATTENTION: Another off-by-one chaos in the making here
-                        start: {
-                            line: range.start.line + 1,
-                            character: range.start.character + 1,
-                        },
-                        end: { line: range.end.line + 1, character: range.end.character + 1 },
+                    // ATTENTION: Another off-by-one chaos in the making here
+                    position: {
+                        line: range.start.line + 1,
+                        character: range.start.character + 1,
                     },
                 })
             )
@@ -601,6 +568,12 @@ const ReferenceGroup: React.FunctionComponent<{
         highlighted = group.path.split(filter)
     }
 
+    // TODO: Better way of determining active style that doesn't rely on the URL?
+    const location = useLocation()
+    const currentLocation = removeSubtreeQueryParameter(`${location.pathname}${location.search}`)
+    const isActiveReference = (reference: Location): boolean =>
+        removeSubtreeQueryParameter(reference.url) === currentLocation
+
     return (
         <div className="ml-4">
             <Button
@@ -631,24 +604,25 @@ const ReferenceGroup: React.FunctionComponent<{
 
             <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
                 <ul className="list-unstyled pl-3 py-1 mb-0">
-                    {group.locations.map(reference => {
-                        // TOOD: Fix comparisons from reference to clickedToken
-                        const className = reference.url === 'fixme' ? styles.coolCodeIntelReferenceActive : ''
-
-                        return (
-                            <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
-                                <div>
-                                    <Link to={reference.url} className={styles.referenceLink}>
-                                        <span>
-                                            {reference.range?.start?.line}
-                                            {': '}
-                                        </span>
-                                        <code>{getLineContent(reference)}</code>
-                                    </Link>
-                                </div>
-                            </li>
-                        )
-                    })}
+                    {group.locations.map(reference => (
+                        <li
+                            key={reference.url}
+                            className={classNames(
+                                'border-0 rounded-0',
+                                isActiveReference(reference) && styles.coolCodeIntelReferenceActive
+                            )}
+                        >
+                            <div>
+                                <Link to={reference.url} className={styles.referenceLink}>
+                                    <span>
+                                        {reference.range?.start?.line}
+                                        {': '}
+                                    </span>
+                                    <code>{getLineContent(reference)}</code>
+                                </Link>
+                            </div>
+                        </li>
+                    ))}
                 </ul>
             </Collapse>
         </div>
@@ -731,18 +705,13 @@ export function locationWithoutViewState(location: H.Location): H.LocationDescri
 }
 
 export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    const location = useLocation()
-    const history = useHistory()
-
-    // TODO: Implement some UI that tracks historical references similar to cs.google
-    console.log('Current reference stack:')
-    console.log(JSON.stringify(history.entries, null, 2))
-
     const handlePanelClose = useCallback(() => {
         // Remove 'viewState' from location
-        props.globalHistory.push(locationWithoutViewState(location))
+        props.externalHistory.push(locationWithoutViewState(props.externalLocation))
         // close(true)
-    }, [props.globalHistory, location])
+    }, [props.externalHistory, props.externalLocation])
+
+    const location = useLocation()
 
     const { hash, pathname, search } = location
     const { line, character } = parseQueryAndHash(search, hash)

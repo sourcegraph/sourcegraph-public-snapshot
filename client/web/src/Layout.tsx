@@ -290,7 +290,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            {coolCodeIntelEnabled && <CoolCodeIntel {...props} {...themeProps} globalHistory={props.history} />}
+            {coolCodeIntelEnabled && parseQueryAndHash(props.location.search, props.location.hash).viewState && (
+                <CoolCodeIntel
+                    {...props}
+                    {...themeProps}
+                    externalHistory={props.history}
+                    externalLocation={props.location}
+                />
+            )}
         </div>
     )
 }

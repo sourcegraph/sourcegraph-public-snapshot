@@ -696,6 +696,15 @@ export const appendSubtreeQueryParameter = (url: string): string => {
 }
 
 /**
+ * Removes the query parameter subtree=true to URLs.
+ */
+export const removeSubtreeQueryParameter = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.delete('subtree')
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+}
+
+/**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,
  * and removes trailing `=`.
  */

@@ -612,10 +612,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         {...props}
                         {...hoverState.hoverOverlayProps}
                         location={location}
-                        nav={url => {
-                            console.log('Pushing', url, 'to history!')
-                            history.push(url)
-                        }}
+                        nav={url => history.push(url)}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}
