@@ -86,8 +86,9 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
                             }
                         />
                         <label className="form-check-label" htmlFor="org-namespace-visibility">
-                            Everyone {isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'} can view the
-                            notebook
+                            Everyone{' '}
+                            {isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'}{' '}
+                            can view the notebook
                         </label>
                     </div>
                 )}
