@@ -59,7 +59,7 @@ if [[ -z "$CUSTOM_CONTEXT" ]]; then
 
   if [ ! -f "$FILE" ]; then
     touch $FILE
-    printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
   fi
 fi
 
