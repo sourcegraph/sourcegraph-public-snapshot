@@ -8,7 +8,7 @@ create_annotation() {
     return
   fi
   slurp=$(cat "$file")
-  echo "$slurp" >"$(dirname "${BASH_SOURCE[0]}")/../../annotations/Job log.md"
+  printf "\`\`\`\n%s\n\`\`\`" "$slurp" >"$(dirname "${BASH_SOURCE[0]}")/../../annotations/Job log.md"
 }
 
 log_file=$(mktemp)
