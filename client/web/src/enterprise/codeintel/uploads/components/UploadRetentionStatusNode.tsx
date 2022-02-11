@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { FunctionComponent } from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { pluralize } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard/src/components/Link'
 
 import { NormalizedUploadRetentionMatch } from '../hooks/queryUploadRetentionMatches'
@@ -20,7 +20,7 @@ export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({
         const joinedRevhashes =
             node.protectingCommits.length !== 0 ? (
                 <>
-                    , by visible {pluralize('commit', node.protectingCommits.length, 'commits')}{' '}
+                    , by visible {pluralize('commit', node.protectingCommits.length)}{' '}
                     {node.protectingCommits.map(hash => hash.slice(0, 9)).join(', ')}
                     <InformationOutlineIcon
                         className="ml-1 icon-inline"

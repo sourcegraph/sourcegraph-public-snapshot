@@ -8,8 +8,8 @@ import { IRetentionPolicyOverviewOnLSIFUploadArguments } from '@sourcegraph/shar
 import { Connection } from '../../../../components/FilteredConnection'
 import {
     GitObjectType,
-    LsifUploadRetentionPolicyMatchesResult as LsifUploadRetentionMatchesResult,
-    LsifUploadRetentionPolicyMatchesVariables as LsifUploadRetentionMatchesVariables,
+    LsifUploadRetentionMatchesResult,
+    LsifUploadRetentionMatchesVariables,
 } from '../../../../graphql-operations'
 import { retentionByUploadTitle } from '../components/UploadRetentionStatusNode'
 
