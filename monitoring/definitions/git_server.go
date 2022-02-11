@@ -27,10 +27,10 @@ func GitServer() *monitoring.Container {
 		Description: "Stores, manages, and operates Git repositories.",
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label: "Shard",
-				Name:  "shard",
-				Query: "label_values(src_gitserver_exec_running, instance)",
-				Multi: true,
+				Label:        "Shard",
+				Name:         "shard",
+				OptionsQuery: "label_values(src_gitserver_exec_running, instance)",
+				Multi:        true,
 			},
 		},
 		Groups: []monitoring.Group{

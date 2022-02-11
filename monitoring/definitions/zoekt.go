@@ -24,10 +24,10 @@ func Zoekt() *monitoring.Container {
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label: "Instance",
-				Name:  "instance",
-				Query: "label_values(index_num_assigned, instance)",
-				Multi: true,
+				Label:        "Instance",
+				Name:         "instance",
+				OptionsQuery: "label_values(index_num_assigned, instance)",
+				Multi:        true,
 			},
 		},
 		Groups: []monitoring.Group{

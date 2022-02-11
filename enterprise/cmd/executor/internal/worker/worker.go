@@ -55,9 +55,6 @@ type Options struct {
 	// ResourceOptions configures the resource limits of docker container and Firecracker
 	// virtual machines running on the executor.
 	ResourceOptions command.ResourceOptions
-
-	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
-	MaximumRuntimePerJob time.Duration
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work. The returned

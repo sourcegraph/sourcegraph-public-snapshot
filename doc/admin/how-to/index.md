@@ -1,5 +1,8 @@
 # How-to guides
 
+- [How to manually execute database migrations with `migrator`](manual_database_migrations.md)
+  - Commands: [up](manual_database_migrations.md#up), [upto](manual_database_migrations.md#upto), [downto](manual_database_migrations.md#downto), [validate](manual_database_migrations.md#validate)
+  - Environments: [Kubernetes](manual_database_migrations.md#kubernetes), [Docker compose](manual_database_migrations.md#docker-compose), [Local development](manual_database_migrations.md#local-development)
 - [How to troubleshoot a dirty database](dirty_database.md)
 - [How to troubleshoot an unfinished migration](unfinished_migration.md)
 - [How to enable or disable an experimental feature](enable-experimental-feature.md)
@@ -19,4 +22,3 @@
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
 - [How to remove a repository from Sourcegraph](remove-repo.md)
 - [How to address common monorepo problems](monorepo-issues.md)
-
