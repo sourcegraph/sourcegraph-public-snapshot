@@ -283,7 +283,24 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) (commits []*gitdomain.Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	wrappedCommits, err := getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, checker) {
+		return getMoreCommits(ctx, repo, opt, checker, filtered)
+	}
+	return filtered, err
+}
+
+func getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -298,7 +315,68 @@ func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, check
 	if err != nil {
 		return nil, err
 	}
-	return filterCommits(ctx, wrappedCommits, repo, checker)
+	return wrappedCommits, nil
+}
+
+func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
+	if !authz.SubRepoEnabled(checker) {
+		return false
+	}
+	if opt.N == 0 || isRequestForSingleCommit(opt) {
+		return false
+	}
+	if len(filtered) < len(commits) {
+		return true
+	}
+	return false
+}
+
+func isRequestForSingleCommit(opt CommitsOptions) bool {
+	return opt.Range != "" && opt.N == 1
+}
+
+// getMoreCommits handles the case where a specific number of commits was requested via CommitsOptions, but after sub-repo
+// filtering, fewer than that requested number was left. This function requests the next N commits (where N was the number
+// originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
+// the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
+func getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
+	// We want to place an upper bound on the number of times we loop here so that we
+	// don't hit pathological conditions where a lot of filtering has been applied.
+	const maxIterations = 5
+
+	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
+	for i := 0; i < maxIterations; i++ {
+		if uint(len(totalCommits)) == opt.N {
+			break
+		}
+		// Increment the Skip number to get the next N commits
+		opt.Skip += opt.N
+		wrappedCommits, err := getWrappedCommits(ctx, repo, opt)
+		if err != nil {
+			return nil, err
+		}
+		filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+		if err != nil {
+			return nil, err
+		}
+		// join the new (filtered) commits with those already fetched (potentially truncating the list to have length N if necessary)
+		totalCommits = joinCommits(baselineCommits, filtered, opt.N)
+		baselineCommits = totalCommits
+		if uint(len(wrappedCommits)) < opt.N {
+			// No more commits available before filtering, so return current total commits (e.g. the last "page" of N commits has been reached)
+			break
+		}
+	}
+	return totalCommits, nil
+}
+
+func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdomain.Commit {
+	allCommits := append(previous, next...)
+	// ensure that we don't return more than what was requested
+	if uint(len(allCommits)) > desiredTotal {
+		return allCommits[:desiredTotal]
+	}
+	return allCommits
 }
 
 // runCommitLog sends the git command to gitserver. It interprets missing

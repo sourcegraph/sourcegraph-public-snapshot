@@ -72,6 +72,7 @@ func TestRepository_GetCommit(t *testing.T) {
 
 				if !CommitsEqual(commit, test.wantCommit) {
 					t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
+					return
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
@@ -511,16 +512,6 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "file2" || content.Path == "file3" {
-			return authz.None, nil
-		}
-		return authz.Read, nil
-	})
 	gitCommands := []string{
 		"touch file1",
 		"git add file1",
@@ -536,10 +527,11 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo        api.RepoName
-		wantCommits []*gitdomain.Commit
-		opt         CommitsOptions
-		wantTotal   uint
+		repo          api.RepoName
+		wantCommits   []*gitdomain.Commit
+		opt           CommitsOptions
+		wantTotal     uint
+		noAccessPaths []string
 	}{
 		"if no read perms on file should filter out commit": {
 			repo:      MakeGitRepository(t, gitCommands...),
@@ -552,21 +544,21 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 					Message:   "commit1",
 				},
 			},
+			noAccessPaths: []string{"file2", "file3"},
 		},
 		"sub-repo perms with path (w/ no access) specified should return no commits": {
 			repo:      MakeGitRepository(t, gitCommands...),
 			wantTotal: 1,
 			opt: CommitsOptions{
-				//Range: "master",
 				Path: "file2",
 			},
-			wantCommits: []*gitdomain.Commit{},
+			wantCommits:   []*gitdomain.Commit{},
+			noAccessPaths: []string{"file2", "file3"},
 		},
 		"sub-repo perms with path (w/ access) specified should return that commit": {
 			repo:      MakeGitRepository(t, gitCommands...),
 			wantTotal: 1,
 			opt: CommitsOptions{
-				//Range: "master",
 				Path: "file1",
 			},
 			wantCommits: []*gitdomain.Commit{
@@ -577,21 +569,117 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 					Message:   "commit1",
 				},
 			},
+			noAccessPaths: []string{"file2", "file3"},
 		},
 	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, test.opt, checker)
-		if err != nil {
-			t.Errorf("%s: Commits(): %s", label, err)
-			return
-		}
+		t.Run(label, func(t *testing.T) {
+			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
+			commits, err := Commits(ctx, test.repo, test.opt, checker)
+			if err != nil {
+				t.Errorf("%s: Commits(): %s", label, err)
+				return
+			}
 
-		if len(commits) != len(test.wantCommits) {
-			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
-		}
+			if len(commits) != len(test.wantCommits) {
+				t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
+			}
 
-		checkCommits(t, label, commits, test.wantCommits)
+			checkCommits(t, label, commits, test.wantCommits)
+		})
+	}
+}
+
+func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:01Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:01Z",
+		"touch file2",
+		"git add file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:02Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:02Z",
+		"echo foo > file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:03Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:03Z",
+		"echo asdf > file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:04Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:04Z",
+		"echo bar > file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit5 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"echo asdf2 > file2",
+		"git add file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit -m commit6 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"echo bazz > file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit7 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+		"echo bazz > file2",
+		"git add file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit8 --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
+	}
+
+	tests := map[string]struct {
+		repo          api.RepoName
+		wantCommits   []*gitdomain.Commit
+		opt           CommitsOptions
+		wantTotal     uint
+		noAccessPaths []string
+	}{
+		"return the requested number of commits": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 3,
+			opt: CommitsOptions{
+				N: 3,
+			},
+			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "61dbc35f719c53810904a2d359309d4e1e98a6be",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Message:   "commit7",
+					Parents:   []api.CommitID{"66566c8aa223f3e1b94ebe09e6cdb14c3a5bfb36"},
+				},
+				{
+					ID:        "2e6b2c94293e9e339f781b2a2f7172e15460f88c",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Parents: []api.CommitID{
+						"9a7ec70986d657c4c86d6ac476f0c5181ece509a",
+					},
+					Message: "commit5",
+				},
+				{
+					ID:        "9a7ec70986d657c4c86d6ac476f0c5181ece509a",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Message:   "commit4",
+					Parents: []api.CommitID{
+						"f3fa8cf6ec56d0469402523385d6ca4b7cb222d8",
+					},
+				},
+			},
+			noAccessPaths: []string{"file2"},
+		},
+	}
+
+	for label, test := range tests {
+		t.Run(label, func(t *testing.T) {
+			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
+			commits, err := Commits(ctx, test.repo, test.opt, checker)
+			if err != nil {
+				t.Errorf("%s: Commits(): %s", label, err)
+				return
+			}
+
+			if diff := cmp.Diff(test.wantCommits, commits); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
