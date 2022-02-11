@@ -54,6 +54,10 @@ func main() {
 		log.Printf("unknown pull request base %q - discarding\n", payload.PullRequest.Base.Ref)
 		return
 	}
+	if payload.Action == "edited" && payload.PullRequest.Merged {
+		log.Println("ignoring edit of already-merged pull request")
+		return
+	}
 
 	// Do checks
 	if payload.PullRequest.Merged {
