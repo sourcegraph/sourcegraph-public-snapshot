@@ -4,7 +4,8 @@ import (
 	"context"
 	"io"
 	"os/exec"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -83,11 +84,13 @@ type startedCmd struct {
 	stdoutBuf *prefixSuffixSaver
 	stderrBuf *prefixSuffixSaver
 
-	outWg *sync.WaitGroup
+	outEg *errgroup.Group
 }
 
 func (sc *startedCmd) Wait() error {
-	sc.outWg.Wait()
+	if err := sc.outEg.Wait(); err != nil {
+		return err
+	}
 	return sc.Cmd.Wait()
 }
 
@@ -135,11 +138,11 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
-	wg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
+	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
 		return nil, err
 	}
-	sc.outWg = wg
+	sc.outEg = eg
 
 	if err := sc.Start(); err != nil {
 		return sc, err
