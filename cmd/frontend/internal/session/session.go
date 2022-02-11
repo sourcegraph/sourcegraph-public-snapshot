@@ -30,8 +30,8 @@ var (
 	sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 )
 
-// defaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 90 days.
-const defaultExpiryPeriod = 90 * 24 * time.Hour
+// defaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 7 days.
+const defaultExpiryPeriod = 7 * 24 * time.Hour
 
 // cookieName is the name of the HTTP cookie that stores the session ID.
 const cookieName = "sgs"
@@ -44,10 +44,10 @@ func init() {
 
 		d, err := time.ParseDuration(c.SiteConfig().AuthSessionExpiry)
 		if err != nil {
-			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
+			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 7 days will be used.")
 		}
 		if d == 0 {
-			return conf.NewSiteProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
+			return conf.NewSiteProblems("auth.sessionExpiry should be greater than zero. The default of 7 days will be used.")
 		}
 		return nil
 	})
