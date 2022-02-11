@@ -12,13 +12,19 @@ import (
 
 type Runner struct {
 	storeFactories map[string]StoreFactory
+	schemas        []*schemas.Schema
 }
 
 type StoreFactory func(ctx context.Context) (Store, error)
 
 func NewRunner(storeFactories map[string]StoreFactory) *Runner {
+	return NewRunnerWithSchemas(storeFactories, schemas.Schemas)
+}
+
+func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
 	return &Runner{
 		storeFactories: storeFactories,
+		schemas:        schemas,
 	}
 }
 
@@ -103,7 +109,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	schemaMap := make(map[string]*schemas.Schema, len(schemaNames))
 
 	for _, targetSchemaName := range schemaNames {
-		for _, schema := range schemas.Schemas {
+		for _, schema := range r.schemas {
 			if schema.Name == targetSchemaName {
 				schemaMap[schema.Name] = schema
 				break

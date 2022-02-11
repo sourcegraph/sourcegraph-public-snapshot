@@ -152,13 +152,20 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 		}
 	}()
 
-	ctx := context.Background()
-
+	dsns := map[string]string{
+		database.Name: postgresDSN,
+	}
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
+	r, err := connections.RunnerFromDSNs(dsns, "sg", storeFactory)
+	if err != nil {
+		return err
+	}
 
-	options := runner.Options{
+	ctx := context.Background()
+
+	return r.Run(ctx, runner.Options{
 		Operations: []runner.MigrationOperation{
 			{
 				SchemaName:     database.Name,
@@ -166,13 +173,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 				TargetVersions: targetVersions,
 			},
 		},
-	}
-
-	dsns := map[string]string{
-		database.Name: postgresDSN,
-	}
-
-	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
+	})
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.

@@ -80,11 +80,14 @@ func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil
 		if err != nil {
 			return nil, err
 		}
-
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 		}
+		r, err := connections.RunnerFromDSNs(dsns, appName, storeFactory)
+		if err != nil {
+			return nil, err
+		}
 
-		return cliutil.NewShim(connections.RunnerFromDSNs(dsns, appName, storeFactory)), nil
+		return cliutil.NewShim(r), nil
 	}
 }
