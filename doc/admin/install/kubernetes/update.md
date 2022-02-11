@@ -81,94 +81,13 @@ the following:
 
 ## Database Migrations
 
-> NOTE: This feature is only available in versions `3.36` and later
+> NOTE: This feature is only available in versions `3.37` and later
 
-By default, database migrations will be performed during application startup by the `frontend` application. These migrations _must_ succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
+By default, database migrations will be performed during application startup by the `frontend` application. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
 In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-To execute the database migrations independently, run the following commands in your fork of `deploy-sourcegraph`.
-
-> NOTE: These values will work for a standard deployment of Sourcegraph with all three databases running in-cluster. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables in `configure/migrator/migrator.Job.yaml` accordingly.
-
-1. Start the migrations (run these commands from the root of your `deploy-sourcegraph` fork):
-
-    > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
-    
-    ```bash
-    # Update the "image" value of the migrator container in the manifest
-    export SOURCEGRAPH_VERSION="the version you're upgrading to"
-    yq eval -i \
-        '.spec.template.spec.containers[0].image = "index.docker.io/sourcegraph/migrator:" + strenv(SOURCEGRAPH_VERSION)' \
-        configure/migrator/migrator.Job.yaml
-
-    # If you do not have yq, you can update the image tag manually to:
-    #   "index.docker.io/sourcegraph/migrator:$SOURCEGRAPH_VERSION"
-
-    # Apply and wait for migrations to complete before continuing
-    kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
-    kubectl apply -f configure/migrator/migrator.Job.yaml
-    # -1s timeout will wait "forever"
-    kubectl wait -f configure/migrator/migrator.job.yaml --for=condition=complete --timeout=-1s
-    ```
-
-    You should see something like the following printed to the terminal:
-
-    ```text
-    job.batch "migrator" deleted
-    job.batch/migrator created
-    job.batch/migrator condition met
-    ```
-
-    The log output of the `migrator` container should look similar to:
-
-    ```
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel appliedVersions="[1000000015 1000000016 ... 1000000024 1000000025]" pendingVersions=[1000000031] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights appliedVersions="[1000000010 1000000011 ... 1000000015 1000000016]" pendingVersions=[1000000031] failedVersions=[]
-
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=frontend leafVersions=[1528395972]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=frontend up=true count=21
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395952 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395953 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked progress of index creation" tableName=repo indexName=repo_hashed_name_idx exists=false isValid=false in-progress=false
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Creating index concurrently" schema=frontend migrationID=1528395954 tableName=repo indexName=repo_hashed_name_idx
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend appliedVersions="[1528395834 1528395835 ... 15283959051 1528395951]" pendingVersions=[] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=frontend up=true count=18
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395955 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395956 up=true
-    ...
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395971 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=frontend migrationID=1528395972 up=true
-    
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=codeintel leafVersions=[1000000030]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel appliedVersions="[1000000015 1000000016 ... 1000000024 1000000025]" pendingVersions=[1000000031] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=codeintel up=true count=5
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000026 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000027 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000028 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000029 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeintel migrationID=1000000030 up=true
-
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Desugaring `upgrade` to `targeted up` operation" schema=codeinsights leafVersions=[1000000018]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights appliedVersions="[1000000010 1000000011 ... 1000000015 1000000016]" pendingVersions=[1000000031] failedVersions=[]
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migrations" schema=codeinsights up=true count=2
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeinsights migrationID=1000000017 up=true
-    migrator | t=2022-02-08T03:14:35+0000 lvl=info msg="Applying migration" schema=codeinsights migrationID=1000000018 up=true
-
-    migrator exited with code 0
-    ```
-
-If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
-
-### Migrating Without Code Insights
-
-If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the migration process will fail. To work around this, the `configure/migrator/migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file.
-
-1. Modify the `migrator` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "frontend,codeintel"]`
-
-You should now be able to apply the job and continue the migration and upgrade process as normal.
+To execute the database migrations independently, follow the [Kubernetes instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#kubernetes). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ### Troubleshooting
 

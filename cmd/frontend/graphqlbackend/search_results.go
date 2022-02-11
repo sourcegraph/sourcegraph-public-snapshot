@@ -46,7 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -702,7 +702,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				addJob(true, &unindexed.RepoUniverseTextSearch{
+				addJob(true, &textsearch.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 
@@ -761,7 +761,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				addJob(true, &unindexed.RepoSubsetTextSearch{
+				addJob(true, &textsearch.RepoSubsetTextSearch{
 					ZoektArgs:        zoektArgs,
 					SearcherArgs:     searcherArgs,
 					NotSearcherOnly:  !searcherOnly,
