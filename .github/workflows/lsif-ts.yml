@@ -23,9 +23,7 @@ jobs:
           - client/shared
           - client/search
           - client/search-ui
-          # Temporarily disable client/web uploads because of long queues
-          # https://github.com/sourcegraph/sourcegraph/issues/30493#issuecomment-1030090306
-          # - client/web
+          - client/web
           - client/wildcard
           - client/common
           - client/http-client
