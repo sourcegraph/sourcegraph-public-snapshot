@@ -157,6 +157,11 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
+			if m.IsPrefixMatcher() {
+				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
+					strings.TrimRight(m.Branch, "/"))
+			}
+
 			// Generate a sample pipeline with all changes
 			pipeline, err := ci.GeneratePipeline(ci.Config{
 				RunType: runtype.PullRequest,

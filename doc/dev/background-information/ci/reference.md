@@ -142,6 +142,11 @@ The run type for branches matching `main` (exact).
 ### Main dry run
 
 The run type for branches matching `main-dry-run/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build main-dry-run
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
@@ -155,6 +160,11 @@ The run type for branches matching `main-dry-run/`.
 ### Patch image
 
 The run type for branches matching `docker-images-patch/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build docker-images-patch
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
@@ -168,6 +178,11 @@ The run type for branches matching `docker-images-patch/`.
 ### Patch image without testing
 
 The run type for branches matching `docker-images-patch-notest/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build docker-images-patch-notest
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
@@ -181,6 +196,11 @@ The run type for branches matching `docker-images-patch-notest/`.
 ### Build all candidates without testing
 
 The run type for branches matching `docker-images-candidates-notest/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build docker-images-candidates-notest
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
@@ -194,6 +214,11 @@ The run type for branches matching `docker-images-candidates-notest/`.
 ### Build executor without testing
 
 The run type for branches matching `executor-patch-notest/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build executor-patch-notest
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
@@ -207,6 +232,11 @@ The run type for branches matching `executor-patch-notest/`.
 ### Backend integration tests
 
 The run type for branches matching `backend-integration/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build backend-integration
+```
 
 - Default pipeline:
   - **Pipeline setup**: Trigger async
