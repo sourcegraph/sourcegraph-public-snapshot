@@ -21,7 +21,6 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -280,19 +279,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 }
 
 func addNotifyBlocks(ctx context.Context, pipeline *bk.Pipeline, c Config) {
-	// Slack client for retriving Slack profile data, not for making the request - for
-	// more details, see the config.Notify docstring.
-	slc := slack.New(c.Notify.SlackToken)
-
-	// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
-	// is a public repository.
-	ghc := github.NewClient(http.DefaultClient)
-
-	// Get teammate based on GitHub author of commit
-	teammates := team.NewTeammateResolver(ghc, slc)
-
-	// Add a notify block
 	if c.RunType.Is(runtype.MainBranch) {
+		// Slack client for retriving Slack profile data, not for making the request - for
+		// more details, see the config.Notify docstring.
+		slc := slack.New(c.Notify.SlackToken)
+
+		// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
+		// is a public repository.
+		ghc := github.NewClient(http.DefaultClient)
+
+		// Get teammate based on GitHub author of commit
+		teammates := team.NewTeammateResolver(ghc, slc)
+
 		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
 		if err != nil {
 			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", errors.Newf("failed to get Slack user: %w", err))
@@ -300,25 +298,8 @@ func addNotifyBlocks(ctx context.Context, pipeline *bk.Pipeline, c Config) {
 			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
 		}
 	}
-
 	if c.RunType.Is(runtype.ReleaseNightly) {
-		releaseConfigData, err := os.ReadFile("./dev/release/release-config.jsonc")
-		if err == nil {
-			var releaseConfig struct {
-				CaptainGitHubUsername string `json:"captainGitHubUsername"`
-			}
-			if err = jsonc.Unmarshal(string(releaseConfigData), &releaseConfig); err == nil {
-				var tm *team.Teammate
-				tm, err = teammates.ResolveByGitHubHandle(ctx, releaseConfig.CaptainGitHubUsername)
-				if err == nil {
-					pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
-				}
-			}
-		}
-
-		if err != nil {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, "dev-experience-support", err)
-		}
+		pipeline.AddFailureSlackNotify(c.Notify.Channel, "release-guild", nil)
 	}
 }
 
