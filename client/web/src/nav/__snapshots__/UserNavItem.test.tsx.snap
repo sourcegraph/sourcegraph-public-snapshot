@@ -2,221 +2,39 @@
 
 exports[`UserNavItem simple 1`] = `
 <DocumentFragment>
-  <div
-    aria-label="User. Open menu"
-    class="py-0 btn-group"
+  <button
+    aria-controls="menu--1"
+    aria-haspopup="true"
+    class="d-flex align-items-center text-decoration-none test-user-nav-item-toggle menuButton"
+    data-reach-menu-button=""
+    id="menu-button--menu"
+    type="button"
   >
-    <a
-      aria-expanded="false"
-      aria-haspopup="true"
-      class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
-      href="#"
-    >
-      <div
-        class="position-relative"
-      >
-        <div
-          class="align-items-center d-flex"
-        >
-          <div
-            class="userAvatar icon-inline avatar"
-            id="target-user-avatar"
-          >
-            ad
-          </div>
-          <svg
-            class="mdi-icon icon-inline"
-            fill="currentColor"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-          >
-            <path
-              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
-            />
-          </svg>
-        </div>
-      </div>
-    </a>
     <div
-      aria-hidden="true"
-      class="dropdownMenu dropdown-menu dropdown-menu-right"
-      role="menu"
-      tabindex="-1"
+      class="position-relative"
     >
-      <h6
-        class="py-1 dropdown-header"
-        tabindex="-1"
-      >
-        Signed in as 
-        <strong>
-          @alice
-        </strong>
-      </h6>
       <div
-        class="dropdown-divider"
-        tabindex="-1"
-      />
-      <a
-        class="dropdown-item"
-        href="/"
-      >
-        Settings
-      </a>
-      <a
-        class="dropdown-item"
-        href="/users/alice/settings/repositories"
-      >
-        Your repositories
-      </a>
-      <a
-        class="dropdown-item"
-        href="/users/alice/searches"
-      >
-        Saved searches
-      </a>
-      <div
-        class="dropdown-divider"
-        tabindex="-1"
-      />
-      <div
-        class="px-2 py-1"
+        class="align-items-center d-flex"
       >
         <div
-          class="d-flex align-items-center"
+          class="userAvatar icon-inline avatar"
+          id="target-user-avatar"
         >
-          <div
-            class="mr-2"
-          >
-            Theme
-          </div>
-          <select
-            class="custom-select custom-select-sm test-theme-toggle"
-          >
-            <option
-              value="light"
-            >
-              Light
-            </option>
-            <option
-              value="dark"
-            >
-              Dark
-            </option>
-            <option
-              value="system"
-            >
-              System
-            </option>
-          </select>
+          ad
         </div>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
       </div>
-      <div
-        class="dropdown-divider"
-        tabindex="-1"
-      />
-      <h6
-        class="dropdown-header"
-        tabindex="-1"
-      >
-        Your organizations
-      </h6>
-      <a
-        class="dropdown-item"
-        href="/organizations/acme/settings"
-      >
-        Acme Corp
-      </a>
-      <a
-        class="dropdown-item"
-        href="/organizations/beta/settings"
-      >
-        Beta Inc
-      </a>
-      <div
-        class="dropdown-divider"
-        tabindex="-1"
-      />
-      <a
-        class="dropdown-item"
-        href="/site-admin"
-      >
-        Site admin
-      </a>
-      <a
-        class="dropdown-item"
-        href="/help"
-        rel="noopener"
-        target="_blank"
-      >
-        Help 
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-          />
-        </svg>
-      </a>
-      <button
-        class="dropdown-item"
-        type="button"
-      >
-        Keyboard shortcuts
-      </button>
-      <a
-        class="dropdown-item"
-        href="/-/sign-out"
-      >
-        Sign out
-      </a>
-      <div
-        class="dropdown-divider"
-        tabindex="-1"
-      />
-      <a
-        class="dropdown-item"
-        href="https://about.sourcegraph.com"
-        rel="noopener"
-        target="_blank"
-      >
-        About Sourcegraph 
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-          />
-        </svg>
-      </a>
-      <a
-        class="dropdown-item"
-        href="https://docs.sourcegraph.com/integration/browser_extension"
-        rel="noopener"
-        target="_blank"
-      >
-        Browser extension 
-        <svg
-          class="mdi-icon icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
-          />
-        </svg>
-      </a>
     </div>
-  </div>
+  </button>
 </DocumentFragment>
 `;

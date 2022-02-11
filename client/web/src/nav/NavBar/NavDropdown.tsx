@@ -1,11 +1,18 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Link } from '@sourcegraph/wildcard'
+import {
+    Menu,
+    MenuButton,
+    Link,
+    MenuList,
+    MenuLink,
+    PopoverOpenEvent,
+    PopoverOpenEventReason,
+} from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -26,33 +33,35 @@ interface NavDropdownProps {
     items: NavDropdownItem[]
 }
 
-const DROPDOWN_MODIFIERS = {
-    flip: {
-        enabled: false,
-    },
-    offset: {
-        enabled: true,
-        // Offset menu to the top so that the menu overlaps with the toggle button.
-        // This prevents the menu from closing when moving mouse cursor from the button
-        // to the menu.
-        offset: '-10,-2',
-    },
-}
-
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
     const location = useLocation()
     const history = useHistory()
+    const menuListReference = useRef<HTMLDivElement | null>(null)
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const toggle = (event: React.KeyboardEvent | React.MouseEvent): void => {
+    const handleKeyDown = (event: React.KeyboardEvent): void => {
         // Don't toggle dropdown with Enter key; instead, navigate to the home item of the dropdown.
         // This matches the behavior of the rest of the nav items.
-        if (event.type === 'keydown' && (event as React.KeyboardEvent).key === 'Enter') {
-            history.push(toggleItem.path)
-            return
+        if (event.type === 'keydown') {
+            switch (event.key) {
+                case 'Enter': {
+                    history.push(toggleItem.path)
+                    event.preventDefault()
+                    return
+                }
+                case 'ArrowUp':
+                case 'ArrowDown': {
+                    if (!isDropdownOpen) {
+                        setIsDropdownOpen(true)
+                    } else {
+                        menuListReference.current?.focus()
+                    }
+                    return
+                }
+            }
         }
-        // For all other events that toggle the dropdown (e.g. space, arrow keys, clicking outside of the dropdown), toggle as normal.
-        setIsDropdownOpen(!isDropdownOpen)
+
+        setIsDropdownOpen(false)
     }
 
     const closeDropdown = (): void => setIsDropdownOpen(false)
@@ -64,22 +73,22 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         [items, toggleItem, location.pathname]
     )
 
+    const handleOpenChange = (event: PopoverOpenEvent): void => {
+        if (event.reason === PopoverOpenEventReason.TriggerClick) {
+            history.push(toggleItem.path)
+        }
+
+        setIsDropdownOpen(event.isOpen)
+    }
+
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
     // and then use CSS @media queries to toggle between them.
     return (
         <>
             {/* Dropdown nav item for bigger screens */}
             <NavItem className="d-none d-md-flex">
-                <ButtonDropdown
-                    isOpen={isDropdownOpen}
-                    onPointerLeave={(event: React.PointerEvent) => {
-                        if (event.pointerType === 'mouse') {
-                            closeDropdown()
-                        }
-                    }}
-                    toggle={toggle}
-                >
-                    <DropdownToggle
+                <Menu isOpen={isDropdownOpen} onOpenChange={handleOpenChange}>
+                    <MenuButton
                         className={classNames(
                             navItemStyles.link,
                             isItemSelected && navItemStyles.active,
@@ -87,7 +96,6 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             'align-items-center',
                             'p-0'
                         )}
-                        nav={true}
                         onPointerEnter={(event: React.PointerEvent) => {
                             if (event.pointerType === 'mouse') {
                                 setIsDropdownOpen(true)
@@ -99,6 +107,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 history.push(toggleItem.path)
                             }
                         }}
+                        onKeyDown={handleKeyDown}
                     >
                         <span className={navItemStyles.linkContent}>
                             <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
@@ -111,32 +120,35 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 <ChevronDownIcon className={classNames('icon-inline', navItemStyles.icon)} />
                             )}
                         </span>
-                    </DropdownToggle>
-                    <DropdownMenu modifiers={DROPDOWN_MODIFIERS}>
-                        <>
-                            {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
-                            <Link
-                                key={toggleItem.path}
-                                to={toggleItem.path}
-                                className={classNames('dropdown-item', styles.showOnTouchScreen)}
-                                onClick={closeDropdown}
-                            >
-                                {mobileHomeItem.content}
-                            </Link>
-                            {items.map(item => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className="dropdown-item"
-                                    onClick={closeDropdown}
-                                    role="menuitem"
-                                >
-                                    {item.content}
-                                </Link>
-                            ))}
-                        </>
-                    </DropdownMenu>
-                </ButtonDropdown>
+                    </MenuButton>
+                    {/* MenuPoper does not have modifiers
+                            Add onPointerLeave from ButtonDropdown Reactstrap library */}
+
+                    <MenuList
+                        onPointerLeave={(event: React.PointerEvent) => {
+                            if (event.pointerType === 'mouse') {
+                                closeDropdown()
+                            }
+                        }}
+                        ref={menuListReference}
+                    >
+                        {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
+                        <MenuLink
+                            as={Link}
+                            key={toggleItem.path}
+                            to={toggleItem.path}
+                            className={styles.showOnTouchScreen}
+                            onClick={closeDropdown}
+                        >
+                            {mobileHomeItem.content}
+                        </MenuLink>
+                        {items.map(item => (
+                            <MenuLink as={Link} key={item.path} to={item.path} onClick={closeDropdown} role="menuitem">
+                                {item.content}
+                            </MenuLink>
+                        ))}
+                    </MenuList>
+                </Menu>
             </NavItem>
             {/* All nav items for smaller screens */}
             {/* Render the toggle item separately */}

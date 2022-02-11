@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import React from 'react'
 
@@ -8,6 +8,23 @@ import { LinkWithIcon } from '../components/LinkWithIcon'
 import { WebStory } from '../components/WebStory'
 
 import { MenuNavItem } from './MenuNavItem'
+
+const config: Meta = {
+    title: 'web/nav/MenuNavItem',
+    decorators: [story => <div className="p-3 container h-100 web-content">{story()}</div>],
+    parameters: {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=1108%3A872',
+        },
+        chromatic: {
+            enableDarkMode: true,
+            viewports: [400],
+        },
+    },
+}
+
+export default config
 
 const InsightsNavItem: React.FunctionComponent = () => (
     <LinkWithIcon
@@ -19,25 +36,14 @@ const InsightsNavItem: React.FunctionComponent = () => (
     />
 )
 
-const { add } = storiesOf('web/nav/MenuNavItem', module)
-
-add(
-    'Menu',
-    () => (
-        <WebStory>
-            {() => (
-                <MenuNavItem openByDefault={true}>
-                    <BatchChangesNavItem />
-                    <InsightsNavItem />
-                    <CodeMonitoringNavItem />
-                </MenuNavItem>
-            )}
-        </WebStory>
-    ),
-    {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/SFhXbl23TJ2j5tOF51NDtF/%F0%9F%93%9AWeb?node-id=1108%3A872',
-        },
-    }
+export const Menu: Story = () => (
+    <WebStory>
+        {() => (
+            <MenuNavItem openByDefault={true}>
+                <BatchChangesNavItem />
+                <InsightsNavItem />
+                <CodeMonitoringNavItem />
+            </MenuNavItem>
+        )}
+    </WebStory>
 )

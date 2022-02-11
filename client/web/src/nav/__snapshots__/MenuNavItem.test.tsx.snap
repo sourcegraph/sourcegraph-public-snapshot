@@ -2,65 +2,36 @@
 
 exports[`MenuNavItem add menu children 1`] = `
 <DocumentFragment>
-  <div
-    class="btn-group"
+  <button
+    aria-controls="menu--1"
+    aria-haspopup="true"
+    class="bg-transparent menuNavItem"
+    data-reach-menu-button=""
+    id="menu-button--menu"
+    type="button"
   >
-    <a
-      aria-expanded="false"
-      aria-haspopup="true"
-      class="bg-transparent nav-link"
-      href="#"
+    <svg
+      class="mdi-icon icon-inline"
+      fill="currentColor"
+      height="24"
+      viewBox="0 0 24 24"
+      width="24"
     >
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
-        />
-      </svg>
-      <svg
-        class="mdi-icon icon-inline"
-        fill="currentColor"
-        height="24"
-        viewBox="0 0 24 24"
-        width="24"
-      >
-        <path
-          d="M7,10L12,15L17,10H7Z"
-        />
-      </svg>
-    </a>
-    <div
-      aria-hidden="true"
-      class="dropdown-menu"
-      role="menu"
-      tabindex="-1"
+      <path
+        d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+      />
+    </svg>
+    <svg
+      class="mdi-icon icon-inline"
+      fill="currentColor"
+      height="24"
+      viewBox="0 0 24 24"
+      width="24"
     >
-      <button
-        class="dropdown-item"
-        role="menuitem"
-        tabindex="0"
-        type="button"
-      >
-        <div>
-          item
-        </div>
-      </button>
-      <button
-        class="dropdown-item"
-        role="menuitem"
-        tabindex="0"
-        type="button"
-      >
-        <div>
-          item
-        </div>
-      </button>
-    </div>
-  </div>
+      <path
+        d="M7,10L12,15L17,10H7Z"
+      />
+    </svg>
+  </button>
 </DocumentFragment>
 `;
