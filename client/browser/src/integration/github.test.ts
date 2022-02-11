@@ -4,7 +4,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { setupExtensionMocking } from '@sourcegraph/shared/src/testing/integration/mockExtension'
+import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -35,7 +35,10 @@ describe('GitHub', () => {
             'https://collector.github.com/*path',
             'https://api.github.com/_private/browser/*',
             'https://github.com/*path/find-definition',
+            'https://github.com/gorilla/mux/commits/checks-statuses-rollups',
+            'https://github.com/commits/badges',
         ]
+
         // Requests to other origins that we need to ignore to prevent breaking tests.
         for (const urlToMock of URLS_TO_MOCK) {
             testContext.server.any(urlToMock).intercept((request, response) => {
@@ -74,6 +77,13 @@ describe('GitHub', () => {
             }),
             ResolveRawRepoName: ({ repoName }) => ({
                 repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
+            }),
+            SiteProductVersion: () => ({
+                site: {
+                    productVersion: '129819_2022-02-08_baac612f829f',
+                    buildVersion: '129819_2022-02-08_baac612f829f',
+                    hasCodeIntelligence: true,
+                },
             }),
             BlobContent: () => ({
                 repository: {
@@ -285,187 +295,226 @@ describe('GitHub', () => {
     })
 
     describe('Pull request pages', () => {
-        // For each pull request test, set up a mock extension that verifies that the correct
-        // file and revision info reach extensions.
-        beforeEach(() => {
-            const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
-                pollyServer: testContext.server,
-                sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
-            })
+        describe('Files Changed view', () => {
+            // For each pull request test, set up a mock extension that verifies that the correct
+            // file and revision info reach extensions.
+            beforeEach(() => {
+                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+                    pollyServer: testContext.server,
+                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
+                })
 
-            const userSettings: Settings = {
-                extensions: extensionSettings,
-            }
-            testContext.overrideGraphQL({
-                ViewerConfiguration: () => ({
-                    viewerConfiguration: {
-                        subjects: [
-                            {
-                                __typename: 'User',
-                                displayName: 'Test User',
-                                id: 'TestUserSettingsID',
-                                latestSettings: {
-                                    id: 123,
-                                    contents: JSON.stringify(userSettings),
+                const userSettings: Settings = {
+                    extensions: extensionSettings,
+                }
+                testContext.overrideGraphQL({
+                    ViewerConfiguration: () => ({
+                        viewerConfiguration: {
+                            subjects: [
+                                {
+                                    __typename: 'User',
+                                    displayName: 'Test User',
+                                    id: 'TestUserSettingsID',
+                                    latestSettings: {
+                                        id: 123,
+                                        contents: JSON.stringify(userSettings),
+                                    },
+                                    username: 'test',
+                                    viewerCanAdminister: true,
+                                    settingsURL: '/users/test/settings',
                                 },
-                                username: 'test',
-                                viewerCanAdminister: true,
-                                settingsURL: '/users/test/settings',
-                            },
-                        ],
-                        merged: { contents: JSON.stringify(userSettings), messages: [] },
-                    },
-                }),
-                Extensions,
-                ResolveRev: ({ revision }) => ({
-                    repository: {
-                        mirrorInfo: { cloned: true },
-                        commit: {
-                            oid: revision,
+                            ],
+                            merged: { contents: JSON.stringify(userSettings), messages: [] },
                         },
-                    },
-                }),
-                BlobContent: ({ commitID }) => ({
-                    repository: {
-                        commit: {
-                            file: {
-                                content:
-                                    commitID === tokens.head.commitID
-                                        ? '// Copyright 2012 The Gorilla Authors. All rights reserved.\n// Use of this source code is governed by a BSD-style\n// license that can be found in the LICENSE file.\n\npackage mux\n\nimport (\n\t"bytes"\n\t"fmt"\n\t"net/http"\n\t"net/url"\n\t"regexp"\n\t"strings"\n)\n\n// newRouteRegexp parses a route template and returns a routeRegexp,\n// used to match a host, a path or a query string.\n//\n// It will extract named variables, assemble a regexp to be matched, create\n// a "reverse" template to build URLs and compile regexps to validate variable\n// values used in URL building.\n//\n// Previously we accepted only Python-like identifiers for variable\n// names ([a-zA-Z_][a-zA-Z0-9_]*), but currently the only restriction is that\n// name and pattern can\'t be empty, and names can\'t contain a colon.\nfunc newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash bool) (*routeRegexp, error) {\n\t// Check if it is well-formed.\n\tidxs, errBraces := braceIndices(tpl)\n\tif errBraces != nil {\n\t\treturn nil, errBraces\n\t}\n\t// Backup the original.\n\ttemplate := tpl\n\t// Now let\'s parse it.\n\tdefaultPattern := "[^/]+"\n\tif matchQuery {\n\t\tdefaultPattern = "[^?&]*"\n\t} else if matchHost {\n\t\tdefaultPattern = "[^.]+"\n\t\tmatchPrefix = false\n\t}\n\t// Only match strict slash if not matching\n\tif matchPrefix || matchHost || matchQuery {\n\t\tstrictSlash = false\n\t}\n\t// Set a flag for strictSlash.\n\tendSlash := false\n\tif strictSlash && strings.HasSuffix(tpl, "/") {\n\t\ttpl = tpl[:len(tpl)-1]\n\t\tendSlash = true\n\t}\n\tvarsN := make([]string, len(idxs)/2)\n\tvarsR := make([]*regexp.Regexp, len(idxs)/2)\n\tpattern := bytes.NewBufferString("")\n\tpattern.WriteByte(\'^\')\n\treverse := bytes.NewBufferString("")\n\tvar end int\n\tvar err error\n\tfor i := 0; i < len(idxs); i += 2 {\n\t\t// Set all values we are interested in.\n\t\traw := tpl[end:idxs[i]]\n\t\tend = idxs[i+1]\n\t\tparts := strings.SplitN(tpl[idxs[i]+1:end-1], ":", 2)\n\t\tname := parts[0]\n\t\tpatt := defaultPattern\n\t\tif len(parts) == 2 {\n\t\t\tpatt = parts[1]\n\t\t}\n\t\t// Name or pattern can\'t be empty.\n\t\tif name == "" || patt == "" {\n\t\t\treturn nil, fmt.Errorf("mux: missing name or pattern in %q",\n\t\t\t\ttpl[idxs[i]:end])\n\t\t}\n\t\t// Build the regexp pattern.\n\t\tfmt.Fprintf(pattern, "%s(?P<%s>%s)", regexp.QuoteMeta(raw), name, patt)\n\t\t// Build the reverse template.\n\t\tfmt.Fprintf(reverse, "%s%%s", raw)\n\n\t\t// Append variable name and compiled pattern.\n\t\tvarsN[i/2] = name\n\t\tvarsR[i/2], err = regexp.Compile(fmt.Sprintf("^%s$", patt))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\t// Add the remaining.\n\traw := tpl[end:]\n\tpattern.WriteString(regexp.QuoteMeta(raw))\n\tif strictSlash {\n\t\tpattern.WriteString("[/]?")\n\t}\n\tif matchQuery {\n\t\t// Add the default pattern if the query value is empty\n\t\tif queryVal := strings.SplitN(template, "=", 2)[1]; queryVal == "" {\n\t\t\tpattern.WriteString(defaultPattern)\n\t\t}\n\t}\n\tif !matchPrefix {\n\t\tpattern.WriteByte(\'$\')\n\t}\n\treverse.WriteString(raw)\n\tif endSlash {\n\t\treverse.WriteByte(\'/\')\n\t}\n\t// Compile full regexp.\n\treg, errCompile := regexp.Compile(pattern.String())\n\tif errCompile != nil {\n\t\treturn nil, errCompile\n\t}\n\t// Done!\n\treturn &routeRegexp{\n\t\ttemplate:    template,\n\t\tmatchHost:   matchHost,\n\t\tmatchQuery:  matchQuery,\n\t\tstrictSlash: strictSlash,\n\t\tregexp:      reg,\n\t\treverse:     reverse.String(),\n\t\tvarsN:       varsN,\n\t\tvarsR:       varsR,\n\t}, nil\n}\n\n// routeRegexp stores a regexp to match a host or path and information to\n// collect and validate route variables.\ntype routeRegexp struct {\n\t// The unmodified template.\n\ttemplate string\n\t// True for host match, false for path or query string match.\n\tmatchHost bool\n\t// True for query string match, false for path and host match.\n\tmatchQuery bool\n\t// The strictSlash value defined on the route, but disabled if PathPrefix was used.\n\tstrictSlash bool\n\t// Expanded regexp.\n\tregexp *regexp.Regexp\n\t// Reverse template.\n\treverse string\n\t// Variable names.\n\tvarsN []string\n\t// Variable regexps (validators).\n\tvarsR []*regexp.Regexp\n}\n\n// Match matches the regexp against the URL host or path.\nfunc (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {\n\tif !r.matchHost {\n\t\tif r.matchQuery {\n\t\t\treturn r.matchQueryString(req)\n\t\t} else {\n\t\t\treturn r.regexp.MatchString(req.URL.Path)\n\t\t}\n\t}\n\treturn r.regexp.MatchString(getHost(req))\n}\n\n// url builds a URL part using the given values.\nfunc (r *routeRegexp) url(values map[string]string) (string, error) {\n\turlValues := make([]interface{}, len(r.varsN))\n\tfor k, v := range r.varsN {\n\t\tvalue, ok := values[v]\n\t\tif !ok {\n\t\t\treturn "", fmt.Errorf("mux: missing route variable %q", v)\n\t\t}\n\t\turlValues[k] = value\n\t}\n\trv := fmt.Sprintf(r.reverse, urlValues...)\n\tif !r.regexp.MatchString(rv) {\n\t\t// The URL is checked against the full regexp, instead of checking\n\t\t// individual variables. This is faster but to provide a good error\n\t\t// message, we check individual regexps if the URL doesn\'t match.\n\t\tfor k, v := range r.varsN {\n\t\t\tif !r.varsR[k].MatchString(values[v]) {\n\t\t\t\treturn "", fmt.Errorf(\n\t\t\t\t\t"mux: variable %q doesn\'t match, expected %q", values[v],\n\t\t\t\t\tr.varsR[k].String())\n\t\t\t}\n\t\t}\n\t}\n\treturn rv, nil\n}\n\n// getUrlQuery returns a single query parameter from a request URL.\n// For a URL with foo=bar&baz=ding, we return only the relevant key\n// value pair for the routeRegexp.\nfunc (r *routeRegexp) getUrlQuery(req *http.Request) string {\n\tif !r.matchQuery {\n\t\treturn ""\n\t}\n\ttemplateKey := strings.SplitN(r.template, "=", 2)[0]\n\tfor key, vals := range req.URL.Query() {\n\t\tif key == templateKey && len(vals) > 0 {\n\t\t\treturn key + "=" + vals[0]\n\t\t}\n\t}\n\treturn ""\n}\n\nfunc (r *routeRegexp) matchQueryString(req *http.Request) bool {\n\treturn r.regexp.MatchString(r.getUrlQuery(req))\n}\n\n// braceIndices returns the first level curly brace indices from a string.\n// It returns an error in case of unbalanced braces.\nfunc braceIndices(s string) ([]int, error) {\n\tvar level, idx int\n\tidxs := make([]int, 0)\n\tfor i := 0; i < len(s); i++ {\n\t\tswitch s[i] {\n\t\tcase \'{\':\n\t\t\tif level++; level == 1 {\n\t\t\t\tidx = i\n\t\t\t}\n\t\tcase \'}\':\n\t\t\tif level--; level == 0 {\n\t\t\t\tidxs = append(idxs, idx, i+1)\n\t\t\t} else if level < 0 {\n\t\t\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t\t\t}\n\t\t}\n\t}\n\tif level != 0 {\n\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t}\n\treturn idxs, nil\n}\n\n// ----------------------------------------------------------------------------\n// routeRegexpGroup\n// ----------------------------------------------------------------------------\n\n// routeRegexpGroup groups the route matchers that carry variables.\ntype routeRegexpGroup struct {\n\thost    *routeRegexp\n\tpath    *routeRegexp\n\tqueries []*routeRegexp\n}\n\n// setMatch extracts the variables from the URL once a route matches.\nfunc (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {\n\t// Store host variables.\n\tif v.host != nil {\n\t\thostVars := v.host.regexp.FindStringSubmatch(getHost(req))\n\t\tif hostVars != nil {\n\t\t\tsubexpNames := v.host.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && v.host.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = hostVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store path variables.\n\tif v.path != nil {\n\t\tpathVars := v.path.regexp.FindStringSubmatch(req.URL.Path)\n\t\tif pathVars != nil {\n\t\t\tsubexpNames := v.path.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && v.path.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = pathVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t\t// Check if we should redirect.\n\t\t\tif v.path.strictSlash {\n\t\t\t\tp1 := strings.HasSuffix(req.URL.Path, "/")\n\t\t\t\tp2 := strings.HasSuffix(v.path.template, "/")\n\t\t\t\tif p1 != p2 {\n\t\t\t\t\tu, _ := url.Parse(req.URL.String())\n\t\t\t\t\tif p1 {\n\t\t\t\t\t\tu.Path = u.Path[:len(u.Path)-1]\n\t\t\t\t\t} else {\n\t\t\t\t\t\tu.Path += "/"\n\t\t\t\t\t}\n\t\t\t\t\tm.Handler = http.RedirectHandler(u.String(), 301)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store query string variables.\n\tfor _, q := range v.queries {\n\t\tqueryVars := q.regexp.FindStringSubmatch(q.getUrlQuery(req))\n\t\tif queryVars != nil {\n\t\t\tsubexpNames := q.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && q.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = queryVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n\n// getHost tries its best to return the request host.\nfunc getHost(r *http.Request) string {\n\tif r.URL.IsAbs() {\n\t\treturn r.URL.Host\n\t}\n\thost := r.Host\n\t// Slice off any port information.\n\tif i := strings.Index(host, ":"); i != -1 {\n\t\thost = host[:i]\n\t}\n\treturn host\n\n}\n'
-                                        : '// Copyright 2012 The Gorilla Authors. All rights reserved.\n// Use of this source code is governed by a BSD-style\n// license that can be found in the LICENSE file.\n\npackage mux\n\nimport (\n\t"bytes"\n\t"fmt"\n\t"net/http"\n\t"net/url"\n\t"regexp"\n\t"strings"\n)\n\n// newRouteRegexp parses a route template and returns a routeRegexp,\n// used to match a host, a path or a query string.\n//\n// It will extract named variables, assemble a regexp to be matched, create\n// a "reverse" template to build URLs and compile regexps to validate variable\n// values used in URL building.\n//\n// Previously we accepted only Python-like identifiers for variable\n// names ([a-zA-Z_][a-zA-Z0-9_]*), but currently the only restriction is that\n// name and pattern can\'t be empty, and names can\'t contain a colon.\nfunc newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash bool) (*routeRegexp, error) {\n\t// Check if it is well-formed.\n\tidxs, errBraces := braceIndices(tpl)\n\tif errBraces != nil {\n\t\treturn nil, errBraces\n\t}\n\t// Backup the original.\n\ttemplate := tpl\n\t// Now let\'s parse it.\n\tdefaultPattern := "[^/]+"\n\tif matchQuery {\n\t\tdefaultPattern = "[^?&]*"\n\t} else if matchHost {\n\t\tdefaultPattern = "[^.]+"\n\t\tmatchPrefix = false\n\t}\n\t// Only match strict slash if not matching\n\tif matchPrefix || matchHost || matchQuery {\n\t\tstrictSlash = false\n\t}\n\t// Set a flag for strictSlash.\n\tendSlash := false\n\tif strictSlash && strings.HasSuffix(tpl, "/") {\n\t\ttpl = tpl[:len(tpl)-1]\n\t\tendSlash = true\n\t}\n\tvarsN := make([]string, len(idxs)/2)\n\tvarsR := make([]*regexp.Regexp, len(idxs)/2)\n\tpattern := bytes.NewBufferString("")\n\tpattern.WriteByte(\'^\')\n\treverse := bytes.NewBufferString("")\n\tvar end int\n\tvar err error\n\tfor i := 0; i < len(idxs); i += 2 {\n\t\t// Set all values we are interested in.\n\t\traw := tpl[end:idxs[i]]\n\t\tend = idxs[i+1]\n\t\tparts := strings.SplitN(tpl[idxs[i]+1:end-1], ":", 2)\n\t\tname := parts[0]\n\t\tpatt := defaultPattern\n\t\tif len(parts) == 2 {\n\t\t\tpatt = parts[1]\n\t\t}\n\t\t// Name or pattern can\'t be empty.\n\t\tif name == "" || patt == "" {\n\t\t\treturn nil, fmt.Errorf("mux: missing name or pattern in %q",\n\t\t\t\ttpl[idxs[i]:end])\n\t\t}\n\t\t// Build the regexp pattern.\n\t\tfmt.Fprintf(pattern, "%s(%s)", regexp.QuoteMeta(raw), patt)\n\t\t// Build the reverse template.\n\t\tfmt.Fprintf(reverse, "%s%%s", raw)\n\n\t\t// Append variable name and compiled pattern.\n\t\tvarsN[i/2] = name\n\t\tvarsR[i/2], err = regexp.Compile(fmt.Sprintf("^%s$", patt))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\t// Add the remaining.\n\traw := tpl[end:]\n\tpattern.WriteString(regexp.QuoteMeta(raw))\n\tif strictSlash {\n\t\tpattern.WriteString("[/]?")\n\t}\n\tif matchQuery {\n\t\t// Add the default pattern if the query value is empty\n\t\tif queryVal := strings.SplitN(template, "=", 2)[1]; queryVal == "" {\n\t\t\tpattern.WriteString(defaultPattern)\n\t\t}\n\t}\n\tif !matchPrefix {\n\t\tpattern.WriteByte(\'$\')\n\t}\n\treverse.WriteString(raw)\n\tif endSlash {\n\t\treverse.WriteByte(\'/\')\n\t}\n\t// Compile full regexp.\n\treg, errCompile := regexp.Compile(pattern.String())\n\tif errCompile != nil {\n\t\treturn nil, errCompile\n\t}\n\t// Done!\n\treturn &routeRegexp{\n\t\ttemplate:    template,\n\t\tmatchHost:   matchHost,\n\t\tmatchQuery:  matchQuery,\n\t\tstrictSlash: strictSlash,\n\t\tregexp:      reg,\n\t\treverse:     reverse.String(),\n\t\tvarsN:       varsN,\n\t\tvarsR:       varsR,\n\t}, nil\n}\n\n// routeRegexp stores a regexp to match a host or path and information to\n// collect and validate route variables.\ntype routeRegexp struct {\n\t// The unmodified template.\n\ttemplate string\n\t// True for host match, false for path or query string match.\n\tmatchHost bool\n\t// True for query string match, false for path and host match.\n\tmatchQuery bool\n\t// The strictSlash value defined on the route, but disabled if PathPrefix was used.\n\tstrictSlash bool\n\t// Expanded regexp.\n\tregexp *regexp.Regexp\n\t// Reverse template.\n\treverse string\n\t// Variable names.\n\tvarsN []string\n\t// Variable regexps (validators).\n\tvarsR []*regexp.Regexp\n}\n\n// Match matches the regexp against the URL host or path.\nfunc (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {\n\tif !r.matchHost {\n\t\tif r.matchQuery {\n\t\t\treturn r.matchQueryString(req)\n\t\t} else {\n\t\t\treturn r.regexp.MatchString(req.URL.Path)\n\t\t}\n\t}\n\treturn r.regexp.MatchString(getHost(req))\n}\n\n// url builds a URL part using the given values.\nfunc (r *routeRegexp) url(values map[string]string) (string, error) {\n\turlValues := make([]interface{}, len(r.varsN))\n\tfor k, v := range r.varsN {\n\t\tvalue, ok := values[v]\n\t\tif !ok {\n\t\t\treturn "", fmt.Errorf("mux: missing route variable %q", v)\n\t\t}\n\t\turlValues[k] = value\n\t}\n\trv := fmt.Sprintf(r.reverse, urlValues...)\n\tif !r.regexp.MatchString(rv) {\n\t\t// The URL is checked against the full regexp, instead of checking\n\t\t// individual variables. This is faster but to provide a good error\n\t\t// message, we check individual regexps if the URL doesn\'t match.\n\t\tfor k, v := range r.varsN {\n\t\t\tif !r.varsR[k].MatchString(values[v]) {\n\t\t\t\treturn "", fmt.Errorf(\n\t\t\t\t\t"mux: variable %q doesn\'t match, expected %q", values[v],\n\t\t\t\t\tr.varsR[k].String())\n\t\t\t}\n\t\t}\n\t}\n\treturn rv, nil\n}\n\n// getUrlQuery returns a single query parameter from a request URL.\n// For a URL with foo=bar&baz=ding, we return only the relevant key\n// value pair for the routeRegexp.\nfunc (r *routeRegexp) getUrlQuery(req *http.Request) string {\n\tif !r.matchQuery {\n\t\treturn ""\n\t}\n\ttemplateKey := strings.SplitN(r.template, "=", 2)[0]\n\tfor key, vals := range req.URL.Query() {\n\t\tif key == templateKey && len(vals) > 0 {\n\t\t\treturn key + "=" + vals[0]\n\t\t}\n\t}\n\treturn ""\n}\n\nfunc (r *routeRegexp) matchQueryString(req *http.Request) bool {\n\treturn r.regexp.MatchString(r.getUrlQuery(req))\n}\n\n// braceIndices returns the first level curly brace indices from a string.\n// It returns an error in case of unbalanced braces.\nfunc braceIndices(s string) ([]int, error) {\n\tvar level, idx int\n\tidxs := make([]int, 0)\n\tfor i := 0; i < len(s); i++ {\n\t\tswitch s[i] {\n\t\tcase \'{\':\n\t\t\tif level++; level == 1 {\n\t\t\t\tidx = i\n\t\t\t}\n\t\tcase \'}\':\n\t\t\tif level--; level == 0 {\n\t\t\t\tidxs = append(idxs, idx, i+1)\n\t\t\t} else if level < 0 {\n\t\t\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t\t\t}\n\t\t}\n\t}\n\tif level != 0 {\n\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t}\n\treturn idxs, nil\n}\n\n// ----------------------------------------------------------------------------\n// routeRegexpGroup\n// ----------------------------------------------------------------------------\n\n// routeRegexpGroup groups the route matchers that carry variables.\ntype routeRegexpGroup struct {\n\thost    *routeRegexp\n\tpath    *routeRegexp\n\tqueries []*routeRegexp\n}\n\n// setMatch extracts the variables from the URL once a route matches.\nfunc (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {\n\t// Store host variables.\n\tif v.host != nil {\n\t\thostVars := v.host.regexp.FindStringSubmatch(getHost(req))\n\t\tif hostVars != nil {\n\t\t\tfor k, v := range v.host.varsN {\n\t\t\t\tm.Vars[v] = hostVars[k+1]\n\t\t\t}\n\t\t}\n\t}\n\t// Store path variables.\n\tif v.path != nil {\n\t\tpathVars := v.path.regexp.FindStringSubmatch(req.URL.Path)\n\t\tif pathVars != nil {\n\t\t\tfor k, v := range v.path.varsN {\n\t\t\t\tm.Vars[v] = pathVars[k+1]\n\t\t\t}\n\t\t\t// Check if we should redirect.\n\t\t\tif v.path.strictSlash {\n\t\t\t\tp1 := strings.HasSuffix(req.URL.Path, "/")\n\t\t\t\tp2 := strings.HasSuffix(v.path.template, "/")\n\t\t\t\tif p1 != p2 {\n\t\t\t\t\tu, _ := url.Parse(req.URL.String())\n\t\t\t\t\tif p1 {\n\t\t\t\t\t\tu.Path = u.Path[:len(u.Path)-1]\n\t\t\t\t\t} else {\n\t\t\t\t\t\tu.Path += "/"\n\t\t\t\t\t}\n\t\t\t\t\tm.Handler = http.RedirectHandler(u.String(), 301)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store query string variables.\n\tfor _, q := range v.queries {\n\t\tqueryVars := q.regexp.FindStringSubmatch(q.getUrlQuery(req))\n\t\tif queryVars != nil {\n\t\t\tfor k, v := range q.varsN {\n\t\t\t\tm.Vars[v] = queryVars[k+1]\n\t\t\t}\n\t\t}\n\t}\n}\n\n// getHost tries its best to return the request host.\nfunc getHost(r *http.Request) string {\n\tif r.URL.IsAbs() {\n\t\treturn r.URL.Host\n\t}\n\thost := r.Host\n\t// Slice off any port information.\n\tif i := strings.Index(host, ":"); i != -1 {\n\t\thost = host[:i]\n\t}\n\treturn host\n\n}\n',
+                    }),
+                    Extensions,
+                    ResolveRev: ({ revision }) => ({
+                        repository: {
+                            mirrorInfo: { cloned: true },
+                            commit: {
+                                oid: revision,
                             },
                         },
-                    },
-                }),
-                RepositoryComparisonDiff: () => ({
-                    repository: {
-                        comparison: {
-                            fileDiffs: {
-                                totalCount: 2,
-                                nodes: [
-                                    {
-                                        oldPath: 'mux_test.go',
-                                        newPath: 'mux_test.go',
-                                        internalID: '3f13e90b2675f05493474c5403806dd0',
-                                    },
-                                    {
-                                        oldPath: 'regexp.go',
-                                        newPath: 'regexp.go',
-                                        internalID: '7907dc0efec1833675561b8c7f402e59',
-                                    },
-                                ],
+                    }),
+                    BlobContent: ({ commitID }) => ({
+                        repository: {
+                            commit: {
+                                file: {
+                                    content:
+                                        commitID === tokens.head.commitID
+                                            ? '// Copyright 2012 The Gorilla Authors. All rights reserved.\n// Use of this source code is governed by a BSD-style\n// license that can be found in the LICENSE file.\n\npackage mux\n\nimport (\n\t"bytes"\n\t"fmt"\n\t"net/http"\n\t"net/url"\n\t"regexp"\n\t"strings"\n)\n\n// newRouteRegexp parses a route template and returns a routeRegexp,\n// used to match a host, a path or a query string.\n//\n// It will extract named variables, assemble a regexp to be matched, create\n// a "reverse" template to build URLs and compile regexps to validate variable\n// values used in URL building.\n//\n// Previously we accepted only Python-like identifiers for variable\n// names ([a-zA-Z_][a-zA-Z0-9_]*), but currently the only restriction is that\n// name and pattern can\'t be empty, and names can\'t contain a colon.\nfunc newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash bool) (*routeRegexp, error) {\n\t// Check if it is well-formed.\n\tidxs, errBraces := braceIndices(tpl)\n\tif errBraces != nil {\n\t\treturn nil, errBraces\n\t}\n\t// Backup the original.\n\ttemplate := tpl\n\t// Now let\'s parse it.\n\tdefaultPattern := "[^/]+"\n\tif matchQuery {\n\t\tdefaultPattern = "[^?&]*"\n\t} else if matchHost {\n\t\tdefaultPattern = "[^.]+"\n\t\tmatchPrefix = false\n\t}\n\t// Only match strict slash if not matching\n\tif matchPrefix || matchHost || matchQuery {\n\t\tstrictSlash = false\n\t}\n\t// Set a flag for strictSlash.\n\tendSlash := false\n\tif strictSlash && strings.HasSuffix(tpl, "/") {\n\t\ttpl = tpl[:len(tpl)-1]\n\t\tendSlash = true\n\t}\n\tvarsN := make([]string, len(idxs)/2)\n\tvarsR := make([]*regexp.Regexp, len(idxs)/2)\n\tpattern := bytes.NewBufferString("")\n\tpattern.WriteByte(\'^\')\n\treverse := bytes.NewBufferString("")\n\tvar end int\n\tvar err error\n\tfor i := 0; i < len(idxs); i += 2 {\n\t\t// Set all values we are interested in.\n\t\traw := tpl[end:idxs[i]]\n\t\tend = idxs[i+1]\n\t\tparts := strings.SplitN(tpl[idxs[i]+1:end-1], ":", 2)\n\t\tname := parts[0]\n\t\tpatt := defaultPattern\n\t\tif len(parts) == 2 {\n\t\t\tpatt = parts[1]\n\t\t}\n\t\t// Name or pattern can\'t be empty.\n\t\tif name == "" || patt == "" {\n\t\t\treturn nil, fmt.Errorf("mux: missing name or pattern in %q",\n\t\t\t\ttpl[idxs[i]:end])\n\t\t}\n\t\t// Build the regexp pattern.\n\t\tfmt.Fprintf(pattern, "%s(?P<%s>%s)", regexp.QuoteMeta(raw), name, patt)\n\t\t// Build the reverse template.\n\t\tfmt.Fprintf(reverse, "%s%%s", raw)\n\n\t\t// Append variable name and compiled pattern.\n\t\tvarsN[i/2] = name\n\t\tvarsR[i/2], err = regexp.Compile(fmt.Sprintf("^%s$", patt))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\t// Add the remaining.\n\traw := tpl[end:]\n\tpattern.WriteString(regexp.QuoteMeta(raw))\n\tif strictSlash {\n\t\tpattern.WriteString("[/]?")\n\t}\n\tif matchQuery {\n\t\t// Add the default pattern if the query value is empty\n\t\tif queryVal := strings.SplitN(template, "=", 2)[1]; queryVal == "" {\n\t\t\tpattern.WriteString(defaultPattern)\n\t\t}\n\t}\n\tif !matchPrefix {\n\t\tpattern.WriteByte(\'$\')\n\t}\n\treverse.WriteString(raw)\n\tif endSlash {\n\t\treverse.WriteByte(\'/\')\n\t}\n\t// Compile full regexp.\n\treg, errCompile := regexp.Compile(pattern.String())\n\tif errCompile != nil {\n\t\treturn nil, errCompile\n\t}\n\t// Done!\n\treturn &routeRegexp{\n\t\ttemplate:    template,\n\t\tmatchHost:   matchHost,\n\t\tmatchQuery:  matchQuery,\n\t\tstrictSlash: strictSlash,\n\t\tregexp:      reg,\n\t\treverse:     reverse.String(),\n\t\tvarsN:       varsN,\n\t\tvarsR:       varsR,\n\t}, nil\n}\n\n// routeRegexp stores a regexp to match a host or path and information to\n// collect and validate route variables.\ntype routeRegexp struct {\n\t// The unmodified template.\n\ttemplate string\n\t// True for host match, false for path or query string match.\n\tmatchHost bool\n\t// True for query string match, false for path and host match.\n\tmatchQuery bool\n\t// The strictSlash value defined on the route, but disabled if PathPrefix was used.\n\tstrictSlash bool\n\t// Expanded regexp.\n\tregexp *regexp.Regexp\n\t// Reverse template.\n\treverse string\n\t// Variable names.\n\tvarsN []string\n\t// Variable regexps (validators).\n\tvarsR []*regexp.Regexp\n}\n\n// Match matches the regexp against the URL host or path.\nfunc (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {\n\tif !r.matchHost {\n\t\tif r.matchQuery {\n\t\t\treturn r.matchQueryString(req)\n\t\t} else {\n\t\t\treturn r.regexp.MatchString(req.URL.Path)\n\t\t}\n\t}\n\treturn r.regexp.MatchString(getHost(req))\n}\n\n// url builds a URL part using the given values.\nfunc (r *routeRegexp) url(values map[string]string) (string, error) {\n\turlValues := make([]interface{}, len(r.varsN))\n\tfor k, v := range r.varsN {\n\t\tvalue, ok := values[v]\n\t\tif !ok {\n\t\t\treturn "", fmt.Errorf("mux: missing route variable %q", v)\n\t\t}\n\t\turlValues[k] = value\n\t}\n\trv := fmt.Sprintf(r.reverse, urlValues...)\n\tif !r.regexp.MatchString(rv) {\n\t\t// The URL is checked against the full regexp, instead of checking\n\t\t// individual variables. This is faster but to provide a good error\n\t\t// message, we check individual regexps if the URL doesn\'t match.\n\t\tfor k, v := range r.varsN {\n\t\t\tif !r.varsR[k].MatchString(values[v]) {\n\t\t\t\treturn "", fmt.Errorf(\n\t\t\t\t\t"mux: variable %q doesn\'t match, expected %q", values[v],\n\t\t\t\t\tr.varsR[k].String())\n\t\t\t}\n\t\t}\n\t}\n\treturn rv, nil\n}\n\n// getUrlQuery returns a single query parameter from a request URL.\n// For a URL with foo=bar&baz=ding, we return only the relevant key\n// value pair for the routeRegexp.\nfunc (r *routeRegexp) getUrlQuery(req *http.Request) string {\n\tif !r.matchQuery {\n\t\treturn ""\n\t}\n\ttemplateKey := strings.SplitN(r.template, "=", 2)[0]\n\tfor key, vals := range req.URL.Query() {\n\t\tif key == templateKey && len(vals) > 0 {\n\t\t\treturn key + "=" + vals[0]\n\t\t}\n\t}\n\treturn ""\n}\n\nfunc (r *routeRegexp) matchQueryString(req *http.Request) bool {\n\treturn r.regexp.MatchString(r.getUrlQuery(req))\n}\n\n// braceIndices returns the first level curly brace indices from a string.\n// It returns an error in case of unbalanced braces.\nfunc braceIndices(s string) ([]int, error) {\n\tvar level, idx int\n\tidxs := make([]int, 0)\n\tfor i := 0; i < len(s); i++ {\n\t\tswitch s[i] {\n\t\tcase \'{\':\n\t\t\tif level++; level == 1 {\n\t\t\t\tidx = i\n\t\t\t}\n\t\tcase \'}\':\n\t\t\tif level--; level == 0 {\n\t\t\t\tidxs = append(idxs, idx, i+1)\n\t\t\t} else if level < 0 {\n\t\t\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t\t\t}\n\t\t}\n\t}\n\tif level != 0 {\n\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t}\n\treturn idxs, nil\n}\n\n// ----------------------------------------------------------------------------\n// routeRegexpGroup\n// ----------------------------------------------------------------------------\n\n// routeRegexpGroup groups the route matchers that carry variables.\ntype routeRegexpGroup struct {\n\thost    *routeRegexp\n\tpath    *routeRegexp\n\tqueries []*routeRegexp\n}\n\n// setMatch extracts the variables from the URL once a route matches.\nfunc (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {\n\t// Store host variables.\n\tif v.host != nil {\n\t\thostVars := v.host.regexp.FindStringSubmatch(getHost(req))\n\t\tif hostVars != nil {\n\t\t\tsubexpNames := v.host.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && v.host.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = hostVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store path variables.\n\tif v.path != nil {\n\t\tpathVars := v.path.regexp.FindStringSubmatch(req.URL.Path)\n\t\tif pathVars != nil {\n\t\t\tsubexpNames := v.path.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && v.path.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = pathVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t\t// Check if we should redirect.\n\t\t\tif v.path.strictSlash {\n\t\t\t\tp1 := strings.HasSuffix(req.URL.Path, "/")\n\t\t\t\tp2 := strings.HasSuffix(v.path.template, "/")\n\t\t\t\tif p1 != p2 {\n\t\t\t\t\tu, _ := url.Parse(req.URL.String())\n\t\t\t\t\tif p1 {\n\t\t\t\t\t\tu.Path = u.Path[:len(u.Path)-1]\n\t\t\t\t\t} else {\n\t\t\t\t\t\tu.Path += "/"\n\t\t\t\t\t}\n\t\t\t\t\tm.Handler = http.RedirectHandler(u.String(), 301)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store query string variables.\n\tfor _, q := range v.queries {\n\t\tqueryVars := q.regexp.FindStringSubmatch(q.getUrlQuery(req))\n\t\tif queryVars != nil {\n\t\t\tsubexpNames := q.regexp.SubexpNames()\n\t\t\tvarName := 0\n\t\t\tfor i, name := range subexpNames[1:] {\n\t\t\t\tif name != "" && q.varsN[varName] == name {\n\t\t\t\t\tm.Vars[name] = queryVars[i+1]\n\t\t\t\t\tvarName++\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n\n// getHost tries its best to return the request host.\nfunc getHost(r *http.Request) string {\n\tif r.URL.IsAbs() {\n\t\treturn r.URL.Host\n\t}\n\thost := r.Host\n\t// Slice off any port information.\n\tif i := strings.Index(host, ":"); i != -1 {\n\t\thost = host[:i]\n\t}\n\treturn host\n\n}\n'
+                                            : '// Copyright 2012 The Gorilla Authors. All rights reserved.\n// Use of this source code is governed by a BSD-style\n// license that can be found in the LICENSE file.\n\npackage mux\n\nimport (\n\t"bytes"\n\t"fmt"\n\t"net/http"\n\t"net/url"\n\t"regexp"\n\t"strings"\n)\n\n// newRouteRegexp parses a route template and returns a routeRegexp,\n// used to match a host, a path or a query string.\n//\n// It will extract named variables, assemble a regexp to be matched, create\n// a "reverse" template to build URLs and compile regexps to validate variable\n// values used in URL building.\n//\n// Previously we accepted only Python-like identifiers for variable\n// names ([a-zA-Z_][a-zA-Z0-9_]*), but currently the only restriction is that\n// name and pattern can\'t be empty, and names can\'t contain a colon.\nfunc newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash bool) (*routeRegexp, error) {\n\t// Check if it is well-formed.\n\tidxs, errBraces := braceIndices(tpl)\n\tif errBraces != nil {\n\t\treturn nil, errBraces\n\t}\n\t// Backup the original.\n\ttemplate := tpl\n\t// Now let\'s parse it.\n\tdefaultPattern := "[^/]+"\n\tif matchQuery {\n\t\tdefaultPattern = "[^?&]*"\n\t} else if matchHost {\n\t\tdefaultPattern = "[^.]+"\n\t\tmatchPrefix = false\n\t}\n\t// Only match strict slash if not matching\n\tif matchPrefix || matchHost || matchQuery {\n\t\tstrictSlash = false\n\t}\n\t// Set a flag for strictSlash.\n\tendSlash := false\n\tif strictSlash && strings.HasSuffix(tpl, "/") {\n\t\ttpl = tpl[:len(tpl)-1]\n\t\tendSlash = true\n\t}\n\tvarsN := make([]string, len(idxs)/2)\n\tvarsR := make([]*regexp.Regexp, len(idxs)/2)\n\tpattern := bytes.NewBufferString("")\n\tpattern.WriteByte(\'^\')\n\treverse := bytes.NewBufferString("")\n\tvar end int\n\tvar err error\n\tfor i := 0; i < len(idxs); i += 2 {\n\t\t// Set all values we are interested in.\n\t\traw := tpl[end:idxs[i]]\n\t\tend = idxs[i+1]\n\t\tparts := strings.SplitN(tpl[idxs[i]+1:end-1], ":", 2)\n\t\tname := parts[0]\n\t\tpatt := defaultPattern\n\t\tif len(parts) == 2 {\n\t\t\tpatt = parts[1]\n\t\t}\n\t\t// Name or pattern can\'t be empty.\n\t\tif name == "" || patt == "" {\n\t\t\treturn nil, fmt.Errorf("mux: missing name or pattern in %q",\n\t\t\t\ttpl[idxs[i]:end])\n\t\t}\n\t\t// Build the regexp pattern.\n\t\tfmt.Fprintf(pattern, "%s(%s)", regexp.QuoteMeta(raw), patt)\n\t\t// Build the reverse template.\n\t\tfmt.Fprintf(reverse, "%s%%s", raw)\n\n\t\t// Append variable name and compiled pattern.\n\t\tvarsN[i/2] = name\n\t\tvarsR[i/2], err = regexp.Compile(fmt.Sprintf("^%s$", patt))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\t// Add the remaining.\n\traw := tpl[end:]\n\tpattern.WriteString(regexp.QuoteMeta(raw))\n\tif strictSlash {\n\t\tpattern.WriteString("[/]?")\n\t}\n\tif matchQuery {\n\t\t// Add the default pattern if the query value is empty\n\t\tif queryVal := strings.SplitN(template, "=", 2)[1]; queryVal == "" {\n\t\t\tpattern.WriteString(defaultPattern)\n\t\t}\n\t}\n\tif !matchPrefix {\n\t\tpattern.WriteByte(\'$\')\n\t}\n\treverse.WriteString(raw)\n\tif endSlash {\n\t\treverse.WriteByte(\'/\')\n\t}\n\t// Compile full regexp.\n\treg, errCompile := regexp.Compile(pattern.String())\n\tif errCompile != nil {\n\t\treturn nil, errCompile\n\t}\n\t// Done!\n\treturn &routeRegexp{\n\t\ttemplate:    template,\n\t\tmatchHost:   matchHost,\n\t\tmatchQuery:  matchQuery,\n\t\tstrictSlash: strictSlash,\n\t\tregexp:      reg,\n\t\treverse:     reverse.String(),\n\t\tvarsN:       varsN,\n\t\tvarsR:       varsR,\n\t}, nil\n}\n\n// routeRegexp stores a regexp to match a host or path and information to\n// collect and validate route variables.\ntype routeRegexp struct {\n\t// The unmodified template.\n\ttemplate string\n\t// True for host match, false for path or query string match.\n\tmatchHost bool\n\t// True for query string match, false for path and host match.\n\tmatchQuery bool\n\t// The strictSlash value defined on the route, but disabled if PathPrefix was used.\n\tstrictSlash bool\n\t// Expanded regexp.\n\tregexp *regexp.Regexp\n\t// Reverse template.\n\treverse string\n\t// Variable names.\n\tvarsN []string\n\t// Variable regexps (validators).\n\tvarsR []*regexp.Regexp\n}\n\n// Match matches the regexp against the URL host or path.\nfunc (r *routeRegexp) Match(req *http.Request, match *RouteMatch) bool {\n\tif !r.matchHost {\n\t\tif r.matchQuery {\n\t\t\treturn r.matchQueryString(req)\n\t\t} else {\n\t\t\treturn r.regexp.MatchString(req.URL.Path)\n\t\t}\n\t}\n\treturn r.regexp.MatchString(getHost(req))\n}\n\n// url builds a URL part using the given values.\nfunc (r *routeRegexp) url(values map[string]string) (string, error) {\n\turlValues := make([]interface{}, len(r.varsN))\n\tfor k, v := range r.varsN {\n\t\tvalue, ok := values[v]\n\t\tif !ok {\n\t\t\treturn "", fmt.Errorf("mux: missing route variable %q", v)\n\t\t}\n\t\turlValues[k] = value\n\t}\n\trv := fmt.Sprintf(r.reverse, urlValues...)\n\tif !r.regexp.MatchString(rv) {\n\t\t// The URL is checked against the full regexp, instead of checking\n\t\t// individual variables. This is faster but to provide a good error\n\t\t// message, we check individual regexps if the URL doesn\'t match.\n\t\tfor k, v := range r.varsN {\n\t\t\tif !r.varsR[k].MatchString(values[v]) {\n\t\t\t\treturn "", fmt.Errorf(\n\t\t\t\t\t"mux: variable %q doesn\'t match, expected %q", values[v],\n\t\t\t\t\tr.varsR[k].String())\n\t\t\t}\n\t\t}\n\t}\n\treturn rv, nil\n}\n\n// getUrlQuery returns a single query parameter from a request URL.\n// For a URL with foo=bar&baz=ding, we return only the relevant key\n// value pair for the routeRegexp.\nfunc (r *routeRegexp) getUrlQuery(req *http.Request) string {\n\tif !r.matchQuery {\n\t\treturn ""\n\t}\n\ttemplateKey := strings.SplitN(r.template, "=", 2)[0]\n\tfor key, vals := range req.URL.Query() {\n\t\tif key == templateKey && len(vals) > 0 {\n\t\t\treturn key + "=" + vals[0]\n\t\t}\n\t}\n\treturn ""\n}\n\nfunc (r *routeRegexp) matchQueryString(req *http.Request) bool {\n\treturn r.regexp.MatchString(r.getUrlQuery(req))\n}\n\n// braceIndices returns the first level curly brace indices from a string.\n// It returns an error in case of unbalanced braces.\nfunc braceIndices(s string) ([]int, error) {\n\tvar level, idx int\n\tidxs := make([]int, 0)\n\tfor i := 0; i < len(s); i++ {\n\t\tswitch s[i] {\n\t\tcase \'{\':\n\t\t\tif level++; level == 1 {\n\t\t\t\tidx = i\n\t\t\t}\n\t\tcase \'}\':\n\t\t\tif level--; level == 0 {\n\t\t\t\tidxs = append(idxs, idx, i+1)\n\t\t\t} else if level < 0 {\n\t\t\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t\t\t}\n\t\t}\n\t}\n\tif level != 0 {\n\t\treturn nil, fmt.Errorf("mux: unbalanced braces in %q", s)\n\t}\n\treturn idxs, nil\n}\n\n// ----------------------------------------------------------------------------\n// routeRegexpGroup\n// ----------------------------------------------------------------------------\n\n// routeRegexpGroup groups the route matchers that carry variables.\ntype routeRegexpGroup struct {\n\thost    *routeRegexp\n\tpath    *routeRegexp\n\tqueries []*routeRegexp\n}\n\n// setMatch extracts the variables from the URL once a route matches.\nfunc (v *routeRegexpGroup) setMatch(req *http.Request, m *RouteMatch, r *Route) {\n\t// Store host variables.\n\tif v.host != nil {\n\t\thostVars := v.host.regexp.FindStringSubmatch(getHost(req))\n\t\tif hostVars != nil {\n\t\t\tfor k, v := range v.host.varsN {\n\t\t\t\tm.Vars[v] = hostVars[k+1]\n\t\t\t}\n\t\t}\n\t}\n\t// Store path variables.\n\tif v.path != nil {\n\t\tpathVars := v.path.regexp.FindStringSubmatch(req.URL.Path)\n\t\tif pathVars != nil {\n\t\t\tfor k, v := range v.path.varsN {\n\t\t\t\tm.Vars[v] = pathVars[k+1]\n\t\t\t}\n\t\t\t// Check if we should redirect.\n\t\t\tif v.path.strictSlash {\n\t\t\t\tp1 := strings.HasSuffix(req.URL.Path, "/")\n\t\t\t\tp2 := strings.HasSuffix(v.path.template, "/")\n\t\t\t\tif p1 != p2 {\n\t\t\t\t\tu, _ := url.Parse(req.URL.String())\n\t\t\t\t\tif p1 {\n\t\t\t\t\t\tu.Path = u.Path[:len(u.Path)-1]\n\t\t\t\t\t} else {\n\t\t\t\t\t\tu.Path += "/"\n\t\t\t\t\t}\n\t\t\t\t\tm.Handler = http.RedirectHandler(u.String(), 301)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\t// Store query string variables.\n\tfor _, q := range v.queries {\n\t\tqueryVars := q.regexp.FindStringSubmatch(q.getUrlQuery(req))\n\t\tif queryVars != nil {\n\t\t\tfor k, v := range q.varsN {\n\t\t\t\tm.Vars[v] = queryVars[k+1]\n\t\t\t}\n\t\t}\n\t}\n}\n\n// getHost tries its best to return the request host.\nfunc getHost(r *http.Request) string {\n\tif r.URL.IsAbs() {\n\t\treturn r.URL.Host\n\t}\n\thost := r.Host\n\t// Slice off any port information.\n\tif i := strings.Index(host, ":"); i != -1 {\n\t\thost = host[:i]\n\t}\n\treturn host\n\n}\n',
+                                },
                             },
                         },
-                    },
-                }),
-            })
-
-            // Serve a mock extension that displays the revision in the hover overlay.
-            mockExtension({
-                id: 'show/revision',
-                bundle: function extensionBundle(): void {
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-                    const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
-
-                    function activate(context: sourcegraph.ExtensionContext): void {
-                        context.subscriptions.add(
-                            sourcegraph.languages.registerHoverProvider(['*'], {
-                                provideHover: (document, position) => {
-                                    const lines = document.text?.split('\n')
-                                    if (!lines) {
-                                        return null
-                                    }
-                                    const line = lines[position.line]
-                                    const hoverIndex = position.character
-                                    let startCharacter = hoverIndex
-                                    let endCharacter = hoverIndex
-
-                                    while (line[startCharacter - 1].match(/\w/)) {
-                                        startCharacter--
-                                    }
-                                    while (line[endCharacter + 1].match(/\w/)) {
-                                        endCharacter++
-                                    }
-                                    endCharacter++ // Not inclusive
-
-                                    const range = new sourcegraph.Range(
-                                        new sourcegraph.Position(position.line, startCharacter),
-                                        new sourcegraph.Position(position.line, endCharacter)
-                                    )
-                                    const token = line.slice(startCharacter, endCharacter)
-
-                                    const parsed = new URL(document.uri)
-                                    const revision = decodeURIComponent(parsed.search.slice('?'.length))
-
-                                    return {
-                                        contents: {
-                                            value: `User is hovering over ${token}, revision: ${revision}`,
-                                            kind: sourcegraph.MarkupKind.Markdown,
+                    }),
+                    RepositoryComparisonDiff: () => ({
+                        repository: {
+                            comparison: {
+                                fileDiffs: {
+                                    totalCount: 2,
+                                    nodes: [
+                                        {
+                                            oldPath: 'mux_test.go',
+                                            newPath: 'mux_test.go',
+                                            internalID: '3f13e90b2675f05493474c5403806dd0',
                                         },
-                                        range,
-                                    }
+                                        {
+                                            oldPath: 'regexp.go',
+                                            newPath: 'regexp.go',
+                                            internalID: '7907dc0efec1833675561b8c7f402e59',
+                                        },
+                                    ],
                                 },
-                            })
-                        )
-                    }
+                            },
+                        },
+                    }),
+                })
 
-                    exports.activate = activate
+                // Serve a mock extension that displays the revision in the hover overlay.
+                mockExtension({
+                    id: 'show/revision',
+                    bundle: function extensionBundle(): void {
+                        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+                        const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
+
+                        function activate(context: sourcegraph.ExtensionContext): void {
+                            context.subscriptions.add(
+                                sourcegraph.languages.registerHoverProvider(['*'], {
+                                    provideHover: (document, position) => {
+                                        const lines = document.text?.split('\n')
+                                        if (!lines) {
+                                            return null
+                                        }
+                                        const line = lines[position.line]
+                                        const hoverIndex = position.character
+                                        let startCharacter = hoverIndex
+                                        let endCharacter = hoverIndex
+
+                                        while (line[startCharacter - 1].match(/\w/)) {
+                                            startCharacter--
+                                        }
+                                        while (line[endCharacter + 1].match(/\w/)) {
+                                            endCharacter++
+                                        }
+                                        endCharacter++ // Not inclusive
+
+                                        const range = new sourcegraph.Range(
+                                            new sourcegraph.Position(position.line, startCharacter),
+                                            new sourcegraph.Position(position.line, endCharacter)
+                                        )
+                                        const token = line.slice(startCharacter, endCharacter)
+
+                                        const parsed = new URL(document.uri)
+                                        const revision = decodeURIComponent(parsed.search.slice('?'.length))
+
+                                        return {
+                                            contents: {
+                                                value: `User is hovering over ${token}, revision: ${revision}`,
+                                                kind: sourcegraph.MarkupKind.Markdown,
+                                            },
+                                            range,
+                                        }
+                                    },
+                                })
+                            )
+                        }
+
+                        exports.activate = activate
+                    },
+                })
+            })
+
+            // regexp.go
+            const tokens = {
+                // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
+                base: {
+                    token: 'varsN',
+                    lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46L244',
+                    commitID: 'f15e0c49460fd49eebe2bcc8486b05d1bef68d3a',
                 },
-            })
-        })
+                // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
+                head: {
+                    token: 'host',
+                    lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
+                    commitID: 'e73f183699f8ab7d54609771e1fa0ab7ffddc21b',
+                },
+            }
 
-        // regexp.go
-        const tokens = {
-            // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
-            base: {
-                token: 'varsN',
-                lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46L244',
-                commitID: 'f15e0c49460fd49eebe2bcc8486b05d1bef68d3a',
-            },
-            // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
-            head: {
-                token: 'host',
-                lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
-                commitID: 'e73f183699f8ab7d54609771e1fa0ab7ffddc21b',
-            },
-        }
+            it('provides hover tooltips for pull requests in unified mode', async () => {
+                await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=unified')
 
-        it('provides hover tooltips for pull requests in unified mode', async () => {
-            await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=unified')
+                // The browser extension takes a bit to initialize and register all event listeners.
+                // Waiting here saves one retry cycle below in the common case.
+                // If it's not enough, the retry will catch it.
+                await driver.page.waitForTimeout(1500)
 
-            // The browser extension takes a bit to initialize and register all event listeners.
-            // Waiting here saves one retry cycle below in the common case.
-            // If it's not enough, the retry will catch it.
-            await driver.page.waitForTimeout(1500)
-
-            // Base
-            const baseTokenElement = await retry(async () => {
-                const lineNumberElement = await driver.page.waitForSelector(`#${tokens.base.lineId}`, {
-                    timeout: 10000,
+                // Base
+                const baseTokenElement = await retry(async () => {
+                    const lineNumberElement = await driver.page.waitForSelector(`#${tokens.base.lineId}`, {
+                        timeout: 10000,
+                    })
+                    const row = (
+                        await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
+                    ).asElement()!
+                    assert(row, 'Expected row to exist')
+                    const tokenElement = (
+                        await driver.page.evaluateHandle(
+                            (row: Element, token: string) =>
+                                [...row.querySelectorAll('span')].find(element => element.textContent === token),
+                            row,
+                            tokens.base.token
+                        )
+                    ).asElement()
+                    assert(tokenElement, 'Expected token element to exist')
+                    return tokenElement
                 })
-                const row = (
-                    await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
-                ).asElement()!
-                assert(row, 'Expected row to exist')
-                const tokenElement = (
-                    await driver.page.evaluateHandle(
-                        (row: Element, token: string) =>
-                            [...row.querySelectorAll('span')].find(element => element.textContent === token),
-                        row,
-                        tokens.base.token
-                    )
-                ).asElement()
-                assert(tokenElement, 'Expected token element to exist')
-                return tokenElement
-            })
-            // Retry is here to wait for listeners to be registered
-            await retry(async () => {
-                await baseTokenElement.hover()
-                await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
+                // Retry is here to wait for listeners to be registered
+                await retry(async () => {
+                    await baseTokenElement.hover()
+                    await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
+
+                    try {
+                        await driver.findElementWithText(
+                            `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
+                            {
+                                selector: '[data-testid="hover-overlay-content"] > p',
+                                fuzziness: 'contains',
+                                wait: {
+                                    timeout: 6000,
+                                },
+                            }
+                        )
+                    } catch {
+                        throw new Error('Timed out waiting for hover tooltip for base side.')
+                    }
+                })
+
+                // Head
+                const headTokenElement = await (async () => {
+                    const lineNumberElement = await driver.page.waitForSelector(`#${tokens.head.lineId}`, {
+                        timeout: 10000,
+                    })
+                    const row = (
+                        await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
+                    ).asElement()!
+                    assert(row, 'Expected row to exist')
+                    const tokenElement = (
+                        await driver.page.evaluateHandle(
+                            (row: Element, token: string) =>
+                                [...row.querySelectorAll('span')].find(element => element.textContent === token),
+                            row,
+                            tokens.head.token
+                        )
+                    ).asElement()
+                    assert(tokenElement, 'Expected token element to exist')
+                    return tokenElement
+                })()
+                await headTokenElement.hover()
 
                 try {
                     await driver.findElementWithText(
-                        `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
+                        `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
                         {
                             selector: '[data-testid="hover-overlay-content"] > p',
                             fuzziness: 'contains',
@@ -475,84 +524,84 @@ describe('GitHub', () => {
                         }
                     )
                 } catch {
-                    throw new Error('Timed out waiting for hover tooltip for base side.')
+                    throw new Error('Timed out waiting for hover tooltip for head side.')
                 }
             })
 
-            // Head
-            const headTokenElement = await (async () => {
-                const lineNumberElement = await driver.page.waitForSelector(`#${tokens.head.lineId}`, {
-                    timeout: 10000,
-                })
-                const row = (
-                    await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
-                ).asElement()!
-                assert(row, 'Expected row to exist')
-                const tokenElement = (
-                    await driver.page.evaluateHandle(
-                        (row: Element, token: string) =>
-                            [...row.querySelectorAll('span')].find(element => element.textContent === token),
-                        row,
-                        tokens.head.token
-                    )
-                ).asElement()
-                assert(tokenElement, 'Expected token element to exist')
-                return tokenElement
-            })()
-            await headTokenElement.hover()
+            it('provides hover tooltips for pull requests in split mode', async () => {
+                await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=split')
 
-            try {
-                await driver.findElementWithText(
-                    `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
-                    {
-                        selector: '[data-testid="hover-overlay-content"] > p',
-                        fuzziness: 'contains',
-                        wait: {
-                            timeout: 6000,
-                        },
+                // The browser extension takes a bit to initialize and register all event listeners.
+                // Waiting here saves one retry cycle below in the common case.
+                // If it's not enough, the retry will catch it.
+                await driver.page.waitForTimeout(1500)
+
+                // Base
+                const baseTokenElement = await retry(async () => {
+                    const lineNumberElement = await driver.page.waitForSelector(`#${tokens.base.lineId}`, {
+                        timeout: 10000,
+                    })
+                    const row = (
+                        await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
+                    ).asElement()!
+                    assert(row, 'Expected row to exist')
+                    const tokenElement = (
+                        await driver.page.evaluateHandle(
+                            (row: Element, token: string) =>
+                                [...row.querySelectorAll('span')].find(element => element.textContent === token),
+                            row,
+                            tokens.base.token
+                        )
+                    ).asElement()
+                    assert(tokenElement, 'Expected token element to exist')
+                    return tokenElement
+                })
+                // Retry is here to wait for listeners to be registered
+                await retry(async () => {
+                    await baseTokenElement.hover()
+                    await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
+
+                    try {
+                        await driver.findElementWithText(
+                            `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
+                            {
+                                selector: '[data-testid="hover-overlay-content"] > p',
+                                fuzziness: 'contains',
+                                wait: {
+                                    timeout: 6000,
+                                },
+                            }
+                        )
+                    } catch {
+                        throw new Error('Timed out waiting for hover tooltip for base side.')
                     }
-                )
-            } catch {
-                throw new Error('Timed out waiting for hover tooltip for head side.')
-            }
-        })
-
-        it('provides hover tooltips for pull requests in split mode', async () => {
-            await driver.page.goto('https://github.com/gorilla/mux/pull/117/files?diff=split')
-
-            // The browser extension takes a bit to initialize and register all event listeners.
-            // Waiting here saves one retry cycle below in the common case.
-            // If it's not enough, the retry will catch it.
-            await driver.page.waitForTimeout(1500)
-
-            // Base
-            const baseTokenElement = await retry(async () => {
-                const lineNumberElement = await driver.page.waitForSelector(`#${tokens.base.lineId}`, {
-                    timeout: 10000,
                 })
-                const row = (
-                    await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
-                ).asElement()!
-                assert(row, 'Expected row to exist')
-                const tokenElement = (
-                    await driver.page.evaluateHandle(
-                        (row: Element, token: string) =>
-                            [...row.querySelectorAll('span')].find(element => element.textContent === token),
-                        row,
-                        tokens.base.token
-                    )
-                ).asElement()
-                assert(tokenElement, 'Expected token element to exist')
-                return tokenElement
-            })
-            // Retry is here to wait for listeners to be registered
-            await retry(async () => {
-                await baseTokenElement.hover()
-                await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
+
+                // Head
+                const headTokenElement = await (async () => {
+                    const lineNumberElement = await driver.page.waitForSelector(`#${tokens.head.lineId}`, {
+                        timeout: 10000,
+                    })
+                    const row = (
+                        await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
+                    ).asElement()!
+                    assert(row, 'Expected row to exist')
+                    const tokenElement = (
+                        await driver.page.evaluateHandle(
+                            (row: Element, token: string) =>
+                                [...row.querySelectorAll('span')].find(element => element.textContent === token),
+                            row,
+                            tokens.head.token
+                        )
+                    ).asElement()
+                    assert(tokenElement, 'Expected token element to exist')
+                    return tokenElement
+                })()
+                await headTokenElement.hover()
 
                 try {
                     await driver.findElementWithText(
-                        `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
+                        `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
                         {
                             selector: '[data-testid="hover-overlay-content"] > p',
                             fuzziness: 'contains',
@@ -562,46 +611,124 @@ describe('GitHub', () => {
                         }
                     )
                 } catch {
-                    throw new Error('Timed out waiting for hover tooltip for base side.')
+                    throw new Error('Timed out waiting for hover tooltip for head side.')
                 }
             })
+        })
 
-            // Head
-            const headTokenElement = await (async () => {
-                const lineNumberElement = await driver.page.waitForSelector(`#${tokens.head.lineId}`, {
-                    timeout: 10000,
+        describe('Commit view', () => {
+            beforeEach(() => {
+                const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
+                    pollyServer: testContext.server,
+                    sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
                 })
-                const row = (
-                    await driver.page.evaluateHandle((element: Element) => element.closest('tr'), lineNumberElement)
-                ).asElement()!
-                assert(row, 'Expected row to exist')
-                const tokenElement = (
-                    await driver.page.evaluateHandle(
-                        (row: Element, token: string) =>
-                            [...row.querySelectorAll('span')].find(element => element.textContent === token),
-                        row,
-                        tokens.head.token
-                    )
-                ).asElement()
-                assert(tokenElement, 'Expected token element to exist')
-                return tokenElement
-            })()
-            await headTokenElement.hover()
 
-            try {
-                await driver.findElementWithText(
-                    `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
-                    {
-                        selector: '[data-testid="hover-overlay-content"] > p',
-                        fuzziness: 'contains',
-                        wait: {
-                            timeout: 6000,
+                const userSettings: Settings = {
+                    extensions: extensionSettings,
+                }
+                testContext.overrideGraphQL({
+                    ViewerConfiguration: () => ({
+                        viewerConfiguration: {
+                            subjects: [
+                                {
+                                    __typename: 'User',
+                                    displayName: 'Test User',
+                                    id: 'TestUserSettingsID',
+                                    latestSettings: {
+                                        id: 123,
+                                        contents: JSON.stringify(userSettings),
+                                    },
+                                    username: 'test',
+                                    viewerCanAdminister: true,
+                                    settingsURL: '/users/test/settings',
+                                },
+                            ],
+                            merged: { contents: JSON.stringify(userSettings), messages: [] },
                         },
-                    }
+                    }),
+                    RepositoryComparisonDiff: () => ({
+                        repository: {
+                            comparison: {
+                                fileDiffs: {
+                                    nodes: [
+                                        {
+                                            oldPath: 'mux.go',
+                                            newPath: 'mux.go',
+                                            internalID: '19f8c0b76d9f9caa0ba82d49c988f9f5',
+                                        },
+                                    ],
+                                    totalCount: 1,
+                                },
+                            },
+                        },
+                    }),
+                    Extensions,
+                })
+
+                // Serve a mock extension with a simple hover provider
+                mockExtension({
+                    id: 'simple/hover',
+                    bundle: simpleHoverProvider,
+                })
+            })
+
+            it('has Sourcegraph icon button and provides hover tooltips for pull requests in unified mode', async () => {
+                await driver.page.goto(
+                    'https://github.com/gorilla/mux/pull/613/commits/0759b72aecaaf40b02af1ebf032e5a23d7a4bedf?diff=unified'
                 )
-            } catch {
-                throw new Error('Timed out waiting for hover tooltip for head side.')
-            }
+
+                await driver.page.waitForSelector(
+                    '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+                )
+
+                // Pause to give codeintellify time to register listeners for
+                // tokenization (only necessary in CI, not sure why).
+                await driver.page.waitForTimeout(1000)
+
+                const lineSelector = '.diff-table tr'
+
+                // Trigger tokenization of the line.
+                const lineNumber = 7
+                const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`)
+
+                if (!line) {
+                    throw new Error(`Found no line with number ${lineNumber}`)
+                }
+
+                const [token] = await line.$x('.//span[text()="HandlerFunc"]')
+                await token.hover()
+
+                await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')
+            })
+
+            it('has Sourcegraph icon button and provides hover tooltips for pull requests in split mode', async () => {
+                await driver.page.goto(
+                    'https://github.com/gorilla/mux/pull/613/commits/0759b72aecaaf40b02af1ebf032e5a23d7a4bedf?diff=split'
+                )
+
+                await driver.page.waitForSelector(
+                    '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+                )
+
+                // Pause to give codeintellify time to register listeners for
+                // tokenization (only necessary in CI, not sure why).
+                await driver.page.waitForTimeout(1000)
+
+                const lineSelector = '.diff-table.file-diff-split tr'
+
+                // Trigger tokenization of the line.
+                const lineNumber = 6
+                const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`)
+
+                if (!line) {
+                    throw new Error(`Found no line with number ${lineNumber}`)
+                }
+
+                const [token] = await line.$x('.//span[text()="HandlerFunc"]')
+                await token.hover()
+
+                await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')
+            })
         })
     })
 })
