@@ -110,12 +110,20 @@ func (s *Store) Start() {
 func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
+	var cacheHit bool
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 		}
 		span.Finish()
+		duration := time.Since(start).Seconds()
+		if cacheHit {
+			zipAccess.WithLabelValues("true").Observe(duration)
+		} else {
+			zipAccess.WithLabelValues("false").Observe(duration)
+		}
 	}()
 
 	// Ensure we have initialized
@@ -137,16 +145,19 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
 	type result struct {
-		path string
-		err  error
+		path     string
+		err      error
+		cacheHit bool
 	}
 	resC := make(chan result, 1)
 	go func() {
 		start := time.Now()
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
+		cacheHit := true
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
+			cacheHit = false
 			return s.fetch(ctx, repo, commit, largeFilePatterns)
 		})
 		var path string
@@ -159,7 +170,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		if err != nil {
 			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
 		}
-		resC <- result{path, err}
+		resC <- result{path, err, cacheHit}
 	}()
 
 	select {
@@ -170,6 +181,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		if res.err != nil {
 			return "", res.err
 		}
+		cacheHit = res.cacheHit
 		return res.path, nil
 	}
 }
@@ -423,6 +435,11 @@ var (
 		Name: "searcher_store_fetch_failed",
 		Help: "The total number of archive fetches that failed.",
 	})
+	zipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "searcher_store_zip_prepare_duration",
+		Help:    "Observes the duration to prepare the zip file for searching.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"cache_hit"})
 )
 
 // temporaryError wraps an error but adds the Temporary method. It does not
