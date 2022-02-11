@@ -34,7 +34,7 @@ The red dot indicates that either the Sourcegraph URL entered is invalid, or you
 
 ### VS Code Extension
 
-#### Current Known Limitations
+#### Unsupported features by Sourcegraph version
 
 Here is a list of known limitations to the VS Code Extension that we are looking into for future releases:
 
