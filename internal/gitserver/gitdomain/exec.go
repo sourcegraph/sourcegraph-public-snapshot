@@ -90,6 +90,11 @@ func IsAllowedGitCmd(args []string) bool {
 				continue // this arg is OK
 			}
 
+			// Special case handling of commands like `git blame -L15,60`.
+			if cmd == "blame" && strings.HasPrefix(arg, "-L") {
+				continue // this arg is OK
+			}
+
 			if !isAllowedGitArg(allowedArgs, arg) {
 				log15.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", "cmd", cmd, "arg", arg)
 				return false
