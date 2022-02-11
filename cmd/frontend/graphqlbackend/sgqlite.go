@@ -32,7 +32,7 @@ func (r *schemaResolver) Execute(ctx context.Context, args struct{ Query string 
 
 	// Using memory right now because it's easy, but we could also create a temp file which should
 	// help ease any issues with holding the whole result set in memory for sorting/filtering/etc.
-	dblite, err := sql.Open("sqlite3_with_extensions", ":memory:")
+	dblite, err := sql.Open("sqlite3_with_extensions", "file:/tmp/test.db?_sync=OFF&_journal=OFF&_query_only=TRUE")
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +192,9 @@ type searchResultCursor struct {
 	db    database.DB
 	query string
 
+	wg     sync.WaitGroup
+	cancel context.CancelFunc
+
 	resultChan chan streaming.SearchEvent
 	done       bool
 
@@ -234,6 +237,9 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 }
 
 func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface{}) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	vc.cancel = cancel
+
 	// Filter is is what tells the ResultCursor about the WHERE clauses (basically).
 	// Its meaning is coupled with BestIndex.
 	// TODO figure out exactly how BestIndex and Filter need to communicate.
@@ -248,7 +254,7 @@ func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface
 	agg := streaming.StreamFunc(func(e streaming.SearchEvent) {
 		resultChan <- e
 	})
-	imp, err := NewSearchImplementer(context.Background(), vc.db, &SearchArgs{
+	imp, err := NewSearchImplementer(ctx, vc.db, &SearchArgs{
 		Query:   vc.query,
 		Stream:  agg,
 		Version: "V2",
@@ -256,14 +262,20 @@ func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface
 	if err != nil {
 		return errors.Wrap(err, "newSearchImplementor")
 	}
+
+	vc.wg = sync.WaitGroup{}
+	vc.wg.Add(1)
 	go func() {
+		defer vc.wg.Done()
 		defer close(resultChan)
-		// TODO collect this goroutine
-		_, err = imp.Results(context.Background())
+
+		_, err = imp.Results(ctx)
 		if err != nil {
+			// TODO collect this error
 			panic(err)
 		}
 	}()
+
 	vc.resultChan = resultChan
 	vc.batch = nil
 	vc.batchIdx, vc.curRowID = -1, -1
@@ -297,5 +309,7 @@ func (vc *searchResultCursor) Rowid() (int64, error) {
 }
 
 func (vc *searchResultCursor) Close() error {
+	vc.cancel()
+	vc.wg.Wait()
 	return nil
 }
