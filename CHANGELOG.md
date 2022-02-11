@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Syntax highlighting for JSON now uses a distinct color for strings in object key positions. [#30105](https://github.com/sourcegraph/sourcegraph/pull/30105)
+- GraphQL API: The order of events returned by `MonitorTriggerEventConnection` has been reversed so newer events are returned first. The `after` parameter has been modified accordingly to return events older the one specified, to allow for pagination. [TODO](https://github.com/sourcegraph/sourcegraph/pull/)
 
 ### Fixed
 
