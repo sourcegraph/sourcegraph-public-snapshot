@@ -1,7 +1,9 @@
 package datastructures
 
+type mapState int
+
 const (
-	mapStateEmpty = iota
+	mapStateEmpty mapState = iota
 	mapStateInline
 	mapStateHeap
 	ILLEGAL_MAPSTATE = "invariant violation: illegal map state!"
@@ -38,7 +40,7 @@ func NewDefaultIDSetMap() *DefaultIDSetMap {
 	return &DefaultIDSetMap{}
 }
 
-func (sm *DefaultIDSetMap) state() uint8 {
+func (sm *DefaultIDSetMap) state() mapState {
 	if sm.inlineValue == nil {
 		if sm.m == nil {
 			return mapStateEmpty
