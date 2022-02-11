@@ -31,4 +31,4 @@ Leaf migrations for "codeinsights" defined at commit "v3.36.0"
 - `downto -db=codeintel -target=1000000030`
 - `downto -db=codeinsights -target=1000000025`
 
-The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](dirty_database.md). A dirty database at this stage requires manual intervention. Please contact support at <mailto:support@sourcegraph.com> for further assistance.
+The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](dirty_database.md). A dirty database at this stage requires manual intervention. Please contact support at <mailto:support@sourcegraph.com> or via your enterprise support channel for further assistance.
