@@ -27,6 +27,7 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud
 
 import { CodeHostItem } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
+import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
@@ -288,22 +289,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const useGitHubApp = data?.organizationFeatureFlagValue || false
 
-    const determineGitHubAppFromOrgs = async (orgIDs: string[]): Promise<boolean> => {
-        const orgFeatureFlagPromises = [] as Promise<GraphQLResult<OrgFeatureFlagValueResult>>[]
-
-        for (const orgID of orgIDs) {
-            const result = requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-                GET_ORG_FEATURE_FLAG_VALUE,
-                { orgID, flagName: GITHUB_APP_FEATURE_FLAG_NAME }
-            ).toPromise()
-
-            orgFeatureFlagPromises.push(result)
-        }
-
-        const orgFeatureFlagResults = await Promise.all(orgFeatureFlagPromises)
-
-        return orgFeatureFlagResults.map(dataOrThrowErrors).some(result => result.organizationFeatureFlagValue === true)
-    }
+    const flagsOverridesResult = useFlagsOverrides()
+    const isGitHubAppEnabled = flagsOverridesResult.data
+        ?.filter(orgFlag => orgFlag.flagName == GITHUB_APP_FEATURE_FLAG_NAME)
+        .some(orgFlag => orgFlag.value)
+    const isGitHubAppLoading = flagsOverridesResult.loading
 
     const defaultNavigateToAuthProvider = useCallback(
         (kind: ExternalServiceKind): void => {
@@ -327,19 +317,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             if (authProvider) {
                 eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
-                let isEnabled = false
 
-                if (kind === ExternalServiceKind.GITHUB && authenticatedUser) {
-                    try {
-                        isEnabled = await determineGitHubAppFromOrgs(
-                            authenticatedUser.organizations.nodes.map(org => org.id)
-                        )
-                    } catch (error) {
-                        handleError(error)
-                    }
-                }
-
-                if (!isEnabled) {
+                if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
                     defaultNavigateToAuthProvider(kind)
                 } else {
                     window.location.assign(
@@ -350,7 +329,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
         },
-        [authProvidersByKind, handleError, authenticatedUser]
+        [authProvidersByKind]
     )
 
     return (
@@ -399,7 +378,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
-                                        loading={kind === ExternalServiceKind.GITHUB && loading}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                     />
                                 </CodeHostListItem>
