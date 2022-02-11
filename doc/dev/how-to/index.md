@@ -15,6 +15,7 @@
 - [Observability](../background-information/observability/index.md)
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
+  - [How to enable continuous profiling in production](profiling_continuous.md)
 
 ## Local Environment
 
@@ -33,7 +34,6 @@
 
 ## Profiling
 
-- [How to enable continuous profiling in production](profiling_continuous.md)
 - [How to do one-off profiling for dogfood and production using pprof](profiling_one-off.md)
 
 ## Executors
