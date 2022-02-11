@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -77,7 +78,7 @@ type FeatureFlagOverrideResolver struct {
 }
 
 func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) {
-	res, err := database.FeatureFlags(f.db).GetFeatureFlag(ctx, f.inner.FlagName)
+	res, err := f.db.FeatureFlags().GetFeatureFlag(ctx, f.inner.FlagName)
 	return &FeatureFlagResolver{f.db, res}, err
 }
 func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
@@ -152,18 +153,33 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 		return false, nil
 	}
 
-	result, err := database.FeatureFlags(r.db).GetOrgFeatureFlag(ctx, org, args.FlagName)
+	result, err := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, org, args.FlagName)
 	if err != nil {
 		return false, err
 	}
 	return result, nil
 }
 
+func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
+	actor := actor.FromContext(ctx)
+
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	return overridesToResolvers(r.db, flags), nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	flags, err := database.FeatureFlags(r.db).GetFeatureFlags(ctx)
+	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
