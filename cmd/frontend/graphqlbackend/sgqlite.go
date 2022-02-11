@@ -64,8 +64,6 @@ type graphqlValue struct {
 	value interface{}
 }
 
-var a = JSONValue{}
-
 func (graphqlValue) ImplementsGraphQLType(name string) bool {
 	return name == "JSONValue"
 }
@@ -87,21 +85,21 @@ func (v *graphqlValue) UnmarshalJSON(data []byte) error {
 func (j *graphqlValue) Scan(src interface{}) error {
 	switch v := src.(type) {
 	case int:
-		j.value = &v
+		j.value = v
 	case int64:
 		i := int(v)
-		j.value = &i
+		j.value = i
 	case float64:
-		j.value = &v
+		j.value = v
 	case bool:
-		j.value = &v
+		j.value = v
 	case []byte:
 		s := string(v)
-		j.value = &s
+		j.value = s
 	case string:
-		j.value = &v
+		j.value = v
 	case time.Time:
-		j.value = &v
+		j.value = v
 	case nil:
 	default:
 		return errors.Errorf("invalid type %T", src)
