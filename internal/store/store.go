@@ -107,15 +107,23 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, cacheHit bool, err error) {
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
+	var cacheHit bool
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 		}
 		span.Finish()
+		duration := time.Since(start).Seconds()
+		if cacheHit {
+			zipAccess.WithLabelValues("true").Observe(duration)
+		} else {
+			zipAccess.WithLabelValues("false").Observe(duration)
+		}
 	}()
 
 	// Ensure we have initialized
@@ -124,7 +132,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return "", false, errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
+		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
 	largeFilePatterns := conf.Get().SearchLargeFiles
@@ -167,13 +175,14 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 
 	select {
 	case <-ctx.Done():
-		return "", false, ctx.Err()
+		return "", ctx.Err()
 
 	case res := <-resC:
 		if res.err != nil {
-			return "", false, res.err
+			return "", res.err
 		}
-		return res.path, res.cacheHit, nil
+		cacheHit = res.cacheHit
+		return res.path, nil
 	}
 }
 
@@ -426,6 +435,11 @@ var (
 		Name: "searcher_store_fetch_failed",
 		Help: "The total number of archive fetches that failed.",
 	})
+	zipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "searcher_store_zip_prepare_duration",
+		Help:    "Observes the duration to prepare the zip file for searching.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"cache_hit"})
 )
 
 // temporaryError wraps an error but adds the Temporary method. It does not
