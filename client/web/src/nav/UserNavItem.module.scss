@@ -70,3 +70,18 @@
     height: 1.5rem;
     width: 1.5rem;
 }
+
+.menu-button {
+    --link-color: var(--icon-color);
+
+    padding: 0;
+    border: none;
+
+    .avatar {
+        color: var(--color-bg-1);
+    }
+
+    &:hover {
+        --link-hover-color: var(--body-color);
+    }
+}

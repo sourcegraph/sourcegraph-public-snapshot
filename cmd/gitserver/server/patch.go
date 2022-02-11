@@ -102,7 +102,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
 		t := time.Now()
-		out, err := cmd.CombinedOutput()
+		out, err := runWith(ctx, cmd, true, nil)
 		if err != nil {
 			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
 			log15.Info("command failed", "prefix", prefix, "command", argsToString(cmd.Args), "duration", time.Since(t), "error", err, "output", string(out))

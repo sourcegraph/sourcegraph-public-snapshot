@@ -242,9 +242,10 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 		switch {
 		case a.Email != nil:
 			e, err := r.db.CodeMonitors().CreateEmailAction(ctx, monitorID, &edb.EmailActionArgs{
-				Enabled:  a.Email.Enabled,
-				Priority: a.Email.Priority,
-				Header:   a.Email.Header,
+				Enabled:        a.Email.Enabled,
+				IncludeResults: a.Email.IncludeResults,
+				Priority:       a.Email.Priority,
+				Header:         a.Email.Header,
 			})
 			if err != nil {
 				return err
@@ -254,12 +255,12 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.Webhook != nil:
-			_, err := r.db.CodeMonitors().CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.URL)
+			_, err := r.db.CodeMonitors().CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.IncludeResults, a.Webhook.URL)
 			if err != nil {
 				return err
 			}
 		case a.SlackWebhook != nil:
-			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.URL)
+			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
 			if err != nil {
 				return err
 			}
@@ -528,9 +529,10 @@ func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.Ed
 	}
 
 	e, err := r.db.CodeMonitors().UpdateEmailAction(ctx, emailID, &edb.EmailActionArgs{
-		Enabled:  args.Update.Enabled,
-		Priority: args.Update.Priority,
-		Header:   args.Update.Header,
+		Enabled:        args.Update.Enabled,
+		IncludeResults: args.Update.IncludeResults,
+		Priority:       args.Update.Priority,
+		Header:         args.Update.Header,
 	})
 	if err != nil {
 		return err
@@ -545,7 +547,7 @@ func (r *Resolver) updateWebhookAction(ctx context.Context, args graphqlbackend.
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
 	return err
 }
 
@@ -556,7 +558,7 @@ func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbac
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
 	return err
 }
 
@@ -1032,6 +1034,10 @@ func (m *monitorEmail) Enabled() bool {
 	return m.EmailAction.Enabled
 }
 
+func (m *monitorEmail) IncludeResults() bool {
+	return m.EmailAction.IncludeResults
+}
+
 func (m *monitorEmail) Priority() string {
 	return m.EmailAction.Priority
 }
@@ -1092,6 +1098,10 @@ func (m *monitorWebhook) Enabled() bool {
 	return m.WebhookAction.Enabled
 }
 
+func (m *monitorWebhook) IncludeResults() bool {
+	return m.WebhookAction.IncludeResults
+}
+
 func (m *monitorWebhook) URL() string {
 	return m.WebhookAction.URL
 }
@@ -1142,6 +1152,10 @@ func (m *monitorSlackWebhook) ID() graphql.ID {
 
 func (m *monitorSlackWebhook) Enabled() bool {
 	return m.SlackWebhookAction.Enabled
+}
+
+func (m *monitorSlackWebhook) IncludeResults() bool {
+	return m.SlackWebhookAction.IncludeResults
 }
 
 func (m *monitorSlackWebhook) URL() string {

@@ -127,7 +127,7 @@ func renderPipelineDocs(w io.Writer) {
 		}
 		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
-			printStepSummary(w, raw)
+			printStepSummary(w, "  ", raw)
 		}
 	})
 
@@ -141,10 +141,10 @@ func renderPipelineDocs(w io.Writer) {
 			if m.Branch != "" {
 				matchName := fmt.Sprintf("`%s`", m.Branch)
 				if m.BranchRegexp {
-					matchName += " (regexp)"
+					matchName += " (regexp match)"
 				}
 				if m.BranchExact {
-					matchName += " (exact)"
+					matchName += " (exact match)"
 				}
 				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
 			}
@@ -157,6 +157,11 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
+			if m.IsPrefixMatcher() {
+				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
+					strings.TrimRight(m.Branch, "/"))
+			}
+
 			// Generate a sample pipeline with all changes
 			pipeline, err := ci.GeneratePipeline(ci.Config{
 				RunType: runtype.PullRequest,
@@ -166,15 +171,15 @@ func renderPipelineDocs(w io.Writer) {
 			if err != nil {
 				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
 			}
-			fmt.Fprintln(w, "\n- Default pipeline:")
+			fmt.Fprint(w, "\nDefault pipeline:\n\n")
 			for _, raw := range pipeline.Steps {
-				printStepSummary(w, raw)
+				printStepSummary(w, "", raw)
 			}
 		}
 	}
 }
 
-func printStepSummary(w io.Writer, rawStep interface{}) {
+func printStepSummary(w io.Writer, indent string, rawStep interface{}) {
 	switch v := rawStep.(type) {
 	case *buildkite.Step:
 		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
@@ -186,6 +191,6 @@ func printStepSummary(w io.Writer, rawStep interface{}) {
 				steps = append(steps, trimEmoji(s.Label))
 			}
 		}
-		fmt.Fprintf(w, "  - **%s**: %s\n", v.Group.Group, strings.Join(steps, ", "))
+		fmt.Fprintf(w, "%s- **%s**: %s\n", indent, v.Group.Group, strings.Join(steps, ", "))
 	}
 }

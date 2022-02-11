@@ -229,6 +229,9 @@ export const commonWebGraphQlResults: Partial<
     OrgFeatureFlagValue: () => ({
         organizationFeatureFlagValue: false,
     }),
+    OrgFeatureFlagOverrides: () => ({
+        organizationFeatureFlagOverrides: [],
+    }),
     GetTemporarySettings: () => ({
         temporarySettings: {
             __typename: 'TemporarySettings',

@@ -15,6 +15,7 @@
 - [Observability](../background-information/observability/index.md)
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
+  - [How to enable continuous profiling in production](profiling_continuous.md)
 
 ## Local Environment
 
@@ -30,6 +31,10 @@
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 - [How to test changes in dogfood](testing_in_dogfood.md)
+
+## Profiling
+
+- [How to do one-off profiling for dogfood and production using pprof](profiling_one-off.md)
 
 ## Executors
 
