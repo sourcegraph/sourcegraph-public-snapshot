@@ -136,11 +136,14 @@ type searchModule struct {
 func (m *searchModule) EponymousOnlyModule() {}
 
 const (
-	COL_RESULT_TYPE = 0
-	COL_REPO_ID     = 1
-	COL_REPO_NAME   = 2
-	COL_FILE_NAME   = 3
-	COL_QUERY       = 4
+	COL_RESULT_TYPE        = 0
+	COL_REPO_ID            = 1
+	COL_REPO_NAME          = 2
+	COL_FILE_NAME          = 3
+	COL_COMMIT_OID         = 4
+	COL_COMMIT_MESSAGE     = 5
+	COL_COMMIT_AUTHOR_NAME = 6
+	COL_QUERY              = 7
 )
 
 func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
@@ -154,6 +157,9 @@ func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTa
 			repo_id INT,
 			repo_name TEXT,
 			file_name TEXT,
+			commit_oid TEXT,
+			commit_message TEXT,
+			commit_author_name TEXT,
 			query HIDDEN TEXT
 		)`, args[0]))
 	if err != nil {
@@ -236,6 +242,29 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 			c.ResultText(fileMatch.Path)
 		} else {
 			// null if not a result.FileMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_OID:
+		if fileMatch, ok := vc.batch[vc.batchIdx].(*result.FileMatch); ok {
+			c.ResultText(string(fileMatch.CommitID))
+		} else if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
+			c.ResultText(string(commitMatch.Commit.ID))
+		} else {
+			// null if not a result.FileMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_MESSAGE:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
+			c.ResultText(string(commitMatch.Commit.Message))
+		} else {
+			// null if not a result.CommitMatch
+			c.ResultNull()
+		}
+	case COL_COMMIT_AUTHOR_NAME:
+		if commitMatch, ok := vc.batch[vc.batchIdx].(*result.CommitMatch); ok {
+			c.ResultText(string(commitMatch.Commit.Author.Name))
+		} else {
+			// null if not a result.CommitMatch
 			c.ResultNull()
 		}
 	case COL_QUERY:
