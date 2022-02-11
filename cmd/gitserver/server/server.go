@@ -670,7 +670,6 @@ func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL,
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRemoteURLFunc")
 	}
-	fmt.Println("remoteURL", remoteURL)
 
 	return vcs.ParseURL(remoteURL)
 }

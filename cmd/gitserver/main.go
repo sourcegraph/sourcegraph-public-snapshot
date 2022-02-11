@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -23,6 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -126,14 +126,27 @@ func main() {
 					return "", err
 				}
 
-				if svc.Kind == extsvc.KindGitHub {
+				if envvar.SourcegraphDotComMode() && svc.Kind == extsvc.KindGitHub {
 					parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 					if err != nil {
 						return "", errors.Wrap(err, "parse config")
 					}
 
-					c := parsed.(*schema.GitHubConnection)
+					c, ok := parsed.(*schema.GitHubConnection)
+					if !ok {
+						return "", errors.Errorf("expect *schema.GitHubConnection but got %T", parsed)
+					}
 					if c.GithubAppInstallationID != "" {
+						baseURL, err := url.Parse(c.Url)
+						if err != nil {
+							return "", errors.Wrap(err, "parse base URL")
+						}
+
+						apiURL, githubDotCom := github.APIRoot(baseURL)
+						if !githubDotCom {
+							return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
+						}
+
 						dotcomConfig := conf.SiteConfig().Dotcom
 						if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
 							return "", errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
@@ -149,10 +162,6 @@ func main() {
 							return "", errors.Wrap(err, "new authenticator with GitHub App")
 						}
 
-						apiURL, err := url.Parse("https://api.github.com")
-						if err != nil {
-							return "", errors.Wrap(err, "parse api.github.com")
-						}
 						client := github.NewV3Client(apiURL, auther, nil)
 
 						installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
@@ -163,7 +172,8 @@ func main() {
 						ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 						defer cancel()
 
-						// TODO(cloud-saas): Cache the installation access token until it expires.
+						// TODO(cloud-saas): Cache the installation access token until it expires, see
+						// https://sourcegraph.atlassian.net/browse/CLOUD-255
 						token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
 						if err != nil {
 							return "", errors.Wrap(err, "create app installation access token")
@@ -172,14 +182,12 @@ func main() {
 							return "", errors.New("empty token returned")
 						}
 
-						fmt.Println("GetRemoteURLFunc new token:", *token.Token)
 						c.Token = *token.Token
 						config, err := json.Marshal(c)
 						if err != nil {
 							return "", errors.Wrap(err, "marshal config")
 						}
 						svc.Config = string(config)
-						fmt.Println("GetRemoteURLFunc svc.Config:", svc.Config)
 					}
 				}
 
