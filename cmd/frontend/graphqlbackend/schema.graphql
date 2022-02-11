@@ -1415,6 +1415,11 @@ type Query {
     organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
 
     """
+    Retrieve all organization feature flag overrides for the current user
+    """
+    organizationFeatureFlagOverrides: [FeatureFlagOverride!]!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
