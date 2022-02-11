@@ -20,6 +20,7 @@ interface SearchNotebooksListProps extends TelemetryProps {
     filters: FilteredConnectionFilter[]
     creatorUserID?: string
     starredByUserID?: string
+    namespace?: string
     fetchNotebooks: typeof _fetchNotebooks
 }
 
@@ -28,6 +29,7 @@ export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListPro
     filters,
     creatorUserID,
     starredByUserID,
+    namespace,
     fetchNotebooks,
     telemetryService,
 }) => {
@@ -49,11 +51,12 @@ export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListPro
                 after: args.after ?? undefined,
                 creatorUserID,
                 starredByUserID,
+                namespace,
                 orderBy,
                 descending,
             })
         },
-        [creatorUserID, starredByUserID, fetchNotebooks]
+        [creatorUserID, starredByUserID, namespace, fetchNotebooks]
     )
 
     const history = useHistory()
