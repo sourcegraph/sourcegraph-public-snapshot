@@ -144,6 +144,9 @@ func TestGenerateComputeRecordings(t *testing.T) {
 		if len(recordings) != 0 {
 			t.Error("No recording should be returned as given repo has sub-repo permissions")
 		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
 	})
 
 	t.Run("compute job with no dependencies multirepo", func(t *testing.T) {

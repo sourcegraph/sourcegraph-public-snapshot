@@ -88,13 +88,15 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 			continue
 		}
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		enabled, checkErr := checkSubRepoPermissionsForRepoId(ctx, checker, repoId, err)
-		if checkErr != nil {
-			err = errors.Append(err, checkErr)
-			continue
-		}
-		if enabled {
-			continue
+		if authz.SubRepoEnabled(checker) {
+			enabled, checkErr := checkSubRepoPermissionsForRepoId(ctx, checker, repoId, err)
+			if checkErr != nil {
+				err = errors.Append(err, checkErr)
+				continue
+			}
+			if enabled {
+				continue
+			}
 		}
 		for _, group := range groupedByCapture {
 			capture := group.Value
