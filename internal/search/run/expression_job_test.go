@@ -14,23 +14,76 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-func newMockSender(waitTime time.Duration) Job {
-	res := &result.RepoMatch{Name: "test", ID: 1}
-	mj := NewMockJob()
-	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
-		s.Send(streaming.SearchEvent{Results: []result.Match{res}})
-		time.Sleep(waitTime)
-		return nil, nil
-	})
-	return mj
+type sender struct {
+	Job   Job
+	sendC chan streaming.SearchEvent
 }
 
-func newMockSenders(n int, waitTime time.Duration) []Job {
-	senders := make([]Job, 0, n)
+func (s *sender) Send() {
+	res := &result.RepoMatch{Name: "test", ID: 1}
+	s.sendC <- streaming.SearchEvent{Results: []result.Match{res}}
+}
+
+func (s *sender) Exit() {
+	close(s.sendC)
+}
+
+type senders []sender
+
+func (ss senders) SendAll() {
+	for _, s := range ss {
+		s.Send()
+	}
+}
+
+func (ss senders) ExitAll() {
+	for _, s := range ss {
+		s.Exit()
+	}
+}
+
+func (ss senders) Jobs() []Job {
+	jobs := make([]Job, 0, len(ss))
+	for _, s := range ss {
+		jobs = append(jobs, s.Job)
+	}
+	return jobs
+}
+
+func newMockSender() sender {
+	mj := NewMockJob()
+	send := make(chan streaming.SearchEvent)
+	mj.RunFunc.SetDefaultHook(func(_ context.Context, _ database.DB, s streaming.Sender) (*search.Alert, error) {
+		for event := range send {
+			s.Send(event)
+		}
+		return nil, nil
+	})
+	return sender{Job: mj, sendC: send}
+}
+
+func newMockSenders(n int) senders {
+	senders := make([]sender, 0, n)
 	for i := 0; i < n; i++ {
-		senders = append(senders, newMockSender(waitTime))
+		senders = append(senders, newMockSender())
 	}
 	return senders
+}
+
+func requireSoon(t *testing.T, c chan struct{}) {
+	select {
+	case <-c:
+	case <-time.After(time.Second):
+		t.Fatalf("expected an event to come within a second")
+	}
+}
+
+func requireNotSoon(t *testing.T, c chan struct{}) {
+	select {
+	case <-c:
+		t.Fatalf("unexpected event")
+	case <-time.After(10 * time.Millisecond):
+	}
 }
 
 func TestAndJob(t *testing.T) {
@@ -47,37 +100,50 @@ func TestAndJob(t *testing.T) {
 	t.Run("result returned from all subexpressions is streamed", func(t *testing.T) {
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				j := NewAndJob(newMockSenders(i, 10*time.Millisecond)...)
+				senders := newMockSenders(i)
+				j := NewAndJob(senders.Jobs()...)
 
-				start := time.Now()
-				var eventTime time.Time
-				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
-					eventTime = time.Now()
-				})
-				_, err := j.Run(context.Background(), nil, s)
-				require.NoError(t, err)
+				eventC := make(chan struct{}, 1)
+				stream := streaming.StreamFunc(func(streaming.SearchEvent) { eventC <- struct{}{} })
 
-				// event should be streamed ~immediately (definitely before the jobs exit)
-				require.Less(t, eventTime.Sub(start), 5*time.Millisecond)
+				finished := make(chan struct{})
+				go func() {
+					_, err := j.Run(context.Background(), nil, stream)
+					require.NoError(t, err)
+					close(finished)
+				}()
+
+				senders.SendAll()        // send the match from all jobs
+				requireSoon(t, eventC)   // expect the AndJob to send an event
+				senders.ExitAll()        // signal the jobs to exit
+				requireSoon(t, finished) // expect our AndJob to exit soon
 			})
 		}
 	})
 
 	t.Run("result not returned from all subexpressions is not streamed", func(t *testing.T) {
-		noSender := NewMockJob()
-		noSender.RunFunc.SetDefaultReturn(nil, nil)
-
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				j := NewAndJob(append([]Job{noSender}, newMockSenders(i-1, 0)...)...)
+				noSender := NewMockJob()
+				noSender.RunFunc.SetDefaultReturn(nil, nil)
+				senders := newMockSenders(i)
+				j := NewAndJob(append(senders.Jobs(), noSender)...)
 
-				eventSent := false
-				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
-					eventSent = true
-				})
-				_, err := j.Run(context.Background(), nil, s)
-				require.NoError(t, err)
-				require.False(t, eventSent)
+				eventC := make(chan struct{}, 1)
+				stream := streaming.StreamFunc(func(e streaming.SearchEvent) { eventC <- struct{}{} })
+
+				finished := make(chan struct{})
+				go func() {
+					_, err := j.Run(context.Background(), nil, stream)
+					require.NoError(t, err)
+					close(finished)
+				}()
+
+				senders.SendAll()         // send the match from all jobs but noSender
+				requireNotSoon(t, eventC) // an event should NOT be streamed
+				senders.ExitAll()         // signal the jobs to exit
+				requireNotSoon(t, eventC) // an event should NOT be streamed after all jobs exit
+				requireSoon(t, finished)  // expect our AndJob to exit soon
 			})
 		}
 	})
@@ -97,16 +163,23 @@ func TestOrJob(t *testing.T) {
 	t.Run("result returned from all subexpressions is streamed", func(t *testing.T) {
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				j := NewOrJob(newMockSenders(i, 10*time.Millisecond)...)
+				senders := newMockSenders(i)
+				j := NewOrJob(senders.Jobs()...)
 
-				start := time.Now()
-				var eventTime time.Time
-				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
-					eventTime = time.Now()
-				})
-				_, err := j.Run(context.Background(), nil, s)
-				require.NoError(t, err)
-				require.Less(t, eventTime.Sub(start), 5*time.Millisecond)
+				eventC := make(chan struct{}, 1)
+				stream := streaming.StreamFunc(func(streaming.SearchEvent) { eventC <- struct{}{} })
+
+				finished := make(chan struct{})
+				go func() {
+					_, err := j.Run(context.Background(), nil, stream)
+					require.NoError(t, err)
+					close(finished)
+				}()
+
+				senders.SendAll()        // send the match from all jobs
+				requireSoon(t, eventC)   // expect the OrJob to send an event
+				senders.ExitAll()        // signal the jobs to exit
+				requireSoon(t, finished) // expect our OrJob to exit soon
 			})
 		}
 	})
@@ -117,17 +190,26 @@ func TestOrJob(t *testing.T) {
 
 		for i := 2; i < 5; i++ {
 			t.Run(fmt.Sprintf("%d subexpressions", i), func(t *testing.T) {
-				j := NewOrJob(append([]Job{noSender}, newMockSenders(i-1, 10*time.Millisecond)...)...)
+				noSender := NewMockJob()
+				noSender.RunFunc.SetDefaultReturn(nil, nil)
+				senders := newMockSenders(i)
+				j := NewOrJob(append(senders.Jobs(), noSender)...)
 
-				var eventTime time.Time
-				s := streaming.StreamFunc(func(_ streaming.SearchEvent) {
-					eventTime = time.Now()
-				})
-				_, err := j.Run(context.Background(), nil, s)
-				require.NoError(t, err)
-				// We should return results that were only matched by some subexpressions
-				// right before we finish the job
-				require.WithinDuration(t, time.Now(), eventTime, 5*time.Millisecond)
+				eventC := make(chan struct{}, 1)
+				stream := streaming.StreamFunc(func(e streaming.SearchEvent) { eventC <- struct{}{} })
+
+				finished := make(chan struct{})
+				go func() {
+					_, err := j.Run(context.Background(), nil, stream)
+					require.NoError(t, err)
+					close(finished)
+				}()
+
+				senders.SendAll()         // send the match from all jobs but noSender
+				requireNotSoon(t, eventC) // an event should NOT be streamed
+				senders.ExitAll()         // signal the jobs to exit
+				requireSoon(t, eventC)    // an event SHOULD be streamed after all jobs exit
+				requireSoon(t, finished)  // expect our AndJob to exit soon
 			})
 		}
 	})
