@@ -31,6 +31,7 @@ describe('SlackWebhookAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorSlackWebhook',
             enabled: true,
+            includeResults: false,
             id: '',
             url: 'https://example.com',
         })
@@ -66,6 +67,7 @@ describe('SlackWebhookAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorSlackWebhook',
             enabled: true,
+            includeResults: false,
             id: '1',
             url: 'https://example2.com',
         })
@@ -116,6 +118,7 @@ describe('SlackWebhookAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorSlackWebhook',
             enabled: true,
+            includeResults: false,
             id: '5',
             url: 'https://example.com',
         })
@@ -127,6 +130,7 @@ describe('SlackWebhookAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorSlackWebhook',
             enabled: false,
+            includeResults: false,
             id: '5',
             url: 'https://example.com',
         })

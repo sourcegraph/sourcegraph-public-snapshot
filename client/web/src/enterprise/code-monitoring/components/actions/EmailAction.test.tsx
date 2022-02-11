@@ -28,6 +28,7 @@ describe('EmailAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorEmail',
             enabled: true,
+            includeResults: false,
             id: '',
             recipients: { nodes: [{ id: 'userID' }] },
         })
@@ -78,6 +79,7 @@ describe('EmailAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorEmail',
             enabled: true,
+            includeResults: false,
             id: '1',
             recipients: { nodes: [{ id: 'userID' }] },
         })
@@ -89,6 +91,7 @@ describe('EmailAction', () => {
         sinon.assert.calledOnceWithExactly(setActionSpy, {
             __typename: 'MonitorEmail',
             enabled: false,
+            includeResults: false,
             id: '1',
             recipients: { nodes: [{ id: 'userID' }] },
         })
