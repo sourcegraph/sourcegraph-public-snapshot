@@ -12,7 +12,7 @@ set -e
 echo -e "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo -e "$OUT" | ./enterprise/dev/ci/scripts/annotate.sh -s "shfmt"
+  echo -e "$OUT" >./annotations/shfmt
   echo "^^^ +++"
 fi
 
