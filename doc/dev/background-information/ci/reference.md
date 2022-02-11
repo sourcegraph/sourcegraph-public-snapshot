@@ -65,154 +65,196 @@ The default run type.
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Browser extension nightly release build
 
 The run type for environment including `{"BEXT_NIGHTLY":"true"}`.
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Tagged release
 
 The run type for tags starting with `v`.
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Release branch
 
-The run type for branches matching `^[0-9]+\.[0-9]+$` (regexp).
+The run type for branches matching `^[0-9]+\.[0-9]+$` (regexp match).
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Browser extension release build
 
-The run type for branches matching `bext/release` (exact).
+The run type for branches matching `bext/release` (exact match).
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Main branch
 
-The run type for branches matching `main` (exact).
+The run type for branches matching `main` (exact match).
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Main dry run
 
 The run type for branches matching `main-dry-run/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build main-dry-run
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Patch image
 
 The run type for branches matching `docker-images-patch/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build docker-images-patch
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Patch image without testing
 
 The run type for branches matching `docker-images-patch-notest/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build docker-images-patch-notest
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Build all candidates without testing
 
 The run type for branches matching `docker-images-candidates-notest/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build docker-images-candidates-notest
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Build executor without testing
 
 The run type for branches matching `executor-patch-notest/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build executor-patch-notest
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace
 
 ### Backend integration tests
 
 The run type for branches matching `backend-integration/`.
+You can create a build of this run type for your changes using:
 
-- Default pipeline:
-  - **Pipeline setup**: Trigger async
-  - **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
-  - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-  - **CI script tests**: test-trace-command.sh
+```sh
+sg ci build backend-integration
+```
+
+Default pipeline:
+
+- **Pipeline setup**: Trigger async
+- **Linters and static analysis**: Prettier, Misc Linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Lint, security - checkov, Check and build docsite
+- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test shared client code, Test wildcard client code, Build, Enterprise build, Test, Puppeteer tests for chrome extension, Test browser extension, Test branded client code, Typescript eslint, Stylelint
+- **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
+- **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
+- **CI script tests**: test-trace-command.sh
   - Upload build trace

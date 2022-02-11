@@ -206,16 +206,23 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				return nil
 			},
 		}, {
-			Name:      "build",
-			FlagSet:   ciBuildFlagSet,
-			ShortHelp: "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).",
-			LongHelp: `Manually request a Buildkite build for the currently checked out commit and branch. Optionally provide a run type (https://docs.sourcegraph.com/dev/background-information/ci/reference) to build with.
+			Name:       "build",
+			FlagSet:    ciBuildFlagSet,
+			ShortUsage: "sg ci build [runtype]",
+			ShortHelp:  "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).",
+			LongHelp: fmt.Sprintf(`Manually request a Buildkite build for the currently checked out commit and branch. Optionally provide a run type to build with.
 
 This is useful when:
 
 - you want to trigger a build with a particular run type, such as 'main-dry-run'
-- triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)`,
-			ShortUsage: fmt.Sprintf("sg ci build [%s]", strings.Join(getAllowedBuildTypeArgs(), "|")),
+- triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)
+
+Supported run types when providing an argument for 'sg ci build [runtype]':
+
+  %s
+
+Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
+				strings.Join(getAllowedBuildTypeArgs(), "\n  ")),
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
