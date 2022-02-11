@@ -1494,6 +1494,15 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
+
+    execute(
+       query: String! 
+    ): ExecutionResult!
+}
+
+type ExecutionResult {
+    columnNames: [String!]!
+    rows: [[JSONValue!]!]!
 }
 
 """

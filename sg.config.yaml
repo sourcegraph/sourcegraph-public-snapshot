@@ -116,7 +116,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -137,7 +137,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
     checkBinary: .bin/enterprise-frontend
     env:
       CONFIGURATION_MODE: server
@@ -191,7 +191,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
@@ -203,7 +203,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
       - internal
@@ -217,7 +217,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     watch:
       - lib
@@ -230,7 +230,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/enterprise-repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
@@ -255,7 +255,7 @@ commands:
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -271,7 +271,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
     checkBinary: .bin/searcher
     watch:
       - lib
@@ -414,7 +414,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
     checkBinary: .bin/precise-code-intel-worker
     watch:
       - lib
@@ -431,7 +431,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      go build -tags=vtable -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
       mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:
