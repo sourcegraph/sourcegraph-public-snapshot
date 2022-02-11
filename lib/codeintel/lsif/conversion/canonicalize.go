@@ -51,8 +51,8 @@ func canonicalizeDocuments(state *State) {
 
 	for documentID, canonicalID := range canonicalIDs {
 		// Move ranges and diagnostics into the canonical document
-		state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
-		state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
+		state.Contains.UnionIDSet(canonicalID, state.Contains.Get(documentID))
+		state.Diagnostics.UnionIDSet(canonicalID, state.Diagnostics.Get(documentID))
 
 		// Remove non-canonical documents
 		delete(state.DocumentData, documentID)
@@ -70,7 +70,7 @@ func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferen
 			// Remove references to non-canonical document...
 			if rangeIDs := documentRanges.Pop(documentID); rangeIDs != nil {
 				// ...and move existing definition/reference data into the canonical document
-				documentRanges.SetUnion(canonicalID, rangeIDs)
+				documentRanges.UnionIDSet(canonicalID, rangeIDs)
 			}
 		}
 	}
