@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -18,7 +21,7 @@ var (
 		Name:       "test",
 		ShortUsage: "sg test <testsuite>",
 		ShortHelp:  "Run the given test suite.",
-		LongHelp:   "Run the given test suite.",
+		LongHelp:   constructTestCmdLongHelp(),
 		FlagSet:    testFlagSet,
 		Exec:       testExec,
 	}
@@ -43,4 +46,30 @@ func testExec(ctx context.Context, args []string) error {
 	}
 
 	return run.Test(ctx, cmd, args[1:], globalConf.Env)
+}
+
+func constructTestCmdLongHelp() string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "  Runs the given testsuite.")
+
+	// Attempt to parse config to list available testsuites, but don't fail on
+	// error, because we should never error when the user wants --help output.
+	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+
+	if globalConf != nil {
+		fmt.Fprintf(&out, "\n\n")
+		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, *configFlag, output.StyleReset)
+		fmt.Fprintf(&out, "\n")
+
+		var names []string
+		for name := range globalConf.Tests {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		fmt.Fprint(&out, strings.Join(names, "\n"))
+
+	}
+
+	return out.String()
 }
