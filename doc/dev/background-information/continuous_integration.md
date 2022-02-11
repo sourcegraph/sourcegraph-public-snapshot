@@ -169,6 +169,30 @@ For more advanced usage for specific run types, see [Developing run types](#deve
 
 For caching artefacts to speed up builds, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
+#### Creating annotations
+
+Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
+The pipeline generator provides an API for this that, at a high level, works like this:
+
+1. In your script, leave a file in `./annotations`:
+
+  ```sh
+  if [ $EXIT_CODE -ne 0 ]; then
+    echo -e "$OUT" >./annotations/docsite
+  fi
+  ```
+
+1. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
+
+  ```go
+    pipeline.AddStep(":memo: Check and build docsite",
+      bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+  ```
+
+1. That's it!
+
+For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
+
 #### Developing PR checks
 
 To create a new check that can run on pull requests on relevant files, check the [`changed.Diff`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/diff.go) type to see if a relevant `Diff` type already exists.
