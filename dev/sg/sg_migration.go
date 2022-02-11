@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -12,8 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -98,8 +102,37 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
+	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory, filesystemSchemas)
+	if err != nil {
+		return nil, err
+	}
 
-	return cliutil.NewShim(connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory)), nil
+	return cliutil.NewShim(r), nil
+}
+
+var filesystemSchemas = []*schemas.Schema{
+	mustResolveSchema("frontend"),
+	mustResolveSchema("codeintel"),
+	mustResolveSchema("codeinsights"),
+}
+
+func mustResolveSchema(name string) *schemas.Schema {
+	if root, err := root.RepositoryRoot(); err == nil {
+		schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(root, "migrations")), name)
+		if err != nil {
+			panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		}
+
+		return schema
+	}
+
+	for _, schema := range schemas.Schemas {
+		if schema.Name == name {
+			return schema
+		}
+	}
+
+	panic(fmt.Sprintf("unknown schema %q", name))
 }
 
 func addExec(ctx context.Context, args []string) error {
