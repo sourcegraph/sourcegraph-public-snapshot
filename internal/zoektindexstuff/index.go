@@ -28,18 +28,18 @@ import (
 
 type IndexArgs = wipindexserver.IndexArgs
 
-type indexState string
+type IndexState string
 
 const (
-	indexStateFail        indexState = "fail"
-	indexStateSuccess     indexState = "success"
-	indexStateSuccessMeta indexState = "success_meta" // We only updated metadata
-	indexStateNoop        indexState = "noop"         // We didn't need to update index
-	indexStateEmpty       indexState = "empty"        // index is empty (empty repo)
+	IndexStateFail        IndexState = "fail"
+	IndexStateSuccess     IndexState = "success"
+	IndexStateSuccessMeta IndexState = "success_meta" // We only updated metadata
+	IndexStateNoop        IndexState = "noop"         // We didn't need to update index
+	IndexStateEmpty       IndexState = "empty"        // index is empty (empty repo)
 )
 
 // Index starts an index job for repo name at commit.
-func Index(args *IndexArgs) (state indexState, err error) {
+func Index(args *IndexArgs) (state IndexState, err error) {
 	// tr := trace.New("index", args.Name)
 
 	// defer func() {
@@ -57,7 +57,7 @@ func Index(args *IndexArgs) (state indexState, err error) {
 	// tr.LazyPrintf("branches: %v", args.Branches)
 
 	if len(args.Branches) == 0 {
-		return indexStateEmpty, createEmptyShard(args)
+		return IndexStateEmpty, createEmptyShard(args)
 	}
 
 	reason := "forced"
@@ -71,7 +71,7 @@ func Index(args *IndexArgs) (state indexState, err error) {
 		switch incrementalState {
 		case build.IndexStateEqual:
 			// debug.Printf("%s index already up to date", args.String())
-			return indexStateNoop, nil
+			return IndexStateNoop, nil
 
 		case build.IndexStateMeta:
 			log.Printf("updating index.meta %s", args.String())
@@ -79,7 +79,7 @@ func Index(args *IndexArgs) (state indexState, err error) {
 			if err := mergeMeta(bo); err != nil {
 				log.Printf("falling back to full update: failed to update index.meta %s: %s", args.String(), err)
 			} else {
-				return indexStateSuccessMeta, nil
+				return IndexStateSuccessMeta, nil
 			}
 
 		case build.IndexStateCorrupt:
@@ -93,7 +93,7 @@ func Index(args *IndexArgs) (state indexState, err error) {
 	// runCmd := func(cmd *exec.Cmd) error { return s.loggedRun(tr, cmd) }
 	// TODO
 	// metricIndexingTotal.Inc()
-	return indexStateSuccess, gitIndex(args, runCmd)
+	return IndexStateSuccess, gitIndex(args, runCmd)
 }
 
 func createEmptyShard(args *IndexArgs) error {
