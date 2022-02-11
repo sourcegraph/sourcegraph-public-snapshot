@@ -229,30 +229,36 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
-	var and []zoekt.Q
-
+func toZoektPattern(pattern string, isRegexp, isCaseSensitive, isNegated, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
 	var q zoekt.Q
 	var err error
-	if p.IsRegExp {
-		fileNameOnly := p.PatternMatchesPath && !p.PatternMatchesContent
-		contentOnly := !p.PatternMatchesPath && p.PatternMatchesContent
-		q, err = parseRe(p.Pattern, fileNameOnly, contentOnly, p.IsCaseSensitive)
+	if isRegexp {
+		fileNameOnly := patternMatchesPath && !patternMatchesContent
+		contentOnly := !patternMatchesPath && patternMatchesContent
+		q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		q = &zoekt.Substring{
-			Pattern:       p.Pattern,
-			CaseSensitive: p.IsCaseSensitive,
+			Pattern:       pattern,
+			CaseSensitive: isCaseSensitive,
 
 			FileName: true,
 			Content:  true,
 		}
 	}
 
-	if p.IsNegated {
+	if isNegated {
 		q = &zoekt.Not{Child: q}
+	}
+	return q, nil
+}
+
+func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+	q, err := toZoektPattern(p.Pattern, p.IsRegExp, p.IsCaseSensitive, p.IsNegated, p.PatternMatchesContent, p.PatternMatchesPath)
+	if err != nil {
+		return nil, err
 	}
 
 	if typ == SymbolRequest {
@@ -262,6 +268,7 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 		}
 	}
 
+	var and []zoekt.Q
 	and = append(and, q)
 
 	// zoekt also uses regular expressions for file paths
