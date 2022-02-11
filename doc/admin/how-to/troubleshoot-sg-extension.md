@@ -36,7 +36,7 @@ The red dot indicates that either the Sourcegraph URL entered is invalid, or you
 
 #### Current Known Limitations
 
-Here is a list of the known limitation for the VS Code Extension, where some will be addressed in future versions:
+Here is a list of known limitations to the VS Code Extension that we are looking into for future releases:
 
 1. Only work with instances that support stream search
 2. Search does not work across instances on version 3.31.x
