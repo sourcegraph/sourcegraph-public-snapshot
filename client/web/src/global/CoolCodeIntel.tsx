@@ -185,7 +185,7 @@ export const ReferencesList: React.FunctionComponent<ReferencesListProps> = prop
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
                     <SideReferences {...props} filter={debouncedFilter} />
                 </div>
-                {props.clickedToken !== undefined && (
+                {props.clickedToken !== undefined && !matchesExternalURL && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
                         <SideBlob {...props} />
                     </div>
@@ -436,7 +436,9 @@ export const SideBlob: React.FunctionComponent<SideBlobProps> = props => {
 }
 
 const buildFileURL = (location: Location): string => {
-    // Note: Potential bug - what if the user is on repoName/-/blob URL? Active style will break.
+    // Note: Potential bug that breaks active styles / external links
+    // - what if the user is on repoName/-/blob URL?
+    // - what if the user is on repoName@branch-name/-/blob URL?
     const path = `/${location.resource.repository.name}@${location.resource.commit.oid}/-/blob/${location.resource.path}`
     const range = location.range
 
