@@ -2,16 +2,16 @@ package search
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -279,6 +279,27 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
+func structuralSearchZoektFileMatch(ctx context.Context, pattern, rule string, languages []string, repo api.RepoName, fm *zoekt.FileMatch, s matchSender) error {
+	args := comby.Args{
+		Input:         comby.FileContent(fm.Content),
+		Matcher:       toMatcher(languages, filepath.Ext(fm.FileName)),
+		MatchTemplate: pattern,
+		Rule:          rule,
+		ResultKind:    comby.MatchOnly,
+	}
+
+	matches, err := comby.Matches(ctx, args)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range matches {
+		s.Send(toFileMatch(m))
+	}
+
+	return nil
+}
+
 func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
@@ -300,35 +321,32 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	if p.Branch == "" {
 		p.Branch = "HEAD"
 	}
+
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
 	useFullDeadline := false
-	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
-	if err != nil {
-		return err
+
+	g, ctx := errgroup.WithContext(ctx)
+	matches := make(chan []zoekt.FileMatch)
+
+	for i := 0; i < numWorkers; i++ {
+		g.Go(func() (err error) {
+			for fms := range matches {
+				for i := range fms {
+					err = structuralSearchZoektFileMatch(ctx, p.Pattern, p.CombyRule, p.Languages, p.Repo, &fms[i], sender)
+					if err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
 	}
 
-	if len(zoektMatches) == 0 {
-		return nil
-	}
+	g.Go(func() error {
+		return zoektSearch(ctx, patternInfo, branchRepos, p.IndexerEndpoints, useFullDeadline, matches)
+	})
 
-	zipFile, err := os.CreateTemp("", "*.zip")
-	if err != nil {
-		return err
-	}
-	defer zipFile.Close()
-	defer os.Remove(zipFile.Name())
-
-	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return err
-	}
-
-	var extensionHint string
-	if len(zoektMatches) > 0 {
-		filename := zoektMatches[0].FileName
-		extensionHint = filepath.Ext(filename)
-	}
-
-	return structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
+	return g.Wait()
 }
 
 var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
