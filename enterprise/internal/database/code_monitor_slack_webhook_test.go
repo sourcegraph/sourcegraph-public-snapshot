@@ -24,7 +24,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
-		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
 		got, err := s.GetSlackWebhookAction(ctx, action.ID)
@@ -42,10 +42,10 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
-		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
-		updated, err := s.UpdateSlackWebhookAction(ctx, action.ID, false, url2)
+		updated, err := s.UpdateSlackWebhookAction(ctx, action.ID, false, false, url2)
 		require.NoError(t, err)
 		require.Equal(t, false, updated.Enabled)
 		require.Equal(t, url2, updated.URL)
@@ -62,7 +62,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		_, _, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 
-		_, err := s.UpdateSlackWebhookAction(ctx, 383838, false, url2)
+		_, err := s.UpdateSlackWebhookAction(ctx, 383838, false, false, url2)
 		require.Error(t, err)
 	})
 
@@ -75,10 +75,10 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
-		action1, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		action1, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
-		action2, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		action2, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
 		err = s.DeleteSlackWebhookActions(ctx, fixtures.monitor.ID, action1.ID)
@@ -104,7 +104,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, count)
 
-		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
 		count, err = s.CountSlackWebhookActions(ctx, fixtures.monitor.ID)
@@ -125,10 +125,10 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, actions, 0)
 
-		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url1)
+		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
 
-		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, url2)
+		_, err = s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url2)
 		require.NoError(t, err)
 
 		actions2, err := s.ListSlackWebhookActions(ctx, ListActionsOpts{MonitorID: &fixtures.monitor.ID})

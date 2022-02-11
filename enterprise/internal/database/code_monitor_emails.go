@@ -12,20 +12,22 @@ import (
 )
 
 type EmailAction struct {
-	ID        int64
-	Monitor   int64
-	Enabled   bool
-	Priority  string
-	Header    string
-	CreatedBy int32
-	CreatedAt time.Time
-	ChangedBy int32
-	ChangedAt time.Time
+	ID             int64
+	Monitor        int64
+	Enabled        bool
+	Priority       string
+	Header         string
+	IncludeResults bool
+	CreatedBy      int32
+	CreatedAt      time.Time
+	ChangedBy      int32
+	ChangedAt      time.Time
 }
 
 const updateActionEmailFmtStr = `
 UPDATE cm_emails
 SET enabled = %s,
+    include_results = %s,
 	priority = %s,
 	header = %s,
 	changed_by = %s,
@@ -35,9 +37,10 @@ RETURNING %s;
 `
 
 type EmailActionArgs struct {
-	Enabled  bool
-	Priority string
-	Header   string
+	Enabled        bool
+	IncludeResults bool
+	Priority       string
+	Header         string
 }
 
 func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args *EmailActionArgs) (*EmailAction, error) {
@@ -45,6 +48,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
 		args.Enabled,
+		args.IncludeResults,
 		args.Priority,
 		args.Header,
 		a.UID,
@@ -59,8 +63,8 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 
 const createActionEmailFmtStr = `
 INSERT INTO cm_emails
-(monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+(monitor, enabled, include_results, priority, header, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -71,6 +75,7 @@ func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int6
 		createActionEmailFmtStr,
 		monitorID,
 		args.Enabled,
+		args.IncludeResults,
 		args.Priority,
 		args.Header,
 		a.UID,
@@ -189,6 +194,7 @@ var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.enabled"),
 	sqlf.Sprintf("cm_emails.priority"),
 	sqlf.Sprintf("cm_emails.header"),
+	sqlf.Sprintf("cm_emails.include_results"),
 	sqlf.Sprintf("cm_emails.created_by"),
 	sqlf.Sprintf("cm_emails.created_at"),
 	sqlf.Sprintf("cm_emails.changed_by"),
@@ -217,6 +223,7 @@ func scanEmail(scanner dbutil.Scanner) (*EmailAction, error) {
 		&m.Enabled,
 		&m.Priority,
 		&m.Header,
+		&m.IncludeResults,
 		&m.CreatedBy,
 		&m.CreatedAt,
 		&m.ChangedBy,

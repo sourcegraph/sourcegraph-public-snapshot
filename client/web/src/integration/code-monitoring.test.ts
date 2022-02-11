@@ -75,6 +75,7 @@ describe('Code monitoring', () => {
                                         {
                                             __typename: 'MonitorEmail',
                                             enabled: true,
+                                            includeResults: false,
                                             id: 'Q29kZU1vbml0b3JBY3Rpb25FbWFpbDoy',
                                             recipients: {
                                                 nodes: [{ id: 'VXNlcjoyNDc=' }],

@@ -23,6 +23,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
     enabled: true,
+    includeResults: false,
 }
 
 add('SlackWebhookAction', () => (

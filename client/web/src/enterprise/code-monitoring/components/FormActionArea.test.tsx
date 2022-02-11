@@ -18,6 +18,7 @@ describe('FormActionArea', () => {
                 id: 'id1',
                 recipients: { nodes: [{ id: mockAuthenticatedUser.id }] },
                 enabled: true,
+                includeResults: false,
             },
         ],
     }

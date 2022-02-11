@@ -12,10 +12,11 @@ import (
 )
 
 type WebhookAction struct {
-	ID      int64
-	Monitor int64
-	Enabled bool
-	URL     string
+	ID             int64
+	Monitor        int64
+	Enabled        bool
+	URL            string
+	IncludeResults bool
 
 	CreatedBy int32
 	CreatedAt time.Time
@@ -26,6 +27,7 @@ type WebhookAction struct {
 const updateWebhookActionQuery = `
 UPDATE cm_webhooks
 SET enabled = %s,
+    include_results = %s,
 	url = %s,
 	changed_by = %s,
 	changed_at = %s
@@ -33,11 +35,12 @@ WHERE id = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, enabled bool, url string) (*WebhookAction, error) {
+func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error) {
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateWebhookActionQuery,
 		enabled,
+		includeResults,
 		url,
 		a.UID,
 		s.Now(),
@@ -51,18 +54,19 @@ func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, en
 
 const createWebhookActionQuery = `
 INSERT INTO cm_webhooks
-(monitor, enabled, url, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s)
+(monitor, enabled, include_results, url, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*WebhookAction, error) {
+func (s *codeMonitorStore) CreateWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*WebhookAction, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		createWebhookActionQuery,
 		monitorID,
 		enabled,
+		includeResults,
 		url,
 		a.UID,
 		now,
@@ -157,6 +161,7 @@ var webhookActionColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_webhooks.monitor"),
 	sqlf.Sprintf("cm_webhooks.enabled"),
 	sqlf.Sprintf("cm_webhooks.url"),
+	sqlf.Sprintf("cm_webhooks.include_results"),
 	sqlf.Sprintf("cm_webhooks.created_by"),
 	sqlf.Sprintf("cm_webhooks.created_at"),
 	sqlf.Sprintf("cm_webhooks.changed_by"),
@@ -184,6 +189,7 @@ func scanWebhookAction(scanner dbutil.Scanner) (*WebhookAction, error) {
 		&w.Monitor,
 		&w.Enabled,
 		&w.URL,
+		&w.IncludeResults,
 		&w.CreatedBy,
 		&w.CreatedAt,
 		&w.ChangedBy,

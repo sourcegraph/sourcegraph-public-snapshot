@@ -25,6 +25,7 @@ const action: EmailActionProps['action'] = {
     id: 'id1',
     recipients: { nodes: [{ id: 'userID' }] },
     enabled: true,
+    includeResults: false,
 }
 
 add('EmailAction', () => (

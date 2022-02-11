@@ -308,6 +308,10 @@ type MonitorEmail implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in the email message
+    """
+    includeResults: Boolean!
+    """
     The priority of the email action.
     """
     priority: MonitorEmailPriority!
@@ -364,6 +368,10 @@ type MonitorWebhook implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
+    """
     The endpoint the webhook event will be sent to
     """
     url: String!
@@ -394,6 +402,10 @@ type MonitorSlackWebhook implements Node {
     Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
     """
     The endpoint the Slack webhook event will be sent to
     """
@@ -564,6 +576,10 @@ input MonitorEmailInput {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in the email message
+    """
+    includeResults: Boolean!
+    """
     The priority of the email.
     """
     priority: MonitorEmailPriority!
@@ -586,6 +602,10 @@ input MonitorWebhookInput {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
+    """
     The URL that will receive a payload when the action is triggered.
     """
     url: String!
@@ -599,6 +619,10 @@ input MonitorSlackWebhookInput {
     Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
     """
     The URL that will receive a payload when the action is triggered.
     """
