@@ -1,11 +1,11 @@
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import DomainIcon from 'mdi-react/DomainIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -23,6 +23,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { NotebookFields } from '../../graphql-operations'
+import { OrgAvatar } from '../../org/OrgAvatar'
 
 import {
     deleteNotebook as _deleteNotebook,
@@ -30,14 +32,18 @@ import {
     deleteNotebookStar as _deleteNotebookStar,
 } from './backend'
 import { DeleteNotebookModal } from './DeleteNotebookModal'
+import { ShareOption } from './NotebookShareOptionsDropdown'
 import styles from './SearchNotebookPageHeaderActions.module.scss'
+import { ShareNotebookModal } from './ShareNotebookModal'
 
 export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
+    namespace: NotebookFields['namespace']
     notebookId: string
     viewerCanManage: boolean
     isPublic: boolean
-    onUpdateVisibility: (isPublic: boolean) => void
+    onUpdateVisibility: (isPublic: boolean, namespace: string) => void
     deleteNotebook: typeof _deleteNotebook
     starsCount: number
     viewerHasStarred: boolean
@@ -46,10 +52,12 @@ export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
 }
 
 export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNotebookPageHeaderActionsProps> = ({
+    isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
     viewerCanManage,
     isPublic,
+    namespace,
     onUpdateVisibility,
     deleteNotebook,
     starsCount,
@@ -57,32 +65,80 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
     createNotebookStar,
     deleteNotebookStar,
     telemetryService,
-}) => (
-    <div className="d-flex align-items-center">
-        <NotebookStarsButton
-            disabled={authenticatedUser === null}
-            notebookId={notebookId}
-            starsCount={starsCount}
-            viewerHasStarred={viewerHasStarred}
-            createNotebookStar={createNotebookStar}
-            deleteNotebookStar={deleteNotebookStar}
-            telemetryService={telemetryService}
-        />
-        <NotebookVisibilityDropdown
-            isPublic={isPublic}
-            viewerCanManage={viewerCanManage}
-            onUpdateVisibility={onUpdateVisibility}
-            telemetryService={telemetryService}
-        />
-        {viewerCanManage && (
-            <NotebookSettingsDropdown
+}) => {
+    const [showShareModal, setShowShareModal] = useState(false)
+    const toggleShareModal = useCallback(() => setShowShareModal(show => !show), [setShowShareModal])
+    const [selectedShareOption, setSelectedShareOption] = useState<ShareOption | null>(
+        namespace
+            ? {
+                  namespaceType: namespace.__typename,
+                  namespaceId: namespace.id,
+                  namespaceName: namespace.namespaceName,
+                  isPublic,
+              }
+            : null
+    )
+
+    const shareIcon = useMemo(() => {
+        if (!selectedShareOption) {
+            return <></>
+        }
+        if (selectedShareOption.namespaceType === 'User') {
+            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
+            return selectedShareOption.isPublic ? (
+                <PublicIcon className="mr-1" size="1.15rem" />
+            ) : (
+                <LockIcon className="mr-1" size="1.15rem" />
+            )
+        }
+        return (
+            <OrgAvatar org={selectedShareOption.namespaceName} className="d-inline-flex mr-1" size="sm" light={true} />
+        )
+    }, [selectedShareOption, isSourcegraphDotCom])
+
+    return (
+        <div className="d-flex align-items-center">
+            <NotebookStarsButton
+                disabled={authenticatedUser === null}
                 notebookId={notebookId}
-                deleteNotebook={deleteNotebook}
+                starsCount={starsCount}
+                viewerHasStarred={viewerHasStarred}
+                createNotebookStar={createNotebookStar}
+                deleteNotebookStar={deleteNotebookStar}
                 telemetryService={telemetryService}
             />
-        )}
-    </div>
-)
+            {authenticatedUser && viewerCanManage && namespace && selectedShareOption && (
+                <>
+                    <Button
+                        variant="primary"
+                        onClick={toggleShareModal}
+                        className="d-flex align-items-center"
+                        data-testid="share-notebook-button"
+                    >
+                        {shareIcon} Share
+                    </Button>
+                    <ShareNotebookModal
+                        isOpen={showShareModal}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        toggleModal={toggleShareModal}
+                        telemetryService={telemetryService}
+                        authenticatedUser={authenticatedUser}
+                        selectedShareOption={selectedShareOption}
+                        setSelectedShareOption={setSelectedShareOption}
+                        onUpdateVisibility={onUpdateVisibility}
+                    />
+                </>
+            )}
+            {viewerCanManage && (
+                <NotebookSettingsDropdown
+                    notebookId={notebookId}
+                    deleteNotebook={deleteNotebook}
+                    telemetryService={telemetryService}
+                />
+            )}
+        </div>
+    )
+}
 
 interface NotebookSettingsDropdownProps extends TelemetryProps {
     notebookId: string
@@ -104,9 +160,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
                     <DotsHorizontalIcon />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
-                    <MenuItem disabled={true} onSelect={noop}>
-                        Settings
-                    </MenuItem>
+                    <MenuHeader>Settings</MenuHeader>
                     <MenuDivider />
                     <MenuItem
                         as={Button}
@@ -126,66 +180,6 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
                 telemetryService={telemetryService}
             />
         </>
-    )
-}
-
-interface NotebookVisibilityDropdownProps extends TelemetryProps {
-    isPublic: boolean
-    viewerCanManage: boolean
-    onUpdateVisibility: (isPublic: boolean) => void
-}
-
-const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDropdownProps> = ({
-    isPublic: initialIsPublic,
-    onUpdateVisibility,
-    viewerCanManage,
-    telemetryService,
-}) => {
-    const [isPublic, setIsPublic] = useState(initialIsPublic)
-
-    const updateVisibility = useCallback(
-        (isPublic: boolean) => {
-            telemetryService.log(`SearchNotebookSet${isPublic ? 'Public' : 'Private'}Visibility`)
-            onUpdateVisibility(isPublic)
-            setIsPublic(isPublic)
-        },
-        [onUpdateVisibility, setIsPublic, telemetryService]
-    )
-
-    return (
-        <Menu>
-            <MenuButton disabled={!viewerCanManage} outline={viewerCanManage}>
-                {isPublic ? (
-                    <span>
-                        <WebIcon className="icon-inline" /> Public
-                    </span>
-                ) : (
-                    <span>
-                        <LockIcon className="icon-inline" /> Private
-                    </span>
-                )}
-            </MenuButton>
-            <MenuList position={Position.bottomEnd}>
-                <MenuHeader>Change notebook visibility</MenuHeader>
-                <MenuDivider />
-                <MenuItem onSelect={() => updateVisibility(false)} className={styles.visibilityDropdownItem}>
-                    <div>
-                        <LockIcon className="icon-inline" /> Private
-                    </div>
-                    <div>
-                        <strong>Only you</strong> will be able to view the notebook.
-                    </div>
-                </MenuItem>
-                <MenuItem onSelect={() => updateVisibility(true)} className={styles.visibilityDropdownItem}>
-                    <div>
-                        <WebIcon className="icon-inline" /> Public
-                    </div>
-                    <div>
-                        <strong>Everyone</strong> will be able to view the notebook.
-                    </div>
-                </MenuItem>
-            </MenuList>
-        </Menu>
     )
 }
 

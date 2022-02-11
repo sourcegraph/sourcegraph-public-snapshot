@@ -491,7 +491,7 @@ commands:
     env:
       MINIO_DISK: $HOME/.sourcegraph-dev/data/minio
       MINIO_LOGS: $HOME/.sourcegraph-dev/logs/minio
-      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log"
+      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log
       IMAGE: sourcegraph/minio
       CONTAINER: minio
 
