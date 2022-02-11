@@ -20,7 +20,7 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Grab a zip.
-	path, _, err := s.PrepareZip(context.Background(), "somerepo", "0123456789012345678901234567890123456789")
+	path, err := s.PrepareZip(context.Background(), "somerepo", "0123456789012345678901234567890123456789")
 	if err != nil {
 		t.Fatal(err)
 	}
