@@ -39,6 +39,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/grafana/regexp v0.0.0-20220202152315-e74e38789280 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/klauspost/compress v1.14.2 // indirect

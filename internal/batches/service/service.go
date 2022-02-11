@@ -8,9 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/grafana/regexp"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"

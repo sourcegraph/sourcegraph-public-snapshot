@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/grafana/regexp"
 )
 
 var _ = func() bool {

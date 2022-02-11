@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- Migrated to [`grafana/regexp`](https://github.com/grafana/regexp) to match our usage in Sourcegraph proper. [#694](https://github.com/sourcegraph/src-cli/pull/694)
+
 ### Fixed
 
 ### Removed

@@ -7,10 +7,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/streaming"

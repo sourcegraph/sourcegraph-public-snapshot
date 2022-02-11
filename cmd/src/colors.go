@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
+
+	"github.com/grafana/regexp"
 
 	"github.com/mattn/go-isatty"
 )

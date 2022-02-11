@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/grafana/regexp"
 
 	"github.com/google/go-cmp/cmp"
 )

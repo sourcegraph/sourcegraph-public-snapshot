@@ -9,10 +9,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/grafana/regexp"
 
 	isatty "github.com/mattn/go-isatty"
 	"jaytaylor.com/html2text"

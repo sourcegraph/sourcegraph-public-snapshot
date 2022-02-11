@@ -1,7 +1,7 @@
 package api
 
 import (
-	"regexp"
+	"github.com/grafana/regexp"
 
 	"github.com/Masterminds/semver"
 )
