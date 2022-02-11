@@ -166,7 +166,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		if authz.SubRepoEnabled(checker) {
 			enabled, checkErr := checkSubRepoPermissions(ctx, checker, decoded.RepoID(), err)
 			if checkErr != nil {
-				err = errors.Append(err, checkErr)
+				log15.Error(fmt.Sprintf("Error during sub-repo permissions check for repoID=%s", decoded.RepoID()))
 				continue
 			}
 			if enabled {
