@@ -21,7 +21,7 @@ var registerOnce sync.Once
 func (r *schemaResolver) Execute(ctx context.Context, args struct{ Query string }) (*ExecutionResult, error) {
 	// TODO this is a bit hacky because it captures the database handle from the first request.
 	// Not a deal-breaker, but also not great. I haven't yet figured out a way to pass request-scoped
-	// through SQLite.
+	// info through SQLite.
 	registerOnce.Do(func() {
 		sql.Register("sqlite3_with_extensions", &sqlite3.SQLiteDriver{
 			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
@@ -30,8 +30,9 @@ func (r *schemaResolver) Execute(ctx context.Context, args struct{ Query string 
 		})
 	})
 
-	// Using memory right now because it's easy, but we could also create a temp file which should
-	// help ease any issues with holding the whole result set in memory for sorting/filtering/etc.
+	// This uses file right now, but it's not clear to me that sqlite is actually paging anything
+	// to disk since all the queries are read-only. We should test that, for large result sets, this
+	// is not all held in memory.
 	dblite, err := sql.Open("sqlite3_with_extensions", "file:/tmp/test.db?_sync=OFF&_journal=OFF&_query_only=TRUE")
 	if err != nil {
 		return nil, err
@@ -134,6 +135,14 @@ type searchModule struct {
 // EponymousOnlyModule is a maker that lets us treat the table like a table-valued function
 func (m *searchModule) EponymousOnlyModule() {}
 
+const (
+	COL_RESULT_TYPE = 0
+	COL_REPO_ID     = 1
+	COL_REPO_NAME   = 2
+	COL_FILE_NAME   = 3
+	COL_QUERY       = 4
+)
+
 func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
 	// The hidden `query` column is populated by the "function" call.
 	// `from search('TODO')` is equivalent to `from search where query = 'TODO'`
@@ -170,10 +179,9 @@ func (t *searchTable) Open() (sqlite3.VTabCursor, error) {
 func (v *searchTable) BestIndex(csts []sqlite3.InfoConstraint, ob []sqlite3.InfoOrderBy) (*sqlite3.IndexResult, error) {
 	// This marks the 'query' column as used so sqlite knows that
 	// it doesn't need to do the filtering itself.
-	// TODO don't mark other WHERE x = y clauses as used
 	used := make([]bool, len(csts))
 	for c, cst := range csts {
-		if cst.Usable && cst.Op == sqlite3.OpEQ {
+		if cst.Usable && cst.Op == sqlite3.OpEQ && cst.Column == COL_QUERY {
 			used[c] = true
 		}
 	}
@@ -208,7 +216,7 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 	// Column number are in the order the table was defined
 	// TODO add additional columns here
 	switch col {
-	case 0: // result_type
+	case COL_RESULT_TYPE:
 		switch vc.batch[vc.batchIdx].(type) {
 		case *result.RepoMatch:
 			c.ResultText("repo")
@@ -219,18 +227,18 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 		default:
 			return errors.New("unknown type")
 		}
-	case 1: // repo_id
+	case COL_REPO_ID:
 		c.ResultInt(int(vc.batch[vc.batchIdx].RepoName().ID))
-	case 2: // repo_name
+	case COL_REPO_NAME:
 		c.ResultText(string(vc.batch[vc.batchIdx].RepoName().Name))
-	case 3: // file_name
+	case COL_FILE_NAME:
 		if fileMatch, ok := vc.batch[vc.batchIdx].(*result.FileMatch); ok {
 			c.ResultText(fileMatch.Path)
 		} else {
 			// null if not a result.FileMatch
 			c.ResultNull()
 		}
-	case 4: // query (hidden)
+	case COL_QUERY:
 		c.ResultText(vc.query)
 	}
 	return nil
