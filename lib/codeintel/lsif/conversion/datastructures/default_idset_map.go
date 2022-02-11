@@ -43,6 +43,25 @@ func (sm *DefaultIDSetMap) Get(key int) *IDSet {
 	return nil
 }
 
+// Pop returns the identifier set at the given key or nil if it does not exist and
+// removes the key from the map.
+func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
+	if sm.key == key {
+		v := sm.value
+		sm.key = 0
+		sm.value = nil
+		return v
+	}
+	if sm.m != nil {
+		v, ok := sm.m[key]
+		if ok {
+			delete(sm.m, key)
+		}
+		return v
+	}
+	return nil
+}
+
 // Delete removes the identifier set at the given key if it exists.
 func (sm *DefaultIDSetMap) Delete(key int) {
 	if sm.key == key {
