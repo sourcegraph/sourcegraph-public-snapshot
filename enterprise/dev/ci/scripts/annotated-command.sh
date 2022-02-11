@@ -32,7 +32,7 @@ for file in "$annotation_dir"/*; do
 
   if [ "$include_names" = "true" ]; then
     # Set the name of the file as the title of this annotation section
-    annotate_file_opts="-s '$name' $annotate_opts"
+    annotate_file_opts="-s '$name' $annotate_file_opts"
   fi
 
   # Generate annotation from file contents
