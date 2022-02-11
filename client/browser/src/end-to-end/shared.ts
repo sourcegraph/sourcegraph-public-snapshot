@@ -79,7 +79,7 @@ export function testSingleFilePage({
                             `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
                         ),
                         { utm_source: `${getDriver().browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
-                    )
+                    ).href
                 )
             })
         })
