@@ -430,12 +430,13 @@ export interface GithubCodeHost extends CodeHost {
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
 
-const isGlobalSearchPage = (): boolean => window.location.pathname.startsWith('/search')
-const isAdvancedSearchPage = (): boolean => window.location.pathname.startsWith('/search/advanced')
-const isRepoSearchPage = (): boolean => window.location.pathname.endsWith('/search')
-const isSearchPage = (): boolean => isGlobalSearchPage() || isRepoSearchPage()
+const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
+const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
+const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
+const isSearchPage = (): boolean =>
+    isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
 
 type GithubResultType =
     | 'repositories'
@@ -468,7 +469,7 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
         case 'code':
             return ''
         default:
-            return isGlobalSearchPage() ? 'repo' : ''
+            return isSimpleSearchPage() ? 'repo' : ''
     }
 }
 
@@ -485,6 +486,11 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
 
     if (resultsLanguage) {
         queryParameters.push(`lang:${encodeURIComponent(resultsLanguage)}`)
+    }
+
+    if (isRepoSearchPage()) {
+        const [user, repo] = window.location.pathname.split('/').filter(Boolean)
+        queryParameters.push(`repo:${user}/${repo}`)
     }
 
     return queryParameters.join('+')
@@ -560,7 +566,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
             const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
             const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
-            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector(
+            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>(
                 "button[type='submit']"
             )
 
@@ -623,7 +629,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                         githubResultType === 'repositories' ||
                         githubResultType === 'commits' ||
                         githubResultType === 'code' ||
-                        (githubResultType === '' && isGlobalSearchPage())
+                        (githubResultType === '' && (isSimpleSearchPage() || isRepoSearchPage()))
                     )
                 })
             )
@@ -632,8 +638,9 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
     /* Simple and advanced search pages */
 
-    const searchInputContainer = document.querySelector('.search-form-fluid')
-    const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
+    const searchForm = document.querySelector<HTMLFormElement>('#search_form')
+    const searchInputContainer = searchForm?.querySelector('.search-form-fluid')
+    const inputElement = searchForm?.querySelector<HTMLInputElement>('input')
 
     if (searchInputContainer && inputElement) {
         const buttonContainer = queryByIdOrCreate('searchInputSourcegraphButton', 'ml-0 ml-md-2 mt-2 mt-md-0')
