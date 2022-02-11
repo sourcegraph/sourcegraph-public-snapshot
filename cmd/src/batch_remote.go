@@ -130,7 +130,7 @@ Examples:
 		aliases: []string{},
 		handler: handler,
 		usageFunc: func() {
-			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src batch remote %s':\n", flagSet.Name())
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src batch %s':\n", flagSet.Name())
 			flagSet.PrintDefaults()
 			fmt.Println(usage)
 		},
