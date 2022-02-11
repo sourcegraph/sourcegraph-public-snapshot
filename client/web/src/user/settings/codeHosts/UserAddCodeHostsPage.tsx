@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
+import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 import {
     ExternalServiceKind,
     ListExternalServiceFields,
@@ -26,7 +27,6 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud
 
 import { CodeHostItem } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
-import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
@@ -290,7 +290,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const flagsOverridesResult = useFlagsOverrides()
     const isGitHubAppEnabled = flagsOverridesResult.data
-        ?.filter(orgFlag => orgFlag.flagName == GITHUB_APP_FEATURE_FLAG_NAME)
+        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
         .some(orgFlag => orgFlag.value)
     const isGitHubAppLoading = flagsOverridesResult.loading
 
@@ -311,7 +311,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     )
 
     const navigateToAuthProvider = useCallback(
-        async (kind: ExternalServiceKind): Promise<void> => {
+        (kind: ExternalServiceKind): void => {
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
@@ -328,7 +328,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
         },
-        [authProvidersByKind]
+        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled]
     )
 
     return (
