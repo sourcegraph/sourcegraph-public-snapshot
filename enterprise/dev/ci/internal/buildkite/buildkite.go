@@ -143,7 +143,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make([]map[string]interface{}, 0, 0),
+		Plugins: make([]map[string]interface{}, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
@@ -217,7 +217,7 @@ func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := w.Write([]byte(output))
+	n, err := w.Write(output)
 	return int64(n), err
 }
 
@@ -226,7 +226,7 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := w.Write([]byte(output))
+	n, err := w.Write(output)
 	return int64(n), err
 }
 
@@ -240,15 +240,95 @@ func RawCmd(command string) StepOpt {
 	}
 }
 
+func tracedCmd(command string) string {
+	// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+	// see the underlying command even if prefixed by the tracing script.
+	return fmt.Sprintf("./tr %s", command)
+}
+
 // Cmd adds a command step with added instrumentation for testing purposes.
 func Cmd(command string) StepOpt {
-	return func(step *Step) {
-		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
-		// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
-		// see the underlying command even if prefixed by the tracing script.
-		tracedCmd := fmt.Sprintf("./tr %s", command)
-		step.Command = append(step.Command, tracedCmd)
+	return RawCmd(tracedCmd(command))
+}
+
+type AnnotationType string
+
+const (
+	// We opt not to allow 'success' and 'info' type annotations for now to encourage
+	// steps to only provide annotations that help debug failure cases. In the future
+	// we can revisit this if there is a need.
+	// AnnotationTypeSuccess AnnotationType = "success"
+	// AnnotationTypeInfo    AnnotationType = "info"
+	AnnotationTypeWarning AnnotationType = "warning"
+	AnnotationTypeError   AnnotationType = "error"
+)
+
+// AnnotatedCmdOpts declares options for AnnotatedCmd.
+type AnnotatedCmdOpts struct {
+	// Type indicates the type annotations from this command should be uploaded as.
+	// Commands that upload annotations of different levels will create separate
+	// annotations.
+	//
+	// If no annotation type is provided, the annotation is created as an error annotation.
+	Type AnnotationType
+
+	// IncludeNames indicates whether the file names of found annotations should be
+	// included in the Buildkite annotation as section titles. For example, if enabled the
+	// contents of the following files:
+	//
+	//  - './annotations/Job log.md'
+	//  - './annotations/shfmt'
+	//
+	// Will be included in the annotation with section titles 'Job log' and 'shfmt'.
+	IncludeNames bool
+
+	// MultiJobContext indicates that this annotation will accept input from multiple jobs
+	// under this context name.
+	MultiJobContext string
+}
+
+// AnnotatedCmd runs the given command, picks up files left in the `./annotations`
+// directory, and appends them to a shared annotation for this job. For example, to
+// generate an annotation file on error:
+//
+//	if [ $EXIT_CODE -ne 0 ]; then
+//		echo -e "$OUT" >./annotations/shfmt
+//		echo "^^^ +++"
+//	fi
+//
+// Annotations can be formatted based on file extensions, for example:
+//
+//  - './annotations/Job log.md' will have its contents appended as markdown
+//  - './annotations/shfmt' will have its contents formatted as terminal output on append
+//
+// Please be considerate about what generating annotations, since they can cause a lot of
+// visual clutter in the Buildkite UI. When creating annotations:
+//
+//  - keep them concise and short, to minimze the space they take up
+//  - ensure they are actionable: an annotation should enable you, the CI user, to know
+//    where to go and what to do next.
+//
+// DO NOT use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
+func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
+	var annotateOpts string
+
+	if opts.Type == "" {
+		annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
+	} else {
+		annotateOpts += fmt.Sprintf(" -t %s", opts.Type)
 	}
+
+	if opts.MultiJobContext != "" {
+		annotateOpts += fmt.Sprintf(" -c %q", opts.MultiJobContext)
+	}
+
+	// ./an is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+	// see the underlying command even if prefixed by the annotation script.
+	annotatedCmd := fmt.Sprintf("./an %q %q %q",
+		tracedCmd(command), fmt.Sprintf("%v", opts.IncludeNames), strings.TrimSpace(annotateOpts))
+	return RawCmd(annotatedCmd)
 }
 
 func Trigger(pipeline string) StepOpt {

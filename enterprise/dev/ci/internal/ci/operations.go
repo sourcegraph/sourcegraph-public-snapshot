@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
@@ -122,7 +123,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.Cmd("./dev/check/docsite.sh"))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
@@ -136,7 +137,9 @@ func addTerraformLint(pipeline *bk.Pipeline) {
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc Linters",
 		withYarnCache(),
-		bk.Cmd("./dev/check/all.sh"))
+		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
+			IncludeNames: true,
+		}))
 }
 
 // yarn ~41s + ~30s
@@ -656,7 +659,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	vulnerabilityExitCode := 27
 
 	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %s", app),
 			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
@@ -669,10 +672,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
-			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
-		}
-
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
+			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
+				Type:            bk.AnnotationTypeWarning,
+				MultiJobContext: "docker-security-scans",
+			}))
 	}
 }
 
@@ -687,15 +690,15 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(TaggedRelease, ImagePatch, ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				images = append(images, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
-			if app == "server" && c.RunType.Is(ReleaseBranch) {
+			if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
 				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
-			if c.RunType.Is(MainBranch) {
+			if c.RunType.Is(runtype.MainBranch) {
 				images = append(images, fmt.Sprintf("%s:insiders", image))
 			}
 		}

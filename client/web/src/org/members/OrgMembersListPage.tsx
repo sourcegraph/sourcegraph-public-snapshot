@@ -5,7 +5,7 @@ import CogIcon from 'mdi-react/CogIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { pluralize } from '@sourcegraph/common'
 import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

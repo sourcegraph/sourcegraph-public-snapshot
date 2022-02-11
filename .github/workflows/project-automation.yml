@@ -1,27 +1,32 @@
-name: Code Insights GitHub project automation
+name: "[OPTIONAL/DOESN'T BLOCK MERGING] Code Insights GitHub project automation"
 
 on:
   issues:
-    types: [closed, reopened]
+    # Note: labeled/milestoned is also triggered when opening a new issue with labels/milestone
+    types: [closed, reopened, milestoned, labeled]
   pull_request:
     types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 
 jobs:
-  update-status:
+  update-project-items:
+    name: Update project items
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Update status
+      - name: Update project items
         uses: Amadevus/pwsh-script@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+          SLACK_WEBHOOK_URI: ${{ secrets.INSIGHTS_ITERATION_SLACKBOT_WEBHOOK_URI }}
         with:
           script: |
-            $global:InformationPreference = 'Continue'
-            $global:ProgressPreference = 'SilentlyContinue'
+            $InformationPreference = 'Continue'
+            $ProgressPreference = 'SilentlyContinue'
+            $ErrorActionPreference = 'Stop'
             Set-StrictMode -Version 3.0
 
-            Install-Module PSGitHub -Force -ErrorAction Stop
+            Install-Module PSGitHub -Force
+            Install-Module PSSlack -Force
 
             if (!$env:GITHUB_TOKEN) {
               throw "No GITHUB_TOKEN env var provided"
@@ -29,4 +34,9 @@ jobs:
 
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
 
-            ./.github/workflows/update-project-item-statuses.ps1 -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' -TeamLabel 'team/code-insights'
+            ./.github/workflows/update-project-items.ps1 `
+              -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' `
+              -TeamLabel 'team/code-insights' `
+              -TeamIterationMilestonePattern '^Insights iteration' `
+              -SlackChannel '#code-insights-planning' `
+              -SlackWebhookUri $env:SLACK_WEBHOOK_URI

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
@@ -28,6 +29,8 @@ func init() {
 	flag.BoolVar(&docs, "docs", false, "Render generated documentation")
 }
 
+//go:generate sh -c "cd ../../../ && echo '<!-- DO NOT EDIT: generated via: go generate ./enterprise/dev/ci -->\n' > doc/dev/background-information/ci/reference.md"
+//go:generate sh -c "cd ../../../ && go run ./enterprise/dev/ci/gen-pipeline.go -docs >> doc/dev/background-information/ci/reference.md"
 func main() {
 	flag.Parse()
 
@@ -42,7 +45,7 @@ func main() {
 	// the stateless agents queue, in order to observe its stability.
 	if buildkite.FeatureFlags.StatelessBuild {
 		// We do not want to trigger any deployment.
-		config.RunType = ci.MainDryRun
+		config.RunType = runtype.MainDryRun
 	}
 
 	pipeline, err := ci.GeneratePipeline(config)
@@ -104,15 +107,19 @@ func trimEmoji(s string) string {
 }
 
 func renderPipelineDocs(w io.Writer) {
-	fmt.Fprintln(w, "# Pipeline reference")
+	fmt.Fprintln(w, "# Pipeline types reference")
+	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
+	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
+	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/continuous_integration).")
+
 	fmt.Fprintln(w, "\n## Run types")
 
-	// Introduce pull request builds first
-	fmt.Fprintf(w, "\n### %s\n\n", ci.PullRequest.String())
+	// Introduce pull request pipelines first
+	fmt.Fprintf(w, "\n### %s\n\n", runtype.PullRequest.String())
 	fmt.Fprintln(w, "The default run type.")
 	changed.ForEachDiffType(func(diff changed.Diff) {
 		pipeline, err := ci.GeneratePipeline(ci.Config{
-			RunType: ci.PullRequest,
+			RunType: runtype.PullRequest,
 			Diff:    diff,
 		})
 		if err != nil {
@@ -120,12 +127,12 @@ func renderPipelineDocs(w io.Writer) {
 		}
 		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
-			printStepSummary(w, raw)
+			printStepSummary(w, "  ", raw)
 		}
 	})
 
 	// Introduce the others
-	for rt := ci.PullRequest + 1; rt < ci.None; rt += 1 {
+	for rt := runtype.PullRequest + 1; rt < runtype.None; rt += 1 {
 		fmt.Fprintf(w, "\n### %s\n\n", rt.String())
 		if m := rt.Matcher(); m == nil {
 			fmt.Fprintln(w, "No matcher defined")
@@ -134,10 +141,10 @@ func renderPipelineDocs(w io.Writer) {
 			if m.Branch != "" {
 				matchName := fmt.Sprintf("`%s`", m.Branch)
 				if m.BranchRegexp {
-					matchName += " (regexp)"
+					matchName += " (regexp match)"
 				}
 				if m.BranchExact {
-					matchName += " (exact)"
+					matchName += " (exact match)"
 				}
 				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
 			}
@@ -150,23 +157,29 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
+			if m.IsPrefixMatcher() {
+				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
+					strings.TrimRight(m.Branch, "/"))
+			}
+
+			// Generate a sample pipeline with all changes
 			pipeline, err := ci.GeneratePipeline(ci.Config{
-				RunType: ci.PullRequest,
+				RunType: runtype.PullRequest,
 				Diff:    changed.All,
 				Branch:  m.Branch,
 			})
 			if err != nil {
 				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
 			}
-			fmt.Fprintln(w, "\n- Default pipeline:")
+			fmt.Fprint(w, "\nDefault pipeline:\n\n")
 			for _, raw := range pipeline.Steps {
-				printStepSummary(w, raw)
+				printStepSummary(w, "", raw)
 			}
 		}
 	}
 }
 
-func printStepSummary(w io.Writer, rawStep interface{}) {
+func printStepSummary(w io.Writer, indent string, rawStep interface{}) {
 	switch v := rawStep.(type) {
 	case *buildkite.Step:
 		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
@@ -178,6 +191,6 @@ func printStepSummary(w io.Writer, rawStep interface{}) {
 				steps = append(steps, trimEmoji(s.Label))
 			}
 		}
-		fmt.Fprintf(w, "  - **%s**: %s\n", v.Group.Group, strings.Join(steps, ", "))
+		fmt.Fprintf(w, "%s- **%s**: %s\n", indent, v.Group.Group, strings.Join(steps, ", "))
 	}
 }

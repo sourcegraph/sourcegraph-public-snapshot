@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -92,7 +93,7 @@ func main() {
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
-	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to create upload store: %s", err)
 	}
@@ -156,7 +157,7 @@ func mustInitializeDB() *sql.DB {
 
 	ctx := context.Background()
 	go func() {
-		for range time.NewTicker(5 * time.Second).C {
+		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}

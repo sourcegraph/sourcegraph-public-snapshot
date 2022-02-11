@@ -42,6 +42,7 @@ require (
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
 	github.com/dnaeon/go-vcr v1.2.0
+	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.2
@@ -129,7 +130,7 @@ require (
 	github.com/slack-go/slack v0.10.1
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20210923201916-00b9c039141c
+	github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20211011105148-2e30f7bacbe1
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -391,7 +392,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220120135924-650214d5a4ea
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220210200412-9d1b56e6180f
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

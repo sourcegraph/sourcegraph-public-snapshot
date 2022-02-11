@@ -79,7 +79,7 @@ var (
 			Query:       fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, CadvisorContainerNameMatcher(containerName)),
 			NoAlert:     true,
 			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
-			Owner:       monitoring.ObservableOwnerCoreApplication,
+			Owner:       owner,
 			Interpretation: `
 				This value indicates the number of filesystem read and write operations by containers of this service.
 				When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.

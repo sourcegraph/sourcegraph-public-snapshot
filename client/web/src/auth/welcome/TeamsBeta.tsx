@@ -12,7 +12,7 @@ import styles from './TeamsBeta.module.scss'
 import { useHubSpotForm } from './useHubSpotForm'
 
 const PORTAL_ID = '2762526'
-const FORM_ID = 'e0e43746-83e9-4133-97bd-9954a60c7af8'
+const FORM_ID = 'b65cc7a2-75ad-4114-be4c-cd9637e7c068'
 
 interface TeamsBeta {
     onFinish: FinishWelcomeFlow

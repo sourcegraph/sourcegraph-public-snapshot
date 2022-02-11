@@ -2,6 +2,7 @@ package workerutil
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -71,6 +72,9 @@ type WorkerOptions struct {
 	// field is periodically updated while being actively processed to signal to other workers that the
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
+
+	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
+	MaximumRuntimePerJob time.Duration
 
 	// Metrics configures logging, tracing, and metrics for the work loop.
 	Metrics WorkerMetrics
@@ -315,7 +319,18 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
+	// If a maximum runtime is configured, set a deadline on the handle context.
+	if w.options.MaximumRuntimePerJob > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(w.options.MaximumRuntimePerJob))
+		defer cancel()
+	}
+
 	handleErr := w.handler.Handle(ctx, record)
+
+	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
+		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
+	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
@@ -345,7 +360,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
 func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
-	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id)
+	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.

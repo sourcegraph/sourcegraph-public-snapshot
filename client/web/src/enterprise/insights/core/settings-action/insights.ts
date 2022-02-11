@@ -1,7 +1,6 @@
 import { get } from 'lodash'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
+import { isErrorLike, modify, parseJSONCOrError } from '@sourcegraph/common'
 
 import {
     Insight,
@@ -76,13 +75,13 @@ export const addInsightToSettings = (settings: string, insight: Insight): string
  */
 const getSanitizedInsight = (insight: Insight): InsightConfiguration | undefined => {
     if (isLangStatsInsight(insight)) {
-        const { id, visibility, type, viewType, ...originalInsight } = insight
+        const { id, visibility, type, viewType, dashboardReferenceCount, ...originalInsight } = insight
 
         return originalInsight
     }
 
     if (isSearchBasedInsight(insight)) {
-        const { id, visibility, type, viewType, ...originalInsight } = insight
+        const { id, visibility, type, viewType, dashboardReferenceCount, ...originalInsight } = insight
         const sanitizedSeries = originalInsight.series.map(line => ({
             name: line.name,
             query: line.query,

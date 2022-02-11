@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	definition "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	storetypes "github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -20,6 +21,9 @@ type MockStore struct {
 	// DownFunc is an instance of a mock function object controlling the
 	// behavior of the method Down.
 	DownFunc *StoreDownFunc
+	// IndexStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method IndexStatus.
+	IndexStatusFunc *StoreIndexStatusFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
@@ -29,9 +33,6 @@ type MockStore struct {
 	// UpFunc is an instance of a mock function object controlling the
 	// behavior of the method Up.
 	UpFunc *StoreUpFunc
-	// VersionFunc is an instance of a mock function object controlling the
-	// behavior of the method Version.
-	VersionFunc *StoreVersionFunc
 	// VersionsFunc is an instance of a mock function object controlling the
 	// behavior of the method Versions.
 	VersionsFunc *StoreVersionsFunc
@@ -54,6 +55,11 @@ func NewMockStore() *MockStore {
 				return nil
 			},
 		},
+		IndexStatusFunc: &StoreIndexStatusFunc{
+			defaultHook: func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+				return storetypes.IndexStatus{}, false, nil
+			},
+		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (Store, error) {
 				return nil, nil
@@ -67,11 +73,6 @@ func NewMockStore() *MockStore {
 		UpFunc: &StoreUpFunc{
 			defaultHook: func(context.Context, definition.Definition) error {
 				return nil
-			},
-		},
-		VersionFunc: &StoreVersionFunc{
-			defaultHook: func(context.Context) (int, bool, bool, error) {
-				return 0, false, false, nil
 			},
 		},
 		VersionsFunc: &StoreVersionsFunc{
@@ -101,6 +102,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Down")
 			},
 		},
+		IndexStatusFunc: &StoreIndexStatusFunc{
+			defaultHook: func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+				panic("unexpected invocation of MockStore.IndexStatus")
+			},
+		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (Store, error) {
 				panic("unexpected invocation of MockStore.Transact")
@@ -114,11 +120,6 @@ func NewStrictMockStore() *MockStore {
 		UpFunc: &StoreUpFunc{
 			defaultHook: func(context.Context, definition.Definition) error {
 				panic("unexpected invocation of MockStore.Up")
-			},
-		},
-		VersionFunc: &StoreVersionFunc{
-			defaultHook: func(context.Context) (int, bool, bool, error) {
-				panic("unexpected invocation of MockStore.Version")
 			},
 		},
 		VersionsFunc: &StoreVersionsFunc{
@@ -144,6 +145,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		DownFunc: &StoreDownFunc{
 			defaultHook: i.Down,
 		},
+		IndexStatusFunc: &StoreIndexStatusFunc{
+			defaultHook: i.IndexStatus,
+		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
 		},
@@ -152,9 +156,6 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		UpFunc: &StoreUpFunc{
 			defaultHook: i.Up,
-		},
-		VersionFunc: &StoreVersionFunc{
-			defaultHook: i.Version,
 		},
 		VersionsFunc: &StoreVersionsFunc{
 			defaultHook: i.Versions,
@@ -370,6 +371,120 @@ func (c StoreDownFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreDownFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreIndexStatusFunc describes the behavior when the IndexStatus method
+// of the parent MockStore instance is invoked.
+type StoreIndexStatusFunc struct {
+	defaultHook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)
+	hooks       []func(context.Context, string, string) (storetypes.IndexStatus, bool, error)
+	history     []StoreIndexStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// IndexStatus delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) IndexStatus(v0 context.Context, v1 string, v2 string) (storetypes.IndexStatus, bool, error) {
+	r0, r1, r2 := m.IndexStatusFunc.nextHook()(v0, v1, v2)
+	m.IndexStatusFunc.appendCall(StoreIndexStatusFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the IndexStatus method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreIndexStatusFunc) SetDefaultHook(hook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IndexStatus method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreIndexStatusFunc) PushHook(hook func(context.Context, string, string) (storetypes.IndexStatus, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreIndexStatusFunc) SetDefaultReturn(r0 storetypes.IndexStatus, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreIndexStatusFunc) PushReturn(r0 storetypes.IndexStatus, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreIndexStatusFunc) nextHook() func(context.Context, string, string) (storetypes.IndexStatus, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreIndexStatusFunc) appendCall(r0 StoreIndexStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreIndexStatusFuncCall objects describing
+// the invocations of this function.
+func (f *StoreIndexStatusFunc) History() []StoreIndexStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreIndexStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreIndexStatusFuncCall is an object that describes an invocation of
+// method IndexStatus on an instance of MockStore.
+type StoreIndexStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 storetypes.IndexStatus
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreIndexStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreIndexStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreTransactFunc describes the behavior when the Transact method of the
@@ -688,117 +803,6 @@ func (c StoreUpFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreVersionFunc describes the behavior when the Version method of the
-// parent MockStore instance is invoked.
-type StoreVersionFunc struct {
-	defaultHook func(context.Context) (int, bool, bool, error)
-	hooks       []func(context.Context) (int, bool, bool, error)
-	history     []StoreVersionFuncCall
-	mutex       sync.Mutex
-}
-
-// Version delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) Version(v0 context.Context) (int, bool, bool, error) {
-	r0, r1, r2, r3 := m.VersionFunc.nextHook()(v0)
-	m.VersionFunc.appendCall(StoreVersionFuncCall{v0, r0, r1, r2, r3})
-	return r0, r1, r2, r3
-}
-
-// SetDefaultHook sets function that is called when the Version method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreVersionFunc) SetDefaultHook(hook func(context.Context) (int, bool, bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Version method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreVersionFunc) PushHook(hook func(context.Context) (int, bool, bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreVersionFunc) SetDefaultReturn(r0 int, r1 bool, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context) (int, bool, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreVersionFunc) PushReturn(r0 int, r1 bool, r2 bool, r3 error) {
-	f.PushHook(func(context.Context) (int, bool, bool, error) {
-		return r0, r1, r2, r3
-	})
-}
-
-func (f *StoreVersionFunc) nextHook() func(context.Context) (int, bool, bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVersionFunc) appendCall(r0 StoreVersionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVersionFuncCall objects describing the
-// invocations of this function.
-func (f *StoreVersionFunc) History() []StoreVersionFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVersionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVersionFuncCall is an object that describes an invocation of method
-// Version on an instance of MockStore.
-type StoreVersionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 bool
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 bool
-	// Result3 is the value of the 4th result returned from this method
-	// invocation.
-	Result3 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVersionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVersionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // StoreVersionsFunc describes the behavior when the Versions method of the

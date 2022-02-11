@@ -2,8 +2,8 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { registerHighlightContributions } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import {
     commonProps,
     FIXTURE_ACTIONS,
