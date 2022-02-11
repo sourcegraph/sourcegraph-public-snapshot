@@ -149,7 +149,7 @@ func Frontend() *monitoring.Container {
 
 							Critical: monitoring.Alert().GreaterOrEqual(2, nil),
 							Panel:    monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:    monitoring.ObservableOwnerCoreApplication,
+							Owner:    monitoring.ObservableOwnerCloudSaaS,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
@@ -428,7 +428,7 @@ func Frontend() *monitoring.Container {
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerCloudSaaS,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
