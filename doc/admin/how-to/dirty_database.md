@@ -7,9 +7,13 @@ This document will take you through how to resolve a 'dirty database' error. Dur
 The error will look something like this:
 
 ```log
-INFO[02-08|00:40:55] Checked current version schema=frontend appliedVersions="[1528395834 1528395835 1528395836 ... 1528395969 1528395970 1528395971]" pendingVersions=[1528395947] failedVersions=[]
-error: 1 error occurred:
-	* dirty database: schema "frontend" marked the following migrations as failed: 1528395947
+INFO[02-08|00:40:55] Checked current version
+  schema=frontend
+  appliedVersions=[1528395834 1528395835 ... 1528395970 1528395971]
+  pendingVersions=[1644515056]
+  failedVersions=[]
+  error: 1 error occurred:
+	  * dirty database: schema "frontend" marked the following migrations as failed: 1644515056
 
 The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
