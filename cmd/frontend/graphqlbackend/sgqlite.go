@@ -189,10 +189,15 @@ func (v *searchTable) Disconnect() error { return nil }
 func (v *searchTable) Destroy() error    { return nil }
 
 type searchResultCursor struct {
-	db      database.DB
-	index   int
-	query   string
-	results result.Matches
+	db    database.DB
+	query string
+
+	resultChan chan streaming.SearchEvent
+	done       bool
+
+	batch    result.Matches
+	batchIdx int
+	curRowID int64
 }
 
 func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
@@ -201,7 +206,7 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 	// TODO add additional columns here
 	switch col {
 	case 0: // result_type
-		switch vc.results[vc.index].(type) {
+		switch vc.batch[vc.batchIdx].(type) {
 		case *result.RepoMatch:
 			c.ResultText("repo")
 		case *result.FileMatch:
@@ -212,11 +217,11 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 			return errors.New("unknown type")
 		}
 	case 1: // repo_id
-		c.ResultInt(int(vc.results[vc.index].RepoName().ID))
+		c.ResultInt(int(vc.batch[vc.batchIdx].RepoName().ID))
 	case 2: // repo_name
-		c.ResultText(string(vc.results[vc.index].RepoName().Name))
+		c.ResultText(string(vc.batch[vc.batchIdx].RepoName().Name))
 	case 3: // file_name
-		if fileMatch, ok := vc.results[vc.index].(*result.FileMatch); ok {
+		if fileMatch, ok := vc.batch[vc.batchIdx].(*result.FileMatch); ok {
 			c.ResultText(fileMatch.Path)
 		} else {
 			// null if not a result.FileMatch
@@ -239,7 +244,10 @@ func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface
 	// TODO we should also figure out a way to support other WHERE clauses
 	vc.query = vals[0].(string)
 	// TODO how to capture context, db, and args from request
-	agg := streaming.NewAggregatingStream()
+	resultChan := make(chan streaming.SearchEvent, 32)
+	agg := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		resultChan <- e
+	})
 	imp, err := NewSearchImplementer(context.Background(), vc.db, &SearchArgs{
 		Query:   vc.query,
 		Stream:  agg,
@@ -248,29 +256,44 @@ func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface
 	if err != nil {
 		return errors.Wrap(err, "newSearchImplementor")
 	}
-	_, err = imp.Results(context.Background())
-	if err != nil {
-		return errors.Wrap(err, "searchImplementor.Results")
-	}
-	vc.index = 0
-	// TODO right now we run the search, aggregate the results, and store them
-	// in the cursor, but I think we can theoretically use a channel along with
-	// the Next() call to stream results into the DB rather than holding them in memory
-	vc.results = agg.Results
-	return nil
+	go func() {
+		defer close(resultChan)
+		// TODO collect this goroutine
+		_, err = imp.Results(context.Background())
+		if err != nil {
+			panic(err)
+		}
+	}()
+	vc.resultChan = resultChan
+	vc.batch = nil
+	vc.batchIdx, vc.curRowID = -1, -1
+	return vc.Next()
 }
 
 func (vc *searchResultCursor) Next() error {
-	vc.index++
+	// Increment counters
+	vc.batchIdx++
+	vc.curRowID++
+
+	// Read events from the channel until we get results
+	for vc.batchIdx >= len(vc.batch) {
+		event, ok := <-vc.resultChan
+		if !ok {
+			vc.done = true
+			return nil
+		}
+		vc.batch = event.Results
+		vc.batchIdx = 0
+	}
 	return nil
 }
 
 func (vc *searchResultCursor) EOF() bool {
-	return vc.index >= len(vc.results)
+	return vc.done
 }
 
 func (vc *searchResultCursor) Rowid() (int64, error) {
-	return int64(vc.index), nil
+	return vc.curRowID, nil
 }
 
 func (vc *searchResultCursor) Close() error {
