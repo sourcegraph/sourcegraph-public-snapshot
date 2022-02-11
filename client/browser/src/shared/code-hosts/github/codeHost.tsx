@@ -11,6 +11,7 @@ import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellif
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
     RepoSpec,
@@ -23,6 +24,7 @@ import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
+import { getPlatformName } from '../../util/context'
 import { MutationRecordLike, querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
@@ -38,8 +40,6 @@ import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
-import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
-import { getPlatformName } from '../../util/context'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -517,14 +517,17 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
         container,
         className = '',
         getSearchQuery,
-        utmCampaign
+        utmCampaign,
     }: {
         container: HTMLElement
         className?: string
         utmCampaign: string
         getSearchQuery: () => string[]
     }): void => {
-        const sourcegraphSearchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {utm_source: getPlatformName(), utm_campaign: utmCampaign})
+        const sourcegraphSearchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {
+            utm_source: getPlatformName(),
+            utm_campaign: utmCampaign,
+        })
 
         render(
             <SourcegraphIconButton
@@ -539,7 +542,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
                     // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be correctly parsed by sourcegraph search page.
                     ;(event.target as HTMLAnchorElement).href = `${sourcegraphSearchURL.href}${
-                        searchQuery ? `?q=${searchQuery}` : ''
+                        searchQuery ? `&q=${searchQuery}` : ''
                     }`
                 }}
             />,
