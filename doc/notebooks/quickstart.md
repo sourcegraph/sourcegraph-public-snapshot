@@ -1,4 +1,35 @@
-<!-- TODO: Get all images uploaded to GCP -->
+<style>
+
+.markdown-body h2 {
+  margin-top: 2em;
+}
+
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(code_monitoring/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+
+</style>
 # Quickstart for Notebooks
 Create your first Notebook in minutes.
 # Introduction

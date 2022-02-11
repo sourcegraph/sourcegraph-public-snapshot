@@ -1,3 +1,35 @@
+<style>
+
+.markdown-body h2 {
+  margin-top: 2em;
+}
+
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(code_monitoring/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+
+</style>
 # Sharing Notebooks
 
 Currently, Notebooks support the following sharing permissions.
@@ -18,3 +50,7 @@ Only organziation members can view and edit the Notebook.
 
 ### Public organization Notebooks
 In self-hosted and managed Sourcegraph instances, everyone who has access to the instance can view the Notebook. On [sourcegraph.com](https://sourcegraph.com), anyone can view the Notebook. In both cases, only members of the owning Sourcegraph organization can edit the Notebook.
+
+<br>
+
+![](https://storage.googleapis.com/sourcegraph-assets/docs/images/notebooks/notebook_sharing.gif)
