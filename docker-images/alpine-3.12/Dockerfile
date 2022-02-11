@@ -1,7 +1,7 @@
 # This Dockerfile defines the sourcegraph/alpine Docker image, which is the
 # base image used by all Sourcegraph Docker images.
 
-FROM alpine:3.12@sha256:a9c28c813336ece5bb98b36af5b66209ed777a394f4f856c6e62267790883820
+FROM alpine:3.12@sha256:74e5ad84a67e9b8ed7609b32dc2460b76175020923d7f494a73a851446222d18
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -21,14 +21,12 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # installing this package, nslookup, Go binaries, etc. will fail to contact
 # other Docker containers.
 # See https://github.com/sourcegraph/deploy-sourcegraph-docker/issues/1
-# hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools
-
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
-# hadolint ignore=DL3018
-RUN apk add --no-cache ca-certificates mailcap tini curl
-
-# Manually upgrade upgrade libxml2 packages due CVE's
-# See https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3517 and https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3518
-# hadolint ignore=DL3018
-RUN apk add --upgrade --no-cache libxml2=2.9.12-r0  apk-tools=2.10.8-r0
+RUN apk update && apk add --no-cache \
+    bind-tools \
+    busybox \
+    ca-certificates \
+    curl \
+    mailcap \
+    tini \
+    wget

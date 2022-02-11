@@ -21,9 +21,6 @@ import (
 // file to make that more obvious. We already have the filter type extracted
 // (Filter).
 type SearchFilters struct {
-	// Globbing is true if the user has enabled globbing support.
-	Globbing bool
-
 	filters filters
 }
 
@@ -74,13 +71,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
-		var filter string
-		if s.Globbing {
-			filter = fmt.Sprintf(`repo:%s`, repoName)
-		} else {
-			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
-		}
-
+		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
 			// are @ and :, both of which are disallowed in git refs
@@ -95,11 +86,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
-				if s.Globbing {
-					s.filters.Add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file")
-				} else {
-					s.filters.Add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
-				}
+				s.filters.Add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
 			}
 		}
 	}
@@ -150,6 +137,10 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(v.Name, v.ID, "", 1)
+		case *result.CommitMatch:
+			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
+			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
+			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
 		}
 	}
 }

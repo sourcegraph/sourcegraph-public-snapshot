@@ -3,18 +3,18 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type FeatureFlagResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	inner *featureflag.FeatureFlag
 }
 
@@ -33,7 +33,7 @@ func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolve
 }
 
 type FeatureFlagBooleanResolver struct {
-	db dbutil.DB
+	db database.DB
 	// Invariant: inner.Bool is non-nil
 	inner *featureflag.FeatureFlag
 }
@@ -49,7 +49,7 @@ func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureF
 }
 
 type FeatureFlagRolloutResolver struct {
-	db dbutil.DB
+	db database.DB
 	// Invariant: inner.Rollout is non-nil
 	inner *featureflag.FeatureFlag
 }
@@ -64,7 +64,7 @@ func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureF
 	return overridesToResolvers(f.db, overrides), nil
 }
 
-func overridesToResolvers(db dbutil.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
+func overridesToResolvers(db database.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
 	res := make([]*FeatureFlagOverrideResolver, 0, len(input))
 	for _, flag := range input {
 		res = append(res, &FeatureFlagOverrideResolver{db, flag})
@@ -73,12 +73,12 @@ func overridesToResolvers(db dbutil.DB, input []*featureflag.Override) []*Featur
 }
 
 type FeatureFlagOverrideResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	inner *featureflag.Override
 }
 
 func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) {
-	res, err := database.FeatureFlags(f.db).GetFeatureFlag(ctx, f.inner.FlagName)
+	res, err := f.db.FeatureFlags().GetFeatureFlag(ctx, f.inner.FlagName)
 	return &FeatureFlagResolver{f.db, res}, err
 }
 func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
@@ -140,18 +140,53 @@ func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagRes
 	return res
 }
 
+func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args *struct {
+	OrgID    graphql.ID
+	FlagName string
+}) (bool, error) {
+	org, err := UnmarshalOrgID(args.OrgID)
+	if err != nil {
+		return false, err
+	}
+	// same behavior as if the flag does not exist
+	if err := backend.CheckOrgAccess(ctx, r.db, org); err != nil {
+		return false, nil
+	}
+
+	result, err := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, org, args.FlagName)
+	if err != nil {
+		return false, err
+	}
+	return result, nil
+}
+
+func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
+	actor := actor.FromContext(ctx)
+
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	return overridesToResolvers(r.db, flags), nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	flags, err := database.FeatureFlags(r.db).GetFeatureFlags(ctx)
+	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return flagsToResolvers(r.db, flags), nil
 }
 
-func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
+func flagsToResolvers(db database.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
 	res := make([]*FeatureFlagResolver, 0, len(flags))
 	for _, flag := range flags {
 		res = append(res, &FeatureFlagResolver{db, flag})

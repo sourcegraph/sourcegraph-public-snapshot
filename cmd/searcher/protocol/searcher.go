@@ -13,6 +13,9 @@ type Request struct {
 	// Repo is the name of the repository to search. eg "github.com/gorilla/mux"
 	Repo api.RepoName
 
+	// RepoID is the Sourcegraph repository id of the repo to search.
+	RepoID api.RepoID
+
 	// URL specifies the repository's Git remote URL (for gitserver). It is optional. See
 	// (gitserver.ExecRequest).URL for documentation on what it is used for.
 	URL string
@@ -42,10 +45,6 @@ type Request struct {
 	// the fetch will still happen in the background so future requests don't have to wait.
 	FetchTimeout string
 
-	// The deadline for the search request.
-	// It is parsed with time.Time.UnmarshalText.
-	Deadline string
-
 	// Endpoint(s) for reaching Zoekt. See description in
 	// endpoint.go:Static(...)
 	IndexerEndpoints []string
@@ -53,10 +52,6 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
-
-	// (Experimental) Whether to stream results to the client with server sent events
-	// rather than returning them as a batch
-	Stream bool
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

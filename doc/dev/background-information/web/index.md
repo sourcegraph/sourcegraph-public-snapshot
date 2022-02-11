@@ -1,7 +1,7 @@
 # Web clients development
 
 This guide documents our approach to developing on the web clients in our codebase (web app, browser extension and shared code).
-See also our [TypeScript guide](https://about.sourcegraph.com/handbook/engineering/languages/typescript) in the handbook.
+See also: [TypeScript programming patterns](../languages/typescript.md).
 
 - [Developing the web app](web_app.md)
 - [Developing the code host integrations](code_host_integrations.md)
@@ -9,4 +9,5 @@ See also our [TypeScript guide](https://about.sourcegraph.com/handbook/engineeri
 - [Wildcard Component Library](wildcard.md)
 - [Styling UI](styling.md)
 - [Accessibility](accessibility.md)
+- [Temporary settings](temporary_settings.md)
 - [Build process](build.md)

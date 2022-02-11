@@ -1,4 +1,4 @@
-import { lazyComponent } from '../../util/lazyComponent'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ExtensionAreaRoute } from './ExtensionArea'
 

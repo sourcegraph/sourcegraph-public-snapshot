@@ -3,12 +3,13 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
+import styles from './AddExternalServicesPage.module.scss'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
@@ -81,7 +82,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
             </div>
             <p className="mt-2">Add repositories from one of these code hosts.</p>
             {!hasDismissedPrivacyWarning && (
-                <div className="alert alert-info">
+                <Alert variant="info">
                     {!userID && (
                         <p>
                             This Sourcegraph installation will never send your code, repository names, file names, or
@@ -99,36 +100,36 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                         <li>
                             Fetching{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/admin/repo/permissions"
+                            <Link
+                                to="https://docs.sourcegraph.com/admin/repo/permissions"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 user repository access permissions
-                            </a>
+                            </Link>
                             , if you have enabled this feature.
                         </li>
                         <li>
                             Opening pull requests and syncing their metadata as part of{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/user/batch_changes"
+                            <Link
+                                to="https://docs.sourcegraph.com/user/batch_changes"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 batch changes
-                            </a>
+                            </Link>
                             , if you have enabled this feature.
                         </li>
                     </ul>
                     <div className="d-flex justify-content-end">
-                        <button className="btn btn-light" onClick={dismissPrivacyWarning} type="button">
+                        <Button variant="secondary" className={styles.btnLight} onClick={dismissPrivacyWarning}>
                             Do not show this again
-                        </button>
+                        </Button>
                     </div>
-                </div>
+                </Alert>
             )}
             {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
-                <div className="add-external-services-page__card" key={id}>
+                <div className={styles.addExternalServicesPageCard} key={id}>
                     <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                 </div>
             ))}
@@ -138,7 +139,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                     <h2>Other connections</h2>
                     <p className="mt-2">Add connections to non-code-host services.</p>
                     {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
-                        <div className="add-external-services-page__card" key={id}>
+                        <div className={styles.addExternalServicesPageCard} key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                         </div>
                     ))}

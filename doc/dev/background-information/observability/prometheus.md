@@ -5,7 +5,7 @@
 
 We ship a custom Prometheus image as part of a standard Sourcegraph distribution.
 It currently [bundles Alertmanager](#alertmanager) as well as [integrations to the Sourcegraph web application](#prom-wrapper).
-Learn more about it in our [monitoring architecture](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#sourcegraph-prometheus).
+Learn more about it in our [monitoring architecture](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#sourcegraph-prometheus).
 
 Adding recording rules, alerts, etc. to this image is handled by the [monitoring generator](./monitoring-generator.md).
 
@@ -21,7 +21,7 @@ To learn more about developing metrics, see the [observability developer guides]
 
 The entrypoint of the image is a sidecar program called the prom-wrapper.
 It manages Prometheus and Alertmanager, and provides integration with the Sourcgraph frontend.
-Learn more about it [here](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#prom-wrapper).
+Learn more about it [here](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#prom-wrapper).
 
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).
 The prom-wrapper also exports an API which can be leveraged through the [`internal/src-prometheus` package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/src-prometheus).

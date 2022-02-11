@@ -20,7 +20,7 @@ export async function injectCodeIntelligence(
     onCodeHostFound?: (codeHost: CodeHost) => Promise<void>
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const codeHost = determineCodeHost()
+    const codeHost = determineCodeHost(urls.sourcegraphURL)
     if (codeHost) {
         console.log('Sourcegraph: Detected code host:', codeHost.type)
 

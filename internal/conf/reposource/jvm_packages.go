@@ -6,9 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Masterminds/semver"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type MavenModule struct {
@@ -16,7 +15,7 @@ type MavenModule struct {
 	ArtifactID string
 }
 
-func (m *MavenModule) IsJdk() bool {
+func (m *MavenModule) IsJDK() bool {
 	return *m == jdkModule()
 }
 
@@ -24,18 +23,23 @@ func (m *MavenModule) MatchesDependencyString(dependency string) bool {
 	return strings.HasPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupID, m.ArtifactID))
 }
 
-func (m *MavenModule) SortText() string {
+func (m *MavenModule) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
 }
 
+func (m *MavenModule) SortText() string {
+	return m.CoursierSyntax()
+}
+
 func (m *MavenModule) LsifJavaKind() string {
-	if m.IsJdk() {
+	if m.IsJDK() {
 		return "jdk"
 	}
 	return "maven"
 }
+
 func (m *MavenModule) RepoName() api.RepoName {
-	if m.IsJdk() {
+	if m.IsJDK() {
 		return "jdk"
 	}
 	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
@@ -46,10 +50,10 @@ func (m *MavenModule) CloneURL() string {
 	return cloneURL.String()
 }
 
+// See [NOTE: Dependency-terminology]
 type MavenDependency struct {
 	MavenModule
-	Version         string
-	SemanticVersion *semver.Version
+	Version string
 }
 
 // SortDependencies sorts the dependencies by the semantic version in descending
@@ -58,54 +62,46 @@ type MavenDependency struct {
 func SortDependencies(dependencies []MavenDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
 		if dependencies[i].MavenModule == dependencies[j].MavenModule {
-			return dependencies[i].SemanticVersion.GreaterThan(dependencies[j].SemanticVersion)
+			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}
 		return dependencies[i].MavenModule.SortText() > dependencies[j].MavenModule.SortText()
 	})
 }
 
-func (d *MavenDependency) IsJdk() bool {
-	return d.MavenModule.IsJdk()
+func (d MavenDependency) IsJDK() bool {
+	return d.MavenModule.IsJDK()
 }
 
-func (d *MavenDependency) CoursierSyntax() string {
+func (d MavenDependency) PackageManagerSyntax() string {
 	return fmt.Sprintf("%s:%s:%s", d.MavenModule.GroupID, d.MavenModule.ArtifactID, d.Version)
 }
 
-func (d *MavenDependency) GitTagFromVersion() string {
+func (d MavenDependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (m *MavenDependency) LsifJavaDependencies() []string {
-	if m.IsJdk() {
+func (d MavenDependency) LsifJavaDependencies() []string {
+	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{m.CoursierSyntax()}
+	return []string{d.PackageManagerSyntax()}
 }
 
+// ParseMavenDependency parses a dependency string in the Coursier format (colon seperated group ID, artifact ID and version)
+// into a MavenDependency.
 func ParseMavenDependency(dependency string) (MavenDependency, error) {
 	parts := strings.Split(dependency, ":")
 	if len(parts) < 3 {
-		return MavenDependency{}, fmt.Errorf("dependency %q must contain at least two colon ':' characters", dependency)
-
+		return MavenDependency{}, errors.Newf("dependency %q must contain at least two colon ':' characters", dependency)
 	}
 	version := parts[2]
-
-	// Ignore error from semantic version parsing because we only use the
-	// semantic version for sorting dependencies, which falls back to
-	// lexicographical ordering if the semantic version is missing. We can't
-	// guarantee that every published Java package has a valid semantic
-	// version according to the implementation of the Go-lang semver
-	// package.
-	semanticVersion, _ := semver.NewVersion(version)
 
 	return MavenDependency{
 		MavenModule: MavenModule{
 			GroupID:    parts[0],
 			ArtifactID: parts[1],
 		},
-		Version:         version,
-		SemanticVersion: semanticVersion,
+		Version: version,
 	}, nil
 }
 
@@ -116,7 +112,7 @@ func ParseMavenModule(urlPath string) (MavenModule, error) {
 	}
 	parts := strings.SplitN(strings.TrimPrefix(urlPath, "maven/"), "/", 2)
 	if len(parts) != 2 {
-		return MavenModule{}, fmt.Errorf("failed to parse a maven module from the path %s", urlPath)
+		return MavenModule{}, errors.Newf("failed to parse a maven module from the path %s", urlPath)
 	}
 
 	return MavenModule{

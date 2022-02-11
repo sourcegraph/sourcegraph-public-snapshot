@@ -104,6 +104,18 @@ func (e *Emitter) EmitTextDocumentTypeDefinition(outV, inV uint64) uint64 {
 	return id
 }
 
+func (e *Emitter) EmitTextDocumentImplementation(outV, inV uint64) uint64 {
+	id := e.nextID()
+	e.writer.Write(protocol.NewTextDocumentImplementation(id, outV, inV))
+	return id
+}
+
+func (e *Emitter) EmitImplementationResult() uint64 {
+	id := e.nextID()
+	e.writer.Write(protocol.NewImplementationResult(id))
+	return id
+}
+
 func (e *Emitter) EmitReferenceResult() uint64 {
 	id := e.nextID()
 	e.writer.Write(protocol.NewReferenceResult(id))

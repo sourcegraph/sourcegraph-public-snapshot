@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestStatusMessages(t *testing.T) {
@@ -26,7 +26,7 @@ func TestStatusMessages(t *testing.T) {
 		t.Skip()
 	}
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := NewStore(db, sql.TxOptions{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{
@@ -100,7 +100,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -117,7 +117,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -132,7 +132,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -156,7 +156,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -174,7 +174,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "1 repository could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},
@@ -192,7 +192,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "2 repositories could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},

@@ -1,11 +1,15 @@
 .container {
     display: flex;
     position: relative;
+}
 
-    &__tooltip {
-        position: absolute;
-        height: 100%;
-        width: 100%;
-        z-index: 999999;
-    }
+.disabled-tooltip {
+    cursor: not-allowed;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    z-index: 999999;
+}
+.disabled-btn {
+    opacity: 0.65;
 }

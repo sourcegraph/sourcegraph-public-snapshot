@@ -6,17 +6,19 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type HeartbeatOptions struct {
@@ -71,6 +73,10 @@ var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated
 // database. See Options for details on the required shape of the database tables (e.g. table column names/types).
 type Store interface {
 	basestore.ShareableStore
+
+	// With creates a new instance of Store using the underlying database
+	// handle of the other ShareableStore.
+	With(other basestore.ShareableStore) Store
 
 	// QueuedCount returns the number of queued records matching the given conditions.
 	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
@@ -146,9 +152,10 @@ func ExecutionLogEntries(raw []workerutil.ExecutionLogEntry) (entries []Executio
 
 type store struct {
 	*basestore.Store
-	options        Options
-	columnReplacer *strings.Replacer
-	operations     *operations
+	options                         Options
+	columnReplacer                  *strings.Replacer
+	modifiedColumnExpressionMatches [][]MatchingColumnExpressions
+	operations                      *operations
 }
 
 var _ Store = &store{}
@@ -226,6 +233,10 @@ type Options struct {
 	// cycle of the same input.
 	MaxNumResets int
 
+	// ResetFailureMessage overrides the default failure message written to job records that have been
+	// reset the maximum number of times.
+	ResetFailureMessage string
+
 	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
 	// Setting this value to zero will disable retries entirely.
 	//
@@ -286,11 +297,44 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
+	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions, alternateColumnNames)
+
+	for i, expression := range options.ColumnExpressions {
+		for _, match := range modifiedColumnExpressionMatches[i] {
+			if match.exact {
+				continue
+			}
+
+			log15.Error(``+
+				`dbworker store: column expression refers to a column modified by dequeue in a complex expression. `+
+				`The given expression will currently evaluate to the OLD value of the row, and the associated handler `+
+				`will not have a completely up-to-date record. Please refer to this column without a transform.`,
+				"index", i,
+				"expression", expression.Query(sqlf.PostgresBindVar),
+				"columnName", match.columnName,
+				"storeName", options.Name,
+			)
+		}
+	}
+
 	return &store{
-		Store:          basestore.NewWithHandle(handle),
-		options:        options,
-		columnReplacer: strings.NewReplacer(replacements...),
-		operations:     newOperations(options.Name, observationContext),
+		Store:                           basestore.NewWithHandle(handle),
+		options:                         options,
+		columnReplacer:                  strings.NewReplacer(replacements...),
+		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
+		operations:                      newOperations(options.Name, observationContext),
+	}
+}
+
+// With creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+func (s *store) With(other basestore.ShareableStore) Store {
+	return &store{
+		Store:                           s.Store.With(other),
+		options:                         s.options,
+		columnReplacer:                  s.columnReplacer,
+		modifiedColumnExpressionMatches: s.modifiedColumnExpressionMatches,
+		operations:                      s.operations,
 	}
 }
 
@@ -354,6 +398,17 @@ SELECT COUNT(*) FROM %s WHERE (
 ) %s
 `
 
+// columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.
+var columnsUpdatedByDequeue = []string{
+	"state",
+	"started_at",
+	"last_heartbeat_at",
+	"finished_at",
+	"failure_message",
+	"execution_logs",
+	"worker_hostname",
+}
+
 // Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 // is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
@@ -364,7 +419,7 @@ SELECT COUNT(*) FROM %s WHERE (
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
-	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
@@ -372,37 +427,41 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	}
 
 	now := s.now()
+	retryAfter := int(s.options.RetryAfter / time.Second)
 
-	// Select and "lock" candidate record
-	id, exists, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		selectCandidateQuery,
+	var (
+		processingExpr     = sqlf.Sprintf("%s", "processing")
+		nowTimestampExpr   = sqlf.Sprintf("%s::timestamp", now)
+		nullExpr           = sqlf.Sprintf("NULL")
+		workerHostnameExpr = sqlf.Sprintf("%s", workerHostname)
+	)
+
+	// NOTE: Changes to this mapping should be reflected in the package variable
+	// columnsUpdatedByDequeue, also defined in this file.
+	updatedColumns := map[string]*sqlf.Query{
+		s.columnReplacer.Replace("{state}"):             processingExpr,
+		s.columnReplacer.Replace("{started_at}"):        nowTimestampExpr,
+		s.columnReplacer.Replace("{last_heartbeat_at}"): nowTimestampExpr,
+		s.columnReplacer.Replace("{finished_at}"):       nullExpr,
+		s.columnReplacer.Replace("{failure_message}"):   nullExpr,
+		s.columnReplacer.Replace("{execution_logs}"):    nullExpr,
+		s.columnReplacer.Replace("{worker_hostname}"):   workerHostnameExpr,
+	}
+
+	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+		dequeueQuery,
 		quote(s.options.ViewName),
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
-		now,
-		now,
-		workerHostname,
-	)))
-	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
-		return nil, false, nil
-	}
-	traceLog(log.Int("id", id))
-
-	// Scan the actual record after updating its state
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
-		selectRecordQuery,
-		sqlf.Join(s.options.ColumnExpressions, ", "),
+		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
+		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
 		quote(s.options.ViewName),
-		id,
 	)))
 	if err != nil {
 		return nil, false, err
@@ -410,11 +469,12 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if !exists {
 		return nil, false, nil
 	}
+	trace.Log(log.Int("recordID", record.RecordID()))
 
 	return record, true, nil
 }
 
-const selectCandidateQuery = `
+const dequeueQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
 	SELECT {id} FROM %s
@@ -434,24 +494,57 @@ WITH candidate AS (
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
 	LIMIT 1
+),
+updated_record AS (
+	UPDATE
+		%s
+	SET
+		%s
+	WHERE
+		{id} IN (SELECT {id} FROM candidate)
 )
-UPDATE %s
-SET
-	{state} = 'processing',
-	{started_at} = %s,
-	{last_heartbeat_at} = %s,
-	{finished_at} = NULL,
-	{failure_message} = NULL,
-	{execution_logs} = NULL,
-	{worker_hostname} = %s
-WHERE {id} IN (SELECT {id} FROM candidate)
-RETURNING {id}
+SELECT
+	%s
+FROM
+	%s
+WHERE
+	{id} IN (SELECT {id} FROM candidate)
 `
 
-const selectRecordQuery = `
--- source: internal/workerutil/store.go:Dequeue
-SELECT %s FROM %s WHERE {id} = %s
-`
+// makeDequeueSelectExpressions constructs the ordered set of SQL expressions that are returned
+// from the dequeue query. This method returns a copy of the configured column expressions slice
+// where expressions referencing one of the column updated by dequeue are replaced by the updated
+// value.
+//
+// Note that this method only considers select expressions like `alias.ColumnName` and not something
+// more complex like `SomeFunction(alias.ColumnName) + 1`. We issue a warning on construction of a
+// new store configured in this way to indicate this (probably) unwanted behavior.
+func (s *store) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
+	copy(selectExpressions, s.options.ColumnExpressions)
+
+	for i := range selectExpressions {
+		for _, match := range s.modifiedColumnExpressionMatches[i] {
+			if match.exact {
+				selectExpressions[i] = updatedColumns[match.columnName]
+				break
+			}
+		}
+	}
+
+	return selectExpressions
+}
+
+// makeDequeueUpdateStatements constructs the set of SQL statements that update values of the target table
+// in the dequeue query.
+func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	updateStatements := make([]*sqlf.Query, 0, len(updatedColumns))
+	for columnName, updateValue := range updatedColumns {
+		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+"=%s", updateValue))
+	}
+
+	return updateStatements
+}
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
 	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
@@ -475,7 +568,35 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
-	return knownIDs, err
+	if err != nil {
+		return nil, err
+	}
+
+	if len(knownIDs) != len(ids) {
+	outer:
+		for _, recordID := range ids {
+			for _, test := range knownIDs {
+				if test == recordID {
+					continue outer
+				}
+			}
+
+			debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+			if debugErr != nil {
+				log15.Error("failed to fetch debug information for job",
+					"recordID", recordID,
+					"err", debugErr,
+				)
+			}
+			log15.Error("heartbeat lost a job",
+				"recordID", recordID,
+				"debug", debug,
+				"options.workerHostname", options.WorkerHostname,
+			)
+		}
+	}
+
+	return knownIDs, nil
 }
 
 const updateCandidateQuery = `
@@ -548,6 +669,19 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 		return entryID, err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", id,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", id,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
 		return entryID, ErrExecutionLogEntryNotUpdated
 	}
 	return entryID, nil
@@ -589,8 +723,23 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 		return err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", recordID,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", recordID,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
+
 		return ErrExecutionLogEntryNotUpdated
 	}
+
 	return nil
 }
 
@@ -655,7 +804,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
+SET {state} = CASE WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
@@ -694,26 +843,57 @@ WHERE %s
 RETURNING {id}
 `
 
+const defaultResetFailureMessage = "job processor died while handling this message too many times"
+
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
 // identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 // respectively.
 func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
-	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	resetLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledQuery)
-	if err != nil {
-		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
-	}
-	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	now := s.now()
+	scan := scanLastHeartbeatTimestampsFrom(now)
 
-	failedLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
+	resetLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.Log(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+
+	resetFailureMessage := s.options.ResetFailureMessage
+	if resetFailureMessage == "" {
+		resetFailureMessage = defaultResetFailureMessage
+	}
+
+	failedLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledMaxResetsQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+			resetFailureMessage,
+		),
+	))
+	if err != nil {
+		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
+	}
+	trace.Log(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }
@@ -738,22 +918,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
-}
-
-func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Duration, error) {
-	now := s.now()
-
-	return scanLastHeartbeatTimestampsFrom(now)(s.Query(
-		ctx,
-		s.formatQuery(
-			query,
-			quote(s.options.TableName),
-			now,
-			int(s.options.StalledMaxAge/time.Second),
-			s.options.MaxNumResets,
-			quote(s.options.TableName),
-		),
-	))
 }
 
 const resetStalledQuery = `
@@ -789,7 +953,7 @@ UPDATE %s
 SET
 	{state} = 'failed',
 	{finished_at} = clock_timestamp(),
-	{failure_message} = 'failed to process'
+	{failure_message} = %s
 WHERE {id} IN (SELECT {id} FROM stalled)
 RETURNING {id}, {last_heartbeat_at}
 `
@@ -800,6 +964,32 @@ func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {
 
 func (s *store) now() time.Time {
 	return s.options.clock.Now().UTC()
+}
+
+const fetchDebugInformationForJob = `
+-- source: internal/workerutil/store.go:UpdateExecutionLogEntry
+SELECT
+	row_to_json(%s)
+FROM
+	%s
+WHERE
+	{id} = %s
+`
+
+func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
+	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
+		fetchDebugInformationForJob,
+		quote(s.options.TableName),
+		quote(s.options.TableName),
+		recordID,
+	)))
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.Newf("fetching debug information for record %d didn't return rows")
+	}
+	return debug, nil
 }
 
 // quote wraps the given string in a *sqlf.Query so that it is not passed to the database
@@ -823,4 +1013,76 @@ func makeConditionSuffix(conditions []*sqlf.Query) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("AND %s", sqlf.Join(quotedConditions, " AND "))
+}
+
+type MatchingColumnExpressions struct {
+	columnName string
+	exact      bool
+}
+
+// matchModifiedColumnExpressions returns a slice of columns to which each of the
+// given column expressions refers. Column references that do not refere to a member
+// of the columnsUpdatedByDequeue slice are ignored. Each match indicates the column
+// name and whether or not the expression is an exact reference or a reference within
+// a more complex expression (arithmetic, function call argument, etc).
+//
+// The output slice has the same number of elements as the input column expressions
+// and the results are ordered in parallel with the given column expressions.
+func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query, alternateColumnNames map[string]string) [][]MatchingColumnExpressions {
+	matches := make([][]MatchingColumnExpressions, len(columnExpressions))
+	columnPrefixes := makeColumnPrefixes(viewName)
+
+	for i, columnExpression := range columnExpressions {
+		columnExpressionText := columnExpression.Query(sqlf.PostgresBindVar)
+
+		for _, columnName := range columnsUpdatedByDequeue {
+			match := false
+			exact := false
+
+			if name, ok := alternateColumnNames[columnName]; ok {
+				columnName = name
+			}
+
+			for _, columnPrefix := range columnPrefixes {
+				if regexp.MustCompile(fmt.Sprintf(`^%s%s$`, columnPrefix, columnName)).MatchString(columnExpressionText) {
+					match = true
+					exact = true
+					break
+				}
+
+				if !match && regexp.MustCompile(fmt.Sprintf(`\b%s%s\b`, columnPrefix, columnName)).MatchString(columnExpressionText) {
+					match = true
+				}
+			}
+
+			if match {
+				matches[i] = append(matches[i], MatchingColumnExpressions{columnName: columnName, exact: exact})
+				break
+			}
+		}
+	}
+
+	return matches
+}
+
+// makeColumnPrefixes returns the set of prefixes of a column to indicate that the column belongs to a
+// particular table or aliased table. The given name should be the table name  or the aliased table
+// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for a
+// bare column reference.
+func makeColumnPrefixes(name string) []string {
+	parts := strings.Split(name, " ")
+
+	switch len(parts) {
+	case 1:
+		// name = TableName
+		// prefixes = <empty> and `TableName.`
+		return []string{"", parts[0] + "."}
+	case 2:
+		// name = TableName alias
+		// prefixes = <empty>, `TableName.`, and `alias.`
+		return []string{"", parts[0] + ".", parts[1] + "."}
+
+	default:
+		return []string{""}
+	}
 }

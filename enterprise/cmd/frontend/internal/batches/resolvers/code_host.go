@@ -28,3 +28,7 @@ func (c *batchChangesCodeHostResolver) Credential() graphqlbackend.BatchChangesC
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }
+
+func (c *batchChangesCodeHostResolver) HasWebhooks() bool {
+	return c.codeHost.HasWebhooks
+}

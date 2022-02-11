@@ -83,6 +83,8 @@ Global credentials are usable by all users of the Sourcegraph instance who have 
 
 Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If no global service account token is set, we can currently fall back to the [token configured for the code host connection](#code-host-connection-tokens). However, this fallback will be deprecated in the future, so for this reason we highly recommend setting up a global service account.
 
+If [forks are enabled](../../admin/config/batch_changes.md#forks), then note that repositories will also be forked into the service account.
+
 ### Adding a token
 
 Adding a global service account token is done through the Batch Changes section of the site admin area:
@@ -120,10 +122,13 @@ Follow the steps to [create a personal access token](https://docs.github.com/en/
 - `read:org`
 - `user:email`
 - `read:discussion`
+- `workflow`
 
 This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
+
+> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 ### GitLab
 
@@ -137,13 +142,13 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gitlab-token.png" alt="The GitLab token creation page, with the api, read_repository, and write_repository scopes selected">
 
-### Bitbucket Server
+### Bitbucket Server / Bitbucket Data Center
 
 Follow the steps to [create a personal access token](https://confluence.atlassian.com/bitbucketserver0516/personal-access-tokens-966061199.html?utm_campaign=in-app-help&utm_medium=in-app-help&utm_source=stash#Personalaccesstokens-Generatingpersonalaccesstokens) on Bitbucket.
 
 Batch Changes requires the access token to have the `write` permission on both projects and repositories. This is done by selecting the **Write** level in the **Projects** dropdown, and letting it be inherited by repositories:
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server token creation page, with Write permissions selected on both the Project and Repository dropdowns">
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server / Bitbucket Data Center token creation page, with Write permissions selected on both the Project and Repository dropdowns">
 
 ### SSH access to code host
 

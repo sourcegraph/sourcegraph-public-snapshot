@@ -1,6 +1,10 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { CardText, CardTitle, CardBody, Card } from '@sourcegraph/wildcard'
+
+import styles from './SingleValueCard.module.scss'
 
 /**
  * A card that displays a large single value.
@@ -15,17 +19,19 @@ export const SingleValueCard: React.FunctionComponent<{
     valueTooltip?: string
     subText?: string
 }> = ({ title, value, subTitle, link, className, valueClassName, valueTooltip, subText }) => (
-    <div className={`card single-value-card ${className || ''}`}>
-        <div className="card-body text-center">
-            <h4 className="card-title mb-0">{title}</h4>
-            <small className="card-text">{subTitle || ''}</small>
-            <p
+    <Card className={classNames(styles.singleValueCard, className)}>
+        <CardBody className="text-center">
+            <CardTitle as="h4" className="mb-0">
+                {title}
+            </CardTitle>
+            <CardText as="small">{subTitle || ''}</CardText>
+            <CardText
                 data-tooltip={valueTooltip}
-                className={`card-text font-weight-bold text-nowrap single-value-card__value ${valueClassName || ''}`}
+                className={classNames(classNames('font-weight-bold text-nowrap', styles.value), valueClassName)}
             >
                 <LinkOrSpan to={link}>{value}</LinkOrSpan>
-            </p>
+            </CardText>
             {subText && <small>{subText}</small>}
-        </div>
-    </div>
+        </CardBody>
+    </Card>
 )

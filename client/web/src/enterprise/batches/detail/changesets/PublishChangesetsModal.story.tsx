@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 
@@ -17,7 +17,7 @@ const publishChangesets = () => {
 }
 
 add('Confirmation', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <PublishChangesetsModal
                 {...props}
@@ -28,5 +28,5 @@ add('Confirmation', () => (
                 publishChangesets={publishChangesets}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

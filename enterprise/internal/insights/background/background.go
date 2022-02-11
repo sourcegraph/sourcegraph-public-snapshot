@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -40,9 +42,11 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "search_queue_processor")
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
+
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
 
 	// Start background goroutines for all of our workers.
 	routines := []goroutine.BackgroundRoutine{
@@ -51,8 +55,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		// disabling the cleaner job while we debug mismatched results from historical insights
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
@@ -60,7 +64,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
@@ -69,7 +73,14 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, observationContext))
 	}
 
-	routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
+	// should not be published as an option externally, and will be deprecated as soon as possible.
+	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
+	if enableSync {
+		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	}
+	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
 
 	return routines
 }
@@ -83,29 +94,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
-	workerResets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_resets_total",
-		Help: "The number of times work took too long and was reset for retry later.",
-	})
-	observationContext.Registerer.MustRegister(workerResets)
-
-	workerResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_reset_failures_total",
-		Help: "The number of times work took too long so many times that retries will no longer happen.",
-	})
-	observationContext.Registerer.MustRegister(workerResetFailures)
-
-	workerErrors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_reset_errors_total",
-		Help: "The number of errors that occurred during a worker job.",
-	})
-	observationContext.Registerer.MustRegister(workerErrors)
-
-	workerMetrics := workerutil.NewMetrics(observationContext, "insights_"+workerName, nil)
-	resetterMetrics := dbworker.ResetterMetrics{
-		RecordResets:        workerResets,
-		RecordResetFailures: workerResetFailures,
-		Errors:              workerErrors,
-	}
-	return workerMetrics, resetterMetrics
+	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
+	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
+	return workerMetrics, *resetterMetrics
 }

@@ -757,14 +757,21 @@ declare module 'sourcegraph' {
         priority: number
 
         /**
-         * Display the results of the location provider (with the given ID) in this panel below the
-         * {@link PanelView#contents}.
+         * Display the results of the location provider (with the given ID) in
+         * this panel below the {@link PanelView#contents}. If
+         * maxLocationResults is set, then only maxLocationResults will be shown
+         * in the panel.
          *
          * Experimental. Subject to change or removal without notice.
          *
          * @internal
          */
-        component: { locationProvider: string } | null
+        component: { locationProvider: string; maxLocationResults?: number } | null
+
+        /**
+         * A selector that defines the documents this panel is applicable to.
+         */
+        selector: DocumentSelector | null
     }
 
     export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
@@ -787,24 +794,26 @@ declare module 'sourcegraph' {
         data: D[]
 
         /** The series (lines) of the chart. */
-        series: {
-            /** The key in each data object for the values this line should be calculated from. */
-            dataKey: keyof D
-
-            /** The name of the line shown in the legend and tooltip. */
-            name?: string
-
-            /**
-             * The link URLs for each data point.
-             * A link URL should take the user to more details about the specific data point.
-             */
-            linkURLs?: string[]
-
-            /** The CSS color of the line. */
-            stroke?: string
-        }[]
+        series: LineChartSeries<D>[]
 
         xAxis: ChartAxis<XK, D>
+    }
+
+    export interface LineChartSeries<D> {
+        /** The key in each data object for the values this line should be calculated from. */
+        dataKey: keyof D
+
+        /** The name of the line shown in the legend and tooltip. */
+        name?: string
+
+        /**
+         * The link URLs for each data point.
+         * A link URL should take the user to more details about the specific data point.
+         */
+        linkURLs?: Record<string | number, string> | string[]
+
+        /** The CSS color of the line. */
+        stroke?: string
     }
 
     export interface BarChartContent<D extends object, XK extends keyof D> {
@@ -1239,11 +1248,15 @@ declare module 'sourcegraph' {
          * When set, extensions use it to scope search queries, code intelligence actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
+         *
+         * @deprecated
          */
         export const versionContext: string | undefined
 
         /**
          * An event that is fired when a workspace's version context changes.
+         *
+         * @deprecated
          */
         export const versionContextChanges: Subscribable<string | undefined>
 

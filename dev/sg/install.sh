@@ -6,10 +6,11 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 # The BUILD_COMMIT is baked into the binary (see `go install` below) and
 # contains the latest commit in the `dev/sg` folder. If the directory is
 # "dirty", though, we mark the build as a dev build.
-if [[ $(git diff --stat .) != '' ]]; then
-  BUILD_COMMIT="dev"
+commit=$(git rev-list -1 HEAD .)
+if [[ -n $(git status --porcelain 2>/dev/null | tail -n1) ]]; then
+  BUILD_COMMIT="dev-$commit"
 else
-  BUILD_COMMIT=$(git rev-list -1 HEAD .)
+  BUILD_COMMIT="$commit"
 fi
 export BUILD_COMMIT
 
@@ -104,3 +105,5 @@ fi
 
 echo "                                                  "
 echo "                  Happy hacking!"
+echo
+echo "  Run 'sg version changelog' to see what has changed."

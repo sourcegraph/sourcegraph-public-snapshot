@@ -27,6 +27,7 @@ export interface Config {
         tags?: boolean
         changesets?: boolean
         trackingIssues?: boolean
+        slack?: boolean
         calendar?: boolean
     }
 }

@@ -13,8 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetLang_language(t *testing.T) {

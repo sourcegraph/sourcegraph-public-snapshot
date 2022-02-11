@@ -14,19 +14,20 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../backend/features'
-import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { fetchTreeEntries } from '../repo/backend'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
+import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
@@ -36,7 +37,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
+export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     location: H.Location
     activeNode: TreeNode
     activePath: string
@@ -188,10 +189,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         return (
             <>
                 {isErrorLike(treeOrError) ? (
-                    <ErrorAlert
+                    <TreeRowAlert
                         // needed because of dynamic styling
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
-                        className="tree__row tree__row-alert"
                         prefix="Error loading tree"
                         error={treeOrError}
                     />
@@ -201,13 +201,13 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                      * We should not be stealing focus here, we should let the user focus on the actual items listed.
                      * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
                      */
-                    <table className="tree-layer" tabIndex={0}>
+                    <TreeLayerTable tabIndex={0}>
                         <tbody>
                             <tr>
-                                <td className="tree__cell">
+                                <TreeLayerCell>
                                     {treeOrError === LOADING ? (
-                                        <div className="tree__row-loader">
-                                            <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                                        <div>
+                                            <LoadingSpinner className="tree-page__entries-loader" />
                                             Loading tree
                                         </div>
                                     ) : (
@@ -225,10 +225,10 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                             />
                                         )
                                     )}
-                                </td>
+                                </TreeLayerCell>
                             </tr>
                         </tbody>
-                    </table>
+                    </TreeLayerTable>
                 )}
             </>
         )

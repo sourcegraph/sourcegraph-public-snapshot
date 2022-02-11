@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
@@ -14,7 +15,7 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
             name="password"
             id="password"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             placeholder={props.placeholder || 'Password'}
             type="password"
             required={true}
@@ -30,7 +31,7 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
             name="email"
             id="email"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             type="email"
             placeholder={props.placeholder || 'Email'}
             spellCheck={false}
@@ -47,7 +48,7 @@ export const UsernameInput: React.FunctionComponent<InputProps> = props => {
             name="username"
             id="username"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             type="text"
             placeholder={props.placeholder || 'Username'}
             spellCheck={false}
@@ -74,4 +75,24 @@ export function getReturnTo(location: H.Location): string {
 
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
+}
+
+export function maybeAddPostSignUpRedirect(url?: string): string {
+    const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
+    const isDotCom = window.context?.sourcegraphDotComMode
+    const shouldAddRedirect = isDotCom && enablePostSignupFlow
+
+    if (url) {
+        if (shouldAddRedirect) {
+            // second param to protect against relative urls
+            const urlObject = new URL(url, window.location.href)
+
+            urlObject.searchParams.append('redirect', '/welcome')
+            return urlObject.toString()
+        }
+
+        return url
+    }
+
+    return shouldAddRedirect ? '/welcome' : ''
 }

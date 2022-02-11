@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // WaitForReposToBeCloned waits (up to two minutes) for all repositories
@@ -20,7 +20,7 @@ func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.Errorf("timed out in %s, still missing %v", timeout, missing)
+			return errors.Errorf("wait for repos to be cloned timed out in %s, still missing %v", timeout, missing)
 		default:
 		}
 
@@ -36,7 +36,7 @@ query Repositories {
 		var err error
 		missing, err = c.waitForReposByQuery(query, repos...)
 		if err != nil {
-			return errors.Wrap(err, "wait for repos")
+			return errors.Wrap(err, "wait for repos to be cloned")
 		}
 		if len(missing) == 0 {
 			break
@@ -47,11 +47,11 @@ query Repositories {
 	return nil
 }
 
-// WaitForReposToBeIndex waits (up to 30 seconds) for all repositories
+// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeIndex(repos ...string) error {
+func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 	timeout := 180 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -60,7 +60,7 @@ func (c *Client) WaitForReposToBeIndex(repos ...string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.Errorf("timed out in %s, still missing %v", timeout, missing)
+			return errors.Errorf("wait for repos to be indexed timed out in %s, still missing %v", timeout, missing)
 		default:
 		}
 
@@ -76,7 +76,7 @@ query Repositories {
 		var err error
 		missing, err = c.waitForReposByQuery(query, repos...)
 		if err != nil {
-			return errors.Wrap(err, "wait for repos")
+			return errors.Wrap(err, "wait for repos to be indexed")
 		}
 		if len(missing) == 0 {
 			break

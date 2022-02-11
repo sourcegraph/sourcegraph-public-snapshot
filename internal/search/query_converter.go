@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2/data"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -15,9 +17,9 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
-// unionRegexp separates values with a | operator to create a string
+// UnionRegExps separates values with a | operator to create a string
 // representing a union of regexp patterns.
-func unionRegexp(values []string) string {
+func UnionRegExps(values []string) string {
 	if len(values) == 0 {
 		// As a regular expression, "()" and "" are equivalent so this
 		// condition wouldn't ordinarily be needed to distinguish these
@@ -34,9 +36,23 @@ func unionRegexp(values []string) string {
 	return "(" + strings.Join(values, ")|(") + ")"
 }
 
-// langToFileRegexp converts a lang: parameter to its corresponding file
+// filenamesFromLanguage is a map of language name to full filenames
+// that are associated with it. This is different from extensions, because
+// some languages (like Dockerfile) do not conventionally have an associated
+// extension.
+var filenamesFromLanguage = func() map[string][]string {
+	res := make(map[string][]string, len(data.LanguagesByFilename))
+	for filename, languages := range data.LanguagesByFilename {
+		for _, language := range languages {
+			res[language] = append(res[language], filename)
+		}
+	}
+	return res
+}()
+
+// LangToFileRegexp converts a lang: parameter to its corresponding file
 // patterns for file filters. The lang value must be valid, cf. validate.go
-func langToFileRegexp(lang string) string {
+func LangToFileRegexp(lang string) string {
 	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
 	extensions := enry.GetLanguageExtensions(lang)
 	patterns := make([]string, len(extensions))
@@ -44,7 +60,10 @@ func langToFileRegexp(lang string) string {
 		// Add `\.ext$` pattern to match files with the given extension.
 		patterns[i] = regexp.QuoteMeta(e) + "$"
 	}
-	return unionRegexp(patterns)
+	for _, filename := range filenamesFromLanguage[lang] {
+		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
+	}
+	return UnionRegExps(patterns)
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -102,8 +121,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := IncludeExcludeValues(q, query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, langToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, langToFileRegexp)...)
+	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
@@ -145,7 +164,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               unionRegexp(filesExclude),
+		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		Languages:                    langInclude,
@@ -210,39 +229,46 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
-	var and []zoekt.Q
-
+func toZoektPattern(pattern string, isRegexp, isCaseSensitive, isNegated, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
 	var q zoekt.Q
 	var err error
-	if p.IsRegExp {
-		fileNameOnly := p.PatternMatchesPath && !p.PatternMatchesContent
-		contentOnly := !p.PatternMatchesPath && p.PatternMatchesContent
-		q, err = parseRe(p.Pattern, fileNameOnly, contentOnly, p.IsCaseSensitive)
+	if isRegexp {
+		fileNameOnly := patternMatchesPath && !patternMatchesContent
+		contentOnly := !patternMatchesPath && patternMatchesContent
+		q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		q = &zoekt.Substring{
-			Pattern:       p.Pattern,
-			CaseSensitive: p.IsCaseSensitive,
+			Pattern:       pattern,
+			CaseSensitive: isCaseSensitive,
 
 			FileName: true,
 			Content:  true,
 		}
 	}
 
-	if p.IsNegated {
+	if isNegated {
 		q = &zoekt.Not{Child: q}
 	}
+	return q, nil
+}
 
-	if forSymbols {
+func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+	q, err := toZoektPattern(p.Pattern, p.IsRegExp, p.IsCaseSensitive, p.IsNegated, p.PatternMatchesContent, p.PatternMatchesPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,
 		}
 	}
 
+	var and []zoekt.Q
 	and = append(and, q)
 
 	// zoekt also uses regular expressions for file paths
@@ -282,6 +308,23 @@ func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
 			return nil, err
 		}
 		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
+	}
+
+	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
+	// more precise language metadata based on file contents analyzed by go-enry, so it's
+	// useful to pass lang: queries down.
+	//
+	// Currently, negated lang queries create filename-based ExcludePatterns that cannot be
+	// corrected by the more precise language metadata. If this is a problem, indexed search
+	// queries should have a special query converter that produces *only* Language predicates
+	// instead of filepatterns.
+	if len(p.Languages) > 0 && feat.ContentBasedLangFilters {
+		or := &zoekt.Or{}
+		for _, lang := range p.Languages {
+			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
+			or.Children = append(or.Children, &zoekt.Language{Language: lang})
+		}
+		and = append(and, or)
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil

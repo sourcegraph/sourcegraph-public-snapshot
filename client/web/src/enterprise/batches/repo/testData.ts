@@ -16,6 +16,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     body: 'body',
     checkState: ChangesetCheckState.PASSED,
     diffStat: {
+        __typename: 'DiffStat',
         added: 10,
         changed: 9,
         deleted: 1,
@@ -24,7 +25,10 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     externalURL: {
         url: 'http://test.test/123',
     },
-    labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+    forkNamespace: null,
+    labels: [
+        { __typename: 'ChangesetLabel', color: '93ba13', description: 'Very awesome description', text: 'Some label' },
+    ],
     repository: {
         id: 'repoid',
         name: 'github.com/sourcegraph/awesome',
@@ -44,8 +48,10 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
         type: ChangesetSpecType.BRANCH,
         description: {
             __typename: 'GitBranchChangesetDescription',
+            baseRef: 'my-branch',
             headRef: 'my-branch',
         },
+        forkTarget: null,
     },
 }
 
@@ -54,12 +60,14 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     body: 'body',
     checkState: null,
     diffStat: {
+        __typename: 'DiffStat',
         added: 10,
         changed: 9,
         deleted: 1,
     },
     externalID: null,
     externalURL: null,
+    forkNamespace: null,
     labels: [],
     repository: {
         id: 'repoid',
@@ -80,8 +88,10 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
         type: ChangesetSpecType.BRANCH,
         description: {
             __typename: 'GitBranchChangesetDescription',
+            baseRef: 'my-branch',
             headRef: 'my-branch',
         },
+        forkTarget: null,
     },
 }
 

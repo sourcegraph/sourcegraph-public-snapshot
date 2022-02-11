@@ -31,7 +31,7 @@ func (s *highlightedStringResolver) Highlights() []highlightedRangeResolver {
 
 type HighlightArgs struct {
 	DisableTimeout     bool
-	IsLightTheme       bool
+	IsLightTheme       *bool
 	HighlightLongLines bool
 }
 
@@ -56,7 +56,6 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
-		IsLightTheme:       args.IsLightTheme,
 		HighlightLongLines: args.HighlightLongLines,
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,

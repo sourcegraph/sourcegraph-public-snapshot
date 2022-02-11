@@ -1,5 +1,7 @@
 package query
 
+import "github.com/sourcegraph/sourcegraph/lib/errors"
+
 /*
 Query processing involves multiple steps to produce a query to evaluate.
 
@@ -9,10 +11,10 @@ processing logic driven by external options.
 */
 
 // A step performs a transformation on nodes, which may fail.
-type step func(nodes []Node) ([]Node, error)
+type step func([]Node) ([]Node, error)
 
 // A pass is a step that never fails.
-type pass func(nodes []Node) []Node
+type pass func([]Node) []Node
 
 // sequence sequences zero or more steps to create a single step.
 func sequence(steps ...step) step {
@@ -38,6 +40,10 @@ func succeeds(passes ...pass) step {
 	}
 }
 
+func identity(nodes []Node) ([]Node, error) {
+	return nodes, nil
+}
+
 // With returns step if enabled is true. Use it to compose a pipeline that
 // conditionally run steps.
 func With(enabled bool, step step) step {
@@ -45,6 +51,41 @@ func With(enabled bool, step step) step {
 		return identity
 	}
 	return step
+}
+
+// SubstituteSearchContexts substitutes terms of the form `context:contextValue`
+// for entire queries, like (repo:foo or repo:bar or repo:baz). It relies on a
+// lookup function, which should return the query string for some
+// `contextValue`.
+func SubstituteSearchContexts(lookupQueryString func(contextValue string) (string, error)) step {
+	return func(nodes []Node) ([]Node, error) {
+		errs := new(errors.MultiError)
+		substitutedContext := MapField(nodes, FieldContext, func(value string, negated bool, ann Annotation) Node {
+			queryString, err := lookupQueryString(value)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				return nil
+			}
+
+			if queryString == "" {
+				return Parameter{
+					Value:      value,
+					Field:      FieldContext,
+					Negated:    negated,
+					Annotation: ann,
+				}
+			}
+
+			query, err := ParseRegexp(queryString)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				return nil
+			}
+			return Operator{Kind: And, Operands: query}
+		})
+
+		return substitutedContext, errs.ErrorOrNil()
+	}
 }
 
 // For runs processing steps for a given search type. This includes

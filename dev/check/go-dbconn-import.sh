@@ -15,10 +15,13 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/worker
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
+  github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
+  # Doesn't connect but uses db internals for use with sqlite
+  github.com/sourcegraph/sourcegraph/cmd/symbols
 )
 
 # Create regex ^(a|b|c)
@@ -32,7 +35,7 @@ if go list ./cmd/... ./enterprise/cmd/... |
   grep -Ev "$allowed" |
   xargs go list -f "$template" |
   grep "github.com/sourcegraph/sourcegraph/internal/database/dbconn"; then
-  echo "Error: the above service(s) are not allowed to import pkg/database/dbconn"
+  echo "Error: the above service(s) are not allowed to import internal/database/dbconn"
   echo "^^^ +++"
   exit 1
 fi

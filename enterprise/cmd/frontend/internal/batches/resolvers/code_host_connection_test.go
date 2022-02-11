@@ -27,7 +27,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -36,14 +36,13 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
-	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	ghRepo := ghRepos[0]
+	ghRepo, _ := ct.CreateTestRepo(t, ctx, db)
 	glRepos, _ := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	glRepo := glRepos[0]
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

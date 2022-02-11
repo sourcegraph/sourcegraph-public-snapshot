@@ -5,25 +5,27 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	srr, err := srs.getResults(ctx)
+	matches, err := srs.getResults(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.Matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -35,24 +37,25 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	return wrapped, nil
 }
 
-func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
 	srs.once.Do(func() {
-		args, err := srs.sr.toTextParameters(srs.sr.Query)
+		job, err := srs.sr.toSearchJob(srs.sr.Query)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, args)
+		agg := streaming.NewAggregatingStream()
+		_, err = job.Run(ctx, srs.sr.db, agg)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		srs.srs = srs.sr.resultsToResolver(results)
+		srs.results = agg.Results
 	})
-	return srs.srs, srs.srsErr
+	return srs.results, srs.err
 }
 
-func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([]inventory.Lang, error) {
+func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
 		repo     api.RepoID
@@ -66,7 +69,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	}
 
 	var (
-		repos    = map[api.RepoID]types.RepoName{}
+		repos    = map[api.RepoID]types.MinimalRepo{}
 		filesMap = map[repoCommit]*fileStatsWork{}
 
 		run = parallel.NewRun(16)
@@ -76,7 +79,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	)
 
 	// Track the mapping of repo ID -> repo object as we iterate.
-	sawRepo := func(repo types.RepoName) {
+	sawRepo := func(repo types.MinimalRepo) {
 		if _, ok := repos[repo.ID]; !ok {
 			repos[repo.ID] = repo
 		}
@@ -121,17 +124,12 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				refName, err := getDefaultBranchForRepo(ctx, repoName.Name)
+				_, oid, err := git.GetDefaultBranch(ctx, repoName.Name)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				oid, _, err := git.GetObject(ctx, repoName.Name, refName)
-				if err != nil {
-					run.Error(err)
-					return
-				}
-				inv, err := backend.Repos.GetInventory(ctx, repoName.ToRepo(), api.CommitID(oid.String()), true)
+				inv, err := backend.NewRepos(db.Repos()).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

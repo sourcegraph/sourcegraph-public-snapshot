@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/grafana-tools/sdk"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
 // Container describes a Docker container to be observed.
@@ -25,11 +27,15 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
-	// List of Annotations to apply to the dashboard.
-	Annotations []sdk.Annotation
+	// Variables define the variables that can be to applied to the dashboard for this
+	// container, such as instances or shards.
+	Variables []ContainerVariable
 
-	// List of Template Variables to apply to the dashboard
-	Templates []sdk.TemplateVar
+	// RawVariables is an alternative to Variables that exposes the underlying Grafana API
+	// to define variables that can be applied to the dashboard for this container.
+	//
+	// It is recommended to use or expand the standardized Variables field instead.
+	RawVariables []sdk.TemplateVar
 
 	// Groups of observable information about the container.
 	Groups []Group
@@ -52,6 +58,11 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+	for i, v := range c.Variables {
+		if err := v.validate(); err != nil {
+			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+		}
+	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
 			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
@@ -73,24 +84,17 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = c.Templates
-	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
-		Label:      "Filter alert level",
-		Name:       "alert_level",
-		AllValue:   ".*",
-		Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
-		IncludeAll: true,
-		Options: []sdk.Option{
-			{Text: "all", Value: "$__all", Selected: true},
-			{Text: "critical", Value: "critical"},
-			{Text: "warning", Value: "warning"},
-		},
-		Query: "critical,warning",
-		Type:  "custom",
-	},
-	)
-	board.Annotations.List = c.Annotations
-	board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
+	alertLevelVariable := ContainerVariable{
+		Label:   "Alert level",
+		Name:    "alert_level",
+		Options: []string{"critical", "warning"},
+	}
+	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
+	for _, variable := range c.Variables {
+		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
+	}
+	board.Templating.List = append(board.Templating.List, c.RawVariables...)
+	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
 		// Show alerts matching the selected alert_level (see template variable above)
@@ -101,8 +105,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 		IconColor:   "rgba(255, 96, 96, 1)",
 		Enable:      false, // disable by default for now
 		Type:        "tags",
-	},
-	)
+	}}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -129,47 +132,21 @@ func (c *Container) renderDashboard() *sdk.Board {
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
 	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
 
-	alertsDefined := sdk.NewTable("Alerts defined")
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
-	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
-		{
-			Pattern: "Time",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "level",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "_01_level",
-			Alias:   StringPtr("level"),
-		},
-		{
-			Pattern:     "Value",
-			Alias:       StringPtr("firing?"),
-			ColorMode:   StringPtr("row"),
-			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
-			Thresholds:  &[]string{"0.99999", "1"},
-			Type:        "string",
-			MappingType: 1,
-			ValueMaps: []sdk.ValueMap{
-				{TextType: "false", Value: "0"},
-				{TextType: "true", Value: "1"},
-			},
-		},
-	}
-	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+	alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+		Expr: fmt.Sprintf(`label_replace(
+			sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
+			"description", "$1", "description", ".*: (.*)"
+		)`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
+	setPanelSize(alertsDefined, 9, 5)
+	setPanelPos(alertsDefined, 0, 3)
 	board.Panels = append(board.Panels, alertsDefined)
 
 	alertsFiring := sdk.NewGraph("Alerts firing")
@@ -191,7 +168,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			LogBase:  1,
 			Max:      sdk.NewFloatString(1),
 			Min:      sdk.NewFloatString(0),
-			Show:     true,
+			Show:     false,
 		},
 		{
 			Format:  "short",
@@ -200,9 +177,14 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
+	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+		Title: "Graph panel",
+		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+	}}
 	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
@@ -356,6 +338,100 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	}, nil
 }
 
+// ContainerVariable describes a template variable that can be applied container dashboard
+// for filtering purposes.
+type ContainerVariable struct {
+	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
+	// to replace "$alert_level" in queries
+	Name string
+	// Label is a human-readable name for the variable, e.g. "Alert level"
+	Label string
+
+	// OptionsQuery is the query to generate the possible values for this variable. Cannot
+	// be used in conjunction with Options
+	OptionsQuery string
+	// Options are the pre-defined possible values for this variable. Cannot be used in
+	// conjunction with Query
+	Options []string
+
+	// WildcardAllValue indicates to Grafana that is should NOT use Query or Options to
+	// generate a concatonated 'All' value for the variable, and use a '.*' wildcard
+	// instead. Setting this to true primarily useful if you use Query and expect it to be
+	// a large enough result set to cause issues when viewing the dashboard.
+	//
+	// We allow Grafana to generate a value by default because simply using '.*' wildcard
+	// can pull in unintended metrics if adequate filtering is not performed on the query,
+	// for example if multiple services export the same metric. If set to true, make sure
+	// the queries that use this variable perform adequate filtering to avoid pulling in
+	// unintended metrics.
+	WildcardAllValue bool
+
+	// Multi indicates whether or not to allow multi-selection for this variable filter
+	Multi bool
+}
+
+func (c *ContainerVariable) validate() error {
+	if c.Name == "" {
+		return errors.New("ContainerVariable.Name is required")
+	}
+	if c.Label == "" {
+		return errors.New("ContainerVariable.Label is required")
+	}
+	if c.OptionsQuery == "" && len(c.Options) == 0 {
+		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
+	}
+	return nil
+}
+
+// toGrafanaTemplateVar generates the Grafana template variable configuration for this
+// container variable.
+func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
+	variable := sdk.TemplateVar{
+		Name:  c.Name,
+		Label: c.Label,
+		Multi: c.Multi,
+
+		Datasource: StringPtr("Prometheus"),
+		IncludeAll: true,
+
+		// Apply the AllValue to a template variable by default
+		Current: sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+	}
+
+	if c.WildcardAllValue {
+		variable.AllValue = ".*"
+	} else {
+		// Rely on Grafana to create a union of only the values
+		// generated by the specified query.
+		//
+		// See https://grafana.com/docs/grafana/latest/variables/formatting-multi-value-variables/#multi-value-variables-with-a-prometheus-or-influxdb-data-source
+		// for more information.
+		variable.AllValue = ""
+	}
+
+	switch {
+	case c.OptionsQuery != "":
+		variable.Type = "query"
+		variable.Query = c.OptionsQuery
+		variable.Refresh = sdk.BoolInt{
+			Flag:  true,
+			Value: Int64Ptr(2), // Refresh on time range change
+		}
+		variable.Sort = 3
+
+	case len(c.Options) > 0:
+		variable.Type = "custom"
+		variable.Query = strings.Join(c.Options, ",")
+		// Add the AllValue as a default
+		variable.Options = []sdk.Option{{Text: "all", Value: "$__all", Selected: true}}
+		for _, option := range c.Options {
+			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option})
+		}
+	}
+
+	return variable
+}
+
 // Group describes a group of observable information about a container.
 //
 // These correspond to collapsible sections in a Grafana dashboard.
@@ -406,35 +482,51 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
+// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 type ObservableOwner string
 
 const (
 	ObservableOwnerSearch          ObservableOwner = "search"
+	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerDistribution    ObservableOwner = "distribution"
 	ObservableOwnerSecurity        ObservableOwner = "security"
 	ObservableOwnerWeb             ObservableOwner = "web"
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
 	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
+	ObservableOwnerDevOps          ObservableOwner = "devops"
+	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
 func (o ObservableOwner) toMarkdown() string {
-	var teamName string
+	var slug string
+
+	team := upperFirst(string(o))
+
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
-	// see https://about.sourcegraph.com/company/team/org_chart#engineering
+	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 	switch o {
 	case ObservableOwnerCodeIntel:
-		teamName = "code-intelligence"
+		slug = "code-intelligence"
+	case ObservableOwnerCodeInsights:
+		slug = "developer-insights/code-insights"
+	case ObservableOwnerDevOps:
+		slug = "cloud/devops"
+	case ObservableOwnerSearchCore:
+		slug = "search/core"
+	case ObservableOwnerCloudSaaS:
+		slug = "cloud/saas"
+		team = "Cloud Software-as-a-Service"
 	default:
-		teamName = string(o)
+		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	slug := strings.ReplaceAll(teamName, " ", "-")
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), slug)
+	return fmt.Sprintf(
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
+		team, slug,
+	)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
@@ -564,8 +656,8 @@ func (o Observable) validate() error {
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
-	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return errors.Errorf("Description must be lowercase; found \"%s\"", o.Description)
+	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
+		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
@@ -574,7 +666,7 @@ func (o Observable) validate() error {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 
-	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
+	allAlertsEmpty := o.alertsCount() == 0
 	if allAlertsEmpty || o.NoAlert {
 		// Ensure lack of alerts is intentional
 		if allAlertsEmpty && !o.NoAlert {
@@ -617,6 +709,16 @@ func (o Observable) validate() error {
 	}
 
 	return nil
+}
+
+func (o Observable) alertsCount() (count int) {
+	if !o.Warning.isEmpty() {
+		count++
+	}
+	if !o.Critical.isEmpty() {
+		count++
+	}
+	return
 }
 
 // Alert provides a builder for defining alerting on an Observable.

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SignOutURL struct {
@@ -32,14 +31,14 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	ssoSignOutHandler = f
 }
 
-func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 
 		// Invalidate all user sessions first
 		// This way, any other signout failures should not leave a valid session
 		var err error
-		if err = session.InvalidateSessionCurrentUser(w, r); err != nil {
+		if err = session.InvalidateSessionCurrentUser(w, r, db); err != nil {
 			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
 			log15.Error("serveSignOutHandler", "err", err)
 		}
@@ -62,7 +61,7 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 }
 
 // logSignOutEvent records an event into the security event log.
-func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventName, err error) {
+func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 

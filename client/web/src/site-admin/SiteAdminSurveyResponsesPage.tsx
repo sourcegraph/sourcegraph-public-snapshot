@@ -1,10 +1,10 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import React, { useCallback, useEffect } from 'react'
+import classNames from 'classnames'
+import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Badge, Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -23,6 +23,7 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
+import styles from './SiteAdminSurveyResponsesPage.module.scss'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 interface SurveyResponseNodeProps {
@@ -34,17 +35,14 @@ interface SurveyResponseNodeProps {
 
 interface SurveyResponseNodeState {}
 
-function scoreToClassSuffix(score: number): string {
+function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
 const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
-    <div
-        className={`ml-4 badge badge-pill badge-${scoreToClassSuffix(props.score)}`}
-        data-tooltip={`${props.score} out of 10`}
-    >
+    <Badge className="ml-4" pill={true} variant={scoreToClassSuffix(props.score)} tooltip={`${props.score} out of 10`}>
         Score: {props.score}
-    </div>
+    </Badge>
 )
 
 class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {
@@ -150,9 +148,9 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
+                            <Button onClick={this.showMoreClicked} variant="secondary" size="sm">
                                 {this.state.displayAll ? 'Hide' : 'See all'}
-                            </button>
+                            </Button>
                         )}
                     </td>
                 </tr>
@@ -161,7 +159,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                         <td colSpan={4}>
                             {responses.map((response, index) => (
                                 <dl key={index}>
-                                    <div className="pl-3 border-left site-admin-survey-responses-connection__wide-border">
+                                    <div className={classNames('pl-3 border-left', styles.wideBorder)}>
                                         <Timestamp date={response.createdAt} />
                                         <ScoreBadge score={response.score} />
                                         <br />
@@ -228,17 +226,17 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
                 : 'text-info'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
-            <div className="msite-admin-survey-responses-summary mb-2">
+            <div className="mb-2">
                 <h3>Summary</h3>
-                <div className="site-admin-survey-responses-summary__container">
+                <div className={styles.container}>
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={this.state.summary.last30DaysCount}
                         title="Number of submissions"
                         subTitle="Last 30 days"
                     />
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={anyResults ? roundAvg : '-'}
                         title="Average score"
                         subTitle="Last 30 days"
@@ -246,7 +244,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
                         valueClassName={anyResults ? `text-${scoreToClassSuffix(roundAvg)}` : ''}
                     />
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={anyResults ? npsText : '-'}
                         title="Net promoter score"
                         subTitle="Last 30 days"
@@ -270,9 +268,7 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  */
 
 export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
@@ -292,10 +288,10 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
 
             <h3>Responses</h3>
 
-            <Tabs defaultIndex={tabIndex} onChange={handleTabsChange}>
-                <TabList className="d-flex justify-content-around">
-                    <Tab className="flex-1">Chronological feed</Tab>
-                    <Tab className="flex-1">Sort by user</Tab>
+            <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                <TabList>
+                    <Tab>Chronological feed</Tab>
+                    <Tab>Sort by user</Tab>
                 </TabList>
                 <TabPanels>
                     <TabPanel>

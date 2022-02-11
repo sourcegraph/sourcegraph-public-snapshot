@@ -7,17 +7,17 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,17 +46,17 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) Validate() []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
 
-func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string) (*authz.ExternalUserPermissions, error) {
+func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	panic("should never be called")
 }
 
@@ -470,7 +470,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
 			context.Background(),
-			&test.cfg,
+			staticConfig(test.cfg.SiteConfiguration),
 			&store,
 		)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
@@ -483,6 +483,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
 		}
 	}
+}
+
+type staticConfig schema.SiteConfiguration
+
+func (s staticConfig) SiteConfig() schema.SiteConfiguration {
+	return schema.SiteConfiguration(s)
 }
 
 func mustURLParse(t *testing.T, u string) *url.URL {

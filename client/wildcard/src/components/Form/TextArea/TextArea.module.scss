@@ -1,3 +1,13 @@
+.label {
+    text-align: left;
+    display: block;
+    margin-bottom: 0;
+}
+
 .textarea {
     margin: 0;
+}
+
+.resize-none {
+    resize: none;
 }

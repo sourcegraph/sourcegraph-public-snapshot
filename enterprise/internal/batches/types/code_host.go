@@ -7,6 +7,7 @@ type CodeHost struct {
 	ExternalServiceType string
 	ExternalServiceID   string
 	RequiresSSH         bool
+	HasWebhooks         bool
 }
 
 // IsSupported returns true, when this code host is supported by

@@ -3,9 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Node must be implemented by any resolver that implements the Node interface in
@@ -67,6 +69,16 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
 	n, ok := r.Node.(MonitorActionEventResolver)
 	return n, ok
@@ -77,36 +89,14 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
-	if n, ok := r.Node.(BatchChangeResolver); ok {
-		return n, n.ActAsCampaign()
-	}
-	return nil, false
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
-	if n, ok := r.Node.(BatchSpecResolver); ok {
-		return n, n.ActAsCampaignSpec()
-	}
-	return nil, false
-}
-
 func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
-	if n, ok := r.Node.(BatchChangeResolver); ok {
-		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-		return n, !n.ActAsCampaign()
-	}
-	return nil, false
+	n, ok := r.Node.(BatchChangeResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
-	if n, ok := r.Node.(BatchSpecResolver); ok {
-		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-		return n, !n.ActAsCampaignSpec()
-	}
-	return nil, false
+	n, ok := r.Node.(BatchSpecResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
@@ -144,12 +134,6 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 		return nil, ok
 	}
 	return n.ToVisibleChangesetSpec()
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
-	n, ok := r.Node.(CampaignsCredentialResolver)
-	return n, ok
 }
 
 func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {
@@ -219,8 +203,13 @@ func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToSearchContext() (*searchContextResolver, bool) {
-	n, ok := r.Node.(*searchContextResolver)
+func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
+	n, ok := r.Node.(SearchContextResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
+	n, ok := r.Node.(NotebookResolver)
 	return n, ok
 }
 
@@ -254,7 +243,27 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecExecution() (BatchSpecExecutionResolver, bool) {
-	n, ok := r.Node.(BatchSpecExecutionResolver)
+func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
+	n, ok := r.Node.(InsightsDashboardResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
+	n, ok := r.Node.(InsightViewResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
+	n, ok := r.Node.(*webhookLogResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
+	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }

@@ -22,7 +22,7 @@ coverage:
         informational: true
         paths:
           - client/web/src/insights
-          - client/web/src/views/ChartViewContent
+          - client/web/src/views
       search:
         informational: true
         paths:

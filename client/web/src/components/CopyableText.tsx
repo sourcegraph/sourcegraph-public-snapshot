@@ -1,6 +1,11 @@
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
+
+import { Button } from '@sourcegraph/wildcard'
+
+import styles from './CopyableText.module.scss'
 
 interface Props {
     /** The text to present and to copy. */
@@ -9,11 +14,17 @@ interface Props {
     /** An optional class name. */
     className?: string
 
+    /** Whether or not the input should take up all horizontal space (flex:1) */
+    flex?: boolean
+
     /** The size of the input element. */
     size?: number
 
     /** Whether or not the text to be copied is a password. */
     password?: boolean
+
+    /** Callback for when the content is copied  */
+    onCopy?: () => void
 }
 
 interface State {
@@ -31,25 +42,20 @@ export class CopyableText extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={`copyable-text form-inline ${this.props.className || ''}`}>
-                <div className="input-group">
+            <div className={classNames('form-inline', this.props.className)}>
+                <div className={classNames('input-group', this.props.flex && 'flex-1')}>
                     <input
                         type={this.props.password ? 'password' : 'text'}
-                        className="copyable-text__input form-control"
+                        className={classNames('form-control', styles.input)}
                         value={this.props.text}
                         size={this.props.size}
                         readOnly={true}
                         onClick={this.onClickInput}
                     />
                     <div className="input-group-append">
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={this.onClickButton}
-                            disabled={this.state.copied}
-                        >
+                        <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
                             <ContentCopyIcon className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -69,5 +75,9 @@ export class CopyableText extends React.PureComponent<Props, State> {
         this.setState({ copied: true })
 
         setTimeout(() => this.setState({ copied: false }), 1000)
+
+        if (typeof this.props.onCopy === 'function') {
+            this.props.onCopy()
+        }
     }
 }

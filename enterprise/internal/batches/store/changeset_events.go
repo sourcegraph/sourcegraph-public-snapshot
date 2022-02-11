@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
@@ -32,7 +34,7 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 	q := getChangesetEventQuery(&opts)
 
 	var c btypes.ChangesetEvent
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangesetEvent(&c, sc)
 	})
 	if err != nil {
@@ -99,7 +101,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 	q := listChangesetEventsQuery(&opts)
 
 	cs = make([]*btypes.ChangesetEvent, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var c btypes.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
 			return err
@@ -137,22 +139,12 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	}
 
 	if len(opts.ChangesetIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
-		for _, id := range opts.ChangesetIDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
 		preds = append(preds,
-			sqlf.Sprintf("changeset_id IN (%s)", sqlf.Join(ids, ",")))
+			sqlf.Sprintf("changeset_id = ANY (%s)", pq.Array(opts.ChangesetIDs)))
 	}
 
 	if len(opts.Kinds) > 0 {
-		kinds := make([]*sqlf.Query, 0, len(opts.Kinds))
-		for _, kind := range opts.Kinds {
-			kinds = append(kinds, sqlf.Sprintf("%s", kind))
-		}
-		preds = append(preds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
+		preds = append(preds, sqlf.Sprintf("kind = ANY (%s)", pq.Array(opts.Kinds)))
 	}
 
 	return sqlf.Sprintf(
@@ -210,7 +202,7 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.Changes
 	}
 
 	i := -1
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		i++
 		return scanChangesetEvent(cs[i], sc)
 	})
@@ -332,7 +324,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*btypes.ChangesetEvent) (*sql
 	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
-func scanChangesetEvent(e *btypes.ChangesetEvent, s scanner) error {
+func scanChangesetEvent(e *btypes.ChangesetEvent, s dbutil.Scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(

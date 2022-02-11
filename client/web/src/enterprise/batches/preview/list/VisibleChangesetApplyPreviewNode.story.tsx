@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetSpecOperation,
     ChangesetState,
@@ -12,7 +13,6 @@ import {
     Scalars,
     VisibleChangesetApplyPreviewFields,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
@@ -55,6 +55,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
                 },
             ],
             diffStat: {
+                __typename: 'DiffStat',
                 added: 10,
                 changed: 8,
                 deleted: 2,
@@ -62,6 +63,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
             title: 'Add prettier to repository',
             published,
         },
+        forkTarget: null,
         ...overrides,
     }
 }
@@ -92,6 +94,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
                     externalID: '123',
                 },
+                forkTarget: null,
             },
         },
     },
@@ -648,6 +651,56 @@ export const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
+    'Forked repo': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec(12, publicationStateSet ? true : null, {
+                forkTarget: { pushUser: true, namespace: null },
+                description: {
+                    __typename: 'GitBranchChangesetDescription',
+                    baseRepository: testRepo,
+                    baseRef: 'master',
+                    headRef: 'cool-branch',
+                    body: 'Body text',
+                    commits: [
+                        {
+                            subject: 'This is the first line of the commit message',
+                            body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'john',
+                                email: 'john@test.not',
+                                user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                            },
+                        },
+                    ],
+                    diffStat: {
+                        __typename: 'DiffStat',
+                        added: 10,
+                        changed: 8,
+                        deleted: 2,
+                    },
+                    title: 'Add prettier to forked repository',
+                    published: publicationStateSet,
+                },
+            }),
+        },
+    },
 })
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
@@ -656,7 +709,7 @@ const stories = visibleChangesetApplyPreviewNodeStories(true)
 
 for (const storyName of Object.keys(stories)) {
     add(storyName, () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <VisibleChangesetApplyPreviewNode
                     {...props}
@@ -670,6 +723,6 @@ for (const storyName of Object.keys(stories)) {
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ))
 }

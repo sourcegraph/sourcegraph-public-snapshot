@@ -53,6 +53,33 @@ func NewMockInterface() *MockInterface {
 	}
 }
 
+// NewStrictMockInterface creates a new mock of the Interface interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockInterface() *MockInterface {
+	return &MockInterface{
+		CountDataFunc: &InterfaceCountDataFunc{
+			defaultHook: func(context.Context, CountDataOpts) (int, error) {
+				panic("unexpected invocation of MockInterface.CountData")
+			},
+		},
+		RecordSeriesPointFunc: &InterfaceRecordSeriesPointFunc{
+			defaultHook: func(context.Context, RecordSeriesPointArgs) error {
+				panic("unexpected invocation of MockInterface.RecordSeriesPoint")
+			},
+		},
+		RecordSeriesPointsFunc: &InterfaceRecordSeriesPointsFunc{
+			defaultHook: func(context.Context, []RecordSeriesPointArgs) error {
+				panic("unexpected invocation of MockInterface.RecordSeriesPoints")
+			},
+		},
+		SeriesPointsFunc: &InterfaceSeriesPointsFunc{
+			defaultHook: func(context.Context, SeriesPointsOpts) ([]SeriesPoint, error) {
+				panic("unexpected invocation of MockInterface.SeriesPoints")
+			},
+		},
+	}
+}
+
 // NewMockInterfaceFrom creates a new mock of the MockInterface interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockInterfaceFrom(i Interface) *MockInterface {

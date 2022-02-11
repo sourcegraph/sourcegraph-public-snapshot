@@ -36,11 +36,9 @@ To add CodeCommit repositories in Docker Container:
 1. Connect Sourcegraph to AWS CodeCommit by going to **Sourcegraph > Site Admin > Manage code hosts > Generic Git host** and add the following:
 
 ```json
-{
-  "url": "ssh://git-codecommit.us-west-1.amazonaws.com", //Please replace the 'us-east-1' region with yours
+"url": "ssh://git-codecommit.us-west-1.amazonaws.com", //Please replace the 'us-east-1' region with yours
   "repos": [
     "v1/repos/REPO_NAME_1",
     "v1/repos/REPO_NAME_2",
   ]
-}
 ``` 

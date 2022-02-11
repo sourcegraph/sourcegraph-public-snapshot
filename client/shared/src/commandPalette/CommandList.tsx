@@ -16,7 +16,8 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { memoizeObservable } from '@sourcegraph/common'
+import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -30,9 +31,10 @@ import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { memoizeObservable } from '../util/memoizeObservable'
 
+import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
+import { EmptyCommandListContainer } from './EmptyCommandListContainer'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -184,13 +186,13 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     public render(): JSX.Element | null {
         if (!this.state.contributions) {
             return (
-                <div className="command-list empty-command-list">
+                <EmptyCommandListContainer className={styles.commandList}>
                     <div className="d-flex py-5 align-items-center justify-content-center">
-                        <LoadingSpinner />
+                        <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
                         <PuzzleIcon className="icon-inline" />
                     </div>
-                </div>
+                </EmptyCommandListContainer>
             )
         }
 
@@ -204,7 +206,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         const selectedIndex = ((this.state.selectedIndex % items.length) + items.length) % items.length
 
         return (
-            <div className="command-list">
+            <div className={styles.commandList}>
                 <header>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
@@ -365,18 +367,20 @@ export function filterAndRankItems(
 export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
-        CommandListClassProps {
+        CommandListClassProps,
+        Pick<ButtonProps, 'variant'> {
     keyboardShortcutForShow?: KeyboardShortcut
 }
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
-    buttonClassName = '',
-    buttonElement: ButtonElement = 'span',
-    buttonOpenClassName = '',
+    buttonClassName,
+    buttonElement = 'span',
+    buttonOpenClassName,
     showCaret = true,
     popoverClassName,
     popoverInnerClassName,
     keyboardShortcutForShow,
+    variant,
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -389,13 +393,13 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
         isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
 
     return (
-        <ButtonElement
+        <Button
+            as={buttonElement}
             role="button"
-            className={classNames('test-command-list-button command-list__popover-button', buttonClassName, {
-                [buttonOpenClassName]: isOpen,
-            })}
             id={id}
             onClick={toggleIsOpen}
+            className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
+            variant={variant}
         >
             <ConsoleIcon className="icon-inline-md" />
 
@@ -419,6 +423,6 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
-        </ButtonElement>
+        </Button>
     )
 }

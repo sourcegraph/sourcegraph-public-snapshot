@@ -1,33 +1,40 @@
+import classNames from 'classnames'
 import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
+import styles from './RegistryExtensionManifestPage.module.scss'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
-    <div className="alert alert-info">
+    <Alert variant="info">
         This extension is not yet published.
         {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
-                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                <Button
+                    className="mt-3"
+                    to={`${extension.registryExtension.url}/-/releases/new`}
+                    variant="primary"
+                    as={Link}
+                >
                     Publish first release of extension
-                </Link>
+                </Button>
             </>
         )}
-    </div>
+    </Alert>
 )
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
@@ -63,7 +70,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
 
     public render(): JSX.Element | null {
         return (
-            <div className="registry-extension-manifest-page">
+            <div>
                 <PageTitle title={`Manifest of ${this.props.extension.id}`} />
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
@@ -75,18 +82,19 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     </div>
                     <div>
                         {this.props.extension.manifest && (
-                            <button type="button" className="btn btn-secondary" onClick={this.onViewModeButtonClick}>
+                            <Button onClick={this.onViewModeButtonClick} variant="secondary">
                                 <EyeIcon className="icon-inline" /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.extension.registryExtension?.viewerCanAdminister && (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
+                                variant="primary"
+                                as={Link}
                             >
                                 Publish new release
-                            </Link>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -105,7 +113,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             telemetryService={this.props.telemetryService}
                         />
                     ) : (
-                        <pre className="form-control registry-extension-manifest-page__plain-viewer">
+                        <pre className={classNames('form-control', styles.plainViewer)}>
                             <code>{this.props.extension.rawManifest}</code>
                         </pre>
                     )}

@@ -5,6 +5,7 @@ import * as React from 'react'
 import { render } from 'react-dom'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
+import { isExternalLink } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -21,11 +22,10 @@ import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { NotificationClassNameProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isExternalLink } from '@sourcegraph/shared/src/util/url'
 
 import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'
@@ -55,15 +55,19 @@ interface InjectProps
     render: typeof render
 }
 
+interface RenderCommandPaletteProps
+    extends TelemetryProps,
+        InjectProps,
+        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> {
+    notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
+}
+
 export const renderCommandPalette = ({
     extensionsController,
     history,
     render,
     ...props
-}: TelemetryProps &
-    InjectProps &
-    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> &
-    NotificationClassNameProps) => (mount: HTMLElement): void => {
+}: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
@@ -76,7 +80,9 @@ export const renderCommandPalette = ({
             />
             <Notifications
                 extensionsController={extensionsController}
-                notificationClassNames={props.notificationClassNames}
+                notificationItemStyleProps={{
+                    notificationItemClassNames: props.notificationClassNames,
+                }}
             />
         </ShortcutProvider>,
         mount
@@ -103,7 +109,9 @@ export const renderGlobalDebug = ({
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
+    const previousAttachments = codeElement.querySelectorAll(
+        `[data-line-decoration-attachment][data-part=${String(part)}]`
+    )
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
@@ -213,7 +221,8 @@ export const applyDecorations = (
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
                 annotation.dataset.part = String(part)
-                annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
+                annotation.className = 'sourcegraph-extension-element'
+                annotation.dataset.lineDecorationAttachment = 'true'
                 codeElement.append(annotation)
             }
         }

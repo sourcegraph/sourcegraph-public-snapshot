@@ -5,21 +5,22 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepository(t *testing.T) {
+	t.Parallel()
+
 	t.Run("repo", func(t *testing.T) {
-		resetMocks()
 		repo := &types.Repo{
 			Name: api.RepoName("github.com/foo/bar"),
 			ExternalRepo: api.ExternalRepoSpec{
@@ -30,10 +31,13 @@ func TestRepository(t *testing.T) {
 				URL: "http://github.com/foo/bar",
 			},
 		}
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-			return nil, errors.New("x")
-		}
-		links, err := Repository(context.Background(), new(dbtesting.MockDB), repo)
+
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Repository(context.Background(), db, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,17 +50,21 @@ func TestRepository(t *testing.T) {
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 
 	t.Run("phabricator", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
-		}
-		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"})
+		})
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,20 +77,23 @@ func TestRepository(t *testing.T) {
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-			return nil, errors.New("x")
-		}
-		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"})
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 }
 
@@ -120,11 +131,12 @@ func TestFileOrDir(t *testing.T) {
 		}
 
 		t.Run(which, func(t *testing.T) {
-			resetMocks()
-			database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-				return nil, errors.New("x")
-			}
-			links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), repo, rev, path, isDir)
+			phabricator := database.NewMockPhabricatorStore()
+			phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+			db := database.NewMockDB()
+			db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+			links, err := FileOrDir(context.Background(), db, repo, rev, path, isDir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,22 +149,27 @@ func TestFileOrDir(t *testing.T) {
 			}; !reflect.DeepEqual(links, want) {
 				t.Errorf("got %+v, want %+v", links, want)
 			}
+			mockrequire.Called(t, phabricator.GetByNameFunc)
 		})
 	}
 
 	t.Run("phabricator", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
-		}
-		git.Mocks.ExecSafe = func(params []string) ([]byte, []byte, int, error) {
-			return []byte("mybranch"), nil, 0, nil
+		})
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		git.Mocks.GetDefaultBranchShort = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+			return "mybranch", "", nil
 		}
 		defer git.ResetMocks()
-		links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, rev, path, true)
+
+		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -165,20 +182,23 @@ func TestFileOrDir(t *testing.T) {
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-			return nil, errors.New("x")
-		}
-		links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, rev, path, true)
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 }
 
@@ -197,11 +217,12 @@ func TestCommit(t *testing.T) {
 	}
 
 	t.Run("repo", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-			return nil, errors.New("x")
-		}
-		links, err := Commit(context.Background(), new(dbtesting.MockDB), repo, commit)
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Commit(context.Background(), db, repo, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -214,17 +235,21 @@ func TestCommit(t *testing.T) {
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 
 	t.Run("phabricator", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
-		}
-		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, commit)
+		})
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -237,19 +262,22 @@ func TestCommit(t *testing.T) {
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-			return nil, errors.New("x")
-		}
-		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, commit)
+		phabricator := database.NewMockPhabricatorStore()
+		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		db := database.NewMockDB()
+		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+
+		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
 		}
+		mockrequire.Called(t, phabricator.GetByNameFunc)
 	})
 }

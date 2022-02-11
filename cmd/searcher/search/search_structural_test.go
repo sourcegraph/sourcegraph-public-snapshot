@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {
@@ -54,11 +54,11 @@ func foo(go string) {}
 		},
 	}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,11 +120,11 @@ func foo(go.txt) {}
 `,
 	}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,17 +212,17 @@ func foo(real string) {}
 	pattern := "foo(:[args])"
 	want := "foo(real string)"
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zPath, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zPath, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cleanup()
 
-	zFile, _ := testutil.MockZipFile(zipData)
+	zFile, _ := storetest.MockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,11 +324,11 @@ func TestIncludePatterns(t *testing.T) {
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,11 +366,11 @@ func TestRule(t *testing.T) {
 		"file.go": "func foo(success) {} func bar(fail) {}",
 	}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -437,10 +437,10 @@ func bar() {
 `,
 	}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	require.NoError(t, err)
 
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -586,11 +586,11 @@ func bar() {
 
 	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
 
-	zipData, err := testutil.CreateZip(input)
+	zipData, err := storetest.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	zf, cleanup, err := storetest.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}

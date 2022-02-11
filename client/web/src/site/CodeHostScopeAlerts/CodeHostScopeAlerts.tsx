@@ -1,7 +1,9 @@
 import React, { FunctionComponent } from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'
+import globalAlertStyles from '../../global/GlobalAlerts.module.scss'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../../user/settings/cloud-ga'
 
 import { useCodeHostScopeContext } from './CodeHostScopeProvider'
@@ -29,7 +31,7 @@ export const CodeHostScopeAlerts: FunctionComponent<Props> = ({ authenticatedUse
     }
 
     return (
-        <DismissibleAlert partialStorageKey={GITHUB_SCOPE_ALERT_KEY} className="alert-info global-alerts__alert">
+        <DismissibleAlert partialStorageKey={GITHUB_SCOPE_ALERT_KEY} variant="info" className={globalAlertStyles.alert}>
             <span>
                 Update your <Link to="/user/settings/code-hosts">GitHub code host connection</Link> to search private
                 code with Sourcegraph.
@@ -54,7 +56,7 @@ export const GitLabScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }
     }
 
     return (
-        <DismissibleAlert partialStorageKey={GITLAB_SCOPE_ALERT_KEY} className="alert-info global-alerts__alert">
+        <DismissibleAlert partialStorageKey={GITLAB_SCOPE_ALERT_KEY} variant="info" className={globalAlertStyles.alert}>
             <span>
                 Update your <Link to="/user/settings/code-hosts">GitLab code host connection</Link> to search private
                 code with Sourcegraph.

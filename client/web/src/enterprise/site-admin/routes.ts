@@ -1,7 +1,9 @@
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
-import { lazyComponent } from '../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
@@ -86,37 +88,86 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
+    {
+        path: '/batch-changes/specs',
+        exact: true,
+        render: lazyComponent(() => import('../batches/BatchSpecsPage'), 'BatchSpecsPage'),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+    },
+    {
+        path: '/batch-changes/webhook-logs',
+        exact: true,
+        render: lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage'),
+        condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
+            batchChangesEnabled && batchChangesWebhookLogsEnabled,
+    },
 
     // Code intelligence upload routes
     {
         path: '/code-intelligence/uploads',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/uploads/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
 
-    // Auto indexing routes
+    // Auto-indexing routes
     {
         path: '/code-intelligence/indexes',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
         path: '/code-intelligence/indexes/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+    },
+
+    // Code intelligence configuration
+    {
+        path: '/code-intelligence/configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
+            'CodeIntelConfigurationPage'
+        ),
+        exact: true,
+    },
+    {
+        path: '/code-intelligence/configuration/:id',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
+            'CodeIntelConfigurationPolicyPage'
+        ),
+        exact: true,
     },
 
     // Legacy routes
     {
         path: '/lsif-uploads/:id',
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
+        exact: true,
+    },
+
+    // Executor routes
+    {
+        path: '/executors',
+        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
+            () => import('../executors/ExecutorsListPage'),
+            'ExecutorsListPage'
+        ),
+        exact: true,
+        condition: () => Boolean(window.context?.executorsEnabled),
+    },
+    // Organization routes
+    {
+        path: '/organizations/early-access-orgs-code',
+        render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
         exact: true,
     },
 ]

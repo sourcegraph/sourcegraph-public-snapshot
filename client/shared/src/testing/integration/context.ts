@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as util from 'util'
 
-import { Polly, PollyServer } from '@pollyjs/core'
+import { MODE, Polly, PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
@@ -13,12 +13,12 @@ import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
-import { asError } from '../../util/errors'
-import { keyExistsIn } from '../../util/types'
+import { asError, keyExistsIn } from '@sourcegraph/common'
+import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
-import { readEnvironmentBoolean } from '../utils'
+import { readEnvironmentString } from '../utils'
 
 import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
 
@@ -31,7 +31,15 @@ Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
-const record = readEnvironmentBoolean({ variable: 'RECORD', defaultValue: false })
+const checkPollyMode = (mode: string): MODE => {
+    if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
+        return mode
+    }
+
+    throw new Error(`Invalid Polly mode (check POLLYJS_MODE): ${mode}`)
+}
+
+const pollyMode = checkPollyMode(readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'passthrough' }))
 
 export class IntegrationTestGraphQlError extends Error {
     constructor(public errors: GraphQLError[]) {
@@ -102,7 +110,7 @@ export const createSharedIntegrationTestContext = async <
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
-    if (record) {
+    if (pollyMode === 'record') {
         await mkdir(recordingsDirectory, { recursive: true })
     }
     const subscriptions = new Subscription()
@@ -121,7 +129,7 @@ export const createSharedIntegrationTestContext = async <
             },
         },
         expiryStrategy: 'warn',
-        recordIfMissing: record,
+        recordIfMissing: pollyMode === 'record',
         matchRequestsBy: {
             method: true,
             body: true,
@@ -129,7 +137,7 @@ export const createSharedIntegrationTestContext = async <
             // Origin header will change when running against a test instance
             headers: false,
         },
-        mode: record ? 'record' : 'replay',
+        mode: pollyMode,
         logging: false,
     })
     const { server } = polly
@@ -266,6 +274,21 @@ export const createSharedIntegrationTestContext = async <
                 DISPOSE_ACTION_TIMEOUT,
                 new Error('Recording coverage timed out')
             )
+
+            if (driver.page.url() !== 'about:blank') {
+                await pTimeout(
+                    driver.page.evaluate(() => {
+                        try {
+                            localStorage.clear()
+                        } catch (error) {
+                            console.error('Failed to clear localStorage!', error)
+                        }
+                    }),
+                    DISPOSE_ACTION_TIMEOUT,
+                    () => console.warn('Failed to clear localStorage!')
+                )
+            }
+
             await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },

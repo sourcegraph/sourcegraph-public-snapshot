@@ -138,7 +138,7 @@ This makes it easy to compose them.
 Avoid having functions that take more data than they actually need just to return this part of the input verbatim, because it makes them harder to test and ties them to the context they are used in currently.
 This "merging" is better done by the caller.
 Instead of constructors, factory functions can be defined that create and return object literals (typed with an interface).
-These functions are conventionally named `create`+_name of interface_ (eg. [`createModelService()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b1ddeff4a2b94ceccda7cdf7021d5f82aa4522ed/-/blob/shared/src/api/client/services/modelService.ts#L99-167).
+These functions are conventionally named `create`+_name of interface_ (eg. [`createModelService()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b1ddeff4a2b94ceccda7cdf7021d5f82aa4522ed/-/blob/shared/src/api/client/services/modelService.ts#L99-167)).
 
 There are a few places where we do use classes, e.g. [`ExtDocuments`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@fd9eef0b5893dfb3358d2a3358d15f3e9b14ca9e/-/blob/shared/src/api/extension/api/documents.ts#L21:20).
 These are usually where mutation is unavoidable.

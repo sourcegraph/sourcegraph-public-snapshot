@@ -3,9 +3,9 @@ import React, { useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -18,6 +18,7 @@ import { externalLinkFieldsFragment } from '../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+import styles from './RepositoryCommitsPage.module.scss'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -133,10 +134,10 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     )
 
     return (
-        <div className="repository-commits-page">
+        <div className={styles.repositoryCommitsPage}>
             <PageTitle title="Commits" />
             <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                className="repository-commits-page__content"
+                className={styles.content}
                 listClassName="list-group list-group-flush"
                 noun="commit"
                 pluralNoun="commits"

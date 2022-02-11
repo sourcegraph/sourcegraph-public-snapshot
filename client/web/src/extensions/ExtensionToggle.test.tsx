@@ -1,5 +1,5 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -21,49 +21,43 @@ describe('ExtensionToggle', () => {
 
     test('extension not present in settings', () => {
         expect(
-            renderer
-                .create(
-                    <ExtensionToggle
-                        extensionID={EXTENSION.id}
-                        enabled={false}
-                        settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
-                        platformContext={NOOP_PLATFORM_CONTEXT}
-                        subject={SUBJECT.subject}
-                    />
-                )
-                .toJSON()
+            render(
+                <ExtensionToggle
+                    extensionID={EXTENSION.id}
+                    enabled={false}
+                    settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                    subject={SUBJECT.subject}
+                />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('extension enabled in settings', () => {
         expect(
-            renderer
-                .create(
-                    <ExtensionToggle
-                        extensionID={EXTENSION.id}
-                        enabled={true}
-                        settingsCascade={{ final: { extensions: { 'x/y': true } }, subjects: [SUBJECT] }}
-                        platformContext={NOOP_PLATFORM_CONTEXT}
-                        subject={SUBJECT.subject}
-                    />
-                )
-                .toJSON()
+            render(
+                <ExtensionToggle
+                    extensionID={EXTENSION.id}
+                    enabled={true}
+                    settingsCascade={{ final: { extensions: { 'x/y': true } }, subjects: [SUBJECT] }}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                    subject={SUBJECT.subject}
+                />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('extension disabled in settings', () => {
         expect(
-            renderer
-                .create(
-                    <ExtensionToggle
-                        extensionID={EXTENSION.id}
-                        enabled={false}
-                        settingsCascade={{ final: { extensions: { 'x/y': false } }, subjects: [SUBJECT] }}
-                        platformContext={NOOP_PLATFORM_CONTEXT}
-                        subject={SUBJECT.subject}
-                    />
-                )
-                .toJSON()
+            render(
+                <ExtensionToggle
+                    extensionID={EXTENSION.id}
+                    enabled={false}
+                    settingsCascade={{ final: { extensions: { 'x/y': false } }, subjects: [SUBJECT] }}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                    subject={SUBJECT.subject}
+                />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

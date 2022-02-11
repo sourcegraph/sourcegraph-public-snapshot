@@ -24,19 +24,12 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             AutoDefinedSearchContexts: () => ({
                 autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
@@ -63,19 +56,42 @@ describe('Search onboarding', () => {
                     final: JSON.stringify({}),
                 },
             }),
+            SearchSidebarGitRefs: () => ({
+                repository: {
+                    __typename: 'Repository',
+                    id: 'repo',
+                    gitRefs: {
+                        __typename: 'GitRefConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                        totalCount: 0,
+                    },
+                },
+            }),
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    __typename: 'TemporarySettings',
+                    contents: JSON.stringify({
+                        'user.daysActiveCount': 1,
+                        'user.lastDayActive': new Date().toDateString(),
+                    }),
+                },
+            }),
         })
-        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
+        testContext.overrideSearchStreamEvents([
+            // Used for suggestions
+            {
+                type: 'matches',
+                data: [{ type: 'repo', repository: '^github\\.com/sourcegraph/sourcegraph$' }],
+            },
+            { type: 'done', data: {} },
+        ])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    const resetOnboardingTour = async () => {
-        await driver.page.evaluate(() => {
-            localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-            localStorage.setItem('has-completed-onboarding-tour', 'false')
-            location.reload()
-        })
-    }
     const waitAndFocusInput = async () => {
         await driver.page.waitForSelector('.monaco-editor .view-lines')
         await driver.page.click('.monaco-editor .view-lines')
@@ -93,11 +109,10 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-language-button')
-            await driver.page.click('.tour-language-button')
+            await driver.page.waitForSelector('[data-testid="tour-language-button"]')
+            await driver.page.click('[data-testid="tour-language-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -106,7 +121,7 @@ describe('Search onboarding', () => {
 
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('typesc')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.page.keyboard.press('Tab')
             await driver.page.waitForSelector('.test-tour-step-3')
             await driver.page.keyboard.press('Space')
@@ -118,11 +133,10 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the repo onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -139,11 +153,10 @@ describe('Search onboarding', () => {
 
         it('advances filter-lang when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-language-button')
-            await driver.page.click('.tour-language-button')
+            await driver.page.waitForSelector('[data-testid="tour-language-button"]')
+            await driver.page.click('[data-testid="tour-language-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -151,7 +164,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'lang:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('TypeScr')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()
@@ -165,11 +178,10 @@ describe('Search onboarding', () => {
 
         it('advances filter-repository when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -177,7 +189,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()
@@ -191,11 +203,10 @@ describe('Search onboarding', () => {
 
         it('advances filter-repository when a user types their own repository', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -203,7 +214,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph/sourcegraph')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()

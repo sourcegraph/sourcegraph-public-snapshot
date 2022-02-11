@@ -4,15 +4,14 @@ import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { InputBoxOptions } from 'sourcegraph'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
+import { ErrorLike, hasProperty } from '@sourcegraph/common'
+import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
 import { Scalars } from '../graphql-operations'
-import { GraphQLResult } from '../graphql/graphql'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { ErrorLike } from '../util/errors'
-import { hasProperty } from '../util/types'
 import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
@@ -91,6 +90,12 @@ export interface PlatformContext {
      * update.
      */
     updateSettings: (subject: Scalars['ID'], edit: SettingsEdit | string) => Promise<void>
+
+    /**
+     * Returns promise that resolves into Apollo Client instance after cache restoration.
+     * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
+     */
+    getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

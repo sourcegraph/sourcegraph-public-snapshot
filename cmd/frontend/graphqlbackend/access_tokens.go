@@ -5,7 +5,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
@@ -16,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type createAccessTokenInput struct {
@@ -26,6 +25,13 @@ type createAccessTokenInput struct {
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
+	// 🚨 SECURITY: Creating access tokens for any user by site admins is not
+	// allowed on Sourcegraph.com. This check is mostly the defense for a
+	// misconfiguration of the site configuration.
+	if envvar.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
+		return nil, errors.Errorf("access token configuration value %q is disabled on Sourcegraph.com", conf.AccessTokensAllow())
+	}
+
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -47,7 +53,6 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 	case conf.AccessTokensNone:
-		fallthrough
 	default:
 		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
 	}
@@ -65,7 +70,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			} else if envvar.SourcegraphDotComMode() {
-				return nil, errors.New("creation of access tokens with sudo scope is disabled")
+				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
 			}
 		default:
 			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
@@ -80,10 +85,10 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
 			log15.Warn("Failed to send email to inform user of access token creation", "error", err)
 		}
 	}
@@ -119,22 +124,21 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		token, err := database.AccessTokens(r.db).GetByID(ctx, accessTokenID)
+		token, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
+		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
 	case args.ByToken != nil:
-		token, err := database.AccessTokens(r.db).GetByToken(ctx, *args.ByToken)
+		token, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
@@ -142,14 +146,14 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
-		if err := database.AccessTokens(r.db).DeleteByToken(ctx, *args.ByToken); err != nil {
+		if err := r.db.AccessTokens().DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
 
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, subjectUserID, "deleted an access token"); err != nil {
 			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
 		}
 	}
@@ -195,7 +199,7 @@ type accessTokenConnectionResolver struct {
 	once         sync.Once
 	accessTokens []*database.AccessToken
 	err          error
-	db           dbutil.DB
+	db           database.DB
 }
 
 func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*database.AccessToken, error) {
@@ -207,7 +211,7 @@ func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*databas
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.accessTokens, r.err = database.AccessTokens(r.db).List(ctx, opt2)
+		r.accessTokens, r.err = r.db.AccessTokens().List(ctx, opt2)
 	})
 	return r.accessTokens, r.err
 }
@@ -229,7 +233,7 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 }
 
 func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := database.AccessTokens(r.db).Count(ctx, r.opt)
+	count, err := r.db.AccessTokens().Count(ctx, r.opt)
 	return int32(count), err
 }
 

@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -79,14 +77,15 @@ func TestClient_GetRepository(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
-	"node_id": "i",
-	"full_name": "o/r",
-	"description": "d",
-	"html_url": "https://github.example.com/o/r",
-	"fork": true,
-	"stargazers_count": 30,
-	"watchers_count": 20,
-	"forks_count": 5
+  "node_id": "i",
+  "full_name": "o/r",
+  "description": "d",
+  "html_url": "https://github.example.com/o/r",
+  "fork": true,
+  "stargazers_count": 30,
+  "watchers_count": 20,
+  "forks_count": 5,
+  "visibility": ""
 }
 `,
 	}
@@ -100,6 +99,10 @@ func TestClient_GetRepository(t *testing.T) {
 		IsFork:         true,
 		StargazerCount: 30,
 		ForkCount:      5,
+		// This is guarded behind a feature flag so will be empty for now. When the feature flag is
+		// enabled, it will return a repo of type "internal". We will need to fix the test
+		// then. This is blocked on our GHE instance being upgraded to 3.3.0.
+		Visibility: "",
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
@@ -365,6 +368,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "internal",
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -378,6 +382,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsDisabled:       true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "private",
 	}
 
 	testCases := []struct {
@@ -402,7 +407,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -414,7 +420,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isDisabled": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "private"
     }
   }
 }
@@ -436,7 +443,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": null
   },
@@ -514,64 +522,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 
 			if !repoListsAreEqual(repos, tc.wantRepos) {
 				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
-			}
-		})
-	}
-}
-
-// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
-// for GITHUB_TOKEN, which can be found in 1Password.
-func TestListRepositoryCollaborators(t *testing.T) {
-	tests := []struct {
-		name      string
-		owner     string
-		repo      string
-		wantUsers []*Collaborator
-	}{
-		{
-			name:  "public repo",
-			owner: "sourcegraph-vcr-repos",
-			repo:  "public-org-repo-1",
-			wantUsers: []*Collaborator{
-				{
-					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
-					DatabaseID: 63290851,
-				}, {
-					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as organization member
-					DatabaseID: 66464773,
-				},
-			},
-		},
-		{
-			name:  "private repo",
-			owner: "sourcegraph-vcr-repos",
-			repo:  "private-org-repo-1",
-			wantUsers: []*Collaborator{
-				{
-					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
-					DatabaseID: 63290851,
-				}, {
-					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as organization member
-					DatabaseID: 66464773,
-				}, {
-					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
-					DatabaseID: 66464926,
-				},
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
-			defer save()
-
-			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
-				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

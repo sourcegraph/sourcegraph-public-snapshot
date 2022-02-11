@@ -1,7 +1,7 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -14,12 +14,13 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<{
         eventLogger.log(eventName)
     }
     return (
-        <Link
+        <ButtonLink
             onClick={onClick}
-            to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}&src=Monitor`}
-            className={classNames('btn btn-primary', className)}
+            to={buildGetStartedURL('code-monitoring', '/code-monitoring/new')}
+            className={className}
+            variant="primary"
         >
             {text}
-        </Link>
+        </ButtonLink>
     )
 }

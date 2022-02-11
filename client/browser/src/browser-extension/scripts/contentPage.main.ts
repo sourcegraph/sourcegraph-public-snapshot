@@ -3,7 +3,7 @@ import '../../shared/polyfills'
 import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
@@ -15,10 +15,9 @@ import {
     signalBrowserExtensionInstalled,
 } from '../../shared/code-hosts/sourcegraph/inject'
 import { initSentry } from '../../shared/sentry'
-import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL, observeSourcegraphURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { storage } from '../web-extension-api/storage'
 
 const subscriptions = new Subscription()
 window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: true })
@@ -31,6 +30,36 @@ initSentry('content', codeHost?.type)
 setLinkComponent(AnchorLink)
 
 const IS_EXTENSION = true
+
+// Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
+// annoying flash/jitter when the stylesheet loads shortly thereafter).
+function loadStyleSheet(options: { id: string; path: string }): HTMLLinkElement {
+    const { id, path } = options
+
+    let styleSheet = document.querySelector<HTMLLinkElement>(`#${id}`)
+    // If does not exist, create
+    if (!styleSheet) {
+        styleSheet = document.createElement('link')
+        styleSheet.id = id
+        styleSheet.rel = 'stylesheet'
+        styleSheet.type = 'text/css'
+        styleSheet.href = browser.extension.getURL(path)
+    }
+    return styleSheet
+}
+
+// If stylesheet is not loaded yet, wait for it to load.
+async function waitForStyleSheet(styleSheet: HTMLLinkElement): Promise<void> {
+    if (!styleSheet.sheet) {
+        await new Promise(resolve => {
+            styleSheet.addEventListener('load', resolve, { once: true })
+            // If not appended yet, append to <head>
+            if (!styleSheet.parentNode) {
+                document.head.append(styleSheet)
+            }
+        })
+    }
+}
 
 /**
  * Main entry point into browser extension.
@@ -61,46 +90,45 @@ async function main(): Promise<void> {
         .pipe(first())
         .toPromise()
 
-    const items = await storage.sync.get()
-    const sourcegraphURL = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
-
-    const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)
-    if (isSourcegraphServer) {
-        signalBrowserExtensionInstalled()
-        return
-    }
-
+    let previousSubscription: Subscription
     subscriptions.add(
-        await injectCodeIntelligence(
-            { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
-            IS_EXTENSION,
-            async function onCodeHostFound() {
-                // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
-                // annoying flash/jitter when the stylesheet loads shortly thereafter).
-                const styleSheet = (() => {
-                    let styleSheet = document.querySelector<HTMLLinkElement>('#ext-style-sheet')
-                    // If does not exist, create
-                    if (!styleSheet) {
-                        styleSheet = document.createElement('link')
-                        styleSheet.id = 'ext-style-sheet'
-                        styleSheet.rel = 'stylesheet'
-                        styleSheet.type = 'text/css'
-                        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-                    }
-                    return styleSheet
-                })()
-                // If not loaded yet, wait for it to load
-                if (!styleSheet.sheet) {
-                    await new Promise(resolve => {
-                        styleSheet.addEventListener('load', resolve, { once: true })
-                        // If not appended yet, append to <head>
-                        if (!styleSheet.parentNode) {
-                            document.head.append(styleSheet)
-                        }
-                    })
-                }
+        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
+        observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
+            if (previousSubscription) {
+                console.log('Sourcegraph detached code intelligence')
+                previousSubscription.unsubscribe()
             }
-        )
+
+            const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)
+            if (isSourcegraphServer) {
+                signalBrowserExtensionInstalled()
+                return
+            }
+
+            try {
+                previousSubscription = await injectCodeIntelligence(
+                    { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
+                    IS_EXTENSION,
+                    async function onCodeHostFound() {
+                        const styleSheets = [
+                            {
+                                id: 'ext-style-sheet',
+                                path: 'css/style.bundle.css',
+                            },
+                            {
+                                id: 'ext-style-sheet-css-modules',
+                                path: 'css/inject.bundle.css',
+                            },
+                        ]
+
+                        await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
+                    }
+                )
+                console.log('Sourcegraph attached code intelligence')
+            } catch (error) {
+                console.log('Sourcegraph code host integration stopped initialization. Reason:', error)
+            }
+        })
     )
 
     // Clean up susbscription if the native integration gets activated

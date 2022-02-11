@@ -1,5 +1,6 @@
 import { FilterType } from './filters'
-import { findFilter, FilterKind, filterExists } from './validate'
+import { findFilter, FilterKind } from './query'
+import { filterExists } from './validate'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

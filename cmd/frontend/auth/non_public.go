@@ -60,6 +60,8 @@ var (
 	// data or allow unprivileged users to perform undesired actions.
 	anonymousAccessibleAPIRoutes = map[string]struct{}{
 		router.RobotsTxt:          {},
+		router.OpenSearch:         {},
+		router.SitemapXmlGz:       {},
 		router.Favicon:            {},
 		router.Logout:             {},
 		router.SignUp:             {},

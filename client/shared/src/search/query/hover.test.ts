@@ -36,7 +36,7 @@ describe('getHoverResult()', () => {
     test('returns hover contents for filters', () => {
         const input = 'repo:sourcegraph file:code_intelligence'
         const scannedQuery = toSuccess(scanSearchQuery(input))
-        expect(getHoverResult(scannedQuery, new Position(1, 4), editor.createModel(input))).toMatchInlineSnapshot(`
+        expect(getHoverResult(scannedQuery, new Position(1, 3), editor.createModel(input))).toMatchInlineSnapshot(`
             {
               "contents": [
                 {
@@ -47,7 +47,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 6
+                "endColumn": 5
               }
             }
         `)
@@ -62,7 +62,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 18,
-                "endColumn": 23
+                "endColumn": 22
               }
             }
         `)
@@ -97,7 +97,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 6
+                "endColumn": 5
               }
             }
         `)

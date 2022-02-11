@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
@@ -10,11 +10,12 @@ const { add } = storiesOf('web/batches/BatchChangeStatsCard', module).addDecorat
 ))
 
 add('All states', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     closed: 10,
                     deleted: 10,
                     merged: 10,
@@ -24,18 +25,19 @@ add('All states', () => (
                     archived: 18,
                     unpublished: 55,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={null}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Batch change closed', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     closed: 10,
                     deleted: 10,
                     merged: 10,
@@ -45,18 +47,19 @@ add('Batch change closed', () => (
                     total: 100,
                     unpublished: 60,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={new Date().toISOString()}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Batch change done', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     deleted: 10,
                     closed: 10,
                     merged: 80,
@@ -66,9 +69,9 @@ add('Batch change done', () => (
                     total: 100,
                     unpublished: 0,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={null}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

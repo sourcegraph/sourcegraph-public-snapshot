@@ -1,6 +1,6 @@
 import { ApolloError, ApolloQueryResult, gql, MutationFunctionOptions, FetchResult, makeVar } from '@apollo/client'
 
-import { useQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 
 import {
     Maybe,
@@ -25,7 +25,9 @@ const SelectedReposInitialValue: SelectedRepos = undefined
 export const selectedReposVar = makeVar<SelectedRepos>(SelectedReposInitialValue)
 
 interface UseSelectedReposResult {
-    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
+    selectedRepos:
+        | (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
+        | undefined
     loadingSelectedRepos: boolean
     errorSelectedRepos: ApolloError | undefined
     refetchSelectedRepos:
@@ -85,6 +87,7 @@ export const SELECTED_REPOS = gql`
     ) {
         node(id: $id) {
             ... on User {
+                __typename
                 repositories(
                     first: $first
                     query: $query
@@ -140,7 +143,7 @@ export const useSelectedRepos = (userId: string, first?: number): UseSelectedRep
     )
 
     return {
-        selectedRepos: data?.node?.repositories.nodes,
+        selectedRepos: (data?.node?.__typename === 'User' && data.node.repositories.nodes) || undefined,
         loadingSelectedRepos: loading,
         errorSelectedRepos: error,
         refetchSelectedRepos: refetch,

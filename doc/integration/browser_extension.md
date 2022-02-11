@@ -2,7 +2,7 @@
 
 The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser) Sourcegraph
 browser extension adds code intelligence to files and diffs on GitHub, GitHub
-Enterprise, GitLab, Phabricator, and Bitbucket Server.
+Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 
 <p>
   <a target="_blank" href="https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack" style="display:flex;align-items:center">
@@ -80,7 +80,7 @@ To install this search engine shortcut manually, and for more information, see "
 </video>
 
 - [GitHub.com](https://github.com/) - no action required.
-- GitHub Enterprise, GitLab, Bitbucket Server and Phabricator - you need to grant the extension permissions first.
+- GitHub Enterprise, GitLab, Bitbucket Server, Bitbucket Data and Phabricator - you need to grant the extension permissions first.
 
 To grant these permissions:
 
@@ -109,7 +109,7 @@ To use the browser extension with your private repositories, you need to set up 
 Follow these instructions:
 
 1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
-2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+2. Click the Sourcegraph extension icon in the browser toolbar on the browser tab for your private Sourcegraph instance then open the settings page.
 3. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`)
 4. Make sure the connection status shows "Looks good!"
 

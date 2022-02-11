@@ -6,8 +6,10 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
+const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
+const { createProxyMiddleware } = require('http-proxy-middleware')
 const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
@@ -22,8 +24,15 @@ const {
   watchGraphQlSchema,
   watchGraphQlOperations,
   watchSchema,
+  cssModulesTypings,
+  watchCSSModulesTypings,
 } = require('../shared/gulpfile')
 
+const { build: buildEsbuild } = require('./dev/esbuild/build')
+const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
+const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
+const printSuccessBanner = require('./dev/utils/success-banner')
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -53,6 +62,8 @@ async function webpack() {
   }
 }
 
+const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
+
 /**
  * Watch files and update the webpack bundle on disk without starting a dev server.
  */
@@ -78,7 +89,7 @@ async function webpackDevelopmentServer() {
   /** @type {import('webpack-dev-server').ProxyConfigMap } */
   const proxyConfig = {
     '/': {
-      target: 'http://localhost:3081',
+      target: `http://${DEV_SERVER_PROXY_TARGET_ADDR.host}:${DEV_SERVER_PROXY_TARGET_ADDR.port}`,
       // Avoid crashing on "read ECONNRESET".
       onError: () => undefined,
       // Don't log proxy errors, these usually just contain
@@ -90,26 +101,35 @@ async function webpackDevelopmentServer() {
     },
   }
 
+  /** @type {import('webpack-dev-server').Configuration} */
   const options = {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
     hot: !process.env.NO_HOT,
-    firewall: false,
-    host: 'localhost',
-    port: 3080,
+    host: DEV_SERVER_LISTEN_ADDR.host,
+    port: DEV_SERVER_LISTEN_ADDR.port,
+    // Disable default DevServer compression. We need more fine grained compression to support streaming search.
+    compress: false,
+    onBeforeSetupMiddleware: developmentServer => {
+      // Re-enable gzip compression using our own `compression` filter.
+      developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+    },
     client: {
-      host: sockHost,
-      port: sockPort,
       overlay: false,
+      webSocketTransport: 'ws',
+      logging: 'verbose',
+      webSocketURL: {
+        hostname: sockHost,
+        port: sockPort,
+        protocol: 'wss',
+      },
     },
     static: {
       directory: './ui/assets',
       publicPath: '/.assets/',
     },
     proxy: proxyConfig,
-    transportMode: {
-      client: 'ws',
-    },
+    webSocketServer: 'ws',
   }
 
   // Based on the update: https://github.com/webpack/webpack-dev-server/pull/2844
@@ -118,35 +138,66 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
-  await new Promise((resolve, reject) => {
-    signale.await('Waiting for Webpack to compile assets')
-    server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))
+  const compiler = createWebpackCompiler(webpackConfig)
+  let compilationDoneOnce = false
+  compiler.hooks.done.tap('Print external URL', stats => {
+    stats = stats.toJson()
+    if (stats.errors !== undefined && stats.errors.length > 0) {
+      // show errors
+      return
+    }
+    if (compilationDoneOnce) {
+      return
+    }
+    compilationDoneOnce = true
+
+    printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: https://${sockHost}:${sockPort}`])
   })
+
+  const server = new WebpackDevServer(options, compiler)
+  signale.await('Waiting for Webpack to compile assets')
+  await server.start()
 }
 
+const esbuildDevelopmentProxy = () =>
+  esbuildDevelopmentServer(DEV_SERVER_LISTEN_ADDR, app => {
+    app.use(
+      '/',
+      createProxyMiddleware({
+        target: {
+          protocol: 'http:',
+          host: DEV_SERVER_PROXY_TARGET_ADDR.host,
+          port: DEV_SERVER_PROXY_TARGET_ADDR.port,
+        },
+        logLevel: 'error',
+      })
+    )
+  })
+
+const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentProxy
+
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-const codeGen = gulp.parallel(schema, graphQlOperations, graphQlSchema)
+const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
 
 // Watches code generation only, rebuilds on file changes
-const watchCodeGen = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations)
+const watchGenerators = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
 
 /**
  * Builds everything.
  */
-const build = gulp.series(codeGen, webpack)
+const build = gulp.series(generate, webBuild)
 
 /**
  * Starts a development server without initial code generation, watches everything and rebuilds on file changes.
  */
-const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, webpackDevelopmentServer)
+const developmentWithoutInitialCodeGen = gulp.parallel(watchGenerators, developmentServer)
 
 /**
  * Runs code generation first, then starts a development server, watches everything and rebuilds on file changes.
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  codeGen,
+  generate,
   developmentWithoutInitialCodeGen
 )
 
@@ -156,8 +207,8 @@ const development = gulp.series(
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  codeGen,
-  gulp.parallel(watchCodeGen, watchWebpack)
+  generate,
+  gulp.parallel(watchGenerators, watchWebpack)
 )
 
 module.exports = {
@@ -168,4 +219,8 @@ module.exports = {
   webpackDevServer: webpackDevelopmentServer,
   webpack,
   watchWebpack,
+  webBuild,
+  developmentServer,
+  generate,
+  watchGenerators,
 }

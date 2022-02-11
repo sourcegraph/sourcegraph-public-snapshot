@@ -5,7 +5,7 @@ Access tokens permit authenticated access to the Sourcegraph API. This is requir
 Creating an access token is done through your user settings. This video shows the steps, which are then described below:
 
 <video width="1920" height="1080" autoplay controls loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
-  <source src="https://sourcegraphstatic.com/docs/images/integration/cli/token.webm type="video/webm">
+  <source src="https://sourcegraphstatic.com/docs/images/integration/cli/token.webm" type="video/webm">
   <source src="https://sourcegraphstatic.com/docs/images/integration/cli/token.mp4" type="video/mp4">
 </video>
 

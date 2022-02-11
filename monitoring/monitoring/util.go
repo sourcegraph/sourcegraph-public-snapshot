@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // upperFirst returns s with an uppercase first rune.
@@ -18,6 +18,13 @@ func withPeriod(s string) string {
 		return s + "."
 	}
 	return s
+}
+
+func pluralize(noun string, count int) string {
+	if count != 1 {
+		noun += "s"
+	}
+	return fmt.Sprintf("%d %s", count, noun)
 }
 
 // StringPtr converts a string value to a pointer, useful for setting fields in some APIs.

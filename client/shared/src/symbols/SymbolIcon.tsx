@@ -1,4 +1,5 @@
-import { kebabCase } from 'lodash'
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
 import CodeArrayIcon from 'mdi-react/CodeArrayIcon'
 import CodeBracesIcon from 'mdi-react/CodeBracesIcon'
@@ -28,6 +29,7 @@ import * as React from 'react'
 
 import { SymbolKind } from '../graphql-operations'
 
+import styles from './SymbolIcon.module.scss'
 /**
  * Returns the icon component for a given symbol kind
  */
@@ -95,16 +97,14 @@ interface SymbolIconProps {
     kind: SymbolKind
     className?: string
 }
+function getSymbolIconClassName(kind: SymbolKind): string | undefined {
+    return (styles as Record<string, string>)[`symbolIconKind${upperFirst(kind.toLowerCase())}`]
+}
 
 /**
  * Renders an Icon for a given symbol kind
  */
 export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, className = '' }) => {
     const Icon = getSymbolIconComponent(kind)
-    return (
-        <Icon
-            className={`symbol-icon symbol-icon--kind-${kebabCase(kind)} ${className}`}
-            data-tooltip={kind.toLowerCase()}
-        />
-    )
+    return <Icon className={classNames(getSymbolIconClassName(kind), className)} data-tooltip={kind.toLowerCase()} />
 }

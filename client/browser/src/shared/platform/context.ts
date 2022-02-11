@@ -1,22 +1,19 @@
-import { combineLatest, Observable, ReplaySubject } from 'rxjs'
-import { map, switchMap, take } from 'rxjs/operators'
+import { combineLatest, ReplaySubject } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, LocalStorageSubject } from '@sourcegraph/common'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'
 import { background } from '../../browser-extension/web-extension-api/runtime'
-import { requestGraphQlHelper } from '../backend/requestGraphQl'
+import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 import { isInPage } from '../context'
-import { observeSourcegraphURL } from '../util/context'
 
 import { createExtensionHost } from './extensionHost'
 import { getInlineExtensions, shouldUseInlineExtensions } from './inlineExtensionsService'
@@ -43,7 +40,7 @@ export interface SourcegraphIntegrationURLs {
  */
 export interface BrowserPlatformContext extends PlatformContext {
     /**
-     * Refetches the settings cascade from the Sourcegraph instance.
+     * Re-fetches the settings cascade from the Sourcegraph instance.
      */
     refreshSettings(): Promise<void>
 }
@@ -57,19 +54,7 @@ export function createPlatformContext(
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    const requestGraphQL: PlatformContext['requestGraphQL'] = <T, V = object>({
-        request,
-        variables,
-    }: {
-        request: string
-        variables: V
-        mightContainPrivateInfo: boolean
-        privateCloudErrors?: Observable<boolean>
-    }): Observable<GraphQLResult<T>> =>
-        observeSourcegraphURL(isExtension).pipe(
-            take(1),
-            switchMap(sourcegraphURL => requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables }))
-        )
+    const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
     const context: BrowserPlatformContext = {
         /**
@@ -130,6 +115,7 @@ export function createPlatformContext(
             await context.refreshSettings()
         },
         requestGraphQL,
+        getGraphQLClient: getBrowserGraphQLClient,
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },

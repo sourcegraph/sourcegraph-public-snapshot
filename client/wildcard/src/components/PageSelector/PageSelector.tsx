@@ -5,9 +5,10 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
+import { Button } from '../Button'
 
 import styles from './PageSelector.module.scss'
 
@@ -16,14 +17,14 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
-    <button
-        type="button"
-        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', styles.button)}
+    <Button
+        className={classNames('mx-1', styles.button)}
+        variant={active ? 'primary' : 'link'}
         aria-current={active}
         {...props}
     >
         {children}
-    </button>
+    </Button>
 )
 
 const isMobileViewport = (width: number): boolean => width < 576

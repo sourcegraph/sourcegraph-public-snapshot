@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var patchID uint64
@@ -102,7 +102,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
 		t := time.Now()
-		out, err := cmd.CombinedOutput()
+		out, err := runWith(ctx, cmd, true, nil)
 		if err != nil {
 			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
 			log15.Info("command failed", "prefix", prefix, "command", argsToString(cmd.Args), "duration", time.Since(t), "error", err, "output", string(out))
@@ -256,7 +256,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		// If the protocol is SSH and a private key was given, we want to
 		// use it for communication with the code host.
-		if remoteURL.Scheme == "ssh" && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
+		if remoteURL.IsSSH() && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
 			// We set up an agent here, which sets up a socket that can be provided to
 			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
 			// it in the background.

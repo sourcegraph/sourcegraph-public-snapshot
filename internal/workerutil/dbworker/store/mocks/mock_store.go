@@ -51,6 +51,9 @@ type MockStore struct {
 	// UpdateExecutionLogEntryFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateExecutionLogEntry.
 	UpdateExecutionLogEntryFunc *StoreUpdateExecutionLogEntryFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *StoreWithFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -112,6 +115,78 @@ func NewMockStore() *MockStore {
 				return nil
 			},
 		},
+		WithFunc: &StoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) store.Store {
+				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockStore creates a new mock of the Store interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockStore() *MockStore {
+	return &MockStore{
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+				panic("unexpected invocation of MockStore.AddExecutionLogEntry")
+			},
+		},
+		DequeueFunc: &StoreDequeueFunc{
+			defaultHook: func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
+				panic("unexpected invocation of MockStore.Dequeue")
+			},
+		},
+		HandleFunc: &StoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockStore.Handle")
+			},
+		},
+		HeartbeatFunc: &StoreHeartbeatFunc{
+			defaultHook: func(context.Context, []int, store.HeartbeatOptions) ([]int, error) {
+				panic("unexpected invocation of MockStore.Heartbeat")
+			},
+		},
+		MarkCompleteFunc: &StoreMarkCompleteFunc{
+			defaultHook: func(context.Context, int, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkComplete")
+			},
+		},
+		MarkErroredFunc: &StoreMarkErroredFunc{
+			defaultHook: func(context.Context, int, string, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkErrored")
+			},
+		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkFailed")
+			},
+		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: func(context.Context, bool, []*sqlf.Query) (int, error) {
+				panic("unexpected invocation of MockStore.QueuedCount")
+			},
+		},
+		RequeueFunc: &StoreRequeueFunc{
+			defaultHook: func(context.Context, int, time.Time) error {
+				panic("unexpected invocation of MockStore.Requeue")
+			},
+		},
+		ResetStalledFunc: &StoreResetStalledFunc{
+			defaultHook: func(context.Context) (map[int]time.Duration, map[int]time.Duration, error) {
+				panic("unexpected invocation of MockStore.ResetStalled")
+			},
+		},
+		UpdateExecutionLogEntryFunc: &StoreUpdateExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+				panic("unexpected invocation of MockStore.UpdateExecutionLogEntry")
+			},
+		},
+		WithFunc: &StoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) store.Store {
+				panic("unexpected invocation of MockStore.With")
+			},
+		},
 	}
 }
 
@@ -151,6 +226,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		UpdateExecutionLogEntryFunc: &StoreUpdateExecutionLogEntryFunc{
 			defaultHook: i.UpdateExecutionLogEntry,
+		},
+		WithFunc: &StoreWithFunc{
+			defaultHook: i.With,
 		},
 	}
 }
@@ -1373,5 +1451,107 @@ func (c StoreUpdateExecutionLogEntryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreUpdateExecutionLogEntryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreWithFunc describes the behavior when the With method of the parent
+// MockStore instance is invoked.
+type StoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) store.Store
+	hooks       []func(basestore.ShareableStore) store.Store
+	history     []StoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) With(v0 basestore.ShareableStore) store.Store {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(StoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) store.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreWithFunc) PushHook(hook func(basestore.ShareableStore) store.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreWithFunc) SetDefaultReturn(r0 store.Store) {
+	f.SetDefaultHook(func(basestore.ShareableStore) store.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreWithFunc) PushReturn(r0 store.Store) {
+	f.PushHook(func(basestore.ShareableStore) store.Store {
+		return r0
+	})
+}
+
+func (f *StoreWithFunc) nextHook() func(basestore.ShareableStore) store.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWithFunc) appendCall(r0 StoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWithFuncCall objects describing the
+// invocations of this function.
+func (f *StoreWithFunc) History() []StoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWithFuncCall is an object that describes an invocation of method
+// With on an instance of MockStore.
+type StoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

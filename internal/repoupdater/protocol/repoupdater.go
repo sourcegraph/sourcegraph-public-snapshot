@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -94,6 +96,8 @@ func (r *RepoLookupResult) String() string {
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
+	ID api.RepoID // ID is the unique numeric ID for this repository.
+
 	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
 	// in the lookup. If the repository was renamed on the external service, this name is the new name.
 	Name api.RepoName
@@ -114,6 +118,7 @@ type RepoInfo struct {
 
 func NewRepoInfo(r *types.Repo) *RepoInfo {
 	info := RepoInfo{
+		ID:           r.ID,
 		Name:         r.Name,
 		Description:  r.Description,
 		Fork:         r.Fork,
@@ -157,6 +162,19 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeBitbucketCloud:
+		repo := r.Metadata.(*bitbucketcloud.Repo)
+		if repo.Links.HTML.Href == "" {
+			break
+		}
+
+		href := repo.Links.HTML.Href
+		info.Links = &RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(href, "/src/{rev}/{path}"),
+			Blob:   pathAppend(href, "/src/{rev}/{path}"),
+			Commit: pathAppend(href, "/commits/{commit}"),
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
@@ -235,10 +253,12 @@ type ChangesetSyncResponse struct {
 	Error string
 }
 
-// PermsSyncRequest is a request to sync permissions.
+// PermsSyncRequest is a request to sync permissions. The provided options are used to
+// sync all provided users and repos - to use different options, make a separate request.
 type PermsSyncRequest struct {
-	UserIDs []int32      `json:"user_ids"`
-	RepoIDs []api.RepoID `json:"repo_ids"`
+	UserIDs []int32                 `json:"user_ids"`
+	RepoIDs []api.RepoID            `json:"repo_ids"`
+	Options authz.FetchPermsOptions `json:"options"`
 }
 
 // PermsSyncResponse is a response to sync permissions.

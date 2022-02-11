@@ -36,6 +36,23 @@ func NewMockWithHooks() *MockWithHooks {
 	}
 }
 
+// NewStrictMockWithHooks creates a new mock of the WithHooks interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockWithHooks() *MockWithHooks {
+	return &MockWithHooks{
+		PostHandleFunc: &WithHooksPostHandleFunc{
+			defaultHook: func(context.Context, Record) {
+				panic("unexpected invocation of MockWithHooks.PostHandle")
+			},
+		},
+		PreHandleFunc: &WithHooksPreHandleFunc{
+			defaultHook: func(context.Context, Record) {
+				panic("unexpected invocation of MockWithHooks.PreHandle")
+			},
+		},
+	}
+}
+
 // NewMockWithHooksFrom creates a new mock of the MockWithHooks interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockWithHooksFrom(i WithHooks) *MockWithHooks {

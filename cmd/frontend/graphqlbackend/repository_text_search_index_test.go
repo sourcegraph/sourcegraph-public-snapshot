@@ -5,15 +5,16 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type repoListerMock struct{}
@@ -28,12 +29,15 @@ func (r repoListerMock) List(ctx context.Context, q zoektquery.Q, opts *zoekt.Li
 				{Name: "1.0", Version: "deadbeef"},
 			},
 		},
+		IndexMetadata: zoekt.IndexMetadata{
+			IndexTime: time.Now(),
+		},
 	}}
 	return &zoekt.RepoList{Repos: zoektRepo}, nil
 }
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	defaultBranchRef := "refs/heads/main"
 	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
@@ -48,7 +52,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defer git.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo:   NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),
+		repo:   NewRepositoryResolver(database.NewDB(db), &types.Repo{Name: "alice/repo"}),
 		client: &repoListerMock{},
 	}
 	refs, err := repoIndexResolver.Refs(context.Background())

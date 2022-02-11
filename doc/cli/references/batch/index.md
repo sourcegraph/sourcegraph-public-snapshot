@@ -4,6 +4,7 @@
 
 
 * [`apply`](apply.md)
+* [`exec`](exec.md)
 * [`new`](new.md)
 * [`preview`](preview.md)
 * [`repositories`](repositories.md)

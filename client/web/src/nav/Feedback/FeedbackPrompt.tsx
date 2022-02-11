@@ -1,22 +1,21 @@
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useEffect, useState } from 'react'
-import TextAreaAutosize from 'react-textarea-autosize'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { gql, useMutation } from '@sourcegraph/http-client'
+import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useRoutesMatch } from '../../hooks'
 import { LayoutRouteProps } from '../../routes'
 import { IconRadioButtons } from '../IconRadioButtons'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
+import styles from './FeedbackPrompt.module.scss'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -54,6 +53,8 @@ interface ContentProps {
     routeMatch?: string
     /** Text to be prepended to user input on submission. */
     textPrefix?: string
+    /** Boolean for displaying the Join Research link */
+    productResearchEnabled?: boolean
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
@@ -62,15 +63,16 @@ const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     closePrompt,
     routeMatch,
+    productResearchEnabled,
     textPrefix = '',
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
+    const textAreaReference = useRef<HTMLInputElement>(null)
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
-    const handleTextChange = useCallback(
-        (event: React.ChangeEvent<HTMLTextAreaElement>) => setText(event.target.value),
-        [setText]
-    )
+    const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
+        setText,
+    ])
 
     const [submitFeedback, { loading, data, error }] = useMutation<
         SubmitHappinessFeedbackResult,
@@ -102,18 +104,20 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
         }
     }, [data?.submitHappinessFeedback])
 
+    useAutoFocus({ autoFocus: true, reference: textAreaReference })
+
     return (
         <>
-            <Button className="feedback-prompt__close" onClick={closePrompt}>
-                <CloseIcon className="feedback-prompt__icon" />
+            <Button className={styles.close} onClick={closePrompt}>
+                <CloseIcon className={styles.icon} />
             </Button>
             {data?.submitHappinessFeedback ? (
-                <div className="feedback-prompt__success">
-                    <TickIcon className="feedback-prompt__success--tick" />
+                <div className={styles.success}>
+                    <TickIcon className={styles.successTick} />
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.
-                        {window.context.productResearchPageEnabled && (
+                        {productResearchEnabled && (
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
@@ -129,14 +133,15 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                 <Form onSubmit={handleSubmit}>
                     <h3 className="mb-0">What’s on your mind?</h3>
 
-                    <TextAreaAutosize
+                    <FlexTextArea
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
                         maxRows={6}
                         placeholder="What’s going well? What could be better?"
-                        className="form-control feedback-prompt__textarea"
+                        className={styles.textarea}
                         autoFocus={true}
+                        ref={textAreaReference}
                     />
 
                     <IconRadioButtons
@@ -153,10 +158,11 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         disabled={!rating || !text || loading}
                         role="menuitem"
                         type="submit"
+                        display="block"
                         variant="secondary"
-                        className="btn-block feedback-prompt__button"
+                        className={styles.button}
                     >
-                        {loading ? <LoadingSpinner inline={true} /> : 'Send'}
+                        {loading ? <LoadingSpinner /> : 'Send'}
                     </Button>
                 </Form>
             )}
@@ -176,17 +182,27 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
     const match = useRoutesMatch(routes)
 
     return (
-        <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
-            <DropdownToggle
+        <ButtonDropdown
+            a11y={false}
+            isOpen={isOpen}
+            toggle={handleToggle}
+            className={styles.feedbackPrompt}
+            group={false}
+        >
+            <Button
                 tag="button"
                 caret={false}
-                className="btn btn-sm btn-outline-secondary text-decoration-none feedback-prompt__toggle"
+                className={classNames('text-decoration-none', styles.toggle)}
                 aria-label="Feedback"
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={DropdownToggle}
             >
                 <span>Feedback</span>
-            </DropdownToggle>
-            <DropdownMenu right={true} className="feedback-prompt__menu">
-                <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
+            </Button>
+            <DropdownMenu right={true} className={styles.menu}>
+                <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>
     )

@@ -1,10 +1,9 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
 import { reenqueueChangesets as _reenqueueChangesets } from '../backend'
 
@@ -38,29 +37,26 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
     }, [changesetIDs, reenqueueChangesets, batchChangeID, afterCreate])
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
             <h3 id={LABEL_ID}>Re-enqueue changesets</h3>
             <p className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
+                    {isLoading === true && <LoadingSpinner />}
                     Re-enqueue
-                </button>
+                </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

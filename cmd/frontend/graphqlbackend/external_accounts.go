@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -66,7 +65,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 // 🚨 SECURITY: When instantiating an externalAccountConnectionResolver value, the caller MUST check
 // permissions.
 type externalAccountConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	opt database.ExternalAccountsListOptions
 
 	// cache results because they are used by multiple fields
@@ -84,7 +83,7 @@ func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*ext
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.externalAccounts, r.err = database.ExternalAccounts(r.db).List(ctx, opt2)
+		r.externalAccounts, r.err = r.db.UserExternalAccounts().List(ctx, opt2)
 	})
 	return r.externalAccounts, r.err
 }
@@ -103,7 +102,7 @@ func (r *externalAccountConnectionResolver) Nodes(ctx context.Context) ([]*exter
 }
 
 func (r *externalAccountConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := database.ExternalAccounts(r.db).Count(ctx, r.opt)
+	count, err := r.db.UserExternalAccounts().Count(ctx, r.opt)
 	return int32(count), err
 }
 

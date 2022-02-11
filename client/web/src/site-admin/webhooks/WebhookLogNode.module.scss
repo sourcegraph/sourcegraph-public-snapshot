@@ -1,0 +1,52 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.separator {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color-2);
+}
+
+.expanded {
+    grid-column: 1 / -1;
+    background: var(--body-bg);
+    margin-top: 0.5rem;
+    // Override the grid gap at the bottom of the expanded element so the
+    // background runs all the way to the next border.
+    margin-bottom: -0.5rem;
+
+    @media (--sm-breakpoint-down) {
+        padding: 0 !important;
+        background: transparent;
+        overflow-x: auto;
+    }
+}
+
+.status-code {
+    text-align: center;
+
+    @media (--sm-breakpoint-down) {
+        text-align: left;
+    }
+}
+
+.status-code,
+.received-at {
+    white-space: nowrap;
+}
+
+.details-button {
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.sm-details-button {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: block;
+
+        > button {
+            width: 100%;
+        }
+    }
+}

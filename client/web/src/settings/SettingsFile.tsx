@@ -1,17 +1,21 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
+import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 import { eventLogger } from '../tracking/eventLogger'
+
+import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
@@ -162,7 +166,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="settings-file test-settings-file d-flex flex-grow-1 flex-column">
+            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
                 <SaveToolbar
                     dirty={dirty}
                     error={this.props.commitError}
@@ -170,17 +174,18 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onSave={this.save}
                     onDiscard={this.discard}
                 />
-                <div className="site-admin-configuration-page__action-groups">
-                    <div className="site-admin-configuration-page__actions">
+                <div className={adminConfigurationStyles.actionGroups}>
+                    <div className={adminConfigurationStyles.actions}>
                         {settingsActions.map(({ id, label }) => (
-                            <button
-                                type="button"
+                            <Button
                                 key={id}
-                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                className={adminConfigurationStyles.action}
                                 onClick={() => this.runAction(id)}
+                                variant="secondary"
+                                size="sm"
                             >
                                 {label}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>

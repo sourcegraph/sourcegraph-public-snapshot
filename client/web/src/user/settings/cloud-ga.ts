@@ -1,11 +1,18 @@
 import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { UserAreaUserFields, Scalars } from '../../graphql-operations'
 
 type Scopes = string[] | null
 
 export interface UserProps {
     user: Pick<UserAreaUserFields, 'id' | 'tags' | 'builtinAuth'>
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'tags'>
+}
+
+export interface Owner {
+    id: Scalars['ID']
+    type: 'user' | 'org'
+    tags?: string[]
+    name?: string
 }
 
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
@@ -24,7 +31,7 @@ export const showPasswordsPage = (props: UserProps): boolean => {
 
 export const showAccountSecurityPage = (props: UserProps): boolean => !showPasswordsPage(props)
 
-export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
+export const externalServiceUserModeFromTags = (tags?: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
     const siteMode = window.context.externalServicesUserMode
     if (siteMode === 'all') {
         // Site mode already allows all repo types, no need to check user tags
@@ -41,11 +48,13 @@ export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'p
 
 // If the user is allowed to add private code but they don't have the 'repo' scope
 // then we need to request it.
-export const githubRepoScopeRequired = (tags: string[], scopes?: Scopes): boolean => requiredScope('repo', tags, scopes)
+export const githubRepoScopeRequired = (tags: string[] = [], scopes?: Scopes): boolean =>
+    requiredScope('repo', tags, scopes)
 
 // If the user is allowed to add private code but they don't have the 'api' scope
 // then we need to request it.
-export const gitlabAPIScopeRequired = (tags: string[], scopes?: Scopes): boolean => requiredScope('api', tags, scopes)
+export const gitlabAPIScopeRequired = (tags: string[] = [], scopes?: Scopes): boolean =>
+    requiredScope('api', tags, scopes)
 
 const requiredScope = (scope: string, tags: string[], scopes?: Scopes): boolean => {
     const allowedPrivate = externalServiceUserModeFromTags(tags) === 'all'

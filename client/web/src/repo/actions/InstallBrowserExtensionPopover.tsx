@@ -1,24 +1,26 @@
+import classNames from 'classnames'
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useMemo } from 'react'
 import FocusLock from 'react-focus-lock'
 import { Popover } from 'reactstrap'
 
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
+import styles from './InstallBrowserExtensionPopover.module.scss'
 
 interface Props {
     url: string
     serviceKind: ExternalServiceKind | null
     onClose: () => void
-    onRejection: () => void
-    onClickInstall: () => void
+    onReject: () => void
+    onInstall: () => void
     targetID: string
-    toggle: () => void
+    onToggle: () => void
     isOpen: boolean
 }
 
@@ -26,10 +28,10 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
     url,
     serviceKind,
     onClose,
-    onRejection,
-    onClickInstall,
+    onReject,
+    onInstall,
     targetID,
-    toggle,
+    onToggle,
     isOpen,
 }) => {
     const { displayName, icon } = serviceKindDisplayNameAndIcon(serviceKind)
@@ -40,10 +42,10 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
 
     return (
         <Popover
-            toggle={toggle}
+            toggle={onToggle}
             target={targetID}
             isOpen={isOpen}
-            popperClassName="shadow border install-browser-extension-popover"
+            popperClassName={classNames('shadow border', styles.installBrowserExtensionPopover)}
             innerClassName="border-0"
             placement="bottom"
             boundariesElement="window"
@@ -71,36 +73,46 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                             on {displayName} or any other connected code host.
                         </p>
 
-                        <div className="mx-auto install-browser-extension-popover__graphic-container d-flex justify-content-between align-items-center">
-                            <SourcegraphIcon className="install-browser-extension-popover__logo p-1" />
-                            <PlusThickIcon className="install-browser-extension-popover__plus-icon" />
-                            <Icon className="install-browser-extension-popover__logo" />
+                        <div
+                            className={classNames(
+                                'mx-auto d-flex justify-content-between align-items-center',
+                                styles.graphicContainer
+                            )}
+                        >
+                            <SourcegraphIcon className={classNames('p-1', styles.logo)} />
+                            <PlusThickIcon className={styles.plusIcon} />
+                            <Icon className={styles.logo} />
                         </div>
 
                         <div className="d-flex justify-content-end">
                             <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
-                                onSelect={onRejection}
+                                className="mr-2"
+                                onSelect={onReject}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
                             >
                                 No, thanks
                             </ButtonLink>
 
                             <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
+                                className="mr-2"
                                 onSelect={onClose}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
                             >
                                 Remind me later
                             </ButtonLink>
 
                             <ButtonLink
-                                className="btn btn-primary mr-2"
-                                onSelect={onClickInstall}
+                                className="mr-2"
+                                onSelect={onInstall}
                                 to="/help/integration/browser_extension"
                                 {...linkProps}
+                                variant="primary"
                             >
                                 Install browser extension
                             </ButtonLink>

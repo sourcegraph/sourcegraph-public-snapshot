@@ -5,11 +5,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetRetentionStatistics(ctx context.Context, db dbutil.DB) (*types.RetentionStats, error) {
+func GetRetentionStatistics(ctx context.Context, db database.DB) (*types.RetentionStats, error) {
 	weekAgo := timeNow().AddDate(0, 0, -7)
 
 	weeklyRetentionQuery := sqlf.Sprintf(`

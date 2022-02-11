@@ -7,22 +7,21 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // This test lives in cmd/enterprise because it tests a proprietary
 // super-set of the validation performed by the OSS version.
 func TestExternalServices_ValidateConfig(t *testing.T) {
-	d := dbtesting.GetDB(t)
+	d := dbtest.NewDB(t)
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -681,11 +680,11 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "without url, token, repositoryQuery, repos nor orgs",
+			desc:   "without url, token, githubAppInstallationID, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
 				"url is required",
-				"token is required",
+				"at least one of token or githubAppInstallationID must be set",
 				"at least one of repositoryQuery, repos or orgs must be set",
 			),
 		},
@@ -697,6 +696,17 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: extsvc.KindGitHub,
+			desc: "with url, githubAppInstallationID, repos",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"githubAppInstallationID": "21994992",
+				"repos": [],
 			}`,
 			assert: equals(`<nil>`),
 		},
@@ -1297,7 +1307,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			if err == nil {
 				have = append(have, "<nil>")
 			} else {
-				var errs *multierror.Error
+				var errs *errors.MultiError
 				if errors.As(err, &errs) {
 					for _, err := range errs.Errors {
 						have = append(have, err.Error())

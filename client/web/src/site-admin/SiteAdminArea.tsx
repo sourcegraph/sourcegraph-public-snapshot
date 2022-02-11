@@ -2,13 +2,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
@@ -87,6 +86,8 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         isLightTheme: props.isLightTheme,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
+        batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
@@ -96,16 +97,18 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className="site-admin-area d-flex my-3" ref={reference}>
+            <div className="d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
-                    className="sidebar flex-0 mr-3"
+                    className="flex-0 mr-3"
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
+                    batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
+                    batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
                                 {props.routes.map(
                                     ({ render, path, exact, condition = () => true }) =>

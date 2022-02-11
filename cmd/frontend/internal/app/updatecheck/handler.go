@@ -10,20 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -32,26 +31,26 @@ var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
-	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
+	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.30.4")
+	latestReleaseDockerServerImageBuild = newBuild("3.36.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.30.4")
+	latestReleaseKubernetesBuild = newBuild("3.36.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.30.4")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.36.3")
 )
 
 func getLatestRelease(deployType string) build {
 	switch {
-	case conf.IsDeployTypeKubernetes(deployType):
+	case deploy.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
-	case conf.IsDeployTypeDockerCompose(deployType), conf.IsDeployTypePureDocker(deployType):
+	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
 	default:
 		return latestReleaseDockerServerImageBuild
@@ -138,8 +137,10 @@ func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (boo
 	return clientVersion.LessThan(latestReleaseBuild.Version), nil
 }
 
-var dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
-var timeNow = time.Now
+var (
+	dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+	timeNow   = time.Now
+)
 
 // canUpdateDate returns true if clientVersionString contains a date
 // more than 40 days in the past. It returns an error if there is no
@@ -193,6 +194,7 @@ type pingRequest struct {
 	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
 	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
 	InitialAdminEmail   string          `json:"initAdmin"`
+	TosAccepted         bool            `json:"tosAccepted"`
 	TotalUsers          int32           `json:"totalUsers"`
 	HasRepos            bool            `json:"repos"`
 	EverSearched        bool            `json:"searched"`
@@ -235,6 +237,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		HasRepos:             toBool(q.Get("repos")),
 		EverSearched:         toBool(q.Get("searched")),
 		EverFindRefs:         toBool(q.Get("refs")),
+		TosAccepted:          toBool(q.Get("tosAccepted")),
 	}, nil
 }
 
@@ -343,7 +346,7 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		now := time.Now().UTC()
 		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis})
+		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
 	}
 }
 

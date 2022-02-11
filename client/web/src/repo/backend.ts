@@ -1,6 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -8,9 +10,6 @@ import {
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
     makeRepoURI,
@@ -184,15 +183,13 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                     $commitID: String!
                     $filePath: String!
                     $disableTimeout: Boolean!
-                    $isLightTheme: Boolean!
                     $ranges: [HighlightLineRange!]!
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 isDirectory
-                                richHTML
-                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
+                                highlight(disableTimeout: $disableTimeout) {
                                     aborted
                                     lineRanges(ranges: $ranges)
                                 }
@@ -216,9 +213,9 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
         ),
     context =>
         makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&isLightTheme=${String(
-            context.isLightTheme
-        )}&ranges=${context.ranges.map(range => `${range.startLine}:${range.endLine}`).join(',')}`
+        `?disableTimeout=${String(context.disableTimeout)}&ranges=${context.ranges
+            .map(range => `${range.startLine}:${range.endLine}`)
+            .join(',')}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(

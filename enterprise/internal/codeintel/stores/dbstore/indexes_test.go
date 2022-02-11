@@ -11,16 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -93,10 +90,7 @@ func TestGetIndexByID(t *testing.T) {
 }
 
 func TestGetQueuedIndexRank(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -145,10 +139,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 }
 
 func TestGetIndexesByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -210,10 +201,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 }
 
 func TestGetIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -264,6 +252,7 @@ func TestGetIndexes(t *testing.T) {
 		{term: "333", expectedIDs: []int{1, 2, 3, 5}},    // searches commits and failure message
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}}, // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},          // search repo names
+		{state: "failed", expectedIDs: []int{2}},         // treats errored/failed states equivalently
 	}
 
 	for _, testCase := range testCases {
@@ -331,10 +320,7 @@ func TestGetIndexes(t *testing.T) {
 }
 
 func TestIsQueued(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
@@ -371,10 +357,7 @@ func TestIsQueued(t *testing.T) {
 }
 
 func TestInsertIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -499,10 +482,7 @@ func TestInsertIndexes(t *testing.T) {
 }
 
 func TestDeleteIndexByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertIndexes(t, db,
@@ -524,10 +504,7 @@ func TestDeleteIndexByID(t *testing.T) {
 }
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
@@ -538,10 +515,7 @@ func TestDeleteIndexByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteIndexesWithoutRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	var indexes []Index
@@ -581,51 +555,5 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 	if diff := cmp.Diff(expected, ids); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)
-	}
-}
-
-func TestDeleteOldIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t1.Add(time.Minute * 4)
-	t4 := t1.Add(time.Minute * 6)
-
-	insertIndexes(t, db,
-		Index{ID: 1, State: "completed", QueuedAt: t1},
-		Index{ID: 2, State: "errored", QueuedAt: t2},
-		Index{ID: 3, State: "completed", QueuedAt: t3},
-		Index{ID: 4, State: "completed", QueuedAt: t4}, // too new
-		Index{ID: 5, State: "queued", QueuedAt: t4},    // too new
-		Index{ID: 6, State: "queued", QueuedAt: t3},
-		Index{ID: 7, State: "queued", QueuedAt: t4}, // too new
-	)
-
-	if count, err := store.DeleteOldIndexes(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
-		t.Fatalf("unexpected error pruning indexes: %s", err)
-	} else if count != 4 {
-		t.Fatalf("unexpected number of indexes deleted: want=%d have=%d", 4, count)
-	}
-
-	existence := map[int]bool{
-		1: false,
-		2: false,
-		3: false,
-		4: true,
-		5: true,
-		6: false,
-		7: true,
-	}
-	for id, expectedExists := range existence {
-		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting index: %s", err)
-		} else if exists != expectedExists {
-			t.Fatalf("unexpected record %d. want=%v have=%v", id, expectedExists, exists)
-		}
 	}
 }

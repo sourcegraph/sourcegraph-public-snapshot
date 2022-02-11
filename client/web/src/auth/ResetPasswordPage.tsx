@@ -1,19 +1,22 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { Button, Link, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
+import styles from './ResetPasswordPage.module.scss'
 import { PasswordInput } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -44,7 +47,10 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
         if (this.state.submitOrError === null) {
             return (
                 <>
-                    <div className="reset-password-page__form signin-signup-form border rounded p-4 mb-3">
+                    <div
+                        className={classNames('border rounded p-4 mb-3', signInSignUpCommonStyles.signinSignupForm)}
+                        data-testid="reset-password-page-form"
+                    >
                         <p className="text-left mb-0">Check your email for a link to reset your password.</p>
                     </div>
                     <span className="form-text text-muted">
@@ -60,7 +66,12 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     <ErrorAlert className="mt-2" error={this.state.submitOrError} />
                 )}
                 <Form
-                    className="reset-password-page__form signin-signup-form border rounded p-4 mb-3"
+                    className={classNames(
+                        'border rounded p-4 mb-3',
+                        signInSignUpCommonStyles.signinSignupForm,
+                        styles.form
+                    )}
+                    data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPasswordInit}
                 >
                     <p className="text-left">
@@ -80,17 +91,14 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Send reset password link'
-                        )}
-                    </button>
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
+                    </Button>
                 </Form>
                 <span className="form-text text-muted">
                     <Link to="/sign-in">Return to sign in</Link>
@@ -162,9 +170,9 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
     public render(): JSX.Element | null {
         if (this.state.submitOrError === null) {
             return (
-                <div className="alert alert-success">
+                <Alert variant="success">
                     Your password was reset. <Link to="/sign-in">Sign in with your new password</Link> to continue.
-                </div>
+                </Alert>
             )
         }
 
@@ -174,7 +182,12 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                     <ErrorAlert className="mt-2" error={this.state.submitOrError} />
                 )}
                 <Form
-                    className="reset-password-page__form signin-signup-form border rounded p-4 mb-3"
+                    className={classNames(
+                        'border rounded p-4 mb-3',
+                        signInSignUpCommonStyles.signinSignupForm,
+                        styles.form
+                    )}
+                    data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPassword}
                 >
                     <p className="text-left">Enter a new password for your account.</p>
@@ -190,17 +203,14 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Reset password'
-                        )}
-                    </button>
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Reset password'}
+                    </Button>
                 </Form>
             </>
         )
@@ -255,7 +265,7 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
     public render(): JSX.Element | null {
         let body: JSX.Element
         if (this.props.authenticatedUser) {
-            body = <div className="alert alert-danger">Authenticated users may not perform password reset.</div>
+            body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
         } else if (window.context.resetPasswordEnabled) {
             const searchParameters = new URLSearchParams(this.props.location.search)
             if (searchParameters.has('code') || searchParameters.has('userID')) {
@@ -264,16 +274,16 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
                 if (code && !isNaN(userID)) {
                     body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
                 } else {
-                    body = <div className="alert alert-danger">The password reset link you followed is invalid.</div>
+                    body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
                 }
             } else {
                 body = <ResetPasswordInitForm history={this.props.history} />
             }
         } else {
             body = (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     Password reset is disabled. Ask a site administrator to manually reset your password.
-                </div>
+                </Alert>
             )
         }
 
@@ -285,7 +295,9 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
                     iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
                     iconClassName="bg-transparent"
                     title="Reset your password"
-                    body={<div className="mt-4 signin-page__container">{body}</div>}
+                    body={
+                        <div className={classNames('mt-4', signInSignUpCommonStyles.signinPageContainer)}>{body}</div>
+                    }
                 />
             </>
         )

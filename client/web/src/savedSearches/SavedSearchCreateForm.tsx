@@ -4,7 +4,7 @@ import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'

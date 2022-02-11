@@ -1,25 +1,25 @@
+import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { createAggregateError, pluralize } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+
+import styles from './RepoSettingsIndexPage.module.scss'
 
 /**
  * Fetches a repository's text search index information.
@@ -76,21 +76,12 @@ const TextSearchIndexedReference: React.FunctionComponent<{
     repo: SettingsAreaRepositoryFields
     indexedRef: GQL.IRepositoryTextSearchIndexedRef
 }> = ({ repo, indexedRef }) => {
-    let Icon: React.ComponentType<{ className?: string }>
-    let iconClassName: string
-    if (indexedRef.indexed && indexedRef.current) {
-        Icon = CheckCircleIcon
-        iconClassName = 'current'
-    } else {
-        Icon = LoadingSpinner
-        iconClassName = 'stale'
-    }
+    const isCurrent = indexedRef.indexed && indexedRef.current
+    const Icon = isCurrent ? CheckCircleIcon : LoadingSpinner
 
     return (
-        <li className="repo-settings-index-page__ref">
-            <Icon
-                className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
-            />
+        <li className={styles.ref}>
+            <Icon className={classNames('icon-inline', styles.refIcon, isCurrent && styles.refIconCurrent)} />
             <LinkOrSpan to={indexedRef.ref.url}>
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
@@ -123,6 +114,19 @@ interface State {
     textSearchIndex?: GQL.IRepositoryTextSearchIndex | null
     loading: boolean
     error?: Error
+}
+
+function prettyBytesBigint(bytes: bigint): string {
+    let unit = 0
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const threshold = BigInt(1000)
+
+    while (bytes >= threshold) {
+        bytes /= threshold
+        unit += 1
+    }
+
+    return bytes.toString() + ' ' + units[unit]
 }
 
 /**
@@ -169,8 +173,8 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         ) : undefined
                     }
                 />
-                <Container className="repo-settings-index-page">
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                <Container>
+                    {this.state.loading && <LoadingSpinner />}
                     {this.state.error && (
                         <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
                     )}
@@ -179,7 +183,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         (this.state.textSearchIndex ? (
                             <>
                                 {this.state.textSearchIndex.refs && (
-                                    <ul className="repo-settings-index-page__refs">
+                                    <ul className={styles.refs}>
                                         {this.state.textSearchIndex.refs.map((reference, index) => (
                                             <TextSearchIndexedReference
                                                 key={index}
@@ -192,7 +196,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 {this.state.textSearchIndex.status && (
                                     <>
                                         <h3>Statistics</h3>
-                                        <table className="table repo-settings-index-page__stats mb-0">
+                                        <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
                                                     <th>Last updated</th>
@@ -203,7 +207,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                 <tr>
                                                     <th>Content size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.contentByteSize)}{' '}
+                                                        {prettyBytesBigint(
+                                                            BigInt(this.state.textSearchIndex.status.contentByteSize)
+                                                        )}{' '}
                                                         ({this.state.textSearchIndex.status.contentFilesCount}{' '}
                                                         {pluralize(
                                                             'file',
@@ -241,11 +247,11 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                             </>
                         ) : (
-                            <div className="alert alert-info mb-0">
+                            <Alert className="mb-0" variant="info">
                                 This Sourcegraph site has not enabled indexed search. See{' '}
                                 <Link to="/help/admin/search">search documentation</Link> for information on how to
                                 enable it.
-                            </div>
+                            </Alert>
                         ))}
                 </Container>
             </>

@@ -44,7 +44,7 @@ func newSlackButtonDocs() slackBlock {
 			Type: "plain_text",
 			Text: "Docs",
 		},
-		"url": "https://about.sourcegraph.com/handbook/engineering/distribution/tools/resources_report",
+		"url": "https://handbook.sourcegraph.com/engineering/distribution/tools/resources_report",
 	}
 }
 

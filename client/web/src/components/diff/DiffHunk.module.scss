@@ -1,0 +1,73 @@
+.line--both .num,
+.num--both {
+    background-color: var(--code-bg);
+}
+.line--deletion .content {
+    background-color: var(--diff-remove-bg);
+}
+.line--deletion .num {
+    background-color: var(--diff-remove-bg);
+}
+.line--addition .content {
+    background-color: var(--diff-add-bg);
+}
+.line--addition .num {
+    background-color: var(--diff-add-bg);
+}
+.line--active .content {
+    /* important suffix is needed in order to overlap any active line with the addition/deletion colors */
+    background-color: var(--code-line-highlight-color) !important;
+}
+.line--active .num {
+    /* important suffix is needed in order to overlap any active line with the addition/deletion colors */
+    background-color: var(--code-line-highlight-color) !important;
+}
+
+.content {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-family: var(--code-font-family);
+    white-space: pre-wrap;
+    font-size: 0.75rem;
+    background-color: var(--code-bg);
+    &::before {
+        padding-right: 0.5rem;
+        content: attr(data-diff-marker);
+    }
+    &--empty {
+        background-color: var(--body-bg);
+
+        /* This cell is always empty opacity will not affect any content */
+        opacity: 0.5;
+    }
+    div {
+        display: inline;
+    }
+}
+
+.num {
+    background-color: var(--code-bg);
+    min-width: 2.5rem;
+    font-size: 0.75rem;
+    line-height: (20/12);
+    white-space: nowrap;
+    text-align: right;
+    user-select: none;
+    vertical-align: top !important;
+    font-family: var(--code-font-family);
+    padding: 0 0.5rem;
+    &--line {
+        color: var(--line-number-color);
+        display: block;
+        &:hover {
+            color: var(--body-color);
+            text-decoration: none;
+        }
+    }
+    &--empty {
+        background-color: var(--body-bg);
+    }
+    &:nth-child(3) {
+        border-left: 1px solid var(--border-color);
+    }
+}

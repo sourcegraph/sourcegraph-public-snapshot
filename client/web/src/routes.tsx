@@ -1,21 +1,23 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import type { ExtensionAlertProps } from './repo/RepoContainer'
+import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
+import { PageRoutes } from './routes.constants'
+import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
+import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
+import { SearchPageWrapper } from './search/SearchPageWrapper'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
+import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
-import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
-const StreamingSearchResults = lazyComponent(
-    () => import('./search/results/StreamingSearchResults'),
-    'StreamingSearchResults'
-)
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -25,16 +27,11 @@ const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
-const KubernetesRepogroupPage = lazyComponent(() => import('./repogroups/Kubernetes'), 'KubernetesRepogroupPage')
-const StackstormRepogroupPage = lazyComponent(() => import('./repogroups/StackStorm'), 'StackStormRepogroupPage')
-const TemporalRepogroupPage = lazyComponent(() => import('./repogroups/Temporal'), 'TemporalRepogroupPage')
-const O3deRepogroupPage = lazyComponent(() => import('./repogroups/o3de'), 'O3deRepogroupPage')
-const StanfordRepogroupPage = lazyComponent(() => import('./repogroups/Stanford'), 'StanfordRepogroupPage')
-const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'CncfRepogroupPage')
-
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ThemeProps,
+        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
@@ -72,51 +69,81 @@ function passThroughToServer(): React.ReactNode {
  */
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
-        path: '/',
-        render: () => <Redirect to="/search" />,
+        path: PageRoutes.Index,
+        render: () => <Redirect to={PageRoutes.Search} />,
         exact: true,
     },
     {
-        path: '/search',
-        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
+        path: PageRoutes.Search,
+        render: props => <SearchPageWrapper {...props} />,
         exact: true,
     },
     {
-        path: '/search/query-builder',
-        render: props =>
-            props.showQueryBuilder ? (
-                lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage')(props)
+        path: PageRoutes.SearchConsole,
+        render: props => {
+            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+
+            return showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
+            )
+        },
+        exact: true,
+    },
+    {
+        path: PageRoutes.SearchNotebook,
+        render: () => <Redirect to={PageRoutes.Notebooks} />,
+        exact: true,
+    },
+    {
+        path: PageRoutes.NotebookCreate,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
+            ) : (
+                <Redirect to={PageRoutes.Notebooks} />
             ),
         exact: true,
     },
     {
-        path: '/search/console',
+        path: PageRoutes.Notebook,
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            )
+        },
+        exact: true,
+    },
+    {
+        path: PageRoutes.Notebooks,
         render: props =>
-            props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <SearchNotebooksListPage {...props} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
         exact: true,
     },
     {
-        path: '/search/notebook',
-        render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
-        exact: true,
-    },
-    {
-        path: '/sign-in',
+        path: PageRoutes.SignIn,
         render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: '/sign-up',
+        path: PageRoutes.SignUp,
         render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: '/welcome',
+        path: PageRoutes.Welcome,
         render: props =>
             /**
-             * Welcome flow is allowed when:
+             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
              * 1. user is authenticated
              * 2. it's a DotComMode instance
              * AND
@@ -126,8 +153,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
              */
 
             !!props.authenticatedUser &&
-            window.context.sourcegraphDotComMode &&
-            (window.context.experimentalFeatures.enablePostSignupFlow ||
+            (!!new URLSearchParams(props.location.search).get('debug') ||
+                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
                 <PostSignUpPage
                     authenticatedUser={props.authenticatedUser}
@@ -137,30 +164,30 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
 
         exact: true,
     },
     {
-        path: '/settings',
+        path: PageRoutes.Settings,
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
-        path: '/user',
+        path: PageRoutes.User,
         render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
-        path: '/organizations',
+        path: PageRoutes.Organizations,
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
-        path: '/site-admin/init',
+        path: PageRoutes.SiteAdminInit,
         exact: true,
         render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
-        path: '/site-admin',
+        path: PageRoutes.SiteAdmin,
         render: props => (
             <SiteAdminArea
                 {...props}
@@ -171,122 +198,38 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         ),
     },
     {
-        path: '/password-reset',
+        path: PageRoutes.PasswordReset,
         render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
     },
     {
-        path: '/api/console',
+        path: PageRoutes.ApiConsole,
         render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
     },
     {
-        path: '/users/:username',
+        path: PageRoutes.UserArea,
         render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
-        path: '/survey/:score?',
+        path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
-        path: '/extensions',
+        path: PageRoutes.Extensions,
         render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
     },
     {
-        path: '/help',
+        path: PageRoutes.Help,
         render: passThroughToServer,
     },
     {
-        path: '/-/debug/*',
+        path: PageRoutes.Debug,
         render: passThroughToServer,
     },
+    ...communitySearchContextsRoutes,
     {
-        path: '/insights',
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-            props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
-    },
-    {
-        path: '/contexts',
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/convert-version-contexts',
-        render: lazyComponent(
-            () => import('./searchContexts/ConvertVersionContextsPage'),
-            'ConvertVersionContextsPage'
-        ),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
-            !!props.authenticatedUser?.siteAdmin,
-    },
-    {
-        path: '/contexts/new',
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:id/edit',
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:id',
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/kubernetes',
-        render: props => <KubernetesRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stackstorm',
-        render: props => <StackstormRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/temporal',
-        render: props => <TemporalRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/o3de',
-        render: props => <O3deRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stanford',
-        render: props => <StanfordRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/cncf',
-        render: props => <CncfRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/:repoRevAndRest+',
+        path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
 ]

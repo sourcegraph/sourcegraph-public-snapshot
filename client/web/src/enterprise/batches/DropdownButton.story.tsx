@@ -2,7 +2,7 @@ import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { Action, DropdownButton, Props } from './DropdownButton'
 
@@ -51,22 +51,18 @@ const commonKnobs: () => Pick<Props, 'disabled' | 'dropdownMenuPosition'> = () =
     ),
 })
 
-add('No actions', () => (
-    <EnterpriseWebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</EnterpriseWebStory>
-))
+add('No actions', () => <WebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</WebStory>)
 
-add('Single action', () => (
-    <EnterpriseWebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</EnterpriseWebStory>
-))
+add('Single action', () => <WebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</WebStory>)
 
 add('Multiple actions without default', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...commonKnobs()} />}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Multiple actions with default', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {() => (
             <DropdownButton
                 actions={[action, disabledAction, experimentalAction]}
@@ -74,5 +70,5 @@ add('Multiple actions with default', () => (
                 {...commonKnobs()}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

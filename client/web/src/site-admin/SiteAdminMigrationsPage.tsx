@@ -1,6 +1,7 @@
+import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArrowLeftBoldIcon from 'mdi-react/ArrowLeftBoldIcon'
 import ArrowRightBoldIcon from 'mdi-react/ArrowRightBoldIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -8,12 +9,11 @@ import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
 import { parse as _parseVersion, SemVer } from 'semver'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -24,6 +24,7 @@ import {
     fetchAllOutOfBandMigrations as defaultFetchAllMigrations,
     fetchSiteUpdateCheck as defaultFetchSiteUpdateCheck,
 } from './backend'
+import styles from './SiteAdminMigrationsPage.module.scss'
 
 export interface SiteAdminMigrationsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     fetchAllMigrations?: typeof defaultFetchAllMigrations
@@ -121,7 +122,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
             {isErrorLike(migrationsOrError) ? (
                 <ErrorAlert prefix="Error loading out of band migrations" error={migrationsOrError} />
             ) : migrationsOrError === undefined ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
@@ -138,7 +139,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
                     <div className="list-group">
                         <FilteredConnection<OutOfBandMigrationFields, Omit<MigrationNodeProps, 'node'>>
                             listComponent="div"
-                            listClassName="site-admin-migrations__grid mb-3"
+                            listClassName={classNames('mb-3', styles.migrationsGrid)}
                             noun="migration"
                             pluralNoun="migrations"
                             queryConnection={queryMigrations}
@@ -200,9 +201,9 @@ interface MigrationInvalidBannerProps {
 }
 
 const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
-    <div className="alert alert-danger">
+    <Alert variant="danger">
         <p>
-            <ErrorIcon className="icon-inline mr-2" />
+            <AlertCircleIcon className="icon-inline mr-2" />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
@@ -214,7 +215,7 @@ const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProp
                 <li key={migration.id}>{migration.description}</li>
             ))}
         </ul>
-    </div>
+    </Alert>
 )
 
 interface MigrationUpgradeWarningBannerProps {
@@ -222,7 +223,7 @@ interface MigrationUpgradeWarningBannerProps {
 }
 
 const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
-    <div className="alert alert-warning">
+    <Alert variant="warning">
         <p>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
@@ -234,7 +235,7 @@ const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWar
             ))}
         </ul>
         <span>Contact support if these migrations are not making progress or if there are associated errors.</span>
-    </div>
+    </Alert>
 )
 
 interface MigrationDowngradeWarningBannerProps {
@@ -244,7 +245,7 @@ interface MigrationDowngradeWarningBannerProps {
 const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
     migrations,
 }) => (
-    <div className="alert alert-warning">
+    <Alert variant="warning">
         <p>
             <WarningIcon className="icon-inline mr-2" />
             <span>
@@ -262,7 +263,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngrad
         </ul>
 
         <span>Contact support for assistance with downgrading your instance.</span>
-    </div>
+    </Alert>
 )
 
 interface MigrationNodeProps {
@@ -272,9 +273,9 @@ interface MigrationNodeProps {
 
 const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
     <React.Fragment key={node.id}>
-        <span className="site-admin-migration-node__separator" />
+        <span className={styles.separator} />
 
-        <div className="d-flex flex-column site-admin-migration-node__information">
+        <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
                 <h3>{node.description}</h3>
 
@@ -299,7 +300,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
             </div>
         </div>
 
-        <span className="d-none d-md-inline site-admin-migration-node__progress">
+        <span className={classNames('d-none d-md-inline', styles.progress)}>
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
@@ -342,12 +343,12 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
         {node.errors.length > 0 && (
             <Collapsible
                 title={<strong>Recent errors ({node.errors.length})</strong>}
-                className="site-admin-migration-node__errors p-0 font-weight-normal"
+                className="p-0 font-weight-normal"
                 buttonClassName="mb-0"
                 titleAtStart={true}
                 defaultExpanded={false}
             >
-                <div className="pt-2 site-admin-migration-node-errors__grid">
+                <div className={classNames('pt-2', styles.nodeGrid)}>
                     {node.errors
                         .map((error, index) => ({ ...error, index }))
                         .map(error => (
@@ -356,7 +357,7 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                                     <Timestamp date={error.created} now={now} />
                                 </div>
 
-                                <span className="py-1 pl-2 site-admin-migration-node-errors__grid-code">
+                                <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
                                     <code>{error.message}</code>
                                 </span>
                             </React.Fragment>

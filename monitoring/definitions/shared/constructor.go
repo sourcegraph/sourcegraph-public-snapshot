@@ -92,11 +92,11 @@ func makeBy(labels ...string) (aggregateExprSuffix string, legendPrefix string) 
 
 	placeholders := make([]string, 0, len(labels))
 	for _, label := range labels {
-		placeholders = append(placeholders, fmt.Sprintf("{{%s}}", label))
+		placeholders = append(placeholders, fmt.Sprintf("%[1]s={{%[1]s}}", label))
 	}
 
 	aggregateExprSuffix = fmt.Sprintf(" by (%s)", strings.Join(labels, ","))
-	legendPrefix = fmt.Sprintf("%s ", strings.Join(placeholders, "-"))
+	legendPrefix = fmt.Sprintf("%s ", strings.Join(placeholders, ","))
 
 	return aggregateExprSuffix, legendPrefix
 }

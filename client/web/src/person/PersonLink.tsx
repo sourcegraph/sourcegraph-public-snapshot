@@ -1,7 +1,8 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
+import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { PersonLinkFields } from '../graphql-operations'
 
@@ -39,7 +40,7 @@ export const PersonLink: React.FunctionComponent<{
 }> = ({ person, className = '', userClassName = '' }) => (
     <LinkOrSpan
         to={person.user?.url}
-        className={`${className} ${person.user ? userClassName : ''}`}
+        className={classNames(className, person.user && userClassName)}
         data-tooltip={
             person.user && (person.user.displayName || person.displayName)
                 ? `${person.user.displayName || person.displayName} <${person.email}>`

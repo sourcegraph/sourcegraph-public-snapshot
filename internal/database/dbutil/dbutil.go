@@ -6,48 +6,12 @@ import (
 	"database/sql/driver"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"net/url"
-	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgconn"
-	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// Transaction calls f within a transaction, rolling back if any error is
-// returned by the function.
-func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err error) {
-	finish := func(tx *sql.Tx) {
-		if err != nil {
-			if err2 := tx.Rollback(); err2 != nil {
-				err = multierror.Append(err, err2)
-			}
-			return
-		}
-		err = tx.Commit()
-	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Transaction")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer finish(tx)
-	return f(tx)
-}
 
 // A DB captures the essential method of a sql.DB: QueryContext.
 type DB interface {
@@ -65,6 +29,15 @@ type Tx interface {
 // A TxBeginner captures BeginTx method of a sql.DB
 type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
+}
+
+// An Unwrapper unwraps itself into its nested DB.
+// This is necessary because the concrete type of a dbutil.DB
+// is used to assert interfaces like `Tx` and `TxBeginner`, so
+// wrapping a dbutil.DB breaks those interface assertions.
+type Unwrapper interface {
+	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
+	Unwrap() DB
 }
 
 func IsPostgresError(err error, codename string) bool {
@@ -223,6 +196,38 @@ func (n NullInt) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullBool represents a bool that may be null. NullBool implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, B is set to false.
+type NullBool struct{ B *bool }
+
+// Scan implements the Scanner interface.
+func (n *NullBool) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case bool:
+		*n.B = v
+	case int:
+		*n.B = v != 0
+	case int32:
+		*n.B = v != 0
+	case int64:
+		*n.B = v != 0
+	case nil:
+		break
+	default:
+		return errors.Errorf("value is not bool: %T", value)
+	}
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n NullBool) Value() (driver.Value, error) {
+	if n.B == nil {
+		return nil, nil
+	}
+	return *n.B, nil
+}
+
 // JSONInt64Set represents an int64 set as a JSONB object where the keys are
 // the ids and the values are null. It implements the sql.Scanner interface so
 // it can be used as a scan destination, similar to
@@ -314,64 +319,7 @@ func (c CommitBytea) Value() (driver.Value, error) {
 	return hex.DecodeString(string(c))
 }
 
-func PostgresDSN(prefix, currentUser string, getenv func(string) string) string {
-	if prefix != "" {
-		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
-	}
-
-	env := func(name string) string {
-		return getenv(prefix + name)
-	}
-
-	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := env("PGDATASOURCE"); dsn != "" {
-		return dsn
-	}
-
-	// TODO match logic in lib/pq
-	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
-	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   "127.0.0.1:5432",
-	}
-
-	// Username preference: PGUSER, $USER, postgres
-	username := "postgres"
-	if currentUser != "" {
-		username = currentUser
-	}
-	if user := env("PGUSER"); user != "" {
-		username = user
-	}
-
-	if password := env("PGPASSWORD"); password != "" {
-		dsn.User = url.UserPassword(username, password)
-	} else {
-		dsn.User = url.User(username)
-	}
-
-	if host := env("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := env("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if db := env("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := env("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-
-	return dsn.String()
-}
-
-// Scanner captures the Scan method of sql.Rows and sql.Row
+// Scanner captures the Scan method of sql.Rows and sql.Row.
 type Scanner interface {
 	Scan(dst ...interface{}) error
 }

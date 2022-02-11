@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -6,37 +7,38 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
+import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+
+import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="file-locations__error alert alert-danger m-2">
+    <Alert className="m-2" variant="danger">
         Error getting locations: {upperFirst(error.message)}
-    </div>
+    </Alert>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (
-    <div className="file-locations__not-found m-2">
+    <div className={classNames('m-2', styles.notFound)}>
         <MapSearchIcon className="icon-inline" /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
-    <div className="file-locations__no-group-selected m-2">
+    <div className="m-2">
         <MapSearchIcon className="icon-inline" /> No locations found in the current repository
     </div>
 )
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -50,8 +52,6 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
     onSelect?: () => void
 
     className?: string
-
-    isLightTheme: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
@@ -123,7 +123,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             return <FileLocationsError error={this.state.locationsOrError} />
         }
         if (this.state.locationsOrError === LOADING) {
-            return <LoadingSpinner className="icon-inline m-1" />
+            return <LoadingSpinner className="m-1" />
         }
         if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
             return this.props.parentContainerIsEmpty ? <FileLocationsNotFound /> : <FileLocationsNoGroupSelected />
@@ -148,12 +148,16 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className || ''}`}>
+            <div className={classNames(styles.fileLocations, this.props.className)}>
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
                     items={orderedURIs}
-                    renderItem={this.renderFileMatch}
+                    renderItem={(
+                        item: OrderedURI,
+                        index: number,
+                        additionalProps: { locationsByURI: Map<string, Location[]> }
+                    ) => this.renderFileMatch(item, additionalProps)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />
@@ -179,14 +183,15 @@ export class FileLocations extends React.PureComponent<Props, State> {
     ): JSX.Element => (
         <FileMatch
             location={this.props.location}
+            telemetryService={this.props.telemetryService}
             expanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
-            isLightTheme={this.props.isLightTheme}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
             settingsCascade={this.props.settingsCascade}
+            containerClassName={styles.resultContainer}
         />
     )
 }
@@ -195,8 +200,8 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
     const parsedUri = parseRepoURI(uri)
     return {
         type: 'content',
-        name: parsedUri.filePath || '',
-        version: (parsedUri.commitID || parsedUri.revision)!,
+        path: parsedUri.filePath || '',
+        commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
         lineMatches: references.filter(property('range', isDefined)).map(reference => ({
             line: '',

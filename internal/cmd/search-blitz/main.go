@@ -86,18 +86,6 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
 				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
 				matchCount.WithLabelValues(group, qc.Name, c.clientType()).Set(float64(m.matchCount))
-
-				go func() {
-					select {
-					case <-ctx.Done():
-						return
-					case <-time.After(qc.Interval / 2):
-					}
-
-					if err := traces.Fetch(ctx, m.trace); err != nil {
-						log.Error("failed to store trace", "error", err)
-					}
-				}()
 			}
 
 			select {
@@ -171,8 +159,7 @@ func (t *tsvLogger) Log(a ...interface{}) {
 }
 
 var (
-	tsv    *tsvLogger
-	traces *traceStore
+	tsv *tsvLogger
 )
 
 func main() {
@@ -200,15 +187,6 @@ func main() {
 
 	ctx, cleanup := SignalSensitiveContext()
 	defer cleanup()
-
-	traces = &traceStore{
-		Dir:                filepath.Join(logDir, "traces"),
-		Token:              os.Getenv(envToken),
-		JaegerServerURL:    os.Getenv("JAEGER_SERVER_URL"),
-		MaxTotalTraceBytes: 10 * 1024 * 1024 * 1024, // 10 GiB
-		MaxFetchAttempts:   10,
-	}
-	go traces.CleanupLoop(ctx)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

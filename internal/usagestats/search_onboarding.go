@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSearchOnboarding(ctx context.Context, db dbutil.DB) (*types.SearchOnboarding, error) {
+func GetSearchOnboarding(ctx context.Context, db database.DB) (*types.SearchOnboarding, error) {
 	const getSearchOnboardingQuery = `
 SELECT
     viewOnboardingTour AS totalOnboardingTourViews,

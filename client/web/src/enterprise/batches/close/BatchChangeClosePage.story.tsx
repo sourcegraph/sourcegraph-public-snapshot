@@ -5,6 +5,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -12,7 +13,6 @@ import {
     ChangesetState,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -26,6 +26,7 @@ const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
         },
     })
 
@@ -34,6 +35,7 @@ const now = new Date()
 const batchChangeDefaults: BatchChangeFields = {
     __typename: 'BatchChange',
     changesetsStats: {
+        __typename: 'ChangesetsStats',
         closed: 1,
         deleted: 1,
         merged: 2,
@@ -44,7 +46,7 @@ const batchChangeDefaults: BatchChangeFields = {
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
-    initialApplier: {
+    creator: {
         url: '/users/alice',
         username: 'alice',
     },
@@ -54,7 +56,7 @@ const batchChangeDefaults: BatchChangeFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -66,13 +68,21 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 0,
     },
     activeBulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 0,
         nodes: [],
     },
@@ -80,6 +90,7 @@ const batchChangeDefaults: BatchChangeFields = {
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
+        __typename: 'ChangesetConnection',
         pageInfo: {
             endCursor: null,
             hasNextPage: false,
@@ -123,6 +134,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: ChangesetCheckState.PASSED,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
@@ -131,7 +143,15 @@ const queryChangesets: typeof _queryChangesets = () =>
                 externalURL: {
                     url: 'http://test.test/123',
                 },
-                labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                forkNamespace: null,
+                labels: [
+                    {
+                        __typename: 'ChangesetLabel',
+                        color: '93ba13',
+                        description: 'Very awesome description',
+                        text: 'Some label',
+                    },
+                ],
                 repository: {
                     id: 'repoid',
                     name: 'github.com/sourcegraph/awesome',
@@ -151,8 +171,10 @@ const queryChangesets: typeof _queryChangesets = () =>
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -160,12 +182,14 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: null,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
                 },
                 externalID: null,
                 externalURL: null,
+                forkNamespace: null,
                 labels: [],
                 repository: {
                     id: 'repoid',
@@ -186,8 +210,10 @@ const queryChangesets: typeof _queryChangesets = () =>
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],
@@ -219,7 +245,7 @@ add('Overview', () => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -232,7 +258,7 @@ add('Overview', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
@@ -242,6 +268,7 @@ add('No open changesets', () => {
     const queryEmptyChangesets = useCallback(
         () =>
             of({
+                __typename: 'ChangesetConnection' as const,
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,
@@ -252,7 +279,7 @@ add('No open changesets', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -265,6 +292,6 @@ add('No open changesets', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

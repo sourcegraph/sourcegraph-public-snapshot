@@ -7,11 +7,11 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,17 +21,32 @@ import (
 	"golang.org/x/net/html/atom"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
+	highlightOp   *observation.Operation
 )
 
 func init() {
 	client = gosyntect.New(syntectServer)
+
+	obsvCtx := observation.Context{
+		HoneyDataset: &honey.Dataset{
+			Name:       "codeintel-syntax-highlighting",
+			SampleRate: 10, // 1 in 10
+		},
+	}
+	highlightOp = obsvCtx.Operation(observation.Op{
+		Name:        "codeintel.syntax-highlight.Code",
+		LogFields:   []otlog.Field{},
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+	})
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -59,9 +74,6 @@ type Params struct {
 	// long as needed to get highlighted results (this should never be on by
 	// default, as some files can take a very long time to highlight).
 	DisableTimeout bool
-
-	// Whether or not the light theme should be used to highlight the code.
-	IsLightTheme bool
 
 	// HighlightLongLines, if true, highlighting lines which are greater than
 	// 2000 bytes is enabled. This may produce a significant amount of HTML
@@ -103,9 +115,20 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
+
+	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("revision", p.Metadata.Revision),
+		otlog.String("repo", p.Metadata.RepoName),
+		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
+		otlog.String("filepath", p.Filepath),
+		otlog.Int("sizeBytes", len(p.Content)),
+		otlog.Bool("highlightLongLines", p.HighlightLongLines),
+		otlog.Bool("disableTimeout", p.DisableTimeout),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	var prometheusStatus string
 	requestTime := prometheus.NewTimer(metricRequestHistogram)
-	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
 		if prometheusStatus != "" {
 			requestCounter.WithLabelValues(prometheusStatus).Inc()
@@ -114,8 +137,6 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		} else {
 			requestCounter.WithLabelValues("success").Inc()
 		}
-		tr.SetError(err)
-		tr.Finish()
 		requestTime.ObserveDuration()
 	}()
 
@@ -143,14 +164,6 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
 	// background.
 	code = strings.TrimSuffix(code, "\n")
-
-	// Tracing so we can identify problematic syntax highlighting requests.
-	tr.LogFields(
-		otlog.String("filepath", p.Filepath),
-		otlog.String("repo_name", p.Metadata.RepoName),
-		otlog.String("revision", p.Metadata.Revision),
-		otlog.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 10))),
-	)
 
 	var stabilizeTimeout time.Duration
 	if p.DisableTimeout {
@@ -186,12 +199,12 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
-		tr.LogFields(otlog.Bool("timeout", true))
+		trace.Log(otlog.Bool("timeout", true))
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
-		table, err2 := generatePlainTable(code)
-		return table, true, err2
+		table, err := generatePlainTable(code)
+		return table, true, err
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
@@ -210,16 +223,22 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		case gosyntect.ErrHSSWorkerTimeout:
 			problem = "hss_worker_timeout"
 		}
+
+		if problem == "" && strings.Contains(err.Error(), "broken pipe") {
+			problem = "broken pipe"
+		}
+
 		if problem != "" {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis, but they are frequent enough that we want
 			// to fallback to plaintext rendering instead of just giving the
 			// user an error.
-			tr.LogFields(otlog.Bool(problem, true))
+			trace.Log(otlog.Bool(problem, true))
+			errCollector.Collect(&err)
 			prometheusStatus = problem
-			table, err2 := generatePlainTable(code)
-			return table, false, err2
+			table, err := generatePlainTable(code)
+			return table, false, err
 		}
 		return "", false, err
 	}
@@ -290,14 +309,14 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := splitHighlightedLines(html, false)
+	lines, err := SplitHighlightedLines(html, false)
 	return lines, aborted, err
 }
 
-// splitHighlightedLines takes the highlighted HTML table and returns a slice
+// SplitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func splitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
+func SplitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
@@ -368,7 +387,7 @@ type LineRange struct {
 //
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
-	lines, err := splitHighlightedLines(html, true)
+	lines, err := SplitHighlightedLines(html, true)
 	if err != nil {
 		return nil, err
 	}

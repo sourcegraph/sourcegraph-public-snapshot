@@ -3,9 +3,11 @@
   "templates": "_resources/templates",
   "content": ".",
   "baseURLPath": "/",
+  "rootURL": "https://docs.sourcegraph.com",
   "assets": "_resources/assets",
   "assetsBaseURLPath": "/assets/",
   "check": {
     "ignoreURLPattern": "(^https?://)|(^#)|(^mailto:(hi|support|security|feedback)@sourcegraph\\.com(\\?|$))|(^chrome://)|(^/@)"
-  }
+  },
+  "search": {"skipIndexURLPattern": ".*insights.*"}
 }

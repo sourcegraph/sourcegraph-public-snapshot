@@ -6,12 +6,11 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type externalServiceLister interface {
@@ -48,6 +47,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 
 	for {
 		services, err := r.serviceLister.List(ctx, database.ExternalServicesListOptions{
+			NoNamespace: true,
 			LimitOffset: &cursor,
 		})
 		if err != nil {
@@ -103,10 +103,10 @@ type ScopeCache interface {
 // provided in the config. It makes a request to the code host but responses are cached
 // in Redis based on the token.
 //
-// Currently only GitHub and GitLab user added external services are supported,
+// Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
 func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
-	if svc.NamespaceUserID == 0 || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
+	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
 	src, err := NewSource(svc, nil)
@@ -133,7 +133,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
-		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
+		scopes, err := src.v3Client.GetAuthenticatedOAuthScopes(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting scopes")
 		}

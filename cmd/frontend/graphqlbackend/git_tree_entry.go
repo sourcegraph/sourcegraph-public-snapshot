@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,9 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var metricLabels = []string{"origin"}
@@ -34,8 +36,10 @@ var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
+//
+// Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	commit *GitCommitResolver
 
 	contentOnce sync.Once
@@ -50,7 +54,7 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat fs.FileInfo) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
@@ -81,6 +85,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
+			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 
@@ -121,7 +126,11 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
+	defer span.Finish()
+
 	if submodule := r.Submodule(); submodule != nil {
+		span.SetTag("Submodule", "true")
 		url := submodule.URL()
 		if strings.HasPrefix(url, "../") {
 			url = path.Join(r.Repository().Name(), url)
@@ -182,7 +191,10 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL string) (string, error) {
+func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName")
+	defer span.Finish()
+
 	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
@@ -206,6 +218,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
+		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

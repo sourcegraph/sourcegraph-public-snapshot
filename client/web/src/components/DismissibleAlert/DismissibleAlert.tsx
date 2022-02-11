@@ -2,17 +2,18 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
+import { Button, Alert, AlertProps } from '@sourcegraph/wildcard'
+
 import styles from './DismissibleAlert.module.scss'
 
-interface Props {
+export interface DismissibleAlertProps extends AlertProps {
     /**
      * If provided, used to build the key that represents the alert in local storage. An
      * alert with a storage key will be permanently dismissed once the user dismisses it.
      */
     partialStorageKey?: string
 
-    /** class name to be applied to the alert */
-    className: string
+    testId?: string
 }
 
 /**
@@ -20,7 +21,13 @@ interface Props {
  * alert will never be shown again after it is dismissed. Otherwise, it will be shown
  * whenever unmounted and remounted.
  */
-export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorageKey, className, children }) => {
+export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = ({
+    partialStorageKey,
+    className,
+    testId,
+    children,
+    variant,
+}) => {
     const [dismissed, setDismissed] = React.useState<boolean>(
         partialStorageKey ? isAlertDismissed(partialStorageKey) : false
     )
@@ -35,13 +42,14 @@ export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorag
     if (dismissed) {
         return null
     }
+
     return (
-        <div className={classNames('alert', styles.container, className)}>
+        <Alert data-testid={testId} className={classNames(styles.container, className)} variant={variant}>
             <div className={styles.content}>{children}</div>
-            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onDismiss}>
+            <Button aria-label="Close alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
                 <CloseIcon className="icon-inline" />
-            </button>
-        </div>
+            </Button>
+        </Alert>
     )
 }
 

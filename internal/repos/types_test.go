@@ -251,21 +251,38 @@ func TestGrantedScopes(t *testing.T) {
 	ctx := context.Background()
 
 	want := []string{"repo"}
-	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
+	github.MockGetAuthenticatedOAuthScopes = func(ctx context.Context) ([]string, error) {
 		return want, nil
 	}
 
-	svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceUserID: 123}
-	// Run twice to use cache
-	for i := 0; i < 2; i++ {
-		have, err := GrantedScopes(ctx, cache, svc)
-		if err != nil {
-			t.Fatal(i, err)
+	t.Run("Test external service with user namespace", func(t *testing.T) {
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceUserID: 123}
+		// Run twice to use cache
+		for i := 0; i < 2; i++ {
+			have, err := GrantedScopes(ctx, cache, svc)
+			if err != nil {
+				t.Fatal(i, err)
+			}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(i, diff)
+			}
 		}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(i, diff)
+	})
+
+	t.Run("Test external service with org namespace", func(t *testing.T) {
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceOrgID: 42}
+		// Run twice to use cache
+		for i := 0; i < 2; i++ {
+			have, err := GrantedScopes(ctx, cache, svc)
+			if err != nil {
+				t.Fatal(i, err)
+			}
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatal(i, diff)
+			}
 		}
-	}
+	})
+
 }
 
 func TestHashToken(t *testing.T) {

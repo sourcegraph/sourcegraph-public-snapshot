@@ -10,7 +10,7 @@ type ServiceMocks struct {
 	ValidateAuthenticator func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error
 }
 
-func (sm ServiceMocks) Reset() {
+func (sm *ServiceMocks) Reset() {
 	sm.ValidateAuthenticator = nil
 }
 

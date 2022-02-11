@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
 import { requestGraphQL } from '../../../../backend/graphql'
@@ -39,6 +39,10 @@ const changesetSpecFieldsFragment = gql`
             __typename
             ...ExistingChangesetReferenceFields
             ...GitBranchChangesetDescriptionFields
+        }
+        forkTarget {
+            pushUser
+            namespace
         }
     }
 
@@ -304,11 +308,10 @@ export const queryChangesetSpecFileDiffs = ({
     changesetSpec,
     first,
     after,
-    isLightTheme,
 }: ChangesetSpecFileDiffsVariables): Observable<ChangesetSpecFileDiffConnectionFields> =>
     requestGraphQL<ChangesetSpecFileDiffsResult, ChangesetSpecFileDiffsVariables>(
         gql`
-            query ChangesetSpecFileDiffs($changesetSpec: ID!, $first: Int, $after: String, $isLightTheme: Boolean!) {
+            query ChangesetSpecFileDiffs($changesetSpec: ID!, $first: Int, $after: String) {
                 node(id: $changesetSpec) {
                     __typename
                     ...ChangesetSpecFileDiffsFields
@@ -317,7 +320,7 @@ export const queryChangesetSpecFileDiffs = ({
 
             ${changesetSpecFileDiffsFields}
         `,
-        { changesetSpec, first, after, isLightTheme }
+        { changesetSpec, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

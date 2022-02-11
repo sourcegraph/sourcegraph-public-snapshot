@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -18,12 +17,12 @@ type ExternalServicesStore interface {
 
 // NewBeforeCreateExternalServiceHook enforces any per-tier validations prior to
 // creating a new external service.
-func NewBeforeCreateExternalServiceHook() func(ctx context.Context, db dbutil.DB) error {
+func NewBeforeCreateExternalServiceHook() func(ctx context.Context, db database.DB) error {
 	if !licensing.EnforceTiers {
 		return nil
 	}
 
-	return func(ctx context.Context, db dbutil.DB) error {
+	return func(ctx context.Context, db database.DB) error {
 		// Licenses are associated with features and resource limits according to
 		// the current plan. We first need to determine the instance license, and then
 		// extract the maximum external service count from it.

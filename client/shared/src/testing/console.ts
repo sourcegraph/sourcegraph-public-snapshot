@@ -6,7 +6,7 @@ import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
 import stringWidth from 'string-width'
 import terminalSize from 'term-size'
 
-import { asError } from '../util/errors'
+import { asError } from '@sourcegraph/common'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,

@@ -7,7 +7,6 @@ const (
 	FieldDefault            = ""
 	FieldCase               = "case"
 	FieldRepo               = "repo"
-	FieldRepoGroup          = "repogroup"
 	FieldFile               = "file"
 	FieldFork               = "fork"
 	FieldArchived           = "archived"
@@ -40,7 +39,6 @@ var allFields = map[string]struct{}{
 	FieldCase:               empty,
 	FieldRepo:               empty,
 	"r":                     empty,
-	FieldRepoGroup:          empty,
 	FieldContext:            empty,
 	"g":                     empty,
 	FieldFile:               empty,
@@ -76,7 +74,6 @@ var allFields = map[string]struct{}{
 
 var aliases = map[string]string{
 	"r":        FieldRepo,
-	"g":        FieldRepoGroup,
 	"f":        FieldFile,
 	"l":        FieldLang,
 	"language": FieldLang,

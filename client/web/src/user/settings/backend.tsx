@@ -1,14 +1,12 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { EMPTY, Observable, Subject } from 'rxjs'
+import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
-    LogEventResult,
-    LogEventVariables,
     LogUserEventResult,
     LogUserEventVariables,
     SetUserEmailVerifiedResult,
@@ -17,6 +15,9 @@ import {
     UpdatePasswordVariables,
     CreatePasswordResult,
     CreatePasswordVariables,
+    LogEventsResult,
+    LogEventsVariables,
+    Event,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -120,6 +121,36 @@ export function logUserEvent(event: UserEvent): void {
         .subscribe()
 }
 
+// Log events in batches.
+const events = new Subject<Event>()
+
+export const logEventsMutation = gql`
+    mutation LogEvents($events: [Event!]) {
+        logEvents(events: $events) {
+            alwaysNil
+        }
+    }
+`
+
+events
+    .pipe(
+        bufferTime(1000),
+        concatMap(events => {
+            if (events.length > 0) {
+                return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
+                    events,
+                }).pipe(map(dataOrThrowErrors))
+            }
+            return EMPTY
+        }),
+        catchError(error => {
+            console.error('Error logging events:', error)
+            return []
+        })
+    )
+    // eslint-disable-next-line rxjs/no-ignored-subscription
+    .subscribe()
+
 /**
  * Log a raw user action (used to allow site admins on a Sourcegraph instance
  * to see a count of unique users on a daily, weekly, and monthly basis).
@@ -128,48 +159,19 @@ export function logUserEvent(event: UserEvent): void {
  * instance's database, and not sent to Sourcegraph.com.
  */
 export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
-    requestGraphQL<LogEventResult, LogEventVariables>(
-        gql`
-            mutation LogEvent(
-                $event: String!
-                $userCookieID: String!
-                $cohortID: String
-                $firstSourceURL: String!
-                $referrer: String
-                $url: String!
-                $source: EventSource!
-                $argument: String
-                $publicArgument: String
-            ) {
-                logEvent(
-                    event: $event
-                    userCookieID: $userCookieID
-                    cohortID: $cohortID
-                    firstSourceURL: $firstSourceURL
-                    referrer: $referrer
-                    url: $url
-                    source: $source
-                    argument: $argument
-                    publicArgument: $publicArgument
-                ) {
-                    alwaysNil
-                }
-            }
-        `,
-        {
-            event,
-            userCookieID: eventLogger.getAnonymousUserID(),
-            cohortID: eventLogger.getCohortID() || null,
-            firstSourceURL: eventLogger.getFirstSourceURL(),
-            referrer: eventLogger.getReferrer(),
-            url: window.location.href,
-            source: EventSource.WEB,
-            argument: eventProperties ? JSON.stringify(eventProperties) : null,
-            publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-        }
-    )
-        .pipe(map(dataOrThrowErrors))
-        // Event logs are best-effort and non-blocking
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        .subscribe()
+    events.next({
+        event,
+        userCookieID: eventLogger.getAnonymousUserID(),
+        cohortID: eventLogger.getCohortID() || null,
+        firstSourceURL: eventLogger.getFirstSourceURL(),
+        lastSourceURL: eventLogger.getLastSourceURL(),
+        referrer: eventLogger.getReferrer(),
+        url: window.location.href,
+        source: EventSource.WEB,
+        argument: eventProperties ? JSON.stringify(eventProperties) : null,
+        publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+        deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
+        eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
+        insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
+    })
 }

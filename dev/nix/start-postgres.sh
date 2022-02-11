@@ -11,6 +11,7 @@ export PGHOST="${SG_DATA_DIR:-$HOME/.sourcegraph}/postgres"
 export PGDATA="${PGHOST}/${PGVER}"
 export PGDATABASE=postgres
 export PGDATASOURCE="postgresql:///postgres?host=${PGHOST}"
+export PGUSER="${USER}"
 
 if [ ! -d "$PGHOST" ]; then
   mkdir -p "$PGHOST"

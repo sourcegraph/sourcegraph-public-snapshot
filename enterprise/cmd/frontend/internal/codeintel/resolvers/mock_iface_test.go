@@ -9,12 +9,13 @@ import (
 	"time"
 
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	git "github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -95,6 +96,9 @@ type MockDBStore struct {
 	// ReferenceIDsAndFiltersFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferenceIDsAndFilters.
 	ReferenceIDsAndFiltersFunc *DBStoreReferenceIDsAndFiltersFunc
+	// RepoIDsByGlobPatternsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDsByGlobPatterns.
+	RepoIDsByGlobPatternsFunc *DBStoreRepoIDsByGlobPatternsFunc
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBStoreRepoNameFunc
@@ -148,13 +152,13 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
 				return nil, nil
 			},
 		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-				return nil, nil
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				return nil, 0, nil
 			},
 		},
 		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
@@ -222,6 +226,11 @@ func NewMockDBStore() *MockDBStore {
 				return nil, 0, nil
 			},
 		},
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: func(context.Context, []string, int, int) ([]int, int, error) {
+				return nil, 0, nil
+			},
+		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
 			defaultHook: func(context.Context, int) (string, error) {
 				return "", nil
@@ -235,6 +244,143 @@ func NewMockDBStore() *MockDBStore {
 		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: func(context.Context, int, []byte) error {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CommitGraphMetadataFunc: &DBStoreCommitGraphMetadataFunc{
+			defaultHook: func(context.Context, int) (bool, *time.Time, error) {
+				panic("unexpected invocation of MockDBStore.CommitGraphMetadata")
+			},
+		},
+		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+				panic("unexpected invocation of MockDBStore.CreateConfigurationPolicy")
+			},
+		},
+		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.DefinitionDumps")
+			},
+		},
+		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockDBStore.DeleteConfigurationPolicyByID")
+			},
+		},
+		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.DeleteIndexByID")
+			},
+		},
+		DeleteUploadByIDFunc: &DBStoreDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadByID")
+			},
+		},
+		FindClosestDumpsFunc: &DBStoreFindClosestDumpsFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.FindClosestDumps")
+			},
+		},
+		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.FindClosestDumpsFromGraphFragment")
+			},
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
+			},
+		},
+		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicyByID")
+			},
+		},
+		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.GetDumpsByIDs")
+			},
+		},
+		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Index, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexByID")
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &DBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexConfigurationByRepositoryID")
+			},
+		},
+		GetIndexesFunc: &DBStoreGetIndexesFunc{
+			defaultHook: func(context.Context, dbstore.GetIndexesOptions) ([]dbstore.Index, int, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexes")
+			},
+		},
+		GetIndexesByIDsFunc: &DBStoreGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexesByIDs")
+			},
+		},
+		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadByID")
+			},
+		},
+		GetUploadsFunc: &DBStoreGetUploadsFunc{
+			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+				panic("unexpected invocation of MockDBStore.GetUploads")
+			},
+		},
+		GetUploadsByIDsFunc: &DBStoreGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadsByIDs")
+			},
+		},
+		HasCommitFunc: &DBStoreHasCommitFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockDBStore.HasCommit")
+			},
+		},
+		HasRepositoryFunc: &DBStoreHasRepositoryFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.HasRepository")
+			},
+		},
+		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockDBStore.MarkRepositoryAsDirty")
+			},
+		},
+		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
+				panic("unexpected invocation of MockDBStore.ReferenceIDsAndFilters")
+			},
+		},
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: func(context.Context, []string, int, int) ([]int, int, error) {
+				panic("unexpected invocation of MockDBStore.RepoIDsByGlobPatterns")
+			},
+		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				panic("unexpected invocation of MockDBStore.RepoName")
+			},
+		},
+		UpdateConfigurationPolicyFunc: &DBStoreUpdateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
+				panic("unexpected invocation of MockDBStore.UpdateConfigurationPolicy")
+			},
+		},
+		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int, []byte) error {
+				panic("unexpected invocation of MockDBStore.UpdateIndexConfigurationByRepositoryID")
 			},
 		},
 	}
@@ -309,6 +455,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
 			defaultHook: i.ReferenceIDsAndFilters,
+		},
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: i.RepoIDsByGlobPatterns,
 		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
 			defaultHook: i.RepoName,
@@ -1108,15 +1257,15 @@ func (c DBStoreFindClosestDumpsFuncCall) Results() []interface{} {
 // the FindClosestDumpsFromGraphFragment method of the parent MockDBStore
 // instance is invoked.
 type DBStoreFindClosestDumpsFromGraphFragmentFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)
+	defaultHook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error)
 	history     []DBStoreFindClosestDumpsFromGraphFragmentFuncCall
 	mutex       sync.Mutex
 }
 
 // FindClosestDumpsFromGraphFragment delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
 	r0, r1 := m.FindClosestDumpsFromGraphFragmentFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
 	m.FindClosestDumpsFromGraphFragmentFunc.appendCall(DBStoreFindClosestDumpsFromGraphFragmentFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
 	return r0, r1
@@ -1125,7 +1274,7 @@ func (m *MockDBStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 i
 // SetDefaultHook sets function that is called when the
 // FindClosestDumpsFromGraphFragment method of the parent MockDBStore
 // instance is invoked and the hook queue is empty.
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error)) {
 	f.defaultHook = hook
 }
 
@@ -1134,7 +1283,7 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error)) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1143,7 +1292,7 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
@@ -1151,12 +1300,12 @@ func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []dbs
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+func (f *DBStoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]dbstore.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1211,7 +1360,7 @@ type DBStoreFindClosestDumpsFromGraphFragmentFuncCall struct {
 	Arg5 string
 	// Arg6 is the value of the 7th argument passed to this method
 	// invocation.
-	Arg6 *gitserver.CommitGraph
+	Arg6 *gitdomain.CommitGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []dbstore.Dump
@@ -1236,24 +1385,24 @@ func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked.
 type DBStoreGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	history     []DBStoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
-	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1262,7 +1411,7 @@ func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1270,21 +1419,21 @@ func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1329,7 +1478,10 @@ type DBStoreGetConfigurationPoliciesFuncCall struct {
 	Result0 []dbstore.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1341,7 +1493,7 @@ func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreGetConfigurationPolicyByIDFunc describes the behavior when the
@@ -2816,6 +2968,125 @@ func (c DBStoreReferenceIDsAndFiltersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBStoreRepoIDsByGlobPatternsFunc describes the behavior when the
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance is
+// invoked.
+type DBStoreRepoIDsByGlobPatternsFunc struct {
+	defaultHook func(context.Context, []string, int, int) ([]int, int, error)
+	hooks       []func(context.Context, []string, int, int) ([]int, int, error)
+	history     []DBStoreRepoIDsByGlobPatternsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoIDsByGlobPatterns delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) RepoIDsByGlobPatterns(v0 context.Context, v1 []string, v2 int, v3 int) ([]int, int, error) {
+	r0, r1, r2 := m.RepoIDsByGlobPatternsFunc.nextHook()(v0, v1, v2, v3)
+	m.RepoIDsByGlobPatternsFunc.appendCall(DBStoreRepoIDsByGlobPatternsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) SetDefaultHook(hook func(context.Context, []string, int, int) ([]int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) PushHook(hook func(context.Context, []string, int, int) ([]int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) SetDefaultReturn(r0 []int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, []string, int, int) ([]int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) PushReturn(r0 []int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, []string, int, int) ([]int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreRepoIDsByGlobPatternsFunc) nextHook() func(context.Context, []string, int, int) ([]int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRepoIDsByGlobPatternsFunc) appendCall(r0 DBStoreRepoIDsByGlobPatternsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRepoIDsByGlobPatternsFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) History() []DBStoreRepoIDsByGlobPatternsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRepoIDsByGlobPatternsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRepoIDsByGlobPatternsFuncCall is an object that describes an
+// invocation of method RepoIDsByGlobPatterns on an instance of MockDBStore.
+type DBStoreRepoIDsByGlobPatternsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRepoIDsByGlobPatternsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRepoIDsByGlobPatternsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // DBStoreRepoNameFunc describes the behavior when the RepoName method of
 // the parent MockDBStore instance is invoked.
 type DBStoreRepoNameFunc struct {
@@ -3165,10 +3436,6 @@ type MockEnqueuerDBStore struct {
 	// GetIndexesByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetIndexesByIDs.
 	GetIndexesByIDsFunc *EnqueuerDBStoreGetIndexesByIDsFunc
-	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetRepositoriesWithIndexConfiguration.
-	GetRepositoriesWithIndexConfigurationFunc *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnqueuerDBStoreHandleFunc
@@ -3208,11 +3475,6 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				return nil, nil
 			},
 		},
-		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: func(context.Context) ([]int, error) {
-				return nil, nil
-			},
-		},
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
 				return nil
@@ -3236,6 +3498,53 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 	}
 }
 
+// NewStrictMockEnqueuerDBStore creates a new mock of the EnqueuerDBStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
+	return &MockEnqueuerDBStore{
+		DirtyRepositoriesFunc: &EnqueuerDBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.DirtyRepositories")
+			},
+		},
+		DoneFunc: &EnqueuerDBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockEnqueuerDBStore.Done")
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.GetIndexConfigurationByRepositoryID")
+			},
+		},
+		GetIndexesByIDsFunc: &EnqueuerDBStoreGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.GetIndexesByIDs")
+			},
+		},
+		HandleFunc: &EnqueuerDBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockEnqueuerDBStore.Handle")
+			},
+		},
+		InsertIndexesFunc: &EnqueuerDBStoreInsertIndexesFunc{
+			defaultHook: func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.InsertIndexes")
+			},
+		},
+		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.IsQueued")
+			},
+		},
+		TransactFunc: &EnqueuerDBStoreTransactFunc{
+			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockEnqueuerDBStoreFrom creates a new mock of the MockEnqueuerDBStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -3252,9 +3561,6 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		},
 		GetIndexesByIDsFunc: &EnqueuerDBStoreGetIndexesByIDsFunc{
 			defaultHook: i.GetIndexesByIDs,
-		},
-		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: i.GetRepositoriesWithIndexConfiguration,
 		},
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -3716,118 +4022,6 @@ func (c EnqueuerDBStoreGetIndexesByIDsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerDBStoreGetIndexesByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc describes the
-// behavior when the GetRepositoriesWithIndexConfiguration method of the
-// parent MockEnqueuerDBStore instance is invoked.
-type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc struct {
-	defaultHook func(context.Context) ([]int, error)
-	hooks       []func(context.Context) ([]int, error)
-	history     []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepositoriesWithIndexConfiguration delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockEnqueuerDBStore) GetRepositoriesWithIndexConfiguration(v0 context.Context) ([]int, error) {
-	r0, r1 := m.GetRepositoriesWithIndexConfigurationFunc.nextHook()(v0)
-	m.GetRepositoriesWithIndexConfigurationFunc.appendCall(EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRepositoriesWithIndexConfiguration method of the parent
-// MockEnqueuerDBStore instance is invoked and the hook queue is empty.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepositoriesWithIndexConfiguration method of the parent
-// MockEnqueuerDBStore instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) nextHook() func(context.Context) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) appendCall(r0 EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall objects
-// describing the invocations of this function.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) History() []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall is an object
-// that describes an invocation of method
-// GetRepositoriesWithIndexConfiguration on an instance of
-// MockEnqueuerDBStore.
-type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4309,6 +4503,39 @@ func NewMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
 		ResolveRevisionFunc: &EnqueuerGitserverClientResolveRevisionFunc{
 			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
 				return "", nil
+			},
+		},
+	}
+}
+
+// NewStrictMockEnqueuerGitserverClient creates a new mock of the
+// EnqueuerGitserverClient interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
+	return &MockEnqueuerGitserverClient{
+		FileExistsFunc: &EnqueuerGitserverClientFileExistsFunc{
+			defaultHook: func(context.Context, int, string, string) (bool, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.FileExists")
+			},
+		},
+		HeadFunc: &EnqueuerGitserverClientHeadFunc{
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.Head")
+			},
+		},
+		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
+			defaultHook: func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.ListFiles")
+			},
+		},
+		RawContentsFunc: &EnqueuerGitserverClientRawContentsFunc{
+			defaultHook: func(context.Context, int, string, string) ([]byte, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.RawContents")
+			},
+		},
+		ResolveRevisionFunc: &EnqueuerGitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.ResolveRevision")
 			},
 		},
 	}
@@ -4943,8 +5170,25 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		CommitGraphFunc: &GitserverClientCommitGraphFunc{
-			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+			defaultHook: func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		CommitExistsFunc: &GitserverClientCommitExistsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitExists")
+			},
+		},
+		CommitGraphFunc: &GitserverClientCommitGraphFunc{
+			defaultHook: func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitGraph")
 			},
 		},
 	}
@@ -5080,15 +5324,15 @@ func (c GitserverClientCommitExistsFuncCall) Results() []interface{} {
 // GitserverClientCommitGraphFunc describes the behavior when the
 // CommitGraph method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitGraphFunc struct {
-	defaultHook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
-	hooks       []func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	defaultHook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	hooks       []func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 	history     []GitserverClientCommitGraphFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitGraph delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 	r0, r1 := m.CommitGraphFunc.nextHook()(v0, v1, v2)
 	m.CommitGraphFunc.appendCall(GitserverClientCommitGraphFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -5097,7 +5341,7 @@ func (m *MockGitserverClient) CommitGraph(v0 context.Context, v1 int, v2 gitserv
 // SetDefaultHook sets function that is called when the CommitGraph method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
 	f.defaultHook = hook
 }
 
@@ -5105,7 +5349,7 @@ func (f *GitserverClientCommitGraphFunc) SetDefaultHook(hook func(context.Contex
 // CommitGraph method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)) {
+func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5113,21 +5357,21 @@ func (f *GitserverClientCommitGraphFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 *gitserver.CommitGraph, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+func (f *GitserverClientCommitGraphFunc) SetDefaultReturn(r0 *gitdomain.CommitGraph, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientCommitGraphFunc) PushReturn(r0 *gitserver.CommitGraph, r1 error) {
-	f.PushHook(func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+func (f *GitserverClientCommitGraphFunc) PushReturn(r0 *gitdomain.CommitGraph, r1 error) {
+	f.PushHook(func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+func (f *GitserverClientCommitGraphFunc) nextHook() func(context.Context, int, git.CommitGraphOptions) (*gitdomain.CommitGraph, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5168,10 +5412,10 @@ type GitserverClientCommitGraphFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 gitserver.CommitGraphOptions
+	Arg2 git.CommitGraphOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *gitserver.CommitGraph
+	Result0 *gitdomain.CommitGraph
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5214,6 +5458,23 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
 			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockIndexEnqueuer creates a new mock of the IndexEnqueuer
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
+	return &MockIndexEnqueuer{
+		InferIndexConfigurationFunc: &IndexEnqueuerInferIndexConfigurationFunc{
+			defaultHook: func(context.Context, int) (*config.IndexConfiguration, error) {
+				panic("unexpected invocation of MockIndexEnqueuer.InferIndexConfiguration")
+			},
+		},
+		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
+			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
 			},
 		},
 	}
@@ -5490,12 +5751,18 @@ type MockLSIFStore struct {
 	// DocumentationPathInfoFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPathInfo.
 	DocumentationPathInfoFunc *LSIFStoreDocumentationPathInfoFunc
+	// DocumentationSearchFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationSearch.
+	DocumentationSearchFunc *LSIFStoreDocumentationSearchFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *LSIFStoreHoverFunc
+	// ImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method Implementations.
+	ImplementationsFunc *LSIFStoreImplementationsFunc
 	// MonikersByPositionFunc is an instance of a mock function object
 	// controlling the behavior of the method MonikersByPosition.
 	MonikersByPositionFunc *LSIFStoreMonikersByPositionFunc
@@ -5508,6 +5775,9 @@ type MockLSIFStore struct {
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *LSIFStoreReferencesFunc
+	// StencilFunc is an instance of a mock function object controlling the
+	// behavior of the method Stencil.
+	StencilFunc *LSIFStoreStencilFunc
 }
 
 // NewMockLSIFStore creates a new mock of the LSIFStore interface. All
@@ -5549,6 +5819,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return nil, nil
 			},
 		},
+		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
+			defaultHook: func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+				return nil, nil
+			},
+		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: func(context.Context, int, string) (bool, error) {
 				return false, nil
@@ -5557,6 +5832,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		HoverFunc: &LSIFStoreHoverFunc{
 			defaultHook: func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
 				return "", lsifstore.Range{}, false, nil
+			},
+		},
+		ImplementationsFunc: &LSIFStoreImplementationsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				return nil, 0, nil
 			},
 		},
 		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
@@ -5577,6 +5857,98 @@ func NewMockLSIFStore() *MockLSIFStore {
 		ReferencesFunc: &LSIFStoreReferencesFunc{
 			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
 				return nil, 0, nil
+			},
+		},
+		StencilFunc: &LSIFStoreStencilFunc{
+			defaultHook: func(context.Context, int, string) ([]lsifstore.Range, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLSIFStore() *MockLSIFStore {
+	return &MockLSIFStore{
+		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
+			defaultHook: func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.BulkMonikerResults")
+			},
+		},
+		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Definitions")
+			},
+		},
+		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Diagnostics")
+			},
+		},
+		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]string, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationAtPosition")
+			},
+		},
+		DocumentationDefinitionsFunc: &LSIFStoreDocumentationDefinitionsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationDefinitions")
+			},
+		},
+		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
+			defaultHook: func(context.Context, int, string) (*precise.DocumentationPageData, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationPage")
+			},
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationPathInfo")
+			},
+		},
+		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
+			defaultHook: func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationSearch")
+			},
+		},
+		ExistsFunc: &LSIFStoreExistsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockLSIFStore.Exists")
+			},
+		},
+		HoverFunc: &LSIFStoreHoverFunc{
+			defaultHook: func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
+				panic("unexpected invocation of MockLSIFStore.Hover")
+			},
+		},
+		ImplementationsFunc: &LSIFStoreImplementationsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Implementations")
+			},
+		},
+		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+				panic("unexpected invocation of MockLSIFStore.MonikersByPosition")
+			},
+		},
+		PackageInformationFunc: &LSIFStorePackageInformationFunc{
+			defaultHook: func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+				panic("unexpected invocation of MockLSIFStore.PackageInformation")
+			},
+		},
+		RangesFunc: &LSIFStoreRangesFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockLSIFStore.Ranges")
+			},
+		},
+		ReferencesFunc: &LSIFStoreReferencesFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.References")
+			},
+		},
+		StencilFunc: &LSIFStoreStencilFunc{
+			defaultHook: func(context.Context, int, string) ([]lsifstore.Range, error) {
+				panic("unexpected invocation of MockLSIFStore.Stencil")
 			},
 		},
 	}
@@ -5607,11 +5979,17 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
 			defaultHook: i.DocumentationPathInfo,
 		},
+		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
+			defaultHook: i.DocumentationSearch,
+		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
 		},
 		HoverFunc: &LSIFStoreHoverFunc{
 			defaultHook: i.Hover,
+		},
+		ImplementationsFunc: &LSIFStoreImplementationsFunc{
+			defaultHook: i.Implementations,
 		},
 		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
 			defaultHook: i.MonikersByPosition,
@@ -5624,6 +6002,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		ReferencesFunc: &LSIFStoreReferencesFunc{
 			defaultHook: i.References,
+		},
+		StencilFunc: &LSIFStoreStencilFunc{
+			defaultHook: i.Stencil,
 		},
 	}
 }
@@ -6472,6 +6853,122 @@ func (c LSIFStoreDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// LSIFStoreDocumentationSearchFunc describes the behavior when the
+// DocumentationSearch method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreDocumentationSearchFunc struct {
+	defaultHook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)
+	hooks       []func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)
+	history     []LSIFStoreDocumentationSearchFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationSearch delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DocumentationSearch(v0 context.Context, v1 string, v2 string, v3 []string) ([]precise.DocumentationSearchResult, error) {
+	r0, r1 := m.DocumentationSearchFunc.nextHook()(v0, v1, v2, v3)
+	m.DocumentationSearchFunc.appendCall(LSIFStoreDocumentationSearchFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DocumentationSearch
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreDocumentationSearchFunc) SetDefaultHook(hook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationSearch method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreDocumentationSearchFunc) PushHook(hook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDocumentationSearchFunc) SetDefaultReturn(r0 []precise.DocumentationSearchResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDocumentationSearchFunc) PushReturn(r0 []precise.DocumentationSearchResult, r1 error) {
+	f.PushHook(func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDocumentationSearchFunc) nextHook() func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDocumentationSearchFunc) appendCall(r0 LSIFStoreDocumentationSearchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDocumentationSearchFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreDocumentationSearchFunc) History() []LSIFStoreDocumentationSearchFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDocumentationSearchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDocumentationSearchFuncCall is an object that describes an
+// invocation of method DocumentationSearch on an instance of MockLSIFStore.
+type LSIFStoreDocumentationSearchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []precise.DocumentationSearchResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDocumentationSearchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDocumentationSearchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // LSIFStoreExistsFunc describes the behavior when the Exists method of the
 // parent MockLSIFStore instance is invoked.
 type LSIFStoreExistsFunc struct {
@@ -6704,6 +7201,133 @@ func (c LSIFStoreHoverFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// LSIFStoreImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockLSIFStore instance is invoked.
+type LSIFStoreImplementationsFunc struct {
+	defaultHook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
+	hooks       []func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
+	history     []LSIFStoreImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// Implementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) Implementations(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]lsifstore.Location, int, error) {
+	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.ImplementationsFunc.appendCall(LSIFStoreImplementationsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Implementations
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreImplementationsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Implementations method of the parent MockLSIFStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LSIFStoreImplementationsFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreImplementationsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreImplementationsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LSIFStoreImplementationsFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreImplementationsFunc) appendCall(r0 LSIFStoreImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreImplementationsFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreImplementationsFunc) History() []LSIFStoreImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of MockLSIFStore.
+type LSIFStoreImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []lsifstore.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreImplementationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LSIFStoreMonikersByPositionFunc describes the behavior when the
@@ -7187,6 +7811,117 @@ func (c LSIFStoreReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// LSIFStoreStencilFunc describes the behavior when the Stencil method of
+// the parent MockLSIFStore instance is invoked.
+type LSIFStoreStencilFunc struct {
+	defaultHook func(context.Context, int, string) ([]lsifstore.Range, error)
+	hooks       []func(context.Context, int, string) ([]lsifstore.Range, error)
+	history     []LSIFStoreStencilFuncCall
+	mutex       sync.Mutex
+}
+
+// Stencil delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLSIFStore) Stencil(v0 context.Context, v1 int, v2 string) ([]lsifstore.Range, error) {
+	r0, r1 := m.StencilFunc.nextHook()(v0, v1, v2)
+	m.StencilFunc.appendCall(LSIFStoreStencilFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stencil method of
+// the parent MockLSIFStore instance is invoked and the hook queue is empty.
+func (f *LSIFStoreStencilFunc) SetDefaultHook(hook func(context.Context, int, string) ([]lsifstore.Range, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stencil method of the parent MockLSIFStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *LSIFStoreStencilFunc) PushHook(hook func(context.Context, int, string) ([]lsifstore.Range, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreStencilFunc) SetDefaultReturn(r0 []lsifstore.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]lsifstore.Range, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreStencilFunc) PushReturn(r0 []lsifstore.Range, r1 error) {
+	f.PushHook(func(context.Context, int, string) ([]lsifstore.Range, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreStencilFunc) nextHook() func(context.Context, int, string) ([]lsifstore.Range, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreStencilFunc) appendCall(r0 LSIFStoreStencilFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreStencilFuncCall objects describing
+// the invocations of this function.
+func (f *LSIFStoreStencilFunc) History() []LSIFStoreStencilFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreStencilFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreStencilFuncCall is an object that describes an invocation of
+// method Stencil on an instance of MockLSIFStore.
+type LSIFStoreStencilFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []lsifstore.Range
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreStencilFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
@@ -7205,6 +7940,19 @@ func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
 		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
 			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockRepoUpdaterClient creates a new mock of the
+// RepoUpdaterClient interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+				panic("unexpected invocation of MockRepoUpdaterClient.EnqueueRepoUpdate")
 			},
 		},
 	}

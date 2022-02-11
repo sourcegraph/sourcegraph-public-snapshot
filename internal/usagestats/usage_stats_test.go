@@ -11,12 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGetArchive(t *testing.T) {
@@ -25,7 +23,7 @@ func TestGetArchive(t *testing.T) {
 	now := time.Now().UTC()
 	ctx := context.Background()
 
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
+	user, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:           "foo@bar.com",
 		Username:        "admin",
 		EmailIsVerified: true,
@@ -47,7 +45,7 @@ func TestGetArchive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dates, err := database.GlobalUsers.ListDates(ctx)
+	dates, err := database.Users(db).ListDates(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +123,17 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, json.RawMessage("{}"), nil, nil)
+	err := logLocalEvents(context.Background(), db, []Event{{
+		EventName:      "ViewRepo",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user.ID,
+		UserCookieID:   "test-cookie-id",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: json.RawMessage("{}"),
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +163,17 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, json.RawMessage("{}"), nil, nil)
+	err := logLocalEvents(context.Background(), db, []Event{{
+		EventName:      "SearchResultsQueried",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user.ID,
+		UserCookieID:   "test-cookie-id",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: json.RawMessage("{}"),
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +193,17 @@ func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, nil, nil, nil)
+	err := logLocalEvents(context.Background(), db, []Event{{
+		EventName:      "hover",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user.ID,
+		UserCookieID:   "test-cookie-id",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +223,17 @@ func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
+	err := logLocalEvents(context.Background(), db, []Event{{
+		EventName:      "hover",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user.ID,
+		UserCookieID:   "test-cookie-id",
+		Source:         "CODEHOSTINTEGRATION",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +261,17 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test single user
-	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err := logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,20 +285,59 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test multiple users, with repeats
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "test-cookie-id-3",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
-
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,74 +378,214 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err := logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "hover",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		Source:         "CODEHOSTINTEGRATION",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/02/28 (2 users, 1 registered)
 	mockTimeNow(oneMonthThreeDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "30dd2661-2e73-4774-bc2b-7a126f360734",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/15 (2 users, 1 registered)
 	mockTimeNow(twoWeeksTwoDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/17 (2 users, 1 registered)
 	mockTimeNow(twoWeeksAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         0,
+		UserCookieID:   "b309dad0-b6f9-440d-bf0a-4cf38030ca70",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "hover",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "CODEHOSTINTEGRATION",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/26 (1 user, 1 registered)
 	mockTimeNow(fiveDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/28 (2 users, 2 registered)
 	mockTimeNow(threeDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "ViewBlob",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user2.ID,
+		UserCookieID:   "test-cookie-id-2",
+		Source:         "WEB",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
+	err = logLocalEvents(ctx, db, []Event{{
+		EventName:      "hover",
+		URL:            "https://sourcegraph.example.com/",
+		UserID:         user1.ID,
+		UserCookieID:   "test-cookie-id-1",
+		Source:         "CODEHOSTINTEGRATION",
+		Argument:       nil,
+		PublicArgument: nil,
+		FeatureFlags:   nil,
+		CohortID:       nil,
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,12 +688,8 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 	}
 }
 
-func setupForTest(t *testing.T) dbutil.DB {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	return dbtesting.GetDB(t)
+func setupForTest(t *testing.T) database.DB {
+	return database.NewDB(dbtest.NewDB(t))
 }
 
 func mockTimeNow(t time.Time) {

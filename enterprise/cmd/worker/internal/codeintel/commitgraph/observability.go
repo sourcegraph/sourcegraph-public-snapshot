@@ -17,7 +17,7 @@ type operations struct {
 func newOperations(dbStore DBStore, observationContext *observation.Context) *operations {
 	commitUpdate := observationContext.Operation(observation.Op{
 		Name: "codeintel.commitUpdater",
-		Metrics: metrics.NewOperationMetrics(
+		Metrics: metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"codeintel_commit_graph_processor",
 			metrics.WithCountHelp("Total number of method invocations."),

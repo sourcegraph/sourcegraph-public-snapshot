@@ -1,26 +1,27 @@
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
-import { SiteConfiguration } from '../schema/site.schema'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import styles from './SiteAdminConfigurationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -265,7 +266,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 // Flipping these feature flags require a reload for the
                                 // UI to be rendered correctly in the navbar and the sidebar.
                                 const keys: (keyof SiteConfiguration)[] = [
-                                    'campaigns.enabled',
                                     'batchChanges.enabled',
                                     'codeIntelAutoIndexing.enabled',
                                 ]
@@ -336,37 +336,32 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const alerts: JSX.Element[] = []
         if (this.state.error) {
-            alerts.push(
-                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={this.state.error} />
-            )
+            alerts.push(<ErrorAlert key="error" className={styles.alert} error={this.state.error} />)
         }
         if (this.state.reloadStartedAt) {
             alerts.push(
-                <div key="error" className="alert alert-primary site-admin-configuration-page__alert">
+                <Alert key="error" className={styles.alert} variant="primary">
                     <p>
-                        <LoadingSpinner className="icon-inline" /> Waiting for site to reload...
+                        <LoadingSpinner /> Waiting for site to reload...
                     </p>
                     {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
                         <p>
                             <small>It's taking longer than expected. Check the server logs for error messages.</small>
                         </p>
                     )}
-                </div>
+                </Alert>
             )
         }
         if (this.state.restartToApply) {
             alerts.push(
-                <div
-                    key="remote-dirty"
-                    className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
-                >
+                <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
                     Server restart is required for the configuration to take effect.
                     {(this.state.site === undefined || this.state.site?.canReloadSite) && (
-                        <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                        <Button onClick={this.reloadSite} variant="primary" size="sm">
                             Restart server
-                        </button>
+                        </Button>
                     )}
-                </div>
+                </Alert>
             )
         }
         if (
@@ -374,16 +369,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.state.site.configuration.validationMessages.length > 0
         ) {
             alerts.push(
-                <div key="validation-messages" className="alert alert-danger site-admin-configuration-page__alert">
+                <Alert key="validation-messages" className={styles.alert} variant="danger">
                     <p>The server reported issues in the last-saved config:</p>
                     <ul>
                         {this.state.site.configuration.validationMessages.map((message, index) => (
-                            <li key={index} className="site-admin-configuration-page__alert-item">
+                            <li key={index} className={styles.alertItem}>
                                 {message}
                             </li>
                         ))}
                     </ul>
-                </div>
+                </Alert>
             )
         }
 
@@ -419,30 +414,27 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         ].filter(property => contents?.includes(`"${property}"`))
         if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
-                <div
-                    key="legacy-cluster-props-present"
-                    className="alert alert-info site-admin-configuration-page__alert"
-                >
+                <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
                     <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
                     <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
                     these properties reported by the configuration editor.
-                </div>
+                </Alert>
             )
         }
 
         const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
-            <div className="site-admin-configuration-page">
+            <div>
                 <PageTitle title="Configuration - Admin" />
                 <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
-                <div className="site-admin-configuration-page__alerts">{alerts}</div>
-                {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                <div>{alerts}</div>
+                {this.state.loading && <LoadingSpinner />}
                 {this.state.site?.configuration && (
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor

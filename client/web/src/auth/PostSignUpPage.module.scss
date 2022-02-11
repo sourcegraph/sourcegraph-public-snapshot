@@ -1,0 +1,39 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.post-signup-page {
+    align-self: flex-start;
+
+    @keyframes ellipsis {
+        to {
+            width: 2rem;
+        }
+    }
+}
+
+.logo {
+    height: 1.75rem;
+    width: 1.75rem;
+}
+
+.logo-link {
+    outline: 0;
+    margin: 0.25rem 0.5rem;
+    display: flex;
+    width: fit-content;
+    text-decoration: none;
+    position: absolute;
+}
+
+@media screen and (max-width: 50rem) {
+    .logo-link {
+        position: relative;
+    }
+}
+
+.container {
+    width: 37.25rem;
+}
+
+.progress {
+    width: 50.25rem;
+}

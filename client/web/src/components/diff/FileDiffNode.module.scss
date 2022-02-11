@@ -1,0 +1,40 @@
+.file-diff-node {
+    margin-bottom: 1rem;
+}
+
+.hunks {
+    flex: 1 1 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+
+    overflow-x: hidden;
+
+    /* decrease from .card-header */
+    padding: 0.25rem 0.5rem;
+
+    &-path-stat {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    &-path {
+        white-space: pre;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        color: var(--link-color);
+        font-size: 0.875rem;
+    }
+
+    &-actions {
+        /* unset from .card-header */
+        font-weight: initial;
+        opacity: initial;
+
+        display: flex;
+        align-items: center;
+    }
+}

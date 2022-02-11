@@ -1,16 +1,15 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, isNot } from '@sourcegraph/shared/src/util/types'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
-import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
+import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../util/context'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension
@@ -18,23 +17,22 @@ const IS_EXTENSION = true // This feature is only supported in browser extension
 export class SearchCommand {
     public description = 'Enter a search query'
 
-    private suggestionFetcher = createSuggestionFetcher(20, this.requestGraphQL)
+    private suggestionFetcher = createSuggestionFetcher()
 
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
-    constructor(private requestGraphQL: PlatformContext['requestGraphQL']) {}
-
-    public getSuggestions = (query: string): Promise<browser.omnibox.SuggestResult[]> =>
-        new Promise(resolve => {
+    public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> => {
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
+        return new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
                 return
             }
 
             this.suggestionFetcher({
-                query,
-                handler: async suggestions => {
-                    const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
+                sourcegraphURL,
+                queries: [`${query} type:repo count:5`, `${query} type:path count:5`, `${query} type:symbol count:5`],
+                handler: suggestions => {
                     const built = suggestions.map(({ title, url, urlLabel }) => ({
                         content: `${sourcegraphURL}${url}`,
                         description: `${title} - ${urlLabel}`,
@@ -49,8 +47,13 @@ export class SearchCommand {
                 },
             })
         })
+    }
 
-    public action = async (query: string, disposition?: string): Promise<void> => {
+    public action = async (
+        query: string,
+        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab',
+        currentTabId?: number
+    ): Promise<void> => {
         const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
@@ -58,23 +61,34 @@ export class SearchCommand {
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(
-                      query,
-                      patternType,
-                      caseSensitive
-                  )}&utm_source=omnibox`,
+                : createURLWithUTM(
+                      new URL(`${sourcegraphURL}/search?${buildSearchURLQuery(query, patternType, caseSensitive)}`),
+                      {
+                          utm_source: getPlatformName(),
+                          utm_campaign: 'omnibox',
+                      }
+                  ).toString(),
         }
 
         switch (disposition) {
+            case 'currentTab':
+                if (currentTabId) {
+                    // Note: this is done in order to blur browser omnibox and set focus on page
+                    await browser.tabs
+                        .get(currentTabId)
+                        .then(currentTab => currentTab.index)
+                        .then(currentTabIndex => browser.tabs.create({ ...props, index: currentTabIndex }))
+                        .then(() => browser.tabs.remove(currentTabId))
+                    break
+                }
+
+                await browser.tabs.update(props)
+                break
             case 'newForegroundTab':
                 await browser.tabs.create(props)
                 break
             case 'newBackgroundTab':
                 await browser.tabs.create({ ...props, active: false })
-                break
-            case 'currentTab':
-            default:
-                await browser.tabs.update(props)
                 break
         }
     }

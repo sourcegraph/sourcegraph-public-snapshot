@@ -1,0 +1,14 @@
+.file-action {
+    display: block;
+    text-align: left;
+
+    span {
+        color: var(--body-color);
+        margin-left: 0.5rem;
+    }
+}
+
+.action {
+    margin-right: 0.625rem;
+    padding: 0.25rem;
+}

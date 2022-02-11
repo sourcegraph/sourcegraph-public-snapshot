@@ -1,4 +1,9 @@
+import classNames from 'classnames'
 import React from 'react'
+
+import { RadioButton } from '@sourcegraph/wildcard'
+
+import styles from './RadioButtons.module.scss'
 
 /**
  * Descriptor of a radio button element.
@@ -45,27 +50,30 @@ interface Props {
      * id of the currently selected RadioButtonNode.
      */
     selected?: string
+
+    /**
+     * name of the field that these radio buttons select. Use a unique name for
+     * each group of radio buttons in a form.
+     */
+    name: string
 }
 
 /**
  * A row of radio buttons.
  */
-export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className }) => (
-    <div className="radio-buttons">
+export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className, name }) => (
+    <div className={classNames(styles.radioButtons, className)}>
         {nodes.map(node => (
-            <label key={node.key ? node.key : node.id.toString()} className="radio-buttons__item" title={node.tooltip}>
-                <input
-                    className={`radio-buttons__input ${className || ''}`}
-                    name="filter"
-                    type="radio"
-                    onChange={onChange}
-                    value={node.id}
-                    checked={node.id === selected}
-                />{' '}
-                <small>
-                    <div className="radio-buttons__label">{node.label}</div>
-                </small>
-            </label>
+            <RadioButton
+                key={node.key ? node.key : node.id.toString()}
+                id={node.id.toString()}
+                title={node.tooltip}
+                name={name}
+                onChange={onChange}
+                value={node.id}
+                checked={node.id === selected}
+                label={<small className={styles.label}>{node.label}</small>}
+            />
         ))}
     </div>
 )

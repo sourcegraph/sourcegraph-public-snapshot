@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "@sourcegraph/eslint-plugin-wildcard",
+  "version": "1.0.0",
+  "description": "Custom rules and recommended config for consumers of the Wildcard component library",
+  "main": "lib/index.js",
+  "peerDependencies": {
+    "eslint-plugin-react": "^7.21.1"
+  },
+  "license": "Apache-2.0"
+}

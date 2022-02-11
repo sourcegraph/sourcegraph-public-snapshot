@@ -7,28 +7,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "codeinsightsbackendqueryrunner"
-}
 
 // TestJobQueue tests that EnqueueJob and dequeueJob work mutually to transfer jobs to/from the
 // database.
 func TestJobQueue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
 
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Check we get no dequeued job first.
@@ -41,6 +40,7 @@ func TestJobQueue(t *testing.T) {
 	firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 		SeriesID:    "job 1",
 		SearchQuery: "our search 1",
+		PersistMode: string(store.RecordMode),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +48,7 @@ func TestJobQueue(t *testing.T) {
 	secondJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 		SeriesID:    "job 2",
 		SearchQuery: "our search 2",
+		PersistMode: string(store.RecordMode),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +58,7 @@ func TestJobQueue(t *testing.T) {
 	firstJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
 	autogold.Want("2", &Job{
 		SeriesID: "job 1", SearchQuery: "our search 1",
+		PersistMode:     "record",
 		DependentFrames: []time.Time{},
 		ID:              1,
 	}).Equal(t, firstJob)
@@ -66,23 +68,23 @@ func TestJobQueue(t *testing.T) {
 		SeriesID: "job 2", SearchQuery: "our search 2",
 		DependentFrames: []time.Time{},
 		ID:              2,
+		PersistMode:     "record",
 	}).Equal(t, secondJob)
 	autogold.Want("5", "<nil>").Equal(t, fmt.Sprint(err))
 }
 
 func TestJobQueueDependencies(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	t.Run("enqueue without dependencies, get none back", func(t *testing.T) {
 		id, err := EnqueueJob(ctx, workerBaseStore, &Job{
 			SeriesID:    "job 1",
 			SearchQuery: "our search 1",
+			PersistMode: string(store.RecordMode),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -94,6 +96,7 @@ func TestJobQueueDependencies(t *testing.T) {
 		}
 		autogold.Want("1", &Job{
 			SeriesID: "job 1", SearchQuery: "our search 1",
+			PersistMode:     "record",
 			DependentFrames: []time.Time{},
 			ID:              1,
 		}).Equal(t, got)
@@ -104,6 +107,7 @@ func TestJobQueueDependencies(t *testing.T) {
 			SeriesID:        "job 2",
 			SearchQuery:     "our search 2",
 			DependentFrames: []time.Time{now, now},
+			PersistMode:     string(store.RecordMode),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -114,6 +118,28 @@ func TestJobQueueDependencies(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestQueryExecution_ToQueueJob(t *testing.T) {
+	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("test to job with dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test to job without dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

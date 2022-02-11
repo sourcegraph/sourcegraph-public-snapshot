@@ -1,4 +1,5 @@
-//+build test_cloudkms
+//go:build test_cloudkms
+// +build test_cloudkms
 
 package cloudkms
 

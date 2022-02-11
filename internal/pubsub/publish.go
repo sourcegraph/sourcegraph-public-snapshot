@@ -6,11 +6,11 @@ import (
 	"context"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PubSubProjectID is used to create a new pubsub client.

@@ -1,20 +1,22 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
-import { ErrorAlert } from '../components/alerts'
 import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
+import styles from './SiteAdminCreateUserPage.module.scss'
 
 interface State {
     errorDescription?: string
@@ -102,7 +104,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </p>
                 {this.state.createUserResult ? (
-                    <div className="alert alert-success">
+                    <Alert variant="success">
                         <p>
                             Account created for <strong>{this.state.username}</strong>.
                         </p>
@@ -114,18 +116,13 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
                         )}
-                        <button
-                            type="button"
-                            className="btn btn-primary mt-2"
-                            onClick={this.dismissAlert}
-                            autoFocus={true}
-                        >
+                        <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
-                        </button>
-                    </div>
+                        </Button>
+                    </Alert>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
-                        <div className="form-group site-admin-create-user-page__form-group">
+                        <div className={classNames('form-group', styles.formGroup)}>
                             <label htmlFor="site-admin-create-user-page__form-username">Username</label>
                             <UsernameInput
                                 id="site-admin-create-user-page__form-username"
@@ -140,7 +137,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                                 with a dot, nor begin with a hyphen.
                             </small>
                         </div>
-                        <div className="form-group site-admin-create-user-page__form-group">
+                        <div className={classNames('form-group', styles.formGroup)}>
                             <label htmlFor="site-admin-create-user-page__form-email">Email</label>
                             <EmailInput
                                 id="site-admin-create-user-page__form-email"
@@ -156,11 +153,11 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         {this.state.errorDescription && (
                             <ErrorAlert className="my-2" error={this.state.errorDescription} />
                         )}
-                        <button className="btn btn-primary" disabled={this.state.loading} type="submit">
+                        <Button disabled={this.state.loading} type="submit" variant="primary">
                             {window.context.resetPasswordEnabled
                                 ? 'Create account & generate password reset link'
                                 : 'Create account'}
-                        </button>
+                        </Button>
                     </Form>
                 )}
             </div>

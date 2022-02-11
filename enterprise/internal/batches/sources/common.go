@@ -29,6 +29,8 @@ func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
+	ChangesetSource
+
 	// CreateDraftChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.
@@ -37,11 +39,24 @@ type DraftChangesetSource interface {
 	UndraftChangeset(context.Context, *Changeset) error
 }
 
+type ForkableChangesetSource interface {
+	ChangesetSource
+
+	// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+	// the given namespace, ensuring that the fork exists and is a fork of the
+	// target repo.
+	GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error)
+
+	// GetUserFork returns a repo pointing to a fork of the given repo in the
+	// currently authenticated user's namespace.
+	GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error)
+}
+
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
 	// commits to the code host.
-	GitserverPushConfig(context.Context, *database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	GitserverPushConfig(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.
@@ -97,8 +112,14 @@ type Changeset struct {
 	HeadRef string
 	BaseRef string
 
+	// RemoteRepo is the repository the branch will be pushed to. This must be
+	// the same as TargetRepo if forking is not in use.
+	RemoteRepo *types.Repo
+	// TargetRepo is the repository in which the pull or merge request will be
+	// opened.
+	TargetRepo *types.Repo
+
 	*btypes.Changeset
-	*types.Repo
 }
 
 // IsOutdated returns true when the attributes of the nested

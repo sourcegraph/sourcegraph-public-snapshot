@@ -1,5 +1,5 @@
+import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 /**
  * Returns "true" if search.globbing is set to true in the final settings, "false" otherwise

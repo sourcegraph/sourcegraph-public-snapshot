@@ -3,8 +3,6 @@ package sources
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type fakeSourcer struct {
@@ -105,7 +104,7 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Chang
 		return s.ChangesetExists, s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return false, NoReposErr
 	}
 
@@ -132,7 +131,7 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -148,7 +147,7 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset)
 		return s.ChangesetExists, s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return false, NoReposErr
 	}
 
@@ -174,7 +173,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset)
 	if s.Err != nil {
 		return s.Err
 	}
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -206,7 +205,7 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) e
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -227,7 +226,7 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) 
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -243,7 +242,7 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -257,7 +256,7 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *Changeset, b
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
 }
 

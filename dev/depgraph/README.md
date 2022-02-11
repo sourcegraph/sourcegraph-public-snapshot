@@ -12,7 +12,7 @@ Run `depgraph {subcommand}` somewhere inside the sourcegraph/sourcegraph reposit
 
 ### Commands
 
-The following commands are available.
+The following commands are available. Across different commands, `{package}` should be specified as a relative path without any leading `./`. For example, `./dev/depgraph/depgraph summary internal/repos` from the root of the `sourcegraph` directory should work.
 
 #### summary
 

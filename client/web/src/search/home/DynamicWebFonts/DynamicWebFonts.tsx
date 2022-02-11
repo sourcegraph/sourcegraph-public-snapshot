@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './DynamicWebFonts.module.scss'
 import { useDynamicWebFonts, DynamicWebFont } from './useDynamicWebFonts'

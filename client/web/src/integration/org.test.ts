@@ -1,11 +1,11 @@
 import assert from 'assert'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
@@ -165,6 +165,8 @@ describe('Organizations', () => {
                     lastID: settingsID,
                     contents: updatedSettings,
                 })
+
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
             })
         })
         describe('Members tab', () => {
@@ -214,6 +216,8 @@ describe('Organizations', () => {
                     2,
                     'Expected members list to show 2 members.'
                 )
+
+                await percySnapshotWithVariants(driver.page, 'Organization members list')
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

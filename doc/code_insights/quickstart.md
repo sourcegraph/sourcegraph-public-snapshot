@@ -19,9 +19,9 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 ## Enable Code Insights
 
-### 1. Enable the experimental feature flag
+### 1. [If need be] Enable the experimental feature flag
 
-Add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings`:
+**If you're on Sourcegraph version 3.31 or earlier** and you don't already see the "Insights" item in your main nav bar, you'll need to add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings` (and _not_ in your site configuration settings):
 
 ```javascript
 "experimentalFeatures": { "codeInsights": true },
@@ -43,9 +43,11 @@ This creates a code insight tracking an arbitrary input that you could run a Sou
 
 If you are more interested in creating a language-based insight to show you language breakdown in your repositories, [follow this tutorial](language_insight_quickstart.md) instead.
 
-### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search
+### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search or check "all repositories"
 
-Enter repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+If you want an insight running over up to ~50-70 repositories, enter the repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+
+If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you don't want to include fork or archived repositories, make sure to indicate `fork:no` and `archived:no` in your data series (step 5). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
 ### 5. Define a data series to track the incidence of `TODO`
 
@@ -61,21 +63,15 @@ You can also select the color of your data series.
 
 Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository name]`.
 
-### 7. Set the visibility of your insight
-
-This controls who else can see your insight.
-
-Anything set to "Private" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
-
-### 8. Set the distance between data points to 1 month
+### 7. Set the distance between data points to 1 month
 
 The code insights prototypes currently show you seven datapoints for each data series. Your code insight will therefore show you results for a time horizon that is 6 * [distance between datapoints]. Setting it to one month means you'll see the results over the last six months.
 
-### 9. Click "create code insight" and view your insight.
+### 8. Click "create code insight" and view your insight.
 
 You'll be taken to the sourcegraph.example.com/insights page and can view your insight.
 
-### 10. Filter your insight to explore it further 
+### 9. Filter your insight to explore it further 
 
 Click the filter button in the top right of an insight card to open the filters panel. This allows you to filter the insight down to a subset of repositories through inclusion or exclusion using regular expressions.
 For more details, see [How to filter an insight](./how-tos/filtering_an_insight.md).

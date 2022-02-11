@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type authnResponseInfo struct {
@@ -86,7 +85,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // getOrCreateUser gets or creates a user account based on the SAML claims. It returns the
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db dbutil.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
 	var data extsvc.AccountData
 	data.SetAccountData(info.accountData)
 

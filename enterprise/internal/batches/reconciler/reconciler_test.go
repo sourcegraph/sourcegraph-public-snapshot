@@ -10,7 +10,8 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,23 +24,24 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 
 	store := store.New(db, &observation.TestContext, nil)
 
 	admin := ct.CreateTestUser(t, db, true)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
-	ct.CreateTestSiteCredential(t, store, rs[0])
+	repo, extSvc := ct.CreateTestRepo(t, ctx, db)
+	ct.CreateTestSiteCredential(t, store, repo)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: rs[0].Name,
-		VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		Name: repo.Name,
+		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
@@ -98,19 +100,19 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Create the specs.
 			specOpts := *tc.currentSpec
 			specOpts.User = admin.ID
-			specOpts.Repo = rs[0].ID
+			specOpts.Repo = repo.ID
 			specOpts.BatchSpec = batchSpec.ID
 			changesetSpec := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			previousSpecOpts := *tc.previousSpec
 			previousSpecOpts.User = admin.ID
-			previousSpecOpts.Repo = rs[0].ID
+			previousSpecOpts.Repo = repo.ID
 			previousSpecOpts.BatchSpec = previousBatchSpec.ID
 			previousSpec := ct.CreateChangesetSpec(t, ctx, store, previousSpecOpts)
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
-			changesetOpts.Repo = rs[0].ID
+			changesetOpts.Repo = repo.ID
 			changesetOpts.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
@@ -151,7 +153,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
-			assertions.Repo = rs[0].ID
+			assertions.Repo = repo.ID
 			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
 			assertions.AttachedTo = []int64{batchChange.ID}
 			assertions.CurrentSpec = changesetSpec.ID
@@ -160,6 +162,6 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		})
 
 		// Clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }

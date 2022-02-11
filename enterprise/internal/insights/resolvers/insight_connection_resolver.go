@@ -2,15 +2,18 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
@@ -18,6 +21,7 @@ var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 type insightConnectionResolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
+	orgStore             database.OrgStore
 	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
@@ -65,11 +69,28 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 
 func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insight, int64, error) {
 	r.once.Do(func() {
-		mapped, err := r.insightMetadataStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: r.ids})
+		args := store.InsightQueryArgs{UniqueIDs: r.ids}
+		var err error
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, r.orgStore)
+		if err != nil {
+			r.err = errors.Wrap(err, "getUserPermissions")
+			return
+		}
+
+		mapped, err := r.insightMetadataStore.GetMapped(ctx, args)
 		if err != nil {
 			r.err = err
 			return
 		}
+		// currently insight metadata is partially stored in user settings. Series will be joined with their appropriate
+		// metadata by sorting based on query text, and joining in the frontend. This is largely a temporary solution
+		// until insights has a full graphql api
+		for _, insight := range mapped {
+			sort.Slice(insight.Series, func(i, j int) bool {
+				return strings.ToUpper(insight.Series[i].Query) < strings.ToUpper(insight.Series[j].Query)
+			})
+		}
+
 		r.insights = mapped
 	})
 	return r.insights, r.next, r.err

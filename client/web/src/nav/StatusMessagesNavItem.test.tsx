@@ -1,9 +1,11 @@
-import { mount } from 'enzyme'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { of, Observable } from 'rxjs'
 
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+
 import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
+import { SourcegraphContext } from '../jscontext'
 
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
@@ -14,10 +16,22 @@ describe('StatusMessagesNavItem', () => {
         isSiteAdmin: false,
     }
 
+    let oldContext: SourcegraphContext & Mocha.SuiteFunction
+
+    beforeEach(() => {
+        oldContext = window.context
+        window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+    })
+    afterEach(() => {
+        window.context = oldContext
+    })
+
     test('no messages', () => {
         const fetchMessages = (): Observable<StatusMessagesResult['statusMessages']> => of([])
         expect(
-            mount(<StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />)
+            renderWithBrandedContext(
+                <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -30,21 +44,21 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
                         user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
     })
@@ -62,21 +76,21 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
                         user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
     })
@@ -90,21 +104,21 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                mount(
+                renderWithBrandedContext(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
                         user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
-                )
+                ).asFragment()
             ).toMatchSnapshot()
         })
     })

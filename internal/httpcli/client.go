@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"math"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,16 +16,20 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
-	"github.com/cockroachdb/errors"
 	"github.com/gregjones/httpcache"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Doer captures the Do method of an http.Client. It facilitates decorating
@@ -59,7 +64,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 	}
 }
 
-// A Opt configures an aspect of a given *http.Client,
+// Opt configures an aspect of a given *http.Client,
 // returning an error in case of failure.
 type Opt func(*http.Client) error
 
@@ -93,6 +98,7 @@ func NewExternalClientFactory() *Factory {
 	return NewFactory(
 		NewMiddleware(
 			ContextErrorMiddleware,
+			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
 		),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
@@ -141,6 +147,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
+		ActorTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -178,10 +185,10 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	opts = append(opts, f.common...)
 
 	var cli http.Client
-	var err *multierror.Error
+	var err *errors.MultiError
 
 	for _, opt := range opts {
-		err = multierror.Append(err, opt(&cli))
+		err = errors.Append(err, opt(&cli))
 	}
 
 	return &cli, err.ErrorOrNil()
@@ -339,6 +346,11 @@ func TracedTransportOpt(cli *http.Client) error {
 // MeteredTransportOpt returns an opt that wraps an existing http.Transport of a http.Client with
 // metrics collection.
 func MeteredTransportOpt(subsystem string) Opt {
+	// This will generate a metric of the following format:
+	// src_$subsystem_requests_total
+	//
+	// For example, if the subsystem is set to "internal", the metric being generated will be named
+	// src_internal_requests_total
 	meter := metrics.NewRequestMeter(
 		subsystem,
 		"Total number of requests sent to "+subsystem,
@@ -357,6 +369,11 @@ func MeteredTransportOpt(subsystem string) Opt {
 	}
 }
 
+var metricRetry = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_httpcli_retry_total",
+	Help: "Total number of times we retry HTTP requests.",
+})
+
 // A regular expression to match the error returned by net/http when the
 // configured number of redirects is exhausted. This error isn't typed
 // specifically so we resort to matching on the error string.
@@ -366,9 +383,6 @@ var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
 // scheme specified in the URL is invalid. This error isn't typed
 // specifically so we resort to matching on the error string.
 var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
-
-// A regular expression to match a DNSError no such host.
-var noSuchHostErrorRe = lazyregexp.New(`no such host`)
 
 // MaxRetries returns the max retries to be attempted, which should be passed
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
@@ -387,6 +401,27 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		status := 0
 
 		defer func() {
+			// Avoid trace log spam if we haven't invoked the retry policy.
+			shouldTraceLog := retry || a.Index > 0
+			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
+				fields := []otlog.Field{
+					otlog.Event("request-retry-decision"),
+					otlog.Bool("retry", retry),
+					otlog.Int("attempt", a.Index),
+					otlog.String("method", a.Request.Method),
+					otlog.String("url", a.Request.URL.String()),
+					otlog.Int("status", status),
+				}
+				if a.Error != nil {
+					fields = append(fields, otlog.Error(a.Error))
+				}
+				span.LogFields(fields...)
+			}
+
+			if retry {
+				metricRetry.Inc()
+			}
+
 			if retry || a.Error == nil || a.Index == 0 {
 				return
 			}
@@ -414,6 +449,14 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		case context.DeadlineExceeded, context.Canceled:
 			return false
 		default:
+			// Don't retry more than 3 times for no such host errors.
+			// This affords some resilience to dns unreliability while
+			// preventing 20 attempts with a non existing name.
+			var dnsErr *net.DNSError
+			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
+				return false
+			}
+
 			if v, ok := a.Error.(*url.Error); ok {
 				e := v.Error()
 				// Don't retry if the error was due to too many redirects.
@@ -423,13 +466,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 
 				// Don't retry if the error was due to an invalid protocol scheme.
 				if schemeErrorRe.MatchString(e) {
-					return false
-				}
-
-				// Don't retry more than 3 times for no such host errors.
-				// This affords some resilience to dns unreliability while
-				// preventing 20 attempts with a non existing name.
-				if noSuchHostErrorRe.MatchString(e) && a.Index >= 3 {
 					return false
 				}
 
@@ -560,4 +596,18 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 	cli.Transport = tr
 
 	return tr, nil
+}
+
+// ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
+// from the context and add it to each request's HTTP headers.
+//
+// Servers can use actor.HTTPMiddleware to populate actor context from incoming requests.
+func ActorTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+
+	return nil
 }

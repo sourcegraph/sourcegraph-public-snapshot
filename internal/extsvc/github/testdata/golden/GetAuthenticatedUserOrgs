@@ -1,20 +1,5 @@
 [
   {
-   "login": "mesos"
-  },
-  {
-   "login": "sourcegraph"
-  },
-  {
-   "login": "dockerlisbon"
-  },
-  {
-   "login": "SICPDistilled"
-  },
-  {
-   "login": "distributed-fuzzing"
-  },
-  {
-   "login": "oklog"
+   "login": "sourcegraph-vcr-repos"
   }
  ]

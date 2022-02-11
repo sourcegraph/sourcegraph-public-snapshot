@@ -4,17 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	r := &LicenseResolver{}
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, nil, nil, nil, r, nil)
+	schema, err := graphqlbackend.NewSchema(nil, nil, nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

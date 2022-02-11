@@ -25,10 +25,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	user := ct.CreateTestUser(t, s.DB(), false)
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -57,7 +59,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -413,7 +415,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -678,7 +680,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -1626,6 +1628,25 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 	})
 
+	t.Run("only for subset of changesets", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesets[0].ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*btypes.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.Now(),
+				LatestEvent:           clock.Now(),
+				ExternalUpdatedAt:     clock.Now(),
+				RepoExternalServiceID: "https://github.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
 	t.Run("ignore closed batch change", func(t *testing.T) {
 		closedBatchChangeID := changesets[0].BatchChanges[0].BatchChangeID
 		c, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: closedBatchChangeID})
@@ -1705,7 +1726,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// Let's define some helpers.
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
+			Spec: &batcheslib.ChangesetSpec{
 				Title: title,
 			},
 		}
@@ -2015,7 +2036,7 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
 		// First, we need to create a changeset spec.
 		spec := &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
+			Spec: &batcheslib.ChangesetSpec{
 				Title: "fake spec",
 			},
 		}
@@ -2137,15 +2158,14 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:               repo.ID,
@@ -2272,15 +2292,14 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	wantEnqueued := ct.ChangesetAssertions{
 		Repo:               repo.ID,

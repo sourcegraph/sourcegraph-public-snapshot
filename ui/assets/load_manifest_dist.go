@@ -1,3 +1,4 @@
+//go:build dist
 // +build dist
 
 package assets
@@ -7,7 +8,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (

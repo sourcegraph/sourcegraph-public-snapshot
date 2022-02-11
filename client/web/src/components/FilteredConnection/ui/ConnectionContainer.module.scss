@@ -1,0 +1,17 @@
+.normal {
+    --compact-summary-padding: 0.5rem 0.75rem;
+    --compact-summary-divider: solid 1px var(--border-color-2);
+    --compact-summary-min-height: 2.75rem;
+
+    table {
+        td {
+            vertical-align: middle;
+        }
+    }
+}
+
+.noncompact {
+    table {
+        width: 100%;
+    }
+}

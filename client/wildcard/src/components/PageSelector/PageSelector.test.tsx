@@ -4,11 +4,6 @@ import sinon from 'sinon'
 
 import { PageSelector, PageSelectorProps } from './PageSelector'
 
-jest.mock('use-resize-observer', () => ({
-    __esModule: true,
-    default: jest.requireActual('use-resize-observer/polyfilled'),
-}))
-
 describe('PageSelector', () => {
     let queries: RenderResult
     const renderWithProps = (props: PageSelectorProps): RenderResult => render(<PageSelector {...props} />)

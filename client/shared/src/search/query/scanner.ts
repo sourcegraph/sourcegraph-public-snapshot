@@ -450,13 +450,13 @@ const whitespaceOrClosingParen = oneOf<Whitespace | ClosingParen>(whitespace, cl
  * @param interpretComments Interpets C-style line comments for multiline queries.
  */
 const createScanner = (kind: PatternKind, interpretComments?: boolean): Scanner<Token[]> => {
-    const baseQuotedScanner = [quoted('"'), quoted("'")]
-    const quotedScanner = kind === PatternKind.Regexp ? [quoted('/'), ...baseQuotedScanner] : baseQuotedScanner
+    const quotedPatternScanner: Scanner<Literal>[] =
+        kind === PatternKind.Regexp ? [quoted('"'), quoted("'"), quoted('/')] : []
 
-    const baseScanner = [keyword, filter, ...quotedScanner, scanPattern(kind)]
+    const baseScanner = [keyword, filter, ...quotedPatternScanner, scanPattern(kind)]
     const tokenScanner: Scanner<Token>[] = interpretComments ? [comment, ...baseScanner] : baseScanner
 
-    const baseEarlyPatternScanner = [...quotedScanner, toPatternResult(scanBalancedLiteral, kind)]
+    const baseEarlyPatternScanner = [...quotedPatternScanner, toPatternResult(scanBalancedLiteral, kind)]
     const earlyPatternScanner = interpretComments ? [comment, ...baseEarlyPatternScanner] : baseEarlyPatternScanner
 
     return zeroOrMore(

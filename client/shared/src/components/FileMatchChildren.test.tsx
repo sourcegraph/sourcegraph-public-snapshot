@@ -1,16 +1,19 @@
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup } from '@testing-library/react'
 import * as H from 'history'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import {
     RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'
@@ -28,11 +31,19 @@ const onSelect = sinon.spy()
 
 const defaultProps = {
     location: history.location,
-    items: [
+    matches: [
         {
             preview: 'third line of code',
             line: 3,
             highlightRanges: [{ start: 7, highlightLength: 4 }],
+        },
+    ],
+    grouped: [
+        {
+            matches: [{ line: 3, character: 7, highlightLength: 4, isInContext: true }],
+            position: { line: 3, character: 7 },
+            startLine: 3,
+            endLine: 4,
         },
     ],
     result: RESULT,
@@ -41,44 +52,11 @@ const defaultProps = {
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     onSelect,
     settingsCascade: NOOP_SETTINGS_CASCADE,
-    isLightTheme: true,
-    versionContext: undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 describe('FileMatchChildren', () => {
     afterAll(cleanup)
-
-    it('calls onSelect callback when an item is clicked', () => {
-        const { container } = render(<FileMatchChildren {...defaultProps} onSelect={onSelect} />)
-        const item = container.querySelector('.file-match-children__item')
-        expect(item).toBeVisible()
-        fireEvent.click(item!)
-        expect(onSelect.calledOnce).toBe(true)
-    })
-
-    it('correctly shows number of context lines when search.contextLines setting is set', () => {
-        const settingsCascade = {
-            final: { 'search.contextLines': 3 },
-            subjects: [
-                {
-                    lastID: 1,
-                    settings: { 'search.contextLines': '3' },
-                    extensions: null,
-                    subject: {
-                        __typename: 'User' as const,
-                        username: 'f',
-                        id: 'abc',
-                        settingsURL: '/users/f/settings',
-                        viewerCanAdminister: true,
-                        displayName: 'f',
-                    },
-                },
-            ],
-        }
-        const { container } = render(<FileMatchChildren {...defaultProps} settingsCascade={settingsCascade} />)
-        const tableRows = container.querySelectorAll('.code-excerpt tr')
-        expect(tableRows.length).toBe(7)
-    })
 
     it('does not disable the highlighting timeout', () => {
         /*
@@ -88,7 +66,9 @@ describe('FileMatchChildren', () => {
             ideal.
         */
         const fetchHighlightedFileLineRanges = sinon.spy(context => of(HIGHLIGHTED_FILE_LINES))
-        render(<FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />)
+        renderWithBrandedContext(
+            <FileMatchChildren {...defaultProps} fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges} />
+        )
         sinon.assert.calledOnce(fetchHighlightedFileLineRanges)
         sinon.assert.calledWithMatch(fetchHighlightedFileLineRanges, { disableTimeout: false })
     })

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -10,31 +9,33 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) *types.User {
 	t.Helper()
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+	u, err := db.Users().Create(context.Background(), database.NewUser{Username: name})
+	require.NoError(t, err)
 
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = db.Users().SetIsSiteAdmin(context.Background(), u.ID, isAdmin)
+	require.NoError(t, err)
 
-	return userID
+	return u
 }
 
-func addUserToOrg(t *testing.T, db *sql.DB, userID int32, orgID int32) {
+func addUserToOrg(t *testing.T, db database.DB, userID int32, orgID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO org_members (org_id, user_id) VALUES (%s, %s)", orgID, userID)
 
-	_, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,15 +96,16 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 	t.Helper()
 
 	defaultOwner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	defaultAction := []*graphqlbackend.CreateActionArgs{
+	defaultActions := []*graphqlbackend.CreateActionArgs{
 		{Email: &graphqlbackend.CreateActionEmailArgs{
 			Enabled:    true,
 			Priority:   "NORMAL",
 			Recipients: []graphql.ID{defaultOwner},
-			Header:     "test header"}}}
+			Header:     "test header"}},
+	}
 
 	options := options{
-		actions:   defaultAction,
+		actions:   defaultActions,
 		owner:     defaultOwner,
 		postHooks: nil,
 	}
@@ -133,12 +135,19 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 
 // newTestResolver returns a Resolver with stopped clock, which is useful to
 // compare input and outputs in tests.
-func newTestResolver(t *testing.T, db dbutil.DB) *Resolver {
+func newTestResolver(t *testing.T, db database.DB) *Resolver {
 	t.Helper()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	return newResolverWithClock(db, clock).(*Resolver)
+	return newResolverWithClock(db, clock)
+}
+
+// newResolverWithClock is used in tests to set the clock manually.
+func newResolverWithClock(db database.DB, clock func() time.Time) *Resolver {
+	mockDB := edb.NewMockEnterpriseDBFrom(edb.NewEnterpriseDB(db))
+	mockDB.CodeMonitorsFunc.SetDefaultReturn(edb.CodeMonitorsWithClock(db, clock))
+	return &Resolver{db: mockDB}
 }
 
 func marshalDateTime(t testing.TB, ts time.Time) string {

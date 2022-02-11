@@ -231,6 +231,23 @@ func TestConsistentHashing(t *testing.T) {
 	})
 }
 
+func BenchmarkConsistenHashing(b *testing.B) {
+	for _, nodeCount := range []int{10, 100, 1000} {
+		b.Run(fmt.Sprintf("NodeCount-%d", nodeCount), func(b *testing.B) {
+			b.ReportAllocs()
+			var nodes []string
+			for i := 0; i < nodeCount; i++ {
+				nodes = append(nodes, fmt.Sprintf("node%d", i))
+			}
+			h := newConsistentHash(nodes)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				h.Lookup("foo")
+			}
+		})
+	}
+}
+
 func makeNodes(n int) []string {
 	nodes := make([]string, n)
 	for i := 0; i < n; i++ {

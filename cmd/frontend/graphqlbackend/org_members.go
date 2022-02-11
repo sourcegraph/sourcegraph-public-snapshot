@@ -3,13 +3,18 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// organisation memberships.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
 	memberships, err := database.OrgMembers(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
@@ -34,7 +39,7 @@ func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageI
 }
 
 type organizationMembershipResolver struct {
-	db         dbutil.DB
+	db         database.DB
 	membership *types.OrgMembership
 }
 

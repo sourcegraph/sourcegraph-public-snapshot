@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // IsBasic returns whether a query is a basic query. A basic query is one which
@@ -35,39 +35,20 @@ func IsPatternAtom(b Basic) bool {
 
 // IsStreamingCompatible returns whether a backend search process may
 // immediately send results over a streaming interface. A query is streaming
-// compatible if a streaming search engine component (like git-powered commit
-// search or Zoekt) may assume that it's processing just one logical search
-// expression which is not subject to additional merge/deduplication processing,
-// which are otherwise required by `and` and `or` expressions in the Sourcegraph
-// query evaluation routine. A single logical search expression is represented
-// by a single Basic query which contains either no pattern node, or a single
-// pattern node.
+// compatible if: ask Camden because this is super in flux right now.
 func IsStreamingCompatible(p Plan) bool {
-	if len(p) == 1 {
-		if p[0].Pattern == nil {
-			return true
-		}
-		switch node := p[0].Pattern.(type) {
-		case Operator:
-			if len(node.Operands) == 1 {
-				return true
-			}
-		case Pattern:
-			return true
-		}
-	}
-	return false
+	return len(p) == 1
 }
 
-// exists traverses every node in nodes and returns early as soon as fn is satisfied.
-func exists(nodes []Node, fn func(node Node) bool) bool {
+// Exists traverses every node in nodes and returns early as soon as fn is satisfied.
+func Exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
 	for _, node := range nodes {
 		if fn(node) {
 			return true
 		}
 		if operator, ok := node.(Operator); ok {
-			if exists(operator.Operands, fn) {
+			if Exists(operator.Operands, fn) {
 				return true
 			}
 		}
@@ -75,24 +56,34 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 	return found
 }
 
-// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
-func forAll(nodes []Node, fn func(node Node) bool) bool {
+// ForAll traverses every node in nodes and returns whether all nodes satisfy fn.
+func ForAll(nodes []Node, fn func(node Node) bool) bool {
 	sat := true
 	for _, node := range nodes {
 		if !fn(node) {
 			return false
 		}
 		if operator, ok := node.(Operator); ok {
-			return forAll(operator.Operands, fn)
+			return ForAll(operator.Operands, fn)
 		}
 	}
 	return sat
 }
 
+// returns true if the query contains a predicate value.
+func ContainsPredicate(nodes []Node) bool {
+	return Exists(nodes, func(node Node) bool {
+		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
+			return true
+		}
+		return false
+	})
+}
+
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {
-	return !exists(nodes, func(node Node) bool {
+	return !Exists(nodes, func(node Node) bool {
 		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
 		_, ok := node.(Parameter)
 		return ok
@@ -101,7 +92,7 @@ func isPatternExpression(nodes []Node) bool {
 
 // containsPattern returns true if any descendent of nodes is a search pattern.
 func containsPattern(node Node) bool {
-	return exists([]Node{node}, func(node Node) bool {
+	return Exists([]Node{node}, func(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
@@ -265,6 +256,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return err
 	}
 
+	isValidGitDate := func() error {
+		_, err := ParseGitDate(value, time.Now)
+		return err
+	}
+
 	satisfies := func(fns ...func() error) error {
 		for _, fn := range fns {
 			if err := fn(); err != nil {
@@ -285,7 +281,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup,
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case
@@ -311,7 +306,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldBefore,
 		FieldAfter:
-		return satisfies(isNotNegated)
+		return satisfies(isNotNegated, isValidGitDate)
 	case
 		FieldAuthor,
 		FieldCommitter,
@@ -358,7 +353,7 @@ func validateRepoRevPair(nodes []Node) error {
 			seenRepoWithCommit = true
 		}
 	})
-	revSpecified := exists(nodes, func(node Node) bool {
+	revSpecified := Exists(nodes, func(node Node) bool {
 		n, ok := node.(Parameter)
 		if ok && n.Field == FieldRev {
 			return true
@@ -401,7 +396,7 @@ func validateTypeStructural(nodes []Node) error {
 	seenStructural := false
 	seenType := false
 	typeDiff := false
-	invalid := exists(nodes, func(node Node) bool {
+	invalid := Exists(nodes, func(node Node) bool {
 		if p, ok := node.(Pattern); ok && p.Annotation.Labels.IsSet(Structural) {
 			seenStructural = true
 		}
@@ -417,6 +412,20 @@ func validateTypeStructural(nodes []Node) error {
 			basic = basic + " and is not currently supported for diff searches"
 		}
 		return errors.New(basic)
+	}
+	return nil
+}
+
+func validateRefGlobs(nodes []Node) error {
+	if !ContainsRefGlobs(nodes) {
+		return nil
+	}
+	var indexValue string
+	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
+		indexValue = value
+	})
+	if ParseYesNoOnly(indexValue) == Only {
+		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
 	}
 	return nil
 }
@@ -457,7 +466,7 @@ func validateRepoHasFile(nodes []Node) error {
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
 func validatePureLiteralPattern(nodes []Node, balanced bool) error {
-	impure := exists(nodes, func(node Node) bool {
+	impure := Exists(nodes, func(node Node) bool {
 		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
 			for _, node := range operator.Operands {
 				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
@@ -527,6 +536,7 @@ func validate(nodes []Node) error {
 		validateRepoHasFile,
 		validateCommitParameters,
 		validateTypeStructural,
+		validateRefGlobs,
 	)
 }
 

@@ -5,18 +5,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const slowDiagnosticsRequestThreshold = time.Second
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDiagnostics []AdjustedDiagnostic, _ int, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Diagnostics", r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Diagnostics", r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -35,8 +38,13 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 
 	totalCount := 0
 
+	checkerEnabled := authz.SubRepoEnabled(r.checker)
+	var a *actor.Actor
+	if checkerEnabled {
+		a = actor.FromContext(ctx)
+	}
 	for i := range adjustedUploads {
-		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		diagnostics, count, err := r.lsifStore.Diagnostics(
 			ctx,
@@ -55,7 +63,17 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 				return nil, 0, err
 			}
 
-			adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+			if !checkerEnabled {
+				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+				continue
+			}
+
+			// sub-repo checker is enabled, proceeding with check
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
+				return nil, 0, err
+			} else if include {
+				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+			}
 		}
 
 		totalCount += count
@@ -64,7 +82,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 	if len(adjustedDiagnostics) > limit {
 		adjustedDiagnostics = adjustedDiagnostics[:limit]
 	}
-	traceLog(
+	trace.Log(
 		log.Int("totalCount", totalCount),
 		log.Int("numDiagnostics", len(adjustedDiagnostics)),
 	)

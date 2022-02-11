@@ -1,0 +1,8 @@
+&precise.DocumentationPathInfoData{
+	PathID:  "/github.com/sourcegraph/lsif-go/internal",
+	IsIndex: true,
+	Children: []string{
+		"/github.com/sourcegraph/lsif-go/internal/gomod",
+		"/github.com/sourcegraph/lsif-go/internal/index",
+	},
+}

@@ -1,78 +1,139 @@
+import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
+import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { IHighlightLineRange } from '../graphql/schema'
-import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
-import { SymbolIcon } from '../symbols/SymbolIcon'
-import { ThemeProps } from '../theme'
-import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
-    toPositionOrRangeQueryParameter,
     appendSubtreeQueryParameter,
-} from '../util/url'
+    isErrorLike,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
+
+import { IHighlightLineRange } from '../schema'
+import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
+import { SettingsCascadeProps } from '../settings/settings'
+import { SymbolIcon } from '../symbols/SymbolIcon'
+import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { MatchItem } from './FileMatch'
-import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
-import { Link } from './Link'
+import styles from './FileMatchChildren.module.scss'
+import { LastSyncedIcon } from './LastSyncedIcon'
+import { MatchGroup } from './ranking/PerFileResultRanking'
 
-export interface EventLogger {
-    log: (eventLabel: string, eventProperties?: any, publicEventProperties?: any) => void
-}
-
-interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
-    eventLogger?: EventLogger
-    items: MatchItem[]
     result: ContentMatch | SymbolMatch | PathMatch
+    grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
-    /**
-     * Whether or not to show all matches for this file, or only a subset.
-     */
-    allMatches: boolean
-    /**
-     * The number of matches to show when the results are collapsed (allMatches===false, user has not clicked "Show N more matches")
-     */
-    subsetMatches: number
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    /**
-     * Called when the file's search result is selected.
-     */
-    onSelect: () => void
 }
 
-// Dev flag for disabling syntax highlighting on search results pages.
-const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
+/**
+ * This helper function determines whether a mouse/click event was triggered as
+ * a result of selecting text in search results.
+ * There are at least to ways to do this:
+ *
+ * - Tracking `mouseup`, `mousemove` and `mousedown` events. The occurrence of
+ * a `mousemove` event would indicate a text selection. However, users
+ * might slightly move the mouse while clicking, and solutions that would
+ * take this into account seem fragile.
+ * - (implemented here) Inspect the Selection object returned by
+ * `window.getSelection()`.
+ *
+ * CAVEAT: Chromium and Firefox (and maybe other browsers) behave
+ * differently when a search result is clicked *after* text selection was
+ * made:
+ *
+ * - Firefox will clear the selection before executing the click event
+ * handler, i.e. the search result will be opened.
+ * - Chrome will only clear the selection if the click happens *outside*
+ * of the selected text (in which case the search result will be
+ * opened). If the click happens inside the selected text the selection
+ * will be cleared only *after* executing the click event handler.
+ */
+function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
+    const selection = window.getSelection()
 
-export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
-    // The number of lines of context to show before and after each match.
-    let context = 1
-
-    if (props.location.pathname === '/search') {
-        // Check if search.contextLines is configured in settings.
-        const contextLinesSetting =
-            isSettingsValid(props.settingsCascade) &&
-            props.settingsCascade.final &&
-            props.settingsCascade.final['search.contextLines']
-
-        if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
-            context = contextLinesSetting
+    // Text selections are always ranges. Should the type not be set, verify
+    // that the selection is not empty.
+    if (selection && (selection.type === 'Range' || selection.toString() !== '')) {
+        // Firefox specific: Because our code excerpts are implemented as tables,
+        // CTRL+click would select the table cell. Since users don't know that we
+        // use tables, the most likely wanted to open the search results in a new
+        // tab instead though.
+        if ((event.ctrlKey || event.metaKey) && selection.anchorNode?.nodeName === 'TR') {
+            // Ugly side effect: We don't want the table cell to be highlighted.
+            // The focus style that Firefox uses doesn't seem to be affected by
+            // CSS so instead we clear the selection.
+            selection.empty()
+            return false
         }
+
+        return true
     }
 
-    const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const [matches, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
-        props.items,
-        maxMatches,
-        context,
-    ])
+    return false
+}
 
+/**
+ * A helper function to replicate browser behavior when clicking on links.
+ * A very common interaction is to open links in a new in the _background_ via
+ * CTRL/CMD + click or middle click.
+ * Unfortunately `window.open` doesn't give us much control over how the new
+ * window/tab should be opened, and the behavior is inconcistent between
+ * browsers.
+ * In order to replicate the standard behvior as much as possible this function
+ * dynamically creates an `<a>` element and triggers a click event on it.
+ */
+function openLink(
+    url: string,
+    event: Pick<MouseEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>,
+    button: 'primary' | 'middle'
+): void {
+    const link = document.createElement('a')
+    link.href = url
+    link.style.display = 'none'
+    const clickEvent = new window.MouseEvent('click', {
+        bubbles: false,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        // Regarding middle click: Setting "button: 1:" doesn't seem to suffice:
+        // Firefox doesn't react to the event at all, Chromium opens the tab in
+        // the foreground. So in order to simulate a middle click, we set
+        // ctrlKey and metaKey to `true` instead.
+        ctrlKey: button === 'middle' ? true : event.ctrlKey,
+        metaKey: button === 'middle' ? true : event.metaKey,
+        view: window,
+    })
+
+    // It looks the link has to be part of the document, otherwise Firefox won't
+    // trigger the default behavior (it works without appending in Chromium).
+    document.body.append(link)
+    link.dispatchEvent(clickEvent)
+    link.remove()
+}
+
+/**
+ * Since we are not using a real link anymore, we have to simulate opening
+ * the file in a new tab when the search result is clicked on with the
+ * middle mouse button.
+ * This handler is bound to the `mouseup` event because the `auxclick`
+ * (https://w3c.github.io/uievents/#event-type-auxclick) event is not
+ * support by all browsers yet (https://caniuse.com/?search=auxclick)
+ */
+function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>): void {
+    const href = event.currentTarget.getAttribute('data-href')
+    if (href && event.button === 1) {
+        openLink(href, event, 'middle')
+    }
+}
+
+export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -81,17 +142,17 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, isLightTheme, fetchHighlightedFileLineRanges, eventLogger, onFirstResultLoad } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
+    const history = useHistory()
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) => {
+        (isFirst, startLine, endLine) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
-                    commitID: result.version || '',
-                    filePath: result.name,
+                    commitID: result.commit || '',
+                    filePath: result.path,
                     disableTimeout: false,
-                    isLightTheme,
                     ranges: optimizeHighlighting
                         ? grouped.map(
                               (group): IHighlightLineRange => ({
@@ -107,20 +168,18 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     if (isFirst && onFirstResultLoad) {
                         onFirstResultLoad()
                     }
-                    if (eventLogger) {
-                        eventLogger.log(
-                            'search.latencies.frontend.code-load',
-                            { durationMs: Date.now() - startTime },
-                            { durationMs: Date.now() - startTime }
-                        )
-                    }
+                    telemetryService.log(
+                        'search.latencies.frontend.code-load',
+                        { durationMs: Date.now() - startTime },
+                        { durationMs: Date.now() - startTime }
+                    )
                     return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                         : lines[0].slice(startLine, endLine)
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -131,21 +190,51 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={getFileMatchUrl(result)}
-                items={matches}
-                onSelect={props.onSelect}
-            />
-        )
-    }
+    /**
+     * This handler implements the logic to simulate the click/keyboard
+     * activation behavior of links, while also allowing the selection of text
+     * inside the element.
+     * Because a click event is dispatched in both cases (clicking the search
+     * result to open it as well as selecting text within it), we have to be
+     * able to distinguish between those two actions.
+     * If we detect a text selection action, we don't have to do anything.
+     *
+     * CAVEATS:
+     * - In Firefox, Shift+click will open the URL in a new tab instead of
+     * a window (unlike Chromium which seems to show the same behavior as with
+     * native links).
+     * - Firefox will insert \t\n in between table rows, causing the copied
+     * text to be different from what is in the file/search result.
+     */
+    const navigateToFile = useCallback(
+        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
+            // Testing for text selection is only necessary for mouse/click
+            // events.
+            if (
+                (event.type === 'click' && !isTextSelectionEvent(event as MouseEvent<HTMLElement>)) ||
+                (event as KeyboardEvent<HTMLElement>).key === 'Enter'
+            ) {
+                const href = event.currentTarget.getAttribute('data-href')
+
+                if (!event.defaultPrevented && href) {
+                    event.preventDefault()
+                    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+                        openLink(href, event, 'primary')
+                    } else {
+                        history.push(href)
+                    }
+                }
+            }
+        },
+        [history]
+    )
 
     return (
-        <div className="file-match-children">
+        <div className={styles.fileMatchChildren} data-testid="file-match-children">
+            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
-                <div className="file-match-children__item">
+                <div className={styles.item} data-testid="file-match-children-item">
                     <small>Path match</small>
                 </div>
             )}
@@ -154,8 +243,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
-                    className="file-match-children__item test-file-match-children-item"
+                    className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
+                    data-testid="file-match-children-item"
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
@@ -166,31 +256,45 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             ))}
 
             {/* Line matches */}
-            {grouped.map((group, index) => (
-                <div
-                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
-                    className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
-                >
-                    <Link
-                        to={createCodeExcerptLink(group)}
-                        className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                        onClick={props.onSelect}
-                    >
-                        <CodeExcerpt
-                            repoName={result.repository}
-                            commitID={result.version || ''}
-                            filePath={result.name}
-                            startLine={group.startLine}
-                            endLine={group.endLine}
-                            highlightRanges={group.matches}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={isLightTheme}
-                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                            isFirst={index === 0}
-                        />
-                    </Link>
+            {grouped && (
+                <div>
+                    {grouped.map((group, index) => (
+                        <div
+                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
+                                group.position.character
+                            }`}
+                            className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
+                        >
+                            <div
+                                data-href={createCodeExcerptLink(group)}
+                                className={classNames(
+                                    'test-file-match-children-item',
+                                    styles.item,
+                                    styles.itemClickable
+                                )}
+                                onClick={navigateToFile}
+                                onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                                onKeyDown={navigateToFile}
+                                data-testid="file-match-children-item"
+                                tabIndex={0}
+                                role="link"
+                            >
+                                <CodeExcerpt
+                                    repoName={result.repository}
+                                    commitID={result.commit || ''}
+                                    filePath={result.path}
+                                    startLine={group.startLine}
+                                    endLine={group.endLine}
+                                    highlightRanges={group.matches}
+                                    fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                                    isFirst={index === 0}
+                                    blobLines={group.blobLines}
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            ))}
+            )}
         </div>
     )
 }

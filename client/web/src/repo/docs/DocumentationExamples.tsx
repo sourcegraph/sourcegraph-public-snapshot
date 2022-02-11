@@ -1,17 +1,18 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState } from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Observable } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { RepositoryFields } from '../../graphql-operations'
 
+import styles from './DocumentationExamples.module.scss'
 import { DocumentationExamplesList } from './DocumentationExamplesList'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -31,7 +32,7 @@ export const DocumentationExamples: React.FunctionComponent<Props> = props => {
 
     return (
         <VisibilitySensor partialVisibility={true} onChange={onVisibilityChange}>
-            <div className="documentation-examples mt-3 mb-3">
+            <div className={classNames('mt-3 mb-3', styles.documentationExamples)}>
                 {visible && <DocumentationExamplesList {...props} />}
             </div>
         </VisibilitySensor>

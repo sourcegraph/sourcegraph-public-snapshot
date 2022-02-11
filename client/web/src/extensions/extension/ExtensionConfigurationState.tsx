@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 
@@ -11,9 +12,9 @@ export const ExtensionConfigurationState: React.FunctionComponent<{
     className?: string
 }> = ({ isAdded, isEnabled, enabledIconOnly, className = '' }) =>
     isAdded && isEnabled ? (
-        <span className={`text-success ${className}`}>
+        <span className={classNames('text-success', className)}>
             <CheckIcon className="icon-inline" /> {!enabledIconOnly && 'Enabled'}
         </span>
     ) : (
-        <span className={`text-muted ${className}`}>Disabled</span>
+        <span className={classNames('text-muted', className)}>Disabled</span>
     )

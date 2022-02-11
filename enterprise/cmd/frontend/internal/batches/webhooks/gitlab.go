@@ -7,17 +7,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -41,6 +43,8 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
+
 	// 🚨 SECURITY: Verify the shared secret against the GitLab external service
 	// configuration. If there isn't a webhook defined in the service with this
 	// secret, or the header is empty, then we return a 401 to the client.
@@ -51,6 +55,10 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusUnauthorized, "shared secret is incorrect")
 		return
 	}
+
+	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
+	// internal actor on the context.
+	ctx := actor.WithInternalActor(r.Context())
 
 	// Parse the event proper.
 	if r.Body == nil {
@@ -83,7 +91,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Route the request based on the event type.
-	if err := h.handleEvent(r.Context(), extSvc, event); err != nil {
+	if err := h.handleEvent(ctx, extSvc, event); err != nil {
 		respond(w, err.code, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)

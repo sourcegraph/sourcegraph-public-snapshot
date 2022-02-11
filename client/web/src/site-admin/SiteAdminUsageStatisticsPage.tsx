@@ -4,10 +4,11 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -16,6 +17,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+import styles from './SiteAdminUsageStatisticsPage.module.scss'
 
 interface ChartData {
     label: string
@@ -41,7 +43,7 @@ interface UsageChartPageProps {
 }
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
-    <div className="site-admin-usage-statistics-page">
+    <div>
         {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
         <BarChart
             showLabels={true}
@@ -60,7 +62,7 @@ export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: 
                 },
             }))}
         />
-        <small className="site-admin-usage-statistics-page__tz-note">
+        <small className={styles.tzNote}>
             <i>GMT/UTC time</i>
         </small>
     </div>
@@ -79,10 +81,8 @@ class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsH
                     <th>Page views</th>
                     <th>Search queries</th>
                     <th>Code intelligence actions</th>
-                    <th className="site-admin-usage-statistics-page__date-column">Last active</th>
-                    <th className="site-admin-usage-statistics-page__date-column">
-                        Last active in code host or code review
-                    </th>
+                    <th className={styles.dateColumn}>Last active</th>
+                    <th className={styles.dateColumn}>Last active in code host or code review</th>
                 </tr>
             </thead>
         )
@@ -114,8 +114,8 @@ class UserUsageStatisticsFooter extends React.PureComponent<UserUsageStatisticsH
                             0
                         )}
                     </td>
-                    <td className="site-admin-usage-statistics-page__date-column" />
-                    <td className="site-admin-usage-statistics-page__date-column" />
+                    <td className={styles.dateColumn} />
+                    <td className={styles.dateColumn} />
                 </tr>
             </tfoot>
         )
@@ -139,14 +139,14 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                 <td>
                     {this.props.node.usageStatistics ? this.props.node.usageStatistics.codeIntelligenceActions : 'n/a'}
                 </td>
-                <td className="site-admin-usage-statistics-page__date-column">
+                <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
                         'never'
                     )}
                 </td>
-                <td className="site-admin-usage-statistics-page__date-column">
+                <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
@@ -243,19 +243,20 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-usage-statistics-page">
+            <div>
                 <PageTitle title="Usage statistics - Admin" />
                 <h2>Usage statistics</h2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                <a
+                <Button
                     href="/site-admin/usage-statistics/archive"
-                    className="btn btn-secondary"
                     data-tooltip="Download usage stats archive"
                     download="true"
+                    variant="secondary"
+                    as="a"
                 >
                     <FileDownloadIcon className="icon-inline" /> Download usage stats archive
-                </a>
+                </Button>
 
                 {this.state.stats && (
                     <>
@@ -264,6 +265,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                                 label,
                                 id: key,
                             }))}
+                            name="chart-options"
                             onChange={this.onChartIndexChange}
                             selected={this.state.chartID}
                         />

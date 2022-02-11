@@ -3,6 +3,8 @@ import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import styles from './BrandLogo.module.scss'
+
 interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     /**
      * The site configuration `branding` property. If not set, the global value from
@@ -47,8 +49,8 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
     return (
         <img
             {...props}
-            className={classNames('brand-logo', className, {
-                'brand-logo--spin': variant === 'symbol' && !branding?.disableSymbolSpin,
+            className={classNames(className, {
+                [styles.brandLogoSpin]: variant === 'symbol' && !branding?.disableSymbolSpin,
             })}
             src={customBrandingLogoUrl || sourcegraphLogoUrl}
             alt={customBrandingLogoUrl ? 'Logo' : 'Sourcegraph logo'}

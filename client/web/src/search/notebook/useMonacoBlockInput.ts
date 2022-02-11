@@ -42,11 +42,13 @@ interface UseMonacoBlockEditorOptions
     extends Pick<BlockProps, 'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'> {
     editor: Monaco.editor.IStandaloneCodeEditor | undefined
     id: string
+    type: 'md' | 'query'
 }
 
 export const useMonacoBlockInput = ({
     editor,
     id,
+    type,
     onRunBlock,
     onBlockInputChange,
     onSelectBlock,
@@ -90,10 +92,10 @@ export const useMonacoBlockInput = ({
             return
         }
         const disposable = editor.onDidChangeModelContent(() => {
-            onBlockInputChange(id, editor.getValue())
+            onBlockInputChange(id, { type, input: editor.getValue() })
         })
         return () => disposable.dispose()
-    }, [editor, id, onBlockInputChange])
+    }, [editor, id, type, onBlockInputChange])
 
     useEffect(() => {
         if (!editor) {

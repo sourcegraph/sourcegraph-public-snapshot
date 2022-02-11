@@ -6,13 +6,13 @@ import { distinctUntilKeyChanged, filter, first, map, switchMap, tap } from 'rxj
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
+import { isDefined, property } from '@sourcegraph/common'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
@@ -22,6 +22,7 @@ import { diffDomFunctions } from '../../repo/compare/dom-functions'
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'
 import { ExtensionInfo } from './FileDiffConnection'
+import styles from './FileDiffHunks.module.scss'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -222,7 +223,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     const isSplitMode = diffMode === 'split'
 
     return (
-        <div className="file-diff-node__body">
+        <div className={styles.body}>
             {extensionInfo && (
                 <div className={classNames('w-100', isSplitMode && 'd-flex ')}>
                     {/* Always render base status bar even though it isn't displayed in unified mode
@@ -232,7 +233,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         getStatusBarItems={getBaseStatusBarItems}
                         className={classNames(
                             isSplitMode && 'flex-1 w-50',
-                            'file-diff-node__status-bar border-bottom border-top-0'
+                            'border-bottom border-top-0',
+                            styles.statusBar
                         )}
                         statusBarItemClassName="mx-0"
                         extensionsController={extensionInfo.extensionsController}
@@ -243,7 +245,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         getStatusBarItems={getHeadStatusBarItems}
                         className={classNames(
                             isSplitMode && 'w-50',
-                            'flex-1 file-diff-node__status-bar border-bottom border-top-0'
+                            'flex-1 border-bottom border-top-0',
+                            styles.statusBar
                         )}
                         statusBarItemClassName="mx-0"
                         extensionsController={extensionInfo.extensionsController}
@@ -252,14 +255,14 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     />
                 </div>
             )}
-            <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
+            <div className={classNames(styles.fileDiffHunks, className)} ref={nextBlobElement}>
                 {hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (
-                    <div className="file-diff-hunks__container" ref={nextCodeElement}>
+                    <div className={styles.container} ref={nextCodeElement}>
                         <table
-                            className={classNames('file-diff-hunks__table file-diff-hunks__table', {
-                                'diff-hunk--split': isSplitMode,
+                            className={classNames(styles.table, {
+                                [styles.tableSplit]: isSplitMode,
                             })}
                         >
                             {lineNumbers && (

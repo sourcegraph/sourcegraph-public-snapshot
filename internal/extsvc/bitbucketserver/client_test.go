@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -1003,11 +1004,11 @@ func TestClient_MergePullRequest(t *testing.T) {
 			name: "not mergeable",
 			pr: func() *PullRequest {
 				pr := *pr
-				pr.ID = 146
-				pr.Version = 1
+				pr.ID = 154
+				pr.Version = 16
 				return &pr
 			},
-			err: "pull request cannot be merged",
+			err: "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException",
 		},
 	} {
 		tc := tc
@@ -1166,31 +1167,8 @@ func TestAuth(t *testing.T) {
 				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, &SudoableOAuthClient{})
 			} else if have.Client.Client.Credentials.Token != "foo" {
 				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
-			} else if diff := cmp.Diff(have.Client.Client.PrivateKey, key, cmp.Comparer(func(a, b *rsa.PrivateKey) bool {
-				// This is adapted from the useful PrivateKey.Equal() function
-				// in Go 1.15, which we can't rely on at present due to being
-				// much too new.
-				if a.PublicKey.E != b.PublicKey.E {
-					return false
-				}
-				if a.PublicKey.N.Cmp(b.PublicKey.N) != 0 {
-					return false
-				}
-				if a.D.Cmp(b.D) != 0 {
-					return false
-				}
-				if len(a.Primes) != len(b.Primes) {
-					return false
-				}
-				for i := range a.Primes {
-					if a.Primes[i].Cmp(b.Primes[i]) != 0 {
-						return false
-					}
-				}
-
-				return true
-			})); diff != "" {
-				t.Errorf("unexpected key:\n%s", diff)
+			} else if !key.Equal(have.Client.Client.PrivateKey) {
+				t.Errorf("unexpected key: have=%q want=%q", have.Client.Client.PrivateKey, key)
 			}
 		})
 	})
@@ -1287,6 +1265,22 @@ func TestClient_GetVersion(t *testing.T) {
 	if want := "7.11.2"; have != want {
 		t.Fatalf("wrong version. want=%s, have=%s", want, have)
 	}
+}
+
+func TestClient_CreateFork(t *testing.T) {
+	ctx := context.Background()
+
+	fixture := "CreateFork"
+	cli, save := NewTestClient(t, fixture, *update)
+	defer save()
+
+	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
+	assert.Nil(t, err)
+	assert.NotNil(t, have)
+	assert.Equal(t, "go", have.Slug)
+	assert.NotEqual(t, "SGDEMO", have.Project.Key)
+
+	checkGolden(t, fixture, have)
 }
 
 func TestMain(m *testing.M) {

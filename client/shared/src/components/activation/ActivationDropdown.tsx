@@ -9,6 +9,7 @@ import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/op
 
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklist } from './ActivationChecklist'
+import styles from './ActivationDropdown.module.scss'
 
 export interface ActivationDropdownProps extends Pick<MenuPopoverProps, 'portal'> {
     history: H.History
@@ -91,11 +92,12 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                     <>
                         <MenuButton
                             className={classNames(
-                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle',
+                                'bg-transparent align-items-center test-activation-nav-item-toggle',
+                                styles.activationDropdownButton,
                                 { animate: this.state.animate }
                             )}
                         >
-                            <div className="activation-dropdown-button__confetti">
+                            <div className={styles.confetti}>
                                 <Confetti
                                     active={this.state.animate}
                                     config={{
@@ -105,7 +107,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                 />
                             </div>
                             Get started
-                            <div className="activation-dropdown-button__confetti">
+                            <div className={styles.confetti}>
                                 <Confetti
                                     active={this.state.animate}
                                     config={{
@@ -114,22 +116,23 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                     }}
                                 />
                             </div>
-                            <span className="activation-dropdown-button__progress-bar-container">
+                            <span className={styles.progressBarContainer}>
                                 <CircularProgressbar
-                                    className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
+                                    className={classNames('test-activation-progress-bar', styles.circularProgressBar)}
                                     strokeWidth={12}
                                     value={percentageDone(this.props.activation.completed)}
                                 />
                             </span>
                         </MenuButton>
                         <MenuPopover
-                            className={classNames('activation-dropdown', 'dropdown-menu', {
+                            className={classNames('dropdown-menu', styles.activationDropdown, {
                                 show: isExpanded || this.props.alwaysShow,
                             })}
                             hidden={!(isExpanded || this.props.alwaysShow)}
                             portal={this.props.portal}
+                            data-testid="activation-dropdown"
                         >
-                            <div className="dropdown-item-text activation-dropdown-header">
+                            <div className={classNames('dropdown-item-text', styles.activationDropdownHeader)}>
                                 <h3 className="mb-0">
                                     {percentageDone(this.props.activation.completed) > 0
                                         ? 'Almost there!'
@@ -141,7 +144,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                 {...this.props}
                                 steps={this.props.activation.steps}
                                 completed={this.props.activation.completed}
-                                className="activation-dropdown__checklist"
+                                className={styles.checklist}
                             />
                         </MenuPopover>
                     </>

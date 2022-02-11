@@ -7,8 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestSplitExtensionID(t *testing.T) {
@@ -101,14 +100,14 @@ type mockRegistryExtension struct {
 
 func TestGetExtensionByExtensionID(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("root", func(t *testing.T) {
 		mockLocalRegistryExtensionIDPrefix = &strnilptr
 		defer func() { mockLocalRegistryExtensionIDPrefix = nil }()
 
 		t.Run("2-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
+			GetLocalExtensionByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
 				if want := "a/b"; extensionID != want {
 					t.Errorf("got %q, want %q", extensionID, want)
 				}
@@ -162,7 +161,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 		})
 
 		t.Run("3-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
+			GetLocalExtensionByExtensionID = func(ctx context.Context, db database.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
 				if want := "b/c"; extensionID != want {
 					t.Errorf("got %q, want %q", extensionID, want)
 				}
@@ -191,17 +190,11 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 
 func TestIsWorkInProgressExtension(t *testing.T) {
 	tests := map[*string]bool{
-		nil:                                        true,
-		strptr(`{`):                                false,
-		strptr(`{}`):                               false,
-		strptr(`{"title":null}`):                   false,
-		strptr(`{"title":""}`):                     false,
-		strptr(`{"title":"a b"}`):                  false,
-		strptr(`{"title":"WIP: a"}`):               true,
-		strptr(`{"title":"[WIP] a"}`):              true,
-		strptr(`{"wip": true, "title":"a"}`):       true,
-		strptr(`{"wip": false, "title":"a"}`):      false,
-		strptr(`{"wip": false, "title":"WIP: a"}`): true,
+		nil:                      true,
+		strptr(`{`):              false,
+		strptr(`{}`):             false,
+		strptr(`{"wip": true}`):  true,
+		strptr(`{"wip": false}`): false,
 	}
 	for manifest, want := range tests {
 		got := IsWorkInProgressExtension(manifest)

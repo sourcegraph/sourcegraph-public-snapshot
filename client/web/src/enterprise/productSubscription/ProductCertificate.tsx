@@ -1,4 +1,9 @@
-import * as React from 'react'
+import classNames from 'classnames'
+import React from 'react'
+
+import { CardBody, Card } from '@sourcegraph/wildcard'
+
+import styles from './ProductCertificate.module.scss'
 
 interface Props {
     /** The title of the certificate. */
@@ -10,7 +15,7 @@ interface Props {
     /** The detail text of the certificate. */
     detail?: React.ReactFragment | null
 
-    /** Rendered after the certificate body (usually consists of a Bootstrap .card-footer). */
+    /** Rendered after the certificate body (usually consists of a Wildcard <CardFooter />). */
     footer?: React.ReactFragment | null
 
     className?: string
@@ -30,10 +35,10 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     footer,
     className = '',
 }) => (
-    <div className={`product-certificate test-product-certificate card ${className || ''}`}>
-        <div className="card-body d-flex align-items-center">
+    <Card className={classNames(className, 'test-product-certificate')}>
+        <CardBody className="d-flex align-items-center">
             <img
-                className="product-certificate__logo mr-1 p-2"
+                className={classNames(styles.logo, 'mr-1', 'p-2')}
                 src="/.assets/img/sourcegraph-mark.svg?v2"
                 alt="Sourcegraph logo"
             />
@@ -42,8 +47,8 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                 {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
-        </div>
-        <div className="product-certificate__bg" />
-        {footer}
-    </div>
+        </CardBody>
+        <div className={styles.bg} />
+        {footer && <div className={styles.footer}>{footer}</div>}
+    </Card>
 )

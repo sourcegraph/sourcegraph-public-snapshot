@@ -11,8 +11,6 @@ go version
 go env
 
 CHECKS=(
-  ./yarn-deduplicate.sh
-  ./docsite.sh
   ./gofmt.sh
   ./template-inlines.sh
   ./go-enterprise-import.sh

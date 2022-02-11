@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -16,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -76,7 +77,7 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 }
 
 func isAlwaysCloningTest(name api.RepoName) bool {
-	return protocol.NormalizeRepo(name) == "github.com/sourcegraphtest/alwayscloningtest"
+	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -103,7 +104,8 @@ type tlsConfig struct {
 }
 
 var tlsExternal = conf.Cached(func() interface{} {
-	c := conf.Get().ExperimentalFeatures.TlsExternal
+	exp := conf.ExperimentalFeatures()
+	c := exp.TlsExternal
 
 	if c == nil {
 		return &tlsConfig{}
@@ -176,8 +178,13 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 }
 
 func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
-	if cmd.Args[0] != "git" {
-		panic("Only git commands are supported")
+	// We split here in case the first command is an absolute path to the executable
+	// which allows us to safely match lower down
+	_, executable := path.Split(cmd.Args[0])
+	// As a special case we also support the experimental p4-fusion client which is
+	// not run as a subcommand of git.
+	if executable != "git" && executable != "p4-fusion" {
+		panic(fmt.Sprintf("Only git or p4-fusion commands are supported, got %q", executable))
 	}
 
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
@@ -187,6 +194,10 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	//
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
+
+	// Identify HTTP requests with a user agent. Please keep the git/ prefix because GitHub breaks the protocol v2
+	// negotiation of clone URLs without a `.git` suffix (which we use) without it. Don't ask.
+	cmd.Env = append(cmd.Env, "GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot")
 
 	if tlsConf.SSLNoVerify {
 		cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
@@ -612,6 +623,19 @@ func fsync(path string) error {
 	return err
 }
 
+// isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
+// present, its first 40 bytes are returned as first argument.
+func isPaused(dir string) (string, bool) {
+	f, err := os.Open(filepath.Join(dir, "SG_PAUSE"))
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+	b := make([]byte, 40)
+	io.ReadFull(f, b)
+	return string(b), true
+}
+
 // bestEffortWalk is a filepath.Walk which ignores errors that can be passed
 // to walkFn. This is a common pattern used in gitserver for best effort work.
 //
@@ -624,6 +648,11 @@ func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) erro
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
+		}
+
+		if msg, ok := isPaused(path); ok {
+			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			return filepath.SkipDir
 		}
 
 		return walkFn(path, info)

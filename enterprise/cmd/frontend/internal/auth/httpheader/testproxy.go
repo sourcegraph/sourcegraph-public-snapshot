@@ -1,6 +1,7 @@
 // The testproxy command runs a simple HTTP proxy that wraps a Sourcegraph server running with the
 // http-header auth provider to test the authentication HTTP proxy support.
 
+//go:build ignore
 // +build ignore
 
 package main

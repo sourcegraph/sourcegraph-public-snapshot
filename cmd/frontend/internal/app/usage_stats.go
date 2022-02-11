@@ -6,11 +6,11 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-func usageStatsArchiveHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func usageStatsArchiveHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may get this archive.
 		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {

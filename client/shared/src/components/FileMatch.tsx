@@ -1,37 +1,26 @@
 import * as H from 'history'
-import React, { useEffect, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { AggregableBadge, Badge } from 'sourcegraph'
+import { AggregableBadge } from 'sourcegraph'
+
+import { isErrorLike, pluralize } from '@sourcegraph/common'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
-import { SettingsCascadeProps } from '../settings/settings'
-import { pluralize } from '../util/strings'
+import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
+import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { FetchFileParameters } from './CodeExcerpt'
-import { EventLogger, FileMatchChildren } from './FileMatchChildren'
-import { LinkOrSpan } from './LinkOrSpan'
+import { FileMatchChildren } from './FileMatchChildren'
+import { LineRanking } from './ranking/LineRanking'
+import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
+import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
-const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
-
-export interface MatchItem extends Badge {
-    highlightRanges: {
-        start: number
-        highlightLength: number
-    }[]
-    preview: string
-    /**
-     * The 0-based line number of this match.
-     */
-    line: number
-    aggregableBadges?: AggregableBadge[]
-}
-
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
-    eventLogger?: EventLogger
     /**
      * The file match search result.
      */
@@ -63,46 +52,39 @@ interface Props extends SettingsCascadeProps {
      */
     showAllMatches: boolean
 
-    isLightTheme: boolean
-
     allExpanded?: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    /**
+     * CSS class name to be applied to the ResultContainer Component
+     */
+    containerClassName?: string
 }
 
+const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
+
+const BY_LINE_RANKING = 'by-line-number'
+const DEFAULT_CONTEXT = 1
+
 export const FileMatch: React.FunctionComponent<Props> = props => {
-    const [subsetMatches, setSubsetMatches] = useState(10)
-    useEffect(() => {
-        const subsetMatches = parseInt(localStorage.getItem(SUBSET_COUNT_KEY) || '', 10)
-        if (!isNaN(subsetMatches)) {
-            setSubsetMatches(subsetMatches)
-        }
-    }, [])
-
     const result = props.result
-    const items: MatchItem[] =
-        result.type === 'content'
-            ? result.lineMatches.map(match => ({
-                  highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                      start,
-                      highlightLength,
-                  })),
-                  preview: match.line,
-                  line: match.lineNumber,
-                  aggregableBadges: match.aggregableBadges,
-              }))
-            : []
-
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
-    const revisionDisplayName = getRevision(result.branches, result.version)
-
+    const revisionDisplayName = getRevision(result.branches, result.commit)
+    const settings = props.settingsCascade.final
+    const ranking = useMemo(() => {
+        if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
+            return new LineRanking()
+        }
+        return new ZoektRanking()
+    }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
-                filePath={result.name}
+                filePath={result.path}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName
@@ -114,34 +96,158 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         </>
     )
 
+    // The number of lines of context to show before and after each match.
+    const context = useMemo(() => {
+        if (props.location.pathname === '/search') {
+            // Check if search.contextLines is configured in settings.
+            const contextLinesSetting =
+                isSettingsValid(props.settingsCascade) &&
+                props.settingsCascade.final &&
+                props.settingsCascade.final['search.contextLines']
+
+            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
+                return contextLinesSetting
+            }
+        }
+        return DEFAULT_CONTEXT
+    }, [props.location, props.settingsCascade])
+
+    const items: MatchItem[] = useMemo(
+        () =>
+            result.type === 'content'
+                ? result.lineMatches?.map(match => ({
+                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
+                          start,
+                          highlightLength,
+                      })),
+                      preview: match.line,
+                      line: match.lineNumber,
+                      aggregableBadges: match.aggregableBadges,
+                  })) || []
+                : [],
+        [result]
+    )
+
     const description =
         items.length > 0 ? (
             <>
                 {aggregateBadges(items).map(badge => (
-                    <LinkOrSpan
+                    <Badge
                         key={badge.text}
-                        to={badge.linkURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary badge-sm text-muted text-uppercase file-match__badge"
+                        href={badge.linkURL}
+                        tooltip={badge.hoverMessage}
+                        variant="secondary"
+                        small={true}
+                        className="text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
-                    </LinkOrSpan>
+                    </Badge>
                 ))}
             </>
         ) : undefined
 
     let containerProps: ResultContainerProps
 
-    const expandedChildren = (
-        <FileMatchChildren {...props} items={items} result={result} allMatches={true} subsetMatches={subsetMatches} />
-    )
+    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
+    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
+    const collapsedMatchCount = collapsedMatchGroups.matches.length
 
-    const matchCount = items.length || (result.type === 'symbol' ? result.symbols?.length : 0)
+    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
+    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
+        collapsedMatchGroups,
+    ])
+
+    const matchCount = highlightRangesCount || (result.type === 'symbol' ? result.symbols?.length : 0)
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
-    if (props.showAllMatches) {
+    const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
+
+    if (result.type === 'content' && result.hunks) {
+        // We should only get here if the new streamed highlight format is sent
+        const grouped: MatchGroup[] =
+            result.hunks?.map(
+                hunk =>
+                    ({
+                        blobLines: hunk.content.html?.split(/\r?\n/),
+                        matches: hunk.matches.map(match => ({
+                            line: match.start.line,
+                            character: match.start.column,
+                            highlightLength: match.end.column - match.start.column,
+                            isInContext: false, // TODO(camdencheek) what is this for?
+                        })),
+                        startLine: hunk.lineStart,
+                        endLine: hunk.lineStart + hunk.lineCount,
+                        position: {
+                            line: hunk.matches[0].start.line + hunk.lineStart + 1,
+                            character: hunk.matches[0].start.column + 1,
+                        },
+                    } as MatchGroup)
+            ) || []
+
+        const matchCount = grouped.reduce((previous, group) => previous + group.matches.length, 0)
+        const matchCountLabel = `${matchCount} ${pluralize('match', matchCount, 'matches')}`
+
+        const { limitedGrouped, limitedMatchCount } = grouped.reduce(
+            (previous, group) => {
+                const remaining = collapsedMatchCount - previous.limitedMatchCount
+                if (remaining <= 0) {
+                    return previous
+                }
+
+                if (group.matches.length <= remaining) {
+                    // We have room for the whole group
+                    previous.limitedGrouped.push(group)
+                    previous.limitedMatchCount += group.matches.length
+                    return previous
+                }
+
+                const limitedGroup = limitGroup(group, remaining)
+                previous.limitedGrouped.push(limitedGroup)
+                previous.limitedMatchCount += limitedGroup.matches.length
+                return previous
+            },
+            { limitedGrouped: [] as MatchGroup[], limitedMatchCount: 0 }
+        )
+
+        if (props.showAllMatches) {
+            containerProps = {
+                collapsible: false,
+                defaultExpanded: props.expanded,
+                icon: props.icon,
+                title: renderTitle(),
+                description: undefined, // TODO we need badges for the descripiton
+                allExpanded: props.allExpanded,
+                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
+                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
+                matchCountLabel,
+                repoStars: result.repoStars,
+                repoLastFetched: result.repoLastFetched,
+                onResultClicked: props.onSelect,
+                className: props.containerClassName,
+                resultType: result.type,
+            }
+        } else {
+            const hideCount = matchCount - limitedMatchCount
+            containerProps = {
+                collapsible: limitedMatchCount < matchCount,
+                defaultExpanded: props.expanded,
+                icon: props.icon,
+                title: renderTitle(),
+                description: undefined,
+                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
+                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
+                collapseLabel: `Hide ${hideCount}`,
+                expandLabel: `${hideCount} more`,
+                allExpanded: props.allExpanded,
+                matchCountLabel,
+                repoStars: result.repoStars,
+                repoLastFetched: result.repoLastFetched,
+                onResultClicked: props.onSelect,
+                className: props.containerClassName,
+                resultType: result.type,
+            }
+        }
+    } else if (props.showAllMatches) {
         containerProps = {
             collapsible: false,
             defaultExpanded: props.expanded,
@@ -152,30 +258,30 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            repoLastFetched: result.repoLastFetched,
+            onResultClicked: props.onSelect,
+            className: props.containerClassName,
+            resultType: result.type,
         }
     } else {
-        const length = items.length - subsetMatches
+        const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
-            collapsible: items.length > subsetMatches,
+            collapsible: items.length > collapsedMatchCount,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),
             description,
-            collapsedChildren: (
-                <FileMatchChildren
-                    {...props}
-                    items={items}
-                    result={result}
-                    allMatches={false}
-                    subsetMatches={subsetMatches}
-                />
-            ),
+            collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
             expandedChildren,
             collapseLabel: `Hide ${length}`,
             expandLabel: `${length} more`,
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            repoLastFetched: result.repoLastFetched,
+            onResultClicked: props.onSelect,
+            className: props.containerClassName,
+            resultType: result.type,
         }
     }
 
@@ -189,4 +295,39 @@ function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
     }
 
     return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
+}
+
+export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
+    if (limit < 1 || group.matches.length === 0) {
+        throw new Error('cannot limit a group to less than one match')
+    }
+
+    if (group.matches.length <= limit) {
+        return group
+    }
+
+    // Do a somewhat deep copy of the group so we can mutate it
+    const partialGroup: MatchGroup = {
+        blobLines: [...(group.blobLines || [])],
+        matches: [...group.matches],
+        position: { ...group.position },
+        startLine: group.startLine,
+        endLine: group.endLine,
+    }
+
+    partialGroup.matches = partialGroup.matches.slice(0, limit)
+
+    // Add matches on the same line and next line (context line) as the limited match
+    const [lastMatch] = partialGroup.matches.slice(-1)
+    for (const match of group.matches.slice(limit, undefined)) {
+        if (match.line <= lastMatch.line + 1) {
+            // include an extra context line
+            partialGroup.matches.push(match)
+            continue
+        }
+        break
+    }
+    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
+    partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
+    return partialGroup
 }

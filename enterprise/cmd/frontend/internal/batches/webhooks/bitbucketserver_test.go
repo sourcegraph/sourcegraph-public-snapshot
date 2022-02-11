@@ -105,13 +105,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:             "Test batch change",
-			Description:      "Testing THE WEBHOOKS",
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    clock(),
-			BatchSpecID:      spec.ID,
+			Name:            "Test batch change",
+			Description:     "Testing THE WEBHOOKS",
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   clock(),
+			BatchSpecID:     spec.ID,
 		}
 
 		err = s.CreateBatchChange(ctx, batchChange)

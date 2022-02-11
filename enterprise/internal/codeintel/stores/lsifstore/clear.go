@@ -21,10 +21,12 @@ var tableNames = []string{
 	"lsif_data_definitions_schema_versions",
 	"lsif_data_references",
 	"lsif_data_references_schema_versions",
+	"lsif_data_implementations",
+	"lsif_data_implementations_schema_versions",
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, traceLog, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numBundleIDs", len(bundleIDs)),
 		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})
@@ -53,7 +55,7 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
-		traceLog(log.String("tableName", tableName))
+		trace.Log(log.String("tableName", tableName))
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err

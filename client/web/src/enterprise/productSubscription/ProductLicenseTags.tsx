@@ -1,13 +1,15 @@
 import React from 'react'
 
+import { Badge } from '@sourcegraph/wildcard'
+
 export const ProductLicenseTags: React.FunctionComponent<{
     tags: string[]
 }> = ({ tags }) => (
     <>
         {tags.map(tag => (
-            <div className="mr-1 badge badge-secondary" key={tag}>
+            <Badge variant="secondary" className="mr-1" key={tag} as="div">
                 {tag}
-            </div>
+            </Badge>
         ))}
     </>
 )

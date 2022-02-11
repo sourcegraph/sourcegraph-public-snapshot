@@ -14,12 +14,13 @@ import (
 )
 
 func TestExternalAccountResolver_AccountData(t *testing.T) {
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{SiteAdmin: id == 1}, nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-	}()
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	tests := []struct {
 		name        string
@@ -67,6 +68,7 @@ func TestExternalAccountResolver_AccountData(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			r := &externalAccountResolver{
+				db: db,
 				account: extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: test.serviceType,

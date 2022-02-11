@@ -1,19 +1,18 @@
 import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -35,12 +34,13 @@ import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
 
 interface Props
-    extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
+    extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject' | 'isSourcegraphDotCom'>,
         PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
         SettingsCascadeProps,
         ThemeProps {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const
@@ -357,12 +357,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 </div>
                             </Form>
                             {!authenticatedUser && (
-                                <div className="alert alert-info my-4">
+                                <Alert className="my-4" variant="info">
                                     <span>An account is required to create, enable and disable extensions. </span>
-                                    <Link to="/sign-up?returnTo=/extensions">
-                                        <span className="alert-link">Register now!</span>
-                                    </Link>
-                                </div>
+                                    <AlertLink to={buildGetStartedURL('extension-registry', '/extensions')}>
+                                        Get started!
+                                    </AlertLink>
+                                </Alert>
                             )}
                             <ExtensionsList
                                 {...props}
@@ -380,6 +380,31 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 <hr className="mt-5" />
                                 <div className="my-4 justify-content-center">
                                     <ExtensionBanner />
+                                </div>
+                            </>
+                        )}
+                        {props.isSourcegraphDotCom && (
+                            <>
+                                <hr className="mt-5" />
+                                <div className="my-4 justify-content-center">
+                                    You may use the Sourcegraph.com extension registry only with Sourcegraph{' '}
+                                    <Link to="https://about.sourcegraph.com/pricing/">
+                                        self-hosted or managed instances
+                                    </Link>
+                                    , <Link to="http://sourcegraph.com/">Sourcegraph.com</Link>, and Sourcegraph's{' '}
+                                    <Link to="https://docs.sourcegraph.com/integration/browser_extension">
+                                        browser extensions
+                                    </Link>{' '}
+                                    and{' '}
+                                    <Link to="https://docs.sourcegraph.com/integration/editor">
+                                        editor integrations
+                                    </Link>
+                                    . You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
+                                    more about the Sourcegraph.com extension registry and administration options in our{' '}
+                                    <Link to="https://docs.sourcegraph.com/admin/extensions">
+                                        extensions documentation
+                                    </Link>
+                                    .
                                 </div>
                             </>
                         )}

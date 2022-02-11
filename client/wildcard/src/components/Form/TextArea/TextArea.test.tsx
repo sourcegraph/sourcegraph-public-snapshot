@@ -3,33 +3,11 @@ import React from 'react'
 
 import { TextArea } from './TextArea'
 
-const ERROR = [true, false] as const
-
 describe('TextArea', () => {
-    it('renders an TextArea correctly', () => {
-        const { container } = render(
-            <TextArea title="TextArea loading" message="random message" placeholder="TextArea" />
+    it('should render correctly', () => {
+        const { asFragment } = render(
+            <TextArea title="TextArea loading" message="random message" placeholder="TextArea" isValid={true} />
         )
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <label
-              class="w-100"
-            >
-              <textarea
-                class="textarea form-control"
-                placeholder="TextArea"
-                title="TextArea loading"
-              />
-              <small
-                class="text-muted form-text"
-              >
-                random message
-              </small>
-            </label>
-        `)
-    })
-
-    it.each(ERROR)("Renders status '%s' correctly", status => {
-        const { container } = render(<TextArea isError={status} defaultValue="" />)
-        expect(container.firstChild).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 })

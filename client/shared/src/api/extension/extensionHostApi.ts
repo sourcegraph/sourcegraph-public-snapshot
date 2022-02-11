@@ -13,13 +13,21 @@ import {
 import * as sourcegraph from 'sourcegraph'
 
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import {
+    allOf,
+    asError,
+    combineLatestOrDefault,
+    ErrorLike,
+    isDefined,
+    isExactly,
+    isNot,
+    property,
+} from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
+import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
-import { asError, ErrorLike } from '../../util/errors'
-import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { allOf, isDefined, isExactly, isNot, property } from '../../util/types'
-import { parseRepoURI } from '../../util/url'
 import { fromHoverMerged } from '../client/types/hover'
 import { match, TextDocumentIdentifier } from '../client/types/textDocument'
 import { FlatExtensionHostAPI } from '../contract'
@@ -28,7 +36,7 @@ import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerType
 
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
-import { computeContext, Context, ContributionScope } from './api/context/context'
+import { computeContext, ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
     filterContributions,
@@ -103,10 +111,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         removeWorkspaceRoot: uri => {
             state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
             state.rootChanges.next()
-        },
-        setVersionContext: context => {
-            state.versionContext = context
-            state.versionContextChanges.next(context)
         },
         setSearchContext: context => {
             state.searchContext = context
@@ -309,6 +313,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 state.activeLanguages.next(new Set<string>(state.languageReferences.keys()))
             }
         },
+
+        // For filtering visible panels by DocumentSelector
+        getActiveViewComponentChanges: () => proxySubscribable(state.activeViewComponentChanges),
 
         // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>
@@ -520,7 +527,7 @@ export interface RegisteredProvider<T> {
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
 /**
- * Filt ers a list of Providers (P type) based on their selectors and a document
+ * Filters a list of Providers (P type) based on their selectors and a document
  *
  * @param document to use for filtering
  * @param entries array of providers (P[])
@@ -563,6 +570,20 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
     mergeResult: (providerResults: readonly (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
+    const logError = (...args: any): void => {
+        if (logErrors) {
+            console.error('Provider errored:', ...args)
+        }
+    }
+    const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
+        try {
+            return invokeProvider(provider)
+        } catch (error) {
+            logError(error)
+            return null
+        }
+    }
+
     return providersObservable
         .pipe(
             map(providers => filterProviders(providers)),
@@ -572,12 +593,10 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
                     providers.map(provider =>
                         concat(
                             [LOADING],
-                            providerResultToObservable(invokeProvider(provider)).pipe(
+                            providerResultToObservable(safeInvokeProvider(provider)).pipe(
                                 defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
                                 catchError(error => {
-                                    if (logErrors) {
-                                        console.error('Provider errored:', error)
-                                    }
+                                    logError(error)
                                     return [null]
                                 })
                             )

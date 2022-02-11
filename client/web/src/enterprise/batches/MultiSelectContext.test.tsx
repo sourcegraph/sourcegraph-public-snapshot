@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import React, { useContext, useEffect } from 'react'
 import { act } from 'react-dom/test-utils'
 
@@ -230,7 +230,7 @@ describe('MultiSelectContextProvider', () => {
 
 const mountContext = (): (() => MultiSelectContextState) => {
     let context: MultiSelectContextState | undefined
-    mount(
+    render(
         <MultiSelectContextProvider>
             <Reflektor onContext={inner => (context = inner)} />
         </MultiSelectContextProvider>

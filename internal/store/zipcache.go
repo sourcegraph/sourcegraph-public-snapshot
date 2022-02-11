@@ -2,7 +2,6 @@ package store
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -12,8 +11,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/sys/unix"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A ZipCache is a shared data structure that provides efficient access to a collection of zip files.
@@ -67,7 +68,7 @@ func (c *ZipCache) Get(path string) (*ZipFile, error) {
 	return zf, nil
 }
 
-func (c *ZipCache) delete(path string) {
+func (c *ZipCache) delete(path string, trace observation.TraceLogger) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
@@ -172,24 +173,6 @@ func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
 // Close has been called.
 func (f *ZipFile) Close() {
 	f.wg.Done()
-}
-
-func MockZipFile(data []byte) (*ZipFile, error) {
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return nil, err
-	}
-	zf := new(ZipFile)
-	if err := zf.PopulateFiles(r); err != nil {
-		return nil, err
-	}
-	// Make a copy of data to avoid accidental alias/re-use bugs.
-	// This method is only for testing, so don't sweat the performance.
-	zf.Data = make([]byte, len(data))
-	copy(zf.Data, data)
-	// zf.f is intentionally left nil;
-	// this is an indicator that this is a mock ZipFile.
-	return zf, nil
 }
 
 // A SrcFile is a single file inside a ZipFile.

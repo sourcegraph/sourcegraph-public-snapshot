@@ -1,14 +1,17 @@
-import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
+import { cleanup, fireEvent, getByTestId, getByText } from '@testing-library/react'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
 import sinon from 'sinon'
 
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import {
     MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
@@ -20,9 +23,8 @@ describe('ResultContainer', () => {
     const history = H.createBrowserHistory()
     history.replace({ pathname: '/search' })
     const onSelect = sinon.spy()
-    const fileMatchChildrenProps = {
-        location: history.location,
-        items: [
+    const expandedMatchGroups = {
+        matches: [
             {
                 preview: '\t"net/http/httptest"',
                 line: 11,
@@ -49,13 +51,65 @@ describe('ResultContainer', () => {
                 highlightRanges: [{ start: 8, highlightLength: 4 }],
             },
         ],
+        grouped: [
+            {
+                matches: [{ line: 11, character: 15, highlightLength: 4, isInContext: true }],
+                position: { line: 11, character: 15 },
+                startLine: 11,
+                endLine: 12,
+            },
+            {
+                matches: [{ line: 39, character: 11, highlightLength: 4, isInContext: true }],
+                position: { line: 39, character: 11 },
+                startLine: 39,
+                endLine: 40,
+            },
+            {
+                matches: [{ line: 73, character: 5, highlightLength: 4, isInContext: true }],
+                position: { line: 73, character: 5 },
+                startLine: 73,
+                endLine: 74,
+            },
+            {
+                matches: [{ line: 117, character: 11, highlightLength: 4, isInContext: true }],
+                position: { line: 117, character: 11 },
+                startLine: 117,
+                endLine: 118,
+            },
+            {
+                matches: [{ line: 134, character: 8, highlightLength: 4, isInContext: true }],
+                position: { line: 134, character: 8 },
+                startLine: 134,
+                endLine: 135,
+            },
+        ],
+    }
+
+    const collapsedMatchGroups = {
+        matches: [
+            {
+                preview: '\t"net/http/httptest"',
+                line: 11,
+                highlightRanges: [{ start: 15, highlightLength: 4 }],
+            },
+        ],
+        grouped: [
+            {
+                matches: [{ line: 11, character: 15, highlightLength: 4, isInContext: true }],
+                position: { line: 11, character: 15 },
+                startLine: 11,
+                endLine: 12,
+            },
+        ],
+    }
+
+    const fileMatchChildrenProps = {
+        location: history.location,
         result: MULTIPLE_MATCH_RESULT,
-        allMatches: true,
-        subsetMatches: 1,
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
         onSelect,
         settingsCascade: NOOP_SETTINGS_CASCADE,
-        isLightTheme: true,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     // Props that represent a FileMatch with multiple results, totaling more than subsetMatch.
@@ -74,11 +128,12 @@ describe('ResultContainer', () => {
                 fileURL="https://example.com/file"
             />
         ),
-        expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} />,
-        collapsedChildren: <FileMatchChildren {...fileMatchChildrenProps} allMatches={false} />,
+        expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} {...expandedMatchGroups} />,
+        collapsedChildren: <FileMatchChildren {...fileMatchChildrenProps} {...collapsedMatchGroups} />,
         collapseLabel: 'Hide matches',
         expandLabel: 'Show matches',
         allExpanded: false,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     const findReferencesProps = {
@@ -94,44 +149,45 @@ describe('ResultContainer', () => {
                 fileURL="https://example.com/file"
             />
         ),
-        expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} />,
-        allExpanded: true,
+        expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} {...expandedMatchGroups} />,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
-    it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {
-        const { container } = render(<ResultContainer {...defaultProps} />)
 
-        const expandedItems = container.querySelectorAll('.file-match-children__item')
+    it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
+
+        const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
     })
 
     it('expands to display all results when the expand button is clicked', () => {
-        const { container } = render(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
-        let expandedItems = container.querySelectorAll('.file-match-children__item')
+        let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
 
-        expandedItems = container.querySelectorAll('.file-match-children__item')
+        expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
     it('displays the expand label when collapsed', () => {
-        const { container } = render(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
         const header = getByTestId(container, 'result-container-header')
         expect(header).toBeVisible()
         expect(getByText(container, 'Show matches')).toBeVisible()
     })
 
     it('displays the collapse label when expanded', () => {
-        const { container } = render(<ResultContainer {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
@@ -140,23 +196,23 @@ describe('ResultContainer', () => {
     })
 
     it('displays all results by default, when allExpanded is true', () => {
-        const { container } = render(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
 
-        const expandedItems = container.querySelectorAll('.file-match-children__item')
+        const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
     it('collapses to show no results when the collapse is clicked, when allExpanded is true', () => {
-        const { container } = render(<ResultContainer {...findReferencesProps} />)
+        const { container } = renderWithBrandedContext(<ResultContainer {...findReferencesProps} />)
 
-        let expandedItems = container.querySelectorAll('.file-match-children__item')
+        let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
         fireEvent.click(button!)
 
-        expandedItems = container.querySelectorAll('.file-match-children__item')
+        expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(0)
     })
 })

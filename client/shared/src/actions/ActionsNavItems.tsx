@@ -1,17 +1,22 @@
 import classNames from 'classnames'
+import { identity } from 'lodash'
 import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
+import { Context } from '@sourcegraph/template-parser'
+import { useObservable } from '@sourcegraph/wildcard'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { ContributionScope } from '../api/extension/api/context/context'
+import { Contributions, Evaluated } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { useObservable } from '../util/useObservable'
 
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps } from './ActionsContainer'
+import styles from './ActionsNavItems.module.scss'
 
 export interface ActionNavItemsClassProps {
     /**
@@ -36,7 +41,7 @@ export interface ActionsNavItemsProps
     extends ActionsProps,
         ActionNavItemsClassProps,
         TelemetryProps,
-        Pick<ActionItemProps, 'showLoadingSpinnerDuringExecution'> {
+        Pick<ActionItemProps, 'showLoadingSpinnerDuringExecution' | 'actionItemStyleProps'> {
     /**
      * If true, it renders a `<ul className="nav">...</ul>` around the items. If there are no items, it renders `null`.
      *
@@ -48,6 +53,12 @@ export interface ActionsNavItemsProps
      */
 
     listClass?: string
+
+    /**
+     * Transform function called when latest contributions from extensions are received.
+     * Likely temporary: quick fix to dedup panel actions from various code intel extensions.
+     */
+    transformContributions?: (contributions: Evaluated<Contributions>) => Evaluated<Contributions>
 }
 
 /**
@@ -55,7 +66,7 @@ export interface ActionsNavItemsProps
  * class="nav"> or <ul class="navbar-nav">.
  */
 export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = props => {
-    const { scope, extraContext, extensionsController, menu, wrapInList } = props
+    const { scope, extraContext, extensionsController, menu, wrapInList, transformContributions = identity } = props
 
     const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
     useDeepCompareEffectNoCheck(() => {
@@ -73,9 +84,10 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
                 combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
                     switchMap(([scope, extraContext, extensionHostAPI]) =>
                         wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
-                    )
+                    ),
+                    map(transformContributions)
                 ),
-            [scopeChanges, extraContextChanges, extensionsController]
+            [scopeChanges, extraContextChanges, extensionsController, transformContributions]
         )
     )
 
@@ -96,8 +108,9 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
                     {...props}
                     variant="actionItem"
                     iconClassName={props.actionItemIconClass}
-                    className={classNames('actions-nav-items__action-item', props.actionItemClass)}
+                    className={classNames(styles.actionItem, props.actionItemClass)}
                     pressedClassName={props.actionItemPressedClass}
+                    actionItemStyleProps={props.actionItemStyleProps}
                 />
             </li>
         </React.Fragment>

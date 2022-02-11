@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const SchemeExecutorToken = "token-executor"
 
 // prepareWorkspace creates and returns a temporary director in which acts the workspace
 // while processing a single job. It is up to the caller to ensure that this directory is
@@ -28,10 +29,8 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	}()
 
 	if repositoryName != "" {
-		cloneURL, err := makeURL(
+		cloneURL, err := makeRelativeURL(
 			h.options.ClientOptions.EndpointOptions.URL,
-			h.options.ClientOptions.EndpointOptions.Username,
-			h.options.ClientOptions.EndpointOptions.Password,
 			h.options.GitServicePath,
 			repositoryName,
 		)
@@ -39,9 +38,15 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 			return "", err
 		}
 
+		authorizationOption := fmt.Sprintf(
+			"http.extraHeader=Authorization: %s %s",
+			SchemeExecutorToken,
+			h.options.ClientOptions.EndpointOptions.Token,
+		)
+
 		gitCommands := []command.CommandSpec{
 			{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
-			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), "-t", commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "-c", authorizationOption, "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", cloneURL.String(), "-t", commit}, Operation: h.operations.SetupGitFetch},
 			{Key: "setup.git.add-remote", Command: []string{"git", "-C", tempDir, "remote", "add", "origin", repositoryName}, Operation: h.operations.SetupAddRemote},
 			{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
 		}
@@ -59,23 +64,19 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	return tempDir, nil
 }
 
-func makeURL(base, username, password string, path ...string) (*url.URL, error) {
-	u, err := makeRelativeURL(base, path...)
-	if err != nil {
-		return nil, err
-	}
-
-	u.User = url.UserPassword(username, password)
-	return u, nil
-}
-
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	baseURL, err := url.Parse(base)
 	if err != nil {
 		return nil, err
 	}
 
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	urlx, err := baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	if err != nil {
+		return nil, err
+	}
+
+	urlx.User = url.User("executor")
+	return urlx, nil
 }
 
 // makeTempDir defaults to makeTemporaryDirectory and can be replaced for testing

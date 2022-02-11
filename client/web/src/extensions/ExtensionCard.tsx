@@ -1,11 +1,11 @@
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
-import { Link } from 'react-router-dom'
 
+import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     ExtensionHeaderColor,
     ExtensionManifest,
@@ -13,15 +13,14 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import styles from './ExtensionCard.module.scss'
 import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from './icons'
@@ -178,21 +177,22 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         return headerColorFromExtensionID(extension.id)
     }, [manifest?.headerColor, extension.id])
 
-    const iconClassName = classNames('extension-card__icon', featured && 'extension-card__icon--featured')
+    const iconClassName = classNames(styles.icon, featured && styles.iconFeatured)
 
     return (
-        <div
-            className={classNames('extension-card card position-relative flex-1', {
-                'p-0 m-0 extension-card--enabled': change === 'enabled',
+        <Card
+            className={classNames('position-relative flex-1', styles.extensionCard, {
+                [classNames('p-0 m-0', styles.extensionCardEnabled)]: change === 'enabled',
             })}
         >
-            <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
+            <CardBody className="p-0 extension-card__body d-flex flex-column position-relative">
                 {/* Section 1: Icon w/ background */}
                 <div
                     className={classNames(
-                        'extension-card__background-section d-flex align-items-center',
+                        'd-flex align-items-center',
+                        styles.backgroundSection,
                         headerColorStyles[headerColorClassName],
-                        featured && 'extension-card__background-section--featured'
+                        featured && styles.backgroundSectionFeatured
                     )}
                 >
                     {icon ? (
@@ -205,12 +205,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     {extension.registryExtension?.isWorkInProgress && (
                         <ExtensionStatusBadge
                             viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
-                            className="extension-card__badge"
+                            className={styles.badge}
                         />
                     )}
                 </div>
                 {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
-                <div className="extension-card__details-section w-100 flex-grow-1">
+                <div className={classNames('w-100 flex-grow-1', styles.detailsSection)}>
                     <div className="mb-2">
                         <h3 className="mb-0 mr-1 text-truncate flex-1">
                             <Link to={`/extensions/${extension.id}`}>{name}</Link>
@@ -218,16 +218,11 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         <span>
                             by {publisher}
                             {isSourcegraphExtension && (
-                                <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />
+                                <SourcegraphExtensionIcon className={classNames('icon-inline', styles.logo)} />
                             )}
                         </span>
                     </div>
-                    <div
-                        className={classNames(
-                            'mt-3 extension-card__description',
-                            featured && 'extension-card__description--featured'
-                        )}
-                    >
+                    <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
@@ -246,7 +241,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     </div>
                 </div>
                 {/* Item 3: Toggle(s) */}
-                <div className="extension-card__toggles-section d-flex flex-column align-items-end mt-1">
+                <div className={classNames('d-flex flex-column align-items-end mt-1', styles.togglesSection)}>
                     <div className="px-1">
                         {/* User toggle */}
                         {subject &&
@@ -288,15 +283,15 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </div>
                     )}
                 </div>
-            </div>
+            </CardBody>
 
             {/* Visual feedback: alert when optimistic update fails */}
             {optimisticFailure && (
-                <div className="alert alert-danger px-2 py-1 extension-card__alert">
+                <Alert className={classNames('px-2 py-1', styles.alert)} variant="danger">
                     <span className="font-weight-medium">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
-                </div>
+                </Alert>
             )}
-        </div>
+        </Card>
     )
 },
 areEqual)

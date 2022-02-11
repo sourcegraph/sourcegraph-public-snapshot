@@ -9,21 +9,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type externalAccountResolver struct {
-	db      dbutil.DB
+	db      database.DB
 	account extsvc.Account
 }
 
-func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*externalAccountResolver, error) {
+func externalAccountByID(ctx context.Context, db database.DB, id graphql.ID) (*externalAccountResolver, error) {
 	externalAccountID, err := unmarshalExternalAccountID(id)
 	if err != nil {
 		return nil, err
 	}
-	account, err := database.ExternalAccounts(db).Get(ctx, externalAccountID)
+	account, err := db.UserExternalAccounts().Get(ctx, externalAccountID)
 	if err != nil {
 		return nil, err
 	}

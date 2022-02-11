@@ -13,13 +13,21 @@ export interface ThemeProps {
 }
 
 /**
- * Returns an Observable that emits the system color scheme using a `prefers-color-scheme` media query.
- * The Observable will emit with the initial value immediately.
+ * Returns an Observable that emits the system color scheme using a `prefers-color-scheme` media
+ * query. The Observable will emit with the initial value immediately. Callers that need the initial
+ * value synchronously can use initialValue.
+ *
+ * @param window_ The global window object (or a mock in tests).
  */
-export const observeSystemIsLightTheme = (): Observable<boolean> => {
-    const mediaList = window.matchMedia('(prefers-color-scheme: dark)')
-    return concat(
-        of(!mediaList.matches),
-        fromEvent<MediaQueryListEvent>(mediaList, 'change').pipe(map(event => !event.matches))
-    )
+export const observeSystemIsLightTheme = (
+    window_: Pick<Window, 'matchMedia'> = window
+): { observable: Observable<boolean>; initialValue: boolean } => {
+    const mediaList = window_.matchMedia('(prefers-color-scheme: dark)')
+    return {
+        observable: concat(
+            of(!mediaList.matches),
+            fromEvent<MediaQueryListEvent>(mediaList, 'change').pipe(map(event => !event.matches))
+        ),
+        initialValue: !mediaList.matches,
+    }
 }

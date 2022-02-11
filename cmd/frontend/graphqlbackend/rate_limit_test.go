@@ -185,12 +185,11 @@ query{
 		{
 			name: "Search query",
 			query: `
-query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $versionContext: String) {
+query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
   search(
     query: $query
     version: $version
     patternType: $patternType
-    versionContext: $versionContext
   ) {
     results {
       __typename

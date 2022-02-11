@@ -4,19 +4,31 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
+type eventLogsArgs struct {
 	graphqlutil.ConnectionArgs
 	EventName *string // return only event logs matching the event name
-}) (*userEventLogsConnectionResolver, error) {
-	// 🚨 SECURITY: Event logs can only be viewed by the user or site admin.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+}
+
+func (r *UserResolver) EventLogs(ctx context.Context, args *eventLogsArgs) (*userEventLogsConnectionResolver, error) {
+	// 🚨 SECURITY: Only the authenticated user can view their event logs on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user and site admins can view users'
+		// event logs.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
+
 	var opt database.EventLogsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	opt.UserID = r.user.ID
@@ -25,12 +37,12 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 }
 
 type userEventLogsConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	opt database.EventLogsListOptions
 }
 
 func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEventLogResolver, error) {
-	events, err := database.EventLogs(r.db).ListAll(ctx, r.opt)
+	events, err := r.db.EventLogs().ListAll(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +60,9 @@ func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
+		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
 	}
 
 	return int32(count), err
@@ -61,9 +73,9 @@ func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
+		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
 	}
 
 	if err != nil {

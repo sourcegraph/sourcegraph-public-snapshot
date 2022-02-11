@@ -6,7 +6,7 @@ import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
-    maintenanceGroup,
+    maintenanceGroup as ossMaintenanceGroup,
     overviewGroup,
     repositoriesGroup,
     usersGroup,
@@ -21,6 +21,18 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+        },
+    ],
+}
+
+const maintenanceGroup: SiteAdminSideBarGroup = {
+    ...ossMaintenanceGroup,
+    items: [
+        ...ossMaintenanceGroup.items,
+        {
+            to: '/site-admin/executors',
+            label: 'Executors',
+            condition: () => Boolean(window.context?.executorsEnabled),
         },
     ],
 }
@@ -45,8 +57,18 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Batch Changes',
+            label: 'Settings',
             to: '/site-admin/batch-changes',
+        },
+        {
+            label: 'Batch specs',
+            to: '/site-admin/batch-changes/specs',
+            condition: props => props.batchChangesExecutionEnabled,
+        },
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/batch-changes/webhook-logs',
+            condition: props => props.batchChangesWebhookLogsEnabled,
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
@@ -83,8 +105,12 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         },
         {
             to: '/site-admin/code-intelligence/indexes',
-            label: 'Auto indexing',
+            label: 'Auto-indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        },
+        {
+            to: '/site-admin/code-intelligence/configuration',
+            label: 'Configuration',
         },
     ],
 }

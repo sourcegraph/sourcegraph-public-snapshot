@@ -8,8 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const TestRawBatchSpec = `{
@@ -59,6 +58,23 @@ changesetTemplate:
   published: false
 `
 
+func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.ImportChangeset) string {
+	t.Helper()
+
+	spec := batcheslib.BatchSpec{
+		Name:             "test-batch-change",
+		Description:      "only importing",
+		ImportChangesets: imports,
+	}
+
+	marshaledRawSpec, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("failed to marshal BatchSpec: %s", err)
+	}
+
+	return string(marshaledRawSpec)
+}
+
 var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
@@ -82,16 +98,16 @@ index e5af166..d44c3fc 100644
  Line 10
 `
 
-var baseChangesetSpecGitBranch = btypes.ChangesetSpecDescription{
+var baseChangesetSpecGitBranch = batcheslib.ChangesetSpec{
 	BaseRef: "refs/heads/master",
 
 	HeadRef: "refs/heads/my-branch",
 	Title:   "the title",
 	Body:    "the body of the PR",
 
-	Published: batches.PublishedValue{Val: false},
+	Published: batcheslib.PublishedValue{Val: false},
 
-	Commits: []btypes.GitCommitDescription{
+	Commits: []batcheslib.GitCommitDescription{
 		{
 			Message:     "git commit message\n\nand some more content in a second paragraph.",
 			Diff:        ChangesetSpecDiff,
@@ -103,9 +119,9 @@ var baseChangesetSpecGitBranch = btypes.ChangesetSpecDescription{
 
 func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	spec := baseChangesetSpecGitBranch
-	spec.BaseRepository = repo
+	spec.BaseRepository = string(repo)
 	spec.BaseRev = baseRev
-	spec.HeadRepository = repo
+	spec.HeadRepository = string(repo)
 
 	rawSpec, err := json.Marshal(spec)
 	if err != nil {
@@ -114,11 +130,11 @@ func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	return string(rawSpec)
 }
 
-func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published batches.PublishedValue) string {
+func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published batcheslib.PublishedValue) string {
 	spec := baseChangesetSpecGitBranch
-	spec.BaseRepository = repo
+	spec.BaseRepository = string(repo)
 	spec.BaseRev = baseRev
-	spec.HeadRepository = repo
+	spec.HeadRepository = string(repo)
 
 	spec.Published = published
 

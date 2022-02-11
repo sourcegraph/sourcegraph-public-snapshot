@@ -1,0 +1,34 @@
+.file-diff-node {
+    margin-bottom: 1rem;
+}
+
+.status-bar {
+    background-color: var(--code-bg);
+    height: 2rem;
+}
+
+.body {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.file-diff-hunks {
+    position: relative;
+
+    border-collapse: separate;
+}
+
+.table {
+    width: 100%;
+
+    &--split {
+        table-layout: fixed;
+    }
+}
+
+.container {
+    /* Must apply overflow-x to the container, not to the outer .file-diff-hunks, or else per the CSS spec */
+
+    /* overflow-y:auto would also be applied, and the code intel hover would be clipped. */
+    overflow-x: auto;
+}

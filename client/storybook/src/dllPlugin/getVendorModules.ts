@@ -1,6 +1,6 @@
 import { StatsCompilation } from 'webpack'
 
-import { nodeModulesPath } from '../webpack.config.common'
+import { NODE_MODULES_PATH } from '@sourcegraph/build-config'
 
 // Do not include Webpack related modules into a DLL bundle. It breaks development build.
 const SKIP_VENDOR_MODULES = ['webpack']
@@ -22,7 +22,7 @@ export function getVendorModules(webpackStats: StatsCompilation): Set<string> {
             }
 
             // `identifier` contains loaders prefix, so `path.relative()` doesn't work for all cases.
-            const [relativePathToModule] = module.identifier.split(`${nodeModulesPath}/`).slice(-1)
+            const [relativePathToModule] = module.identifier.split(`${NODE_MODULES_PATH}/`).slice(-1)
 
             // Remove suffix generated for some Storybook modules.
             return relativePathToModule.replace('-generated-other-entry.js', '')

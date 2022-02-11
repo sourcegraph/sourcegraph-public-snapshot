@@ -2,17 +2,16 @@ import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 
 import { fetchSiteUpdateCheck } from './backend'
+import styles from './SiteAdminUpdatesPage.module.scss'
 
 interface Props extends TelemetryProps {}
 
@@ -34,29 +33,31 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
     const updateCheck = state.updateCheck
 
     return (
-        <div className="site-admin-updates-page">
+        <div>
             <PageTitle title="Updates - Admin" />
             <h2>Updates</h2>
-            {isErrorLike(state) && <ErrorAlert className="site-admin-updates-page__error" error={state} />}
+            {isErrorLike(state) && <ErrorAlert error={state} />}
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>
                     {updateCheck.pending && (
-                        <div className="site-admin-updates-page__alert alert alert-primary">
-                            <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few seconds)
-                        </div>
+                        <Alert className={styles.alert} variant="primary">
+                            <LoadingSpinner /> Checking for updates... (reload in a few seconds)
+                        </Alert>
                     )}
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
-                            <div className="site-admin-updates-page__alert alert alert-success">
+                            <Alert className={styles.alert} variant="success">
                                 <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
-                                <a href="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</a>
-                            </div>
+                                <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
+                            </Alert>
                         ) : (
-                            <div className="site-admin-updates-page__alert alert alert-success">Up to date.</div>
+                            <Alert className={styles.alert} variant="success">
+                                Up to date.
+                            </Alert>
                         ))}
                     {updateCheck.errorMessage && (
                         <ErrorAlert
-                            className="site-admin-updates-page__alert"
+                            className={styles.alert}
                             prefix="Error checking for updates"
                             error={updateCheck.errorMessage}
                         />
@@ -65,9 +66,9 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
             )}
 
             {!autoUpdateCheckingEnabled && (
-                <div className="site-admin-updates-page__alert alert alert-warning">
+                <Alert className={styles.alert} variant="warning">
                     Automatic update checking is disabled.
-                </div>
+                </Alert>
             )}
 
             <p className="site-admin-updates_page__info">
@@ -92,9 +93,9 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 </small>
             </p>
             <p>
-                <a href="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
+                <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                     Sourcegraph changelog
-                </a>
+                </Link>
             </p>
         </div>
     )

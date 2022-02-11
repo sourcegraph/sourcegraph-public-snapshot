@@ -7,14 +7,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestUiPublicationStates_Add(t *testing.T) {
 	var ps UiPublicationStates
 
 	// Add a single publication state, ensuring that ps.rand is initialised.
-	if err := ps.Add("foo", batches.PublishedValue{Val: true}); err != nil {
+	if err := ps.Add("foo", batcheslib.PublishedValue{Val: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 	if len(ps.rand) != 1 {
@@ -22,7 +22,7 @@ func TestUiPublicationStates_Add(t *testing.T) {
 	}
 
 	// Add another publication state.
-	if err := ps.Add("bar", batches.PublishedValue{Val: true}); err != nil {
+	if err := ps.Add("bar", batcheslib.PublishedValue{Val: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 	if len(ps.rand) != 2 {
@@ -30,7 +30,7 @@ func TestUiPublicationStates_Add(t *testing.T) {
 	}
 
 	// Try to add a duplicate publication state.
-	if err := ps.Add("bar", batches.PublishedValue{Val: true}); err == nil {
+	if err := ps.Add("bar", batcheslib.PublishedValue{Val: true}); err == nil {
 		t.Error("unexpected nil error")
 	}
 	if len(ps.rand) != 2 {
@@ -70,22 +70,22 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 		changesetUI = &btypes.ChangesetSpec{
 			ID:     1,
 			RandID: "1",
-			Spec: &btypes.ChangesetSpecDescription{
-				Published: batches.PublishedValue{Val: nil},
+			Spec: &batcheslib.ChangesetSpec{
+				Published: batcheslib.PublishedValue{Val: nil},
 			},
 		}
 		changesetPublished = &btypes.ChangesetSpec{
 			ID:     2,
 			RandID: "2",
-			Spec: &btypes.ChangesetSpecDescription{
-				Published: batches.PublishedValue{Val: true},
+			Spec: &batcheslib.ChangesetSpec{
+				Published: batcheslib.PublishedValue{Val: true},
 			},
 		}
 		changesetUnwired = &btypes.ChangesetSpec{
 			ID:     3,
 			RandID: "3",
-			Spec: &btypes.ChangesetSpecDescription{
-				Published: batches.PublishedValue{Val: true},
+			Spec: &batcheslib.ChangesetSpec{
+				Published: batcheslib.PublishedValue{Val: true},
 			},
 		}
 
@@ -108,15 +108,15 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		for name, tc := range map[string]struct {
-			changesetUIs map[string]batches.PublishedValue
+			changesetUIs map[string]batcheslib.PublishedValue
 		}{
 			"spec not in mappings": {
-				changesetUIs: map[string]batches.PublishedValue{
+				changesetUIs: map[string]batcheslib.PublishedValue{
 					changesetUnwired.RandID: {Val: true},
 				},
 			},
 			"spec with published field": {
-				changesetUIs: map[string]batches.PublishedValue{
+				changesetUIs: map[string]batcheslib.PublishedValue{
 					changesetPublished.RandID: {Val: true},
 				},
 			},
@@ -137,7 +137,7 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		var ps UiPublicationStates
 
-		ps.Add(changesetUI.RandID, batches.PublishedValue{Val: true})
+		ps.Add(changesetUI.RandID, batcheslib.PublishedValue{Val: true})
 		if err := ps.prepareAndValidate(mappings); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -157,7 +157,7 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 func TestUiPublicationStates_prepareEmpty(t *testing.T) {
 	for name, ps := range map[string]UiPublicationStates{
 		"nil":   {},
-		"empty": {rand: map[string]batches.PublishedValue{}},
+		"empty": {rand: map[string]batcheslib.PublishedValue{}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if err := ps.prepareAndValidate(btypes.RewirerMappings{}); err != nil {

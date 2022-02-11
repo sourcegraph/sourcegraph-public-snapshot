@@ -6,7 +6,7 @@ import YAML from 'yaml'
 import { CreatedChangeset } from './github'
 import { readLine, cacheFolder } from './util'
 
-// https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
+// https://handbook.sourcegraph.com/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
 
 interface SourcegraphCLIConfig {
@@ -33,7 +33,6 @@ export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
  */
 export interface BatchChangeOptions {
     name: string
-    description: string
     namespace: string
     cliConfig: SourcegraphCLIConfig
 }
@@ -44,7 +43,6 @@ export interface BatchChangeOptions {
 export function releaseTrackingBatchChange(version: string, cliConfig: SourcegraphCLIConfig): BatchChangeOptions {
     return {
         name: `release-sourcegraph-${version}`,
-        description: `Track publishing of sourcegraph@${version}`,
         namespace: 'sourcegraph',
         cliConfig,
     }
@@ -62,7 +60,11 @@ export function batchChangeURL(options: BatchChangeOptions): string {
 /**
  * Create a new batch change from a set of changes.
  */
-export async function createBatchChange(changes: CreatedChangeset[], options: BatchChangeOptions): Promise<void> {
+export async function createBatchChange(
+    changes: CreatedChangeset[],
+    options: BatchChangeOptions,
+    description: string
+): Promise<void> {
     // create a batch change spec
     const importChangesets = changes.map(change => ({
         repository: `github.com/${change.repository}`,
@@ -72,7 +74,7 @@ export async function createBatchChange(changes: CreatedChangeset[], options: Ba
     return await applyBatchChange(
         {
             name: options.name,
-            description: options.description,
+            description,
             importChangesets,
         },
         options

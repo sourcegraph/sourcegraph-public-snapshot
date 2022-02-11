@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs'
 
-import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
+import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
@@ -25,6 +25,7 @@ export const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 export const org: IOrg = {
@@ -57,8 +58,8 @@ export const org: IOrg = {
     url: '/organizations/test-org',
     settingsURL: '/organizations/test-org/settings',
     namespaceName: 'test-org',
-    campaigns: {
-        __typename: 'CampaignConnection',
+    repositories: {
+        __typename: 'RepositoryConnection',
         nodes: [],
         totalCount: 0,
         pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },

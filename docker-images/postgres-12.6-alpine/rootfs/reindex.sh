@@ -27,8 +27,10 @@ file_env() {
 prepare_env() {
   file_env 'POSTGRES_USER' 'postgres'
   file_env 'POSTGRES_PASSWORD'
+  file_env 'POSTGRES_DB'
   export PGUSER="${PGUSER:-$POSTGRES_USER}"
   export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
+  export PGDATABASE="${PGDATABASE:-$POSTGRES_DB}"
 }
 
 unset_env() {

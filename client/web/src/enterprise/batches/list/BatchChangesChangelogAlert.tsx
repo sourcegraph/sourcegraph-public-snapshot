@@ -2,34 +2,26 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import styles from './BatchChangesListIntro.module.scss'
 
 export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.30"
+        partialStorageKey="batch-changes-list-intro-changelog-3.36"
     >
-        <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
-            <div className="card-body">
-                <h4>New Batch Changes features in version 3.30</h4>
+        <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
+            <CardBody>
+                <h4>Batch Changes updates in version 3.36</h4>
                 <ul className="mb-0 pl-3">
                     <li>
-                        Changesets can now be published from the UI!{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui"
-                            rel="noopener"
-                            target="_blank"
-                        >
-                            Learn more.
-                        </a>
-                    </li>
-                    <li>
-                        You can now view changesets created in a specific repository from that repository's landing
-                        page.
+                        <Link to="/help/admin/config/batch_changes#forks" rel="noopener" target="_blank">
+                            Batch Changes now supports pushing changesets to forked repositories.
+                        </Link>
                     </li>
                 </ul>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </DismissibleAlert>
 )

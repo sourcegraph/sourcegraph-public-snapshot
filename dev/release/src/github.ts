@@ -8,7 +8,7 @@ import commandExists from 'command-exists'
 import execa from 'execa'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
@@ -27,8 +27,23 @@ export function releaseName(release: semver.SemVer): string {
     return `${release.major}.${release.minor}${release.patch !== 0 ? `.${release.patch}` : ''}`
 }
 
-// https://github.com/sourcegraph/sourcegraph/labels/release-tracking
-const labelReleaseTracking = 'release-tracking'
+export enum IssueLabel {
+    // https://github.com/sourcegraph/sourcegraph/labels/release-tracking
+    RELEASE_TRACKING = 'release-tracking',
+    // https://github.com/sourcegraph/sourcegraph/labels/patch-release-request
+    PATCH_REQUEST = 'patch-release-request',
+
+    // New labels to better distinguish release-tracking issues
+    RELEASE = 'release',
+    PATCH = 'patch',
+    MANAGED = 'managed-instances',
+}
+
+enum IssueTitleSuffix {
+    RELEASE_TRACKING = 'release tracking issue',
+    PATCH_TRACKING = 'patch release tracking issue',
+    MANAGED_TRACKING = 'upgrade managed instances tracking issue',
+}
 
 /**
  * Template used to generate tracking issue
@@ -45,7 +60,7 @@ interface IssueTemplate {
     /**
      * Title for issue.
      */
-    title: (v: semver.SemVer) => string
+    titleSuffix: IssueTitleSuffix
     /**
      * Labels to apply on issues.
      */
@@ -74,6 +89,41 @@ interface IssueTemplateArguments {
     oneWorkingDayAfterRelease: Date
 }
 
+/**
+ * Configure templates for the release tool to generate issues with.
+ *
+ * Ensure these templates are up to date with the state of the tooling and release processes.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const getTemplates = () => {
+    const releaseIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'handbook',
+        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
+        titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
+    }
+    const patchReleaseIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'handbook',
+        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
+        titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
+    }
+    const upgradeManagedInstanceIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'handbook',
+        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
+        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
+    }
+    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+}
+
+function dateMarkdown(date: Date, name: string): string {
+    return `[${formatDate(date)}](${timezoneLink(date, name)})`
+}
+
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
@@ -97,40 +147,10 @@ async function execTemplate(
         )
 }
 
-/**
- * Configure templates for the release tool to generate issues with.
- *
- * Ensure these templates are up to date with the state of the tooling and release processes.
- */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const getTemplates = () => {
-    const releaseIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/release_issue_template.md',
-        title: trackingIssueTitle,
-        labels: [labelReleaseTracking],
-    }
-    const patchReleaseIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/patch_release_issue_template.md',
-        title: trackingIssueTitle,
-        labels: [labelReleaseTracking],
-    }
-    const upgradeManagedInstanceIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
-        title: (version: semver.SemVer) => `${version.version} upgrade managed instances tracking issue`,
-        labels: [labelReleaseTracking, 'managed-instances'],
-    }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
-}
-
 interface MaybeIssue {
     title: string
     url: string
+    number: number
     created: boolean
 }
 
@@ -192,7 +212,7 @@ export async function ensureTrackingIssues({
         const issue = await ensureIssue(
             octokit,
             {
-                title: template.title(version),
+                title: trackingIssueTitle(version, template),
                 labels: template.labels,
                 body: parentIssue ? `${body}\n\n---\n\nAlso see [${parentIssue.title}](${parentIssue.url})` : body,
                 assignees,
@@ -207,6 +227,25 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
+
+        // close previous iterations of this issue
+        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
+        for (const previousIssue of previous) {
+            if (previousIssue.number === issue.number) {
+                // don't close self
+                continue
+            }
+
+            if (dryRun) {
+                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
+                continue
+            }
+            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
+            console.log(
+                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
+            )
+            await closeIssue(octokit, previousIssue)
+        }
     }
     return created
 }
@@ -243,7 +282,7 @@ async function ensureIssue(
         assignees: string[]
         body: string
         milestone?: number
-        labels?: string[]
+        labels: string[]
     },
     dryRun: boolean
 ): Promise<MaybeIssue> {
@@ -255,18 +294,18 @@ async function ensureIssue(
         milestone,
         labels,
     }
-    const issue = await getIssueByTitle(octokit, title)
+    const issue = await getIssueByTitle(octokit, title, labels)
     if (issue) {
-        return { title, url: issue.url, created: false }
+        return { title, url: issue.url, number: issue.number, created: false }
     }
     if (dryRun) {
         console.log('Dry run enabled, skipping issue creation')
         console.log(`Issue that would have been created:\n${JSON.stringify(issueData, null, 1)}`)
         console.log(`With body: ${body}`)
-        return { title, url: '', created: false }
+        return { title, url: '', number: 0, created: false }
     }
     const createdIssue = await octokit.issues.create({ body, ...issueData })
-    return { title, url: createdIssue.data.html_url, created: true }
+    return { title, url: createdIssue.data.html_url, number: createdIssue.data.number, created: true }
 }
 
 export async function listIssues(
@@ -277,6 +316,7 @@ export async function listIssues(
 }
 
 export interface Issue {
+    title: string
     number: number
     url: string
 
@@ -286,7 +326,32 @@ export interface Issue {
 }
 
 export async function getTrackingIssue(client: Octokit, release: semver.SemVer): Promise<Issue | null> {
-    return getIssueByTitle(client, trackingIssueTitle(release))
+    const templates = getTemplates()
+    const template = release.patch ? templates.patchReleaseIssue : templates.releaseIssue
+    return getIssueByTitle(client, trackingIssueTitle(release, template), template.labels)
+}
+
+function trackingIssueTitle(release: semver.SemVer, template: IssueTemplate): string {
+    return `${release.version} ${template.titleSuffix}`
+}
+
+export async function commentOnIssue(client: Octokit, issue: Issue, body: string): Promise<string> {
+    const comment = await client.issues.createComment({
+        body,
+        issue_number: issue.number,
+        owner: issue.owner,
+        repo: issue.repo,
+    })
+    return comment.data.url
+}
+
+async function closeIssue(client: Octokit, issue: Issue): Promise<void> {
+    await client.issues.update({
+        state: 'closed',
+        issue_number: issue.number,
+        owner: issue.owner,
+        repo: issue.repo,
+    })
 }
 
 interface Milestone {
@@ -319,29 +384,33 @@ async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Pro
         : null
 }
 
-function trackingIssueTitle(version: semver.SemVer): string {
-    if (!version.patch) {
-        return `${version.major}.${version.minor} release tracking issue`
-    }
-    return `${version.version} patch release tracking issue`
-}
-
-async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {
+export async function queryIssues(octokit: Octokit, titleQuery: string, labels: string[]): Promise<Issue[]> {
     const owner = 'sourcegraph'
     const repo = 'sourcegraph'
     const response = await octokit.search.issuesAndPullRequests({
         per_page: 100,
-        q: `type:issue repo:${owner}/${repo} is:open ${JSON.stringify(title)}`,
+        q: `type:issue repo:${owner}/${repo} is:open ${labels
+            .map(label => `label:${label}`)
+            .join(' ')} ${JSON.stringify(titleQuery)}`,
     })
+    return response.data.items.map(item => ({
+        title: item.title,
+        number: item.number,
+        url: item.html_url,
+        owner,
+        repo,
+    }))
+}
 
-    const matchingIssues = response.data.items.filter(issue => issue.title === title)
+async function getIssueByTitle(octokit: Octokit, title: string, labels: string[]): Promise<Issue | null> {
+    const matchingIssues = (await queryIssues(octokit, title, labels)).filter(issue => issue.title === title)
     if (matchingIssues.length === 0) {
         return null
     }
     if (matchingIssues.length > 1) {
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
-    return { number: matchingIssues[0].number, url: matchingIssues[0].html_url, owner, repo }
+    return matchingIssues[0]
 }
 
 export type EditFunc = (d: string) => void
@@ -372,6 +441,11 @@ export interface CreatedChangeset {
 }
 
 export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
+    // Overwriting `process.env` may not be a good practice,
+    // but it's the easiest way to avoid making changes all over the place
+    const dockerHubCredential = await getContainerRegistryCredential('index.docker.io')
+    process.env.CR_USERNAME = dockerHubCredential.username
+    process.env.CR_PASSWORD = dockerHubCredential.password
     for (const command of options.requiredCommands) {
         try {
             await commandExists(command)
@@ -568,6 +642,45 @@ export async function createTag(
     await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }
 
-function dateMarkdown(date: Date, name: string): string {
-    return `[${formatDate(date)}](${timezoneLink(date, name)})`
+// createLatestRelease generates a GitHub release iff this release is the latest and
+// greatest, otherwise it is a no-op.
+export async function createLatestRelease(
+    octokit: Octokit,
+    { owner, repo, release }: { owner: string; repo: string; release: semver.SemVer },
+    dryRun?: boolean
+): Promise<string> {
+    const latest = await octokit.repos.getLatestRelease({
+        owner,
+        repo,
+    })
+    const latestTag = latest.data.tag_name
+    if (semver.gt(latestTag.startsWith('v') ? latestTag.slice(1) : latestTag, release)) {
+        // if latest is greater than release, do not generate a release
+        console.log(`Latest release ${latestTag} is more recent than ${release.version}, skipping GitHub release`)
+        return ''
+    }
+
+    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}`
+
+    const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
+        owner,
+        repo,
+        tag_name: `v${release.version}`,
+        name: `Sourcegraph ${release.version}`,
+        prerelease: false,
+        draft: false,
+        body: `Sourcegraph ${release.version} is now available!
+
+- [Changelog](${changelogURL(release.format())})
+- [Update](${updateURL})
+- [Release post](${releasePostURL}) (might not be available immediately upon release)
+`,
+    }
+    if (dryRun) {
+        console.log('Skipping GitHub release, parameters:', request)
+        return ''
+    }
+    const response = await octokit.repos.createRelease(request)
+    return response.data.html_url
 }

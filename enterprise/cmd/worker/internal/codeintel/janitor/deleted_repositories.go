@@ -5,10 +5,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type deletedRepositoryJanitor struct {
@@ -37,12 +37,12 @@ func (j *deletedRepositoryJanitor) Handle(ctx context.Context) (err error) {
 
 	uploadsCounts, err := tx.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "DeleteUploadsWithoutRepository")
+		return errors.Wrap(err, "dbstore.DeleteUploadsWithoutRepository")
 	}
 
 	indexesCounts, err := tx.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "DeleteIndexesWithoutRepository")
+		return errors.Wrap(err, "dbstore.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {

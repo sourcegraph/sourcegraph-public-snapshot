@@ -7,13 +7,13 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
 const (
-	RobotsTxt = "robots-txt"
-	Favicon   = "favicon"
+	RobotsTxt    = "robots-txt"
+	SitemapXmlGz = "sitemap-xml-gz"
+	Favicon      = "favicon"
 
 	OpenSearch = "opensearch"
 
@@ -37,18 +37,17 @@ const (
 
 	LatestPing = "pings.latest"
 
+	SetupGitHubAppCloud = "setup.github.app.cloud"
+
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
-	GDDORefs = "gddo.refs"
-	Editor   = "editor"
+	Editor = "editor"
 
 	Debug        = "debug"
 	DebugHeaders = "debug.headers"
 
 	GopherconLiveBlog = "gophercon.live.blog"
-
-	GoSymbolURL = "go-symbol-url"
 
 	UI = "ui"
 )
@@ -64,6 +63,7 @@ func newRouter() *mux.Router {
 	base.StrictSlash(true)
 
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
+	base.Path("/sitemap{number:(?:_(?:[0-9]+))?}.xml.gz").Methods("GET").Name(SitemapXmlGz)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
@@ -82,7 +82,6 @@ func newRouter() *mux.Router {
 
 	base.Path("/-/static/extension/{RegistryExtensionReleaseFilename}").Methods("GET").Name(RegistryExtensionBundle)
 
-	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 
 	base.Path("/-/debug/headers").Methods("GET").Name(DebugHeaders)
@@ -97,9 +96,7 @@ func newRouter() *mux.Router {
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
-	if envvar.SourcegraphDotComMode() {
-		base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
-	}
+	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

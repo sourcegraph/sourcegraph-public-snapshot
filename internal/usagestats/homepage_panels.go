@@ -3,7 +3,7 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -61,7 +61,7 @@ FROM (
 ) sub
 `
 
-func GetHomepagePanels(ctx context.Context, db dbutil.DB) (*types.HomepagePanels, error) {
+func GetHomepagePanels(ctx context.Context, db database.DB) (*types.HomepagePanels, error) {
 	var p types.HomepagePanels
 	return &p, db.QueryRowContext(ctx, getHomepagePanelsQuery).Scan(
 		&p.RecentFilesClickedPercentage,

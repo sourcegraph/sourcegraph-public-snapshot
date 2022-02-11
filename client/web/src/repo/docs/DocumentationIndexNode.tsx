@@ -1,16 +1,18 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import styles from './DocumentationIndexNode.module.scss'
 import { DocumentationNodeChild, GQLDocumentationNode, isExcluded, Tag } from './graphql'
 
 /**
@@ -148,21 +150,31 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
         const styleAsExpandable = !styleAsActive && depth !== 0 && node.children.length > 0
         return (
             <div
-                className={`documentation-index-node d-flex flex-column${depth !== 0 ? ' mt-2' : ''}`}
+                className={classNames('documentation-index-node d-flex flex-column', depth !== 0 && 'mt-2')}
                 ref={nodeReference}
             >
                 <span
-                    className={`d-flex align-items-center text-nowrap documentation-index-node-row${
-                        styleAsActive || styleAsExpandable ? ' documentation-index-node-row--shift-left' : ''
-                    }`}
+                    className={classNames(
+                        'd-flex align-items-center text-nowrap',
+                        styles.documentationIndexNodeRow,
+                        (styleAsActive || styleAsExpandable) && styles.documentationIndexNodeRowShiftLeft
+                    )}
                 >
                     {styleAsActive && (
-                        <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline documentation-index-node-active-circle" />
+                        <CircleMediumIcon
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1 icon-inline',
+                                styles.documentationIndexNodeActiveCircle
+                            )}
+                        />
                     )}
                     {styleAsExpandable && (
-                        <button
-                            type="button"
-                            className="d-flex flex-shrink-0 mr-1 btn btn-icon documentation-index-node-expand-button"
+                        <Button
+                            variant="icon"
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1',
+                                styles.documentationIndexNodeExpandButton
+                            )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
                             onClick={toggleExpanded}
                         >
@@ -172,7 +184,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                                 <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                             )}
                             {node.detail.value === '' && <strong id={'index-' + hash}>{node.label.value}</strong>}
-                        </button>
+                        </Button>
                     )}
                     {node.detail.value !== '' && (
                         <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">

@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -23,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetResolver struct {
@@ -58,7 +58,7 @@ func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo 
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DB(), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
 		changeset:    changeset,
 	}
 }
@@ -143,11 +143,6 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	return r.BatchChanges(ctx, args)
-}
-
 func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
 	opts := store.ListBatchChangesOpts{
 		ChangesetID: r.changeset.ID,
@@ -170,7 +165,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, err
 	}
@@ -178,7 +173,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 	}
 
@@ -250,7 +245,7 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 	}
 
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		name,
 		email,
 		// Try to find the corresponding Sourcegraph user.
@@ -279,7 +274,7 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpecDescription, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
@@ -360,6 +355,13 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 		return nil, nil
 	}
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
+}
+
+func (r *changesetResolver) ForkNamespace() *string {
+	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
+		return &namespace
+	}
+	return nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
@@ -487,7 +489,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
-			r.store.DB(),
+			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
 			diff,
@@ -522,7 +524,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DatabaseDB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,

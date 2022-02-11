@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -39,6 +39,7 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        grantedScopes
         namespace {
             id
             namespaceName
@@ -149,8 +150,8 @@ export function listAffiliatedRepositories(
 ): Observable<NonNullable<AffiliatedRepositoriesResult>> {
     return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
         gql`
-            query AffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
-                affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
+            query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
+                affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
                     nodes {
                         name
                         codeHost {
@@ -164,7 +165,7 @@ export function listAffiliatedRepositories(
             }
         `,
         {
-            user: args.user,
+            namespace: args.namespace,
             codeHost: args.codeHost ?? null,
             query: args.query ?? null,
         }
@@ -206,6 +207,35 @@ export const listExternalServiceFragment = gql`
         grantedScopes
     }
 `
+export const listExternalServiceInvitableCollaboratorsFragment = gql`
+    fragment ListExternalServiceInvitableCollaboratorsFields on ExternalService {
+        invitableCollaborators {
+            email
+            displayName
+            name
+            avatarURL
+        }
+    }
+`
+
+export const EXTERNAL_SERVICES_WITH_COLLABORATORS = gql`
+    query ExternalServicesWithCollaborators($first: Int, $after: String, $namespace: ID) {
+        externalServices(first: $first, after: $after, namespace: $namespace) {
+            nodes {
+                ...ListExternalServiceFields
+                ...ListExternalServiceInvitableCollaboratorsFields
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+
+    ${listExternalServiceFragment}
+    ${listExternalServiceInvitableCollaboratorsFragment}
+`
 
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String, $namespace: ID) {
@@ -227,25 +257,7 @@ export const EXTERNAL_SERVICES = gql`
 export function queryExternalServices(
     variables: ExternalServicesVariables
 ): Observable<ExternalServicesResult['externalServices']> {
-    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(
-        gql`
-            query ExternalServices($first: Int, $after: String, $namespace: ID) {
-                externalServices(first: $first, after: $after, namespace: $namespace) {
-                    nodes {
-                        ...ListExternalServiceFields
-                    }
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                }
-            }
-
-            ${listExternalServiceFragment}
-        `,
-        variables
-    ).pipe(
+    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
         map(({ data, errors }) => {
             if (!data || !data.externalServices || errors) {
                 throw createAggregateError(errors)

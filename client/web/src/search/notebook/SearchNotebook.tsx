@@ -1,41 +1,73 @@
+import { noop } from 'lodash'
+import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Observable } from 'rxjs'
+import { startWith, switchMap, tap } from 'rxjs/operators'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
-import { fetchSuggestions } from '../backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
-import { useQueryIntelligence } from '../useQueryIntelligence'
+import { AuthenticatedUser } from '../../auth'
 
+import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
+import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
+import { Block, BlockDirection, BlockInit, BlockInput, BlockType, Notebook } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
+        ExtensionsControllerProps<'extHostAPI'>,
+        FileBlockValidationFunctions {
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
-    blocks: BlockInitializer[]
+    blocks: BlockInit[]
+    authenticatedUser: AuthenticatedUser | null
+}
+
+const LOADING = 'LOADING' as const
+
+type BlockCounts = { [blockType in BlockType]: number }
+
+function countBlockTypes(blocks: Block[]): BlockCounts {
+    return blocks.reduce((aggregate, block) => ({ ...aggregate, [block.type]: aggregate[block.type] + 1 }), {
+        md: 0,
+        file: 0,
+        query: 0,
+    })
 }
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
+    extensionsController,
     ...props
 }) => {
-    const notebook = useMemo(() => new Notebook(props.blocks), [props.blocks])
+    const notebook = useMemo(
+        () =>
+            new Notebook(props.blocks, {
+                extensionHostAPI: extensionsController.extHostAPI,
+                fetchHighlightedFileLineRanges: props.fetchHighlightedFileLineRanges,
+            }),
+        [props.blocks, props.fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+    )
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
@@ -47,8 +79,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             if (serialize) {
                 onSerializeBlocks(blocks)
             }
+            const blockCountsPerType = countBlockTypes(blocks)
+            props.telemetryService.log(
+                'SearchNotebookBlocksUpdated',
+                { blocksCount: blocks.length, blockCountsPerType },
+                { blocksCount: blocks.length, blockCountsPerType }
+            )
         },
-        [notebook, setBlocks, onSerializeBlocks]
+        [notebook, setBlocks, onSerializeBlocks, props.telemetryService]
     )
 
     // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
@@ -68,21 +106,34 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         [notebook, props.telemetryService, updateBlocks]
     )
 
+    const [runAllBlocks, runningAllBlocks] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent>) =>
+                click.pipe(
+                    switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
+                    tap(() => {
+                        updateBlocks()
+                        props.telemetryService.log('SearchNotebookRunAllBlocks')
+                    })
+                ),
+            [notebook, props.telemetryService, updateBlocks]
+        )
+    )
+
     const onBlockInputChange = useCallback(
-        (id: string, value: string) => {
-            notebook.setBlockInputById(id, value)
+        (id: string, blockInput: BlockInput) => {
+            notebook.setBlockInputById(id, blockInput)
             updateBlocks(false)
         },
         [notebook, updateBlocks]
     )
 
     const onAddBlock = useCallback(
-        (index: number, type: BlockType, input: string) => {
+        (index: number, blockInput: BlockInput) => {
             if (isReadOnly) {
                 return
             }
-
-            const addedBlock = notebook.insertBlockAtIndex(index, type, input)
+            const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
             if (addedBlock.type === 'md') {
                 notebook.runBlockById(addedBlock.id)
             }
@@ -173,14 +224,19 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     useEffect(() => {
         const handleEventOutsideBlockWrapper = (event: MouseEvent | FocusEvent): void => {
             const target = event.target as HTMLElement | null
-            if (target && !target.closest('.block-wrapper')) {
+            if (!target?.closest('.block-wrapper') && !target?.closest('[data-reach-combobox-list]')) {
                 setSelectedBlockId(null)
             }
         }
         const handleKeyDown = (event: KeyboardEvent): void => {
+            const target = event.target as HTMLElement
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (event.key === 'Escape' && !isMonacoEditorDescendant(event.target as HTMLElement)) {
+            } else if (
+                event.key === 'Escape' &&
+                !isMonacoEditorDescendant(target) &&
+                target.tagName.toLowerCase() !== 'input'
+            ) {
                 setSelectedBlockId(null)
             }
         }
@@ -197,7 +253,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         }
     }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType: SearchPatternType.literal,
         globbing: props.globbing,
         interpretComments: true,
@@ -205,22 +261,70 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
     // Register dummy onCompletionSelected handler to prevent console errors
     useEffect(() => {
-        const disposable = Monaco.editor.registerCommand('completionItemSelected', () => {})
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
         return () => disposable.dispose()
     }, [])
 
-    const blockCallbackProps = {
-        onSelectBlock,
-        onRunBlock,
-        onBlockInputChange,
-        onMoveBlockSelection,
-        onDeleteBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    }
+    const renderBlock = useCallback(
+        (block: Block) => {
+            const blockProps = {
+                ...props,
+                onSelectBlock,
+                onRunBlock,
+                onBlockInputChange,
+                onMoveBlockSelection,
+                onDeleteBlock,
+                onMoveBlock,
+                onDuplicateBlock,
+                isReadOnly,
+                isSelected: selectedBlockId === block.id,
+                isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
+            }
+
+            switch (block.type) {
+                case 'md':
+                    return <SearchNotebookMarkdownBlock {...block} {...blockProps} />
+                case 'file':
+                    return <SearchNotebookFileBlock {...block} {...blockProps} />
+                case 'query':
+                    return (
+                        <SearchNotebookQueryBlock
+                            {...block}
+                            {...blockProps}
+                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                        />
+                    )
+            }
+        },
+        [
+            isReadOnly,
+            onBlockInputChange,
+            onDeleteBlock,
+            onDuplicateBlock,
+            onMoveBlock,
+            onMoveBlockSelection,
+            onRunBlock,
+            onSelectBlock,
+            props,
+            selectedBlockId,
+            sourcegraphSearchLanguageId,
+        ]
+    )
 
     return (
         <div className={styles.searchNotebook}>
+            <div className="pb-1">
+                <Button
+                    className="mr-2"
+                    variant="primary"
+                    size="sm"
+                    onClick={runAllBlocks}
+                    disabled={blocks.length === 0 || runningAllBlocks === LOADING}
+                >
+                    <PlayCircleOutlineIcon className="icon-inline mr-1" />
+                    <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
+                </Button>
+            </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
                     {!isReadOnly ? (
@@ -228,29 +332,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     ) : (
                         <div className="mb-2" />
                     )}
-                    <>
-                        {block.type === 'md' && (
-                            <SearchNotebookMarkdownBlock
-                                {...props}
-                                {...block}
-                                {...blockCallbackProps}
-                                isReadOnly={isReadOnly}
-                                isSelected={selectedBlockId === block.id}
-                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
-                            />
-                        )}
-                        {block.type === 'query' && (
-                            <SearchNotebookQueryBlock
-                                {...props}
-                                {...block}
-                                {...blockCallbackProps}
-                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
-                                isReadOnly={isReadOnly}
-                                isSelected={selectedBlockId === block.id}
-                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
-                            />
-                        )}
-                    </>
+                    {renderBlock(block)}
                 </div>
             ))}
             {!isReadOnly && (

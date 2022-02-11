@@ -1,3 +1,4 @@
+//go:build !dist
 // +build !dist
 
 package assets

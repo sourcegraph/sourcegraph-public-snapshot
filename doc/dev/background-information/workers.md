@@ -84,17 +84,19 @@ The most common way to use a worker is to use the database-backed store. When us
 
 The store relies on a jobs table _specific to your worker_ to exist with the following columns. For a live example, see the [lsif_uploads table](https://github.com/sourcegraph/sourcegraph/blob/3.25/internal/database/schema.md#table-publiclsif_uploads).
 
-| Name              | Type                     | Description |
-| ----------------- | ------------------------ | ----------- |
-| `id`              | integer                  | The job's primary key |
-| `state`           | text                     | The job's current status (one of `queued`, `processing`, `errored`, or `failed`) |
-| `failure_message` | text                     | Updated with the text of the error returned from the handle hook |
-| `started_at`      | timestamp with time zone | Updated when the job is dequeued for processing |
-| `finished_at`     | timestamp with time zone | Updated when the handler finishes processing the job (successfully or unsuccessfully) |
-| `process_after`   | timestamp with time zone | Controls the time after which the job is visible for processing |
-| `num_resets`      | integer                  | Updated when the job is moved back from `failed` to `queued` |
-| `num_failures`    | integer                  | Updated when the job enters the `failed` state |
-| `execution_logs`  | json[]                   | A list of log entries from the most recent processing attempt |
+| Name                | Type                     | Description |
+| ------------------- | ------------------------ | ----------- |
+| `id`                | integer                  | The job's primary key |
+| `state`             | text                     | The job's current status (one of `queued`, `processing`, `errored`, or `failed`) |
+| `failure_message`   | text                     | Updated with the text of the error returned from the handle hook |
+| `started_at`        | timestamp with time zone | Updated when the job is dequeued for processing |
+| `finished_at`       | timestamp with time zone | Updated when the handler finishes processing the job (successfully or unsuccessfully) |
+| `process_after`     | timestamp with time zone | Controls the time after which the job is visible for processing |
+| `num_resets`        | integer                  | Updated when the job is moved back from `failed` to `queued` |
+| `num_failures`      | integer                  | Updated when the job enters the `failed` state |
+| `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
+| `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
+| `worker_hostname`   | text                     | Hostname of the worker that picked up the job. |
 
 The target jobs table may have additional columns as the store only selects and updates records. Again, inserting/enqueueing job records is a task that is **not** handled by the worker, thus columns with non-null constraints are safe to add here as well.
 
@@ -144,14 +146,17 @@ Defining this view is **optional** and is done here to showcase the flexibility 
 BEGIN;
 
 CREATE TABLE example_jobs (
-  id              SERIAL PRIMARY KEY,
-  state           text DEFAULT 'queued',
-  failure_message text,
-  started_at      timestamp with time zone,
-  finished_at     timestamp with time zone,
-  process_after   timestamp with time zone,
-  num_resets      integer not null default 0,
-  num_failures    integer not null default 0,
+  id                SERIAL PRIMARY KEY,
+  state             text DEFAULT 'queued',
+  failure_message   text,
+  started_at        timestamp with time zone,
+  finished_at       timestamp with time zone,
+  process_after     timestamp with time zone,
+  num_resets        integer not null default 0,
+  num_failures      integer not null default 0,
+  last_heartbeat_at timestamp with time zone,
+  execution_logs    json[],
+  worker_hostname   text not null default '',
 
   repository_id integer not null
 );
@@ -180,14 +185,17 @@ import (
 )
 
 type ExampleJob struct {
-	ID             int
-	State          string
-	FailureMessage *string
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
-	NumResets      int
-	NumFailures    int
+	ID              int
+	State           string
+	FailureMessage  *string
+	StartedAt       *time.Time
+	FinishedAt      *time.Time
+	ProcessAfter    *time.Time
+	NumResets       int
+	NumFailures     int
+	LastHeartbeatAt time.Time
+	ExecutionLogs   []workerutil.ExecutionLogEntry
+	WorkerHostname  string
 
 	RepositoryID   int
 	RepositoryName string
@@ -202,6 +210,9 @@ var exampleJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.process_after"),
 	sqlf.Sprintf("j.num_resets"),
 	sqlf.Sprintf("j.num_failures"),
+	sqlf.Sprintf("j.last_heartbeat_at"),
+	sqlf.Sprintf("j.execution_logs"),
+	sqlf.Sprintf("j.worker_hostname"),
 	sqlf.Sprintf("j.repository_id"),
 	sqlf.Sprintf("j.repository_name"),
 }
@@ -214,6 +225,7 @@ import (
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // scanFirstExampleJob scans a single job from the return value of `*Store.query`.
@@ -225,6 +237,7 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 
 	if rows.Next() {
 		var job ExampleJob
+		var executionLogs []dbworkerstore.ExecutionLogEntry
 
 		if err := rows.Scan(
 			&job.ID,
@@ -235,10 +248,17 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
+			&job.LastHeartbeatAt,
+			pq.Array(&executionLogs),
+			&job.WorkerHostname,
 			&job.RepositoryID,
 			&job.RepositoryName,
 		); err != nil {
 			return nil, false, err
+		}
+
+		for _, entry := range executionLogs {
+			job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 		}
 
 		return job, true, nil

@@ -1,0 +1,8 @@
+[
+  {
+   "login": "sourcegraph-vcr-repos",
+   "default_repository_permission": "none",
+   "state": "active",
+   "role": "admin"
+  }
+ ]

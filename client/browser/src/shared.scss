@@ -5,14 +5,6 @@
 // box that renders the tooltip on GitHub is pure white.
 $body-bg-color-light: #ffffff;
 
-@import '../../shared/src/actions/ActionItem';
-@import '../../shared/src/actions/ActionsNavItems';
-@import '../../shared/src/commandPalette/CommandList';
-@import '../../shared/src/commandPalette/EmptyCommandList.scss';
-@import '../../shared/src/extensions/devtools';
-@import '../../shared/src/notifications/NotificationItem';
-@import '../../shared/src/notifications/Notifications';
-
 :root {
     --body-bg: #ffffff;
     --text-muted: #888888;
@@ -44,7 +36,7 @@ $body-bg-color-light: #ffffff;
     right: 0;
 }
 
-.global-debug {
+[data-global-debug] {
     position: fixed;
     right: 0;
     bottom: 0;
@@ -65,6 +57,6 @@ $body-bg-color-light: #ffffff;
     opacity: 0.2;
 }
 
-.line-decoration-attachment {
+[data-line-decoration-attachment] {
     margin-left: 0.25rem;
 }

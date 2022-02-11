@@ -1,0 +1,19 @@
+[
+  {
+   "Name": "private-access",
+   "Slug": "private-access",
+   "URL": "https://api.github.com/organizations/65169595/team/3878345",
+   "ReposCount": 1,
+   "Organization": {
+    "login": "sourcegraph-vcr-repos"
+   }
+  },
+  {
+   "Name": "all_read_only",
+   "Slug": "all_read_only",
+   "URL": "https://api.github.com/organizations/65169595/team/5058995",
+   "Organization": {
+    "login": "sourcegraph-vcr-repos"
+   }
+  }
+ ]

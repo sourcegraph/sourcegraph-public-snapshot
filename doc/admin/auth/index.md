@@ -6,6 +6,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
+- [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
 - [HTTP authentication proxies](#http-authentication-proxies)
@@ -33,7 +34,7 @@ order:
   identity provider (e.g., SAML, OpenID Connect, LDAP, etc.). Sourcegraph will redirect to your code
   host on sign-in and the code host will perform the required sign-in flow before redirecting to
   Sourcegraph on success.
-- If you are using an identity provider that supports SAML, use the [SAML auth provider](#saml).
+- If you are using an identity provider that supports SAML, use the [SAML auth provider](saml/index.md).
 - If you are using an identity provider that supports OpenID Connect (including Google accounts),
   use the [OpenID Connect provider](#openid-connect).
 - If you wish to use LDAP and cannot use the GitHub/GitLab OAuth provider as described above, or if
@@ -88,8 +89,8 @@ Then add the following lines to your site configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false,  // Set to true to enable anyone with a GitHub account to sign up without invitation
-      "allowOrgs": ["your-org-name"] // Restrict logins to members of these orgs.
+      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
+      "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
     }
   ]
 }
@@ -104,6 +105,8 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 (typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
+
+> WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your Github url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit signups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
 
 The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
 

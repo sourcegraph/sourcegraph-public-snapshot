@@ -3,11 +3,10 @@ import { BehaviorSubject, combineLatest, from, Observable, Subscription } from '
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
+import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
+
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { hashCode } from '../../util/hashCode'
-import { memoizeObservable } from '../../util/memoizeObservable'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
 import { Contributions } from '../protocol'
@@ -50,6 +49,12 @@ export function observeActiveExtensions(
     }
 }
 
+/**
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
+ */
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
@@ -90,6 +95,11 @@ export function activateExtensions(
                 const activeExtensionIDs = new Set<string>()
 
                 for (const extension of activeExtensions) {
+                    // Ignore extensions that now work via built-in insights fetchers
+                    if (DEPRECATED_EXTENSION_IDS.has(extension.id)) {
+                        continue
+                    }
+
                     // Populate set of currently active extension IDs
                     activeExtensionIDs.add(extension.id)
                     // Populate map of extensions to activate
@@ -303,10 +313,10 @@ async function deactivateExtension(extensionID: string): Promise<void> {
     }
 }
 
-export function extensionsWithMatchedActivationEvent(
-    enabledExtensions: (ConfiguredExtension | ExecutableExtension)[],
+export function extensionsWithMatchedActivationEvent<Extension extends ConfiguredExtension | ExecutableExtension>(
+    enabledExtensions: Extension[],
     visibleTextDocumentLanguages: ReadonlySet<string>
-): (ConfiguredExtension | ExecutableExtension)[] {
+): Extension[] {
     const languageActivationEvents = new Set(
         [...visibleTextDocumentLanguages].map(language => `onLanguage:${language}`)
     )

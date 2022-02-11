@@ -97,6 +97,10 @@ type limitedStream struct {
 	cancel    context.CancelFunc
 }
 
+// newLimitedStream creates a stream that will limit the number of matches passed through it,
+// cancelling the context it returns when that happens. For each match sent to the stream,
+// if it hasn't hit the limit, it will call the onMatch callback with that match. The onMatch
+// callback will never be called concurrently.
 func newLimitedStream(ctx context.Context, limit int, cb func(protocol.FileMatch)) (context.Context, context.CancelFunc, *limitedStream) {
 	ctx, cancel := context.WithCancel(ctx)
 	s := &limitedStream{
@@ -112,8 +116,8 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	if match.MatchCount <= m.remaining {
 		m.remaining -= match.MatchCount
 		m.sentCount += match.MatchCount
-		m.mux.Unlock()
 		m.cb(match)
+		m.mux.Unlock()
 		return
 	}
 
@@ -137,8 +141,8 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
-	m.mux.Unlock()
 	m.cb(match)
+	m.mux.Unlock()
 }
 
 func (m *limitedStream) SentCount() int {

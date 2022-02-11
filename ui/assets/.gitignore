@@ -3,6 +3,8 @@
 *.svg
 !fonts/*.css
 *.map
+*.ttf
+*.woff2
+*.png
 !img/**
 *.DS_Store
-*.ttf

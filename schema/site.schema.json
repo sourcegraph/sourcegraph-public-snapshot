@@ -44,6 +44,17 @@
       "group": "Debug",
       "examples": [["20"]]
     },
+    "apidocs.search.index-size-limit-factor": {
+      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "type": "number",
+      "default": 1.0,
+      "additionalProperties": false
+    },
+    "cloneProgress.log": {
+      "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
+      "type": "boolean",
+      "default": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -71,6 +82,12 @@
               "default": false
             }
           }
+        },
+        "apidocs.search.indexing": {
+          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -104,6 +121,41 @@
         },
         "jvmPackages": {
           "description": "Allow adding JVM packages code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
+        "pagure": {
+          "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "subRepoPermissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables sub-repo permission checking",
+              "type": "boolean",
+              "default": false
+            },
+            "userCacheSize": {
+              "description": "The number of user permissions to cache",
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1
+            },
+            "userCacheTTLSeconds": {
+              "description": "The TTL in seconds for cached user permissions",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          }
+        },
+        "npmPackages": {
+          "description": "Allow adding NPM packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -163,6 +215,40 @@
             ]
           ]
         },
+        "search.index.revisions": {
+          "description": "An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "SearchIndexRevisionsRule",
+            "additionalProperties": false,
+            "required": ["revisions"],
+            "anyOf": [{ "required": ["name"] }],
+            "properties": {
+              "name": {
+                "description": "Regular expression which matches against the name of a repository (e.g. \"^github\\.com/owner/name$\").",
+                "type": "string",
+                "format": "regex"
+              },
+              "revisions": {
+                "description": "Revisions to index",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "examples": [
+            [
+              {
+                "name": "^github.com/org/.*",
+                "revisions": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"]
+              }
+            ]
+          ]
+        },
         "search.index.branches": {
           "description": "A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch (\"HEAD\") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.",
           "type": "object",
@@ -178,8 +264,13 @@
             }
           ]
         },
+        "search.index.query.contexts": {
+          "description": "Enables indexing of revisions of repos matching any query defined in search contexts.",
+          "type": "boolean",
+          "default": false
+        },
         "versionContexts": {
-          "description": "JSON array of version context configuration",
+          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
           "type": "array",
           "items": {
             "title": "VersionContext",
@@ -267,12 +358,23 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
-              "default": 0,
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "default": 24,
               "type": "integer",
-              "group": "Search"
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
+        },
+        "enableGithubInternalRepoVisibility": {
+          "description": "Enable support for visilibity of internal Github repositories",
+          "type": "boolean",
+          "default": false
+        },
+        "enableGitServerCommandExecFilter": {
+          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -292,14 +394,14 @@
       "group": "Experimental"
     },
     "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
+      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
     "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
@@ -311,6 +413,12 @@
       "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": true
+    },
+    "batchChanges.enforceForks": {
+      "description": "When enabled, all branches created by batch changes will be pushed to forks of the original repository.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
     },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
@@ -364,8 +472,28 @@
         }
       }
     },
+    "batchChanges.disableWebhooksWarning": {
+      "description": "Hides Batch Changes warnings about webhooks not being configured.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
+      "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
+      "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
+      "type": "integer",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": -1
+    },
+    "codeIntelAutoIndexing.allowGlobalPolicies": {
+      "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -463,6 +591,12 @@
       "type": "string",
       "group": "Internal",
       "hide": true
+    },
+    "gitLongCommandTimeout": {
+      "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
+      "type": "integer",
+      "default": 3600,
+      "group": "External services"
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
@@ -565,6 +699,11 @@
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
       "default": false
+    },
+    "authz.refreshInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
@@ -694,6 +833,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.accessToken": {
+      "description": "The shared secret between Sourcegraph and executors.",
+      "type": "string",
+      "minLength": 20
+    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",
@@ -759,6 +903,11 @@
             },
             "backendDSN": {
               "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "codeIntelDSN": {
+              "description": "Sentry Data Source Name (DSN) for code intel errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
             }
@@ -908,6 +1057,13 @@
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
     },
+    "insights.commit.indexer.interval": {
+      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60,
+      "examples": [120]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -941,6 +1097,24 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "githubApp.cloud": {
+          "description": "The config options for Sourcegraph Cloud GitHub App.",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "appID": {
+              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "privateKey": {
+              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"
@@ -1051,6 +1225,9 @@
         },
         "userExternalAccountKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookLogKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
@@ -1097,6 +1274,38 @@
               }
             }
           }
+        }
+      }
+    },
+    "webhook.logging": {
+      "description": "Configuration for logging incoming webhooks.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "retention": {
+          "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
+          "type": "string",
+          "default": "72h"
+        }
+      }
+    },
+    "organizationInvitations": {
+      "description": "Configuration for organization invitations.",
+      "type": "object",
+      "required": ["signingKey"],
+      "properties": {
+        "expiryTime": {
+          "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
+          "type": "integer",
+          "default": 48
+        },
+        "signingKey": {
+          "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "type": "string"
         }
       }
     }
@@ -1169,6 +1378,11 @@
           "description": "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
           "type": "string",
           "pattern": "^[^<@]"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1316,6 +1530,11 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowGroupsPermissionsSync": {
+          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
         }
       }
     },
@@ -1342,7 +1561,13 @@
           "type": "string",
           "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "api",
+          "enum": ["api", "read_api"]
+        }
       }
     },
     "AuthProviderCommon": {

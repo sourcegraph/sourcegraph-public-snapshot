@@ -1,128 +1,51 @@
 package types
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestChangesetSpecUnmarshalValidate(t *testing.T) {
-	tests := []struct {
-		name    string
-		rawSpec string
-		err     string
+func TestChangesetSpec_ForkGetters(t *testing.T) {
+	for name, tc := range map[string]struct {
+		spec      *ChangesetSpec
+		isFork    bool
+		namespace *string
 	}{
-		{
-			name: "valid ExistingChangesetReference",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"externalID": "1234"
-			}`,
+		"no fork": {
+			spec:      &ChangesetSpec{ForkNamespace: nil},
+			isFork:    false,
+			namespace: nil,
 		},
-		{
-			name: "valid GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
-				"title": "my title",
-				"body": "my body",
-				"published": false,
-				"commits": [{
-				  "message": "commit message",
-				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
-				}]
-			}`,
+		"fork to user": {
+			spec:      &ChangesetSpec{ForkNamespace: strPtr(changesetSpecForkNamespaceUser)},
+			isFork:    true,
+			namespace: nil,
 		},
-		{
-			name: "missing fields in GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
-				"title": "my title",
-				"published": false,
-				"commits": [{
-				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
-				}]
-			}`,
-			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required\n\n",
+		"fork to namespace": {
+			spec:      &ChangesetSpec{ForkNamespace: strPtr("org")},
+			isFork:    true,
+			namespace: strPtr("org"),
 		},
-		{
-			name: "missing fields in ExistingChangesetReference",
-			rawSpec: `{
-				"baseRepository": "graphql-id"
-			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required\n\n",
-		},
-		{
-			name: "headRepository in GitBranchChangesetDescription does not match baseRepository",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id999999",
-				"title": "my title",
-				"body": "my body",
-				"published": false,
-				"commits": [{
-				  "message": "commit message",
-				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
-				}]
-			}`,
-			err: ErrHeadBaseMismatch.Error(),
-		},
-		{
-			name: "too many commits in GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
-				"title": "my title",
-				"body": "my body",
-				"published": false,
-				"commits": [
-				  {
-				    "message": "commit message",
-					"diff": "the diff",
-					"authorName": "Mary McButtons",
-					"authorEmail": "mary@example.com"
-				  },
-                  {
-				    "message": "commit message2",
-					"diff": "the diff2",
-					"authorName": "Mary McButtons",
-					"authorEmail": "mary@example.com"
-				  }
-				]
-			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items\n\n",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			spec := &ChangesetSpec{RawSpec: tc.rawSpec}
-			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
-			if haveErr == "<nil>" {
-				haveErr = ""
-			}
-			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
-				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.isFork, tc.spec.IsFork())
+			if tc.namespace == nil {
+				assert.Nil(t, tc.spec.GetForkNamespace())
+			} else {
+				have := tc.spec.GetForkNamespace()
+				assert.NotNil(t, have)
+				assert.Equal(t, *tc.namespace, *have)
 			}
 		})
 	}
 }
+
+func TestChangesetSpec_SetForkToUser(t *testing.T) {
+	cs := &ChangesetSpec{ForkNamespace: nil}
+	cs.setForkToUser()
+	assert.NotNil(t, cs.ForkNamespace)
+	assert.Equal(t, changesetSpecForkNamespaceUser, *cs.ForkNamespace)
+}
+
+func strPtr(s string) *string { return &s }

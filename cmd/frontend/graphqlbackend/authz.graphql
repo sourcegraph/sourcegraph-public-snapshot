@@ -26,7 +26,32 @@ extend type Mutation {
     repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
     the user's operations on Sourcegraph.
     """
-    scheduleUserPermissionsSync(user: ID!): EmptyResponse!
+    scheduleUserPermissionsSync(
+        """
+        User to schedule a sync for.
+        """
+        user: ID!
+        """
+        Additional options when performing a sync.
+        """
+        options: FetchPermissionsOptions
+    ): EmptyResponse!
+    """
+    Set the sub-repo permissions of a repository (i.e., which paths are allowed or disallowed for
+    a particular user). This operation overwrites the previous sub-repo permissions for the
+    repository.
+    """
+    setSubRepositoryPermissionsForUsers(
+        """
+        The repository whose permissions to set.
+        """
+        repository: ID!
+        """
+        A list of user identifiers and their sub-repository permissions, which defines the set of
+        paths within the repository they can access.
+        """
+        userPermissions: [UserSubRepoPermission!]!
+    ): EmptyResponse!
 }
 
 extend type Query {
@@ -119,6 +144,26 @@ input UserPermission {
 }
 
 """
+A user (identified either by username or email address) with its sub-repository permissions.
+"""
+input UserSubRepoPermission {
+    """
+    Depending on the bindID option in the permissions.userMapping site configuration property,
+    the elements of the list are either all usernames (bindID of "username") or all email
+    addresses (bindID of "email").
+    """
+    bindID: String!
+    """
+    An array of paths that the user is allowed to access, in glob format.
+    """
+    pathIncludes: [String!]!
+    """
+    An array of paths that the user is not allowed to access, in glob format.
+    """
+    pathExcludes: [String!]!
+}
+
+"""
 Different repository permission levels.
 """
 enum RepositoryPermission {
@@ -143,4 +188,15 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime!
+}
+
+"""
+Additional options when performing a permissions sync.
+"""
+input FetchPermissionsOptions {
+    """
+    Indicate that any caches added for optimization encountered during this permissions
+    sync should be invalidated.
+    """
+    invalidateCaches: Boolean
 }

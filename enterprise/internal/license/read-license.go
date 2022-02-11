@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // Command read-license describes a signed Sourcegraph license key. It does not verify the
@@ -15,10 +16,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type noopPublicKey struct{}

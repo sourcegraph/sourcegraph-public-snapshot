@@ -1,9 +1,10 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ErrorBoundary } from './ErrorBoundary'
 
-jest.mock('mdi-react/ErrorIcon', () => 'ErrorIcon')
+jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
 
 const ThrowError: React.FunctionComponent = () => {
@@ -12,40 +13,36 @@ const ThrowError: React.FunctionComponent = () => {
 
 /** Throws an error that resembles the Webpack error when chunk loading fails.  */
 const ThrowChunkError: React.FunctionComponent = () => {
-    throw new Error('Loading chunk 123 failed.')
+    const ChunkError = new Error('Loading chunk 123 failed.')
+    ChunkError.name = 'ChunkLoadError'
+    throw ChunkError
 }
 
 describe('ErrorBoundary', () => {
     test('passes through if non-error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <ErrorBoundary location={null}>
+                    <ThrowError />
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('renders error page if error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <span>hello</span>
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <ErrorBoundary location={null}>
+                    <span>hello</span>
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('renders reload page if chunk error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowChunkError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            renderWithBrandedContext(
+                <ErrorBoundary location={null}>
+                    <ThrowChunkError />
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 })

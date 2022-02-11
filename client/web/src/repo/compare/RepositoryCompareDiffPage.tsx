@@ -4,15 +4,15 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
@@ -27,19 +27,11 @@ export function queryRepositoryComparisonFileDiffs(args: {
     base: string | null
     head: string | null
     first?: number
-    after?: string
-    isLightTheme: boolean
+    after?: string | null
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff(
-                $repo: ID!
-                $base: String
-                $head: String
-                $first: Int
-                $after: String
-                $isLightTheme: Boolean!
-            ) {
+            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
@@ -115,7 +107,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         },
                         lineNumbers: true,
                     }}
-                    updateOnChange={String(this.props.isLightTheme)}
                     defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
@@ -133,6 +124,5 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
-            isLightTheme: this.props.isLightTheme,
         })
 }

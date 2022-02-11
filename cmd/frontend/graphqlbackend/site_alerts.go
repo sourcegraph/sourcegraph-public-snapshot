@@ -8,18 +8,19 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -86,10 +87,10 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", "disables security upgrade notices"))
 
 func init() {
-	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if c.ExternalURL == "" {
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.ExternalURL, "http://") {
+		} else if deploy.Type() != deploy.Dev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
 			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
 		}
 
@@ -105,9 +106,6 @@ func init() {
 
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
-
-	// Notify about postgres deprecation
-	AlertFuncs = append(AlertFuncs, deprecationAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -229,25 +227,6 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 	return []*Alert{alert}
-}
-
-// This should be removed from 3.27
-func deprecationAlert(args AlertFuncArgs) []*Alert {
-	if envvar.SourcegraphDotComMode() {
-		return nil
-	}
-
-	cv, err := semver.NewVersion(version.Version())
-	if err != nil {
-		log15.Error("cannot determine version", "error", err)
-		return nil
-	}
-
-	if cv.Minor() == 26 && args.IsSiteAdmin {
-		return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: "Support for Postgres v11.x and below will be deprecated from Sourcegraph v3.27. Please reach out to support@sourcegraph.com if you require assistance upgrading.", IsDismissibleWithKeyValue: "true"}}
-	}
-
-	return nil
 }
 
 func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {

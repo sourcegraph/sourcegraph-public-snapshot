@@ -10,6 +10,7 @@
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-query` | GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise) |  |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 | `-vars` | GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}' |  |
 
 
@@ -27,6 +28,8 @@ Usage of 'src api':
     	GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -vars string
     	GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'
 

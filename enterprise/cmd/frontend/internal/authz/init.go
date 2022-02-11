@@ -15,32 +15,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
-	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ExternalServices = edb.NewExternalServicesStore
-	database.GlobalAuthz = edb.NewAuthzStore(db, clock)
+	database.Authz = func(db dbutil.DB) database.AuthzStore {
+		return edb.NewAuthzStore(db, clock)
+	}
+	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
+		return edb.NewAuthzStore(db, clock)
+	}
 
 	extsvcStore := database.ExternalServices(db)
 
+	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
-	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
-		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, extsvcStore)
+	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		_, providers, seriousProblems, warnings :=
+			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Add connection validation issue
+		for _, p := range providers {
+			for _, problem := range p.ValidateConnection(ctx) {
+				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
+			}
+		}
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
 	})
@@ -57,7 +72,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), extsvcStore)
+		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -116,27 +131,46 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	// (due to an error in parsing or verification, or because the license has expired).
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Site admins are exempt from license enforcement screens so that they can
-			// easily update the license key. Also ignore backend.ErrNotAuthenticated
-			// because we need to allow site admins to sign in.
-			err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
-			if err == nil || err == backend.ErrNotAuthenticated {
+			a := actor.FromContext(ctx)
+			// Ignore not authenticated users, because we need to allow site admins
+			// to sign in to set a license.
+			if !a.IsAuthenticated() {
 				next.ServeHTTP(w, r)
-				return
-			} else if err != backend.ErrMustBeSiteAdmin {
-				log15.Error("Error checking current user is site admin", "err", err)
-				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
+			siteadminOrHandler := func(handler func()) {
+				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
+				if err == nil {
+					// User is site admin, let them proceed.
+					next.ServeHTTP(w, r)
+					return
+				}
+				if err != backend.ErrMustBeSiteAdmin {
+					log15.Error("Error checking current user is site admin", "err", err)
+					http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
+					return
+				}
+
+				handler()
+			}
+
+			// Check if there are any license issues. If so, don't let the request go through.
+			// Exception: Site admins are exempt from license enforcement screens so that they
+			// can easily update the license key. We only fetch the user if we don't have a license,
+			// to save that DB lookup in most cases.
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				enforcement.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
+				siteadminOrHandler(func() {
+					enforcement.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
+				})
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				siteadminOrHandler(func() {
+					enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				})
 				return
 			}
 

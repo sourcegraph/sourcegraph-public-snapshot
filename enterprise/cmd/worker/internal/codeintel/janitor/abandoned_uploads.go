@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type abandonedUploadJanitor struct {
@@ -32,7 +32,7 @@ func NewAbandonedUploadJanitor(dbStore DBStore, ttl, interval time.Duration, met
 func (h *abandonedUploadJanitor) Handle(ctx context.Context) error {
 	count, err := h.dbStore.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-h.ttl))
 	if err != nil {
-		return errors.Wrap(err, "DeleteUploadsStuckUploading")
+		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}
 	if count > 0 {
 		log15.Debug("Deleted abandoned upload records", "count", count)

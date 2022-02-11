@@ -7,26 +7,25 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
-func NeedsSiteInit(baseURL string) (bool, error) {
+func NeedsSiteInit(baseURL string) (bool, string, error) {
 	resp, err := http.Get(baseURL + "/sign-in")
 	if err != nil {
-		return false, errors.Wrap(err, "get page")
+		return false, "", errors.Wrap(err, "get page")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	p, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, errors.Wrap(err, "read body")
+		return false, "", errors.Wrap(err, "read body")
 	}
-	return strings.Contains(string(p), `"needsSiteInit":true`), nil
+	return strings.Contains(string(p), `"needsSiteInit":true`), string(p), nil
 }
 
 // SiteAdminInit initializes the instance with given admin account.
@@ -60,7 +59,7 @@ func SignIn(baseURL, email, password string) (*Client, error) {
 
 // authenticate initializes an authenticated client with given request body.
 func authenticate(baseURL, path string, body interface{}) (*Client, error) {
-	client, err := newClient(baseURL)
+	client, err := NewClient(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
 	}
@@ -101,9 +100,9 @@ type Client struct {
 	userID string
 }
 
-// newClient instantiates a new client by performing a GET request then obtains the
-// CSRF token and cookie from its response.
-func newClient(baseURL string) (*Client, error) {
+// NewClient instantiates a new client by performing a GET request then obtains the
+// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only.)
+func NewClient(baseURL string) (*Client, error) {
 	resp, err := http.Get(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "get URL")
@@ -116,18 +115,12 @@ func newClient(baseURL string) (*Client, error) {
 	}
 
 	csrfToken := extractCSRFToken(string(p))
-	if csrfToken == "" {
-		return nil, errors.Wrap(err, `"X-Csrf-Token" not found in the response body`)
-	}
 	var csrfCookie *http.Cookie
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == "sg_csrf_token" {
 			csrfCookie = cookie
 			break
 		}
-	}
-	if csrfCookie == nil {
-		return nil, errors.Wrap(err, `"sg_csrf_token" cookie not found`)
 	}
 
 	return &Client{
@@ -151,8 +144,12 @@ func (c *Client) authenticate(path string, body interface{}) error {
 		return errors.Wrap(err, "new request")
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Csrf-Token", c.csrfToken)
-	req.AddCookie(c.csrfCookie)
+	if c.csrfToken != "" {
+		req.Header.Set("X-Csrf-Token", c.csrfToken)
+	}
+	if c.csrfCookie != nil {
+		req.AddCookie(c.csrfCookie)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -244,11 +241,15 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 	if token != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
 	} else {
-		// NOTE: We use this header to protect from CSRF attacks of HTTP API,
-		// see https://sourcegraph.com/github.com/sourcegraph/sourcegraph@0cf1f0ca7f64e44728ab122e3f7562da7b6b5042/-/blob/cmd/frontend/internal/cli/http.go#L41-42
+		// NOTE: This header is required to authenticate our session with a session cookie, see:
+		// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
 		req.Header.Set("X-Requested-With", "Sourcegraph")
-		req.AddCookie(c.csrfCookie)
 		req.AddCookie(c.sessionCookie)
+
+		// Older versions of Sourcegraph require a CSRF cookie.
+		if c.csrfCookie != nil {
+			req.AddCookie(c.csrfCookie)
+		}
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -275,9 +276,9 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "unmarshal response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs *multierror.Error
+			var errs *errors.MultiError
 			for _, err := range errResp.Errors {
-				errs = multierror.Append(errs, errors.New(err.Message))
+				errs = errors.Append(errs, errors.New(err.Message))
 			}
 			return errs
 		}
@@ -319,6 +320,10 @@ func (c *Client) Post(url string, body io.Reader) (*http.Response, error) {
 }
 
 func (c *Client) addCookies(req *http.Request) {
-	req.AddCookie(c.csrfCookie)
 	req.AddCookie(c.sessionCookie)
+
+	// Older versions of Sourcegraph require a CSRF cookie.
+	if c.csrfCookie != nil {
+		req.AddCookie(c.csrfCookie)
+	}
 }

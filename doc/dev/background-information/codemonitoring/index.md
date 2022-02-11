@@ -22,10 +22,10 @@ actions.
 Code monitoring is an enterprise functionality. To run it locally you need to start Sourcegraph as enterprise service:
 
 ```bash
-<sourcegraph root>/enterprise/dev/start.sh
+sg start # which defaults to `sg start enterprise`
 ```
 
-Code monitoring is still a prototype which means you have to enable it in the
+Code monitoring is still experimental which means you have to enable it in the
 settings to be visible in the UI. Open your local instance of Sourcegraph and go
 to `settings > User account > settings`.
 

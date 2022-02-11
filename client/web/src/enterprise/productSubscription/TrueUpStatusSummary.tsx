@@ -1,10 +1,13 @@
 import * as React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
+import { numberWithCommas } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Link } from '@sourcegraph/wildcard'
 
 import { SingleValueCard } from '../../components/SingleValueCard'
 import { formatUserCount } from '../../productSubscription/helpers'
+
+import styles from './TrueUpStatusSummary.module.scss'
 
 interface Props {
     /**
@@ -29,17 +32,17 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
     license,
 }) => (
     <>
-        <div className="true-up-status-summary mb-2 mt-4">
-            <div className="true-up-status-summary__container">
+        <div className="mb-2 mt-4">
+            <div className={styles.container}>
                 <SingleValueCard
-                    className="true-up-status-summary__item"
+                    className={styles.item}
                     value={numberWithCommas(license.userCount)}
                     valueTooltip={`${formatUserCount(license.userCount, true)} license`}
                     title="Licensed users"
                     subText="The number of users that are currently covered by your license. The true-up model allows having more users, and additional users will incur a retroactive charge on renewal."
                 />
                 <SingleValueCard
-                    className="true-up-status-summary__item"
+                    className={styles.item}
                     value={numberWithCommas(actualUserCount)}
                     valueTooltip={`${numberWithCommas(actualUserCount)} total users${
                         actualUserCountDate && ` (reached on ${actualUserCountDate})`
@@ -48,7 +51,7 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
                     subText="This is the highest peak of users on your installation since the license started, and this is the minimum number you need to purchase when you renew your license."
                 />
                 <SingleValueCard
-                    className="true-up-status-summary__item"
+                    className={styles.item}
                     value={numberWithCommas(Math.max(0, actualUserCount - license.userCount))}
                     valueTooltip={`${numberWithCommas(Math.max(0, actualUserCount - license.userCount))} users over${
                         actualUserCountDate && ` (on ${actualUserCountDate})`
@@ -60,9 +63,9 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
             </div>
             <small>
                 Learn more about{' '}
-                <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
+                <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
                     Sourcegraph's true-up pricing model
-                </a>
+                </Link>
                 .
             </small>
         </div>

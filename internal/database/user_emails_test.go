@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
@@ -58,7 +57,7 @@ func TestUserEmails_Get(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -106,7 +105,7 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -158,7 +157,7 @@ func TestUserEmails_SetPrimary(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -202,7 +201,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -272,7 +271,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	const emailA = "a@example.com"
@@ -353,7 +352,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	const email = "a@example.com"
@@ -396,7 +395,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	}
 }
 
-func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
+func isUserEmailVerified(ctx context.Context, db DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
@@ -411,7 +410,7 @@ func isUserEmailVerified(ctx context.Context, db dbutil.DB, userID int32, email 
 	return false, errors.Errorf("email not found: %s", email)
 }
 
-func isUserEmailPrimary(ctx context.Context, db dbutil.DB, userID int32, email string) (bool, error) {
+func isUserEmailPrimary(ctx context.Context, db DB, userID int32, email string) (bool, error) {
 	userEmails, err := UserEmails(db).ListByUser(ctx, UserEmailsListOptions{
 		UserID: userID,
 	})
@@ -431,7 +430,7 @@ func TestUserEmails_SetLastVerificationSentAt(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -479,7 +478,7 @@ func TestUserEmails_GetLatestVerificationSentEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	const addr = "alice@example.com"
@@ -538,7 +537,7 @@ func TestUserEmails_GetVerifiedEmails(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{

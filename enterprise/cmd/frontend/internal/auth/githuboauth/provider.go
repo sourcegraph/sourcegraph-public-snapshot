@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -22,11 +22,8 @@ import (
 
 const sessionKey = "githuboauth@0"
 
-func parseProvider(p *schema.GitHubAuthProvider, db dbutil.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
-	rawURL := p.Url
-	if rawURL == "" {
-		rawURL = "https://github.com/"
-	}
+func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+	rawURL := p.GetURL()
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		messages = append(messages, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
@@ -63,7 +60,7 @@ func parseProvider(p *schema.GitHubAuthProvider, db dbutil.DB, sourceCfg schema.
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return github.CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(&sessionIssuerHelper{
+				oauth.SessionIssuer(db, &sessionIssuerHelper{
 					CodeHost:    codeHost,
 					db:          db,
 					clientID:    p.ClientID,
@@ -101,7 +98,7 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 }
 
-var clientIDSecretValidator = lazyregexp.New("^[a-z0-9]*$")
+var clientIDSecretValidator = lazyregexp.New("^[a-zA-Z0-9.]*$")
 
 func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
@@ -114,7 +111,7 @@ func requestedScopes(p *schema.GitHubAuthProvider, extraScopes []string) []strin
 	}
 
 	// Needs extra scope to check organization membership
-	if len(p.AllowOrgs) > 0 {
+	if len(p.AllowOrgs) > 0 || p.AllowGroupsPermissionsSync {
 		scopes = append(scopes, "read:org")
 	}
 

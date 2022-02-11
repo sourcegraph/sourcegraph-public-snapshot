@@ -6,11 +6,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitFunc func(args ...string) (string, error)
 
+// GitGetChildren lists all the children under the givem directories for the given commit.
+//
+// NOTE: A copy of this function was added to
+// sourcegraph/sourcegraph/internal/vcs/git called ListDirectoryChildren as we
+// don't want to rely on this package from there.
 func GitGetChildren(gitFunc GitFunc, commit string, dirnames []string) (map[string][]string, error) {
 	out, err := gitFunc(
 		append(
@@ -94,13 +99,11 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 					break
 				}
 			}
-		} else {
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
 			// No need to loop here. If we have a root input directory it
 			// will necessarily be the last element due to the previous
 			// sorting step.
-			if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
-				childrenMap[""] = append(childrenMap[""], path)
-			}
+			childrenMap[""] = append(childrenMap[""], path)
 		}
 	}
 

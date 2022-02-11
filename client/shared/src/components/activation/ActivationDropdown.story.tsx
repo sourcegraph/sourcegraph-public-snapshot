@@ -1,22 +1,15 @@
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 
+import { subtypeOf } from '@sourcegraph/common'
 import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { subtypeOf } from '../../util/types'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Activation } from './Activation'
 import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
-
-const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
-    <>
-        <style>{webMainStyles}</style>
-        <div>{story()}</div>
-    </>
-))
 
 const baseActivation = (): Activation => ({
     steps: [
@@ -30,7 +23,7 @@ const baseActivation = (): Activation => ({
             title: 'Search your code',
             detail: (
                 <span>
-                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    Head to the <Link to="/search">homepage</Link> and perform a search query on your code.{' '}
                     <strong>Example:</strong> type 'lang:' and select a language
                 </span>
             ),
@@ -58,8 +51,20 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     portal: false,
 })
 
-add('Loading', () => <ActivationDropdown {...commonProps} activation={baseActivation()} />)
-add('0/4 completed', () => (
+const decorator: DecoratorFn = story => (
+    <>
+        <style>{webMainStyles}</style>
+        <div>{story()}</div>
+    </>
+)
+const config: Meta = {
+    title: 'shared/ActivationDropdown',
+    decorators: [decorator],
+}
+export default config
+export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
+
+export const _04Completed: Story = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -72,8 +77,11 @@ add('0/4 completed', () => (
             },
         }}
     />
-))
-add('1/4 completed', () => (
+)
+
+_04Completed.storyName = '0/4 completed'
+
+export const _14Completed: Story = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -86,4 +94,6 @@ add('1/4 completed', () => (
             },
         }}
     />
-))
+)
+
+_14Completed.storyName = '1/4 completed'

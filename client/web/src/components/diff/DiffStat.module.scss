@@ -1,0 +1,20 @@
+.diff-stat {
+    display: inline-flex;
+    align-items: center;
+}
+
+.empty {
+    background-color: var(--text-muted);
+}
+
+.square {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-left: 0.125rem;
+}
+
+.squares {
+    display: flex;
+    flex-wrap: nowrap;
+}
