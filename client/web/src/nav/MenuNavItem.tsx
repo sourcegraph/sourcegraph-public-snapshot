@@ -5,7 +5,7 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { ComponentType, forwardRef, useCallback, useState } from 'react'
 
-import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
 import styles from './MenuNavItem.module.scss'
 
@@ -13,6 +13,7 @@ interface MenuNavItemProps {
     children: React.ReactNode
     openByDefault?: boolean
     as?: ComponentType
+    position?: Position
 }
 
 /**
@@ -21,7 +22,7 @@ interface MenuNavItemProps {
  *
  */
 export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef((props, reference) => {
-    const { children, openByDefault, as: Component } = props
+    const { children, openByDefault, as: Component, position = Position.bottomStart } = props
 
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
@@ -34,7 +35,7 @@ export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef
                         <MenuIcon className="icon-inline" />
                         {isExpanded ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
                     </MenuButton>
-                    <MenuList>
+                    <MenuList position={position}>
                         {React.Children.map(children, child => child && <MenuItem onSelect={noop}>{child}</MenuItem>)}
                     </MenuList>
                 </>

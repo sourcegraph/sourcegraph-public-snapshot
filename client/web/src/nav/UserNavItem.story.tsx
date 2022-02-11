@@ -5,14 +5,14 @@ import React from 'react'
 
 import { Position } from '@sourcegraph/wildcard'
 
-import { WebStory, WebStoryProps } from '../components/WebStory'
+import { WebStory } from '../components/WebStory'
 import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 
-const config: Meta<WebStoryProps> = {
+const config: Meta = {
     title: 'web/nav/UserNavItem',
     decorators: [story => <div className="p-3 container h-100 web-content">{story()}</div>],
     parameters: {
