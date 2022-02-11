@@ -35,11 +35,13 @@ if [[ "$CACHE" == "true" ]]; then
 fi
 
 # shellcheck disable=SC2086
+docker pull us.gcr.io/sourcegraph-dev/grafana:insiders || true
 docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION
+  --build-arg VERSION \
+  --cache-from us.gcr.io/sourcegraph-dev/grafana:insiders
 
 # cd out of $BUILDDIR for cleanup
 popd
