@@ -106,7 +106,7 @@ import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
-import { githubCodeHost } from '../github/codeHost'
+import { GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
@@ -215,18 +215,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
-
-    /**
-     * Configuration for built-in search input enhancement
-     */
-    searchEnhancement?: {
-        /** Search input element resolver */
-        searchViewResolver: ViewResolver<{ element: HTMLElement }>
-        /** Search result element resolver */
-        resultViewResolver: ViewResolver<{ element: HTMLElement }>
-        /** Callback to trigger on input element change */
-        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
-    }
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -862,8 +850,15 @@ export async function handleCodeHost({
             (await codeHost.getContext?.())?.privateRepository
         )
 
-    if (codeHost.searchEnhancement) {
-        subscriptions.add(initializeSearchEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
+    if (isGithubCodeHost(codeHost)) {
+        // TODO: add tests in codeHost.test.tsx
+        const { searchEnhancement, enhanceSearchPage } = codeHost
+        if (searchEnhancement) {
+            subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
+        }
+        if (enhanceSearchPage) {
+            subscriptions.add(enhanceSearchPage(sourcegraphURL, mutations))
+        }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -1467,8 +1462,8 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     return codeHost
 }
 
-function initializeSearchEnhancement(
-    searchEnhancement: NonNullable<CodeHost['searchEnhancement']>,
+function initializeGithubSearchInputEnhancement(
+    searchEnhancement: NonNullable<GithubCodeHost['searchEnhancement']>,
     sourcegraphURL: string,
     mutations: Observable<MutationRecordLike[]>
 ): Subscription {

@@ -1,14 +1,17 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import { defer, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import React from 'react'
+import { render } from 'react-dom'
+import { defer, Observable, of, Subscription } from 'rxjs'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
     RepoSpec,
@@ -19,8 +22,10 @@ import {
 
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
+import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
-import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
+import { getPlatformName } from '../../util/context'
+import { MutationRecordLike, querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -316,7 +321,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'flash flash-error',
 }
 
-const searchEnhancement: CodeHost['searchEnhancement'] = {
+const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
     searchViewResolver: {
         selector: '.js-site-search-form input[type="text"][aria-controls="jump-to-results"]',
         resolveView: element => ({ element }),
@@ -407,10 +412,255 @@ export const isPrivateRepository = (
         })
 }
 
-export const githubCodeHost: CodeHost = {
+export interface GithubCodeHost extends CodeHost {
+    /**
+     * Configuration for built-in search input enhancement
+     */
+    searchEnhancement: {
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+    }
+
+    enhanceSearchPage: (sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>) => Subscription
+}
+
+export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
+
+const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
+const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
+const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
+const isSearchResultsPage = (): boolean =>
+    Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
+const isSearchPage = (): boolean =>
+    isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
+
+type GithubResultType =
+    | 'repositories'
+    | 'code'
+    | 'commits'
+    | 'issues'
+    | 'discussions'
+    | 'packages'
+    | 'marketplace'
+    | 'topics'
+    | 'wikis'
+    | 'users'
+
+const getGithubResultType = (): GithubResultType | '' => {
+    const githubResultType = new URLSearchParams(window.location.search).get('type')
+
+    return githubResultType ? (githubResultType.toLowerCase() as GithubResultType) : ''
+}
+
+type SourcegraphResultType = 'repo' | 'commit'
+
+const getSourcegraphResultType = (): SourcegraphResultType | '' => {
+    const githubResultType = getGithubResultType()
+
+    switch (githubResultType) {
+        case 'repositories':
+            return 'repo'
+        case 'commits':
+            return 'commit'
+        case 'code':
+            return ''
+        default:
+            return isSimpleSearchPage() ? 'repo' : ''
+    }
+}
+
+const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
+
+const buildSourcegraphQuery = (searchTerms: string[]): string => {
+    const queryParameters = searchTerms.filter(Boolean)
+    const sourcegraphResultType = getSourcegraphResultType()
+    const resultsLanguage = getSourcegraphResultLanguage()
+
+    if (sourcegraphResultType) {
+        queryParameters.push(`type:${sourcegraphResultType}`)
+    }
+
+    if (resultsLanguage) {
+        queryParameters.push(`lang:${encodeURIComponent(resultsLanguage)}`)
+    }
+
+    if (isRepoSearchPage()) {
+        const [user, repo] = window.location.pathname.split('/').filter(Boolean)
+        queryParameters.push(`repo:${user}/${repo}`)
+    }
+
+    return queryParameters.join('+')
+}
+
+const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
+    let element = document.querySelector<HTMLElement>(`#${id}`)
+
+    if (element) {
+        return element
+    }
+
+    element = document.createElement('div')
+    element.setAttribute('id', id)
+    element.classList.add(...className.split(/\s/gi))
+
+    return element
+}
+
+/**
+ * Adds "Search on Sourcegraph buttons" to GitHub search pages
+ */
+function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>): Subscription {
+    if (!isSearchPage()) {
+        return new Subscription()
+    }
+
+    // TODO: cleanup button on unsubscribe
+    const renderSourcegraphButton = ({
+        container,
+        className = '',
+        getSearchQuery,
+        utmCampaign,
+    }: {
+        container: HTMLElement
+        className?: string
+        utmCampaign: string
+        getSearchQuery: () => string[]
+    }): void => {
+        const sourcegraphSearchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {
+            utm_source: getPlatformName(),
+            utm_campaign: utmCampaign,
+        })
+
+        render(
+            <SourcegraphIconButton
+                label="Search on Sourcegraph"
+                title="Search on Sourcegraph to get hover tooltips, go to definition and more"
+                ariaLabel="Search on Sourcegraph to get hover tooltips, go to definition and more"
+                className={classNames('btn', 'm-auto', className)}
+                iconClassName={classNames('mr-1', 'v-align-middle', styles.icon)}
+                href={sourcegraphSearchURL.href}
+                onClick={event => {
+                    const searchQuery = buildSourcegraphQuery(getSearchQuery())
+
+                    // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be correctly parsed by sourcegraph search page.
+                    ;(event.target as HTMLAnchorElement).href = `${sourcegraphSearchURL.href}${
+                        searchQuery ? `&q=${searchQuery}` : ''
+                    }`
+                }}
+            />,
+            container
+        )
+    }
+
+    if (isSearchResultsPage()) {
+        const renderSearchResultsPageButtons = (): void => {
+            /*
+                Separate search form is visible for screen sizes xs-md, so we add a Sourcegraph button
+                next to form submit button and track search query changes from the corresponding form input.
+                On screen sizes smaller than md Github *Submit* and *Search on Sourcegraph* buttons are hidden while search input remains visible.
+            */
+
+            const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
+            const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
+            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector<HTMLButtonElement>(
+                "button[type='submit']"
+            )
+
+            if (pageSearchInput && pageSearchFormSubmitButton) {
+                const buttonContainer = queryByIdOrCreate('pageSearchFormSourcegraphButton', 'ml-2 d-none d-md-block')
+                pageSearchFormSubmitButton.after(buttonContainer)
+
+                renderSourcegraphButton({
+                    container: buttonContainer,
+                    utmCampaign: 'github-search-results-page',
+                    getSearchQuery: () => pageSearchInput.value.split(' ').map(substring => substring.trim()),
+                })
+            }
+
+            /*
+                On screen sizes lg and larger separate search form is hidden, so we add a Sourcegraph button
+                next to search results header container and track search query changes from search input in header.
+            */
+
+            const headerSearchInput = document.querySelector<HTMLInputElement>(
+                "header form.js-site-search-form input.form-control[name='q']"
+            )
+            const searchResultsContainer = document.querySelector<HTMLDivElement>('.codesearch-results')
+            const emptyResultsContainer = searchResultsContainer?.querySelector('.blankslate')
+            const searchResultsContainerHeading = searchResultsContainer?.querySelector<HTMLHeadingElement>(
+                'div > div > h3'
+            )
+
+            if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
+                const buttonContainer: HTMLElement = queryByIdOrCreate(
+                    'headerSearchInputSourcegraphButton',
+                    'ml-auto d-none d-lg-block'
+                )
+
+                if (emptyResultsContainer) {
+                    buttonContainer.classList.add('mt-2')
+                    emptyResultsContainer.append(buttonContainer)
+                } else if (searchResultsContainerHeading) {
+                    buttonContainer.classList.add('mr-2')
+                    searchResultsContainerHeading.after(buttonContainer)
+                }
+
+                renderSourcegraphButton({
+                    container: buttonContainer,
+                    className: emptyResultsContainer ? '' : 'btn-sm',
+                    utmCampaign: 'github-search-results-page',
+                    getSearchQuery: () => headerSearchInput.value.split(' ').map(substring => substring.trim()),
+                })
+            }
+        }
+
+        return mutations
+            .pipe(
+                map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
+                filter(Boolean),
+                distinctUntilChanged(),
+                filter(() => {
+                    const githubResultType = getGithubResultType()
+                    return (
+                        githubResultType === 'repositories' ||
+                        githubResultType === 'commits' ||
+                        githubResultType === 'code' ||
+                        (githubResultType === '' && (isSimpleSearchPage() || isRepoSearchPage()))
+                    )
+                })
+            )
+            .subscribe(() => renderSearchResultsPageButtons())
+    }
+
+    /* Simple and advanced search pages */
+
+    const searchForm = document.querySelector<HTMLFormElement>('#search_form')
+    const searchInputContainer = searchForm?.querySelector('.search-form-fluid')
+    const inputElement = searchForm?.querySelector<HTMLInputElement>('input')
+
+    if (searchInputContainer && inputElement) {
+        const buttonContainer = queryByIdOrCreate('searchInputSourcegraphButton', 'ml-0 ml-md-2 mt-2 mt-md-0')
+        searchInputContainer?.append(buttonContainer)
+
+        renderSourcegraphButton({
+            container: buttonContainer,
+            utmCampaign: `github-${isAdvancedSearchPage() ? 'advanced' : 'simple'}-search-page`,
+            getSearchQuery: () => inputElement.value.split(' ').map(substring => substring.trim()),
+        })
+    }
+
+    return new Subscription()
+}
+
+export const githubCodeHost: GithubCodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     searchEnhancement,
+    enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],

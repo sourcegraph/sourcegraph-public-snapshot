@@ -18,6 +18,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 - Add filtering of browser extension dropdown duplicated URLs [#pull/30674](https://github.com/sourcegraph/sourcegraph/pull/30674), [#issues/30673](https://github.com/sourcegraph/sourcegraph/issues/30673)
 - Add code intel support to GitHub pull request commit view [#pull/30618](https://github.com/sourcegraph/sourcegraph/pull/30618), [#issues/30623](https://github.com/sourcegraph/sourcegraph/issues/30623)
 - Add tracking of inbound traffic from browser extension/code host integration [#pull/30170](https://github.com/sourcegraph/sourcegraph/pull/30170), [#issues/27082](https://github.com/sourcegraph/sourcegraph/issues/27082)
+- Add "Search on Sourcegraph" buttons to GitHub search pages [pull/#30399](https://github.com/sourcegraph/sourcegraph/pull/30399), [#issues/10410](https://github.com/sourcegraph/sourcegraph/issues/10410), [#issues/30968](https://github.com/sourcegraph/sourcegraph/issues/30968)
 
 ## Chrome & Firefox v22.1.25.1535, Safari v1.10
 
