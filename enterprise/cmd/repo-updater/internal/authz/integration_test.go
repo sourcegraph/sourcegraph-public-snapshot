@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -437,6 +439,141 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+	})
+}
+
+func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	// Token with org:write is required, so we can use a token from milton's account in
+	// ghe.sgdev.org.
+	token := os.Getenv("GITHUB_ENTERPRISE_TOKEN")
+
+	spec := extsvc.AccountSpec{
+		ServiceType: extsvc.TypeGitHub,
+		ServiceID:   "https://ghe.sgdev.org/api/v3/",
+		AccountID:   "2383", // TODO: For now indradhanush.
+	}
+
+	svc := types.ExternalService{
+		Kind:      extsvc.KindGitHub,
+		CreatedAt: timeutil.Now(),
+		Config:    `{"url": "https://ghe.sgdev.org/api/v3", "authorization": {}}`,
+	}
+
+	url, err := url.Parse("https://ghe.sgdev.org/api/v3")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("repo-centric", func(t *testing.T) {
+		newUser := database.NewUser{
+			Email:           "integration-test@sourcegraph.com",
+			Username:        "integration-test",
+			EmailIsVerified: true,
+		}
+
+		t.Run("groups-enabled", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGithubInternalRepoVisibility: true,
+					},
+				},
+			})
+
+			name := t.Name()
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+			defer save()
+
+			doer, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+			cli := extsvcGitHub.NewV3Client(url, &auth.OAuthBearerToken{Token: token}, doer)
+
+			testDB := dbtest.NewDB(t)
+			ctx := actor.WithInternalActor(context.Background())
+
+			repoStore := repos.NewStore(testDB, sql.TxOptions{})
+
+			if err := repoStore.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
+				t.Fatal(err)
+			}
+
+			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+				GitHubClient:   cli,
+				GitHubURL:      url,
+				BaseToken:      token,
+				GroupsCacheTTL: 72,
+			})
+			provider.EnableGithubInternalRepoVisibility()
+
+			authz.SetProviders(false, []authz.Provider{provider})
+
+			repo := types.Repo{
+				Name:    "ghe.sgdev.org/sgtest/internal",
+				Private: true,
+				URI:     "ghe.sgdev.org/sgtest/internal",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnk0NDIyODI=",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://ghe.sgdev.org/api/v3/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
+				},
+			}
+
+			if err := repoStore.RepoStore.Create(ctx, &repo); err != nil {
+				t.Fatal(err)
+			}
+
+			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			db := database.NewDB(testDB)
+			permsStore := edb.Perms(testDB, timeutil.Now)
+			syncer := NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, nil)
+
+			if err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{}); err != nil {
+				t.Fatal(err)
+			}
+
+			p := &authz.UserPermissions{
+				UserID: userID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			}
+
+			if err := permsStore.LoadUserPermissions(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+
+			wantIDs := []uint32{1}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+
+			// sync again and check
+			if err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{}); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := permsStore.LoadUserPermissions(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+
 			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
