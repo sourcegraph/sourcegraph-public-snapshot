@@ -16,12 +16,17 @@ exit_code="$?"
 
 # Check for annotations
 for file in "$annotation_dir"/*; do
+  name=$(basename "$file")
+
+  case "$name" in
+    *.md) annotate_opts="$annotate_opts -m" && name="${name%.*}" ;;
+  esac
+
   if [ "$include_names" = "true" ]; then
-    section=$(basename "$file")
-    eval "./enterprise/dev/ci/scripts/annotate.sh -s '$section' $annotate_opts <'$file'"
-  else
-    eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_opts <'$file'"
+    annotate_opts="-s '$name' $annotate_opts"
   fi
+
+  eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_opts <'$file'"
 done
 
 exit "$exit_code"

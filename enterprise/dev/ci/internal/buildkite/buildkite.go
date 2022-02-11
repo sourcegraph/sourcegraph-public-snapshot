@@ -264,8 +264,7 @@ const (
 )
 
 type AnnotationOpts struct {
-	Type     AnnotationType
-	Markdown bool
+	Type AnnotationType
 
 	IncludeNames bool
 
@@ -281,10 +280,6 @@ func AnnotatedCmd(command string, opts AnnotationOpts) StepOpt {
 		annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
 	} else {
 		annotateOpts += fmt.Sprintf(" -t %s", opts.Type)
-	}
-
-	if opts.Markdown {
-		annotateOpts += " -m"
 	}
 
 	if opts.MultiJobContext != "" {
