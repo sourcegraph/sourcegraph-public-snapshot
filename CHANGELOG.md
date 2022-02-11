@@ -21,6 +21,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- A bug in 3.36.3 caused `src batch apply` to no longer accept a file provided with `-f`. This has been fixed. [#695](https://github.com/sourcegraph/src-cli/pull/695)
+
 ### Removed
 
 ## 3.36.3

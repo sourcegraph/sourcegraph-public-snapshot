@@ -39,8 +39,9 @@ Examples:
 			return err
 		}
 
-		if len(flagSet.Args()) != 0 {
-			return cmderrors.Usage("additional arguments not allowed")
+		file, err := getBatchSpecFile(flagSet, &flags.file)
+		if err != nil {
+			return err
 		}
 
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
@@ -54,13 +55,13 @@ Examples:
 			execUI = &ui.TUI{Out: out}
 		}
 
-		err := executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
+		if err = executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
+			file:   file,
 
 			applyBatchSpec: true,
-		})
-		if err != nil {
+		}); err != nil {
 			return cmderrors.ExitCode(1, nil)
 		}
 
