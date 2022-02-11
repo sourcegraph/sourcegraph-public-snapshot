@@ -264,29 +264,27 @@ export const Panel = React.memo<Props>(props => {
                 <TabList
                     wrapperClassName={styles.header}
                     actions={
-                        <>
-                            <small>
-                                {activeTab && (
-                                    <ActionsNavItems
-                                        {...props}
-                                        // TODO remove references to Bootstrap from shared, get class name from prop
-                                        // This is okay for now because the Panel is currently only used in the webapp
-                                        listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                        listItemClass="px-2 mx-2"
-                                        actionItemClass="font-weight-medium"
-                                        actionItemIconClass="icon-inline"
-                                        menu={ContributableMenu.PanelToolbar}
-                                        scope={{
-                                            type: 'panelView',
-                                            id: activeTab.id,
-                                            hasLocations: Boolean(activeTab.hasLocations),
-                                        }}
-                                        wrapInList={true}
-                                        location={location}
-                                        transformContributions={transformPanelContributions}
-                                    />
-                                )}
-                            </small>
+                        <div className="align-items-center d-flex">
+                            {activeTab && (
+                                <ActionsNavItems
+                                    {...props}
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                    listItemClass="px-2 mx-2"
+                                    actionItemClass="font-weight-medium"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={{
+                                        type: 'panelView',
+                                        id: activeTab.id,
+                                        hasLocations: Boolean(activeTab.hasLocations),
+                                    }}
+                                    wrapInList={true}
+                                    location={location}
+                                    transformContributions={transformPanelContributions}
+                                />
+                            )}
                             <Button
                                 onClick={handlePanelClose}
                                 variant="icon"
@@ -297,7 +295,7 @@ export const Panel = React.memo<Props>(props => {
                             >
                                 <CloseIcon className="icon-inline" />
                             </Button>
-                        </>
+                        </div>
                     }
                 >
                     {items.map(({ label, id, trackTabClick }) => (
