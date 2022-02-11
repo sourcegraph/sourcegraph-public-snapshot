@@ -83,6 +83,7 @@ type MonitorAction interface {
 type MonitorEmailResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	Priority() string
 	Header() string
 	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
@@ -92,6 +93,7 @@ type MonitorEmailResolver interface {
 type MonitorWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -99,6 +101,7 @@ type MonitorWebhookResolver interface {
 type MonitorSlackWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -163,20 +166,23 @@ type CreateActionArgs struct {
 }
 
 type CreateActionEmailArgs struct {
-	Enabled    bool
-	Priority   string
-	Recipients []graphql.ID
-	Header     string
+	Enabled        bool
+	IncludeResults bool
+	Priority       string
+	Recipients     []graphql.ID
+	Header         string
 }
 
 type CreateActionWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type CreateActionSlackWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type ToggleCodeMonitorArgs struct {
