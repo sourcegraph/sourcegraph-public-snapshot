@@ -103,13 +103,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		headers: map[string]string{
 			headerKeyActorUID: "",
 		},
-		wantActor: &Actor{Internal: true},
-	}, {
-		name: "backcompat: legacy user actor header",
-		headers: map[string]string{
-			headerKeyLegacyActorUID: "1234",
-		},
-		wantActor: &Actor{UID: 1234},
+		wantActor: &Actor{Internal: false},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

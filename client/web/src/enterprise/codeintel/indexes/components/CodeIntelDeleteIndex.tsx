@@ -1,7 +1,7 @@
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'
 
 export interface CodeIntelDeleteIndexProps {

@@ -9,12 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestSetActorDeleteSession(t *testing.T) {
@@ -23,11 +22,13 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	db := database.NewDB(nil)
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -140,10 +141,13 @@ func TestSessionExpiry(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -167,7 +171,6 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	db := database.NewDB(nil)
 	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
@@ -181,13 +184,15 @@ func TestManualSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := database.NewDB(nil)
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
 		return user, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new session
 	w := httptest.NewRecorder()
@@ -224,8 +229,8 @@ func TestCookieMiddleware(t *testing.T) {
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
 
-	db := database.NewDB(nil)
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
 			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 		}
@@ -233,8 +238,10 @@ func TestCookieMiddleware(t *testing.T) {
 			return nil, &errcode.Mock{IsNotFound: true}
 		}
 		return nil, errors.New("x") // other error
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start new sessions for all actors
 	authedReqs := make([]*http.Request, len(actors))
@@ -348,11 +355,11 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	// request. Later we'll change the value in the database, and the
 	// mismatch will be noticed, terminating the session.
 	user := &types.User{ID: 1, CreatedAt: time.Now()}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return user, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
-	db := database.NewDB(nil)
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start a new session for the user with ID 1. Their creation time
 	// will be recorded into the session store.
@@ -385,10 +392,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	// won't match what we have in the database, so we indicate that something has gone
 	// wrong / someone may be impersonated etc.
 	user = &types.User{ID: 1, CreatedAt: time.Now().Add(time.Minute)}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return user, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 	// Perform the authenticated request again and verify that the
 	// session was terminated due to the mismatch.
@@ -409,11 +413,11 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	// This user's session will _not_ have the UserCreatedAt value in the session
 	// store. When that situation occurs, we want to allow the session to continue
 	// as this is a logged-in user with a session that was created before the change.
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
-	db := database.NewDB(nil)
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, CreatedAt: time.Now()}, nil)
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	// Start a new session for the user with ID 1. Their creation time will not be
 	// be recorded into the session store.

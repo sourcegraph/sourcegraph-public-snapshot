@@ -15,12 +15,8 @@ Click "Create new dashboard" in the top right corner and name your dashboard. Da
 Set a visibility level for your dashboard. Dashboards [respect insights' permissions](../explanations/viewing_code_insights.md#dashboard-visibility-respects-insights-visibility), so don't create an organization-shared dashboard if you have private insights you want to attach to it. 
 
 - Private: visible only to you 
-- Shared with an organization: visible to everyone in the organization 
+- Shared with [an organization](../../admin/organizations.md): visible to everyone in the organization 
 - Global: visible to everyone on the Sourcegraph instance 
-
-> Global visibility is currently only available if your instance is not [using a separate global settings file](../../admin/config/advanced_config_file.md#global-settings). Global visibility regardless of settings file setup will arrive by October 2021. 
-
-> The **quick workaround** is to [make an organization and easily add all users to it](../../admin/organizations.md). 
 
 Then click "Create dashboard." 
 

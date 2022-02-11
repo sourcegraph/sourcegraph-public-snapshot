@@ -4,18 +4,7 @@ import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    BehaviorSubject,
-    combineLatest,
-    merge,
-    EMPTY,
-    from,
-    fromEvent,
-    of,
-    ReplaySubject,
-    Subject,
-    Subscription,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -31,6 +20,25 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
+import {
+    getCodeElementsInRange,
+    HoveredToken,
+    locateTarget,
+    findPositionsFromEvents,
+    createHoverifier,
+} from '@sourcegraph/codeintellify'
+import {
+    asError,
+    isErrorLike,
+    isDefined,
+    property,
+    observeResize,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -39,8 +47,6 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { createHoverifier, findPositionsFromEvents } from '@sourcegraph/shared/src/codeintellify'
-import { getCodeElementsInRange, HoveredToken, locateTarget } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -49,13 +55,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
-    LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
     ModeSpec,
     UIPositionSpec,
     RepoSpec,
@@ -63,16 +65,12 @@ import {
     RevisionSpec,
     toURIWithPath,
     parseQueryAndHash,
-    toPositionOrRangeQueryParameter,
-    addLineRangeQueryParameter,
-    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'
@@ -245,15 +243,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
-
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -275,7 +269,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         { extensionsController }
                     ),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
         [
             // None of these dependencies are likely to change
@@ -284,7 +277,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             hoverOverlayElements,
             blobElements,
             rerenders,
-            closeButtonClicks,
         ]
     )
 
@@ -326,12 +318,16 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(
-                                addLineRangeQueryParameter(new URLSearchParams(location.search), query)
-                            ),
-                        })
+                        if (position && !('character' in position)) {
+                            // Only change the URL when clicking on blank space on the line (not on
+                            // characters). Otherwise, this would interfere with go to definition.
+                            props.history.push({
+                                ...location,
+                                search: formatSearchParameters(
+                                    addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                                ),
+                            })
+                        }
                     }),
                     mapTo(undefined)
                 ),
@@ -614,8 +610,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
+                        nav={url => props.history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                         extensionsController={extensionsController}
                     />
                 )}

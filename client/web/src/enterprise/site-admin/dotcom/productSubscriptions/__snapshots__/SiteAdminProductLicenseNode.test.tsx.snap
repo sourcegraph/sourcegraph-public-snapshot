@@ -14,7 +14,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         <strong>
           License in 
           <a
-            class="mr-3"
+            class="anchorLink mr-3"
             href="/s"
           >
             s
@@ -81,7 +81,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg
@@ -118,7 +118,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         <strong>
           License in 
           <a
-            class="mr-3"
+            class="anchorLink mr-3"
             href="/s"
           >
             s
@@ -180,7 +180,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg

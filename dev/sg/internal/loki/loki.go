@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const pushEndpoint = "/loki/api/v1/push"
@@ -53,18 +54,6 @@ type StreamLabels struct {
 	Branch string `json:"branch"`
 }
 
-// Logs come out with a ton yikes
-func cleanAnsi(s string) string {
-	// https://github.com/acarl005/stripansi/blob/master/stripansi.go
-	ansi := regexp.MustCompile("[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))")
-	s = ansi.ReplaceAllString(s, "")
-	// Other weird markers not caught be above regex
-	s = strings.ReplaceAll(s, "\x1BE", "")
-	s = strings.ReplaceAll(s, "\x1b", "")
-	s = strings.ReplaceAll(s, "\a", "")
-	return s
-}
-
 // NewStreamFromJobLogs cleans the given log data, splits it into log entries, merges
 // entries with the same timestamp, and returns a Stream that can be pushed to Loki.
 func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
@@ -73,7 +62,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 		App:       "buildkite",
 		Component: "build-logs",
 	}
-	cleanedContent := cleanAnsi(*log.Content)
+	cleanedContent := bk.CleanANSI(*log.Content)
 
 	// seems to be some kind of buildkite line separator, followed by a timestamp
 	const bkTimestampSeparator = "_bk;"
@@ -84,7 +73,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 		}, nil
 	}
 	if !strings.Contains(cleanedContent, bkTimestampSeparator) {
-		return nil, fmt.Errorf("log content does not contain Buildkite timestamps, denoted by %q", bkTimestampSeparator)
+		return nil, errors.Newf("log content does not contain Buildkite timestamps, denoted by %q", bkTimestampSeparator)
 	}
 	lines := strings.Split(cleanedContent, bkTimestampSeparator)
 
@@ -100,7 +89,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 
 		tsMatches := timestamp.FindStringSubmatch(line)
 		if len(tsMatches) == 0 {
-			return nil, fmt.Errorf("no timestamp on line %q", line)
+			return nil, errors.Newf("no timestamp on line %q", line)
 		}
 
 		line = strings.TrimSpace(strings.Replace(line, tsMatches[0], "", 1))
@@ -158,7 +147,7 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 		if strings.Contains(string(b), "entry out of order") {
 			return nil
 		}
-		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(b))
+		return errors.Newf("unexpected status code %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
 }

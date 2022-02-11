@@ -21,12 +21,24 @@ type batchSpecWorkspaceStepResolver struct {
 	cachedResult *execution.AfterStepResult
 }
 
+func (r *batchSpecWorkspaceStepResolver) Number() int32 {
+	return int32(r.index + 1)
+}
+
 func (r *batchSpecWorkspaceStepResolver) Run() string {
 	return r.step.Run
 }
 
 func (r *batchSpecWorkspaceStepResolver) Container() string {
 	return r.step.Container
+}
+
+func (r *batchSpecWorkspaceStepResolver) IfCondition() *string {
+	cond := r.step.IfCondition()
+	if cond == "" {
+		return nil
+	}
+	return &cond
 }
 
 func (r *batchSpecWorkspaceStepResolver) CachedResultFound() bool {

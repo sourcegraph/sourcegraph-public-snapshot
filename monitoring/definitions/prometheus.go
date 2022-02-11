@@ -31,7 +31,7 @@ func Prometheus() *monitoring.Container {
 							Query:       `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(30, nil), // standard prometheus_rule_group_interval_seconds
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).MinAuto().LegendFormat("{{rule_group}}"),
-							Owner:       monitoring.ObservableOwnerDistribution,
+							Owner:       monitoring.ObservableOwnerDevOps,
 							Interpretation: fmt.Sprintf(`
 								A high value here indicates Prometheus rule evaluation is taking longer than expected.
 								It might indicate that certain rule groups are taking too long to evaluate, or Prometheus is underprovisioned.
@@ -50,7 +50,7 @@ func Prometheus() *monitoring.Container {
 							Query:          `sum by(rule_group) (rate(prometheus_rule_evaluation_failures_total[5m]))`,
 							Warning:        monitoring.Alert().Greater(0, nil),
 							Panel:          monitoring.Panel().LegendFormat("{{rule_group}}"),
-							Owner:          monitoring.ObservableOwnerDistribution,
+							Owner:          monitoring.ObservableOwnerDevOps,
 							Interpretation: ruleGroupInterpretation,
 							PossibleSolutions: `
 								- Check Prometheus logs for messages related to rule group evaluation (generally with log field 'component="rule manager"').
@@ -71,7 +71,7 @@ func Prometheus() *monitoring.Container {
 							Query:       `sum by(integration) (rate(alertmanager_notification_latency_seconds_sum[1m]))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(1, nil),
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{integration}}"),
-							Owner:       monitoring.ObservableOwnerDistribution,
+							Owner:       monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: fmt.Sprintf(`
 								- Check the %s panels and try increasing resources for Prometheus if necessary.
 								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
@@ -84,7 +84,7 @@ func Prometheus() *monitoring.Container {
 							Query:       `sum by(integration) (rate(alertmanager_notifications_failed_total[1m]))`,
 							Warning:     monitoring.Alert().Greater(0, nil),
 							Panel:       monitoring.Panel().LegendFormat("{{integration}}"),
-							Owner:       monitoring.ObservableOwnerDistribution,
+							Owner:       monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: `
 								- Ensure that your ['observability.alerts' configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 								- Check if the relevant alert integration service is experiencing downtime or issues.
@@ -104,7 +104,7 @@ func Prometheus() *monitoring.Container {
 							Query:          `prometheus_config_last_reload_successful`,
 							Warning:        monitoring.Alert().Less(1, nil),
 							Panel:          monitoring.Panel().LegendFormat("reload success").Max(1),
-							Owner:          monitoring.ObservableOwnerDistribution,
+							Owner:          monitoring.ObservableOwnerDevOps,
 							Interpretation: "A '1' indicates Prometheus reloaded its configuration successfully.",
 							PossibleSolutions: `
 								- Check Prometheus logs for messages related to configuration loading.
@@ -117,7 +117,7 @@ func Prometheus() *monitoring.Container {
 							Query:             `alertmanager_config_last_reload_successful`,
 							Warning:           monitoring.Alert().Less(1, nil),
 							Panel:             monitoring.Panel().LegendFormat("reload success").Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							Interpretation:    "A '1' indicates Alertmanager reloaded its configuration successfully.",
 							PossibleSolutions: "Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.",
 						},
@@ -129,7 +129,7 @@ func Prometheus() *monitoring.Container {
 							Query:             `increase(label_replace({__name__=~"prometheus_tsdb_(.*)_failed_total"}, "operation", "$1", "__name__", "(.+)s_failed_total")[5m:1m])`,
 							Warning:           monitoring.Alert().Greater(0, nil),
 							Panel:             monitoring.Panel().LegendFormat("{{operation}}"),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "Check Prometheus logs for messages related to the failing operation.",
 						},
 						{
@@ -138,7 +138,7 @@ func Prometheus() *monitoring.Container {
 							Query:             "increase(prometheus_target_scrapes_exceeded_sample_limit_total[10m])",
 							Warning:           monitoring.Alert().Greater(0, nil),
 							Panel:             monitoring.Panel().LegendFormat("rejected scrapes"),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "Check Prometheus logs for messages related to target scrape failures.",
 						},
 						{
@@ -147,16 +147,16 @@ func Prometheus() *monitoring.Container {
 							Query:             "increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[10m])",
 							Warning:           monitoring.Alert().Greater(0, nil),
 							Panel:             monitoring.Panel().LegendFormat("rejected scrapes"),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "Check Prometheus logs for messages related to target scrape failures.",
 						},
 					},
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }

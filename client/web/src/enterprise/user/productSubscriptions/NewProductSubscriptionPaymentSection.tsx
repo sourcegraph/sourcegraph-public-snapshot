@@ -6,13 +6,11 @@ import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, createAggregateError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -103,7 +101,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
         <div className="new-product-subscription-payment-section">
             <div className="form-text mb-2">
                 {previewInvoice === LOADING ? (
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 ) : !productSubscription || previewInvoice === null ? (
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
@@ -118,17 +116,17 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                             className="mb-2"
                         />
                         {previewInvoice.isDowngradeRequiringManualIntervention ? (
-                            <div className="alert alert-danger mb-2">
+                            <Alert className="mb-2" variant="danger">
                                 Self-service downgrades are not yet supported.{' '}
-                                <a
-                                    href={mailtoSales({
+                                <Link
+                                    to={mailtoSales({
                                         subject: `Downgrade subscription ${subscriptionID!}`,
                                     })}
                                 >
                                     Contact sales
-                                </a>{' '}
+                                </Link>{' '}
                                 for help.
-                            </div>
+                            </Alert>
                         ) : (
                             !isEqual(previewInvoice.beforeInvoiceItem, previewInvoice.afterInvoiceItem) && (
                                 <div className="mb-2">Amount due: ${numberWithCommas(previewInvoice.price / 100)}</div>
@@ -141,7 +139,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                         {formatDistanceStrict(parseISO(previewInvoice.afterInvoiceItem.expiresAt), Date.now())} (
                         {formatUserCount(previewInvoice.afterInvoiceItem.userCount)})
                         {/* Include invisible LoadingSpinner to ensure that the height remains constant between loading and total. */}
-                        <LoadingSpinner className="icon-inline invisible" />
+                        <LoadingSpinner className="invisible" />
                     </>
                 )}
             </div>

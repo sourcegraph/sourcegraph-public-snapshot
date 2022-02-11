@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
@@ -25,6 +24,7 @@ import (
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sessionIssuerHelper struct {
@@ -158,7 +158,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	// this point we may already have a code host and we just need to update the
 	// token with the new one.
 
-	tx, err := database.ExternalServices(s.db).Transact(ctx)
+	tx, err := s.db.ExternalServices().Transact(ctx)
 	if err != nil {
 		return
 	}

@@ -1,0 +1,71 @@
+{
+  "id": 157,
+  "version": 7,
+  "title": "Merge merge",
+  "description": "asdfasdfasdf",
+  "state": "MERGED",
+  "open": false,
+  "closed": true,
+  "createdDate": 1639735561195,
+  "updatedDate": 1639736998761,
+  "fromRef": {
+   "id": "refs/heads/thorsten/READMEmd-1639735546623",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "thorsten",
+    "emailAddress": "thorsten@sourcegraph.com",
+    "id": 104,
+    "displayName": "thorsten",
+    "active": true,
+    "slug": "thorsten",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [
+   {
+    "user": {
+     "name": "erik",
+     "emailAddress": "erik@sourcegraph.com",
+     "id": 152,
+     "displayName": "Erik Seliger",
+     "active": true,
+     "slug": "erik",
+     "type": "NORMAL"
+    },
+    "lastReviewedCommit": "",
+    "role": "REVIEWER",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/157"
+    }
+   ]
+  }
+ }

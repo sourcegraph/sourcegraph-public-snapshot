@@ -9,6 +9,19 @@
     }
 }
 
+.card {
+    margin-bottom: 1rem;
+}
+
+.row {
+    width: 100%;
+}
+
+.btn-no-left-rounded-corners {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
 .person {
     display: flex;
     align-items: center;

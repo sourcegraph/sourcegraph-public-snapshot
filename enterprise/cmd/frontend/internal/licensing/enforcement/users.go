@@ -35,7 +35,7 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB) error {
 		}
 
 		// Block creation of a new user beyond the licensed user count (unless true-up is allowed).
-		userCount, err := database.Users(db).Count(ctx, nil)
+		userCount, err := db.Users().Count(ctx, nil)
 		if err != nil {
 			return err
 		}

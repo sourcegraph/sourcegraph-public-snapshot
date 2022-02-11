@@ -1,5 +1,6 @@
 import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+import * as uuid from 'uuid'
 
 import { convertMarkdownToBlocks } from '../../search/notebook/convertMarkdownToBlocks'
 import { SearchNotebook, SearchNotebookProps } from '../../search/notebook/SearchNotebook'
@@ -16,7 +17,10 @@ export const RenderedSearchNotebookMarkdown: React.FunctionComponent<RenderedSea
     markdown,
     ...props
 }) => {
-    const blocks = useMemo(() => convertMarkdownToBlocks(markdown), [markdown])
+    // Generate fresh block IDs, since we do not store them in Markdown.
+    const blocks = useMemo(() => convertMarkdownToBlocks(markdown).map(block => ({ id: uuid.v4(), ...block })), [
+        markdown,
+    ])
     return (
         <div className={styles.renderedSearchNotebookMarkdownWrapper}>
             <div className={styles.renderedSearchNotebookMarkdown}>

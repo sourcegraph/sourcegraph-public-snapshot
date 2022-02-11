@@ -8,7 +8,6 @@ import (
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -31,11 +30,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const addr = ":3188"
@@ -51,6 +53,10 @@ func main() {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("Failed to start profiler: %v", err)
+	}
 
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load config: %s", err)
@@ -86,12 +92,18 @@ func main() {
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
-	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to create upload store: %s", err)
 	}
 	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
+	}
+
+	// Initialize sub-repo permissions client
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
 	}
 
 	// Initialize metrics
@@ -135,7 +147,7 @@ func mustInitializeDB() *sql.DB {
 
 	ctx := context.Background()
 	go func() {
-		for range time.NewTicker(5 * time.Second).C {
+		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}

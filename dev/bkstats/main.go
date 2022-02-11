@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/cockroachdb/errors"
 )
 
 var token string
@@ -20,10 +21,10 @@ var shortDateFormat = "2006-01-02"
 var longDateFormat = "2006-01-02 15:04 (MST)"
 
 func init() {
-	flag.StringVar(&token, "token", "", "mandatory buildkite token")
+	flag.StringVar(&token, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&date, "date", "", "date for builds")
-	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
-	flag.StringVar(&slack, "slack", "", "Slack Webhook URL to post the results on")
+	flag.StringVar(&pipeline, "buildkite.pipeline", "sourcegraph", "name of the pipeline to inspect")
+	flag.StringVar(&slack, "slack.webhook", "", "Slack Webhook URL to post the results on")
 }
 
 type event struct {
@@ -166,7 +167,18 @@ func postOnSlack(report *report) error {
 					Text: report.summary,
 				},
 			},
-			{
+		},
+	}
+
+	if len(report.details) > 0 {
+		// Add the details block only if there are details, otherwise Slack API will
+		// consider the block to be invalid and will reject it.
+		var text string
+		for _, detail := range report.details {
+			text += "• " + detail + " \n"
+		}
+		slackBody.Blocks = append(slackBody.Blocks,
+			slackBlock{
 				Type: "context",
 				Elements: []slackText{
 					{
@@ -175,23 +187,23 @@ func postOnSlack(report *report) error {
 					},
 				},
 			},
-		},
+		)
 	}
 
 	body, err := json.MarshalIndent(slackBody, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 	// Perform the HTTP Post on the webhook
 	req, err := http.NewRequest(http.MethodPost, slack, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 
 	// Parse the response, to check if it succeeded
@@ -202,7 +214,7 @@ func postOnSlack(report *report) error {
 	}
 	defer resp.Body.Close()
 	if buf.String() != "ok" {
-		return fmt.Errorf("failed to post on slack: %s", buf.String())
+		return errors.Newf("failed to post on slack: %s", buf.String())
 	}
 	return nil
 }

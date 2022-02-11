@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"os"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/prometheus/client_golang/prometheus"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -39,12 +41,24 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	run, err := createRunFunc()
-	if err != nil {
-		return err
+	runnerFactory := newRunnerFactory()
+	rootFlagSet := flag.NewFlagSet(appName, flag.ExitOnError)
+	command := &ffcli.Command{
+		Name:       appName,
+		ShortUsage: fmt.Sprintf("%s <command>", appName),
+		ShortHelp:  "Validates and runs schema migrations",
+		FlagSet:    rootFlagSet,
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		Subcommands: []*ffcli.Command{
+			cliutil.Up(appName, runnerFactory, out),
+			cliutil.UpTo(appName, runnerFactory, out),
+			cliutil.DownTo(appName, runnerFactory, out),
+			cliutil.Validate(appName, runnerFactory, out),
+			cliutil.AddLog(appName, runnerFactory, out),
+		},
 	}
-
-	command := cliutil.Flags(appName, run, out)
 
 	if err := command.Parse(args); err != nil {
 		return err
@@ -53,7 +67,7 @@ func mainErr(ctx context.Context, args []string) error {
 	return command.Run(ctx)
 }
 
-func createRunFunc() (cliutil.RunFunc, error) {
+func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -61,14 +75,16 @@ func createRunFunc() (cliutil.RunFunc, error) {
 	}
 	operations := store.NewOperations(observationContext)
 
-	dsns, err := postgresdsn.DSNsBySchema()
-	if err != nil {
-		return nil, err
-	}
+	return func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
+		if err != nil {
+			return nil, err
+		}
 
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, operations)
-	}
+		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+		}
 
-	return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run, nil
+		return cliutil.NewShim(connections.RunnerFromDSNs(dsns, appName, storeFactory)), nil
+	}
 }

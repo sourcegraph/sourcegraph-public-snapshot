@@ -2,12 +2,12 @@ package runner
 
 import (
 	"context"
-	"fmt"
+	"sync"
+	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Runner struct {
@@ -22,52 +22,81 @@ func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 	}
 }
 
-type Options struct {
-	Up            bool
-	NumMigrations int
-	SchemaNames   []string
+type schemaContext struct {
+	schema               *schemas.Schema
+	store                Store
+	initialSchemaVersion schemaVersion
 }
 
-func (r *Runner) Run(ctx context.Context, options Options) error {
-	schemaContexts, err := r.prepareContexts(ctx, options.SchemaNames)
-	if err != nil {
-		return err
+type schemaVersion struct {
+	appliedVersions []int
+	pendingVersions []int
+	failedVersions  []int
+}
+
+type visitFunc func(ctx context.Context, schemaContext schemaContext) error
+
+// Store returns the store associated with the given schema.
+func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
+	if factory, ok := r.storeFactories[schemaName]; ok {
+		return factory(ctx)
+
 	}
 
-	// Run the migrations
-	return r.runSchemas(ctx, options, schemaContexts)
+	return nil, errors.Newf("unknown store %q", schemaName)
 }
 
-func (r *Runner) prepareContexts(ctx context.Context, schemaNames []string) (map[string]schemaContext, error) {
+// forEachSchema invokes the given function once for each schema in the given list, with
+// store instances initialized for each given schema name. Each function invocation occurs
+// concurrently. Errors from each invocation are collected and returned. An error from one
+// goroutine will not cancel the progress of another.
+func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visitor visitFunc) error {
 	// Create map of relevant schemas keyed by name
 	schemaMap, err := r.prepareSchemas(schemaNames)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create map of migration stores keyed by name
 	storeMap, err := r.prepareStores(ctx, schemaNames)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create map of versions keyed by name
 	versionMap, err := r.fetchVersions(ctx, storeMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Invert maps so we can get the set of data necessary to run each schema
-	schemaContexts := make(map[string]schemaContext, len(schemaNames))
+	var wg sync.WaitGroup
+	errorCh := make(chan error, len(schemaNames))
+
 	for _, schemaName := range schemaNames {
-		schemaContexts[schemaName] = schemaContext{
-			schema:  schemaMap[schemaName],
-			store:   storeMap[schemaName],
-			version: versionMap[schemaName],
+		wg.Add(1)
+
+		go func(schemaName string) {
+			defer wg.Done()
+
+			errorCh <- visitor(ctx, schemaContext{
+				schema:               schemaMap[schemaName],
+				store:                storeMap[schemaName],
+				initialSchemaVersion: versionMap[schemaName],
+			})
+		}(schemaName)
+	}
+
+	wg.Wait()
+	close(errorCh)
+
+	var errs *errors.MultiError
+	for err := range errorCh {
+		if err != nil {
+			errs = errors.Append(errs, err)
 		}
 	}
 
-	return schemaContexts, nil
+	return errs.ErrorOrNil()
 }
 
 func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schema, error) {
@@ -85,7 +114,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	// Ensure that all supplied schema names are valid
 	for _, schemaName := range schemaNames {
 		if _, ok := schemaMap[schemaName]; !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 	}
 
@@ -98,7 +127,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	for _, schemaName := range schemaNames {
 		storeFactory, ok := r.storeFactories[schemaName]
 		if !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 
 		store, err := storeFactory(ctx)
@@ -112,141 +141,112 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	return storeMap, nil
 }
 
-func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (map[string]int, error) {
-	versions := make(map[string]int, len(storeMap))
+func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (map[string]schemaVersion, error) {
+	versions := make(map[string]schemaVersion, len(storeMap))
 
 	for schemaName, store := range storeMap {
-		version, dirty, _, err := store.Version(ctx)
+		schemaVersion, err := r.fetchVersion(ctx, schemaName, store)
 		if err != nil {
 			return nil, err
 		}
 
-		log15.Info("Checked current version", "schema", schemaName, "version", version, "dirty", dirty)
-
-		if dirty {
-			return nil, fmt.Errorf("dirty database")
-		}
-
-		versions[schemaName] = version
+		versions[schemaName] = schemaVersion
 	}
 
 	return versions, nil
 }
 
-type schemaContext struct {
-	schema  *schemas.Schema
-	store   Store
-	version int
-}
-
-func (r *Runner) runSchemas(ctx context.Context, options Options, schemaContexts map[string]schemaContext) error {
-	for _, context := range schemaContexts {
-		if err := r.runSchema(ctx, options, context); err != nil {
-			return err
-		}
+func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
+	appliedVersions, pendingVersions, failedVersions, err := store.Versions(ctx)
+	if err != nil {
+		return schemaVersion{}, err
 	}
 
-	return nil
+	logger.Info(
+		"Checked current version",
+		"schema", schemaName,
+		"appliedVersions", appliedVersions,
+		"pendingVersions", pendingVersions,
+		"failedVersions", failedVersions,
+	)
+
+	return schemaVersion{
+		appliedVersions,
+		pendingVersions,
+		failedVersions,
+	}, nil
 }
 
-func (r *Runner) runSchema(ctx context.Context, options Options, context schemaContext) error {
-	if locked, unlock, err := context.store.Lock(ctx); err != nil {
-		return err
-	} else if !locked {
-		return fmt.Errorf("failed to acquire lock")
+const lockPollInterval = time.Second
+
+// pollLock will attempt to acquire a session-level advisory lock while the given context has not
+// been canceled. The caller must eventually invoke the unlock function on successful acquisition
+// of the lock.
+func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err error) error, _ error) {
+	for {
+		if acquired, unlock, err := store.TryLock(ctx); err != nil {
+			return nil, err
+		} else if acquired {
+			return unlock, nil
+		}
+
+		select {
+		case <-time.After(lockPollInterval):
+			continue
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+}
+
+type lockedVersionCallback func(
+	schemaVersion schemaVersion,
+	byState definitionsByState,
+	earlyUnlock unlockFunc,
+) error
+
+type unlockFunc func(err error) error
+
+// withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
+// database. The resulting schema state is passed to the given function. The advisory lock
+// will be released on function exit, but the callback may explicitly release the lock earlier.
+//
+// This method returns a true-valued flag if it should be re-invoked by the caller.
+func (r *Runner) withLockedSchemaState(
+	ctx context.Context,
+	schemaContext schemaContext,
+	definitions []definition.Definition,
+	f lockedVersionCallback,
+) (retry bool, _ error) {
+	// Take an advisory lock to determine if there are any migrator instances currently
+	// running queries unrelated to non-concurrent index creation. This will block until
+	// we are able to gain the lock.
+	unlock, err := r.pollLock(ctx, schemaContext.store)
+	if err != nil {
+		return false, err
 	} else {
 		defer func() { err = unlock(err) }()
 	}
 
-	if options.Up {
-		if err := r.runSchemaUp(ctx, options, context); err != nil {
-			return err
-		}
-	} else {
-		if err := r.runSchemaDown(ctx, options, context); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *Runner) runSchemaUp(ctx context.Context, options Options, context schemaContext) (err error) {
-	log15.Info("Upgrading schema", "schema", context.schema.Name)
-
-	definitions, err := context.schema.Definitions.UpFrom(context.version, options.NumMigrations)
+	// Re-fetch the current schema of the database now that we hold the lock. This may differ
+	// from our original assumption if another migrator is running concurrently.
+	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
 	if err != nil {
-		return err
+		return false, err
+	}
+	byState := groupByState(schemaVersion, definitions)
+
+	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
+	// instances to finish their current work.
+	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
+		return false, err
+	} else if retry {
+		// An index is currently being created. WE return true here to flag to the caller that
+		// we should wait a small time, then be re-invoked. We don't want to take any action
+		// here while the other proceses is working.
+		return true, nil
 	}
 
-	for _, definition := range definitions {
-		log15.Info("Running up migration", "schema", context.schema.Name, "migrationID", definition.ID)
-
-		if err := context.store.Up(ctx, definition); err != nil {
-			return errors.Wrapf(err, "failed upgrade migration %d", definition.ID)
-		}
-	}
-
-	return nil
-}
-
-func (r *Runner) runSchemaDown(ctx context.Context, options Options, context schemaContext) error {
-	log15.Info("Downgrading schema", "schema", context.schema.Name)
-
-	definitions, err := context.schema.Definitions.DownFrom(context.version, options.NumMigrations)
-	if err != nil {
-		return err
-	}
-
-	for _, definition := range definitions {
-		log15.Info("Running down migration", "schema", context.schema.Name, "migrationID", definition.ID)
-
-		if err := context.store.Down(ctx, definition); err != nil {
-			return errors.Wrapf(err, "failed downgrade migration %d", definition.ID)
-		}
-	}
-
-	return nil
-}
-
-func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
-	schemaContexts, err := r.prepareContexts(ctx, schemaNames)
-	if err != nil {
-		return err
-	}
-
-	// Validate database schemas are up to date
-	return r.validateSchemas(ctx, schemaContexts)
-}
-
-func (r *Runner) validateSchemas(ctx context.Context, schemaContexts map[string]schemaContext) error {
-	for schemaName, schemaContext := range schemaContexts {
-		definitions, err := schemaContext.schema.Definitions.UpFrom(schemaContext.version, 0)
-		if err != nil {
-			// An error here means we might just be a very old instance.
-			// In order to figure out what version we expect to be at, we
-			// re-query from a "blank" database so that we can take populate
-			// the definitions variable in the error construction below.
-			//
-			// Note that we can't exit without an error value from this function
-			// from this branch.
-
-			var innerErr error
-			definitions, innerErr = schemaContext.schema.Definitions.UpFrom(0, 0)
-			if innerErr != nil || len(definitions) == 0 {
-				return err
-			}
-		}
-		if len(definitions) == 0 {
-			continue
-		}
-
-		return &SchemaOutOfDateError{
-			schemaName:      schemaName,
-			currentVersion:  schemaContext.version,
-			expectedVersion: definitions[len(definitions)-1].ID,
-		}
-	}
-
-	return nil
+	// Invoke the callback with the current schema state
+	return false, f(schemaVersion, byState, unlock)
 }

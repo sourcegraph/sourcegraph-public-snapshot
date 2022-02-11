@@ -60,9 +60,10 @@ Code insights docs are actively in progress during the beta.
 ## [Explanations](explanations/index.md)
 
 - [Administration and security of Code Insights](explanations/administration_and_security_of_code_insights.md)
+- [Automatically generated data series for version or pattern tracking](explanations/automatically_generated_data_series.md)
+- [Code Insights filters](explanations/code_insights_filters.md)
 - [Current limitations of Code Insights (Beta limitations)](explanations/current_limitations_of_code_insights.md)
 - [Viewing code insights](explanations/viewing_code_insights.md)
-- [Code Insights filters](explanations/code_insights_filters.md)
 
 ## [How-tos](how-tos/index.md)
 
@@ -74,3 +75,4 @@ Code insights docs are actively in progress during the beta.
 
 - [Common use cases and recipes](references/common_use_cases.md)
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
+- [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)

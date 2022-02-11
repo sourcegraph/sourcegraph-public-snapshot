@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
@@ -347,7 +348,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := git.Stat(r.Context(), common.Repo.Name, common.CommitID, path)
+	stat, err := git.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)
@@ -481,6 +482,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 	email := r.URL.Query().Get("email")
+	tosAccepted := r.URL.Query().Get("tos_accepted")
 
 	firstSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
 	var firstSourceURL string
@@ -501,6 +503,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		AnonymousUserID: anonymousUserId,
 		FirstSourceURL:  firstSourceURL,
 		LastSourceURL:   lastSourceURL,
+		HasAgreedToToS:  tosAccepted == "true",
 	})
 	return nil
 }

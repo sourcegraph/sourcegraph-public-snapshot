@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -16,7 +17,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 		NewestCommit: api.CommitID(r.commit.OID()),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
-	})
+	}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return nil, err
 	}

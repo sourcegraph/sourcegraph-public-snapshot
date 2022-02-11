@@ -2,6 +2,7 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -793,14 +794,14 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 	}
 }
 
-func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group {
+func newPackageManagerGroup(packageManager string, containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Coursier invocation stats",
+			DescriptionRoot: fmt.Sprintf("%s invocation stats", packageManager),
 			Hidden:          true,
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_coursier",
+				MetricNameRoot:        fmt.Sprintf("codeintel_%s", strings.ToLower(packageManager)),
 				MetricDescriptionRoot: "invocations",
 				Filters:               []string{`op!="RunCommand"`},
 				By:                    []string{"op"},
@@ -819,6 +820,14 @@ func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group 
 			ErrorRate: NoAlertsOption("none"),
 		},
 	})
+}
+
+func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group {
+	return newPackageManagerGroup("Coursier", containerName)
+}
+
+func (codeIntelligence) NewNPMGroup(containerName string) monitoring.Group {
+	return newPackageManagerGroup("NPM", containerName)
 }
 
 func (codeIntelligence) NewDependencyReposStoreGroup(containerName string) monitoring.Group {

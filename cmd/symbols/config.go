@@ -4,6 +4,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -21,6 +22,18 @@ type Config struct {
 	cacheSizeMB       int
 	numCtagsProcesses int
 	requestBufferSize int
+	processingTimeout time.Duration
+
+	// The maximum sum of lengths of all paths in a single call to git archive. Without this limit, we
+	// could hit the error "argument list too long" by exceeding the limit on the number of arguments to
+	// a command enforced by the OS.
+	//
+	// Mac  : getconf ARG_MAX returns 1,048,576
+	// Linux: getconf ARG_MAX returns 2,097,152
+	//
+	// We want to remain well under that limit, so defaulting to 100,000 seems safe (see the
+	// MAX_TOTAL_PATHS_LENGTH environment variable below).
+	maxTotalPathsLength int
 }
 
 var config = &Config{}
@@ -37,4 +50,6 @@ func (c *Config) Load() {
 	c.cacheSizeMB = c.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)")
 	c.numCtagsProcesses = c.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run")
 	c.requestBufferSize = c.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel")
+	c.processingTimeout = c.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository")
+	c.maxTotalPathsLength = c.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 }

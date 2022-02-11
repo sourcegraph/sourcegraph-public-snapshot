@@ -51,7 +51,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{},
 				},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 			},
 			{
@@ -62,7 +61,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"a/b/c.go"},
 				},
 				Path:               "a/b",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: false,
 			},
 			{
@@ -73,7 +71,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"d/e/f.go"},
 				},
 				Path:               "d/e",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 			},
 			{
@@ -85,7 +82,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"main.go"},
 				},
 				Path:        "",
-				Steps:       []batcheslib.Step{},
 				Unsupported: true,
 			},
 			{
@@ -97,7 +93,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"lol.txt"},
 				},
 				Path:    "",
-				Steps:   []batcheslib.Step{},
 				Ignored: true,
 			},
 		},
@@ -122,7 +117,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "d34db33f",
 			FileMatches:        []string{},
 			Path:               "",
-			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -133,7 +127,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "d34db33f",
 			FileMatches:        []string{"a/b/c.go"},
 			Path:               "a/b",
-			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: false,
 		},
 		{
@@ -144,7 +137,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "c0ff33",
 			FileMatches:        []string{"d/e/f.go"},
 			Path:               "d/e",
-			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -154,7 +146,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:           "h0rs3s",
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"main.go"},
-			Steps:            []batcheslib.Step{},
 			Unsupported:      true,
 		},
 		{
@@ -164,7 +155,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:           "f00b4r",
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"lol.txt"},
-			Steps:            []batcheslib.Step{},
 			Ignored:          true,
 		},
 	}
@@ -196,7 +186,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches: []string{},
 			},
 			Path:               "",
-			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: true,
 		}
 	}
@@ -208,7 +197,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	}
 
 	createBatchSpec := func(t *testing.T, noCache bool) *btypes.BatchSpec {
-		batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML, false)
+		batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -238,7 +227,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			},
 			workspace.Path,
 			workspace.OnlyFetchWorkspace,
-			workspace.Steps,
+			batchSpec.Spec.Steps,
 		)
 		rawKey, err := key.Key()
 		if err != nil {
@@ -281,7 +270,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				Commit:             "caching-enabled",
 				FileMatches:        []string{},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  true,
 			},
@@ -389,11 +377,70 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				Commit:             "caching-disabled",
 				FileMatches:        []string{},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  false,
 			},
 		})
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.IsZero() {
+			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		}
+	})
+
+	t.Run("caching enabled but workspace is ignored", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-ignored")
+		workspace.Ignored = true
+
+		batchSpec := createBatchSpec(t, false)
+
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.IsZero() {
+			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		}
+	})
+
+	t.Run("caching enabled but workspace is unsupported", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-ignored")
+		workspace.Unsupported = true
+
+		batchSpec := createBatchSpec(t, false)
+
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
 
 		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
 			UserID: batchSpec.UserID,

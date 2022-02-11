@@ -2,8 +2,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import React, { useCallback, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getChangesetDiff } from '../backend'
 
@@ -62,22 +62,24 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     if (isErrorLike(state)) {
         icon = <AlertCircleIcon className="icon icon-inline" data-tooltip={state?.message} />
     } else if (state === DownloadState.LOADING) {
-        icon = <LoadingSpinner className="icon-inline" />
+        icon = <LoadingSpinner />
     } else {
         icon = <DownloadIcon className="icon-inline" />
     }
 
     return (
-        <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary mb-1"
+        <Button
+            className="mb-1"
             aria-label="Download generated diff"
             data-tooltip="This is the changeset diff created when src batch preview|apply executed the batch change"
             onClick={loadDiff}
             disabled={state === DownloadState.LOADING}
+            outline={true}
+            variant="secondary"
+            size="sm"
         >
             {icon}
             <span className="pl-1">Download generated diff</span>
-        </button>
+        </Button>
     )
 }

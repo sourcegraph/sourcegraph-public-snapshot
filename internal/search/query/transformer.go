@@ -5,9 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names,
@@ -483,7 +482,7 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 	}
 	return Pattern{
 		Annotation: Annotation{Labels: Regexp},
-		Value:      "(" + strings.Join(values, ").*?(") + ")",
+		Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
 	}
 }
 
@@ -659,14 +658,14 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 // Invariant: Guaranteed to succeed on a validat Basic query.
 func ConcatRevFilters(b Basic) Basic {
 	var revision string
-	nodes := MapField(ToNodes(b.Parameters), FieldRev, func(value string, _ bool) Node {
+	nodes := MapField(ToNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
 		revision = value
 		return nil // remove this node
 	})
 	if revision == "" {
 		return b
 	}
-	modified := MapField(nodes, FieldRepo, func(value string, negated bool) Node {
+	modified := MapField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) Node {
 		if !negated {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
@@ -703,7 +702,7 @@ func ellipsesForHoles(nodes []Node) []Node {
 
 func OverrideField(nodes []Node, field, value string) []Node {
 	// First remove any fields that exist.
-	nodes = MapField(nodes, field, func(_ string, _ bool) Node {
+	nodes = MapField(nodes, field, func(_ string, _ bool, _ Annotation) Node {
 		return nil
 	})
 	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
@@ -712,7 +711,7 @@ func OverrideField(nodes []Node, field, value string) []Node {
 // OmitField removes all fields `field` from a query. The `field` string
 // should be the canonical name and not an alias ("repo", not "r").
 func OmitField(q Q, field string) string {
-	return StringHuman(MapField(q, field, func(_ string, _ bool) Node {
+	return StringHuman(MapField(q, field, func(_ string, _ bool, _ Annotation) Node {
 		return nil
 	}))
 }

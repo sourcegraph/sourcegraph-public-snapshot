@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchChangeColumns are used by the batch change related Store methods to insert,
@@ -173,7 +173,7 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
 	}
@@ -350,7 +350,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
@@ -393,7 +393,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
@@ -452,7 +452,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}

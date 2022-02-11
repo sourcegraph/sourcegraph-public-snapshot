@@ -1,19 +1,5 @@
 package result
 
-// Union performs a merge of results, merging line matches when they occur in
-// the same file.
-func Union(left, right []Match) []Match {
-	dedup := NewDeduper()
-	// Add results to maps for deduping
-	for _, result := range left {
-		dedup.Add(result)
-	}
-	for _, result := range right {
-		dedup.Add(result)
-	}
-	return dedup.Results()
-}
-
 // Intersect performs a merge of match results, merging line matches for files
 // contained in both result sets.
 func Intersect(left, right []Match) []Match {

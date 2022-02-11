@@ -7,7 +7,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -18,11 +17,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
@@ -58,6 +59,13 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"searchcontexts": searchcontexts.Init,
 	"enterprise":     orgrepos.Init,
 	"notebooks":      notebooks.Init,
+	"compute":        compute.Init,
+}
+
+var codeIntelConfig = &codeintel.Config{}
+
+func init() {
+	codeIntelConfig.Load()
 }
 
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -77,24 +85,32 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	services, err := codeintel.NewServices(ctx, conf, db)
+	if err := codeIntelConfig.Validate(); err != nil {
+		log.Fatalf("failed to load codeintel config: %s", err)
+	}
+
+	services, err := codeintel.NewServices(ctx, codeIntelConfig, conf, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := codeintel.Init(ctx, db, conf, &enterpriseServices, observationContext, services); err != nil {
-		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
+	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
+		log.Fatalf("failed to initialize codeintel: %s", err)
 	}
 
 	// Initialize executor-specific services with the code-intel services.
 	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
-		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
+		log.Fatalf("failed to initialize executor: %s", err)
+	}
+
+	if err := app.Init(db, conf, &enterpriseServices); err != nil {
+		log.Fatalf("failed to initialize app: %s", err)
 	}
 
 	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
-			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
+			log.Fatalf("failed to initialize %s: %s", name, err)
 		}
 	}
 

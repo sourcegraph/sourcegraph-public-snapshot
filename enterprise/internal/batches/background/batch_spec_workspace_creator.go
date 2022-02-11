@@ -42,6 +42,13 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	}
 }
 
+type workspaceCacheKey struct {
+	dbWorkspace   *btypes.BatchSpecWorkspace
+	repo          batcheslib.Repository
+	stepCacheKeys []string
+	skippedSteps  map[int32]struct{}
+}
+
 func (r *batchSpecWorkspaceCreator) process(
 	ctx context.Context,
 	tx *store.Store,
@@ -77,11 +84,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
 	// Collect all cache keys so we can look them up in a single query.
-	cacheKeyWorkspaces := make(map[string]struct {
-		dbWorkspace   *btypes.BatchSpecWorkspace
-		repo          batcheslib.Repository
-		stepCacheKeys []string
-	})
+	cacheKeyWorkspaces := make(map[string]workspaceCacheKey)
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -95,7 +98,6 @@ func (r *batchSpecWorkspaceCreator) process(
 			Path:               w.Path,
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-			Steps:              w.Steps,
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
@@ -104,6 +106,12 @@ func (r *batchSpecWorkspaceCreator) process(
 		ws = append(ws, workspace)
 
 		if spec.NoCache {
+			continue
+		}
+		if !spec.AllowIgnored && w.Ignored {
+			continue
+		}
+		if !spec.AllowUnsupported && w.Unsupported {
 			continue
 		}
 
@@ -123,7 +131,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			r,
 			w.Path,
 			w.OnlyFetchWorkspace,
-			w.Steps,
+			spec.Spec.Steps,
 		)
 
 		rawKey, err := key.Key()
@@ -131,9 +139,17 @@ func (r *batchSpecWorkspaceCreator) process(
 			return err
 		}
 
-		stepCacheKeys := make([]string, 0, len(workspace.Steps))
+		skippedSteps, err := batcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Name), w.FileMatches)
+		if err != nil {
+			return err
+		}
+
+		stepCacheKeys := make([]string, 0, len(spec.Spec.Steps))
 		// Generate cache keys for all the step results as well.
-		for i := 0; i < len(workspace.Steps)-1; i++ {
+		for i := 0; i < len(spec.Spec.Steps)-1; i++ {
+			if _, ok := skippedSteps[int32(i)]; ok {
+				continue
+			}
 			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
 			rawStepKey, err := key.Key()
 			if err != nil {
@@ -142,14 +158,11 @@ func (r *batchSpecWorkspaceCreator) process(
 			stepCacheKeys = append(stepCacheKeys, rawStepKey)
 		}
 
-		cacheKeyWorkspaces[rawKey] = struct {
-			dbWorkspace   *btypes.BatchSpecWorkspace
-			repo          batcheslib.Repository
-			stepCacheKeys []string
-		}{
+		cacheKeyWorkspaces[rawKey] = workspaceCacheKey{
 			dbWorkspace:   workspace,
 			repo:          r,
 			stepCacheKeys: stepCacheKeys,
+			skippedSteps:  skippedSteps,
 		}
 	}
 
@@ -197,6 +210,11 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Check for an existing cache entry for each of the workspaces.
 	for rawKey, workspace := range cacheKeyWorkspaces {
 		for idx, key := range workspace.stepCacheKeys {
+			// Ignore statically skipped steps.
+			if _, ok := workspace.skippedSteps[int32(idx)]; ok {
+				continue
+			}
+
 			if c, ok := stepEntriesByCacheKey[key]; ok {
 				var res execution.AfterStepResult
 				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {

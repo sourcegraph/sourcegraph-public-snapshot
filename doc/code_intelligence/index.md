@@ -1,3 +1,36 @@
+<style>
+
+.markdown-body h2 {
+  margin-top: 2em;
+}
+
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../batch_changes/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+
+</style>
+
 # Code intelligence
 
 <p class="subtitle">Navigate code, with definitions and references</p>
@@ -8,7 +41,7 @@ Code intelligence provides advanced code navigation features that let developers
 
 <div class="cta-group">
 <a class="btn btn-primary" href="explanations/introduction_to_code_intelligence">★ Introduction to code intelligence</a>
-<a class="btn" href="references/indexers">LSIF supported languages</a>
+<a class="btn" href="references/indexers">🗂 LSIF supported languages</a>
 <a class="btn" href="apidocs">📚 API docs for your code</a>
 </div>
 
@@ -34,43 +67,51 @@ Code intelligence provides advanced code navigation features that let developers
   </a>
 </div>
 
+## [Explanations](explanations/index.md)
+
+- [Introduction to code intelligence](explanations/introduction_to_code_intelligence.md)
+- [Precise code intelligence](explanations/precise_code_intelligence.md)
+  - [Precise code intelligence uploads](explanations/uploads.md)
+- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
+- [Code navigation features](explanations/features.md)
+  - [Popover](explanations/features.md#popover)
+  - [Go to definition](explanations/features.md#go-to-definition)
+  - [Find references](explanations/features.md#find-references)
+  - [Find implementations](explanations/features.md#find-implementations)
+  - [Symbol search](explanations/features.md#symbol-search)
+- [Writing an indexer](explanations/writing_an_indexer.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
+
 
 ## [How-tos](how-to/index.md)
 
-- [Configure data retention policies](how-to/configure_data_retention.md)
-- [Add a GitHub repository to your Sourcegraph instance](how-to/add_a_repository.md)
-- [Index a Go repository](how-to/index_a_go_repository.md)
-- [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
-- [Index a C++ repository](how-to/index_a_cpp_repository.md)
-- [Index other languages](how-to/index_other_languages.md)
-- [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
-- [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
-- <span class="badge badge-experimental">Experimental</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
-- <span class="badge badge-experimental">Experimental</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
+- General
+  - [Configure data retention policies](how-to/configure_data_retention.md)
+- Language-specific guides
+  - [Index a Go repository](how-to/index_a_go_repository.md)
+  - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
+  - [Index a C++ repository](how-to/index_a_cpp_repository.md)
+  - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/lsif-java/docs/getting-started.html)
+- Automate uploading LSIF data
+  - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
+  - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
+  - <span class="badge badge-experimental">Experimental</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
+  - <span class="badge badge-experimental">Experimental</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
 
 ## [Tutorials](tutorials/index.md)
 
 - [Manually index a popular Go repository](tutorials/indexing_go_repo.md)
 - [Manually index a popular TypeScript repository](tutorials/indexing_ts_repo.md)
 
-## [Explanations](explanations/index.md)
-
-- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
-- [Precise code intelligence](explanations/precise_code_intelligence.md)
-- [Features](explanations/features.md)
-  - [Hover tooltips](explanations/features.md#hover-tooltips-with-documentation-and-type-signatures)
-  - [Go to definition](explanations/features.md#go-to-definition)
-  - [Find references](explanations/features.md#find-references)
-  - [Symbol search](explanations/features.md#symbol-search)
-- [Precise code intelligence uploads](explanations/uploads.md)
-- [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 ## [References](references/index.md)
 
-- [Environment variables](references/envvars.md)
+- [Requirements](references/requirements.md)
 - [Troubleshooting](references/troubleshooting.md)
+- [FAQ](references/faq.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
-- [LSIF.dev](https://lsif.dev/)
+- [Environment variables](references/envvars.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)
+
+

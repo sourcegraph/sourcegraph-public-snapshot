@@ -2,9 +2,8 @@ import { Observable, of, zip, OperatorFunction, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
+import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
-import { PositionAdjuster } from '@sourcegraph/shared/src/codeintellify/hoverifier'
-import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 

@@ -1,7 +1,8 @@
 import * as uuid from 'uuid'
 
-import { InsightDashboard } from '../../../../../../schema/settings.schema'
-import { DashboardCreationFields } from '../components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+import { InsightDashboard } from '@sourcegraph/shared/src/schema/settings.schema'
+
+import { DashboardCreationFields } from '../components/InsightsDashboardCreationContent'
 
 /**
  * Creates sanitized dashboard configuration object according to public user setting's API.

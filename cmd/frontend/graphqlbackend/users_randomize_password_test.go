@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -18,7 +18,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 	userID := int32(42)
 	userIDBase64 := string(MarshalUserID(userID))
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("Errors when resetting passwords is not enabled", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
@@ -77,7 +77,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 	defer conf.Mock(nil)
 
 	t.Run("Returns error if user is not site-admin", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -104,7 +104,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 	})
 
 	t.Run("Returns error when cannot parse user ID", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -131,7 +131,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 	})
 
 	t.Run("Returns resetPasswordUrl if user is site-admin", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
 		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
@@ -162,13 +162,13 @@ func TestRandomizeUserPassword(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig)
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
 		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
 
-		userEmails := dbmock.NewMockUserEmailsStore()
+		userEmails := database.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)

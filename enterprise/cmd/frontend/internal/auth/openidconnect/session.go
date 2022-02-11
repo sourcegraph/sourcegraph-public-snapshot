@@ -3,10 +3,9 @@ package openidconnect
 import (
 	"net/http"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const sessionKey = "oidc@0"

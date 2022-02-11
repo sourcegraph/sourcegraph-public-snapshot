@@ -3,7 +3,8 @@ package apitest
 type Notebook struct {
 	ID              string
 	Title           string
-	Creator         NotebookCreator
+	Creator         NotebookUser
+	Updater         NotebookUser
 	CreatedAt       string
 	UpdatedAt       string
 	Public          bool
@@ -11,7 +12,7 @@ type Notebook struct {
 	Blocks          []NotebookBlock
 }
 
-type NotebookCreator struct {
+type NotebookUser struct {
 	Username string
 }
 
@@ -33,4 +34,13 @@ type FileInput struct {
 type LineRange struct {
 	StartLine int32
 	EndLine   int32
+}
+
+type NotebookStar struct {
+	User      NotebookStarUser
+	CreatedAt string
+}
+
+type NotebookStarUser struct {
+	Username string
 }

@@ -10,6 +10,7 @@ import (
 type Operations struct {
 	repoName           *observation.Operation
 	getJVMDependencies *observation.Operation
+	getNPMDependencies *observation.Operation
 }
 
 func NewREDMetrics(observationContext *observation.Context) *metrics.REDMetrics {
@@ -33,5 +34,6 @@ func NewOperations(observationContext *observation.Context, metrics *metrics.RED
 	return &Operations{
 		repoName:           op("RepoName"),
 		getJVMDependencies: op("GetJVMDependencies"),
+		getNPMDependencies: op("GetNPMDependencies"),
 	}
 }

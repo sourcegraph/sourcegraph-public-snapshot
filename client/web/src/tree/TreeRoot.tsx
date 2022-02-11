@@ -14,13 +14,13 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../backend/features'
 import { TreeFields } from '../graphql-operations'
@@ -207,7 +207,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                 <TreeLayerCell>
                                     {treeOrError === LOADING ? (
                                         <div>
-                                            <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                                            <LoadingSpinner className="tree-page__entries-loader" />
                                             Loading tree
                                         </div>
                                     ) : (

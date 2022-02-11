@@ -45,6 +45,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -74,6 +75,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -82,7 +84,12 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -106,7 +113,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
         class="text-center py-3"
       >
         <button
-          class="btn btn-link"
+          class="btn btnLink"
           type="button"
         >
           Show more
@@ -162,6 +169,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -191,6 +199,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -199,7 +208,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -223,7 +237,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
         class="text-center py-3"
       >
         <button
-          class="btn btn-link"
+          class="btn btnLink"
           type="button"
         >
           Show more
@@ -279,6 +293,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -308,6 +323,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -316,7 +332,12 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -386,6 +407,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -415,6 +437,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class="anchorLink"
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -423,7 +446,12 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>

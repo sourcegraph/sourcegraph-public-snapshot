@@ -166,7 +166,6 @@ Foreign-key constraints:
  path                 | text                     |           | not null | 
  file_matches         | text[]                   |           | not null | 
  only_fetch_workspace | boolean                  |           | not null | false
- steps                | jsonb                    |           |          | '[]'::jsonb
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
  ignored              | boolean                  |           | not null | false
@@ -176,8 +175,6 @@ Foreign-key constraints:
  step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
@@ -295,6 +292,7 @@ Foreign-key constraints:
  head_ref          | text                     |           |          | 
  title             | text                     |           |          | 
  external_id       | text                     |           |          | 
+ fork_namespace    | citext                   |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_external_id" btree (external_id)
@@ -352,6 +350,7 @@ Referenced by:
  worker_hostname          | text                                         |           | not null | ''::text
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -575,14 +574,21 @@ Slack webhook actions configured on code monitors
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
+ search_results    | jsonb                    |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
 Foreign-key constraints:
     "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
+
+**num_results**: DEPRECATED: replaced by len(search_results). Can be removed after version 3.37 release cut
+
+**results**: DEPRECATED: replaced by len(search_results) > 0. Can be removed after version 3.37 release cut
 
 # Table "public.cm_webhooks"
 ```
@@ -1542,6 +1548,24 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
 
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Collation | Nullable | Default 
@@ -1559,26 +1583,53 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.notebook_stars"
+```
+   Column    |           Type           | Collation | Nullable | Default 
+-------------+--------------------------+-----------+----------+---------
+ notebook_id | integer                  |           | not null | 
+ user_id     | integer                  |           | not null | 
+ created_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "notebook_stars_pkey" PRIMARY KEY, btree (notebook_id, user_id)
+    "notebook_stars_user_id_idx" btree (user_id)
+Foreign-key constraints:
+    "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
+    "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.notebooks"
 ```
-     Column      |           Type           | Collation | Nullable |                                              Default                                              
------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
- id              | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
- title           | text                     |           | not null | 
- blocks          | jsonb                    |           | not null | '[]'::jsonb
- public          | boolean                  |           | not null | 
- creator_user_id | integer                  |           |          | 
- created_at      | timestamp with time zone |           | not null | now()
- updated_at      | timestamp with time zone |           | not null | now()
- blocks_tsvector | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
+      Column       |           Type           | Collation | Nullable |                                              Default                                              
+-------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
+ title             | text                     |           | not null | 
+ blocks            | jsonb                    |           | not null | '[]'::jsonb
+ public            | boolean                  |           | not null | 
+ creator_user_id   | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ blocks_tsvector   | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ updater_user_id   | integer                  |           |          | 
 Indexes:
     "notebooks_pkey" PRIMARY KEY, btree (id)
     "notebooks_blocks_tsvector_idx" gin (blocks_tsvector)
+    "notebooks_namespace_org_id_idx" btree (namespace_org_id)
+    "notebooks_namespace_user_id_idx" btree (namespace_user_id)
     "notebooks_title_trgm_idx" gin (title gin_trgm_ops)
 Check constraints:
     "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
+    "notebooks_has_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_updater_user_id_fkey" FOREIGN KEY (updater_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+Referenced by:
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1589,13 +1640,15 @@ Foreign-key constraints:
  id                | bigint                   |           | not null | nextval('org_invitations_id_seq'::regclass)
  org_id            | integer                  |           | not null | 
  sender_user_id    | integer                  |           | not null | 
- recipient_user_id | integer                  |           | not null | 
+ recipient_user_id | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  notified_at       | timestamp with time zone |           |          | 
  responded_at      | timestamp with time zone |           |          | 
  response_type     | boolean                  |           |          | 
  revoked_at        | timestamp with time zone |           |          | 
  deleted_at        | timestamp with time zone |           |          | 
+ recipient_email   | citext                   |           |          | 
+ expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
     "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
@@ -1604,6 +1657,7 @@ Indexes:
 Check constraints:
     "check_atomic_response" CHECK ((responded_at IS NULL) = (response_type IS NULL))
     "check_single_use" CHECK (responded_at IS NULL AND response_type IS NULL OR revoked_at IS NULL)
+    "either_user_id_or_email_defined" CHECK ((recipient_user_id IS NULL) <> (recipient_email IS NULL))
 Foreign-key constraints:
     "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
@@ -1688,6 +1742,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebooks" CONSTRAINT "notebooks_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_stats" CONSTRAINT "org_stats_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
@@ -2053,11 +2108,13 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  deleted_at        | timestamp with time zone |           |          | 
+ query             | text                     |           |          | 
 Indexes:
     "search_contexts_pkey" PRIMARY KEY, btree (id)
     "search_contexts_name_namespace_org_id_unique" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
     "search_contexts_name_namespace_user_id_unique" UNIQUE, btree (name, namespace_user_id) WHERE namespace_user_id IS NOT NULL
     "search_contexts_name_without_namespace_unique" UNIQUE, btree (name) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL
+    "search_contexts_query_idx" btree (query)
 Check constraints:
     "search_contexts_has_one_or_no_namespace" CHECK (namespace_user_id IS NULL OR namespace_org_id IS NULL)
 Foreign-key constraints:
@@ -2158,6 +2215,7 @@ Foreign-key constraints:
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
+    "sub_repo_perms_user_id" btree (user_id)
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -2385,7 +2443,10 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "notebooks" CONSTRAINT "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "notebooks" CONSTRAINT "notebooks_updater_user_id_fkey" FOREIGN KEY (updater_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
@@ -2780,6 +2841,8 @@ Foreign-key constraints:
  external_title           | text                                         |           |          | 
  worker_hostname          | text                                         |           |          | 
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
+ last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 
 ```
 
@@ -2821,7 +2884,9 @@ Foreign-key constraints:
     c.syncer_error,
     c.external_title,
     c.worker_hostname,
-    c.ui_publication_state
+    c.ui_publication_state,
+    c.last_heartbeat_at,
+    c.external_fork_namespace
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

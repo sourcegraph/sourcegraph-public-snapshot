@@ -1,34 +1,36 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy",
-  "Title": "This is a test PR",
-  "Body": "This is the description of the test PR",
+  "ID": "PR_kwDODS5xec4waLb5",
+  "Title": "`MergePullRequest` test PR",
+  "Body": "A test PR for the GithubSource `MergePullRequest` unit test.\n\n[_Created by Sourcegraph batch change `LawnGnome/merge-pr-github`._](https://sourcegraph.test:3443/users/LawnGnome/batch-changes/merge-pr-github)",
   "State": "MERGED",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/424",
-  "HeadRefOid": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
-  "BaseRefOid": "53229c4dc5ba7c0f7abf109003aa15a956be485e",
-  "HeadRefName": "test-pr-7",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/465",
+  "HeadRefOid": "9d809d09ba1d1543186ed1b0bd6070c43d0f177e",
+  "BaseRefOid": "d559e66a56e6615759f60f543475fd69e347f592",
+  "HeadRefName": "merge-pr-github",
   "BaseRefName": "master",
-  "Number": 424,
+  "Number": 465,
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
    "Login": "LawnGnome",
    "URL": "https://github.com/LawnGnome"
+  },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "R_kgDOGmqtEg",
+   "Owner": {
+    "Login": "LawnGnome"
+   }
   },
   "Participants": [
    {
     "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
     "Login": "LawnGnome",
     "URL": "https://github.com/LawnGnome"
-   },
-   {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
-    "Login": "eseliger",
-    "URL": "https://github.com/eseliger"
-   },
-   {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
-    "Login": "mrnugget",
-    "URL": "https://github.com/mrnugget"
    }
   ],
   "Labels": {
@@ -39,22 +41,17 @@
     "Type": "PullRequestCommit",
     "Item": {
      "Commit": {
-      "OID": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
-      "Message": "Push a new branch",
-      "MessageHeadline": "Push a new branch",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/81da5d9c265d943d33a6bbed9da18da16f3ac633",
+      "OID": "9d809d09ba1d1543186ed1b0bd6070c43d0f177e",
+      "Message": "Remove the file added in `test-pr-7`.",
+      "MessageHeadline": "Remove the file added in `test-pr-7`.",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/9d809d09ba1d1543186ed1b0bd6070c43d0f177e",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4",
-       "Email": "mrnugget@gmail.com",
-       "Name": "Thorsten Ball",
-       "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
-        "Login": "mrnugget",
-        "URL": "https://github.com/mrnugget"
-       }
+       "AvatarURL": "https://camo.githubusercontent.com/a2bc397351e6bfc2725fe88be81169b9f2b082396ac1c5db6419aa57ed5e4c16/68747470733a2f2f312e67726176617461722e636f6d2f6176617461722f63356564373065326531623566623266306437373438383337613637633266623f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67",
+       "Email": "batch-changes@sourcegraph.com",
+       "Name": "Sourcegraph"
       },
-      "CommittedDate": "2021-02-22T16:39:56Z",
-      "PushedDate": "2021-02-22T16:40:00Z"
+      "CommittedDate": "2021-12-30T22:32:04Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
      }
     }
    },
@@ -62,38 +59,38 @@
     "Type": "MergedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
-      "Login": "eseliger",
-      "URL": "https://github.com/eseliger"
+      "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+      "Login": "LawnGnome",
+      "URL": "https://github.com/LawnGnome"
      },
      "MergeRefName": "master",
-     "URL": "https://github.com/sourcegraph/automation-testing/pull/424#event-4878235653",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/465#event-5829255555",
      "Commit": {
-      "OID": "9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e",
-      "Message": "Push a new branch (#424)\n\nCo-authored-by: Thorsten Ball \u003cmrnugget@gmail.com\u003e",
-      "MessageHeadline": "Push a new branch (#424)",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e",
+      "OID": "36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea",
+      "Message": "Remove the file added in `test-pr-7`. (#465)\n\nCo-authored-by: Sourcegraph \u003cbatch-changes@sourcegraph.com\u003e",
+      "MessageHeadline": "Remove the file added in `test-pr-7`. (#465)",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea",
       "Committer": {
        "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
        "Email": "noreply@github.com",
        "Name": "GitHub"
       },
-      "CommittedDate": "2021-06-11T14:08:50Z",
+      "CommittedDate": "2021-12-30T22:35:46Z",
       "PushedDate": "0001-01-01T00:00:00Z"
      },
-     "CreatedAt": "2021-06-11T14:08:50Z"
+     "CreatedAt": "2021-12-30T22:35:46Z"
     }
    },
    {
     "Type": "ClosedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
-      "Login": "eseliger",
-      "URL": "https://github.com/eseliger"
+      "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+      "Login": "LawnGnome",
+      "URL": "https://github.com/LawnGnome"
      },
-     "CreatedAt": "2021-06-11T14:08:50Z",
-     "URL": "https://github.com/sourcegraph/automation-testing/pull/424#event-4878235659"
+     "CreatedAt": "2021-12-30T22:35:46Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/465#event-5829255559"
     }
    }
   ],
@@ -101,48 +98,20 @@
    "Nodes": [
     {
      "Commit": {
-      "OID": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
+      "OID": "9d809d09ba1d1543186ed1b0bd6070c43d0f177e",
       "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTU4",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYx",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYy",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+       "Nodes": []
       },
       "Status": {
        "State": "",
        "Contexts": null
       },
-      "CommittedDate": "2021-02-22T16:39:56Z"
+      "CommittedDate": "2021-12-30T22:32:04Z"
      }
     }
    ]
   },
   "IsDraft": false,
-  "CreatedAt": "2021-02-22T16:40:45Z",
-  "UpdatedAt": "2021-06-11T14:08:50Z"
+  "CreatedAt": "2021-12-30T22:34:11Z",
+  "UpdatedAt": "2021-12-30T22:35:46Z"
  }

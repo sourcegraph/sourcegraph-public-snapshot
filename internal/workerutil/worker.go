@@ -2,12 +2,11 @@ package workerutil
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
@@ -72,6 +72,9 @@ type WorkerOptions struct {
 	// field is periodically updated while being actively processed to signal to other workers that the
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
+
+	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
+	MaximumRuntimePerJob time.Duration
 
 	// Metrics configures logging, tracing, and metrics for the work loop.
 	Metrics WorkerMetrics
@@ -131,7 +134,7 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
 			if err != nil {
-				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
+				logger.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
@@ -140,7 +143,7 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					log15.Error("Removed unknown job from running set", "id", id)
+					logger.Error("Removed unknown job from running set", "id", id)
 					w.runningIDSet.Remove(id)
 				}
 			}
@@ -170,7 +173,7 @@ loop:
 				break loop
 			}
 
-			log15.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
+			logger.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
 		}
 
 		delay := w.options.Interval
@@ -197,7 +200,7 @@ loop:
 		}
 	}
 
-	log15.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
+	logger.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
 	w.wg.Wait()
 }
 
@@ -271,7 +274,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	w.options.Metrics.numJobs.Inc()
-	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
+	logger.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
 
 	if hook, ok := w.handler.(WithHooks); ok {
 		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
@@ -303,7 +306,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
+			logger.Error("Failed to finalize record", "name", w.options.Name, "err", err)
 		}
 	}()
 
@@ -316,29 +319,40 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
+	// If a maximum runtime is configured, set a deadline on the handle context.
+	if w.options.MaximumRuntimePerJob > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(w.options.MaximumRuntimePerJob))
+		defer cancel()
+	}
+
 	handleErr := w.handler.Handle(ctx, record)
+
+	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
+		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
+	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
-			log15.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			logger.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else if handleErr != nil {
 		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
-			log15.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			logger.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else {
 		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			log15.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
+			logger.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
 		}
 	}
 
-	log15.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
+	logger.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
 }
 
@@ -346,7 +360,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
 func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
-	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id)
+	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.

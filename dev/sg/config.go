@@ -4,10 +4,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ParseConfigFile(name string) (*Config, error) {
@@ -109,13 +109,21 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 	return merged
 }
 
+type check struct {
+	Name        string `yaml:"-"`
+	Cmd         string `yaml:"cmd"`
+	FailMessage string `yaml:"failMessage"`
+
+	CheckFunc string `yaml:"checkFunc"`
+}
+
 type Config struct {
 	Env               map[string]string      `yaml:"env"`
 	Commands          map[string]run.Command `yaml:"commands"`
 	Commandsets       map[string]*Commandset `yaml:"commandsets"`
 	DefaultCommandset string                 `yaml:"defaultCommandset"`
 	Tests             map[string]run.Command `yaml:"tests"`
-	Checks            map[string]run.Check   `yaml:"checks"`
+	Checks            map[string]check       `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
@@ -166,4 +174,24 @@ func equal(a, b []string) bool {
 	}
 
 	return true
+}
+
+func (c *Config) GetEnv(key string) string {
+	// First look into process env, emulating the logic in makeEnv used
+	// in internal/run/run.go
+	val, ok := os.LookupEnv(key)
+	if ok {
+		return val
+	}
+	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+	return os.Expand(c.Env[key], func(lookup string) string {
+		if lookup == key {
+			return os.Getenv(lookup)
+		}
+
+		if e, ok := c.Env[lookup]; ok {
+			return e
+		}
+		return os.Getenv(lookup)
+	})
 }

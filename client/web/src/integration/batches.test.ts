@@ -26,20 +26,24 @@ import {
     BatchChangeByNamespaceResult,
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
+    BatchChangeState,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
+const now = new Date()
+
 const batchChangeListNode: ListBatchChange = {
     id: 'batch123',
     url: '/users/alice/batch-changes/test-batch-change',
     name: 'test-batch-change',
-    createdAt: subDays(new Date(), 5).toISOString(),
+    createdAt: subDays(now, 5).toISOString(),
     changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
     description: null,
+    state: BatchChangeState.OPEN,
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
@@ -135,7 +139,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
         changesetCountsOverTime: [
             {
                 closed: 12,
-                date: subDays(new Date(), 2).toISOString(),
+                date: subDays(now, 2).toISOString(),
                 merged: 10,
                 openApproved: 3,
                 openChangesRequested: 1,
@@ -145,7 +149,7 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
             },
             {
                 closed: 12,
-                date: subDays(new Date(), 1).toISOString(),
+                date: subDays(now, 1).toISOString(),
                 merged: 10,
                 openApproved: 23,
                 openChangesRequested: 1,
@@ -181,8 +185,8 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     __typename: 'ExternalChangeset',
                     body: 'body123',
                     checkState: ChangesetCheckState.PASSED,
-                    createdAt: subDays(new Date(), 5).toISOString(),
-                    updatedAt: subDays(new Date(), 5).toISOString(),
+                    createdAt: subDays(now, 5).toISOString(),
+                    updatedAt: subDays(now, 5).toISOString(),
                     diffStat: {
                         __typename: 'DiffStat',
                         added: 100,
@@ -196,6 +200,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     externalURL: {
                         url: 'http://test.test/123',
                     },
+                    forkNamespace: null,
                     id: 'changeset123',
                     labels: [
                         {
@@ -218,8 +223,10 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
+                            baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        forkTarget: null,
                     },
                 },
             ],
@@ -297,8 +304,8 @@ function mockCommonGraphQLResponses(
                     draft: 2,
                 },
                 closedAt: null,
-                createdAt: subDays(new Date(), 5).toISOString(),
-                updatedAt: subDays(new Date(), 5).toISOString(),
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
                 description: '### Very cool batch change',
                 creator: {
                     url: '/users/alice',
@@ -312,12 +319,13 @@ function mockCommonGraphQLResponses(
                 diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
-                lastAppliedAt: subDays(new Date(), 5).toISOString(),
+                lastAppliedAt: subDays(now, 5).toISOString(),
                 lastApplier: {
                     url: '/users/bob',
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                     codeHostsWithoutWebhooks: {
@@ -535,11 +543,11 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(2)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(3)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(3)')
                 await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.
@@ -553,7 +561,7 @@ describe('Batches', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
-                    ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
+                    ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(now, 1).toISOString() }),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
@@ -610,7 +618,7 @@ describe('Batches', () => {
                             __typename: 'BatchSpec',
                             id: 'spec123',
                             appliesToBatchChange: null,
-                            createdAt: subDays(new Date(), 2).toISOString(),
+                            createdAt: subDays(now, 2).toISOString(),
                             creator: {
                                 username: 'alice',
                                 url: '/users/alice',
@@ -626,7 +634,7 @@ describe('Batches', () => {
                                 changed: 100,
                                 deleted: 182,
                             },
-                            expiresAt: addDays(new Date(), 3).toISOString(),
+                            expiresAt: addDays(now, 3).toISOString(),
                             namespace:
                                 entityType === 'user'
                                     ? {
@@ -677,6 +685,7 @@ describe('Batches', () => {
                                                     __typename: 'GitBranchChangesetDescription',
                                                     baseRef: 'main',
                                                     headRef: 'head-ref',
+                                                    fork: false,
                                                     baseRepository: {
                                                         name: 'github.com/sourcegraph/repo',
                                                         url: 'http://test.test/repo',
@@ -707,9 +716,10 @@ describe('Batches', () => {
                                                     },
                                                     title: 'Changeset title',
                                                 },
-                                                expiresAt: addDays(new Date(), 3).toISOString(),
+                                                expiresAt: addDays(now, 3).toISOString(),
                                                 id: 'changesetspec123',
                                                 type: ChangesetSpecType.BRANCH,
+                                                forkTarget: null,
                                             },
                                         },
                                     },

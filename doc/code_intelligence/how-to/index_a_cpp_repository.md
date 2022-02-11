@@ -57,6 +57,10 @@ with `gcc` or `g++`.)
   ```
   docker run -e SRC_ACCESS_TOKEN=$ACCESS_TOKEN -e SRC_ENDPOINT=https://sourcegraph.example.com -e PROJECT_REV=HEAD $IMAGE_ID
   ```
+> NOTE: The URL used for SRC_ENDPOINT must have the http{,s}:// or it will not work
+
+> NOTE: If SRC_ACCESS_TOKEN and SRC_ENDPOINT are not set you may receive an "unsupported protocol scheme" error
+
   with the following substitutions:
   * `SRC_ACCESS_TOKEN=`: the Sourcegraph access token you just created
   * `SRC_ENDPOINT=`: the URL to your Sourcegraph instance
@@ -80,7 +84,7 @@ container. If this situation applies to you, you'll need to install `lsif-clang`
 local dev environment.
 
 1. Install `lsif-clang` in your environment using the [instructions in the `lsif-clang`
-   repository](https://github.com/sourcegraph/lsif-clang/blob/llvmorg-10.0.0-lsif-clang/docs/install.md).
+   repository](https://github.com/sourcegraph/lsif-clang/blob/main/docs/install.md).
 
 1. [Install the `src` CLI](https://github.com/sourcegraph/src-cli).
 

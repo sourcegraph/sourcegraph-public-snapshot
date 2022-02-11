@@ -32,10 +32,10 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache --verbose \
+    # [NOTE: git-version-min-requirement]
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git=~2.34.1' \
+    'git>=2.34.1' \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
@@ -43,13 +43,14 @@ RUN apk add --no-cache --verbose \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     && apk add --no-cache --verbose \
-    'bash=~5.0.17' \
-    'redis=~5.0' \
+    'bash>=5.0.17' \
+    'redis>=5.0' \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=~14.5.0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
     postgresql=12.9-r0 \
-    postgresql-contrib
+    postgresql-contrib \
+    cmake
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -61,7 +62,7 @@ COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-08-31T05-46-54Z
+ENV MINIO_VERSION=RELEASE.2021-12-10T23-03-39Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio
@@ -82,7 +83,6 @@ COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
-# hadolint ignore=DL3018
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \
@@ -103,6 +103,49 @@ COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz /
 RUN tar zxf /lib-x64.tgz --directory /
 
+# p4-fusion installation
+RUN apk add --no-cache \
+    --virtual p4-build-deps \
+    g++ \
+    gcc \
+    perl \
+    cmake \
+    make
+
+# Fetching p4 sources archive
+RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz && \
+    mv v1.5.tar.gz /usr/local/bin && \
+    mkdir -p /usr/local/bin/p4-fusion-src && \
+    tar -C /usr/local/bin/p4-fusion-src -xzvf /usr/local/bin/v1.5.tar.gz --strip 1
+
+# We need a specific version of OpenSSL
+RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
+
+WORKDIR /openssl-1.0.2t
+
+RUN ./config && make && make install
+
+# We also need Helix Core C++ API to build p4-fusion
+RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz && \
+    mkdir -p /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux && \
+    mv p4api.tgz /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux && \
+    tar -C /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux -xzvf /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux/p4api.tgz --strip 1
+
+WORKDIR /usr/local/bin/p4-fusion-src
+
+# Build p4-fusion
+RUN ./generate_cache.sh Release
+RUN ./build.sh
+
+WORKDIR /usr/local/bin
+# Move exe file to /usr/local/bin where other executables are located; delete src directory and archive
+RUN mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin && \
+    rm -rf /usr/local/bin/p4-fusion-src && \
+    rm /usr/local/bin/v1.5.tar.gz
+
+RUN apk --no-cache --purge del p4-build-deps
+# p4-fusion installation completed here
+
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
@@ -110,6 +153,8 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
+
+WORKDIR /
 
 ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

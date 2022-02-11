@@ -4,16 +4,17 @@ import React from 'react'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/schema'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
 
-const { add } = storiesOf('web/searchContexts/SearchContextForm', module)
+const { add } = storiesOf('web/enterprise/searchContexts/SearchContextForm', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
 
@@ -28,6 +29,7 @@ const onSubmit = (): Observable<ISearchContext> =>
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories: [],
+        query: '',
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
     })
@@ -41,6 +43,7 @@ const searchContextToEdit: ISearchContext = {
     public: true,
     autoDefined: false,
     description: 'Repositories on Sourcegraph',
+    query: '',
     repositories: [
         {
             __typename: 'SearchContextRepositoryRevisions',
@@ -72,6 +75,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)
@@ -86,6 +90,8 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>
@@ -104,6 +110,8 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>

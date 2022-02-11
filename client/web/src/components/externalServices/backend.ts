@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -206,6 +206,35 @@ export const listExternalServiceFragment = gql`
         }
         grantedScopes
     }
+`
+export const listExternalServiceInvitableCollaboratorsFragment = gql`
+    fragment ListExternalServiceInvitableCollaboratorsFields on ExternalService {
+        invitableCollaborators {
+            email
+            displayName
+            name
+            avatarURL
+        }
+    }
+`
+
+export const EXTERNAL_SERVICES_WITH_COLLABORATORS = gql`
+    query ExternalServicesWithCollaborators($first: Int, $after: String, $namespace: ID) {
+        externalServices(first: $first, after: $after, namespace: $namespace) {
+            nodes {
+                ...ListExternalServiceFields
+                ...ListExternalServiceInvitableCollaboratorsFields
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+
+    ${listExternalServiceFragment}
+    ${listExternalServiceInvitableCollaboratorsFragment}
 `
 
 export const EXTERNAL_SERVICES = gql`

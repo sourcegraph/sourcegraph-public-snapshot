@@ -105,25 +105,18 @@ add('Line chart with missing data', () => (
                     dataKey: 'a',
                     name: 'A metric',
                     stroke: 'var(--blue)',
-                    linkURLs: [
-                        '#A:1st_data_point',
-                        '#A:2nd_data_point',
-                        '#A:3rd_data_point',
-                        '#A:4th_data_point',
-                        '#A:5th_data_point',
-                    ],
+                    linkURLs: {
+                        [1588965700286 - 4 * 24 * 60 * 60 * 1000]: '#A:1st_data_point',
+                        [1588965700286 - 3 * 24 * 60 * 60 * 1000]: '#A:2st_data_point',
+                        [1588965700286 - 3 * 24 * 60 * 60 * 1000]: '#A:3rd_data_point',
+                        [1588965700286 - 2 * 24 * 60 * 60 * 1000]: '#A:4th_data_point',
+                        [1588965700286 - 1 * 24 * 60 * 60 * 1000]: '#A:5th_data_point',
+                    },
                 },
                 {
                     dataKey: 'b',
                     name: 'B metric',
                     stroke: 'var(--warning)',
-                    linkURLs: [
-                        '#B:1st_data_point',
-                        '#B:2nd_data_point',
-                        '#B:3rd_data_point',
-                        '#B:4th_data_point',
-                        '#B:5th_data_point',
-                    ],
                 },
             ],
             xAxis: {
@@ -149,6 +142,7 @@ add('Line chart with 0 to 1 data', () => (
                     dataKey: 'a',
                     name: 'A metric',
                     stroke: 'var(--red)',
+                    linkURLs: ['#A:1st_data_point', 'https://example.com'],
                 },
             ],
             xAxis: {

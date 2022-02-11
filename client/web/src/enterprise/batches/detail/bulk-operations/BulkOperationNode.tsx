@@ -7,13 +7,11 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { pluralize } from '@sourcegraph/common'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { BulkOperationFields } from '../../../../graphql-operations'
@@ -102,25 +100,25 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                     title={<h4 className="mb-0">The following errors occured while running this task:</h4>}
                 >
                     {node.errors.map((error, index) => (
-                        <div className="mt-2 alert alert-danger" key={index}>
+                        <Alert className="mt-2" key={index} variant="danger">
                             <p>
                                 {error.changeset.__typename === 'HiddenExternalChangeset' ? (
                                     <span className="text-muted">On hidden repository</span>
                                 ) : (
                                     <>
-                                        <LinkOrSpan className="alert-link" to={error.changeset.externalURL?.url}>
+                                        <AlertLink to={error.changeset.externalURL?.url ?? ''}>
                                             {error.changeset.title} <ExternalLinkIcon className="icon-inline" />
-                                        </LinkOrSpan>{' '}
+                                        </AlertLink>{' '}
                                         on{' '}
-                                        <Link className="alert-link" to={error.changeset.repository.url}>
+                                        <AlertLink to={error.changeset.repository.url}>
                                             repository {error.changeset.repository.name}
-                                        </Link>
+                                        </AlertLink>
                                         .
                                     </>
                                 )}
                             </p>
                             {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
-                        </div>
+                        </Alert>
                     ))}
                 </Collapsible>
             </div>

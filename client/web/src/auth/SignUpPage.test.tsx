@@ -1,9 +1,10 @@
-import { render } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../auth'
 import { FeatureFlagName } from '../featureFlags/featureFlags'
@@ -33,42 +34,46 @@ describe('SignUpPage', () => {
 
     it('renders sign up page (server)', () => {
         expect(
-            render(
-                <MemoryRouter>
-                    <SignUpPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            experimentalFeatures: { enablePostSignupFlow: false },
-                            authProviders,
-                            xhrHeaders: {},
-                        }}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
-                </MemoryRouter>
+            renderWithBrandedContext(
+                <MockedTestProvider mocks={[]}>
+                    <MemoryRouter>
+                        <SignUpPage
+                            {...commonProps}
+                            authenticatedUser={null}
+                            context={{
+                                allowSignup: true,
+                                sourcegraphDotComMode: false,
+                                experimentalFeatures: { enablePostSignupFlow: false },
+                                authProviders,
+                                xhrHeaders: {},
+                            }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
+                    </MemoryRouter>
+                </MockedTestProvider>
             ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('renders sign up page (cloud)', () => {
         expect(
-            render(
-                <MemoryRouter>
-                    <SignUpPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: true,
-                            experimentalFeatures: { enablePostSignupFlow: false },
-                            authProviders,
-                            xhrHeaders: {},
-                        }}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
-                </MemoryRouter>
+            renderWithBrandedContext(
+                <MockedTestProvider mocks={[]}>
+                    <MemoryRouter>
+                        <SignUpPage
+                            {...commonProps}
+                            authenticatedUser={null}
+                            context={{
+                                allowSignup: true,
+                                sourcegraphDotComMode: true,
+                                experimentalFeatures: { enablePostSignupFlow: false },
+                                authProviders,
+                                xhrHeaders: {},
+                            }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
+                    </MemoryRouter>
+                </MockedTestProvider>
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -83,21 +88,23 @@ describe('SignUpPage', () => {
         } as AuthenticatedUser
 
         expect(
-            render(
-                <MemoryRouter>
-                    <SignUpPage
-                        {...commonProps}
-                        authenticatedUser={mockUser}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            experimentalFeatures: { enablePostSignupFlow: false },
-                            authProviders,
-                            xhrHeaders: {},
-                        }}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
-                </MemoryRouter>
+            renderWithBrandedContext(
+                <MockedTestProvider mocks={[]}>
+                    <MemoryRouter>
+                        <SignUpPage
+                            {...commonProps}
+                            authenticatedUser={mockUser}
+                            context={{
+                                allowSignup: true,
+                                sourcegraphDotComMode: false,
+                                experimentalFeatures: { enablePostSignupFlow: false },
+                                authProviders,
+                                xhrHeaders: {},
+                            }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
+                    </MemoryRouter>
+                </MockedTestProvider>
             ).asFragment()
         ).toMatchSnapshot()
     })

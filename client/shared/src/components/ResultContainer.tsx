@@ -7,6 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './ResultContainer.module.scss'
 import { SearchResultStar } from './SearchResultStar'
@@ -164,11 +165,12 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     </>
                 )}
                 {collapsible && (
-                    <button
-                        type="button"
+                    <Button
                         data-testid="toggle-matches-container"
-                        className={classNames('btn btn-sm btn-link py-0', styles.toggleMatchesContainer)}
+                        className={classNames('py-0', styles.toggleMatchesContainer)}
                         onClick={toggle}
+                        variant="link"
+                        size="sm"
                     >
                         {expanded ? (
                             <>
@@ -183,7 +185,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                                 {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
                             </>
                         )}
-                    </button>
+                    </Button>
                 )}
                 {matchCountLabel && formattedRepositoryStarCount && (
                     <div className={classNames('mx-2', styles.headerDivider)} />

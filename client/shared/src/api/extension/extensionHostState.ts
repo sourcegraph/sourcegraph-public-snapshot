@@ -2,16 +2,16 @@ import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
+import { Context } from '@sourcegraph/template-parser'
+
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
-import { ReferenceCounter } from '../../util/ReferenceCounter'
 import { MainThreadAPI } from '../contract'
 import { Contributions } from '../protocol'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
 import { ExecutableExtension, observeActiveExtensions } from './activation'
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { Context } from './api/context/context'
 import { ExtensionDocument } from './api/textDocument'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { InitData } from './extensionHost'
@@ -22,6 +22,7 @@ import {
     PlainNotification,
     ProgressNotification,
 } from './extensionHostApi'
+import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,

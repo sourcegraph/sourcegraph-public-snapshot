@@ -27,7 +27,7 @@ const INSIGHT_PAGE_CONTEXT = {}
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
     const { telemetryService, insights } = props
 
-    const [layouts, setLayouts] = useState<Layouts>(insightLayoutGenerator(insights))
+    const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
 
     useEffect(() => {

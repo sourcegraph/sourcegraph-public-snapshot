@@ -7,9 +7,8 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Container, Button, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -169,13 +168,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         <small className="text-muted">
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
                             Do not include{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                            <Link
+                                to="/help/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                                 target="_blank"
                                 rel="noopener"
                             >
                                 confidential information
-                            </a>
+                            </Link>
                             .
                         </small>
                     </div>
@@ -216,10 +215,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             authenticatedUser={authenticatedUser}
                             disabled={!formCompletion.triggerCompleted}
                             onActionsChange={onActionsChange}
-                            description={currentCodeMonitorState.description}
-                            cardBtnClassName={styles.cardButton}
-                            cardLinkClassName={styles.cardLink}
-                            cardClassName={styles.card}
+                            monitorName={currentCodeMonitorState.description}
                         />
                     </div>
                     <hr className={classNames('my-3', styles.horizontalRule)} />
@@ -248,7 +244,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 <div>
                     <div className="d-flex justify-content-between my-4">
                         <div>
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={
                                     !formCompletion.actionCompleted ||
@@ -257,34 +253,30 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                     !hasChangedFields
                                 }
                                 data-testid="submit-monitor"
-                                className="btn btn-primary mr-2 test-submit-monitor"
+                                className="mr-2 test-submit-monitor"
+                                variant="primary"
                             >
                                 {submitButtonLabel}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={onCancel}
-                                data-testid="cancel-monitor"
-                            >
+                            </Button>
+                            <Button onClick={onCancel} data-testid="cancel-monitor" variant="secondary">
                                 Cancel
-                            </button>
+                            </Button>
                         </div>
                         {showDeleteButton && (
                             <div>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-danger"
+                                <Button
                                     onClick={toggleDeleteModal}
                                     data-testid="delete-monitor"
+                                    outline={true}
+                                    variant="danger"
                                 >
                                     Delete
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
+                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
                     )}
                 </div>
             </Form>

@@ -6,7 +6,7 @@ var cases = []struct {
 	args string
 	want string
 }{
-	/* {"", ""},
+	{"", ""},
 	{"camelCase", "camel_case"},
 	{"PascalCase", "pascal_case"},
 	{"snake_case", "snake_case"},
@@ -25,12 +25,13 @@ var cases = []struct {
 	{"Id0Value", "id0_value"},
 	{"ID0Value", "id0_value"},
 	{"MyLIFEIsAwesomE", "my_life_is_awesom_e"},
-	{"Japan125Canada130Australia150", "japan125_canada130_australia150"}, */
+	{"Japan125Canada130Australia150", "japan125_canada130_australia150"},
 	{"codeintel.uploadHandler", "codeintel.upload_handler"},
 	{"codeintel.GoodbyeBob", "codeintel.goodbye_bob"},
 	{"CodeInsights.HistoricalEnqueuer", "code_insights.historical_enqueuer"},
 	{"codeintel.autoindex-enqueuer", "codeintel.autoindex_enqueuer"},
 	{"diskcache.Cached Fetch", "diskcache.cached_fetch"},
+	{"uploadIDsWithReferences", "upload_ids_with_references"},
 }
 
 func TestToSnakeCase(t *testing.T) {

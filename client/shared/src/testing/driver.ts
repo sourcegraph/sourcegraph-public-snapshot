@@ -26,11 +26,12 @@ import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/oper
 import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
+import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
+
 import { ExternalServiceKind } from '../graphql-operations'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../schema'
 import { Settings } from '../settings/settings'
-import { isDefined } from '../util/types'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
@@ -259,6 +260,23 @@ export class Driver {
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
+    }
+
+    /**
+     * Sets 'Enable click to go to definition' option flag value.
+     */
+    public async setClickGoToDefOptionFlag(isEnabled: boolean): Promise<void> {
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        const toggleAdvancedSettingsButton = await this.page.waitForSelector('.test-toggle-advanced-settings-button')
+        await toggleAdvancedSettingsButton?.click()
+        const checkbox = await this.findElementWithText('Enable click to go to definition')
+        if (!checkbox) {
+            throw new Error("'Enable click to go to definition' checkbox not found.")
+        }
+        const isChecked = await checkbox.$eval('input', input => (input as HTMLInputElement).checked)
+        if (isEnabled !== isChecked) {
+            await checkbox.click()
+        }
     }
 
     public async close(): Promise<void> {

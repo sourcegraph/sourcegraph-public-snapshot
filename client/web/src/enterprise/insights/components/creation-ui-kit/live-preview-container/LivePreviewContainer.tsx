@@ -3,8 +3,9 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
 import * as View from '../../../../../views'
@@ -17,19 +18,23 @@ const LINE_CHART_SETTINGS = {
 }
 
 export interface LivePreviewContainerProps {
-    onUpdateClick: () => void
     loading: boolean
     disabled: boolean
-    className?: string
+    livePreviewControls?: boolean
     chartContentClassName?: string
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
+    title?: string
     description?: ReactNode
+    className?: string
+    onUpdateClick: () => void
 }
 
 export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContainerProps>): ReactElement {
     const {
+        title = '',
+        livePreviewControls = true,
         disabled,
         loading,
         dataOrError,
@@ -43,14 +48,16 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
 
     return (
         <aside className={classNames(styles.livePreview, className)}>
-            <div className="d-flex align-items-center mb-1">
-                Live preview
-                <button type="button" disabled={disabled} className="btn btn-icon ml-1" onClick={onUpdateClick}>
-                    <RefreshIcon size="1rem" />
-                </button>
-            </div>
+            {livePreviewControls && (
+                <div className="d-flex align-items-center mb-1">
+                    Live preview
+                    <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
+                        <RefreshIcon size="1rem" />
+                    </Button>
+                </div>
+            )}
 
-            <View.Root className={classNames(chartContentClassName, 'flex-grow-1')}>
+            <View.Root title={title} className={classNames(chartContentClassName, 'flex-grow-1')}>
                 {loading ? (
                     <View.LoadingContent text="Loading code insight" />
                 ) : isErrorLike(dataOrError) ? (

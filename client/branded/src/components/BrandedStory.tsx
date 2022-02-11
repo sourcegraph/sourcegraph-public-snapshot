@@ -5,10 +5,11 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
+// Add root Tooltip for Storybook
+// eslint-disable-next-line no-restricted-imports
+import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import brandedStyles from '../global-styles/index.scss'
-
-import { Tooltip } from './tooltip/Tooltip'
 
 export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<ThemeProps>
@@ -31,10 +32,12 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
 
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
-            <MemoryRouter {...memoryRouterProps}>
-                <Tooltip />
-                <Children isLightTheme={isLightTheme} />
-            </MemoryRouter>
+            <WildcardThemeContext.Provider value={{ isBranded: true }}>
+                <MemoryRouter {...memoryRouterProps}>
+                    <Tooltip />
+                    <Children isLightTheme={isLightTheme} />
+                </MemoryRouter>
+            </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )
 }

@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, FlexTextArea } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
-import { FlexTextArea } from '../../../../../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'
 
 import styles from './DrillDownRegExpInput.module.scss'
 
@@ -18,7 +17,12 @@ export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps
     return (
         <span className="d-flex w-100">
             <span className={classNames(styles.prefixText, 'text-monospace')}>{prefix}</span>
-            <FlexTextArea {...inputProps} className={classNames(inputProps.className, styles.input)} ref={reference} />
+            <FlexTextArea
+                {...inputProps}
+                containerClassName="w-100"
+                className={classNames(inputProps.className, styles.input)}
+                ref={reference}
+            />
         </span>
     )
 })

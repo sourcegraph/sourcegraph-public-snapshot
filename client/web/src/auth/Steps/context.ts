@@ -15,6 +15,7 @@ export interface Steps {
 export interface State {
     current: number
     initialStep: number
+    totalSteps: number
     steps: Steps
 }
 

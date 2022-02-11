@@ -2,6 +2,7 @@
 package gitservice
 
 import (
+	"bytes"
 	"compress/gzip"
 	"net/http"
 	"os"
@@ -9,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var uploadPackArgs = []string{
@@ -19,6 +22,12 @@ var uploadPackArgs = []string{
 	// Can fetch any object. Used in case of race between a resolve ref and a
 	// fetch of a commit. Safe to do, since this is only used internally.
 	"-c", "uploadpack.allowAnySHA1InWant=true",
+
+	// The maximum size of memory that is consumed by each thread in git-pack-objects[1]
+	// for pack window memory when no limit is given on the command line.
+	//
+	// Important for large monorepos to not run into memory issues when cloned.
+	"-c", "pack.windowMemory=100m",
 
 	"upload-pack",
 
@@ -122,9 +131,11 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		env = append(env, "GIT_PROTOCOL="+protocol)
 	}
 
+	var stderr bytes.Buffer
 	cmd := exec.CommandContext(r.Context(), "git", args...)
 	cmd.Env = env
 	cmd.Stdout = w
+	cmd.Stderr = &stderr
 	cmd.Stdin = body
 
 	if s.CommandHook != nil {
@@ -134,6 +145,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Errorf("error running git service command args=%q: %w", args, err)
+		log15.Error("git-service error", "error", err, "stderr", stderr.String())
 		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }

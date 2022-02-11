@@ -1,7 +1,7 @@
+import { isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import {
     Insight,
     InsightExecutionType,
@@ -53,6 +53,7 @@ export function parseInsightFromSubject(
                 visibility: subject.subject.id,
                 type: InsightExecutionType.Runtime,
                 viewType: type,
+                dashboardReferenceCount: 0,
                 ...insightConfiguration,
             }
         }
@@ -64,8 +65,13 @@ export function parseInsightFromSubject(
                 id: insightId,
                 visibility: subject.subject.id,
                 type: InsightExecutionType.Runtime,
+                dashboardReferenceCount: 0,
                 viewType: type,
                 ...insightConfiguration,
+                series: insightConfiguration.series?.map((line, index) => ({
+                    ...line,
+                    id: `${line.name}-${index}`,
+                })),
             }
         }
     }
@@ -76,6 +82,7 @@ export function parseInsightFromSubject(
     // At the moment we support only search based insight in setting BE insight map
     if (allReposInsights[insightId] && type === InsightType.SearchBased) {
         const insightConfiguration = allReposInsights[insightId]
+        const filters = insightConfiguration.filters ?? { includeRepoRegexp: '', excludeRepoRegexp: '' }
 
         return {
             id: insightId,
@@ -83,11 +90,13 @@ export function parseInsightFromSubject(
             type: InsightExecutionType.Backend,
             step: { months: 1 },
             viewType: type,
+            dashboardReferenceCount: 0,
             ...insightConfiguration,
             series: insightConfiguration.series?.map((line, index) => ({
                 id: `${line.name}-${index}`,
                 ...line,
             })),
+            filters,
         }
     }
 

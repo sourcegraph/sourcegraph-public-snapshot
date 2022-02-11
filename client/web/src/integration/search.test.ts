@@ -2,6 +2,7 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -53,7 +54,7 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
@@ -296,7 +297,7 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
-        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+        test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')

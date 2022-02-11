@@ -5,11 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNotInited(t *testing.T) {
@@ -44,10 +42,10 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		gss := dbmock.NewMockGlobalStateStore()
+		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		if err := tryInit(db); err != nil {
@@ -63,10 +61,10 @@ func TestGet(t *testing.T) {
 
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
-		gss := dbmock.NewMockGlobalStateStore()
+		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(nil, errors.New("x"))
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		want := errors.Errorf("panic: [Error initializing global state: x]")
@@ -86,7 +84,7 @@ func TestGet(t *testing.T) {
 		os.Setenv("TRACKING_APP_ID", "a")
 		defer os.Unsetenv("TRACKING_APP_ID")
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 
 		if err := tryInit(db); err != nil {
 			t.Fatal(err)
@@ -104,10 +102,10 @@ func TestGet(t *testing.T) {
 		os.Setenv("TRACKING_APP_ID", "a")
 		defer os.Unsetenv("TRACKING_APP_ID")
 
-		gss := dbmock.NewMockGlobalStateStore()
+		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "b"}, nil)
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		if err := tryInit(db); err != nil {

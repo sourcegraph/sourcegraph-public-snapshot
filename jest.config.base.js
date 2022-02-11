@@ -30,9 +30,7 @@ const config = {
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/comlink|monaco-editor|marked)',
-  ],
+  transformIgnorePatterns: ['/node_modules/(?!abortable-rx|@sourcegraph/comlink|monaco-editor|marked)'],
 
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',
@@ -55,6 +53,7 @@ const config = {
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
+    path.join(__dirname, 'client/shared/dev/mockPopper.ts'),
     path.join(__dirname, 'client/shared/dev/fetch'),
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),

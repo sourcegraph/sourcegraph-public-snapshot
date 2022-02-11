@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -44,7 +44,7 @@ func installExec(ctx context.Context, args []string) error {
 		// to /usr/local/bin. We're safe with ~/.sg/sg.
 		location = filepath.Join(homeDir, ".sg", "sg")
 	default:
-		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+		return errors.Newf("unsupported platform: %s", runtime.GOOS)
 	}
 
 	var logoOut bytes.Buffer

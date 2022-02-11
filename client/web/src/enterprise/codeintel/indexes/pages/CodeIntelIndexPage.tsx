@@ -3,18 +3,16 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { Redirect, RouteComponentProps } from 'react-router'
 import { takeWhile } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import { ErrorAlert } from '../../../../components/alerts'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifIndexFields } from '../../../../graphql-operations'
-import { CodeIntelStateBanner } from '../../shared/components/CodeIntelStateBanner'
+import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'
 import { CodeIntelAssociatedUpload } from '../components/CodeIntelAssociatedUpload'
 import { CodeIntelDeleteIndex } from '../components/CodeIntelDeleteIndex'
 import { CodeIntelIndexMeta } from '../components/CodeIntelIndexMeta'
@@ -28,9 +26,9 @@ export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: strin
     now?: () => Date
 }
 
-const classNamesByState = new Map([
-    [LSIFIndexState.COMPLETED, 'alert-success'],
-    [LSIFIndexState.ERRORED, 'alert-danger'],
+const variantByState = new Map<LSIFIndexState, CodeIntelStateBannerProps['variant']>([
+    [LSIFIndexState.COMPLETED, 'success'],
+    [LSIFIndexState.ERRORED, 'danger'],
 ])
 
 export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
@@ -108,7 +106,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
             {isErrorLike(indexOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} />
             ) : !indexOrError ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 <>
                     <PageHeader
@@ -136,7 +134,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                             failure={indexOrError.failure}
                             typeName="index"
                             pluralTypeName="indexes"
-                            className={classNamesByState.get(indexOrError.state)}
+                            variant={variantByState.get(indexOrError.state)}
                         />
                     </Container>
 

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import { render as reactDOMRender } from 'react-dom'
+import { render as reactDOMRender, Renderer } from 'react-dom'
 import {
     asyncScheduler,
     combineLatest,
@@ -34,16 +34,8 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { NotificationType, HoverAlert } from 'sourcegraph'
+import { HoverAlert } from 'sourcegraph'
 
-import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
-import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     ContextResolver,
     createHoverifier,
@@ -51,25 +43,39 @@ import {
     Hoverifier,
     HoverState,
     MaybeLoadingResult,
-} from '@sourcegraph/shared/src/codeintellify'
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
+    DiffPart,
+} from '@sourcegraph/codeintellify'
+import {
+    asError,
+    asObservable,
+    isDefined,
+    isInstanceOf,
+    property,
+    registerHighlightContributions,
+    isExternalLink,
+} from '@sourcegraph/common'
+import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
+import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
-import { isDefined, isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     FileSpec,
     UIPositionSpec,
@@ -87,19 +93,16 @@ import { observeStorageKey } from '../../../browser-extension/web-extension-api/
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
+import { TrackAnchorClick } from '../../components/TrackAnchorClick'
+import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
-import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import {
-    DEFAULT_SOURCEGRAPH_URL,
-    getPlatformName,
-    isDefaultSourcegraphUrl,
-    observeSourcegraphURL,
-} from '../../util/context'
+import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
-import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
@@ -107,6 +110,7 @@ import { githubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
+import styles from './codeHost.module.scss'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
@@ -275,7 +279,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         context: URLToFileContext
     ) => string
 
-    notificationClassNames: Record<NotificationType, string>
+    notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
     /**
      * CSS classes for the command palette to customize styling
@@ -291,11 +295,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
-
-    /**
-     * Whether or not hover tooltips can be pinned.
-     */
-    pinningEnabled?: boolean
 }
 
 /**
@@ -377,7 +376,7 @@ function initCodeIntelligence({
     hoverAlerts,
     privateCloudErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
-    render: typeof reactDOMRender
+    render: Renderer
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
     privateCloudErrors: Observable<boolean>
@@ -386,9 +385,6 @@ function initCodeIntelligence({
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
-
-    /** Emits when the close button was clicked */
-    const closeButtonClicks = new Subject<MouseEvent>()
 
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -412,7 +408,6 @@ function initCodeIntelligence({
         HoverMerged,
         ActionItemAction
     >({
-        closeButtonClicks,
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
@@ -475,7 +470,6 @@ function initCodeIntelligence({
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
-        pinningEnabled: codeHost.pinningEnabled ?? true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
@@ -485,7 +479,6 @@ function initCodeIntelligence({
     > {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
-        private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
 
         constructor(props: {}) {
             super(props)
@@ -499,6 +492,59 @@ function initCodeIntelligence({
                 hoverifier.hoverStateUpdates.subscribe(update => {
                     this.setState(update)
                 })
+            )
+            this.subscription.add(
+                hoverifier.hoverStateUpdates
+                    .pipe(
+                        withLatestFrom(observeOptionFlag('clickToGoToDefinition')),
+                        filter(([, clickToGoToDefinition]) => clickToGoToDefinition),
+                        map(([hoverState]) => hoverState),
+                        switchMap(({ hoveredTokenElement: token, hoverOverlayProps }) => {
+                            if (token === undefined) {
+                                return EMPTY
+                            }
+                            if (hoverOverlayProps === undefined) {
+                                return EMPTY
+                            }
+
+                            const { actionsOrError } = hoverOverlayProps
+                            const definitionAction =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+                            const referenceAction =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+                            const action = definitionAction || referenceAction
+                            if (!action) {
+                                return EMPTY
+                            }
+
+                            const def = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!def) {
+                                return EMPTY
+                            }
+
+                            const oldCursor = token.style.cursor
+                            token.style.cursor = 'pointer'
+
+                            return fromEvent(token, 'click').pipe(
+                                tap(() => {
+                                    const selection = window.getSelection()
+                                    if (selection !== null && selection.toString() !== '') {
+                                        return
+                                    }
+
+                                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                                    telemetryService.log(`${actionType}CodeHost.click`)
+                                    window.location.href = def
+                                }),
+                                finalize(() => (token.style.cursor = oldCursor))
+                            )
+                        })
+                    )
+                    .subscribe()
             )
             if (codeHost.isLightTheme) {
                 this.subscription.add(
@@ -515,23 +561,52 @@ function initCodeIntelligence({
         public componentDidUpdate(): void {
             containerComponentUpdates.next()
         }
+        /**
+         * Intercept all link clicks and append UTM markers to any external URLs
+         */
+        private handleHoverLinkClick = (event: React.MouseEvent): void => {
+            const element = event.target as HTMLAnchorElement
+            if (!isExternalLink(element.href)) {
+                return
+            }
+
+            const newHref = createURLWithUTM(new URL(element.href), {
+                utm_source: getPlatformName(),
+                utm_campaign: 'hover',
+            }).href
+
+            if (element.getAttribute('target') === '_blank') {
+                window.open(newHref, '_blank', element.getAttribute('rel') ?? undefined)
+            } else {
+                window.location.href = newHref
+            }
+
+            event.preventDefault()
+        }
         public render(): JSX.Element | null {
             const hoverOverlayProps = this.getHoverOverlayProps()
-            return hoverOverlayProps ? (
-                <HoverOverlay
-                    {...hoverOverlayProps}
-                    {...codeHost.hoverOverlayClassProps}
-                    telemetryService={telemetryService}
-                    isLightTheme={this.state.isLightTheme}
-                    hoverRef={this.nextOverlayElement}
-                    extensionsController={extensionsController}
-                    platformContext={platformContext}
-                    location={H.createLocation(window.location)}
-                    onCloseButtonClick={this.nextCloseButtonClick}
-                    onAlertDismissed={onHoverAlertDismissed}
-                    useBrandedLogo={true}
-                />
-            ) : null
+
+            if (!hoverOverlayProps) {
+                return null
+            }
+
+            return (
+                <TrackAnchorClick onClick={this.handleHoverLinkClick}>
+                    <HoverOverlay
+                        {...hoverOverlayProps}
+                        {...codeHost.hoverOverlayClassProps}
+                        className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
+                        telemetryService={telemetryService}
+                        isLightTheme={this.state.isLightTheme}
+                        hoverRef={this.nextOverlayElement}
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                        location={H.createLocation(window.location)}
+                        onAlertDismissed={onHoverAlertDismissed}
+                        useBrandedLogo={true}
+                    />
+                </TrackAnchorClick>
+            )
         }
         private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
@@ -635,7 +710,7 @@ export function observeHoverOverlayMountLocation(
 
 export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     mutations: Observable<MutationRecordLike[]>
-    render: typeof reactDOMRender
+    render: Renderer
     minimalUI: boolean
     hideActions?: boolean
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
@@ -1398,9 +1473,10 @@ function initializeSearchEnhancement(
     mutations: Observable<MutationRecordLike[]>
 ): Subscription {
     const { searchViewResolver, resultViewResolver, onChange } = searchEnhancement
-    const searchURL = new URL('/search', sourcegraphURL)
-    searchURL.searchParams.append('utm_source', getPlatformName())
-    searchURL.searchParams.append('utm_campaign', 'global-search')
+    const searchURL = createURLWithUTM(new URL('/search', sourcegraphURL), {
+        utm_source: getPlatformName(),
+        utm_campaign: 'global-search',
+    })
 
     const searchView = mutations.pipe(
         trackViews([searchViewResolver]),
@@ -1440,21 +1516,20 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(extensionsController)
 
-    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
-        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
+    const isTelemetryEnabled = combineLatest([
+        observeSendTelemetry(isExtension),
+        from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
+    ]).pipe(
+        map(
+            ([sendTelemetry, isPrivateRepo]) =>
+                sendTelemetry &&
+                /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
+                (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
+        )
     )
 
-    const observeSendTelemetry = combineLatest([overrideSendTelemetry, observeOptionFlag('sendTelemetry')]).pipe(
-        map(([override, sendTelemetry]) => {
-            if (override) {
-                return true
-            }
-            return sendTelemetry
-        })
-    )
-
-    const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, observeSendTelemetry)
+    const innerTelemetryService = new EventLogger(requestGraphQL, sourcegraphURL)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
     subscriptions.add(telemetryService)
 
     let codeHostSubscription: Subscription
@@ -1469,6 +1544,10 @@ export function injectCodeIntelligenceToCodeHost(
         minimalUIStorageFlag !== null ? minimalUIStorageFlag === 'true' : codeHost.type === 'gitlab' && !isExtension
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
+
+    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
+        reactDOMRender(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>, container)
+
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
         extensionDisabled.subscribe(async disableExtension => {
@@ -1486,7 +1565,7 @@ export function injectCodeIntelligenceToCodeHost(
                     platformContext,
                     showGlobalDebug,
                     telemetryService,
-                    render: reactDOMRender,
+                    render: renderWithThemeProvider as Renderer,
                     minimalUI,
                     hideActions,
                     background,

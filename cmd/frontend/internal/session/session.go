@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/inconshreveable/log15"
 
@@ -360,7 +359,7 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 		}
 
 		// Check that user still exists.
-		usr, err := database.Users(db).GetByID(r.Context(), info.Actor.UID)
+		usr, err := db.Users().GetByID(r.Context(), info.Actor.UID)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				_ = deleteSession(w, r) // clear the bad value

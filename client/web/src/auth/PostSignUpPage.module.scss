@@ -1,8 +1,6 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .post-signup-page {
-    margin-top: 7rem;
-    margin-bottom: 5rem;
     align-self: flex-start;
 
     @keyframes ellipsis {
@@ -34,4 +32,8 @@
 
 .container {
     width: 37.25rem;
+}
+
+.progress {
+    width: 50.25rem;
 }

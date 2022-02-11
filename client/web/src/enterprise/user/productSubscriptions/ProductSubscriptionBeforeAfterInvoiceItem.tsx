@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
+import { numberWithCommas } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 

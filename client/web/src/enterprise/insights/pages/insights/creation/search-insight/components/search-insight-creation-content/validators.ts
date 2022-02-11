@@ -1,7 +1,7 @@
-import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
+import { renderError } from '@sourcegraph/branded/src/components/alerts'
+import { dedupeWhitespace } from '@sourcegraph/common'
 
-import { renderError } from '../../../../../../../../components/alerts'
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
 import { Validator } from '../../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../../components/form/validators'

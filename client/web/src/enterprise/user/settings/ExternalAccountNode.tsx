@@ -1,14 +1,13 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Badge } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { Badge, Button, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
     DeleteExternalAccountResult,
@@ -150,23 +149,18 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                     </div>
                     <div className="text-nowrap">
                         {this.props.node.accountData && (
-                            <button type="button" className="btn btn-secondary" onClick={this.toggleShowData}>
+                            <Button onClick={this.toggleShowData} variant="secondary">
                                 {this.state.showData ? 'Hide' : 'Show'} data
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.node.refreshURL && (
-                            <a className="btn btn-secondary" href={this.props.node.refreshURL}>
+                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
                                 Refresh
-                            </a>
+                            </Button>
                         )}{' '}
-                        <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={this.deleteExternalAccount}
-                            disabled={loading}
-                        >
+                        <Button onClick={this.deleteExternalAccount} disabled={loading} variant="danger">
                             Delete
-                        </button>
+                        </Button>
                         {isErrorLike(this.state.deletionOrError) && (
                             <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
                         )}

@@ -12,11 +12,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/fatih/structs"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -109,8 +109,7 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 		}
 		return []jsonStringField{}, nil
 	case *schema.NPMPackagesConnection:
-		// TODO: [npm-package-support-credentials] Redact credentials here.
-		return []jsonStringField{}, nil
+		return []jsonStringField{{[]string{"credentials"}, &cfg.Credentials}}, nil
 	case *schema.OtherExternalServiceConnection:
 		return []jsonStringField{{[]string{"url"}, &cfg.Url}}, nil
 	default:

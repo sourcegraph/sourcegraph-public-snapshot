@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const changesetSpecIDKind = "ChangesetSpec"
@@ -93,6 +93,10 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 
 func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
+}
+
+func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
+	return &forkTargetResolver{changesetSpec: r.changesetSpec}
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -222,3 +226,17 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	return &body
 }
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+
+type forkTargetResolver struct {
+	changesetSpec *btypes.ChangesetSpec
+}
+
+var _ graphqlbackend.ForkTargetInterface = &forkTargetResolver{}
+
+func (r *forkTargetResolver) PushUser() bool {
+	return r.changesetSpec.IsFork()
+}
+
+func (r *forkTargetResolver) Namespace() *string {
+	return r.changesetSpec.GetForkNamespace()
+}

@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileBlockInput } from '..'
 import { WebStory } from '../../../components/WebStory'

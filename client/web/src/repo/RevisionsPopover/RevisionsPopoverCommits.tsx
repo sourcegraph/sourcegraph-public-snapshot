@@ -3,8 +3,8 @@ import * as H from 'history'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { Badge, useDebounce } from '@sourcegraph/wildcard'
@@ -91,7 +91,9 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <Badge title={node.oid} as="code">
                     {node.abbreviatedOID}
                 </Badge>
-                <small className={styles.message}>{node.subject.slice(0, 200)}</small>
+                <small title={node.author.date} className={styles.message}>
+                    {node.subject.slice(0, 200)}
+                </small>
             </ConnectionPopoverNodeLink>
         </ConnectionPopoverNode>
     )

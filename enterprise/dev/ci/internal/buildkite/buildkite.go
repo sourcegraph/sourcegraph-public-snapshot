@@ -8,7 +8,9 @@ package buildkite
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,9 +18,32 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+type featureFlags struct {
+	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
+	// agents and forces a MainDryRun type build to avoid impacting normal builds.
+	//
+	// It is meant to test the stateless builds without any side effects.
+	StatelessBuild bool
+}
+
+// FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
+var FeatureFlags = featureFlags{
+	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
+}
+
 type Pipeline struct {
-	Env   map[string]string `json:"env,omitempty"`
-	Steps []interface{}     `json:"steps"`
+	Env    map[string]string `json:"env,omitempty"`
+	Steps  []interface{}     `json:"steps"`
+	Notify []slackNotifier   `json:"notify,omitempty"`
+
+	// Group, if provided, indicates this Pipeline is actually a group of steps.
+	// See: https://buildkite.com/docs/pipelines/group-step
+	Group
+}
+
+type Group struct {
+	Group string `json:"group,omitempty"`
+	Key   string `json:"key,omitempty"`
 }
 
 type BuildOptions struct {
@@ -60,25 +85,26 @@ func (bo BuildOptions) MarshalYAML() ([]byte, error) {
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
-	Label                  string                 `json:"label"`
-	Key                    string                 `json:"key,omitempty"`
-	Command                []string               `json:"command,omitempty"`
-	DependsOn              []string               `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                   `json:"allow_dependency_failure,omitempty"`
-	TimeoutInMinutes       string                 `json:"timeout_in_minutes,omitempty"`
-	Trigger                string                 `json:"trigger,omitempty"`
-	Async                  bool                   `json:"async,omitempty"`
-	Build                  *BuildOptions          `json:"build,omitempty"`
-	Env                    map[string]string      `json:"env,omitempty"`
-	Plugins                map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
-	Concurrency            int                    `json:"concurrency,omitempty"`
-	Parallelism            int                    `json:"parallelism,omitempty"`
-	Skip                   string                 `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
-	Retry                  *RetryOptions          `json:"retry,omitempty"`
-	Agents                 map[string]string      `json:"agents,omitempty"`
+	Label                  string                   `json:"label"`
+	Key                    string                   `json:"key,omitempty"`
+	Command                []string                 `json:"command,omitempty"`
+	DependsOn              []string                 `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                     `json:"allow_dependency_failure,omitempty"`
+	TimeoutInMinutes       string                   `json:"timeout_in_minutes,omitempty"`
+	Trigger                string                   `json:"trigger,omitempty"`
+	Async                  bool                     `json:"async,omitempty"`
+	Build                  *BuildOptions            `json:"build,omitempty"`
+	Env                    map[string]string        `json:"env,omitempty"`
+	Plugins                []map[string]interface{} `json:"plugins,omitempty"`
+	ArtifactPaths          string                   `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string                   `json:"concurrency_group,omitempty"`
+	Concurrency            int                      `json:"concurrency,omitempty"`
+	Parallelism            int                      `json:"parallelism,omitempty"`
+	Skip                   string                   `json:"skip,omitempty"`
+	SoftFail               []softFailExitStatus     `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions            `json:"retry,omitempty"`
+	Agents                 map[string]string        `json:"agents,omitempty"`
+	If                     string                   `json:"if,omitempty"`
 }
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -117,7 +143,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make(map[string]interface{}),
+		Plugins: make([]map[string]interface{}, 0, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
@@ -135,32 +161,14 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 
 	// Set a default agent queue to assign this job to
 	if len(step.Agents) == 0 {
-		step.Agents["queue"] = "standard"
+		if FeatureFlags.StatelessBuild {
+			step.Agents["queue"] = "job"
+		} else {
+			step.Agents["queue"] = "standard"
+		}
 	}
 
 	p.Steps = append(p.Steps, step)
-}
-
-// AddEnsureStep adds a step that has a dependency on all other steps prior to this step,
-// up until a wait step.
-//
-// We do not go past the closest "wait" because it won't work anyway - a failure before a
-// "wait" will not allow this step to run.
-func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
-	// Collect all keys to make this step depends on all others, traversing in reverse
-	// until we reach a "wait", if there is one.
-	keys := []string{}
-	for i := len(p.Steps) - 1; i >= 0; i-- {
-		step := p.Steps[i]
-		if s, ok := step.(*Step); ok {
-			keys = append(keys, s.Key)
-		} else if wait, ok := step.(string); ok {
-			if wait == "wait" {
-				break // we are done
-			}
-		}
-	}
-	p.AddStep(label, append(opts, DependsOn(keys...))...)
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
@@ -174,6 +182,34 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
+}
+
+type slackNotifier struct {
+	Slack slackChannelsNotification `json:"slack"`
+	If    string                    `json:"if"`
+}
+
+type slackChannelsNotification struct {
+	Channels []string `json:"channels"`
+	Message  string   `json:"message"`
+}
+
+// AddFailureSlackNotify configures a notify block that updates the given channel if the
+// build fails.
+func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, err error) {
+	n := slackChannelsNotification{
+		Channels: []string{channel},
+	}
+
+	if mentionUserID != "" {
+		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
+	} else if err != nil {
+		n.Message = err.Error()
+	}
+	p.Notify = append(p.Notify, slackNotifier{
+		Slack: n,
+		If:    `build.state == "failed"`,
+	})
 }
 
 func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
@@ -196,9 +232,22 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 
 type StepOpt func(step *Step)
 
-func Cmd(command string) StepOpt {
+// RawCmd adds a command step without any instrumentation. This is useful to
+// test the instrumentation itself.
+func RawCmd(command string) StepOpt {
 	return func(step *Step) {
 		step.Command = append(step.Command, command)
+	}
+}
+
+// Cmd adds a command step with added instrumentation for testing purposes.
+func Cmd(command string) StepOpt {
+	return func(step *Step) {
+		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+		// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+		// see the underlying command even if prefixed by the tracing script.
+		tracedCmd := fmt.Sprintf("./tr %s", command)
+		step.Command = append(step.Command, tracedCmd)
 	}
 }
 
@@ -326,7 +375,9 @@ func Key(key string) StepOpt {
 
 func Plugin(name string, plugin interface{}) StepOpt {
 	return func(step *Step) {
-		step.Plugins[name] = plugin
+		wrapper := map[string]interface{}{}
+		wrapper[name] = plugin
+		step.Plugins = append(step.Plugins, wrapper)
 	}
 }
 
@@ -336,11 +387,30 @@ func DependsOn(dependency ...string) StepOpt {
 	}
 }
 
+// IfReadyForReview causes this step to only be added if this build is associated with a
+// pull request that is also ready for review.
+func IfReadyForReview() StepOpt {
+	return func(step *Step) {
+		step.If = "build.pull_request.id != null && !build.pull_request.draft"
+	}
+}
+
 // AllowDependencyFailure enables `allow_dependency_failure` attribute on the step.
 // Such a step will run when the depended-on jobs complete, fail or even did not run.
 // See extended docs here: https://buildkite.com/docs/pipelines/dependencies#allowing-dependency-failures
 func AllowDependencyFailure() StepOpt {
 	return func(step *Step) {
 		step.AllowDependencyFailure = true
+	}
+}
+
+// flattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
+// It is useful to build helpers that can then be used when defining operations,
+// when the helper wraps multiple stepOpts at once.
+func flattenStepOpts(stepOpts ...StepOpt) StepOpt {
+	return func(step *Step) {
+		for _, stepOpt := range stepOpts {
+			stepOpt(step)
+		}
 	}
 }

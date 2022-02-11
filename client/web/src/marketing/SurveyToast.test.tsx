@@ -4,16 +4,18 @@ import { cleanup, within, fireEvent } from '@testing-library/react'
 import React from 'react'
 import { take } from 'rxjs/operators'
 
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
-
-import { TemporarySettings } from '../settings/temporary/TemporarySettings'
-import { TemporarySettingsContext } from '../settings/temporary/TemporarySettingsProvider'
-import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from '../settings/temporary/TemporarySettingsStorage'
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
+import {
+    InMemoryMockSettingsBackend,
+    TemporarySettingsStorage,
+} from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { SurveyToast } from './SurveyToast'
 
 describe('SurveyToast', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
 
     afterEach(() => {
         localStorage.clear()
@@ -35,7 +37,7 @@ describe('SurveyToast', () => {
 
     const renderwithTemporarySettings = (settings: TemporarySettings) => {
         settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend(settings))
-        return renderWithRouter(
+        return renderWithBrandedContext(
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <SurveyToast />
             </TemporarySettingsContext.Provider>
@@ -155,7 +157,7 @@ describe('SurveyToast', () => {
                     'npsSurvey.hasTemporarilyDismissed': true,
                     'user.daysActiveCount': 30,
                 })
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderWithBrandedContext(<SurveyToast />)
             })
 
             it('the user is not surveyed but toast dismissal is set to false', async () => {

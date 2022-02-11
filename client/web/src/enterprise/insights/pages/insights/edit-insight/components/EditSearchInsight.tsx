@@ -4,9 +4,9 @@ import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
-import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight/types'
 import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/insight-sanitizer'
 
 interface EditSearchBasedInsightProps {
@@ -29,6 +29,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
                 stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
                 step: Object.keys(insight.step)[0] as InsightStep,
                 allRepos: true,
+                dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
 
@@ -40,6 +41,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: false,
+            dashboardReferenceCount: insight.dashboardReferenceCount,
         }
     }, [insight])
 
@@ -47,8 +49,8 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
 
-        // Preserve backend insight filters since these filters don't represent in form fields
-        // in case if editing hasn't change type of search insight.
+        // Preserve backend insight filters since these filters aren't represented
+        // in the editing form
         if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
             return onSubmit({
                 ...sanitizedInsight,

@@ -1,13 +1,12 @@
 import { combineLatest, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, LocalStorageSubject } from '@sourcegraph/common'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'

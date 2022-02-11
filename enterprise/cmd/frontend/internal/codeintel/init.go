@@ -4,31 +4,30 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
-	if err := config.Validate(); err != nil {
-		return err
-	}
-
+func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
 	resolverObservationContext := &observation.Context{
 		Logger:     observationContext.Logger,
 		Tracer:     observationContext.Tracer,
 		Registerer: observationContext.Registerer,
 		Sentry:     services.hub,
+		HoneyDataset: &honey.Dataset{
+			Name:       "codeintel-graphql",
+			SampleRate: 4,
+		},
 	}
 
-	resolver, err := newResolver(ctx, db, resolverObservationContext, services)
+	resolver, err := newResolver(ctx, db, config, resolverObservationContext, services)
 	if err != nil {
 		return err
 	}
@@ -38,7 +37,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 	return nil
 }
 
-func newResolver(ctx context.Context, db database.DB, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
 	policyMatcher := policies.NewMatcher(
 		services.gitserverClient,
 		policies.NoopExtractor,
@@ -59,6 +58,7 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 		services.indexEnqueuer,
 		hunkCache,
 		observationContext,
+		db,
 	)
 
 	return codeintelgqlresolvers.NewResolver(db, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil

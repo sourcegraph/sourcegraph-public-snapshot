@@ -8,9 +8,9 @@ import (
 	"sort"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
+	"github.com/tomnomnom/linkheader"
 
-	"github.com/sourcegraph/sourcegraph/internal/linkheader"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type releaseMeta struct {
@@ -125,6 +125,17 @@ func releaseVersionsPage(url string) ([]*semver.Version, string, error) {
 		versions = append(versions, version)
 	}
 
-	nextURL, _ := linkheader.ExtractNextURL(resp)
+	nextURL, _ := extractURL(resp, "next")
 	return versions, nextURL, nil
+}
+
+// ExtractURL retrieves the URL with given rel from the given response's Link header.
+func extractURL(resp *http.Response, rel string) (string, bool) {
+	for _, link := range linkheader.Parse(resp.Header.Get("Link")) {
+		if link.Rel == rel {
+			return link.URL, true
+		}
+	}
+
+	return "", false
 }

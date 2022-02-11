@@ -7,9 +7,8 @@ import {
     FileDecoration,
 } from 'sourcegraph'
 
+import { hasProperty } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-
-import { hasProperty } from '../../../util/types'
 
 // LINE DECORATIONS
 

@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { FileBlockInput } from '..'
 import { fetchRepository as _fetchRepository, resolveRevision as _resolveRevision } from '../../../repo/backend'

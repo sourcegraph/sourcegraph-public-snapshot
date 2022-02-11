@@ -3,9 +3,9 @@ import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import { Container, Link, PageSelector, RadioButton } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -28,6 +28,7 @@ import {
     UserSettingReposContainer,
 } from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+import styles from './SelectAffiliatedRepos.module.scss'
 
 export interface AffiliatedReposReference {
     submit: () => Promise<FetchResult<SetExternalServiceReposResult>[] | void>
@@ -101,12 +102,18 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const { setComplete, resetToTheRight, currentIndex } = useSteps()
+    const { setComplete, resetToTheRight, currentIndex, setStep } = useSteps()
     const { externalServices, errorServices } = useExternalServices(authenticatedUser.id)
     const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
     const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
 
-    const fetchingError = errorServices || errorAffiliatedRepos || errorSelectedRepos
+    const fetchingError =
+        errorServices ||
+        // The affliliated repos query will always return an error on the GraphQL API when no
+        // external services are set up. In this case we allow the user to go back to the previous
+        // step and set up code hosts.
+        (externalServices !== undefined && externalServices.length !== 0 && errorAffiliatedRepos) ||
+        errorSelectedRepos
 
     useEffect(() => {
         if (fetchingError) {
@@ -312,26 +319,37 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     const modeSelect: JSX.Element = (
         <>
-            <label className="d-flex flex-row align-items-baseline">
-                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all repositories</p>
-                    <p className="font-weight-normal text-muted">
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline">
+                <RadioButton
+                    id="sync_all_repositories"
+                    name="all_repositories"
+                    value="all"
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync all repositories</p>
+                            <p className="font-weight-normal text-muted">
+                                Will sync all current and future public and private repositories
+                            </p>
+                        </div>
+                    }
+                />
+            </div>
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    id="sync_selected_repositories"
+                    name="selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync selected repositories</p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected repositories</p>
-                </div>
-            </label>
+            </div>
         </>
     )
 
@@ -532,30 +550,48 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             <Container>
                 <ul className="list-group">
                     <ListItemContainer key="from-code-hosts">
-                        <div>
-                            {/* display type of repo sync radio buttons or shimmer when appropriate */}
-                            {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
+                        {externalServices && !hasCodeHosts ? (
+                            <div className={styles.noCodeHosts}>
+                                <p>
+                                    <Link
+                                        to="/welcome"
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            setStep(Math.max(0, currentIndex - 1))
+                                        }}
+                                    >
+                                        Add a code host
+                                    </Link>{' '}
+                                    to add repositories.
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                {/* display type of repo sync radio buttons or shimmer when appropriate */}
+                                {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 
-                            {hasCodeHosts && selectionState.radio === 'selected' && (
-                                <div className="ml-4">
-                                    {filterControls}
-                                    <table role="grid" className="table">
-                                        {
-                                            // if the repos are loaded display the rows of repos
-                                            repoState.loaded && rows
-                                        }
-                                    </table>
-                                    {filteredRepos.length > 0 && (
-                                        <PageSelector
-                                            currentPage={currentPage}
-                                            onPageChange={setPage}
-                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                            className="pt-4"
-                                        />
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                {hasCodeHosts && selectionState.radio === 'selected' && (
+                                    <div className="ml-4">
+                                        {filterControls}
+                                        <table role="grid" className="table">
+                                            {
+                                                // if the repos are loaded display the rows of repos
+                                                repoState.loaded && rows
+                                            }
+                                        </table>
+                                        {filteredRepos.length > 0 && (
+                                            <PageSelector
+                                                currentPage={currentPage}
+                                                onPageChange={setPage}
+                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                                className="pt-4"
+                                            />
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </ListItemContainer>
                 </ul>
             </Container>

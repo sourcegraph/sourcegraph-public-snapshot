@@ -1,19 +1,23 @@
 import React, { useCallback, useState, useEffect } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
-import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import {
+    ExternalServiceKind,
+    ListExternalServiceFields,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
+} from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../../org/backend'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -148,21 +152,21 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="update-github">
+            <Alert className="mb-4" role="alert" key="update-github" variant="info">
                 Update your GitHub code host connection to search private code with Sourcegraph.
-            </div>
+            </Alert>
         ) : null
 
     const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
+            <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
                 Update your GitLab code host connection to search private code with Sourcegraph.
-            </div>
+            </Alert>
         ) : null
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
-            <div className="alert alert-success my-3" role="alert" key="add-repos">
+            <Alert className="my-3" role="alert" key="add-repos" variant="success">
                 <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
                 <p className="align-middle mb-0">
                     Next,{' '}
@@ -175,7 +179,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     </Link>{' '}
                     to search with Sourcegraph.
                 </p>
-            </div>
+            </Alert>
         ) : null
 
     interface serviceProblem {
@@ -239,24 +243,24 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
-        <div className="alert alert-warning my-3" key={service.id}>
+        <Alert className="my-3" key={service.id} variant="warning">
             <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                    <Button
+                        className="font-weight-normal shadow-none p-0 border-0"
                         onClick={toggleUpdateModal}
+                        variant="link"
                     >
                         updating the code host connection
-                    </button>
+                    </Button>
                 ) : (
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
             </p>
-        </div>
+        </Alert>
     )
 
     // auth providers by service type
@@ -282,6 +286,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         },
         [authProvidersByKind]
     )
+
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
+
+    const useGitHubApp = data?.organizationFeatureFlagValue || false
 
     return (
         <div className="user-code-hosts-page">
@@ -329,6 +346,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading}
+                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                     />
                                 </CodeHostListItem>
                             ) : null
@@ -337,7 +356,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 </Container>
             ) : (
                 <div className="d-flex justify-content-center">
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </div>
             )}
 

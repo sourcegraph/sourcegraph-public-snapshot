@@ -3,9 +3,9 @@ package compression
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoStore interface {
@@ -159,7 +161,7 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 	}
 
 	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
-	err = i.commitStore.InsertCommits(ctx, repoId, commits)
+	err = i.commitStore.InsertCommits(ctx, repoId, commits, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}
@@ -172,7 +174,7 @@ func getCommits(ctx context.Context, name api.RepoName, after time.Time, operati
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)})
+	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)}, authz.DefaultSubRepoPermsChecker)
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

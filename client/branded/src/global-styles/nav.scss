@@ -1,19 +1,146 @@
-$navbar-padding-y: ($spacer / 4);
-$navbar-padding-x: ($spacer / 2);
-$nav-tabs-border-color: var(--border-color);
-$nav-tabs-link-hover-border-color: var(--border-color) var(--border-color) transparent;
-$nav-tabs-link-active-color: var(--body-color);
-$nav-tabs-link-active-border-color: var(--border-color) var(--border-color) transparent;
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
 
-@import 'bootstrap/scss/nav';
-@import 'bootstrap/scss/navbar';
+.nav-link {
+    --nav-link-padding-y: 0.5rem;
+    --nav-link-padding-x: 1rem;
+    --nav-link-disabled-color: var(--gray-06);
+
+    display: block;
+    padding: var(--nav-link-padding-y) var(--nav-link-padding-x);
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+        text-decoration: none;
+    }
+
+    // Disabled state lightens text
+    &.disabled {
+        color: var(--nav-link-disabled-color);
+        pointer-events: none;
+        cursor: default;
+    }
+}
+
+//
+// Tabs
+//
+.nav-tabs {
+    --nav-tabs-border-width: 1px;
+    --nav-tabs-border-radius: var(--border-radius);
+    --nav-tabs-link-active-bg: var(--body-bg);
+    --nav-tabs-border-color: var(--border-color);
+    --nav-tabs-link-hover-border-color: var(--border-color) var(--border-color) transparent;
+    --nav-tabs-link-active-color: var(--gray-07);
+    --nav-tabs-link-active-border-color: var(--border-color) var(--border-color) transparent;
+
+    border-bottom: var(--nav-tabs-border-width) solid var(--nav-tabs-border-color);
+
+    .nav-item {
+        margin-bottom: calc(var(--nav-tabs-border-width) * -1);
+    }
+
+    .nav-link {
+        border: var(--nav-tabs-border-width) solid transparent;
+        border-top-left-radius: var(--nav-tabs-border-radius);
+        border-top-right-radius: var(--nav-tabs-border-radius);
+
+        &:hover,
+        &:focus {
+            border-color: var(--nav-tabs-link-hover-border-color);
+        }
+
+        &.disabled {
+            color: var(--nav-link-disabled-color);
+            background-color: transparent;
+            border-color: transparent;
+        }
+    }
+
+    .nav-link.active,
+    .nav-item.show .nav-link {
+        color: var(--nav-tabs-link-active-color);
+        background-color: var(--nav-tabs-link-active-bg);
+        border-color: var(--nav-tabs-link-active-border-color);
+    }
+
+    .dropdown-menu {
+        // Make dropdown border overlap tab border
+        margin-top: calc(var(--nav-tabs-border-width) * -1);
+        // Remove the top rounded corners here since there is a hard edge above the menu
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+}
+
+.navbar {
+    --navbar-padding-y: calc(var(--spacer) / 4);
+    --navbar-padding-x: calc(var(--spacer) / 2);
+
+    position: relative;
+    display: flex;
+    flex-wrap: wrap; // allow us to do the line break for collapsing content
+    align-items: center;
+    justify-content: space-between; // space out brand from logo
+    padding: var(----navbar-padding-y) var(--navbar-padding-x);
+
+    // Because flex properties aren't inherited, we need to redeclare these first
+    // few properties so that content nested within behave properly.
+    .container,
+    .container-fluid {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+// Navbar nav
+//
+// Custom navbar navigation (doesn't require `.nav`, but does make use of `.nav-link`).
+.navbar-nav {
+    display: flex;
+    flex-direction: column; // cannot use `inherit` to get the `.navbar`s value
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+
+    .nav-link {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .dropdown-menu {
+        position: static;
+        float: none;
+    }
+}
+
+.navbar-expand {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+
+    .navbar-nav {
+        flex-direction: row;
+    }
+
+    .navbar-collapse {
+        display: flex !important;
+        flex-basis: auto;
+    }
+}
 
 // Ensure that tabs are all the same height, regardless of whether they have an icon. Without this,
 // tabs with an icon are 38px and tabs without an icon are 37.5px, which causes tabs without an icon
 // to have an undesirable bottom border when active.
 .nav-tabs > .nav-item > .nav-link {
     height: 100%;
-
     display: inline-flex;
     align-items: center;
     flex-direction: column;
@@ -21,12 +148,14 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--text-muted);
+
     &:focus-visible {
         border-radius: var(--border-radius);
         // Add this new stacking context in order to show the focus ring without cutting any edge.
         isolation: isolate;
         z-index: 1;
     }
+
     &:not(.active):hover {
         border-bottom: 2px solid var(--border-color-2);
         margin-top: 0;

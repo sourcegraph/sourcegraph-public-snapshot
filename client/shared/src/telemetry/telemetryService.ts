@@ -20,6 +20,13 @@ export interface TelemetryService {
      * Log a pageview event (by sending it to the server).
      */
     logViewEvent(eventName: string, eventProperties?: any, publicArgument?: any): void
+
+    /**
+     * Listen for event logs
+     *
+     * @returns a cleanup/removeEventListener function
+     */
+    addEventLogListener?(callback: (eventName: string) => void): () => void
 }
 
 /**

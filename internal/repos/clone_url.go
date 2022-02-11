@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -16,10 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

@@ -49,7 +49,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
   - Define saved [search scopes](explanations/features.md#search-scopes) for easier searching.
   - Use [search contexts](explanations/features.md#search-contexts) to search across a set of repositories at specific revisions.
   - Curate [saved searches](explanations/features.md#saved-searches) for yourself or your org.
-  - Set up notifications for code changes that match a query.
+  - Use [Code monitoring](../code_monitoring/index.md) to set up notifications for code changes that match a query.
   - View [language statistics](explanations/features.md#statistics) for search results.
 - [Search details](explanations/search_details.md)
 - [Sourcegraph Cloud](explanations/sourcegraph_cloud.md)

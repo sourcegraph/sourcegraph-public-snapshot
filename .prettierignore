@@ -1,5 +1,6 @@
 .bin/
 *.bundle.*
+lib/codeintel/lsif_typed
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
@@ -15,7 +16,7 @@ vendor/
 out/
 dist/
 client/shared/src/graphqlschema.ts
-client/web/src/schema/
+client/shared/src/schema/
 ts-node-*
 testdata
 .github/*
@@ -27,3 +28,4 @@ GH2SG.bookmarklet.js
 docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 storybook-static/
 browser/code-intel-extensions/
+.buildkite-cache/

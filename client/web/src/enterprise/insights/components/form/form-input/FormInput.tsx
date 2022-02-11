@@ -3,14 +3,15 @@ import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import styles from './FormInput.module.scss'
-import { ForwardReferenceComponent } from './types'
 
 interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
     title?: ReactNode
+
+    subtitle?: ReactNode
     /** Description block for field. */
     description?: ReactNode
     /** Custom class name for root label element. */
@@ -39,6 +40,7 @@ const FormInput = forwardRef((props, reference) => {
         as: Component = 'input',
         type = 'text',
         title,
+        subtitle,
         description,
         className,
         inputClassName,
@@ -60,6 +62,8 @@ const FormInput = forwardRef((props, reference) => {
         <label className={classNames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
 
+            {subtitle}
+
             <LoaderInput className="d-flex" loading={loading}>
                 <Component
                     type={type}
@@ -68,8 +72,8 @@ const FormInput = forwardRef((props, reference) => {
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    autoFocus={autoFocus}
                     ref={mergedReference}
+                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}

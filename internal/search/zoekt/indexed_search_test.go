@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -192,9 +192,9 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantMatchCount: 3,
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Commit: "2", Path: "bam.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "dev", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "dev", Commit: "2", Path: "bam.go"},
 			},
 			wantMatchInputRevs: []string{
 				"HEAD",
@@ -225,7 +225,7 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
 			},
 			wantMatchCount:     1,
 			wantMatchInputRevs: []string{"HEAD"},
@@ -319,20 +319,18 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			gotMatches, gotCommon, err := streaming.CollectStream(func(stream streaming.Sender) error {
-				return indexed.Search(tt.args.ctx, stream)
-			})
+			agg := streaming.NewAggregatingStream()
+			err = indexed.Search(tt.args.ctx, agg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-
-			gotFm, err := matchesToFileMatches(gotMatches)
+			gotFm, err := matchesToFileMatches(agg.Results)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(&tt.wantCommon, &gotCommon, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(&tt.wantCommon, &agg.Stats, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}
 

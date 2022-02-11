@@ -1,14 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { asError } from '@sourcegraph/common'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import { LivePreviewContainer } from '../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { LivePreviewContainer, getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
-import { InsightStep } from '../../search-insight/types'
+import { InsightStep } from '../../search-insight'
+import { getSanitizedCaptureQuery } from '../utils/capture-group-insight-sanitizer'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
@@ -46,11 +46,12 @@ interface CaptureGroupCreationLivePreviewProps {
     query: string
     stepValue: string
     step: InsightStep
+    isAllReposMode: boolean
     className?: string
 }
 
 export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
-    const { disabled, repositories, query, stepValue, step, className } = props
+    const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
     const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
     const [dataOrError, setDataOrError] = useState<ChartContent | Error | undefined>()
 
@@ -59,7 +60,7 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
     const settings = useDistinctValue({
         disabled,
-        query,
+        query: getSanitizedCaptureQuery(query.trim()),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
     })
@@ -72,7 +73,6 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
         setDataOrError(undefined)
 
         if (debouncedSettings.disabled) {
-            setDataOrError(undefined)
             return
         }
 
@@ -89,11 +89,26 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
     return (
         <LivePreviewContainer
-            dataOrError={dataOrError}
+            dataOrError={!disabled ? dataOrError : undefined}
             loading={!disabled && !dataOrError}
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
-            mockMessage=" The chart preview will be shown here once you have filled out the repositories and series field"
+            mockMessage={
+                isAllReposMode ? (
+                    <span> Live previews are currently not available for insights running over all repositories. </span>
+                ) : (
+                    <span>
+                        {' '}
+                        The chart preview will be shown here once you have filled out the repositories and series
+                        fields.
+                    </span>
+                )
+            }
+            description={
+                isAllReposMode
+                    ? 'Previews are only displayed only if you individually list up to 50 repositories.'
+                    : null
+            }
             className={className}
             chartContentClassName="pt-4"
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}

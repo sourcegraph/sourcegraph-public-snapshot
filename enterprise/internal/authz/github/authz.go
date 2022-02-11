@@ -5,21 +5,26 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewAuthzProviders returns the set of GitHub authz providers derived from the connections.
-// It also returns any validation problems with the config, separating these into "serious problems" and
-// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func NewAuthzProviders(
 	conns []*types.GitHubConnection,
 	authProviders []schema.AuthProviders,
+	enableGithubInternalRepoVisibility bool,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
@@ -48,6 +53,11 @@ func NewAuthzProviders(
 			continue
 		}
 
+		// We want to make the feature flag available to the GitHub provider, but at the same time
+		// also not use the global conf.SiteConfig which is discouraged and could cause race
+		// conditions. As a result, we use a temporary hack by setting this on the provider for now.
+		p.enableGithubInternalRepoVisibility = enableGithubInternalRepoVisibility
+
 		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
 		// with restricted permissions will not be visible to non-admins.
 		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
@@ -67,11 +77,6 @@ func NewAuthzProviders(
 					p.ServiceID()))
 			// Forcibly disable groups cache.
 			p.groupsCache = nil
-		}
-
-		// Check for other validation issues.
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("GitHub config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 
 		// Register this provider.

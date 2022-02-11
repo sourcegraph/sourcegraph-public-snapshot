@@ -4,18 +4,15 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
@@ -97,10 +94,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     userHasCodeMonitors !== 'loading' &&
                     !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
-                        <Link to="/code-monitoring/new" className="btn btn-primary">
+                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <PlusIcon className="icon-inline" />
                             Create
-                        </Link>
+                        </Button>
                     )
                 }
                 description={
@@ -117,15 +114,15 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             />
 
             {userHasCodeMonitors === 'loading' ? (
-                <LoadingSpinner />
+                <LoadingSpinner inline={false} />
             ) : (
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">
                         <div className="nav nav-tabs">
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <a
-                                    href=""
+                                <Link
+                                    to=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('list')
@@ -136,12 +133,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Code monitors">
                                         Code monitors
                                     </span>
-                                </a>
+                                </Link>
                             </div>
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <a
-                                    href=""
+                                <Link
+                                    to=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('getting-started')
@@ -152,7 +149,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Getting started">
                                         Getting started
                                     </span>
-                                </a>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -163,7 +160,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
 
                     {showList && (
                         <CodeMonitorList
-                            settingsCascade={settingsCascade}
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}

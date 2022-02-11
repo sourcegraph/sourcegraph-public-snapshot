@@ -6,7 +6,7 @@ Invite others to join your organization on Sourcegraph Cloud and search across [
 1. Go to User menu > Settings in the top navigation bar.
 2. Go to your organization in the sidebar navigation.
 3. Go to Members in the sidebar navigation.
-4. Enter a team member’s Sourcegraph Cloud username in Invite a member.
+4. Enter a team member’s Sourcegraph Cloud username in invite a member.
 5. Press Send invitation to join.
 
 Your team member will receive an email inviting them to join your organization on Sourcegraph Cloud. When they have accepted the invitation, they will appear in the list of organization members.

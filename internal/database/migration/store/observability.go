@@ -8,11 +8,13 @@ import (
 )
 
 type Operations struct {
-	ensureSchemaTable *observation.Operation
-	version           *observation.Operation
-	lock              *observation.Operation
-	up                *observation.Operation
 	down              *observation.Operation
+	ensureSchemaTable *observation.Operation
+	indexStatus       *observation.Operation
+	tryLock           *observation.Operation
+	up                *observation.Operation
+	versions          *observation.Operation
+	withMigrationLog  *observation.Operation
 }
 
 func NewOperations(observationContext *observation.Context) *Operations {
@@ -32,10 +34,12 @@ func NewOperations(observationContext *observation.Context) *Operations {
 	}
 
 	return &Operations{
-		ensureSchemaTable: op("EnsureSchemaTable"),
-		version:           op("Version"),
-		lock:              op("Lock"),
-		up:                op("Up"),
 		down:              op("Down"),
+		ensureSchemaTable: op("EnsureSchemaTable"),
+		indexStatus:       op("IndexStatus"),
+		tryLock:           op("TryLock"),
+		up:                op("Up"),
+		versions:          op("Versions"),
+		withMigrationLog:  op("WithMigrationLog"),
 	}
 }

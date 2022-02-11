@@ -2,11 +2,10 @@ import { mapValues, values } from 'lodash'
 import React, { useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -109,28 +108,28 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
             <PageTitle title="Report a bug - Admin" />
             <h2>Report a bug</h2>
             <p>
-                <a
+                <Link
                     target="_blank"
                     rel="noopener noreferrer"
-                    href="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                    to="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
                 >
                     Create an issue on the public issue tracker
-                </a>
+                </Link>
                 , and include a description of the bug along with the info below (with secrets redacted). If the report
                 contains sensitive information that should not be public, email the report to{' '}
-                <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
+                <Link target="_blank" rel="noopener noreferrer" to="mailto:support@sourcegraph.com">
                     support@sourcegraph.com
-                </a>{' '}
+                </Link>{' '}
                 instead.
             </p>
-            <div className="card-header alert alert-warning">
+            <Alert variant="warning">
                 <div>
                     Please redact any secrets before sharing, whether on the public issue tracker or with
                     support@sourcegraph.com.
                 </div>
-            </div>
+            </Alert>
             {allConfig === undefined || monitoringStats === undefined ? (
-                <LoadingSpinner className="icon-inline mt-2" />
+                <LoadingSpinner className="mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
                     value={JSON.stringify(

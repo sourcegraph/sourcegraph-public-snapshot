@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -97,7 +98,7 @@ func main() {
 	)
 
 	cache := diskcache.NewStore(config.cacheDir, "symbols",
-		diskcache.WithBackgroundTimeout(20*time.Minute),
+		diskcache.WithBackgroundTimeout(config.processingTimeout),
 		diskcache.WithObservationContext(observationContext),
 	)
 
@@ -107,7 +108,7 @@ func main() {
 	}
 
 	gitserverClient := gitserver.NewClient(observationContext)
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
@@ -116,7 +117,7 @@ func main() {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(apiHandler, conf.DefaultClient())),
+		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(apiHandler, conf.DefaultClient()))),
 	})
 
 	evictionInterval := time.Second * 10

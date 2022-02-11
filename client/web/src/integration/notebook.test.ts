@@ -1,6 +1,7 @@
+import { subDays } from 'date-fns'
 import expect from 'expect'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -8,13 +9,13 @@ import { WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../search/notebook'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
+import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
-const viewerSettings: Partial<WebGraphQlOperations> = {
+const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
         viewerSettings: {
             __typename: 'SettingsCascade',
@@ -55,10 +56,79 @@ const viewerSettings: Partial<WebGraphQlOperations> = {
     }),
 }
 
+const now = new Date()
+
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    FetchNotebook: ({ id }) => ({
+        node: {
+            __typename: 'Notebook',
+            id,
+            title: 'Notebook Title',
+            createdAt: subDays(now, 5).toISOString(),
+            updatedAt: subDays(now, 5).toISOString(),
+            public: true,
+            viewerCanManage: true,
+            viewerHasStarred: true,
+            namespace: {
+                id: '1',
+            },
+            stars: {
+                totalCount: 123,
+            },
+            creator: { __typename: 'User', username: 'user1' },
+            blocks: [
+                { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+                { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+            ],
+        },
+    }),
+    UpdateNotebook: ({ id, notebook }) => ({
+        updateNotebook: {
+            __typename: 'Notebook',
+            id,
+            title: notebook.title,
+            createdAt: subDays(now, 5).toISOString(),
+            updatedAt: subDays(now, 5).toISOString(),
+            public: notebook.public,
+            viewerCanManage: true,
+            viewerHasStarred: true,
+            namespace: {
+                id: '2',
+            },
+            stars: {
+                totalCount: 123,
+            },
+            creator: { __typename: 'User', username: 'user1' },
+            blocks: notebook.blocks.map(block => {
+                switch (block.type) {
+                    case NotebookBlockType.MARKDOWN:
+                        return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
+                    case NotebookBlockType.QUERY:
+                        return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
+                    case NotebookBlockType.FILE:
+                        return {
+                            __typename: 'FileBlock',
+                            id: block.id,
+                            fileInput: {
+                                __typename: 'FileBlockInput',
+                                repositoryName: block.fileInput?.repositoryName ?? '',
+                                filePath: block.fileInput?.filePath ?? '',
+                                revision: block.fileInput?.revision ?? '',
+                                lineRange: {
+                                    __typename: 'FileBlockLineRange',
+                                    startLine: block.fileInput?.lineRange?.startLine ?? 0,
+                                    endLine: block.fileInput?.lineRange?.endLine ?? 1,
+                                },
+                            },
+                        }
+                }
+            }),
+        },
+    }),
 }
 
 describe('Search Notebook', () => {
@@ -101,8 +171,18 @@ describe('Search Notebook', () => {
     const addNewBlock = (type: BlockType) =>
         driver.page.click(`[data-testid="always-visible-add-block-buttons"] [data-testid="add-${type}-button"]`)
 
-    it('Should render a notebook with two default blocks', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
+    const getFileBlockHeaderText = async (fileBlockSelector: string) => {
+        const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+        await driver.page.waitForSelector(fileBlockHeaderSelector, { visible: true })
+        const fileBlockHeaderText = await driver.page.evaluate(
+            fileBlockHeaderSelector => document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent,
+            fileBlockHeaderSelector
+        )
+        return fileBlockHeaderText
+    }
+
+    it('Should render a notebook', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
@@ -110,7 +190,7 @@ describe('Search Notebook', () => {
     })
 
     it('Should move, duplicate, and delete blocks', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         const blockIds = await getBlockIds()
 
@@ -134,7 +214,7 @@ describe('Search Notebook', () => {
     })
 
     it('Should add markdown and query blocks, edit, and run them', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
         await addNewBlock('md')
@@ -148,7 +228,6 @@ describe('Search Notebook', () => {
 
         // Edit and run new markdown block
         await driver.page.click(newMarkdownBlockSelector)
-        await driver.page.click('[data-testid="Edit"]')
         await driver.replaceText({
             selector: `${newMarkdownBlockSelector} .monaco-editor`,
             newText: 'Replaced text',
@@ -186,7 +265,7 @@ describe('Search Notebook', () => {
     })
 
     it('Should add file block and edit it', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
         await addNewBlock('file')
@@ -228,12 +307,69 @@ describe('Search Notebook', () => {
         // Save the inputs
         await driver.page.click('[data-testid="Save"]')
 
-        const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
-        await driver.page.waitForSelector(fileBlockHeaderSelector, { visible: true })
-        const fileBlockHeaderText = await driver.page.evaluate(
-            fileBlockHeaderSelector => document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent,
-            fileBlockHeaderSelector
-        )
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
         expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
+    })
+
+    it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await addNewBlock('file')
+
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+
+        const fileBlockSelector = blockSelector(blockIds[2])
+
+        // Edit new file block
+        await driver.page.click(fileBlockSelector)
+
+        // Simulate pasting the file URL
+        await driver.page.evaluate(
+            (fileBlockSelector: string, fileURL: string) => {
+                const dataTransfer = new DataTransfer()
+                dataTransfer.setData('text', fileURL)
+                const event = new ClipboardEvent('paste', {
+                    clipboardData: dataTransfer,
+                    bubbles: true,
+                })
+                const element = document.querySelector(fileBlockSelector)
+                element?.dispatchEvent(event)
+            },
+            fileBlockSelector,
+            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32'
+        )
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+
+        // Refocus the entire block (prevents jumping content for below actions)
+        await driver.page.click(fileBlockSelector)
+
+        // Save the inputs
+        await driver.page.click('[data-testid="Save"]')
+
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
+        expect(fileBlockHeaderText).toEqual(
+            'github.com/sourcegraph/sourcegraph/client/search/src/index.ts@main, lines 30-32'
+        )
+    })
+
+    it('Should update the notebook title', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await driver.page.click('[data-testid="notebook-title-button"]')
+
+        await driver.page.waitForSelector('[data-testid="notebook-title-input"]')
+        await driver.enterText('type', ' Edited')
+
+        await driver.page.keyboard.press('Enter')
+        await driver.page.waitForSelector('[data-testid="notebook-title-button"]')
+        const titleText = await driver.page.evaluate(
+            () => document.querySelector<HTMLButtonElement>('[data-testid="notebook-title-button"]')?.textContent
+        )
+        expect(titleText).toEqual('Notebook Title Edited')
     })
 })

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
 import { SearchStackEntry } from '../stores/searchStack'
@@ -11,28 +11,19 @@ import { SearchStackEntry } from '../stores/searchStack'
 import { SearchStack } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithRouterResult =>
-        renderWithRouter(<SearchStack {...props} />)
+    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(<SearchStack {...props} />)
 
     afterEach(cleanup)
 
     const mockEntries: SearchStackEntry[] = [
-        { type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
-        { type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+        { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
+        { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
     ]
 
     describe('inital state', () => {
         it('does not render anything if feature is disabled', () => {
             useExperimentalFeatures.setState({ enableSearchStack: false })
-
-            renderSearchStack()
-
-            expect(screen.queryByRole('button', { name: 'Open search session' })).not.toBeInTheDocument()
-        })
-
-        it('does not render anything if there is no previous session', () => {
-            useExperimentalFeatures.setState({ enableSearchStack: true })
-            useSearchStackState.setState({ canRestoreSession: false })
 
             renderSearchStack()
 
@@ -69,8 +60,14 @@ describe('Search Stack', () => {
             useExperimentalFeatures.setState({ enableSearchStack: true })
             useSearchStackState.setState({
                 entries: [
-                    { type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
-                    { type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+                    {
+                        id: 0,
+                        type: 'search',
+                        query: 'TODO',
+                        caseSensitive: false,
+                        patternType: SearchPatternType.literal,
+                    },
+                    { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                 ],
             })
         })
@@ -87,18 +84,14 @@ describe('Search Stack', () => {
         })
 
         it('redirects to entries', () => {
-            const result = renderSearchStack()
+            renderSearchStack()
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
             const entryLinks = screen.queryAllByRole('link')
 
-            userEvent.click(entryLinks[0])
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/search"')
-            expect(result.history.location.search).toMatchInlineSnapshot('"?q=TODO&patternType=literal"')
-
-            userEvent.click(entryLinks[1])
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/test@master/-/blob/path/to/file"')
-            expect(result.history.location.search).toMatchInlineSnapshot('""')
+            // Entries are in reverse order
+            expect(entryLinks[0]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
+            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=literal')
         })
 
         it('creates notebooks', () => {
@@ -107,7 +100,7 @@ describe('Search Stack', () => {
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/search/notebook"')
+            expect(result.history.location.pathname).toMatchInlineSnapshot('"/notebooks/new"')
             expect(result.history.location.hash).toMatchInlineSnapshot(
                 '"#query:TODO,file:http%3A%2F%2Flocalhost%2Ftest%40master%2F-%2Fblob%2Fpath%2Fto%2Ffile"'
             )

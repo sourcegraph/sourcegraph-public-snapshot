@@ -9,12 +9,11 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
@@ -45,9 +44,6 @@ const defaultProps = (
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
     selectedSearchContextSpec: '',

@@ -1,6 +1,6 @@
 package processrestart
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // CanRestart reports whether the current set of Sourcegraph processes can
 // be restarted.

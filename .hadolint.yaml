@@ -1,0 +1,11 @@
+ignored:
+# We use Alpine, and Alpine packages only keep the most recent few releases of packages,
+# with older releases being dropped on a regular basis. This means pinning versions as
+# enforced in https://github.com/hadolint/hadolint/wiki/DL3018 causing frequent build
+# failures due to missing packages or mismatched inter-package dependencies, at which
+# point we just upgrade anyway, negating the use for pinning packages. There are no build
+# reproducibility advantages either since we cannot rebuild an image if a package version
+# required is no longer available.
+#
+# To force the inclusion of a security patch, use 'package>=$version' instead of pinning.
+- DL3018

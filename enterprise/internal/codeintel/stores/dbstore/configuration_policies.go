@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitObjectType string
@@ -247,7 +247,7 @@ func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ Confi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return ConfigurationPolicy{}, false, err
 	}

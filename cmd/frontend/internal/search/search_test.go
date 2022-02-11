@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -59,7 +58,7 @@ func TestServeStream_empty(t *testing.T) {
 
 // Ensures graphqlbackend matches the interface we expect
 func TestDefaultNewSearchResolver(t *testing.T) {
-	_, err := defaultNewSearchResolver(context.Background(), dbmock.NewMockDB(), &graphqlbackend.SearchArgs{
+	_, err := defaultNewSearchResolver(context.Background(), database.NewMockDB(), &graphqlbackend.SearchArgs{
 		Version:  "V2",
 		Settings: &schema.Settings{},
 	})
@@ -125,7 +124,8 @@ func TestDisplayLimit(t *testing.T) {
 				done: make(chan struct{}),
 			}
 
-			database.Mocks.Repos.Metadata = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
+			repos := database.NewStrictMockRepoStore()
+			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
 				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
 					res = append(res, &types.SearchedRepo{
@@ -133,9 +133,12 @@ func TestDisplayLimit(t *testing.T) {
 					})
 				}
 				return res, nil
-			}
+			})
+			db := database.NewStrictMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
+				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {

@@ -3,10 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *UserResolver) Session(ctx context.Context) (*sessionResolver, error) {

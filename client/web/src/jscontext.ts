@@ -1,4 +1,4 @@
-import { SiteConfiguration } from './schema/site.schema'
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
@@ -38,6 +38,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
+
+    githubAppCloudSlug: string
 
     /**
      * siteID is the identifier of the Sourcegraph site.

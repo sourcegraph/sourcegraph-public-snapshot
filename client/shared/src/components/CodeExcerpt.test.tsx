@@ -8,7 +8,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { CodeExcerpt } from './CodeExcerpt'
 

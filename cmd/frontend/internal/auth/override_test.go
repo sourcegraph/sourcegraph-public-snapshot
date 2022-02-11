@@ -8,14 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestOverrideAuthMiddleware(t *testing.T) {
@@ -38,7 +36,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 	t.Run("disabled, not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		handler := newHandler(dbmock.NewMockDB())
+		handler := newHandler(database.NewMockDB())
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "no user"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -50,7 +48,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		defer func() { envOverrideAuthSecret = "" }()
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		handler := newHandler(dbmock.NewMockDB())
+		handler := newHandler(database.NewMockDB())
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "no user"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -63,7 +61,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 2}))
-		handler := newHandler(dbmock.NewMockDB())
+		handler := newHandler(database.NewMockDB())
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "user 2"; got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -86,12 +84,12 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id, CreatedAt: time.Now()}, nil
 		})
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		handler := newHandler(db)
@@ -121,12 +119,12 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id, CreatedAt: time.Now()}, nil
 		})
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		handler := newHandler(db)
@@ -145,7 +143,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(overrideSecretHeader, "bad")
-		handler := newHandler(dbmock.NewMockDB())
+		handler := newHandler(database.NewMockDB())
 		handler.ServeHTTP(rr, req)
 		if got, want := rr.Body.String(), "no user"; got != want {
 			t.Errorf("got %q, want %q", got, want)

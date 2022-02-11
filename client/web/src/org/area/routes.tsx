@@ -1,18 +1,25 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { namespaceAreaRoutes } from '../../namespaces/routes'
-import { lazyComponent } from '../../util/lazyComponent'
 
 import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
+const OrgMembersArea = lazyComponent(() => import('../members/OrgMembersArea'), 'OrgMembersArea')
 
 const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
     <Redirect to={`${props.match.url}/settings/profile`} />
 )
 
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
+    {
+        path: '/settings/members',
+        condition: context => context.newMembersInviteEnabled,
+        render: props => <OrgMembersArea {...props} isLightTheme={props.isLightTheme} />,
+    },
     {
         path: '/settings',
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,

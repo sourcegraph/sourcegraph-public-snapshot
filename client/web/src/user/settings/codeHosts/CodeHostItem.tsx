@@ -3,7 +3,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -32,6 +33,8 @@ interface CodeHostItemProps {
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
+    loading?: boolean
+    useGitHubApp?: boolean
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
@@ -48,6 +51,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     isUpdateModalOpen,
     toggleUpdateModal,
     onDidUpsert,
+    loading = false,
+    useGitHubApp = false,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -69,6 +74,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const toGitHubApp = function (): void {
+        window.location.assign(
+            `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
+                owner.id
+            )}`
+        )
+    }
 
     const isUserOwner = owner.type === 'user'
     const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
@@ -130,51 +143,55 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {!service?.id ? (
                     oauthInFlight ? (
                         <LoaderButton
-                            type="button"
-                            className="btn btn-primary"
                             loading={true}
                             disabled={true}
                             label="Connecting..."
                             alwaysShowLabel={true}
+                            variant="primary"
+                        />
+                    ) : loading ? (
+                        <LoaderButton
+                            type="button"
+                            className="btn btn-primary"
+                            loading={true}
+                            disabled={true}
+                            alwaysShowLabel={false}
                         />
                     ) : (
-                        <button type="button" className="btn btn-primary" onClick={connectAction}>
+                        <Button onClick={useGitHubApp ? toGitHubApp : connectAction} variant="primary">
                             Connect
-                        </button>
+                        </Button>
                     )
                 ) : (
                     (isTokenUpdateRequired || !isUserOwner) &&
                     (oauthInFlight ? (
                         <LoaderButton
-                            type="button"
-                            className="btn btn-merged"
                             loading={true}
                             disabled={true}
                             label="Updating..."
                             alwaysShowLabel={true}
+                            variant="merged"
                         />
                     ) : (
-                        <button
-                            type="button"
-                            className={`btn ${
-                                !isUserOwner ? 'btn-link p-0 shadow-none font-weight-normal' : 'btn-merged'
-                            }`}
+                        <Button
+                            className={classNames(!isUserOwner && 'p-0 shadow-none font-weight-normal')}
+                            variant={isUserOwner ? 'merged' : 'link'}
                             onClick={updateAction}
                         >
                             Update
-                        </button>
+                        </Button>
                     ))
                 )}
 
                 {/* always show remove button when the service exists */}
                 {service?.id && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-danger font-weight-normal shadow-none px-0 ml-3"
+                    <Button
+                        className="text-danger font-weight-normal shadow-none px-0 ml-3"
                         onClick={toggleRemoveConnectionModal}
+                        variant="link"
                     >
                         Remove
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

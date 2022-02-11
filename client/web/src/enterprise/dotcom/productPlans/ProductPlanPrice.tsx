@@ -1,7 +1,7 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { pluralize } from '@sourcegraph/common'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { ProductPlanTiered } from './ProductPlanTiered'
 

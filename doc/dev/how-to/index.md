@@ -29,7 +29,11 @@
    - See also [Testing Principles](../background-information/testing_principles.md) and [Continuous Integration](../background-information/continuous_integration.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
-- [Adding or changing Buildkite secrets](adding_buildkite_secrets.md)
+- [How to test changes in dogfood](testing_in_dogfood.md)
+
+## Executors
+
+- [How to deploy a new executor image](deploy_executor_image.md)
 
 ## Windows support
 

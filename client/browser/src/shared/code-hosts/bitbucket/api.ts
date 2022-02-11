@@ -3,9 +3,8 @@ import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined, memoizeObservable } from '@sourcegraph/common'
+import { checkOk } from '@sourcegraph/http-client'
 
 import { DiffResolvedRevisionSpec } from '../../repo'
 

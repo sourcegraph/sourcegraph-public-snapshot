@@ -8,10 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDefinitionDumps(t *testing.T) {
@@ -131,6 +133,21 @@ func TestDefinitionDumps(t *testing.T) {
 	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		if dumps, err := store.DefinitionDumps(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+			t.Fatalf("unexpected error getting package: %s", err)
+		} else if len(dumps) != 0 {
+			t.Errorf("unexpected count. want=%d have=%d", 0, len(dumps))
+		}
+	})
 }
 
 func TestReferenceIDsAndFilters(t *testing.T) {
@@ -234,6 +251,23 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
+		if err != nil {
+			t.Fatalf("unexpected error getting filters: %s", err)
+		}
+		if totalCount != 0 {
+			t.Errorf("unexpected count. want=%d have=%d", 0, totalCount)
+		}
+	})
 }
 
 func TestReferenceIDsAndFiltersVisibility(t *testing.T) {

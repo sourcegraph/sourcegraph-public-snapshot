@@ -1,10 +1,14 @@
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
+import {
+    CodeInsightDashboardsVisibility,
+    CodeInsightTimeStepPicker,
+    VisibilityPicker,
+} from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
@@ -27,6 +31,7 @@ interface CreationSearchInsightFormProps {
     submitted: boolean
     className?: string
     isFormClearActive?: boolean
+    dashboardReferenceCount?: number
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
@@ -51,10 +56,10 @@ interface CreationSearchInsightFormProps {
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
      */
-    onEditSeriesRequest: (openedCardIndex: number) => void
-    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
-    onEditSeriesCancel: (closedCardIndex: number) => void
-    onSeriesRemove: (removedSeriesIndex: number) => void
+    onEditSeriesRequest: (seriesId?: string) => void
+    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
+    onEditSeriesCancel: (seriesId: string) => void
+    onSeriesRemove: (seriesId: string) => void
 
     onFormReset: () => void
 }
@@ -81,6 +86,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         step,
         className,
         isFormClearActive,
+        dashboardReferenceCount,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -135,13 +141,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                        <Link
+                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             beta limitations here.
-                        </a>
+                        </Link>
                     </small>
                 </label>
 
@@ -157,7 +163,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
-                    isBackendInsightEdit={isEditMode && allReposMode.input.value}
+                    isBackendInsightEdit={isGqlBackend ? false : isEditMode && allReposMode.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
@@ -196,8 +202,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
+                    numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
+
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
 
             <hr className="my-4 w-100" />
 
@@ -211,7 +222,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     type="submit"
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

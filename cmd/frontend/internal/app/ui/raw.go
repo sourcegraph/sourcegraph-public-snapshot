@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -232,7 +233,7 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := git.Stat(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := git.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"
@@ -244,7 +245,7 @@ func serveRaw(db database.DB) handlerFunc {
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := git.ReadDir(r.Context(), common.Repo.Name, common.CommitID, requestedPath, false)
+				infos, err := git.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}
@@ -267,7 +268,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := git.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
+			f, err := git.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return err
 			}

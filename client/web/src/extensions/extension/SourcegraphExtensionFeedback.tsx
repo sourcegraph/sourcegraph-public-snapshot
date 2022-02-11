@@ -1,7 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useState } from 'react'
 
-import { FeedbackPromptContent } from '../../nav/Feedback/FeedbackPrompt'
+import { Button, Modal } from '@sourcegraph/wildcard'
+
+import { FeedbackPromptContent } from '../../nav/Feedback'
 
 interface SourcegraphExtensionFeedbackProps {
     extensionID: string
@@ -19,17 +20,13 @@ export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphEx
 
     return (
         <>
-            <button type="button" className="btn btn-link p-0" onClick={toggleIsOpen}>
+            <Button className="p-0" onClick={toggleIsOpen} variant="link">
                 <small>Message the author</small>
-            </button>
+            </Button>
             {isOpen && (
-                <Dialog
-                    className="modal-body modal-body--top-third p-4 rounded border"
-                    onDismiss={onClose}
-                    aria-labelledby={labelId}
-                >
+                <Modal onDismiss={onClose} aria-labelledby={labelId}>
                     <FeedbackPromptContent closePrompt={onClose} textPrefix={textPrefix} />
-                </Dialog>
+                </Modal>
             )}
         </>
     )

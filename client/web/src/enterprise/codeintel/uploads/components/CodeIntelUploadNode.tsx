@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'

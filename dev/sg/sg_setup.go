@@ -18,13 +18,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/garyburd/redigo/redis"
+	"github.com/Masterminds/semver"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -40,29 +43,9 @@ var (
 	}
 )
 
-type userContextKey struct{}
-type userContext struct {
-	shellPath       string
-	shellConfigPath string
-}
-
-func buildUserContext(userContext userContext, ctx context.Context) context.Context {
-	return context.WithValue(ctx, userContextKey{}, userContext)
-}
-
-func getUserShellPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellPath
-}
-
-func getUserShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellConfigPath
-}
-
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
 		os.Exit(1)
 	}
 
@@ -71,20 +54,17 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	// extract user environment general informations
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err := usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx = buildUserContext(userContext, ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(usershell.ShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -113,7 +93,7 @@ func setupExec(ctx context.Context, args []string) error {
 	}
 
 	for len(failed) != 0 {
-		out.ClearScreen()
+		stdout.Out.ClearScreen()
 
 		writeOrangeLinef("-------------------------------------")
 		writeOrangeLinef("|        Welcome to sg setup!       |")
@@ -130,7 +110,7 @@ func setupExec(ctx context.Context, args []string) error {
 				continue
 			}
 
-			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
+			pending := stdout.Out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
 			category.Update(ctx)
 			pending.Destroy()
 
@@ -150,12 +130,12 @@ func setupExec(ctx context.Context, args []string) error {
 
 		if len(failed) == 0 && len(employeeFailed) == 0 {
 			if len(skipped) == 0 && len(employeeFailed) == 0 {
-				out.Write("")
-				out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 			}
 
 			if len(skipped) != 0 {
-				out.Write("")
+				stdout.Out.Write("")
 				writeWarningLinef("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
 				writeFingerPointingLinef("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
 			}
@@ -163,7 +143,7 @@ func setupExec(ctx context.Context, args []string) error {
 			return nil
 		}
 
-		out.Write("")
+		stdout.Out.Write("")
 
 		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
 			writeWarningLinef("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
@@ -180,7 +160,7 @@ func setupExec(ctx context.Context, args []string) error {
 		}
 		selectedCategory := categories[idx]
 
-		out.ClearScreen()
+		stdout.Out.ClearScreen()
 
 		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
 		if err != nil {
@@ -211,7 +191,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+			{name: "git", check: checkFuncs["git"], instructionsCommands: `brew install git`},
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
@@ -219,8 +199,15 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
 			{
+				name: "rosetta",
+				check: anyChecks(
+					checkCommandOutputContains("uname -m", "x86_64"), // will return true on non-m1 macs
+					checkCommandExitCode("pgrep oahd", 0)),           // oahd is the process running rosetta
+				instructionsCommands: `softwareupdate --install-rosetta --agree-to-license`,
+			},
+			{
 				name:                 "docker",
-				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
+				check:                checkFuncs["docker"],
 				instructionsCommands: `brew install --cask docker`,
 			},
 		},
@@ -283,7 +270,7 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 				check: checkCommandOutputContains("asdf", "version"),
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
 				}),
 			},
 		},
@@ -309,7 +296,7 @@ asdf install golang
 			},
 			{
 				name:  "yarn",
-				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
+				check: combineChecks(checkInPath("yarn"), checkCommandExitCode("yarn --version", 0)),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
@@ -324,7 +311,7 @@ Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 brew install gpg
 asdf plugin-add yarn
-asdf install yarn 
+asdf install yarn
 `,
 			},
 			{
@@ -342,7 +329,7 @@ programming languages and tools. Find out how to install asdf here:
 
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
+asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `,
@@ -362,7 +349,7 @@ asdf install nodejs
 				//
 				// Because only the latest error is returned, it's better to finish with the real check
 				// for error message clarity.
-				check: anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
+				check: checkFuncs["postgres"],
 				instructionsComment: `` +
 					`Sourcegraph requires the PostgreSQL database to be running.
 
@@ -383,13 +370,13 @@ createdb || true
 					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},
 			{
 				name:  "psql",
-				check: checkInPath("psql"),
+				check: checkFuncs["psql"],
 				instructionsComment: `` +
 					`psql, the PostgreSQL CLI client, needs to be available in your $PATH.
 
@@ -406,7 +393,7 @@ If you used another method, make sure psql is available.`,
 		dependencies: []*dependency{
 			{
 				name:  "Connection to Redis",
-				check: retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
+				check: checkFuncs["redis"],
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running.
 					We recommend installing it with Homebrew and starting it as a system service.`,
@@ -416,6 +403,7 @@ If you used another method, make sure psql is available.`,
 	},
 	{
 		name:               "Setup proxy for local development",
+		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
 			{
@@ -457,7 +445,7 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		if instruction.ifBool != "" {
 			val, ok := conditions[instruction.ifBool]
 			if !ok {
-				out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
+				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
 				os.Exit(1)
 			}
 			if !val {
@@ -467,7 +455,7 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		if instruction.ifNotBool != "" {
 			val, ok := conditions[instruction.ifNotBool]
 			if !ok {
-				out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
+				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
 				os.Exit(1)
 			}
 			if val {
@@ -476,20 +464,20 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		}
 
 		i++
-		out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
-		out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
-		out.Write("")
+		stdout.Out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
+		stdout.Out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
+		stdout.Out.Write("")
 
 		if instruction.comment != "" {
-			out.Write(instruction.comment)
-			out.Write("")
+			stdout.Out.Write(instruction.comment)
+			stdout.Out.Write("")
 		}
 
 		if instruction.command != "" {
-			out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
+			stdout.Out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
+			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
 
-			out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
 			input := bufio.NewScanner(os.Stdin)
 			input.Scan()
 		}
@@ -718,8 +706,10 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	case 1:
 		err = fixCategoryManually(ctx, categoryIdx, category)
 	case 2:
-		out.ClearScreen()
-		err = fixCategoryAutomatically(ctx, category)
+		if category.autoFixing {
+			stdout.Out.ClearScreen()
+			err = fixCategoryAutomatically(ctx, category)
+		}
 	case 3:
 		return nil
 	}
@@ -727,9 +717,9 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 }
 
 func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCategory) {
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
-	out.Write("")
-	out.Write("Checks:")
+	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
+	stdout.Out.Write("")
+	stdout.Out.Write("Checks:")
 
 	for i, dep := range category.dependencies {
 		idx := i + 1
@@ -831,18 +821,18 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		dep := category.dependencies[idx]
 
-		out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
-		out.Write("")
+		stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
+		stdout.Out.Write("")
 
 		if dep.err != nil {
-			out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
+			stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
 		}
 
-		out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
 
 		if dep.instructionsComment != "" {
-			out.Write("")
-			out.Write(dep.instructionsComment)
+			stdout.Out.Write("")
+			stdout.Out.Write(dep.instructionsComment)
 		}
 
 		// If we don't have anything do run, we simply print instructions to
@@ -852,15 +842,15 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			waitForReturn()
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
-			out.Write("")
+			stdout.Out.Write("")
 			if category.requiresRepository {
-				out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
+				stdout.Out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
 			} else {
-				out.Write("Run the following command(s):")
+				stdout.Out.Write("Run the following command(s):")
 			}
-			out.Write("")
+			stdout.Out.Write("")
 
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
+			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -884,7 +874,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 		}
 
-		pending := out.Pending(output.Linef("", output.StylePending, "Determining status..."))
+		pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Determining status..."))
 		for _, dep := range category.dependencies {
 			dep.Update(ctx)
 		}
@@ -905,11 +895,97 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
+func checkGitVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		out, err := combinedSourceExec(ctx, "git version")
+		if err != nil {
+			return errors.Wrapf(err, "failed to run 'git version'")
+		}
+
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 3 {
+			return errors.Newf("unexpected output from git server: %s", out)
+		}
+
+		trimmed := strings.TrimSpace(elems[2])
+		return checkVersion("git", trimmed, versionConstraint)
+	}
+}
+
+func checkGoVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "go version"
+		out, err := combinedSourceExec(ctx, "go version")
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 4 {
+			return errors.Newf("unexpected output from %q: %s", out)
+		}
+
+		haveVersion := strings.TrimLeft(elems[2], "go")
+
+		return checkVersion("go", haveVersion, versionConstraint)
+	}
+}
+
+func checkYarnVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "yarn --version"
+		out, err := combinedSourceExec(ctx, cmd)
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), "\n")
+		if len(elems) == 0 {
+			return errors.Newf("no output from %q", cmd)
+		}
+
+		trimmed := strings.TrimSpace(elems[0])
+		return checkVersion("yarn", trimmed, versionConstraint)
+	}
+}
+
+func checkVersion(cmdName, haveVersion, versionConstraint string) error {
+	c, err := semver.NewConstraint(versionConstraint)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(haveVersion)
+	if err != nil {
+		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+	}
+
+	if !c.Check(version) {
+		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+	}
+	return nil
+}
+
 func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
 	return func(ctx context.Context) error {
 		out, _ := combinedSourceExec(ctx, cmd)
 		if !strings.Contains(string(out), contains) {
 			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
+		}
+		return nil
+	}
+}
+
+func checkCommandExitCode(cmd string, exitCode int) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := execFreshShell(ctx, cmd)
+		err := cmd.Run()
+		var execErr *exec.ExitError
+		if err != nil {
+			if errors.As(err, &execErr) && execErr.ExitCode() != exitCode {
+				return errors.Newf("failed to check command exit code, wanted %d but got %d", exitCode, execErr.ExitCode())
+			}
+			return err
 		}
 		return nil
 	}
@@ -939,34 +1015,12 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
-func guessUserShell() (string, string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", "", err
-	}
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	var shellrc string
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-	switch {
-	case strings.Contains(shell, "bash"):
-		shellrc = ".bashrc"
-	case strings.Contains(shell, "zsh"):
-		shellrc = ".zshrc"
-	}
-	return shell, filepath.Join(home, shellrc), nil
-}
-
 // execFreshShell returns a command wrapped in a new shell process, enabling
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
-	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
+	command := fmt.Sprintf("source %s || true; %s", usershell.ShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, usershell.ShellPath(ctx), "-c", command)
 }
 
 // combinedSourceExec runs a command in a fresh shell environment,
@@ -1234,7 +1288,7 @@ func waitForReturn() { fmt.Scanln() }
 
 func getChoice(choices map[int]string) (int, error) {
 	for {
-		out.Write("")
+		stdout.Out.Write("")
 		writeFingerPointingLinef("What do you want to do?")
 
 		for i := 0; i < len(choices); i++ {
@@ -1243,7 +1297,7 @@ func getChoice(choices map[int]string) (int, error) {
 			if !ok {
 				return 0, errors.Newf("internal error: %d not found in provided choices", i)
 			}
-			out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
+			stdout.Out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
 
 		fmt.Printf("Enter choice: ")
@@ -1370,10 +1424,10 @@ func trusted(cert *x509.Certificate) bool {
 func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
 	pemBlock, _ := pem.Decode(pemDER)
 	if pemBlock == nil {
-		return nil, fmt.Errorf("no PEM block found")
+		return nil, errors.Newf("no PEM block found")
 	}
 	if pemBlock.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
+		return nil, errors.Newf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
 	}
 	return x509.ParseCertificate(pemBlock.Bytes)
 }

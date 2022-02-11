@@ -4,9 +4,9 @@ import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import { asError } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
-import { asError } from '../../util/errors'
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 

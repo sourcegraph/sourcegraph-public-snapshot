@@ -21,8 +21,16 @@ jobs:
           - client/browser
           - client/build-config
           - client/shared
-          - client/web
+          - client/search
+          - client/search-ui
+          # Temporarily disable client/web uploads because of long queues
+          # https://github.com/sourcegraph/sourcegraph/issues/30493#issuecomment-1030090306
+          # - client/web
           - client/wildcard
+          - client/common
+          - client/http-client
+          - client/codeintellify
+          - client/template-parser
     steps:
       # Setup
       - name: Checkout

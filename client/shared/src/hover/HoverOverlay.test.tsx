@@ -3,10 +3,10 @@ import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { subtypeOf } from '../util/types'
 
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
@@ -19,7 +19,6 @@ describe('HoverOverlay', () => {
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
-        showCloseButton: false,
         hoveredToken: { repoName: 'r', commitID: 'c', revision: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
         isLightTheme: false,

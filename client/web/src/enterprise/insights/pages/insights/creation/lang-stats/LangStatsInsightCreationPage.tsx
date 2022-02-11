@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -116,9 +116,9 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights" target="_blank" rel="noopener">
                         Learn more.
-                    </a>
+                    </Link>
                 </p>
             </div>
 

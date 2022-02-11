@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var testMetricWarning = promauto.NewGaugeVec(prometheus.GaugeOpts{

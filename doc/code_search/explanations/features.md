@@ -36,87 +36,11 @@ Saved searches let you save and describe search queries so you can easily monito
 
 See the [saved searches](../how-to/saved_searches.md) documentation for instructions for setting up and configuring saved searches.
 
-## Search scopes
-
-Every project and team has a different set of repositories they commonly work with and search over. Custom search scopes enable users and organizations to quickly filter their searches to predefined subsets of files and repositories. Instead of typing out the subset of repositories or files you want to search, you can save and select scopes using the search scope buttons whenever you need.
-
 ## Suggestions
 
 As you type a query, the menu below will contain suggestions based on the query. Use the keyboard or mouse to select a suggestion. For example, if your query is `repo:foo file:\.js$ hello`, the suggestions will consist of the list of files that match your query.
 
 You can also type in the partial name of a repository or filename to quickly jump to it. For example, typing in just `foo` would show you a list of repositories (first) and files with names containing _foo_.
-
-## Statistics
-
-> NOTE: To enable this experimental feature, set `{"experimentalFeatures": {"searchStats": true} }` in user settings.
-
-On a search results page, press the **Stats** button to view a language breakdown of all results matching the query. Each matching file is analyzed to detect its language, and line count statistics are computed as follows:
-
-- Query matches entire repositories (e.g., using only `repo:`): all lines (in all files) in matching repositories are counted.
-- Query matches entire files (e.g., using only `file:` or `lang:`): all lines in all matching files are counted.
-- Query matches text in files (e.g., using a term such as `foo`): all lines that match the query are counted.
-
-Examples:
-
-- If your search query was `file:test` and you had a single 100-line Java test file (and no other files whose name contains `test`), the statistics would show 100 Java lines.
-- If your search query was `foo` and that term appeared on 3 lines in Java files and on 1 line in a Python file, the statistics would show 3 Java lines and 1 Python line.
-
-Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
-
-## Version contexts <span class="badge badge-primary">sunsetting</span>
-
-The version contexts feature is being sunset and will be replaced by [search contexts](#search-contexts). Search contexts support all features and capabilities of version contexts.
-
-Existing version contexts are managed by site admins in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
-
-```json
-"experimentalFeatures": {
-  "versionContexts": [
-   {
-      "name": "srcgraph 3.15",
-      "revisions": [
-        {
-          "repo": "github.com/sourcegraph/sourcegraph",
-          "rev": "3.15"
-        },
-        {
-          "repo": "github.com/sourcegraph/src-cli",
-          "rev": "3.11.2"
-        }
-      ]
-    }
-  ]
-}
-```
-
-To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
-
-After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
-
-> NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
-
-## Multi-branch indexing <span class="badge badge-primary">experimental</span>
-
-> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
-
-The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
-
-Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
-
-``` json
-"experimentalFeatures": {
-  "search.index.branches": {
-   "github.com/sourcegraph/sourcegraph": ["3.15", "develop"],
-   "github.com/sourcegraph/src-cli": ["next"]
-  }
-}
-```
-
-Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
-
-> NOTE: The default branch (`HEAD`) is always indexed.
-
-> NOTE: All revisions specified in version contexts are also indexed.
 
 ## Search contexts
 
@@ -147,6 +71,29 @@ Your site admin can enable search contexts on your private instance in **global 
   "showSearchContextManagement": true
 }
 ```
+
+## Multi-branch indexing <span class="badge badge-primary">experimental</span>
+
+> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
+
+The most common branch to search is your default branch. To speed up this common operation Sourcegraph maintains an index of the source code on your default branch. Some organizations have other branches that are regularly searched. To speed up search for those branches Sourcegraph can be configured to index up to 64 branches per repository.
+
+Your site admin can configure indexed branches in site configuration under the `experimentalFeatures.search.index.branches` setting. For example:
+
+``` json
+"experimentalFeatures": {
+  "search.index.branches": {
+   "github.com/sourcegraph/sourcegraph": ["3.15", "develop"],
+   "github.com/sourcegraph/src-cli": ["next"]
+  }
+}
+```
+
+Indexing multiple branches will add additional resource requirements to Sourcegraph (particularly memory). The indexer will deduplicate documents between branches. So the size of your index will grow in relation to the number of unique documents. Refer to our [resource estimator](../../../admin/install/resource_estimator.md) to estimate whether additional resources are required.
+
+> NOTE: The default branch (`HEAD`) is always indexed.
+
+> NOTE: All revisions specified in version contexts are also indexed.
 
 **Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
 

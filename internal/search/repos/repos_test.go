@@ -9,18 +9,18 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMain(m *testing.M) {
@@ -157,9 +157,9 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
-			repos := dbmock.NewMockRepoStore()
+			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{Name: "repoFoo"}}, nil)
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: tt.repoFilters}
@@ -255,7 +255,7 @@ func TestSearchRevspecs(t *testing.T) {
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
-			err:      errors.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			err:      errors.Errorf("%s", "bad request: in findPatternRevs: error parsing regexp: missing argument to repetition operator: `*`"),
 			matched:  nil,
 			clashing: nil,
 		},
@@ -401,7 +401,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
@@ -434,7 +434,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		}, nil
 	})
 
-	ns := dbmock.NewMockNamespaceStore()
+	ns := database.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
 			t.Fatalf("got %q, want %q", name, wantName)
@@ -442,7 +442,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
 	})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.NamespacesFunc.SetDefaultReturn(ns)
 
@@ -499,7 +499,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return api.CommitID(spec), nil
 	}
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
@@ -507,7 +507,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return []types.MinimalRepo{repoA, repoB}, nil
 	})
 
-	sc := dbmock.NewMockSearchContextsStore()
+	sc := database.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		if opts.Name != searchContext.Name {
 			t.Fatalf("got %q, want %q", opts.Name, searchContext.Name)
@@ -521,7 +521,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return searchContextRepositoryRevisions, nil
 	})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 

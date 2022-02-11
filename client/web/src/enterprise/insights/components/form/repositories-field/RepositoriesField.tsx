@@ -1,16 +1,17 @@
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 import React, {
-    MouseEvent,
     ChangeEvent,
     FocusEvent,
+    forwardRef,
+    MouseEvent,
+    Ref,
+    useImperativeHandle,
     useRef,
     useState,
-    forwardRef,
-    useImperativeHandle,
-    Ref,
 } from 'react'
 
-import { FlexTextArea } from './components/flex-textarea/FlexTextArea'
+import { FlexTextArea } from '@sourcegraph/wildcard'
+
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
 import styles from './RepositoriesField.module.scss'

@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetResolver struct {
@@ -356,6 +355,13 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 		return nil, nil
 	}
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
+}
+
+func (r *changesetResolver) ForkNamespace() *string {
+	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
+		return &namespace
+	}
+	return nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {

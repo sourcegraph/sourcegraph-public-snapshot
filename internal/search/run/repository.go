@@ -3,95 +3,37 @@ package run
 import (
 	"context"
 	"math"
-	"strings"
 
-	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoSearch struct {
-	Args  *search.TextParameters
-	Limit int
+	Args *search.TextParameters
 }
 
-func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) (err error) {
+func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	fieldAllowlist := map[string]struct{}{
-		query.FieldRepo:               {},
-		query.FieldContext:            {},
-		query.FieldType:               {},
-		query.FieldDefault:            {},
-		query.FieldIndex:              {},
-		query.FieldCount:              {},
-		query.FieldTimeout:            {},
-		query.FieldFork:               {},
-		query.FieldArchived:           {},
-		query.FieldVisibility:         {},
-		query.FieldCase:               {},
-		query.FieldRepoHasFile:        {},
-		query.FieldRepoHasCommitAfter: {},
-		query.FieldPatternType:        {},
-		query.FieldSelect:             {},
-	}
-	// Don't return repo results if the search contains fields that aren't on the allowlist.
-	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range s.Args.Query.Fields() {
-		if _, ok := fieldAllowlist[field]; !ok {
-			tr.LazyPrintf("contains dissallowed field: %s", field)
-			return nil
-		}
-	}
+	tr.LogFields(otlog.String("pattern", s.Args.PatternInfo.Pattern))
 
-	tr.LogFields(
-		otlog.String("pattern", s.Args.PatternInfo.Pattern),
-		otlog.Int("limit", s.Limit))
-
-	opts := s.Args.RepoOptions // copy
-
-	if s.Args.PatternInfo.Pattern != "" {
-		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
-
-		patternPrefix := strings.SplitN(s.Args.PatternInfo.Pattern, "@", 2)
-		if len(patternPrefix) == 0 {
-			// No "@" in pattern? We're good.
-			opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
-		} else if patternPrefix[0] != "" {
-			// Extend the repo search using the pattern value, but
-			// since the pattern contains @, only search the part
-			// prefixed by the first @. This because downstream
-			// logic will get confused by the presence of @ and try
-			// to resolve repo revisions. See #27816.
-			opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
-		} else {
-			// This pattern starts with @, of the form "@thing". We can't
-			// consistently handle search repos of this form, because
-			// downstream logic will attempt to interpret "thing" as a repo
-			// revision, may fail, and cause us to raise an alert for any
-			// non `type:repo` search. Better to not attempt a repo search.
-			return nil
-		}
-	}
-
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
-
-	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
@@ -114,7 +56,7 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 		err = nil
 	}
 
-	return err
+	return nil, err
 }
 
 func (*RepoSearch) Name() string {
@@ -172,7 +114,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}
-	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
+	matches, _, err := textsearch.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -33,13 +33,13 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
 
-	userEmails := dbmock.NewMockUserEmailsStore()
+	userEmails := database.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "test"}, nil)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 

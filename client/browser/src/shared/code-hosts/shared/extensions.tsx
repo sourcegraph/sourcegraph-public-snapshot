@@ -4,6 +4,8 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { isExternalLink } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -12,7 +14,6 @@ import {
     groupDecorationsByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
@@ -21,11 +22,10 @@ import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { NotificationClassNameProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isExternalLink } from '@sourcegraph/shared/src/util/url'
 
 import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'
@@ -55,15 +55,19 @@ interface InjectProps
     render: typeof render
 }
 
+interface RenderCommandPaletteProps
+    extends TelemetryProps,
+        InjectProps,
+        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> {
+    notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
+}
+
 export const renderCommandPalette = ({
     extensionsController,
     history,
     render,
     ...props
-}: TelemetryProps &
-    InjectProps &
-    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> &
-    NotificationClassNameProps) => (mount: HTMLElement): void => {
+}: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
@@ -76,7 +80,9 @@ export const renderCommandPalette = ({
             />
             <Notifications
                 extensionsController={extensionsController}
-                notificationClassNames={props.notificationClassNames}
+                notificationItemStyleProps={{
+                    notificationItemClassNames: props.notificationClassNames,
+                }}
             />
         </ShortcutProvider>,
         mount

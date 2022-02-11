@@ -13,7 +13,16 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Make "single click to definition" an opt-in through advanced settings: [#pull/30540](https://github.com/sourcegraph/sourcegraph/pull/30540), [#issues/#30437](https://github.com/sourcegraph/sourcegraph/issues/30437)
+- Add "https://" URL input placeholder [#pull/30282](https://github.com/sourcegraph/sourcegraph/pull/30282), [#issues/14723](https://github.com/sourcegraph/sourcegraph/issues/14723)
+- Add filtering of browser extension dropdown duplicated URLs [#pull/30674](https://github.com/sourcegraph/sourcegraph/pull/30674), [#issues/30673](https://github.com/sourcegraph/sourcegraph/issues/30673)
+- Add tracking of inbound traffic from browser extension/code host integration [#pull/30170](https://github.com/sourcegraph/sourcegraph/pull/30170), [#issues/27082](https://github.com/sourcegraph/sourcegraph/issues/27082)
+
+## Chrome & Firefox v22.1.25.1535, Safari v1.10
+
 - Add extra field to log browser extension version [#issues/27845](https://github.com/sourcegraph/sourcegraph/issues/27845), [pull/27902](https://github.com/sourcegraph/sourcegraph/pull/27902)
+- Implement Sourcegraph URL dropdown for ease of URL switching [#issues/29030](https://github.com/sourcegraph/sourcegraph/issues/29030), [#pull/29471](https://github.com/sourcegraph/sourcegraph/pull/29471)
+  - Fix incorrect event log URL detection. Allow event logs for non-private repositories. [#issues/25778](https://github.com/sourcegraph/sourcegraph/issues/25778)
 
 ## Chrome v21.12.10.1012, Firefox v21.12.10.1048, Safari v1.9
 

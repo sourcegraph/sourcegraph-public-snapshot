@@ -1,19 +1,15 @@
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
-import { PatternTypeProps } from '../search'
 import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contributions'
 
 /**
  * Properties passed to all page components in the namespace area.
  */
-export interface NamespaceAreaContext
-    extends ExtensionsControllerProps,
-        ThemeProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+export interface NamespaceAreaContext extends ExtensionsControllerProps, ThemeProps {
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
     authenticatedUser: AuthenticatedUser | null

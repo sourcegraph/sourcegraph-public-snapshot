@@ -14,6 +14,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         class="icon bg-transparent"
       >
         <a
+          class="anchorLink"
           href="/search"
         >
           <svg
@@ -86,6 +87,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   class="form-text text-muted"
                 >
                   <a
+                    class="anchorLink"
                     href="/password-reset"
                   >
                     Forgot password?
@@ -107,7 +109,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btn-primary btn-block"
+                class="btn btnPrimary btn-block"
                 type="submit"
               >
                 Sign in
@@ -133,7 +135,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btn-secondary btn-block"
+              class="btn btnSecondary btn-block"
               href=""
             >
               <svg
@@ -154,6 +156,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         <p>
           New to Sourcegraph? 
           <a
+            class="anchorLink"
             href="/sign-up"
           >
             Sign up
@@ -245,6 +248,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   class="form-text text-muted"
                 >
                   <a
+                    class="anchorLink"
                     href="/password-reset"
                   >
                     Forgot password?
@@ -266,7 +270,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group"
             >
               <button
-                class="btn btn-primary btn-block"
+                class="btn btnPrimary btn-block"
                 type="submit"
               >
                 Sign in
@@ -292,7 +296,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="btn btn-secondary btn-block"
+              class="btn btnSecondary btn-block"
               href=""
             >
               <svg
@@ -313,6 +317,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         <p>
           New to Sourcegraph? 
           <a
+            class="anchorLink"
             href="/sign-up"
           >
             Sign up

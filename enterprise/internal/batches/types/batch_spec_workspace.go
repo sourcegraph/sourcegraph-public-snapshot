@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
@@ -23,7 +22,6 @@ type BatchSpecWorkspace struct {
 	Branch             string
 	Commit             string
 	Path               string
-	Steps              []batcheslib.Step
 	FileMatches        []string
 	OnlyFetchWorkspace bool
 

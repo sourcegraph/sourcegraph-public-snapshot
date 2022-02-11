@@ -6,7 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token"],
+  "required": ["url"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
@@ -170,6 +170,10 @@
           "default": 72
         }
       }
+    },
+    "githubAppInstallationID": {
+      "description": "The installation ID of the GitHub App.",
+      "type": "string"
     },
     "cloudGlobal": {
       "title": "CloudGlobal",

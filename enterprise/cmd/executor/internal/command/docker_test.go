@@ -9,9 +9,12 @@ import (
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	actual := formatRawOrDockerCommand(
 		CommandSpec{
-			Command:   []string{"ls", "-a"},
-			Dir:       "subdir",
-			Env:       []string{"TEST=true"},
+			Command: []string{"ls", "-a"},
+			Dir:     "subdir",
+			Env: []string{
+				`TEST=true`,
+				`CONTAINS_WHITESPACE=yes it does`,
+			},
 			Operation: makeTestOperation(),
 		},
 		"/proj/src",
@@ -21,7 +24,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	expected := command{
 		Command: []string{"ls", "-a"},
 		Dir:     "/proj/src/subdir",
-		Env:     []string{"TEST=true"},
+		Env:     []string{"TEST=true", "CONTAINS_WHITESPACE=yes it does"},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
@@ -34,8 +37,11 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",
-			Env:        []string{"TEST=true"},
-			Operation:  makeTestOperation(),
+			Env: []string{
+				`TEST=true`,
+				`CONTAINS_WHITESPACE=yes it does`,
+			},
+			Operation: makeTestOperation(),
 		},
 		"/proj/src",
 		Options{
@@ -54,34 +60,12 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			"-v", "/proj/src:/data",
 			"-w", "/data/subdir",
 			"-e", "TEST=true",
+			"-e", `CONTAINS_WHITESPACE="yes it does"`,
 			"--entrypoint",
 			"/bin/sh",
 			"alpine:latest",
 			"/data/.sourcegraph-executor/myscript.sh",
 		},
-	}
-	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
-		t.Errorf("unexpected command (-want +got):\n%s", diff)
-	}
-}
-
-func TestFormatRawOrDockerCommandDockerCommand(t *testing.T) {
-	actual := formatRawOrDockerCommand(
-		CommandSpec{
-			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
-			Env:     []string{"TEST=true"},
-		},
-		"/proj/src",
-		Options{},
-	)
-
-	expected := command{
-		Command: []string{
-			"ls", "-a",
-		},
-		Env: []string{"TEST=true"},
-		Dir: "/proj/src/subdir",
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)

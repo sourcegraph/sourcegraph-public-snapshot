@@ -1,0 +1,16 @@
+.list-group {
+    border-top: inherit;
+    border-bottom: inherit;
+
+    &:first-child {
+        border-top-width: 0;
+        border-top-right-radius: var(--border-radius);
+        border-top-left-radius: var(--border-radius);
+    }
+
+    &:last-child {
+        border-bottom-width: 0;
+        border-bottom-right-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
+    }
+}

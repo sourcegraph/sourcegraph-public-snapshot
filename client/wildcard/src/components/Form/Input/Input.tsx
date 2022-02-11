@@ -3,8 +3,9 @@ import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
+import { ForwardReferenceComponent } from '../../../types'
+
 import styles from './Input.module.scss'
-import { ForwardReferenceComponent } from './types'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** text label of input. */

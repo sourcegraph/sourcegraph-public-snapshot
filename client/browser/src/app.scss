@@ -10,7 +10,7 @@ $line-height-base: (20/14);
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
-    --mark-bg: #{$mark-bg-light};
+    --mark-bg: var(--mark-bg-light);
 }
 
 .sg-icon .icon {
@@ -41,10 +41,3 @@ $line-height-base: (20/14);
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
 @import './shared';
-@import './shared/code-hosts/bitbucket/style.scss';
-@import './shared/code-hosts/bitbucket-cloud/style.scss';
-@import './shared/code-hosts/gitlab/style.scss';
-@import './shared/code-hosts/github/style.scss';
-@import './shared/code-hosts/phabricator/style.scss';
-@import './shared/code-hosts/gerrit/style.scss';
-@import './shared/code-hosts/shared/HoverOverlay.scss';

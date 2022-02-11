@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/google/zoekt"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -98,16 +96,16 @@ func TestSearch(t *testing.T) {
 			mockDecodedViewerFinalSettings = &schema.Settings{}
 			defer func() { mockDecodedViewerFinalSettings = nil }()
 
-			repos := dbmock.NewMockRepoStore()
+			repos := database.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)
 
-			ext := dbmock.NewMockExternalServiceStore()
+			ext := database.NewMockExternalServiceStore()
 			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
 
-			phabricator := dbmock.NewMockPhabricatorStore()
+			phabricator := database.NewMockPhabricatorStore()
 			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
 
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
@@ -254,26 +252,6 @@ var testSearchGQLQuery = `
 		}
 `
 
-func testStringResult(result SearchSuggestionResolver) string {
-	var name string
-	switch r := result.(type) {
-	case repositorySuggestionResolver:
-		name = "repo:" + r.repo.Name()
-	case gitTreeSuggestionResolver:
-		name = "file:" + r.gitTreeEntry.Path()
-	case languageSuggestionResolver:
-		name = "lang:" + r.lang.name
-	case symbolSuggestionResolver:
-		name = "symbol:" + r.symbol.Symbol.Name
-	default:
-		panic("never here")
-	}
-	if result.Score() == 0 {
-		return "<removed>"
-	}
-	return name
-}
-
 func TestDetectSearchType(t *testing.T) {
 	typeRegexp := "regexp"
 	typeLiteral := "literal"
@@ -352,20 +330,6 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 }
 
-func TestQuoteSuggestions(t *testing.T) {
-	t.Run("regex error", func(t *testing.T) {
-		raw := "*"
-		_, err := query.Pipeline(query.InitRegexp(raw))
-		if err == nil {
-			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
-		}
-		alert := alertForQuery(raw, err)
-		if !strings.Contains(alert.description, "regexp") {
-			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
-		}
-	})
-}
-
 func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
 	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
@@ -390,9 +354,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	})
 
 	ctx := context.Background()
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
 	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -412,9 +376,7 @@ func BenchmarkSearchResults(b *testing.B) {
 				Query:        plan.ToParseTree(),
 				UserSettings: &schema.Settings{},
 			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

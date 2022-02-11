@@ -1,7 +1,7 @@
 import { ApolloError } from '@apollo/client'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { GitObjectType, Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { PreviewGitObjectFilterResult, PreviewGitObjectFilterVariables } from '../../../../graphql-operations'
 

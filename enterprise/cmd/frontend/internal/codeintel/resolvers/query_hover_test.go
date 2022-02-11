@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -41,6 +42,7 @@ func TestHover(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {
@@ -123,6 +125,7 @@ func TestHoverRemote(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {

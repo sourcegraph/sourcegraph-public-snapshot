@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { pluralize } from '@sourcegraph/common'
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -51,19 +50,15 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
     const SITE_ADMIN_CONFIG_DOC_URL = 'https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration'
 
     return (
-        <DismissibleAlert className="alert-warning" partialStorageKey={id}>
+        <DismissibleAlert variant="warning" partialStorageKey={id}>
             <div>
                 <h4>Changeset information may not be up to date</h4>
                 <p className={styles.blurb}>
                     Sourcegraph will poll for updates because{' '}
-                    <button
-                        type="button"
-                        className={classNames(styles.openLink, 'btn btn-link p-0')}
-                        onClick={toggleOpen}
-                    >
+                    <Button className={classNames(styles.openLink, 'p-0')} onClick={toggleOpen} variant="link">
                         {totalCount}{' '}
                         {pluralize('code host is not configured', totalCount, 'code hosts are not configured')}
-                    </button>{' '}
+                    </Button>{' '}
                     to use webhooks.{' '}
                     {isSiteAdmin ? (
                         <>

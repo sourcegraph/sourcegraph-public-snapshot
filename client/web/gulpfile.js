@@ -6,7 +6,6 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
-const chalk = require('chalk')
 const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
@@ -33,6 +32,7 @@ const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
 const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
 const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
+const printSuccessBanner = require('./dev/utils/success-banner')
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -151,29 +151,7 @@ async function webpackDevelopmentServer() {
     }
     compilationDoneOnce = true
 
-    const url = `https://${sockHost}:${sockPort}`
-    const banner = '==============================================='
-    const emptyLine = ' '.repeat(banner.length)
-    const lineLength = banner.length
-    /**
-     * @param {string} content
-     */
-    const paddedLine = content => {
-      const spaceRequired = lineLength - content.length
-      const half = spaceRequired / 2
-      let line = `${' '.repeat(half)}${content}${' '.repeat(half)}`
-      if (line.length < lineLength) {
-        line += ' '
-      }
-      return line
-    }
-    console.log(chalk.bgYellowBright.black(banner))
-    console.log(chalk.bgYellowBright.black(emptyLine))
-    console.log(chalk.bgYellowBright.black(paddedLine('✱ Sourcegraph is really ready now!')))
-    console.log(chalk.bgYellowBright.black(emptyLine))
-    console.log(chalk.bgYellowBright.black(paddedLine(`Click here: ${url}`)))
-    console.log(chalk.bgYellowBright.black(emptyLine))
-    console.log(chalk.bgYellowBright.black(banner))
+    printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: https://${sockHost}:${sockPort}`])
   })
 
   const server = new WebpackDevServer(options, compiler)

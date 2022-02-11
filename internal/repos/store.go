@@ -7,8 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -22,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -44,6 +43,13 @@ type Store struct {
 	txtrace *trace.Trace
 	txctx   context.Context
 }
+
+type ReposMocks struct {
+	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
+	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
+}
+
+var Mocks ReposMocks
 
 // NewStore instantiates and returns a new DBStore with prepared statements.
 func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
@@ -170,7 +176,7 @@ func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (
 const countTotalNamespacedReposQueryFmtstr = `
 SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
-WHERE user_id IS NOT NULL OR org_id IS NOT NULL`
+WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
 // DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
 // by the given external service. We run one query per repo rather than one batch query in order to reduce the chances
@@ -206,10 +212,10 @@ func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		return nil, errors.Wrap(err, "failed to list external service repo ids")
 	}
 
-	var errs multierror.Error
+	var errs errors.MultiError
 	for _, id := range toDelete {
 		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
-			multierror.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+			errors.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
 		} else {
 			deleted = append(deleted, api.RepoID(id))
 		}
@@ -287,8 +293,8 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 // given repository. These users have proven that they have read access to the
 // repository given records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
-		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
+		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
@@ -324,8 +330,8 @@ AND repo.private
 // user has already proven that they have read access to the repositories since
 // records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
-		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
+		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
@@ -574,9 +580,9 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
 WHERE NOT EXISTS (
 	SELECT
-	FROM external_service_sync_jobs j
-	JOIN external_services es ON es.id = j.external_service_id
-	WHERE j.external_service_id = %s
+	FROM external_services es
+	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
+	WHERE es.id = %s
 	AND (
 		j.state IN ('queued', 'processing')
 		OR es.cloud_default

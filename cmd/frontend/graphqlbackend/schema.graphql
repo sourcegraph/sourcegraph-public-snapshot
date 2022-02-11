@@ -218,9 +218,12 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
-    Sets the current user to accept the site's Terms of Service and Privacy Policy.
+    Sets the user to accept the site's Terms of Service and Privacy Policy.
+    If the ID is ommitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
     """
-    setTosAccepted: EmptyResponse!
+    setTosAccepted(userID: ID): EmptyResponse!
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
@@ -250,12 +253,20 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Sends an invitation to join Sourcegraph to the given email address.
+
+    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
+    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
+    or if the user has been invited too recently.
+    """
+    inviteEmailToSourcegraph(email: String!): EmptyResponse!
+    """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -851,6 +862,7 @@ enum EventSource {
     WEB
     CODEHOSTINTEGRATION
     BACKEND
+    STATICWEB
 }
 
 """
@@ -1295,10 +1307,6 @@ type Query {
     """
     clientConfiguration: ClientConfigurationDetails!
     """
-    Fetch search filter suggestions for autocompletion.
-    """
-    searchFilterSuggestions: SearchFilterSuggestions!
-    """
     Runs a search.
     """
     search(
@@ -1475,6 +1483,17 @@ type Query {
         """
         after: String
     ): ExecutorConnection!
+
+    """
+    (experimental)
+    Get invitation based on the JWT in the invitation URL
+    """
+    invitationByToken(
+        """
+        The token that uniquely identifies the invitation
+        """
+        token: String!
+    ): OrganizationInvitation!
 }
 
 """
@@ -1805,29 +1824,11 @@ type Search {
     """
     results: SearchResults!
     """
-    The suggestions.
-    """
-    suggestions(first: Int): [SearchSuggestion!]!
-        @deprecated(
-            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
-        )
-
-    """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
     data.
     """
     stats: SearchResultsStats!
-}
-
-"""
-Predefined suggestions for search filters when backfill.
-"""
-type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repo:".
-    """
-    repo: [String!]!
 }
 
 """
@@ -1967,6 +1968,7 @@ type SearchResults {
     """
     timedout: [Repository!]!
     """
+    DEPRECATED: This field is not used in known clients, and will always return `false`.
     True if indexed search is enabled but was not available during this search.
     """
     indexUnavailable: Boolean!
@@ -2039,11 +2041,6 @@ type Language {
     """
     name: String!
 }
-
-"""
-A search suggestion.
-"""
-union SearchSuggestion = Repository | File | Symbol | Language
 
 """
 A search-related alert message.
@@ -2340,6 +2337,20 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories included by this external service, and is derived from commit history (because that
+    for example gives more accurate collaborator work email addresses than the contributors API which
+    often returns personal emails.
+
+    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
+    inviting collaborators while repositories are cloning.
+
+    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
+    reaches out to the code host directly which is wasteful if repositories are already cloned.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
@@ -2790,7 +2801,7 @@ type RepositoryTextSearchIndexStatus {
     """
     The byte size of the original content.
     """
-    contentByteSize: Int!
+    contentByteSize: BigInt!
     """
     The number of files in the original content.
     """
@@ -4994,9 +5005,13 @@ type Org implements Node & SettingsSubject & Namespace {
             reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
         )
     """
+    DEPRECATED
     A pending invitation for the viewer to join this organization, if any.
     """
     viewerPendingInvitation: OrganizationInvitation
+        @deprecated(
+            reason: "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
+        )
     """
     Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     have admin privileges on the organization.
@@ -5055,7 +5070,11 @@ type OrganizationInvitation implements Node {
     """
     The user who received the invitation.
     """
-    recipient: User!
+    recipient: User
+    """
+    The email address that the invitation was sent to.
+    """
+    recipientEmail: String
     """
     The date when this invitation was created.
     """
@@ -5080,6 +5099,10 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    Boolean flag which returns true if the email on the invite matches a verified email of the user
+    """
+    isVerifiedEmail: Boolean
 }
 
 """

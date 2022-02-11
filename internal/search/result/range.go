@@ -1,13 +1,61 @@
 package result
 
 import (
+	"bufio"
 	"encoding/json"
 	"sort"
+	"strings"
 )
 
 type MatchedString struct {
 	Content       string `json:"content"`
 	MatchedRanges Ranges `json:"matched_ranges"`
+}
+
+func (m MatchedString) ToHighlightedString() HighlightedString {
+	highlights := make([]HighlightedRange, 0, len(m.MatchedRanges))
+	for _, r := range m.MatchedRanges {
+		highlights = append(highlights, rangeToHighlights(m.Content, r)...)
+	}
+	return HighlightedString{Value: m.Content, Highlights: highlights}
+}
+
+// rangeToHighlights converts a Range (which can cross multiple lines)
+// into HighlightedRange, which is scoped to one line. In order to do this
+// correctly, we need the string that is being highlighted in order to identify
+// line-end boundaries within multi-line ranges.
+// TODO(camdencheek): push the Range format up the stack so we can be smarter about multi-line highlights.
+func rangeToHighlights(s string, r Range) []HighlightedRange {
+	var res []HighlightedRange
+
+	// Use a scanner to handle \r?\n
+	scanner := bufio.NewScanner(strings.NewReader(s[r.Start.Offset:r.End.Offset]))
+	lineNum := r.Start.Line
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		character := 0
+		if lineNum == r.Start.Line {
+			character = r.Start.Column
+		}
+
+		length := len(line)
+		if lineNum == r.End.Line {
+			length = r.End.Column - character
+		}
+
+		if length > 0 {
+			res = append(res, HighlightedRange{
+				Line:      int32(lineNum),
+				Character: int32(character),
+				Length:    int32(length),
+			})
+		}
+
+		lineNum++
+	}
+
+	return res
 }
 
 type Location struct {

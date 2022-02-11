@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAuthzStore returns an OSS database.AuthzStore set with enterprise implementation.
@@ -28,7 +27,7 @@ func NewAuthzStoreWith(other basestore.ShareableStore, clock func() time.Time) d
 }
 
 type authzStore struct {
-	store *PermsStore
+	store PermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.

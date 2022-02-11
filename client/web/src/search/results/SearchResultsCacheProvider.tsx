@@ -9,7 +9,7 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 

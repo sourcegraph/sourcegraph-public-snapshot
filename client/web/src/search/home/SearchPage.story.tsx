@@ -9,11 +9,10 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
@@ -35,9 +34,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
@@ -64,7 +60,7 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [544, 577, 769, 993, 1200] },
+        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
@@ -80,13 +76,13 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
-add('Cloud with community search contexts', () => (
+add('Cloud marketing home', () => (
     <WebStory>
         {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
 ))
 
-add('Cloud with notebook onboarding', () => (
+add('Cloud marketing home with notebook onboarding', () => (
     <WebStory>
         {webProps => (
             <SearchPage
@@ -98,8 +94,6 @@ add('Cloud with notebook onboarding', () => (
         )}
     </WebStory>
 ))
-
-add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
 add('Server with panels', () => (
     <WebStory>

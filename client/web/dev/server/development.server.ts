@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import compression from 'compression'
 import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
@@ -23,6 +22,10 @@ import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
+// TODO: migrate webpack.config.js to TS to use `import` in this file.
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+const printSuccessBanner = require('../utils/success-banner') as (lines: string[], log: () => void) => void
+
 const {
     SOURCEGRAPH_API_URL,
     SOURCEGRAPH_HTTPS_PORT,
@@ -106,17 +109,21 @@ async function startWebpackDevelopmentServer({
     const compiler = createWebpackCompiler(webpackConfig)
     const server = new WebpackDevServer(developmentServerConfig, compiler)
 
-    compiler.hooks.afterEmit.tap(
+    compiler.hooks.done.tap(
         'development-server-logger',
         once(() => {
-            signale.success('Webpack build is ready!')
+            printSuccessBanner(
+                [
+                    'Webpack build is ready!',
+                    `Development HTTP server is ready at ${HTTP_WEB_SERVER_URL}`,
+                    `Development HTTPS server is ready at ${HTTPS_WEB_SERVER_URL}`,
+                ],
+                signale.log.bind(signale)
+            )
         })
     )
 
     await server.start()
-    signale.info(`Development HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
-    signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
-    signale.await('Waiting for Webpack to compile assets')
 }
 
 async function startEsbuildDevelopmentServer({

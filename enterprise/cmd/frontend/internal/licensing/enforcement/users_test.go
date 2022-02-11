@@ -89,12 +89,14 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			database.Mocks.Users.Count = func(ctx context.Context, opt *database.UsersListOptions) (int, error) {
-				return test.activeUserCount, nil
-			}
-			t.Cleanup(func() { database.Mocks.Users.Count = nil })
 
-			err := NewBeforeCreateUserHook()(context.Background(), nil)
+			users := database.NewStrictMockUserStore()
+			users.CountFunc.SetDefaultReturn(test.activeUserCount, nil)
+
+			db := database.NewStrictMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+
+			err := NewBeforeCreateUserHook()(context.Background(), db)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}

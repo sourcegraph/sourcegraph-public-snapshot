@@ -3,7 +3,6 @@ package enqueuer
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type IndexEnqueuer struct {
@@ -187,7 +187,16 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 
 	var indexes []config.IndexJob
 	for _, recognizer := range inference.Recognizers {
-		indexes = append(indexes, recognizer.InferIndexJobs(gitclient, paths)...)
+		recognizedPaths := []string{}
+		pattern := inference.OrPattern(recognizer.Patterns())
+		for _, path := range paths {
+			if pattern.MatchString(path) {
+				recognizedPaths = append(recognizedPaths, path)
+			}
+		}
+		if len(recognizedPaths) > 0 {
+			indexes = append(indexes, recognizer.InferIndexJobs(gitclient, recognizedPaths)...)
+		}
 	}
 
 	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {

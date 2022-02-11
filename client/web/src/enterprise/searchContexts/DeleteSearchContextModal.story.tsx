@@ -3,15 +3,16 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 
-const { add } = storiesOf('web/searchContexts/DeleteSearchContextModal', module)
+const { add } = storiesOf('web/enterprise/searchContexts/DeleteSearchContextModal', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
 
@@ -21,7 +22,7 @@ const searchContext = {
 } as ISearchContext
 
 add(
-    'delete modal',
+    'DeleteSearchContextModal',
     () => (
         <WebStory>
             {webProps => (
@@ -31,6 +32,7 @@ add(
                     searchContext={searchContext}
                     toggleDeleteModal={sinon.fake()}
                     deleteSearchContext={sinon.fake(() => NEVER)}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>

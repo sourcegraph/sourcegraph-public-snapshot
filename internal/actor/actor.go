@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an
@@ -20,6 +19,8 @@ import (
 // Actor can be propagated across services by using actor.HTTPTransport (used by
 // httpcli.InternalClientFactory) and actor.HTTPMiddleware. Before assuming this, ensure
 // that actor propagation is enabled on both ends of the request.
+//
+// To learn more about actor propagation, see: https://sourcegraph.com/notebooks/Tm90ZWJvb2s6OTI=
 type Actor struct {
 	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
 	UID int32 `json:",omitempty"`

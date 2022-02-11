@@ -124,6 +124,28 @@ digraph architecture {
                 ]
             }
 
+            subgraph cluster_code_insights {
+                            label="Code Insights"
+                            graph [style="dotted"]
+
+                            worker [
+                                label="worker"
+                                shape="box3d"
+                                fillcolor="#eac1c1"
+                                URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/internal/insights/background"
+                            ]
+
+                            frontend [
+                                label="frontend"
+                                shape="box3d"
+                                fillcolor="#c1eaea"
+                                URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/internal/insights/resolvers"
+                            ]
+                            postgres [label="frontend db"]
+                            codeinsights_db [label="codeinsights db"]
+
+                        }
+
             gitserver [
                 label="gitserver"
                 fillcolor="#cd5c5c"
@@ -204,9 +226,9 @@ digraph architecture {
     github_proxy -> github_dot_com [fillcolor="#aaaaff"]
 
     /* To databases */
-    frontend -> {postgres, codeintel_db} [fillcolor="#7e78dc"]
+    frontend -> {postgres, codeintel_db, codeinsights_db} [fillcolor="#7e78dc"]
     frontend -> {redis} [fillcolor="#7e78dc"]
-    worker -> {postgres, codeintel_db} [fillcolor="#22ffff"]
+    worker -> {postgres, codeintel_db, codeinsights_db} [fillcolor="#22ffff"]
     codeintel_worker -> {postgres, codeintel_db} [ fillcolor="#eac1c1"]
 
     /* Internal routes */

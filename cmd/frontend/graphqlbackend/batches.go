@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CreateBatchChangeArgs struct {
@@ -82,7 +83,7 @@ type CreateBatchSpecFromRawArgs struct {
 	AllowUnsupported bool
 	Execute          bool
 	NoCache          bool
-	Namespace        *graphql.ID
+	Namespace        graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {
@@ -93,6 +94,8 @@ type ReplaceBatchSpecInputArgs struct {
 	Execute          bool
 	NoCache          bool
 }
+
+type UpsertBatchSpecInputArgs = CreateBatchSpecFromRawArgs
 
 type DeleteBatchSpecArgs struct {
 	BatchSpec graphql.ID
@@ -243,6 +246,7 @@ type BatchChangesResolver interface {
 	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
 	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
+	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
 	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
 	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
@@ -456,6 +460,8 @@ type VisibleChangesetSpecResolver interface {
 
 	Description(ctx context.Context) (ChangesetDescription, error)
 	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -504,6 +510,11 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
 }
 
 type BatchChangesCodeHostConnectionResolver interface {
@@ -567,6 +578,7 @@ type ListWorkspacesArgs struct {
 	After   *string
 	OrderBy *string
 	Search  *string
+	State   *string
 }
 
 type ListRecentlyCompletedWorkspacesArgs struct {
@@ -698,6 +710,7 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+	ForkNamespace() *string
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.
@@ -796,6 +809,8 @@ type BatchSpecWorkspaceResolver interface {
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
+
+	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
 }
 
 type BatchSpecWorkspaceStagesResolver interface {
@@ -805,8 +820,10 @@ type BatchSpecWorkspaceStagesResolver interface {
 }
 
 type BatchSpecWorkspaceStepResolver interface {
+	Number() int32
 	Run() string
 	Container() string
+	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
 	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)

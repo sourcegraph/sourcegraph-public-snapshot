@@ -5,12 +5,13 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { getUser, setTosAccepted } from './util/api'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import {
     ensureLoggedInOrCreateTestUser,
@@ -50,6 +51,11 @@ describe('Core functionality regression test suite', () => {
                 ...config,
             })
         )
+        const user = await getUser(gqlClient, testUsername)
+        if (!user) {
+            throw new Error(`test user ${testUsername} does not exist`)
+        }
+        await setTosAccepted(gqlClient, user.id)
         screenshots = new ScreenshotVerifier(driver)
     })
 

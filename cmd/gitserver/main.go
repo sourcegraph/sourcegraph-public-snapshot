@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
@@ -43,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -324,7 +324,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.NPMPackagesSyncer{Config: &c}, nil
+		return server.NewNPMPackagesSyncer(c, codeintelDB, nil), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

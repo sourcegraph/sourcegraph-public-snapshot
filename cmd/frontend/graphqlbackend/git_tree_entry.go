@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,10 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var metricLabels = []string{"origin"}
@@ -84,6 +85,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
+			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 
@@ -216,6 +218,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
+		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

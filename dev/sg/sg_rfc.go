@@ -4,9 +4,11 @@ import (
 	"context"
 	"flag"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -28,21 +30,21 @@ func rfcExec(ctx context.Context, args []string) error {
 
 	switch args[0] {
 	case "list":
-		return rfc.List(ctx, out)
+		return rfc.List(ctx, stdout.Out)
 
 	case "search":
 		if len(args) != 2 {
 			return errors.New("no search query given")
 		}
 
-		return rfc.Search(ctx, args[1], out)
+		return rfc.Search(ctx, args[1], stdout.Out)
 
 	case "open":
 		if len(args) != 2 {
 			return errors.New("no number given")
 		}
 
-		return rfc.Open(ctx, args[1], out)
+		return rfc.Open(ctx, args[1], stdout.Out)
 	}
 
 	return nil

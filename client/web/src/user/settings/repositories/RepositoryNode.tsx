@@ -8,9 +8,8 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -44,7 +43,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     if (mirrorInfo.cloneInProgress) {
         return (
             <small data-tooltip="Clone in progress." className="mr-2 text-success">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </small>
         )
     }
@@ -120,9 +119,9 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     return (
         <RepositoryNodeContainer as="tr">
             <td className="border-color">
-                <a
+                <Link
                     className={classNames('w-100 d-flex justify-content-between align-items-center', styles.link)}
-                    href={url}
+                    to={url}
                     onClick={handleOnClick}
                 >
                     <div className="d-flex align-items-center">
@@ -139,7 +138,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         )}
                         <ChevronRightIcon className="icon-inline ml-2 text-primary" />
                     </div>
-                </a>
+                </Link>
             </td>
         </RepositoryNodeContainer>
     )

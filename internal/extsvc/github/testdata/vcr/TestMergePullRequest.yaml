@@ -32,13 +32,15 @@ interactions:
       on PullRequestCommit {\n    commit {\n      ...commit\n    }\n  }\n  \n  ...
       on ConvertToDraftEvent {\n    actor {\n\t  ...actor\n\t}\n\tcreatedAt\n  }\n\n}\n\nfragment
       actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment label on Label
-      {\n  name\n  color\n  description\n  id\n}\n\nfragment commitWithChecks on Commit
-      {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      {\n  name\n  color\n  description\n  id\n}\n\nfragment repo on Repository {\n  id\n  owner
+      {\n    login\n  }\n}\n\nfragment commitWithChecks on Commit {\n  oid\n  status
+      {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
+      {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
       {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
       CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
@@ -47,7 +49,7 @@ interactions:
       READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes
       {\n      __typename\n      ...timelineItems\n    }\n  }\n}\n\n\nmutation MergePullRequest($input:
       MergePullRequestInput!) {\n  mergePullRequest(input: $input) {\n\t  pullRequest
-      {\n\t\t  ...pr\n\t  }\n  }\n}\n","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy","mergeMethod":"SQUASH"}}}'
+      {\n\t\t  ...pr\n\t  }\n  }\n}\n","variables":{"input":{"pullRequestId":"PR_kwDODS5xec4waLb5","mergeMethod":"SQUASH"}}}'
     form: {}
     headers:
       Accept:
@@ -57,28 +59,27 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"mergePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"MERGED","url":"https://github.com/sourcegraph/automation-testing/pull/424","number":424,"createdAt":"2021-02-22T16:40:45Z","updatedAt":"2021-06-11T14:08:50Z","headRefOid":"81da5d9c265d943d33a6bbed9da18da16f3ac633","baseRefOid":"53229c4dc5ba7c0f7abf109003aa15a956be485e","headRefName":"test-pr-7","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},{"avatarUrl":"https://avatars.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"81da5d9c265d943d33a6bbed9da18da16f3ac633","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTU4","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYx","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYy","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2021-02-22T16:39:56Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABeftnbVABqjQ4NzgyMzU2NTk="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"81da5d9c265d943d33a6bbed9da18da16f3ac633","message":"Push
-      a new branch","messageHeadline":"Push a new branch","committedDate":"2021-02-22T16:39:56Z","pushedDate":"2021-02-22T16:40:00Z","url":"https://github.com/sourcegraph/automation-testing/commit/81da5d9c265d943d33a6bbed9da18da16f3ac633","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
-      Ball","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"mergeRefName":"master","url":"https://github.com/sourcegraph/automation-testing/pull/424#event-4878235653","commit":{"oid":"9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e","message":"Push
-      a new branch (#424)\n\nCo-authored-by: Thorsten Ball <mrnugget@gmail.com>","messageHeadline":"Push
-      a new branch (#424)","committedDate":"2021-06-11T14:08:50Z","pushedDate":null,"url":"https://github.com/sourcegraph/automation-testing/commit/9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2021-06-11T14:08:50Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2021-06-11T14:08:50Z","url":"https://github.com/sourcegraph/automation-testing/pull/424#event-4878235659"}]}}}}}'
+    body: '{"data":{"mergePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec4waLb5","title":"`MergePullRequest`
+      test PR","body":"A test PR for the GithubSource `MergePullRequest` unit test.\n\n[_Created
+      by Sourcegraph batch change `LawnGnome/merge-pr-github`._](https://sourcegraph.test:3443/users/LawnGnome/batch-changes/merge-pr-github)","state":"MERGED","url":"https://github.com/sourcegraph/automation-testing/pull/465","number":465,"createdAt":"2021-12-30T22:34:11Z","updatedAt":"2021-12-30T22:35:46Z","headRefOid":"9d809d09ba1d1543186ed1b0bd6070c43d0f177e","baseRefOid":"d559e66a56e6615759f60f543475fd69e347f592","headRefName":"merge-pr-github","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","owner":{"login":"sourcegraph"}},"headRepository":{"id":"R_kgDOGmqtEg","owner":{"login":"LawnGnome"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"9d809d09ba1d1543186ed1b0bd6070c43d0f177e","status":null,"checkSuites":{"nodes":[]},"committedDate":"2021-12-30T22:32:04Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABfg18IdABqjU4MjkyNTU1NTk="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d809d09ba1d1543186ed1b0bd6070c43d0f177e","message":"Remove
+      the file added in `test-pr-7`.","messageHeadline":"Remove the file added in
+      `test-pr-7`.","committedDate":"2021-12-30T22:32:04Z","pushedDate":null,"url":"https://github.com/sourcegraph/automation-testing/commit/9d809d09ba1d1543186ed1b0bd6070c43d0f177e","committer":{"avatarUrl":"https://camo.githubusercontent.com/a2bc397351e6bfc2725fe88be81169b9f2b082396ac1c5db6419aa57ed5e4c16/68747470733a2f2f312e67726176617461722e636f6d2f6176617461722f63356564373065326531623566623266306437373438383337613637633266623f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67","email":"batch-changes@sourcegraph.com","name":"Sourcegraph","user":null}}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"mergeRefName":"master","url":"https://github.com/sourcegraph/automation-testing/pull/465#event-5829255555","commit":{"oid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","message":"Remove
+      the file added in `test-pr-7`. (#465)\n\nCo-authored-by: Sourcegraph <batch-changes@sourcegraph.com>","messageHeadline":"Remove
+      the file added in `test-pr-7`. (#465)","committedDate":"2021-12-30T22:35:46Z","pushedDate":null,"url":"https://github.com/sourcegraph/automation-testing/commit/36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2021-12-30T22:35:46Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T22:35:46Z","url":"https://github.com/sourcegraph/automation-testing/pull/465#event-5829255559"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 11 Jun 2021 14:08:50 GMT
+      - Thu, 30 Dec 2021 22:35:46 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -96,19 +97,20 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - E16A:621F:187AB1E:18FECA7:60C36E71
+      - 9BA0:3AC3:19E0BA0:357827D:61CE3441
       X-Oauth-Scopes:
-      - read:discussion, read:org, repo, workflow
+      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
+        read:user, repo, workflow
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4994"
+      - "4948"
       X-Ratelimit-Reset:
-      - "1623424033"
+      - "1640906777"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "6"
+      - "52"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -145,13 +147,15 @@ interactions:
       on PullRequestCommit {\n    commit {\n      ...commit\n    }\n  }\n  \n  ...
       on ConvertToDraftEvent {\n    actor {\n\t  ...actor\n\t}\n\tcreatedAt\n  }\n\n}\n\nfragment
       actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment label on Label
-      {\n  name\n  color\n  description\n  id\n}\n\nfragment commitWithChecks on Commit
-      {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      {\n  name\n  color\n  description\n  id\n}\n\nfragment repo on Repository {\n  id\n  owner
+      {\n    login\n  }\n}\n\nfragment commitWithChecks on Commit {\n  oid\n  status
+      {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
+      {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
       {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
       CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
@@ -170,7 +174,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"mergePullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["mergePullRequest"],"locations":[{"line":303,"column":3}],"message":"Pull
+    body: '{"data":{"mergePullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["mergePullRequest"],"locations":[{"line":316,"column":3}],"message":"Pull
       Request is not mergeable"}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -178,16 +182,14 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
-      Cache-Control:
-      - no-cache
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 11 Jun 2021 14:08:51 GMT
+      - Thu, 30 Dec 2021 22:35:47 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -205,19 +207,20 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - E16A:621F:187AC34:18FEDCE:60C36E71
+      - 9BA0:3AC3:19E0BD8:35782FF:61CE3441
       X-Oauth-Scopes:
-      - read:discussion, read:org, repo, workflow
+      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
+        read:user, repo, workflow
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4991"
+      - "4945"
       X-Ratelimit-Reset:
-      - "1623424033"
+      - "1640906777"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "9"
+      - "55"
       X-Xss-Protection:
       - "0"
     status: 200 OK

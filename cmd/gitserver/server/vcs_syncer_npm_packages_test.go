@@ -2,6 +2,7 @@ package server
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -14,12 +15,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,13 +51,18 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 
 	createMaliciousTgz(t, tgzPath)
 
-	s := NPMPackagesSyncer{
-		Config: &schema.NPMPackagesConnection{Dependencies: []string{}},
-	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+		nil,
+	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzPath, s.Config)
-	assert.NotNil(t, err)
+	tgzFile, err := os.Open(tgzPath)
+	require.Nil(t, err)
+	defer func() { require.Nil(t, tgzFile.Close()) }()
+	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzFile)
+	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)
 	baseline := []string{"src"}
@@ -83,103 +91,99 @@ func TestNPMCloneCommand(t *testing.T) {
 	assert.Nil(t, err)
 	defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
 
-	createPlaceholderSourcesTgz(t, dir, exampleJSFileContents, exampleJSFilepath, exampleTgz)
-	createPlaceholderSourcesTgz(t, dir, exampleTSFileContents, exampleTSFilepath, exampleTgz2)
+	tgzPath := path.Join(dir, exampleTgz)
+	createTgz(t, tgzPath, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
+	defer func() { assert.Nil(t, os.Remove(tgzPath)) }()
+	tgzPath2 := path.Join(dir, exampleTgz2)
+	createTgz(t, tgzPath2, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
+	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
 
-	npm.NPMBinary = npmScript(t, dir)
-	s := NPMPackagesSyncer{
-		Config: &schema.NPMPackagesConnection{Dependencies: []string{}},
+	client := npmtest.MockClient{
+		TarballMap: map[string]string{exampleNPMVersionedPackage: tgzPath, exampleNPMVersionedPackage2: tgzPath2},
 	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+		&client,
+	)
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n")
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
+	checkSingleTag := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\n", exampleNPMVersion))
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+	}
+	checkSingleTag()
 
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage, exampleNPMVersionedPackage2})
-
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\nv2.0.0-abc\n", // verify that the v2.0.0 tag got added
-	)
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
-
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion2, exampleTSFilepath)),
-		bareGitDirectory,
-		exampleTSFileContents,
-	)
+	checkTagAdded := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\nv%s\n", exampleNPMVersion, exampleNPMVersion2), // verify that a new tag was added
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion2, exampleTSFilepath)),
+			bareGitDirectory,
+			exampleTSFileContents,
+		)
+	}
+	checkTagAdded()
 
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
-	)
-}
+	checkTagRemoved := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\n", exampleNPMVersion), // verify that second tag has been removed.
+		)
+	}
+	checkTagRemoved()
 
-func createPlaceholderSourcesTgz(t *testing.T, dir, contents, filename, tgzFilename string) {
-	createTgz(t, path.Join(dir, tgzFilename),
-		[]fileInfo{
-			{filename, []byte(contents)},
-		})
-}
+	// Now run the same tests with the database output instead.
+	mockStore := NewStrictMockDBStore()
+	s.dbStore = mockStore
 
-func npmScript(t *testing.T, dir string) string {
-	t.Helper()
-	npmPath, err := os.OpenFile(path.Join(dir, "npm"), os.O_CREATE|os.O_RDWR, 07777)
-	assert.Nil(t, err)
-	defer func() { assert.Nil(t, npmPath.Close()) }()
-	script := fmt.Sprintf(`#!/usr/bin/env bash
-CLASSIFIER="$1"
-ARG="$2"
-if [[ "$CLASSIFIER" =~ "view" ]]; then
-  if [[ "$ARG" =~ "%[1]s" || "$ARG" =~ "%[2]s" ]]; then
-    echo "$ARG"
-  else
-    # Mimicking NPM's buggy behavior:
-    # https://github.com/npm/cli/issues/3184#issuecomment-963387099
-    exit 0
-  fi
-elif [[ "$CLASSIFIER" =~ "pack" ]]; then
-  if [[ "$ARG" =~ "%[1]s" ]]; then
-    echo "[{\"filename\": \"%[3]s\"}]"
-  elif [[ "$ARG" =~ "%[2]s" ]]; then
-    echo "[{\"filename\": \"%[4]s\"}]"
-  fi
-else
-  echo "invalid arguments for fake npm script: $@"
-  exit 1
-fi
-`,
-		exampleNPMVersionedPackage, exampleNPMVersionedPackage2,
-		path.Join(dir, exampleTgz), path.Join(dir, exampleTgz2),
-	)
-	_, err = npmPath.WriteString(script)
-	assert.Nil(t, err)
-	return npmPath.Name()
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", exampleNPMVersion, 0},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkSingleTag()
+
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", exampleNPMVersion, 0},
+		{"example", exampleNPMVersion2, 1},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkTagAdded()
+
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", "1.0.0", 0},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkTagRemoved()
 }
 
 func (s NPMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
 	t.Helper()
 	packageURL := vcs.URL{URL: url.URL{Path: exampleNPMPackageURL}}
-	s.Config.Dependencies = dependencies
+	s.connection.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
 	assert.Nil(t, err)
 	assert.Nil(t, cmd.Run())
@@ -254,7 +258,10 @@ func TestDecompressTgz(t *testing.T) {
 			fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
 		}
 		createTgz(t, tgzPath, fileInfos)
-		assert.Nil(t, decompressTgz(tgzPath, dir))
+		tgzFile, err := os.Open(tgzPath)
+		require.Nil(t, err)
+		defer tgzFile.Close()
+		assert.Nil(t, decompressTgz(namedReadSeeker{tgzPath, tgzFile}, dir))
 		dirEntries, err := os.ReadDir(dir)
 		assert.Nil(t, err)
 		dirEntryNames := []string{}
@@ -266,4 +273,52 @@ func TestDecompressTgz(t *testing.T) {
 		}
 		assert.True(t, reflect.DeepEqual(dirEntryNames, testData.expect))
 	}
+}
+
+// Regression test for: https://github.com/sourcegraph/sourcegraph/issues/30554
+func TestDecompressTgzNoOOB(t *testing.T) {
+	testCases := [][]tar.Header{
+		{
+			{Typeflag: tar.TypeDir, Name: "non-empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeDir, Name: "non-empty/"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testDecompressTgzNoOOBImpl(t, testCase)
+	}
+}
+
+func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
+	buffer := bytes.NewBuffer([]byte{})
+
+	gzipWriter := gzip.NewWriter(buffer)
+	tarWriter := tar.NewWriter(gzipWriter)
+	for _, entry := range entries {
+		tarWriter.WriteHeader(&entry)
+		if entry.Typeflag == tar.TypeReg {
+			tarWriter.Write([]byte("filler"))
+		}
+	}
+	tarWriter.Close()
+	gzipWriter.Close()
+
+	readSeeker := bytes.NewReader(buffer.Bytes())
+
+	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
+	require.Nil(t, err)
+	defer os.RemoveAll(outDir)
+
+	require.NotPanics(t, func() {
+		decompressTgz(namedReadSeeker{"buffer", readSeeker}, outDir)
+	})
 }

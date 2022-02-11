@@ -40,12 +40,6 @@ This determines below what % the insight groups all other languages into an 'Oth
 
 Example: if the Threshold is set to 3%, and 2% of your code is in python and 2% of your code is in ruby, then both will be grouped into 'Other' and the value for 'Other' will be 4%. 
 
-### 6. Set the visibility of your insight
-
-This controls who else can see your insight. 
-
-Anything set to "Private" won't be visible by anyone else.  Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](quickstart.md#1-enable-the-experimental-feature-flag)).
-
-### 7. Click "create code insight" to view and save your insight
+### 6. Click "create code insight" to view and save your insight
 
 You'll be taken to the sourcegraph.example.com/insights page and can view your insight.

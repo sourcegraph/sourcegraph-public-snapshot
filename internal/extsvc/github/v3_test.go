@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/url"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -521,6 +523,55 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 }
 
+func TestV3Client_Fork(t *testing.T) {
+	ctx := context.Background()
+	testName := func(t *testing.T) string {
+		return strings.ReplaceAll(t.Name(), "/", "_")
+	}
+
+	t.Run("success", func(t *testing.T) {
+		// For this test, we only need a repository that can be forked into the
+		// user's namespace and sourcegraph-testing: it doesn't matter whether it
+		// already has been or not because of the way the GitHub API operates.
+		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
+		for name, org := range map[string]*string{
+			"user":                nil,
+			"sourcegraph-testing": strPtr("sourcegraph-testing"),
+		} {
+			t.Run(name, func(t *testing.T) {
+				testName := testName(t)
+				client, save := newV3TestClient(t, testName)
+				defer save()
+
+				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org)
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				if org != nil {
+					owner, err := fork.Owner()
+					assert.Nil(t, err)
+					assert.Equal(t, *org, owner)
+				}
+
+				testutil.AssertGolden(t, testName, update(testName), fork)
+			})
+		}
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		// For this test, we need a repository that cannot be forked. Conveniently,
+		// we have one at github.com/sourcegraph-testing/unforkable.
+		testName := testName(t)
+		client, save := newV3TestClient(t, testName)
+		defer save()
+
+		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil)
+		assert.NotNil(t, err)
+		assert.Nil(t, fork)
+
+		testutil.AssertGolden(t, testName, update(testName), fork)
+	})
+}
+
 func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
 
@@ -537,3 +588,5 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 
 	return NewV3Client(uri, vcrToken, doer), save
 }
+
+func strPtr(s string) *string { return &s }

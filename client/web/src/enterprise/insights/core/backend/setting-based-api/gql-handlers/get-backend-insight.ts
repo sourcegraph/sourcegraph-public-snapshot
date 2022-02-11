@@ -2,7 +2,7 @@ import { uniqBy } from 'lodash'
 import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../../../../backend/graphql'
 import { InsightFields, InsightsResult } from '../../../../../../graphql-operations'

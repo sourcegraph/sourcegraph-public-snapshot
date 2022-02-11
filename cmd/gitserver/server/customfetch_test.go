@@ -36,6 +36,10 @@ func TestCustomGitFetch(t *testing.T) {
 			DomainPath: "github.com/foo/faulty",
 			Fetch:      "",
 		},
+		{
+			DomainPath: "github.com/foo/absolute",
+			Fetch:      "/foo/bar/git fetch things",
+		},
 	}
 
 	tests := []struct {
@@ -55,6 +59,10 @@ func TestCustomGitFetch(t *testing.T) {
 		},
 		{
 			url: "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116dgit@github.com/bar/notthere",
+		},
+		{
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/absolute",
+			expectedArgs: []string{"/foo/bar/git", "fetch", "things"},
 		},
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SubRepoPermsVersion is defines the version we are using to encode our include
@@ -62,19 +62,11 @@ func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsSto
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
 func (s *subRepoPermsStore) Transact(ctx context.Context) (SubRepoPermsStore, error) {
-	if Mocks.SubRepoPerms.Transact != nil {
-		return Mocks.SubRepoPerms.Transact(ctx)
-	}
-
 	txBase, err := s.Store.Transact(ctx)
 	return &subRepoPermsStore{Store: txBase}, err
 }
 
 func (s *subRepoPermsStore) Done(err error) error {
-	if Mocks.SubRepoPerms.Transact != nil {
-		return err
-	}
-
 	return s.Store.Done(err)
 }
 
@@ -97,13 +89,9 @@ SET
 }
 
 // UpsertWithSpec will upsert sub repo permissions data using the provided
-// external repo spec to map to out internal repo id. If there is no mapping,
+// external repo spec to map to our internal repo id. If there is no mapping,
 // nothing is written.
 func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
-	if Mocks.SubRepoPerms.UpsertWithSpec != nil {
-		return Mocks.SubRepoPerms.UpsertWithSpec(ctx, userID, spec, perms)
-	}
-
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 SELECT %s, id, %s, %s, %s, now()
@@ -130,8 +118,8 @@ func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.Re
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
-WHERE user_id = %s
-  AND repo_id = %s
+WHERE repo_id = %s
+  AND user_id = %s
   AND version = %s
 `, userID, repoID, SubRepoPermsVersion)
 
@@ -188,9 +176,4 @@ WHERE user_id = %s
 	}
 
 	return result, nil
-}
-
-type MockSubRepoPerms struct {
-	Transact       func(ctx context.Context) (*subRepoPermsStore, error)
-	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }

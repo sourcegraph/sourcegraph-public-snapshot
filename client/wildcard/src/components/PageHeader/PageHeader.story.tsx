@@ -5,9 +5,11 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { Button } from '../Button'
+import { FeedbackBadge } from '../Feedback'
+import { Link } from '../Link'
 
 import { PageHeader } from './PageHeader'
 
@@ -18,6 +20,11 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'wildcard/PageHeader',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config
@@ -26,9 +33,9 @@ export const BasicHeader: Story = () => (
     <PageHeader
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
-            <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
+            <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
                 <SearchIcon className="icon-inline" /> Button with icon
-            </Link>
+            </Button>
         }
     />
 )
@@ -56,12 +63,12 @@ export const ComplexHeader: Story = () => (
         description="Enter the description for your section here. This is useful on list and create pages."
         actions={
             <div className="d-flex">
-                <Link to="/page" className="btn btn-secondary mr-2">
+                <Button as={Link} to="/page" variant="secondary" className="mr-2">
                     Secondary
-                </Link>
-                <Link to="/page" className="btn btn-primary text-nowrap">
+                </Button>
+                <Button as={Link} to="/page" variant="primary" className="text-nowrap">
                     <PlusIcon className="icon-inline" /> Create
-                </Link>
+                </Button>
             </div>
         }
     />

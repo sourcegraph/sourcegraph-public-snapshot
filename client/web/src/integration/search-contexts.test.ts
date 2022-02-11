@@ -4,7 +4,7 @@ import { range } from 'lodash'
 import { test } from 'mocha'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -42,7 +42,7 @@ describe('Search contexts', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
+    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ViewerSettings: () => ({
             viewerSettings: {
                 __typename: 'SettingsCascade',
@@ -186,6 +186,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -265,6 +266,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -288,6 +290,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -363,6 +366,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: false,
+                    query: '',
                     repositories: [],
                 },
             }),
@@ -402,6 +406,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -448,6 +453,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 
@@ -526,6 +532,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 

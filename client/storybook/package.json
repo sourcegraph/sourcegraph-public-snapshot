@@ -14,8 +14,5 @@
     "start:dll": "TS_NODE_TRANSPILE_ONLY=true WEBPACK_DLL_PLUGIN=true start-storybook -p 9001 -c ./src -s ./assets",
     "clean:dll": "rm -rf assets/dll-bundle storybook-static/*-stats.json",
     "test": "jest"
-  },
-  "devDependencies": {
-    "@sourcegraph/build-config": "0.0.1"
   }
 }

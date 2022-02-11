@@ -1,7 +1,7 @@
 import { Duration } from 'date-fns'
 
+import { isDefined } from '@sourcegraph/common'
 import { TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 /**
  * Returns tuple with gql model time interval unit and value. Used to convert FE model

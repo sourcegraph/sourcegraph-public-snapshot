@@ -82,6 +82,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="Code monitors support literal and regex search. Searches are literal by default."
                 >
                   <svg
                     aria-hidden="true"
@@ -140,6 +142,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="type:diff targets code present in new commits, while type:commit targets commit messages"
                 >
                   <svg
                     aria-hidden="true"
@@ -194,6 +198,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                 >
                   <svg
                     aria-hidden="true"
@@ -245,7 +251,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           class="p-2 my-2 queryInputPreviewLink"
         >
           <a
-            class="test-preview-link queryInputPreviewLinkText"
+            class="anchorLink test-preview-link queryInputPreviewLinkText"
             href="/search?q=test+repo:test&patternType=literal"
             rel="noopener noreferrer"
             target="_blank"
@@ -268,7 +274,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     </div>
     <div>
       <button
-        class="btn btn-secondary mr-1 test-submit-trigger"
+        class="btn btnSecondary mr-1 test-submit-trigger"
         data-testid="submit-trigger"
         disabled=""
         type="submit"
@@ -276,7 +282,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
         Continue
       </button>
       <button
-        class="btn btn-outline-secondary"
+        class="btn btnOutlineSecondary"
         type="button"
       >
         Cancel
@@ -288,6 +294,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
   >
      What other events would you like to monitor? 
     <a
+      class="anchorLink"
       href="mailto:feedback@sourcegraph.com"
       rel="noopener"
       target="_blank"

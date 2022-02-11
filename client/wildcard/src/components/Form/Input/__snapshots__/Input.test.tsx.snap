@@ -29,7 +29,7 @@ exports[`Input Renders status 'loading' correctly 1`] = `
       value=""
     />
     <div
-      class="loading-spinner spinner"
+      class="loadingSpinner spinner"
     />
   </div>
 </label>

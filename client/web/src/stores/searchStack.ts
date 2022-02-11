@@ -2,15 +2,19 @@ import { useEffect } from 'react'
 import create from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 import { useExperimentalFeatures } from './experimentalFeatures'
 
 export interface SearchEntry {
     type: 'search'
+    /**
+     * The ID is primarily used to let the UI uniquily identifiy each entry.
+     */
+    id: number
     query: string
     caseSensitive: boolean
     searchContext?: string
@@ -19,6 +23,10 @@ export interface SearchEntry {
 
 export interface FileEntry {
     type: 'file'
+    /**
+     * The ID is primarily used to let the UI uniquily identifiy each entry.
+     */
+    id: number
     path: string
     repo: string
     revision: string
@@ -26,14 +34,24 @@ export interface FileEntry {
 }
 
 export type SearchStackEntry = SearchEntry | FileEntry
-
-const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
+export type SearchStackEntryInput = Omit<SearchEntry, 'id'> | Omit<FileEntry, 'id'>
 
 export interface SearchStackStore {
+    /**
+     * If a page/component has information that can be added to the search
+     * stack, it should set this value.
+     */
+    addableEntry: SearchStackEntryInput | null
     entries: SearchStackEntry[]
     previousEntries: SearchStackEntry[]
     canRestoreSession: boolean
 }
+
+const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
+/**
+ * Uniquly identifies each entry.
+ */
+let nextEntryID = 0
 
 /**
  * Hook to get the search stack's current state. Used by the SearchStack
@@ -49,6 +67,7 @@ export const useSearchStackState = create<SearchStackStore>(() => {
     const entriesFromPreviousSession = restoreSession(localStorage)
 
     return {
+        addableEntry: null,
         entries: entriesFromSession,
         previousEntries: entriesFromPreviousSession,
         canRestoreSession: entriesFromSession.length === 0 && entriesFromPreviousSession.length > 0,
@@ -64,69 +83,62 @@ export const useSearchStackState = create<SearchStackStore>(() => {
  * - A file entry is considered the same if the repo and the path are the same
  * (revison and line range are updated)
  */
-export function useSearchStack(newEntry: SearchStackEntry | null): void {
+export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
     useEffect(() => {
         if (enableSearchStack && newEntry) {
-            switch (newEntry.type) {
-                case 'file':
-                    addSearchStackEntry(
-                        newEntry,
-                        existingEntry =>
-                            existingEntry.type === 'file' &&
-                            existingEntry.repo === newEntry.repo &&
-                            existingEntry.path === newEntry.path
-                    )
-                    break
+            let entry: SearchStackEntryInput = newEntry
+
+            switch (entry.type) {
                 case 'search': {
                     // `query` most likely contains a 'context' filter that we don't
                     // want to show (this information is kept separately in
                     // `searchContext`).
-                    let processedQuery = newEntry.query
-                    const contextFilter = findFilter(newEntry.query, FilterType.context, FilterKind.Global)
+                    let processedQuery = entry.query
+                    const contextFilter = findFilter(entry.query, FilterType.context, FilterKind.Global)
                     if (contextFilter) {
-                        processedQuery = omitFilter(newEntry.query, contextFilter)
+                        processedQuery = omitFilter(entry.query, contextFilter)
                     }
-                    addSearchStackEntry(
-                        { ...newEntry, query: processedQuery },
-                        existingEntry => existingEntry.type === 'search' && existingEntry.query === processedQuery
-                    )
+                    entry = { ...entry, query: processedQuery }
                     break
                 }
             }
+            useSearchStackState.setState({ addableEntry: entry })
+
+            // We have to "remove" the entry if the component unmounts.
+            return () => {
+                const currentState = useSearchStackState.getState()
+                if (currentState.addableEntry === newEntry) {
+                    useSearchStackState.setState({ addableEntry: null })
+                }
+            }
         }
+        return // without this typescript complains
     }, [newEntry, enableSearchStack])
 }
 
-function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchStackEntry) => boolean): void {
-    useSearchStackState.setState(state => {
-        if (update) {
-            const existingEntry = state.entries.find(update)
-            if (existingEntry) {
-                const entriesCopy = [...state.entries]
-                const index = entriesCopy.indexOf(existingEntry)
-                entriesCopy[index] = { ...existingEntry, ...entry }
-                // If the list contains more than one entry we disable restoring from
-                // the previous session
-                return { entries: entriesCopy, canRestoreSession: entriesCopy.length <= 1 }
-            }
-        }
-        const newState = {
-            entries: [...state.entries, entry],
-            canRestoreSession: state.entries.length === 0,
-        }
-        // We store search stack data in both local and session storage: This
-        // feature should really be considered to be session related but at the
-        // same time we want to make it possible to restore information from the
-        // previous session (e.g. in case the page was accidentally closed).
-        // Storing the entries in local storage allows us to do that (see
-        // useSearchStackState above).
-        const serializedEntries = JSON.stringify(newState.entries)
-        localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
-        sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
+/**
+ * Adds the current value of addableEntry to the list of items.
+ * If that value is a file entry, then a hint can be provided to control whether
+ * the whole file or the line range should be added.
+ */
+export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'file' | 'range'): void {
+    const { addableEntry, entries } = useSearchStackState.getState()
 
-        return newState
-    })
+    let entry = newEntry
+    if (entry.type === 'file' && entry.lineRange && hint === 'file') {
+        entry = { ...entry, lineRange: null }
+    }
+
+    const newState = {
+        // Clear addableEntry if that's the entry we are adding
+        addableEntry: addableEntry === newEntry ? null : addableEntry,
+        entries: [...entries, { ...entry, id: nextEntryID++ }],
+        canRestoreSession: entries.length === 0,
+    }
+
+    persistSession(newState.entries)
+    useSearchStackState.setState(newState)
 }
 
 export function restorePreviousSession(): void {
@@ -138,6 +150,36 @@ export function restorePreviousSession(): void {
     }
 }
 
+export function removeSearchStackEntry(entryToDelete: SearchStackEntry): void {
+    useSearchStackState.setState(currentState => {
+        const entries = currentState.entries.filter(entry => entry !== entryToDelete)
+        persistSession(entries)
+        return { entries }
+    })
+}
+
+export function removeAllSearchStackEntries(): void {
+    persistSession([])
+    useSearchStackState.setState({ entries: [] })
+}
+
 function restoreSession(storage: Storage): SearchStackEntry[] {
-    return JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+    return (
+        JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
+            // We always "re-id" restored entries. This makes things easier (no need
+            // to track which IDs have already been used)
+            .map((entry: SearchStackEntry) => ({ ...entry, id: nextEntryID++ }))
+    )
+}
+
+function persistSession(entries: SearchStackEntry[]): void {
+    // We store search stack data in both local and session storage: This
+    // feature should really be considered to be session related but at the
+    // same time we want to make it possible to restore information from the
+    // previous session (e.g. in case the page was accidentally closed).
+    // Storing the entries in local storage allows us to do that (see
+    // useSearchStackState above).
+    const serializedEntries = JSON.stringify(entries)
+    localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
+    sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
 }

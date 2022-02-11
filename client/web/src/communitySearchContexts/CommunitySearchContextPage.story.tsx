@@ -2,18 +2,18 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
-import { NEVER, Observable, of } from 'rxjs'
+import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
+import { subtypeOf } from '@sourcegraph/common'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
@@ -46,6 +46,7 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
+    requestGraphQL: () => EMPTY,
 }
 
 const authUser: AuthenticatedUser = {
@@ -68,6 +69,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [
@@ -99,6 +101,7 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         public: true,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
+        query: '',
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,

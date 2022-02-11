@@ -8,12 +8,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecWorkspaceIDKind = "BatchSpecWorkspace"
@@ -31,6 +34,7 @@ type batchSpecWorkspaceResolver struct {
 	store     *store.Store
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
+	batchSpec *batcheslib.BatchSpec
 
 	preloadedRepo *types.Repo
 
@@ -103,13 +107,23 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.workspace.Steps))
-	for idx, step := range r.workspace.Steps {
+	repo, err := r.computeRepoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	skippedSteps, err := batcheslib.SkippedStepsForRepo(r.batchSpec, repo.Name(), r.workspace.FileMatches)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.batchSpec.Steps))
+	for idx, step := range r.batchSpec.Steps {
 		si, ok := stepInfo[idx+1]
 		if !ok {
 			// Step hasn't run yet.
 			si = &btypes.StepInfo{}
-			// But also will never run
+			// ..but also will never run.
 			if entryExitCode != nil {
 				si.Skipped = true
 			}
@@ -122,6 +136,12 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 
 		// Mark all steps as skipped when a workspace is skipped.
 		if r.workspace.Skipped {
+			si.Skipped = true
+		}
+
+		// If we have marked the step as to-be-skipped, we have to translate
+		// that here into the workspace step info.
+		if _, ok := skippedSteps[int32(idx)]; ok {
 			si.Skipped = true
 		}
 
@@ -151,7 +171,7 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	// Check if step exists.
-	if int(args.Index) > len(r.workspace.Steps) {
+	if int(args.Index) > len(r.batchSpec.Steps) {
 		return nil, nil
 	}
 
@@ -324,6 +344,26 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 
 	i32 := int32(r.execution.PlaceInQueue)
 	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		if err != backend.ErrMustBeSiteAdmin {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return executor, nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {

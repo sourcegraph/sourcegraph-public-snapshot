@@ -25,6 +25,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     externalURL: {
         url: 'http://test.test/123',
     },
+    forkNamespace: null,
     labels: [
         { __typename: 'ChangesetLabel', color: '93ba13', description: 'Very awesome description', text: 'Some label' },
     ],
@@ -47,8 +48,10 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
         type: ChangesetSpecType.BRANCH,
         description: {
             __typename: 'GitBranchChangesetDescription',
+            baseRef: 'my-branch',
             headRef: 'my-branch',
         },
+        forkTarget: null,
     },
 }
 
@@ -64,6 +67,7 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     },
     externalID: null,
     externalURL: null,
+    forkNamespace: null,
     labels: [],
     repository: {
         id: 'repoid',
@@ -84,8 +88,10 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
         type: ChangesetSpecType.BRANCH,
         description: {
             __typename: 'GitBranchChangesetDescription',
+            baseRef: 'my-branch',
             headRef: 'my-branch',
         },
+        forkTarget: null,
     },
 }
 

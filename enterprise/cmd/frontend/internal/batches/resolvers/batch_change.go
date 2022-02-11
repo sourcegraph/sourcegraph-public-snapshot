@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -18,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
@@ -334,6 +334,8 @@ func (r *batchChangeResolver) BatchSpecs(
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
+		// We want the batch spec connection to always show the latest one first.
+		NewestFirst: true,
 	}
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {

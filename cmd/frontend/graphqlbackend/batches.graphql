@@ -449,6 +449,13 @@ type ExternalChangeset implements Node & Changeset {
     externalURL: ExternalLink
 
     """
+    If the changeset was opened from a fork, this is the namespace of the fork
+    (which will generally correspond to a user or organisation name on the code
+    host).
+    """
+    forkNamespace: String
+
+    """
     The review state of this changeset. This is only set once the changeset is published on the code host.
     """
     reviewState: ChangesetReviewState
@@ -834,6 +841,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     expiresAt: DateTime
 
     """
+    The fork the changeset will be pushed to, if any.
+    """
+    forkTarget: ForkTarget
+
+    """
     The workspace this resulted from. Null, if not run server-side.
     """
     workspace: BatchSpecWorkspace
@@ -894,11 +906,11 @@ type GitBranchChangesetDescription {
 
     """
     The repository that contains the branch with this changeset's changes.
-
-    Fork repositories and cross-repository changesets are not yet supported. Therefore,
-    headRepository must be equal to baseRepository.
     """
     headRepository: Repository!
+        @deprecated(
+            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
+        )
 
     """
     The full name of the Git ref that holds the changes proposed by this changeset. This ref will
@@ -1235,6 +1247,23 @@ type ChangesetApplyPreviewConnection {
     stats: ChangesetApplyPreviewConnectionStats!
 }
 
+"""
+The target repository that a changeset will be pushed to, if it's not the origin
+repository.
+"""
+type ForkTarget {
+    """
+    True if the remote target is a fork in the user namespace associated with
+    the credential used to push the changeset.
+    """
+    pushUser: Boolean!
+
+    """
+    The specific named fork that the changeset will be pushed to.
+    """
+    namespace: String
+}
+
 extend type Mutation {
     """
     Upload a changeset spec that will be used in a future update to a batch change. The changeset spec
@@ -1327,8 +1356,8 @@ extend type Mutation {
     """
     Creates a batch change with an empty batch spec, such as for drafting a new batch
     change. The user creating the batch change must have permission to create it in the
-    namespace provided. Use `replaceBatchSpecInput` to update the input batch spec after
-    creating.
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
     """
     createEmptyBatchChange(
         """
@@ -1343,10 +1372,13 @@ extend type Mutation {
     ): BatchChange!
 
     """
-    Creates a batch spec and triggers a job to evaluate the workspaces. Consumers
-    need to poll the batch spec until the resolution is completed to get a full
-    list of all workspaces. This might become streaming so the results will come
-    in over time.
+    Creates a batch spec and triggers a job to evaluate the workspaces. Consumers need to
+    poll the batch spec until the resolution is completed to get a full list of all
+    workspaces. This might become streaming so the results will come in over time.
+
+    This mutation should be used when updating an existing batch change whose previous
+    batch spec was already applied. When the previous batch spec was not yet applied, you
+    can use `replaceBatchSpecInput` instead.
     """
     createBatchSpecFromRaw(
         """
@@ -1384,17 +1416,20 @@ extend type Mutation {
         """
         The namespace (either a user or organization). A batch spec can only be applied to (or
         used to create) batch changes in this namespace.
-
-        Defaults to the user who created the batch spec.
         """
-        namespace: ID
+        namespace: ID!
     ): BatchSpec!
 
     """
-    Replaces the original input of the batch spec. All existing resolution jobs
-    and workspaces are deleted and recreated in the background as the `on` section
-    is evaluated. This mutation is used for overwriting existing resolutions, so
-    after typing in the editor, we don't create 10s of batch specs.
+    Replaces the original input of the batch spec. All existing resolution jobs and
+    workspaces are deleted and recreated in the background as the `on` section is
+    evaluated. This mutation is used for overwriting existing resolutions on unapplied
+    batch specs, so after typing in the editor, we don't create 10s of batch specs. The ID
+    of the batch spec to update should NEVER be that of a batch spec that was already
+    applied to a batch change, or it will be lost.
+
+    For creating a new batch spec for a batch change whose previous spec was already
+    applied, use `createBatchSpecFromRaw` instead.
     """
     replaceBatchSpecInput(
         """
@@ -1433,6 +1468,54 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         noCache: Boolean = false
+    ): BatchSpec!
+
+    """
+    Creates or updates a batch spec based on the given namespace and name, then
+    triggers a job to evaluate the workspaces.
+
+    This is essentially a wrapper for `createBatchSpecFromRaw` and
+    `replaceBatchSpecInput` to facilitate src-cli, and should not be used
+    otherwise.
+    """
+    upsertBatchSpecInput(
+        """
+        The raw batch spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/batch_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchSpec: String!
+
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+
+        """
+        If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+
+        """
+        Right away set the execute flag.
+
+        TODO: Not implemented yet.
+        """
+        execute: Boolean = false
+
+        """
+        Don't use cache entries.
+
+        TODO: Not implemented yet.
+        """
+        noCache: Boolean = false
+
+        """
+        The namespace (either a user or organization). A batch spec can only be applied to (or
+        used to create) batch changes in this namespace.
+        """
+        namespace: ID!
     ): BatchSpec!
 
     """
@@ -1796,8 +1879,20 @@ type BatchSpecWorkspaceResolution {
     workspaces(
         first: Int = 50
         after: String
+        """
+        Not implemented.
+        """
         orderBy: WorkspacesSortOrder
+        """
+        Search for workspaces matching this query. Queries may include quoted substrings
+        to match phrases, and words may be preceded by - to negate them.
+        Currently, this supports searching repository names only.
+        """
         search: String
+        """
+        Filter workspaces by given state.
+        """
+        state: BatchSpecWorkspaceState
     ): BatchSpecWorkspaceConnection!
 
     """
@@ -2036,12 +2131,24 @@ type BatchSpecWorkspace implements Node {
     failed.
     """
     diffStat: DiffStat
+
+    """
+    The executor that picked up this job. Null, if the executor has been pruned
+    from the data set or if the job has not started yet.
+    Only available to site-admins.
+    """
+    executor: Executor
 }
 
 """
 Description of one step in the execution of a workspace.
 """
 type BatchSpecWorkspaceStep {
+    """
+    The number of the step.
+    """
+    number: Int!
+
     """
     The command to run.
     """
@@ -2051,6 +2158,11 @@ type BatchSpecWorkspaceStep {
     The docker container image to use to run this command.
     """
     container: String!
+
+    """
+    The if condition, under which the step is executed. Null, if not set.
+    """
+    ifCondition: String
 
     """
     True, if a cached result has been found.
@@ -2331,7 +2443,8 @@ type BatchChange implements Node {
     diffStat: DiffStat!
 
     """
-    The current change spec this change reflects.
+    The last batch spec applied to this batch change, or an "empty" spec if the batch
+    change has never had a spec applied.
     """
     currentSpec: BatchSpec!
 

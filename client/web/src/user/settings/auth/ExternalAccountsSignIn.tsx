@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { AuthProvider } from '../../../jscontext'

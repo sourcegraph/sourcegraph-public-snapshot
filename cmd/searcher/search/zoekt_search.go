@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
@@ -22,6 +21,7 @@ import (
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -145,7 +145,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 
 	// Choose sensible values for k when we generalize this.
 	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
 	searchOpts.Whole = true
 
 	// TODO(@camdencheek) TODO(@rvantonder) handle "timeout:..." values in this context.

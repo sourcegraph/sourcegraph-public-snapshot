@@ -9,6 +9,7 @@ import {
     DeleteDashboardResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
+    HasAvailableCodeInsightResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
     RemoveInsightViewFromDashboardResult,
@@ -16,8 +17,8 @@ import {
     UpdateInsightsDashboardInput,
 } from 'src/graphql-operations'
 
+import { fromObservableQuery } from '@sourcegraph/http-client'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
@@ -99,9 +100,24 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData) || null
+                return createInsightView(insightData) ?? null
             })
         )
+
+    public hasInsights = (): Observable<boolean> =>
+        from(
+            this.apolloClient.query<HasAvailableCodeInsightResult>({
+                query: gql`
+                    query HasAvailableCodeInsight {
+                        insightViews {
+                            pageInfo {
+                                hasNextPage
+                            }
+                        }
+                    }
+                `,
+            })
+        ).pipe(map(({ data }) => data.insightViews.pageInfo.hasNextPage))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for

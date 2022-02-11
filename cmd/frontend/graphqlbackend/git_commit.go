@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -80,7 +81,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -206,7 +207,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -225,14 +226,14 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if !stat.Mode().IsRegular() {
+	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
 	return NewGitTreeEntryResolver(r.db, r, stat), nil

@@ -9,6 +9,7 @@ import (
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -38,6 +39,9 @@ type MockResolver struct {
 	// DocumentationSearchFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationSearch.
 	DocumentationSearchFunc *ResolverDocumentationSearchFunc
+	// ExecutorResolverFunc is an instance of a mock function object
+	// controlling the behavior of the method ExecutorResolver.
+	ExecutorResolverFunc *ResolverExecutorResolverFunc
 	// GetConfigurationPoliciesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetConfigurationPolicies.
 	GetConfigurationPoliciesFunc *ResolverGetConfigurationPoliciesFunc
@@ -125,6 +129,11 @@ func NewMockResolver() *MockResolver {
 		DocumentationSearchFunc: &ResolverDocumentationSearchFunc{
 			defaultHook: func(context.Context, string, []string) ([]precise.DocumentationSearchResult, error) {
 				return nil, nil
+			},
+		},
+		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
+			defaultHook: func() graphql.Resolver {
+				return nil
 			},
 		},
 		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
@@ -244,6 +253,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.DocumentationSearch")
 			},
 		},
+		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
+			defaultHook: func() graphql.Resolver {
+				panic("unexpected invocation of MockResolver.ExecutorResolver")
+			},
+		},
 		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
 			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockResolver.GetConfigurationPolicies")
@@ -348,6 +362,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		DocumentationSearchFunc: &ResolverDocumentationSearchFunc{
 			defaultHook: i.DocumentationSearch,
+		},
+		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
+			defaultHook: i.ExecutorResolver,
 		},
 		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
 			defaultHook: i.GetConfigurationPolicies,
@@ -1054,6 +1071,106 @@ func (c ResolverDocumentationSearchFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverDocumentationSearchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverExecutorResolverFunc describes the behavior when the
+// ExecutorResolver method of the parent MockResolver instance is invoked.
+type ResolverExecutorResolverFunc struct {
+	defaultHook func() graphql.Resolver
+	hooks       []func() graphql.Resolver
+	history     []ResolverExecutorResolverFuncCall
+	mutex       sync.Mutex
+}
+
+// ExecutorResolver delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) ExecutorResolver() graphql.Resolver {
+	r0 := m.ExecutorResolverFunc.nextHook()()
+	m.ExecutorResolverFunc.appendCall(ResolverExecutorResolverFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ExecutorResolver
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverExecutorResolverFunc) SetDefaultHook(hook func() graphql.Resolver) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExecutorResolver method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverExecutorResolverFunc) PushHook(hook func() graphql.Resolver) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverExecutorResolverFunc) SetDefaultReturn(r0 graphql.Resolver) {
+	f.SetDefaultHook(func() graphql.Resolver {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverExecutorResolverFunc) PushReturn(r0 graphql.Resolver) {
+	f.PushHook(func() graphql.Resolver {
+		return r0
+	})
+}
+
+func (f *ResolverExecutorResolverFunc) nextHook() func() graphql.Resolver {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverExecutorResolverFunc) appendCall(r0 ResolverExecutorResolverFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverExecutorResolverFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverExecutorResolverFunc) History() []ResolverExecutorResolverFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverExecutorResolverFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverExecutorResolverFuncCall is an object that describes an
+// invocation of method ExecutorResolver on an instance of MockResolver.
+type ResolverExecutorResolverFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 graphql.Resolver
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverExecutorResolverFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverExecutorResolverFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ResolverGetConfigurationPoliciesFunc describes the behavior when the

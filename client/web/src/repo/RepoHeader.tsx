@@ -4,12 +4,12 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu } from 'reactstrap'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -160,9 +160,6 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     location: H.Location
     history: H.History
-
-    /** Whether or not an alert is displayed directly above RepoHeader */
-    isAlertDisplayed: boolean
 }
 
 /**
@@ -170,13 +167,7 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({
-    onLifecyclePropsChange,
-    resolvedRev,
-    repo,
-    isAlertDisplayed,
-    ...props
-}) => {
+export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -218,14 +209,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
 
     return (
-        <nav
-            data-testid="repo-header"
-            className={classNames(
-                'navbar navbar-expand',
-                styles.repoHeader,
-                isAlertDisplayed && styles.repoHeaderAlert
-            )}
-        >
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
@@ -267,7 +251,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                                 isOpen={isDropdownOpen}
                                 toggle={toggleDropdownOpen}
                             >
-                                <RepoHeaderActionDropdownToggle className="btn btn-icon" nav={true}>
+                                <RepoHeaderActionDropdownToggle nav={true}>
                                     <DotsVerticalIcon className="icon-inline" />
                                 </RepoHeaderActionDropdownToggle>
                                 <DropdownMenu>

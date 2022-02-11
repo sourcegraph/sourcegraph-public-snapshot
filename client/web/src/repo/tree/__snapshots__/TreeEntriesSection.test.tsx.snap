@@ -4,7 +4,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
 <DocumentFragment>
   <div>
     <a
-      class="test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/tree/src"
       title="src"
@@ -43,7 +43,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/tree/testdata"
       title="testdata"
@@ -82,7 +82,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/blob/.editorconfig"
       title=".editorconfig"
@@ -107,7 +107,7 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/blob/.eslintrc.json"
       title=".eslintrc.json"
@@ -139,7 +139,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
 <DocumentFragment>
   <div>
     <a
-      class="test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/tree/src/testutils"
       title="src/testutils"
@@ -178,7 +178,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/tree/src/typings"
       title="src/typings"
@@ -217,7 +217,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/blob/src/errors.ts"
       title="src/errors.ts"
@@ -242,7 +242,7 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       </div>
     </a>
     <a
-      class="test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry test-tree-entry-file treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/sourcegraph/codeintellify/-/blob/src/helpers.ts"
       title="src/helpers.ts"
@@ -274,7 +274,7 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
 <DocumentFragment>
   <div>
     <a
-      class="test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
+      class="anchorLink test-page-file-decorable treeEntry font-weight-bold test-tree-entry-directory treeEntryNoColumns"
       data-testid="tree-entry"
       href="/github.com/vanadium/core/-/tree/x/ref"
       title="x/ref"

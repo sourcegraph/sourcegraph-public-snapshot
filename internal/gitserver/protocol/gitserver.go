@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchRequest struct {
-	Repo        api.RepoName
-	Revisions   []RevisionSpecifier
-	Query       Node
-	IncludeDiff bool
-	Limit       int
+	Repo                 api.RepoName
+	Revisions            []RevisionSpecifier
+	Query                Node
+	IncludeDiff          bool
+	Limit                int
+	IncludeModifiedFiles bool
 }
 
 type RevisionSpecifier struct {
@@ -73,8 +73,9 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message result.MatchedString `json:",omitempty"`
-	Diff    result.MatchedString `json:",omitempty"`
+	Message       result.MatchedString `json:",omitempty"`
+	Diff          result.MatchedString `json:",omitempty"`
+	ModifiedFiles []string             `json:",omitempty"`
 }
 
 type Signature struct {
@@ -94,6 +95,7 @@ type ExecRequest struct {
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
+	EnableTimeout  bool        `json:"enableTimeout"`
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.

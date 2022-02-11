@@ -5,7 +5,7 @@ import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
@@ -22,7 +22,7 @@ export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
         <TimerSandIcon className={className} />
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (
-        <LoadingSpinner className={className} />
+        <LoadingSpinner inline={false} className={className} />
     ) : state === LSIFUploadState.COMPLETED || state === LSIFIndexState.COMPLETED ? (
         <CheckCircleIcon className={classNames('text-success', className)} />
     ) : state === LSIFUploadState.ERRORED || state === LSIFIndexState.ERRORED ? (

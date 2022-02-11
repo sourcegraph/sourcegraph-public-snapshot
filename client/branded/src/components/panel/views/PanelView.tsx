@@ -2,12 +2,12 @@ import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { PanelViewWithComponent } from '../Panel'
 
@@ -38,6 +38,7 @@ export const PanelView = React.memo<Props>(props => (
             <HierarchicalLocationsView
                 location={props.location}
                 locations={props.panelView.locationProvider}
+                maxLocationResults={props.panelView.maxLocationResults}
                 defaultGroup={props.repoName}
                 isLightTheme={props.isLightTheme}
                 fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}

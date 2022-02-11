@@ -63,21 +63,15 @@ You can also select the color of your data series.
 
 Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository name]`.
 
-### 7. Set the visibility of your insight
-
-This controls who else can see your insight.
-
-Anything set to "Private" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
-
-### 8. Set the distance between data points to 1 month
+### 7. Set the distance between data points to 1 month
 
 The code insights prototypes currently show you seven datapoints for each data series. Your code insight will therefore show you results for a time horizon that is 6 * [distance between datapoints]. Setting it to one month means you'll see the results over the last six months.
 
-### 9. Click "create code insight" and view your insight.
+### 8. Click "create code insight" and view your insight.
 
 You'll be taken to the sourcegraph.example.com/insights page and can view your insight.
 
-### 10. Filter your insight to explore it further 
+### 9. Filter your insight to explore it further 
 
 Click the filter button in the top right of an insight card to open the filters panel. This allows you to filter the insight down to a subset of repositories through inclusion or exclusion using regular expressions.
 For more details, see [How to filter an insight](./how-tos/filtering_an_insight.md).

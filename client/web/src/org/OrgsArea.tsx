@@ -13,10 +13,10 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
-import { PatternTypeProps } from '../search'
 
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
+import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
@@ -27,7 +27,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props
+export interface Props
     extends RouteComponentProps<{}>,
         ExtensionsControllerProps,
         PlatformContextProps,
@@ -36,8 +36,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -51,6 +50,11 @@ interface Props
 const AuthenticatedOrgsArea: React.FunctionComponent<Props> = props => (
     <Switch>
         <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+        <Route
+            path={`${props.match.url}/invitation/:token`}
+            exact={true}
+            render={routeComponentProps => <OrgInvitationPage {...props} {...routeComponentProps} />}
+        />
         <Route
             path={`${props.match.url}/:name`}
             render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}

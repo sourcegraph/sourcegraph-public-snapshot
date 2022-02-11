@@ -11,6 +11,8 @@ import { CaptureInsightSettings } from '../../code-insights-backend-types'
 import { getDataPoints, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
+import { MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
+
 const SERIES_COLORS = Object.keys(openColor)
     .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
     .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
@@ -58,7 +60,7 @@ export const getCaptureGroupInsightsPreview = (
             }
 
             // Extend series with synthetic index based series id
-            const indexedSeries = series.map<InsightDataSeriesData>((series, index) => ({
+            const indexedSeries = series.slice(0, MAX_NUMBER_OF_SERIES).map<InsightDataSeriesData>((series, index) => ({
                 seriesId: `${index}`,
                 ...series,
             }))

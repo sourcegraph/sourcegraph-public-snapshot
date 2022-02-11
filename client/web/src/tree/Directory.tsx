@@ -3,7 +3,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { FileDecoration } from 'sourcegraph'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     TreeLayerRowContentsText,
@@ -84,13 +84,13 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                 </TreeLayerRowContentsText>
                 {props.loading && (
                     <div>
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                        <LoadingSpinner className="tree-page__entries-loader" />
                     </div>
                 )}
             </TreeLayerRowContents>
             {props.index === props.maxEntries - 1 && (
                 <TreeRowAlert
-                    className="alert-warning"
+                    variant="warning"
                     style={treePadding(props.depth, true, true)}
                     error="Too many entries. Use search to find a specific file."
                 />

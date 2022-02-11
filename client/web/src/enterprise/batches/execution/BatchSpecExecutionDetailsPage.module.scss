@@ -1,26 +1,21 @@
-.workspace-repo,
-.workspace-name {
-    word-wrap: break-word;
-}
-
 .batch-spec {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.workspaces-list {
-    max-height: 60vh;
-    overflow-y: auto;
+    min-height: 400px;
+    height: 100%;
 }
 
 .workspaces-list-container {
     width: 40%;
+    max-width: 350px;
+    flex-shrink: 0;
 }
 
-.workspace-list-icon {
-    align-self: center;
+.layout-container {
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
 }
 
-.workspace-selected {
-    background-color: var(--color-bg-1);
+.workspaces-list {
+    overflow-y: auto;
 }

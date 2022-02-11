@@ -5,10 +5,18 @@ import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { ProductStatusBadge, Container, PageSelector } from '@sourcegraph/wildcard'
+import {
+    ProductStatusBadge,
+    Container,
+    PageSelector,
+    RadioButton,
+    TextArea,
+    Button,
+    Alert,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -109,21 +117,21 @@ type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-warning my-3" role="alert" key={warning}>
+    <Alert className="my-3" role="alert" key={warning} variant="warning">
         <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-danger my-3" role="alert" key={error.message}>
+    <Alert className="my-3" role="alert" key={error.message} variant="danger">
         <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayAffiliateRepoProblems = (
@@ -572,37 +580,43 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             {!isOrgOwner && (
-                <label className="d-flex flex-row align-items-baseline">
-                    <input
-                        type="radio"
+                <div className="d-flex flex-row align-items-baseline">
+                    <RadioButton
+                        name="all_repositories"
+                        id="sync_all_repositories"
                         value="all"
                         disabled={noCodeHostsOrErrors}
                         checked={selectionState.radio === 'all'}
                         onChange={handleRadioSelect}
+                        label={
+                            <div className="d-flex flex-column ml-2">
+                                <p className="mb-0">Sync all repositories</p>
+                                <p className="font-weight-normal text-muted">
+                                    Will sync all current and future public and private repositories
+                                </p>
+                            </div>
+                        }
                     />
-                    <div className="d-flex flex-column ml-2">
-                        <p className="mb-0">Sync all repositories</p>
-                        <p className="font-weight-normal text-muted">
-                            Will sync all current and future public and private repositories
-                        </p>
-                    </div>
-                </label>
+                </div>
             )}
 
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    name="selected_repositories"
+                    id="sync_selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     disabled={noCodeHostsOrErrors}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
+                                Sync selected repositories
+                            </p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
-                        Sync selected repositories
-                    </p>
-                </div>
-            </label>
+            </div>
         </Form>
     )
 
@@ -794,7 +808,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             </p>
 
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
-                                <div className="alert alert-primary">
+                                <Alert variant="primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
                                     <Link
                                         to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
@@ -803,16 +817,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     >
                                         Get updated when this feature launches
                                     </Link>
-                                </div>
+                                </Alert>
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                                <div className="alert alert-warning mb-2">
+                                <Alert className="mb-2" variant="warning">
                                     <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
                                         Connect with a code host
                                     </Link>{' '}
                                     to add
                                     {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
-                                </div>
+                                </Alert>
                             )}
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
@@ -863,8 +877,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">
                                         <p className="mb-2">Repositories to sync</p>
-                                        <textarea
-                                            className="form-control"
+                                        <TextArea
                                             rows={5}
                                             value={publicRepoState.repos}
                                             onChange={handlePublicReposChanged}
@@ -889,19 +902,22 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={fetchingRepos === 'loading'}
-                    className="btn btn-primary test-goto-add-external-service-page mr-2"
+                    className="test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
                     label={fetchingRepos ? 'Saving...' : 'Save'}
                     disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
+                    variant="primary"
                 />
 
-                <Link
-                    className="btn btn-secondary test-goto-add-external-service-page"
+                <Button
+                    className="test-goto-add-external-service-page"
                     to={`${routingPrefix}/repositories`}
+                    variant="secondary"
+                    as={Link}
                 >
                     Cancel
-                </Link>
+                </Button>
             </Form>
         </UserSettingReposContainer>
     )

@@ -43,8 +43,7 @@ func main() {
 		definitions.Searcher(),
 		definitions.Symbols(),
 		definitions.SyntectServer(),
-		definitions.ZoektIndexServer(),
-		definitions.ZoektWebServer(),
+		definitions.Zoekt(),
 		definitions.Prometheus(),
 		definitions.Executor(),
 	); err != nil {

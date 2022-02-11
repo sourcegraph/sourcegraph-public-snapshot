@@ -221,71 +221,71 @@ type BitbucketCloudRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
+// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
 type BitbucketServerAuthorization struct {
-	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
+	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
-	// Oauth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
+	// Oauth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 	Oauth BitbucketServerOAuth `json:"oauth"`
 }
 
-// BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
+// BitbucketServerConnection description: Configuration for a connection to Bitbucket Server / Bitbucket Data Center.
 type BitbucketServerConnection struct {
-	// Authorization description: If non-null, enforces Bitbucket Server repository permissions.
+	// Authorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
 	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
-	// Certificate description: TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// Certificate description: TLS certificate of the Bitbucket Server / Bitbucket Data Center instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over "repos" and "repositoryQuery".
+	// Exclude description: A list of repositories to never mirror from this Bitbucket Server / Bitbucket Data Center instance. Takes precedence over "repos" and "repositoryQuery".
 	//
 	// Supports excluding by name ({"name": "projectKey/repositorySlug"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
 	// ExcludePersonalRepositories description: Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.
 	ExcludePersonalRepositories bool `json:"excludePersonalRepositories,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server / Bitbucket Data Center instance.
 	//
-	// If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
+	// If "http", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server / Bitbucket Data Center instance uses HTTPS).
 	//
-	// If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. BitBucket repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
-	// Password description: The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
+	// Password description: The password to use when authenticating to the Bitbucket Server / Bitbucket Data Center instance. Also set the corresponding "username" field.
 	//
-	// For Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
+	// For Bitbucket Server / Bitbucket Data Center instances that support personal access tokens (Bitbucket Server / Bitbucket Data Center version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
 	Password string `json:"password,omitempty"`
-	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
+	// Plugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
 	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
-	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server / Bitbucket Data Center repository.
 	//
-	//  - "{host}" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)
+	//  - "{host}" is replaced with the Bitbucket Server / Bitbucket Data Center URL's host (such as bitbucket.example.com)
 	//  - "{projectKey}" is replaced with the Bitbucket repository's parent project key (such as "PRJ")
 	//  - "{repositorySlug}" is replaced with the Bitbucket repository's slug key (such as "my-repo").
 	//
-	// For example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{projectKey}/{repositorySlug}" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.
+	// For example, if your Bitbucket Server / Bitbucket Data Center is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{projectKey}/{repositorySlug}" would mean that a Bitbucket Server / Bitbucket Data Center repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// RepositoryQuery description: An array of strings specifying which repositories to mirror on Sourcegraph. Each string is a URL query string with parameters that filter the list of returned repos. Examples: "?name=my-repo&projectname=PROJECT&visibility=private".
 	//
-	// The special string "none" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Server documentation about which query string parameters are valid: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+	// The special string "none" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Server / Bitbucket Data Center documentation about which query string parameters are valid: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
-	// Token description: A Bitbucket Server personal access token with Read permissions. When using batch changes, the token needs Write permissions. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add. Also set the corresponding "username" field.
+	// Token description: A Bitbucket Server / Bitbucket Data Center personal access token with Read permissions. When using batch changes, the token needs Write permissions. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add. Also set the corresponding "username" field.
 	//
-	// For Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the "username" and "password" fields.
+	// For Bitbucket Server / Bitbucket Data Center instances that don't support personal access tokens (Bitbucket Server / Bitbucket Data Center version 5.4 and older), specify user-password credentials in the "username" and "password" fields.
 	Token string `json:"token,omitempty"`
-	// Url description: URL of a Bitbucket Server instance, such as https://bitbucket.example.com.
+	// Url description: URL of a Bitbucket Server / Bitbucket Data Center instance, such as https://bitbucket.example.com.
 	Url string `json:"url"`
-	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
+	// Username description: The username to use when authenticating to the Bitbucket Server / Bitbucket Data Center instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
 	// Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
-// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
+// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 type BitbucketServerIdentityProvider struct {
 	Username *BitbucketServerUsernameIdentity
 }
@@ -310,22 +310,22 @@ func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
 }
 
-// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
+// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 type BitbucketServerOAuth struct {
-	// ConsumerKey description: The OAuth consumer key specified when creating the Bitbucket Server Application Link with incoming authentication.
+	// ConsumerKey description: The OAuth consumer key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
 	ConsumerKey string `json:"consumerKey"`
-	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server Application Link with incoming authentication.
+	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
 	SigningKey string `json:"signingKey"`
 }
 
-// BitbucketServerPlugin description: Configuration for Bitbucket Server Sourcegraph plugin
+// BitbucketServerPlugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 type BitbucketServerPlugin struct {
-	// Permissions description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
+	// Permissions description: Enables fetching Bitbucket Server / Bitbucket Data Center permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
 	Permissions string                         `json:"permissions,omitempty"`
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
-	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
 	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
@@ -436,6 +436,8 @@ type DebugLog struct {
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
+	// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
+	GithubAppCloud *GithubAppCloud `json:"githubApp.cloud,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 }
@@ -509,11 +511,11 @@ type ExcludedBitbucketCloudRepo struct {
 	Uuid string `json:"uuid,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
-	// Id description: The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.
+	// Id description: The ID of a Bitbucket Server / Bitbucket Data Center repo (as returned by the Bitbucket Server / Bitbucket Data Center instance's API) to exclude from mirroring.
 	Id int `json:"id,omitempty"`
-	// Name description: The name of a Bitbucket Server repo ("projectKey/repositorySlug") to exclude from mirroring.
+	// Name description: The name of a Bitbucket Server / Bitbucket Data Center repo ("projectKey/repositorySlug") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of a Bitbucket Server repo.
+	// Pattern description: Regular expression which matches against the name of a Bitbucket Server / Bitbucket Data Center repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
@@ -567,6 +569,8 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
+	// EnableGitServerCommandExecFilter description: Enable filtering of all exec commands on gitserver based on a pre-defined allowlist
+	EnableGitServerCommandExecFilter bool `json:"enableGitServerCommandExecFilter,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
@@ -589,6 +593,8 @@ type ExperimentalFeatures struct {
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
+	// SearchIndexQueryContexts description: Enables indexing of revisions of repos matching any query defined in search contexts.
+	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
@@ -713,6 +719,8 @@ type GitHubConnection struct {
 	//
 	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
+	// GithubAppInstallationID description: The installation ID of the GitHub App.
+	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via "repos", "exclude" and "repositoryQuery" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Orgs description: An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.
@@ -745,7 +753,7 @@ type GitHubConnection struct {
 	// If you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
 	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"`
 	// Url description: URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
@@ -854,6 +862,16 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
+}
+
+// GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
+type GithubAppCloud struct {
+	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
+	AppID string `json:"appID,omitempty"`
+	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
+	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1003,8 +1021,9 @@ type MountedEncryptionKey struct {
 }
 
 // NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
-// TODO: [npm-package-support-credentials] Add a credential field to NPMConfig.
 type NPMPackagesConnection struct {
+	// Credentials description: Access token for logging into the NPM registry.
+	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
@@ -1173,6 +1192,8 @@ type OnRepository struct {
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.
+	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ClientID description: The client ID for the OpenID Connect client for this site.
 	//
 	// For Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials
@@ -1191,6 +1212,19 @@ type OpenIDConnectAuthProvider struct {
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
+}
+
+// OrganizationInvitations description: Configuration for organization invitations.
+type OrganizationInvitations struct {
+	// ExpiryTime description: Time before the invitation expires, in hours (experimental, not enforced at the moment).
+	ExpiryTime int `json:"expiryTime,omitempty"`
+	// SigningKey description: Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.
+	// More documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC
+	//
+	// If not provided, will fall back to legacy invitation to an organization.
+	//
+	// The legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.
+	SigningKey string `json:"signingKey"`
 }
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
@@ -1326,8 +1360,8 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
-	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.
-	MaxReorderQueueSize int `json:"maxReorderQueueSize,omitempty"`
+	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
+	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
 }
@@ -1452,6 +1486,8 @@ type Settings struct {
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
 	CodeIntelligenceAutoIndexRepositoryGroups []string `json:"codeIntelligence.autoIndexRepositoryGroups,omitempty"`
+	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
+	CodeIntelligenceMaxPanelResults int `json:"codeIntelligence.maxPanelResults,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
@@ -1519,14 +1555,20 @@ type SettingsExperimentalFeatures struct {
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
+	// ClientSearchResultRanking description: How to rank search results in the client
+	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
+	// CodeInsightsLandingPage description: Enables code insights landing page layout.
+	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
+	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
+	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
@@ -1535,15 +1577,17 @@ type SettingsExperimentalFeatures struct {
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
-	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
+	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// SearchContextsQuery description: Enables query based search contexts
+	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
-	// ShowCodeMonitoringTestEmailButton description: Enables the 'Send test email' debugging button for code monitoring.
+	// ShowCodeMonitoringTestEmailButton description: REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
@@ -1599,10 +1643,14 @@ type SiteConfiguration struct {
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
+	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
+	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
 	BatchChangesDisableWebhooksWarning bool `json:"batchChanges.disableWebhooksWarning,omitempty"`
 	// BatchChangesEnabled description: Enables/disables the Batch Changes feature.
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
+	// BatchChangesEnforceForks description: When enabled, all branches created by batch changes will be pushed to forks of the original repository.
+	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
@@ -1711,6 +1759,8 @@ type SiteConfiguration struct {
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
+	// OrganizationInvitations description: Configuration for organization invitations.
+	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).

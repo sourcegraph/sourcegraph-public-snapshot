@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 
 import brandedStyles from '../../branded.scss'
 
+import { OptionsPageContainer } from './components/OptionsPageContainer'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 
 const OPTIONS_FLAGS = [
@@ -14,13 +15,18 @@ const OPTIONS_FLAGS = [
 const decorator: DecoratorFn = story => (
     <>
         <style>{brandedStyles}</style>
-        <div className="options-page options-page--full">{story()}</div>
+        <OptionsPageContainer isFullPage={true}>{story()}</OptionsPageContainer>
     </>
 )
 
 const config: Meta = {
     title: 'browser/Options/OptionsPageAdvancedSettings',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config

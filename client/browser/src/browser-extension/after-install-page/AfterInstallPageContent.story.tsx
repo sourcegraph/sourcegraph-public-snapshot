@@ -9,6 +9,11 @@ import { AfterInstallPageContent } from './AfterInstallPageContent'
 
 const config: Meta = {
     title: 'browser/AfterInstallPage',
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config

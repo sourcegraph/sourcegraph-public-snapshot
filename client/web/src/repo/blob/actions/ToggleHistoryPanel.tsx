@@ -4,15 +4,15 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
     lprToRange,
-    parseQueryAndHash,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
-} from '@sourcegraph/shared/src/util/url'
+} from '@sourcegraph/common'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -64,7 +64,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                Tooltip.forceUpdate()
+                TooltipController.forceUpdate()
             })
         )
 
@@ -88,7 +88,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink className="btn" file={true} onSelect={this.onClick}>
+                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
                     <HistoryIcon className="icon-inline" />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
@@ -96,7 +96,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         }
         return (
             <RepoHeaderActionButtonLink
-                className="btn btn-icon"
+                className="btn-icon"
                 file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}

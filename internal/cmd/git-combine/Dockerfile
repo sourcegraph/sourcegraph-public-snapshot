@@ -1,4 +1,4 @@
-FROM golang:1.17.3-alpine AS builder
+FROM golang:1.17.6-alpine AS builder
 
 WORKDIR /go/src/app
 
@@ -16,7 +16,6 @@ RUN go build .
 # Sourcegraph.com.
 FROM alpine:3.15
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache git ca-certificates tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/

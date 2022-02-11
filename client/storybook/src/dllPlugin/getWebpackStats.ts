@@ -5,12 +5,14 @@ import path from 'path'
 import signale from 'signale'
 import { StatsCompilation } from 'webpack'
 
-import { readJsonFile, storybookWorkspacePath, rootPath } from '../webpack.config.common'
+import { ROOT_PATH } from '@sourcegraph/build-config'
+
+import { readJsonFile, storybookWorkspacePath } from '../webpack.config.common'
 
 const webpackStatsPath = path.resolve(storybookWorkspacePath, 'storybook-static/preview-stats.json')
 
 export const ensureWebpackStatsAreReady = (): void => {
-    signale.start(`Checking if Webpack stats are available: ${path.relative(rootPath, webpackStatsPath)}`)
+    signale.start(`Checking if Webpack stats are available: ${path.relative(ROOT_PATH, webpackStatsPath)}`)
 
     // eslint-disable-next-line no-sync
     if (!fs.existsSync(webpackStatsPath)) {

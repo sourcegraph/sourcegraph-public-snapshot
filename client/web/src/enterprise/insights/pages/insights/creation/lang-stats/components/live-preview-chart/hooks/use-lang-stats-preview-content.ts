@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'

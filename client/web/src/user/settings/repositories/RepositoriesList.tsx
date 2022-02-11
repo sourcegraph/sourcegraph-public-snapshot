@@ -2,7 +2,7 @@ import React from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import {
     FilteredConnection,
     FilteredConnectionFilter,

@@ -1,6 +1,6 @@
 import { ApolloError, FetchResult, MutationFunctionOptions } from '@apollo/client'
 
-import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     DeleteCodeIntelligenceConfigurationPolicyResult,

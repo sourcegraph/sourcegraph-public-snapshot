@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -205,7 +206,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, repo.Name, commitID, "")
+	root, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

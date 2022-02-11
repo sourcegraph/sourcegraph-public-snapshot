@@ -22,7 +22,10 @@
 }
 
 .legend {
+    margin-top: 0.75rem;
+
     &--horizontal {
+        margin-top: 0;
         flex-grow: 1;
         flex-shrink: 0;
         min-width: 11rem;
@@ -39,11 +42,10 @@
     // Reset ul styles (bullets, paddings, margins)
     list-style: none;
     margin: 0;
-    padding: 0.75rem 0 0 0;
+    padding: 0;
     line-height: 1.2;
 
     &--horizontal {
-        padding-top: 0;
         flex-wrap: nowrap;
         flex-direction: column;
     }

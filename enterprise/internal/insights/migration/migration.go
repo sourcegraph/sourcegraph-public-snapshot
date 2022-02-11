@@ -8,20 +8,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type migrationBatch string
@@ -129,7 +126,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	for _, job := range jobs {
 		err := m.performMigrationForRow(ctx, jobStoreTx, *job)
 		if err != nil {
-			errs = multierror.Append(err)
+			errs = errors.Append(err)
 		}
 	}
 
@@ -167,6 +164,14 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		userStore := database.Users(m.postgresDB)
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
+			// If the user doesn't exist, just mark the job complete.
+			if strings.Contains(err.Error(), "user not found") {
+				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+				if err != nil {
+					return errors.Wrap(err, "MarkCompleted")
+				}
+				return nil
+			}
 			return errors.Wrap(err, "UserStoreGetByID")
 		}
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
@@ -176,6 +181,14 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.orgIds = []int{*job.OrgId}
 		org, err := orgStore.GetByID(ctx, orgId)
 		if err != nil {
+			// If the org doesn't exist, just mark the job complete.
+			if strings.Contains(err.Error(), "org not found") {
+				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+				if err != nil {
+					return errors.Wrap(err, "MarkCompleted")
+				}
+				return nil
+			}
 			return errors.Wrap(err, "OrgStoreGetByID")
 		}
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
@@ -222,20 +235,20 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 
 		count, err := m.migrateLangStatsInsights(ctx, langStatsInsights)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, frontendInsights, frontend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, backendInsights, backend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		err = jobStoreTx.UpdateMigratedInsights(ctx, job.UserId, job.OrgId, migratedInsightsCount)
 		if err != nil {
-			return multierror.Append(insightMigrationErrors, err)
+			return errors.Append(insightMigrationErrors, err)
 		}
 		if totalInsights != migratedInsightsCount {
 			return insightMigrationErrors
@@ -265,7 +278,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 	err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "MarkCompleted")
 	}
 
 	return nil
