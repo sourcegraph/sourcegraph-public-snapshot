@@ -78,7 +78,7 @@ type FeatureFlagOverrideResolver struct {
 }
 
 func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) {
-	res, err := database.FeatureFlags(f.db).GetFeatureFlag(ctx, f.inner.FlagName)
+	res, err := f.db.FeatureFlags().GetFeatureFlag(ctx, f.inner.FlagName)
 	return &FeatureFlagResolver{f.db, res}, err
 }
 func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
@@ -153,7 +153,7 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 		return false, nil
 	}
 
-	result, err := database.FeatureFlags(r.db).GetOrgFeatureFlag(ctx, org, args.FlagName)
+	result, err := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, org, args.FlagName)
 	if err != nil {
 		return false, err
 	}
@@ -179,7 +179,7 @@ func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolv
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	flags, err := database.FeatureFlags(r.db).GetFeatureFlags(ctx)
+	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}

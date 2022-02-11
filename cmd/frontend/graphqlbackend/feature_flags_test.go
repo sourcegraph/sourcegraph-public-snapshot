@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,47 +14,36 @@ import (
 )
 
 func TestOrganizationFeatureFlagOverrides(t *testing.T) {
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	t.Run("return org flag override for user", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	orgs := database.NewMockOrgStore()
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+		orgs := database.NewMockOrgStore()
+		mockedOrg := types.Org{ID: 1, Name: "acme"}
+		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	flags := database.NewMockFeatureFlagStore()
-	mockedFlag := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "test-flag", Value: true}
-	flagOverrides := []*featureflag.Override{&mockedFlag}
+		flags := database.NewMockFeatureFlagStore()
+		mockedFeatureFlag := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+		mockedOverride := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "test-flag", Value: true}
+		flagOverrides := []*featureflag.Override{&mockedOverride}
 
-	flags.GetOrgOverridesForUserFunc.SetDefaultHook(func(ctx context.Context, userID int32) ([]*featureflag.Override, error) {
-		assert.Equal(t, int32(1), userID)
-		return flagOverrides, nil
-	})
+		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
+			return &mockedFeatureFlag, nil
+		})
 
-	db := database.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		flags.GetOrgOverridesForUserFunc.SetDefaultHook(func(ctx context.Context, userID int32) ([]*featureflag.Override, error) {
+			assert.Equal(t, int32(1), userID)
+			return flagOverrides, nil
+		})
 
-	result, err := newSchemaResolver(db).OrganizationFeatureFlagOverrides(ctx)
+		db := database.NewMockDB()
+		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(flags)
 
-	if err != nil {
-		t.Errorf("expected error to be nil")
-	}
-
-	got := []*featureflag.Override{}
-
-	for _, f := range result {
-		got = append(got, f.inner)
-	}
-
-	if !reflect.DeepEqual(got, flagOverrides) {
-		t.Errorf("expected %v got %v", flagOverrides, got)
-	}
-
-	t.Run("return org override for user", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: ctx,
@@ -79,23 +68,160 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 				`,
 				ExpectedResult: `
 					{
-						"organizationFeatureFlagOverrides": {
-							"nodes": [
-								{
-									"namespace": {
-										"id": "1"
-									},
-									"targetFlag": {
-										"name": "test-flag"
-									},
-									"value": true
-								}
-							]
-						}
+						"organizationFeatureFlagOverrides": [
+							{
+								"namespace": {
+									"id": "T3JnOjE="
+								},
+								"targetFlag": {
+									"name": "test-flag"
+								},
+								"value": true
+							}
+						]
 					}
 				`,
 			},
 		})
 	})
 
+	t.Run("return empty list if no overrides", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		orgs := database.NewMockOrgStore()
+		mockedOrg := types.Org{ID: 1, Name: "acme"}
+		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+		flags := database.NewMockFeatureFlagStore()
+		mockedFeatureFlag := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+
+		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
+			return &mockedFeatureFlag, nil
+		})
+
+		db := database.NewMockDB()
+		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+
+		RunTests(t, []*Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					organizationFeatureFlagOverrides {
+						namespace {
+							id
+						},
+						targetFlag {
+							... on FeatureFlagBoolean {
+								name
+							},
+							... on FeatureFlagRollout {
+								name
+							}
+						},
+						value
+					}
+				}
+				`,
+				ExpectedResult: `
+					{
+						"organizationFeatureFlagOverrides": []
+					}
+				`,
+			},
+		})
+	})
+
+	t.Run("return multiple org overrides for user", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		orgs := database.NewMockOrgStore()
+		mockedOrg := types.Org{ID: 1, Name: "acme"}
+		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+		flags := database.NewMockFeatureFlagStore()
+		mockedFeatureFlag1 := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+		mockedFeatureFlag2 := featureflag.FeatureFlag{Name: "another-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+		mockedOverride1 := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "test-flag", Value: true}
+		mockedOverride2 := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "another-flag", Value: true}
+		flagOverrides := []*featureflag.Override{&mockedOverride1, &mockedOverride2}
+
+		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
+			if flagName == "test-flag" {
+				return &mockedFeatureFlag1, nil
+			} else {
+				return &mockedFeatureFlag2, nil
+			}
+		})
+
+		flags.GetOrgOverridesForUserFunc.SetDefaultHook(func(ctx context.Context, userID int32) ([]*featureflag.Override, error) {
+			assert.Equal(t, int32(1), userID)
+			return flagOverrides, nil
+		})
+
+		db := database.NewMockDB()
+		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+
+		RunTests(t, []*Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					organizationFeatureFlagOverrides {
+						namespace {
+							id
+						},
+						targetFlag {
+							... on FeatureFlagBoolean {
+								name
+							},
+							... on FeatureFlagRollout {
+								name
+							}
+						},
+						value
+					}
+				}
+				`,
+				ExpectedResult: `
+					{
+						"organizationFeatureFlagOverrides": [
+							{
+								"namespace": {
+									"id": "T3JnOjE="
+								},
+								"targetFlag": {
+									"name": "test-flag"
+								},
+								"value": true
+							},
+							{
+								"namespace": {
+									"id": "T3JnOjE="
+								},
+								"targetFlag": {
+									"name": "another-flag"
+								},
+								"value": true
+							}
+						]
+					}
+				`,
+			},
+		})
+	})
 }
