@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultIDSetMapAdd(t *testing.T) {
@@ -113,4 +114,60 @@ func TestDefaultIDSetMapMultipleValues(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Regression tests
+
+func TestDefaultIDSetMap_Each(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	sm.SetAdd(0, 1)
+	counter := 0
+	sm.Each(func(_ int, _ *IDSet) {
+		counter++
+	})
+	require.Equal(t, counter, 1)
+}
+
+func TestDefaultIDSetMap_SetLen(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	require.NotPanics(t, func() {
+		sm.SetLen(0)
+	})
+}
+
+func TestDefaultIDSetMap_SetContains(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	require.NotPanics(t, func() {
+		_ = sm.SetContains(0, 1)
+	})
+}
+
+func TestDefaultIDSetMap_SetEach(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	num := 30
+	require.NotPanics(t,
+		func() { sm.SetEach(0, func(_ int) { num++ }) },
+	)
+	require.Equal(t, 30, num)
+}
+
+func TestDefaultIDSetMap_SetAdd(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	require.NotPanics(t, func() {
+		sm.SetAdd(0, 22)
+	})
+}
+
+func TestDefaultIDSetMap_SetUnion(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	idSet := NewIDSet()
+	idSet.Add(3)
+	require.NotPanics(t, func() {
+		sm.SetUnion(0, idSet)
+	})
+}
+
+func TestDefaultIDSetMap_getOrCreate(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	require.NotNil(t, sm.getOrCreate(0))
 }
