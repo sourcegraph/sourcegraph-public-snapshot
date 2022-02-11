@@ -297,7 +297,14 @@ type AnnotatedCmdOpts struct {
 //  - './annotations/Job log.md' will have its contents appended as markdown
 //  - './annotations/shfmt' will have its contents formatted as terminal output on append
 //
-// Do not use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
+// Please be considerate about what generating annotations, since they can cause a lot of
+// visual clutter in the Buildkite UI. When creating annotations:
+//
+//  - keep them concise and short, to minimze the space they take up
+//  - ensure they are actionable: an annotation should enable you, the CI user, to know
+//    where to go and what to do next.
+//
+// DO NOT use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
 func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
 	var annotateOpts string
 
