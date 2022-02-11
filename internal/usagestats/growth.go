@@ -124,6 +124,7 @@ END
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
                     AND page = 'search') AS bext_cta_clicks_on_search_page
    FROM events_for_today
+   GROUP BY day
 `
 
 	var (
@@ -139,7 +140,7 @@ END
 	)
 	now := timeNow()
 	if err := db.QueryRowContext(ctx, q, now).Scan(
-		day,
+		&day,
 		&userCountWhoSawBextCtaOnFilePage,
 		&userCountWhoClickedBextCtaOnFilePage,
 		&userCountWhoSawBextCtaOnSearchPage,
