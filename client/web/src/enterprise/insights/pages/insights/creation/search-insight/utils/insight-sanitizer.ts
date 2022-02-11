@@ -42,15 +42,14 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
             step: { [rawInsight.step]: +rawInsight.stepValue },
-            filters: { includeRepoRegexp: '', excludeRepoRegexp: '' },
             dashboardReferenceCount: rawInsight.dashboardReferenceCount,
         }
     }
 
     return {
-        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         // ID generated according to our naming insight convention
         // <Type of insight>.insight.<name of insight>
+        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         type: InsightExecutionType.Runtime,
         viewType: InsightType.SearchBased,
         visibility: rawInsight.visibility,

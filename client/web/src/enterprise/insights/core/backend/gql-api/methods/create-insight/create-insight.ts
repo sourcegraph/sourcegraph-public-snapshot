@@ -153,6 +153,7 @@ function searchInsightCreationOptimisticUpdate(
     const cachedInsight = cache.readFragment<InsightViewNode>({
         id: createdInsightId,
         fragment: INSIGHT_VIEW_FRAGMENT,
+        fragmentName: 'InsightViewNode',
     })
 
     if (dashboard && !isVirtualDashboard(dashboard)) {

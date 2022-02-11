@@ -71,15 +71,18 @@ export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label'
  *
  * @param series - insight series with points data
  * @param seriesDefinition - insight definition with line settings (color, name, query)
+ * @param filters - insight drill-down filters
  */
 export function createLineChartContentFromIndexedSeries(
     series: InsightDataSeriesData[],
     seriesDefinition: SearchBasedInsightSeries[] = [],
-    filters: SearchBasedBackendFilters
+    filters?: SearchBasedBackendFilters
 ): LineChartContent<SeriesDataset, 'dateTime'> {
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id ?? '', definition])
     )
+
+    const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
 
     return {
         chart: 'line',
@@ -101,9 +104,8 @@ export function createLineChartContentFromIndexedSeries(
                         const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
                         const before = formatISO(date)
 
-                        const includeRepoFilter = filters.includeRepoRegexp ? `repo:${filters.includeRepoRegexp}` : ''
-
-                        const excludeRepoFilter = filters.excludeRepoRegexp ? `-repo:${filters.excludeRepoRegexp}` : ''
+                        const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
+                        const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
 
                         const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
                         const afterFilter = after ? `after:${after}` : ''
