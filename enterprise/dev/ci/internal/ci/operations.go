@@ -123,7 +123,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotationOpts{
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
 			Type: bk.AnnotationTypeError,
 		}))
 }
@@ -139,7 +139,7 @@ func addTerraformLint(pipeline *bk.Pipeline) {
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc Linters",
 		withYarnCache(),
-		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotationOpts{
+		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
 			Type:         bk.AnnotationTypeError,
 			IncludeNames: true,
 		}))
@@ -675,7 +675,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
-			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotationOpts{
+			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
 				Type:            bk.AnnotationTypeWarning,
 				MultiJobContext: "docker-security-scans",
 			}))

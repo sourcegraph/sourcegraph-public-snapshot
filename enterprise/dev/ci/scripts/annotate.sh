@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Convenience script for https://buildkite.com/docs/agent/v3/cli-annotate
+# If you are writing a pipeline step DO NOT use this script directly - instead, use
+# bk.AnnotatedCmd to get your command's annotations picked up.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 set -e
@@ -34,8 +36,9 @@ while getopts 't:s:c:m' flag; do
   esac
 done
 
-# Set defaults
+# Set a default context that is unique per job/custom context and type combination.
 CONTEXT=${CUSTOM_CONTEXT:-$BUILDKITE_JOB_ID}
+CONTEXT="$CONTEXT-$TYPE"
 
 # If we are not in Buildkite, exit before doing annotations
 if [[ -z "$BUILDKITE" ]]; then
