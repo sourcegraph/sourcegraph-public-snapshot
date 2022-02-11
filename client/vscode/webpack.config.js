@@ -120,6 +120,7 @@ const webviewConfig = {
   resolve: {
     alias: {
       path: require.resolve('path-browserify'),
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
