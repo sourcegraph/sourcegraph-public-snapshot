@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -41,6 +43,7 @@ func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args
 	observability.SetParseAmount(ctx, observability.CachedParse)
 	cacheFile, err := w.cache.OpenWithPath(ctx, key, func(fetcherCtx context.Context, tempDBFile string) error {
 		if err := w.databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile); err != nil {
+			log15.Error("databaseWriter.WriteDBFile", "args", args, "error", err)
 			return errors.Wrap(err, "databaseWriter.WriteDBFile")
 		}
 
