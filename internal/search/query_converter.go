@@ -261,6 +261,10 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 		return nil, err
 	}
 
+	return withZoektParameters(q, p, feat, typ)
+}
+
+func withZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
