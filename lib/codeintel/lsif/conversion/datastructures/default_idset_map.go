@@ -1,9 +1,9 @@
 package datastructures
 
 const (
-	mapEmpty         = 0
-	mapInline        = 1
-	mapHeap          = 2
+	mapStateEmpty = iota
+	mapStateInline
+	mapStateHeap
 	ILLEGAL_MAPSTATE = "invariant violation: illegal map state!"
 	// random sentinel key to identify runtime errors
 	uninitSentinelKey = -0xc0c0
@@ -41,14 +41,14 @@ func NewDefaultIDSetMap() *DefaultIDSetMap {
 func (sm *DefaultIDSetMap) state() uint8 {
 	if sm.inlineValue == nil {
 		if sm.m == nil {
-			return mapEmpty
+			return mapStateEmpty
 		}
-		return mapHeap
+		return mapStateHeap
 	}
 	if sm.m != nil {
 		panic("m field of DefaultIDSetMap should be nil when value is present inline")
 	}
-	return mapInline
+	return mapStateInline
 }
 
 // DefaultIDSetMapWith creates a default identifier set map with
@@ -66,11 +66,11 @@ func DefaultIDSetMapWith(m map[int]*IDSet) *DefaultIDSetMap {
 // Len returns the number of keys.
 func (sm *DefaultIDSetMap) Len() int {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return 0
-	case mapInline:
+	case mapStateInline:
 		return 1
-	case mapHeap:
+	case mapStateHeap:
 		return len(sm.m)
 	default:
 		panic(ILLEGAL_MAPSTATE)
@@ -80,14 +80,14 @@ func (sm *DefaultIDSetMap) Len() int {
 // Get returns the identifier set at the given key or nil if it does not exist.
 func (sm *DefaultIDSetMap) Get(key int) *IDSet {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return nil
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey == key {
 			return sm.inlineValue
 		}
 		return nil
-	case mapHeap:
+	case mapStateHeap:
 		return sm.m[key]
 	default:
 		panic(ILLEGAL_MAPSTATE)
@@ -98,9 +98,9 @@ func (sm *DefaultIDSetMap) Get(key int) *IDSet {
 // removes the key from the map.
 func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return nil
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey != key {
 			return nil
 		}
@@ -108,7 +108,7 @@ func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
 		sm.inlineKey = uninitSentinelKey
 		sm.inlineValue = nil
 		return v
-	case mapHeap:
+	case mapStateHeap:
 		v, ok := sm.m[key]
 		if ok {
 			delete(sm.m, key)
@@ -122,14 +122,14 @@ func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
 // Delete removes the identifier set at the given key if it exists.
 func (sm *DefaultIDSetMap) Delete(key int) {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey == key {
 			sm.inlineKey = uninitSentinelKey
 			sm.inlineValue = nil
 		}
-	case mapHeap:
+	case mapStateHeap:
 		delete(sm.m, key)
 		if len(sm.m) == 1 {
 			for k, v := range sm.m {
@@ -148,11 +148,11 @@ func (sm *DefaultIDSetMap) Delete(key int) {
 // The order of iteration is not guaranteed to be deterministic.
 func (sm *DefaultIDSetMap) Each(f func(key int, value *IDSet)) {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return
-	case mapInline:
+	case mapStateInline:
 		f(sm.inlineKey, sm.inlineValue)
-	case mapHeap:
+	case mapStateHeap:
 		for k, v := range sm.m {
 			f(k, v)
 		}
@@ -164,13 +164,13 @@ func (sm *DefaultIDSetMap) Each(f func(key int, value *IDSet)) {
 // NumIDsForKey returns the number of identifiers in the identifier set at the given key.
 func (sm *DefaultIDSetMap) NumIDsForKey(key int) int {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return 0
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey == key {
 			return sm.inlineValue.Len()
 		}
-	case mapHeap:
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s.Len()
 		}
@@ -183,11 +183,11 @@ func (sm *DefaultIDSetMap) NumIDsForKey(key int) int {
 // Contains determines if the given identifier belongs to the set at the given key.
 func (sm *DefaultIDSetMap) Contains(key, id int) bool {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return false
-	case mapInline:
+	case mapStateInline:
 		return sm.inlineKey == key && sm.inlineValue.Contains(id)
-	case mapHeap:
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s.Contains(id)
 		}
@@ -202,13 +202,13 @@ func (sm *DefaultIDSetMap) Contains(key, id int) bool {
 // The order of iteration is not guaranteed to be deterministic.
 func (sm *DefaultIDSetMap) EachID(key int, f func(id int)) {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey == key {
 			sm.inlineValue.Each(f)
 		}
-	case mapHeap:
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			s.Each(f)
 		}
@@ -236,11 +236,11 @@ func (sm *DefaultIDSetMap) UnionIDSet(key int, other *IDSet) {
 // The return value is never nil.
 func (sm *DefaultIDSetMap) getOrCreate(key int) *IDSet {
 	switch sm.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		sm.inlineKey = key
 		sm.inlineValue = NewIDSet()
 		return sm.inlineValue
-	case mapInline:
+	case mapStateInline:
 		if sm.inlineKey == key {
 			return sm.inlineValue
 		}
@@ -249,7 +249,7 @@ func (sm *DefaultIDSetMap) getOrCreate(key int) *IDSet {
 		sm.inlineValue = nil
 		sm.inlineKey = uninitSentinelKey
 		return newValue
-	case mapHeap:
+	case mapStateHeap:
 		if s, ok := sm.m[key]; ok {
 			return s
 		}
@@ -288,11 +288,11 @@ func compareDefaultIDSetMaps(x, y *DefaultIDSetMap) bool {
 // compareDefaultIDSetMaps for testing and should not be used in the hot path.
 func toMap(s *DefaultIDSetMap) map[int]*IDSet {
 	switch s.state() {
-	case mapEmpty:
+	case mapStateEmpty:
 		return nil
-	case mapInline:
+	case mapStateInline:
 		return map[int]*IDSet{s.inlineKey: s.inlineValue}
-	case mapHeap:
+	case mapStateHeap:
 		m := map[int]*IDSet{}
 		for k, v := range s.m {
 			m[k] = v
