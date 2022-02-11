@@ -96,7 +96,6 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 
 	if len(failed) == 0 {
 		return nil
-
 	}
 
 	stdout.Out.Write("")
