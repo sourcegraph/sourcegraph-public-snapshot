@@ -74,12 +74,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanManage: true,
             viewerHasStarred: true,
             namespace: {
+                __typename: 'User',
                 id: '1',
+                namespaceName: 'user1',
             },
             stars: {
                 totalCount: 123,
             },
             creator: { __typename: 'User', username: 'user1' },
+            updater: { __typename: 'User', username: 'user1' },
             blocks: [
                 { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                 { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
@@ -97,12 +100,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanManage: true,
             viewerHasStarred: true,
             namespace: {
-                id: '2',
+                __typename: 'User',
+                id: '1',
+                namespaceName: 'user1',
             },
             stars: {
                 totalCount: 123,
             },
             creator: { __typename: 'User', username: 'user1' },
+            updater: { __typename: 'User', username: 'user1' },
             blocks: notebook.blocks.map(block => {
                 switch (block.type) {
                     case NotebookBlockType.MARKDOWN:
@@ -371,5 +377,19 @@ describe('Search Notebook', () => {
             () => document.querySelector<HTMLButtonElement>('[data-testid="notebook-title-button"]')?.textContent
         )
         expect(titleText).toEqual('Notebook Title Edited')
+    })
+
+    it('Should open the share dialog, switch the share option, and close the dialog', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="share-notebook-button"]', { visible: true })
+
+        await driver.page.click('[data-testid="share-notebook-button"]')
+        await driver.page.waitForSelector('[data-testid="share-notebook-options-dropdown-toggle"]', { visible: true })
+
+        await driver.page.click('[data-testid="share-notebook-options-dropdown-toggle"]')
+        await driver.page.waitForSelector('[data-testid="share-notebook-option-test-true"]')
+        await driver.page.click('[data-testid="share-notebook-option-test-true"]')
+
+        await driver.page.click('[data-testid="share-notebook-done-button"]')
     })
 })

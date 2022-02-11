@@ -90,7 +90,7 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 				}
 			}
 			if !hasAccess {
-				return nil, errors.Newf("org not found: %d", orgID)
+				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
 			}
 		}
 	}

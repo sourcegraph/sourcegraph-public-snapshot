@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
@@ -170,11 +171,13 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 	notebook.Public = notebookInput.Public
 	notebook.Blocks = blocks
 	notebook.UpdaterUserID = user.ID
-	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	var namespaceUserID, namespaceOrgID int32
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &namespaceUserID, &namespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
-
+	notebook.NamespaceUserID = namespaceUserID
+	notebook.NamespaceOrgID = namespaceOrgID
 	// Current user has to have write permissions for both the old and the new namespace.
 	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
@@ -387,6 +390,12 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 	if r.notebook.NamespaceOrgID != 0 {
 		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.notebook.NamespaceOrgID))
 		if err != nil {
+			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
+			// that org, then he does not have access to further information about the org. Instead of returning an error
+			// (which would prevent the user from viewing the notebook) we return an empty namespace.
+			if envvar.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
