@@ -476,7 +476,7 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
 const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
 
 const buildSourcegraphQuery = (searchTerms: string[]): string => {
-    const queryParameters = searchTerms.filter(Boolean)
+    const queryParameters = searchTerms.filter(Boolean).map(parameter => parameter.trim())
     const sourcegraphResultType = getSourcegraphResultType()
     const resultsLanguage = getSourcegraphResultLanguage()
 
@@ -490,7 +490,17 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
 
     if (isRepoSearchPage()) {
         const [user, repo] = window.location.pathname.split('/').filter(Boolean)
-        queryParameters.push(`repo:${user}/${repo}`)
+        queryParameters.push(`repo:${user}/${repo}$`)
+    }
+
+    for (const owner of ['org', 'user']) {
+        const index = queryParameters.findIndex(parameter => parameter.startsWith(`${owner}:`))
+        if (index >= 0) {
+            const name = queryParameters[index].replace(`${owner}:`, '')
+            if (name) {
+                queryParameters[index] = `repo:${name}/*`
+            }
+        }
     }
 
     return queryParameters.join('+')
@@ -577,7 +587,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                 renderSourcegraphButton({
                     container: buttonContainer,
                     utmCampaign: 'github-search-results-page',
-                    getSearchQuery: () => pageSearchInput.value.split(' ').map(substring => substring.trim()),
+                    getSearchQuery: () => pageSearchInput.value.split(' '),
                 })
             }
 
@@ -613,7 +623,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                     container: buttonContainer,
                     className: emptyResultsContainer ? '' : 'btn-sm',
                     utmCampaign: 'github-search-results-page',
-                    getSearchQuery: () => headerSearchInput.value.split(' ').map(substring => substring.trim()),
+                    getSearchQuery: () => headerSearchInput.value.split(' '),
                 })
             }
         }
@@ -649,7 +659,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
         renderSourcegraphButton({
             container: buttonContainer,
             utmCampaign: `github-${isAdvancedSearchPage() ? 'advanced' : 'simple'}-search-page`,
-            getSearchQuery: () => inputElement.value.split(' ').map(substring => substring.trim()),
+            getSearchQuery: () => inputElement.value.split(' '),
         })
     }
 
