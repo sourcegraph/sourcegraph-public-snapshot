@@ -14,6 +14,8 @@ import {
 
 import '../../SourcegraphWebApp.scss'
 
+import styles from './EmbeddedWebApp.module.scss'
+
 setLinkComponent(AnchorLink)
 
 const WILDCARD_THEME: WildcardTheme = {
@@ -40,7 +42,7 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
     return (
         <BrowserRouter>
             <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                <div className={classNames(isLightTheme ? 'theme-light' : 'theme-dark', 'p-3')}>
+                <div className={classNames(isLightTheme ? 'theme-light' : 'theme-dark', styles.body)}>
                     <Suspense
                         fallback={
                             <div className="d-flex justify-content-center">
