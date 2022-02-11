@@ -7,8 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
-
+	regexp "github.com/grafana/regexp"
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
