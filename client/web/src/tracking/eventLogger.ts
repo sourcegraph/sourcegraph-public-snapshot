@@ -253,11 +253,12 @@ function pageViewQueryParameters(url: string): UTMMarker {
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
     const utmCampaign = parsedUrl.searchParams.get('utm_campaign')
+    const utmMedium = parsedUrl.searchParams.get('utm_medium')
 
     const utmProps: UTMMarker = {
         utm_campaign: utmCampaign || undefined,
         utm_source: utmSource || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+        utm_medium: utmMedium || undefined,
         utm_term: parsedUrl.searchParams.get('utm_term') || undefined,
         utm_content: parsedUrl.searchParams.get('utm_content') || undefined,
     }
@@ -281,6 +282,8 @@ function pageViewQueryParameters(url: string): UTMMarker {
         ].includes(utmSource ?? '')
     ) {
         eventLogger.log('UTMCodeHostIntegration', utmProps, utmProps)
+    } else if (utmMedium === 'VSCIDE' && utmCampaign === 'vsce-sign-up') {
+        eventLogger.log('VSCIDESignUpLinkClicked', utmProps, utmProps)
     }
 
     return utmProps
