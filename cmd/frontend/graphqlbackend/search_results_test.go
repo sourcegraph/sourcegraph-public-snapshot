@@ -635,7 +635,7 @@ func TestEvaluateAnd(t *testing.T) {
 		{
 			name:         "zoekt does not return enough matches, not exhausted",
 			query:        "foo and bar index:only count:50",
-			zoektMatches: 10,
+			zoektMatches: 0,
 			filesSkipped: 1,
 			wantAlert:    true,
 		},
