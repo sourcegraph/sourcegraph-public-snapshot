@@ -36,6 +36,13 @@ type Provider struct {
 	enableGithubInternalRepoVisibility bool
 }
 
+// EnableGithubInternalRepoVisibility is a hack so that we can set the private attribute in
+// tests. This will be removed when we remove the associated feature flag and make this the default
+// behaviour.
+func (p *Provider) EnableGithubInternalRepoVisibility() {
+	p.enableGithubInternalRepoVisibility = true
+}
+
 type ProviderOptions struct {
 	// If a GitHubClient is not provided, one is constructed from GitHubURL
 	GitHubClient *github.V3Client
