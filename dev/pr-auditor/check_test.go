@@ -49,11 +49,13 @@ And a little complicated; there's also the following reasons:
 			body, err := os.ReadFile(tt.bodyFile)
 			require.NoError(t, err)
 
-			got := checkTestPlan(context.Background(), nil, &EventPayload{
+			got := checkPR(context.Background(), nil, &EventPayload{
 				PullRequest: PullRequestPayload{
 					Body:           string(body),
 					ReviewComments: 1, // Happy path
 				},
+			}, checkOpts{
+				ValidateReviews: false,
 			})
 			assert.Equal(t, tt.want.HasTestPlan(), got.HasTestPlan())
 			t.Log("got.Explanation: ", got.TestPlan)

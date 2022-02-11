@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
@@ -47,28 +50,69 @@ func main() {
 	log.Printf("got event for pull request %s, full payload: %+v\n", payload.PullRequest.URL, payload)
 
 	// Discard unwanted events
-	if !payload.PullRequest.Merged {
-		log.Println("pull request not merged, discarding")
-		return
-	}
-	if payload.Base.Ref != "main" {
-		log.Printf("unknown pull request base %q discarding\n", payload.Base.Ref)
+	if payload.PullRequest.Base.Ref != "main" {
+		log.Printf("unknown pull request base %q - discarding\n", payload.PullRequest.Base.Ref)
 		return
 	}
 
 	// Do checks
-	result := checkTestPlan(ctx, ghc, payload)
-	log.Printf("checkTestPlan: %+v\n", result)
+	if payload.PullRequest.Merged {
+		if err := postMergeAudit(ctx, ghc, payload, flags); err != nil {
+			log.Fatalf("postMergeAudit: %s", err)
+		}
+	} else {
+		if err := preMergeAudit(ctx, ghc, payload, flags); err != nil {
+			log.Fatalf("preMergeAudit: %s", err)
+		}
+	}
+}
+
+func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
+	result := checkPR(ctx, ghc, payload, checkOpts{
+		ValidateReviews: true,
+	})
+	log.Printf("checkPR: %+v\n", result)
+
 	if result.HasTestPlan() && result.Reviewed {
 		log.Println("Acceptance checked and PR reviewed, done")
-		return
+		return nil
 	}
 	issue := generateExceptionIssue(payload, &result)
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
 	if err != nil {
-		log.Fatal("Issues.Create: ", err)
+		return errors.Newf("Issues.Create: %w", err)
 	}
 	log.Println("Created issue: ", created.GetHTMLURL())
+	return nil
+}
+
+func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
+	result := checkPR(ctx, ghc, payload, checkOpts{
+		ValidateReviews: true,
+	})
+	log.Printf("checkPR: %+v\n", result)
+
+	var prState, stateDescription string
+	switch {
+	case result.Error != nil:
+		prState = "error"
+		stateDescription = fmt.Sprintf("checkPR: %s", result.Error.Error())
+	case !result.HasTestPlan():
+		prState = "failure"
+		stateDescription = "No test plan detected - please provide one!"
+	default:
+		prState = "success"
+	}
+	owner, repo := payload.Repository.GetOwnerAndName()
+	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.Ref, &github.RepoStatus{
+		Context:     github.String("pr-auditor"),
+		State:       github.String(prState),
+		Description: github.String(stateDescription),
+	})
+	if err != nil {
+		return errors.Newf("CreateStatus: %w", err)
+	}
+	return nil
 }

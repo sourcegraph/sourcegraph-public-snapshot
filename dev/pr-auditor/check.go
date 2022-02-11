@@ -23,18 +23,22 @@ func (r checkResult) HasTestPlan() bool {
 
 var markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 
-func checkTestPlan(ctx context.Context, ghc *github.Client, payload *EventPayload) checkResult {
+type checkOpts struct {
+	ValidateReviews bool
+}
+
+func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opts checkOpts) checkResult {
 	pr := payload.PullRequest
 
 	// Whether or not this PR was reviewed can be inferred from payload, but an approval
 	// might not have any comments so we need to double-check through the GitHub API
 	var err error
 	reviewed := pr.ReviewComments > 0
-	if !reviewed {
-		repoParts := strings.Split(payload.Repository.FullName, "/")
+	if !reviewed && opts.ValidateReviews {
+		owner, repo := payload.Repository.GetOwnerAndName()
 		var reviews []*github.PullRequestReview
 		// Continue, but return err later
-		reviews, _, err = ghc.PullRequests.ListReviews(ctx, repoParts[0], repoParts[1], payload.PullRequest.Number, &github.ListOptions{})
+		reviews, _, err = ghc.PullRequests.ListReviews(ctx, owner, repo, payload.PullRequest.Number, &github.ListOptions{})
 		reviewed = len(reviews) > 0
 	}
 

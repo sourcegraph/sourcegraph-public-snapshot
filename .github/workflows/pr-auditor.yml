@@ -2,7 +2,7 @@
 name: pr-auditor
 on:
   pull_request:
-    types: [ closed ]
+    types: [ closed, edited ]
 
 jobs:
   run:

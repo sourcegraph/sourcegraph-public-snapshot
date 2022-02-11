@@ -1,12 +1,13 @@
 package main
 
+import "strings"
+
 // EventPayload describes the payload of the pull_request event we subscribe to:
 // https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
 type EventPayload struct {
 	Action      string             `json:"action"`
 	PullRequest PullRequestPayload `json:"pull_request"`
 	Repository  RepositoryPayload  `json:"repository"`
-	Base        RefPayload         `json:"base"`
 }
 
 type PullRequestPayload struct {
@@ -20,6 +21,9 @@ type PullRequestPayload struct {
 	MergedBy UserPayload `json:"merged_by"`
 
 	URL string `json:"html_url"`
+
+	Base RefPayload `json:"base"`
+	Head RefPayload `json:"head"`
 }
 
 type UserPayload struct {
@@ -30,6 +34,11 @@ type UserPayload struct {
 type RepositoryPayload struct {
 	FullName string `json:"full_name"`
 	URL      string `json:"html_url"`
+}
+
+func (r *RepositoryPayload) GetOwnerAndName() (string, string) {
+	repoParts := strings.Split(r.FullName, "/")
+	return repoParts[0], repoParts[1]
 }
 
 type RefPayload struct {
