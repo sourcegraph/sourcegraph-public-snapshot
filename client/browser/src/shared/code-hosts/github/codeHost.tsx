@@ -490,7 +490,15 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
 
     if (isRepoSearchPage()) {
         const [user, repo] = window.location.pathname.split('/').filter(Boolean)
-        queryParameters.push(`repo:${user}/${repo}`)
+        queryParameters.push(`repo:${user}/${repo}$`)
+    }
+
+    const orgFilterIndex = queryParameters.findIndex(parameter => parameter.startsWith('org:'))
+    if (orgFilterIndex >= 0) {
+        const orgName = queryParameters[orgFilterIndex].replace('org:', '')
+        if (orgName) {
+            queryParameters.splice(orgFilterIndex, 1, `repo:${orgName}/*`)
+        }
     }
 
     return queryParameters.join('+')
