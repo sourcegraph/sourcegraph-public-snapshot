@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -149,66 +148,8 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	var checks []run.Check
-	var funcs []builtinCheck
-	for _, name := range set.Checks {
-		check, ok := globalConf.Checks[name]
-		if !ok {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config", name))
-			continue
-		}
-
-		if check.Cmd != "" {
-			checks = append(checks, run.Check{
-				Name:        check.Name,
-				FailMessage: check.FailMessage,
-				Cmd:         check.Cmd,
-			})
-		} else if fn, ok := checkFuncs[check.CheckFunc]; ok {
-			funcs = append(funcs, builtinCheck{
-				Name:        check.CheckFunc,
-				Func:        fn,
-				FailMessage: check.FailMessage,
-			})
-		}
-	}
-
-	ok, err := run.Checks(ctx, globalConf.Env, checks...)
-	if err != nil {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s", err))
+	if err := runChecksWithName(ctx, set.Checks); err != nil {
 		return nil
-	}
-
-	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s", set.Name))
-		return nil
-	}
-
-	if len(funcs) > 0 {
-		ctx, err = usershell.Context(ctx)
-		if err != nil {
-			return err
-		}
-
-		var failedchecks []string
-		for _, check := range funcs {
-			// TODO: Formatting here is duplicated from run.Checks
-			p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
-
-			if err := check.Func(ctx); err != nil {
-				p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
-
-				stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
-
-				failedchecks = append(failedchecks, check.Name)
-			} else {
-				p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
-			}
-		}
-
-		if len(failedchecks) != 0 {
-			return errors.Newf("failed checks: %s", strings.Join(failedchecks, ", "))
-		}
 	}
 
 	cmds := make([]run.Command, 0, len(set.Commands))
