@@ -100,9 +100,8 @@ func (j *graphqlValue) Scan(src interface{}) error {
 		j.value = v
 	case time.Time:
 		j.value = v
-	case nil:
 	default:
-		return errors.Errorf("invalid type %T", src)
+		j.value = nil
 	}
 	return nil
 }
@@ -132,6 +131,7 @@ func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTa
 			result_type TEXT,
 			repo_id INT,
 			repo_name TEXT,
+			file_name TEXT,
 			query HIDDEN TEXT
 		)`, args[0]))
 	if err != nil {
@@ -197,6 +197,12 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 	case 2:
 		c.ResultText(string(vc.results[vc.index].RepoName().Name))
 	case 3:
+		if fileMatch, ok := vc.results[vc.index].(*result.FileMatch); ok {
+			c.ResultText(fileMatch.Path)
+		} else {
+			c.ResultNull()
+		}
+	case 4:
 		c.ResultText(vc.query)
 	}
 	return nil
