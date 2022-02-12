@@ -23,7 +23,16 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 
 docker pull us.gcr.io/sourcegraph-dev/gitserver:insiders || true
 
-docker build -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
+# docker build \ 
+#   --target p4cli
+#   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
+#   --progress=plain \
+#   --build-arg COMMIT_SHA \
+#   --build-arg DATE \
+#   --build-arg VERSION
+
+docker build --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
+  -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
