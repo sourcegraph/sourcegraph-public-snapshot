@@ -28,7 +28,7 @@ PRIVATE_REGISTRY="us.gcr.io"
 docker pull us.gcr.io/sourcegraph-dev/gitserver:insiders || true
 docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli || true
 docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion || true
-docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-coursier || true
+docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier || true
 
 docker build \
   --target p4cli \
@@ -65,11 +65,11 @@ docker build \
 
 docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli
 docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion
-docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-coursier
+docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier
 
 docker build \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
   --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
