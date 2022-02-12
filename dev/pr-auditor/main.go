@@ -89,7 +89,21 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 		// Don't create status that likely nobody will check anyway
 		return nil
 	}
+
 	owner, repo := payload.Repository.GetOwnerAndName()
+	if result.Error != nil {
+		_, _, statusErr := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
+			Context:     github.String(commitStatusPostMerge),
+			State:       github.String("error"),
+			Description: github.String(fmt.Sprintf("checkPR: %s", result.Error.Error())),
+			TargetURL:   github.String(flags.GitHubRunURL),
+		})
+		if statusErr != nil {
+			return errors.Newf("result.Error != nil (%w), statusErr: %w", result.Error, statusErr)
+		}
+		return nil
+	}
+
 	issue := generateExceptionIssue(payload, &result)
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
