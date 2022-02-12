@@ -922,11 +922,6 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "useJaeger": {
-      "description": "DEPRECATED. Use `\"observability.tracing\": { \"sampling\": \"all\" }`, instead. Enables Jaeger tracing.",
-      "type": "boolean",
-      "group": "Misc."
-    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",

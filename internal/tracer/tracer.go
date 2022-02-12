@@ -102,8 +102,6 @@ func initTracer(serviceName string, c conftypes.WatchableSiteConfig) {
 				samplingStrategy = ot.TraceSelective
 			}
 			shouldLog = tracingConfig.Debug
-		} else if siteConfig.UseJaeger {
-			samplingStrategy = ot.TraceAll
 		}
 		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && !initial {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
