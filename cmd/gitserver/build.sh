@@ -33,7 +33,7 @@ docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-coursier || true
 docker build \
   --target p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  -t sourcegraph-dev/gitserver:p4cli \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
@@ -44,7 +44,7 @@ docker build \
   --target p4-fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
-  -t sourcegraph-dev/gitserver:p4-fusion \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
@@ -56,7 +56,7 @@ docker build \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
-  -t sourcegraph-dev/gitserver:coursier \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
