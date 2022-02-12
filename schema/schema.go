@@ -1795,8 +1795,6 @@ type SiteConfiguration struct {
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
-	UseJaeger bool `json:"useJaeger,omitempty"`
 	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
 	UserReposMaxPerSite int `json:"userRepos.maxPerSite,omitempty"`
 	// UserReposMaxPerUser description: The per user maximum number of repos that can be added by non site admins
