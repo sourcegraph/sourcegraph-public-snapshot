@@ -361,6 +361,7 @@ func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shou
 
 	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
 	command.Repo = api.RepoName(g.repo)
+	command.DisableTimeout()
 	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {
 		return err
