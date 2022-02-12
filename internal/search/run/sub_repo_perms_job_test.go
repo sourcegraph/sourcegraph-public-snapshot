@@ -1,4 +1,4 @@
-package subrepoperms
+package run
 
 import (
 	"context"

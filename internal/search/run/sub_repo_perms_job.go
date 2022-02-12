@@ -1,4 +1,4 @@
-package subrepoperms
+package run
 
 import (
 	"context"
@@ -12,19 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(child run.Job) run.Job {
+func NewFilterJob(child Job) Job {
 	return &subRepoPermsFilterJob{child: child}
 }
 
 type subRepoPermsFilterJob struct {
-	child run.Job
+	child Job
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
