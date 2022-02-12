@@ -42,9 +42,9 @@ echo "${CODEINTEL_OUTPUT_FILE}"
 
 docker pull us.gcr.io/sourcegraph-dev/postgres_exporter:insiders || true
 
-docker build -f ./Dockerfile -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
+docker build --cache-from docker us.gcr.io/sourcegraph-dev/postgres_exporter:insiders \
+  -f ./Dockerfile -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION \
-  --cache-from docker us.gcr.io/sourcegraph-dev/postgres_exporter:insiders
+  --build-arg VERSION 

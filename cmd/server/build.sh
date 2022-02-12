@@ -106,9 +106,9 @@ cmd/server/jaeger.sh
 echo "--- docker build"
 docker pull us.gcr.io/sourcegraph-dev/server:insiders || true
 
-docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
+  -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION \
-  --cache-from us.gcr.io/sourcegraph-dev/server:insiders
+  --build-arg VERSION
