@@ -99,7 +99,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
     ${batchChangesCredentialFieldsFragment}
 `
 
-const USER_CODE_HOSTS_QUERY = gql`
+export const USER_CODE_HOSTS = gql`
     query UserBatchChangesCodeHosts($user: ID!, $first: Int, $after: String) {
         node(id: $user) {
             __typename
@@ -118,7 +118,7 @@ export const useUserBatchChangesCodeHostConnection = (
     user: Scalars['ID']
 ): UseConnectionResult<BatchChangesCodeHostFields> =>
     useConnection<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
-        query: USER_CODE_HOSTS_QUERY,
+        query: USER_CODE_HOSTS,
         variables: {
             user,
             after: null,
@@ -166,7 +166,7 @@ export const queryUserBatchChangesCodeHosts = ({
         })
     )
 
-const GLOBAL_CODE_HOSTS_QUERY = gql`
+export const GLOBAL_CODE_HOSTS = gql`
     query GlobalBatchChangesCodeHosts($first: Int, $after: String) {
         batchChangesCodeHosts(first: $first, after: $after) {
             ...BatchChangesCodeHostsFields
@@ -178,7 +178,7 @@ const GLOBAL_CODE_HOSTS_QUERY = gql`
 
 export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<BatchChangesCodeHostFields> =>
     useConnection<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
-        query: GLOBAL_CODE_HOSTS_QUERY,
+        query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,
             first: 20,
@@ -197,15 +197,3 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<B
             return data.batchChangesCodeHosts
         },
     })
-
-export const queryGlobalBatchChangesCodeHosts = ({
-    first,
-    after,
-}: GlobalBatchChangesCodeHostsVariables): Observable<BatchChangesCodeHostsFields> =>
-    requestGraphQL<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables>(gql``, {
-        first,
-        after,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.batchChangesCodeHosts)
-    )
