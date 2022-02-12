@@ -149,7 +149,7 @@ func startExec(ctx context.Context, args []string) error {
 	}
 
 	if err := runChecksWithName(ctx, set.Checks); err != nil {
-		return nil
+		return err
 	}
 
 	cmds := make([]run.Command, 0, len(set.Commands))

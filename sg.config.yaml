@@ -709,7 +709,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - frontend
       - worker
@@ -733,7 +733,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -762,7 +762,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -792,7 +792,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -820,7 +820,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -840,7 +840,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -865,7 +865,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-repo-updater
