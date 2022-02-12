@@ -105,9 +105,9 @@ type Status struct {
 	mu        sync.Mutex
 }
 
-func NewStatus(repo string, commit string, tasklog *TaskLog) *Status {
+func NewStatus(repo string, commit string) *Status {
 	return &Status{
-		TaskLog:   tasklog,
+		TaskLog:   NewTaskLog(),
 		Repo:      repo,
 		Commit:    commit,
 		HeldLocks: map[string]struct{}{},
@@ -229,7 +229,9 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted, status *Status) (err error) {
+func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
+	tasklog := status.TaskLog
+
 	unlock, err := onVisit(tasklog, db, repo, maxRepos, status)
 	defer func() {
 		if unlock != nil {

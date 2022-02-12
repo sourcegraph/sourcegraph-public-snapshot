@@ -9,7 +9,6 @@ import (
 	"os"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -79,11 +78,11 @@ func NewStatuses() Status {
 	}
 }
 
-func (status *Status) Begin(repo string, commit string, tasklog *rockskip.TaskLog) (*rockskip.Status, func()) {
+func (status *Status) Begin(repo string, commit string) (*rockskip.Status, func()) {
 	status.mu.Lock()
 	defer status.mu.Unlock()
 
-	rockskipStatus := rockskip.NewStatus(repo, commit, tasklog)
+	rockskipStatus := rockskip.NewStatus(repo, commit)
 
 	requestId := status.nextRequestId
 	status.nextRequestId++
@@ -218,24 +217,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			}
 		}()
 
-		tasklog := rockskip.NewTaskLog()
-
-		ctx, cancel := context.WithCancel(context.Background())
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-				case <-time.After(1 * time.Second):
-				}
-
-				tasklog.Print()
-
-				if ctx.Err() != nil {
-					break
-				}
-			}
-		}()
-
 		// Lazily create the parser
 		var parser ctags.Parser
 		createParserOnce := sync.Once{}
@@ -267,10 +248,9 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			return symbols, nil
 		}
 
-		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID), tasklog)
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem, rockskipStatus)
+		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, rockskipStatus, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
 		end()
-		cancel()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
