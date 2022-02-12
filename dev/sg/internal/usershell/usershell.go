@@ -3,7 +3,9 @@ package usershell
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -63,4 +65,18 @@ func Context(ctx context.Context) (context.Context, error) {
 		shellConfigPath: shellConfigPath,
 	}
 	return context.WithValue(ctx, key{}, userCtx), nil
+}
+
+// Cmd returns a command wrapped in a new shell process, enabling
+// changes added by various checks to be run. This negates the new to ask the
+// user to restart sg for many checks.
+func Cmd(ctx context.Context, cmd string) *exec.Cmd {
+	command := fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
+}
+
+// CombinedExec runs a command in a fresh shell environment, and returns
+// stderr and stdout combined, along with an error.
+func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
+	return Cmd(ctx, cmd).CombinedOutput()
 }
