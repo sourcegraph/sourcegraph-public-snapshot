@@ -8,12 +8,6 @@
     grid-column: 1 / -1;
     border-top: 1px solid var(--border-color-2);
     margin: 1rem 0;
-
-    // The first separator will be the 4th child in the grid.
-    // Give it a smaller top margin to look better right under the header.
-    &:nth-child(4) {
-        margin-top: 0.25rem;
-    }
 }
 
 .expanded-row {

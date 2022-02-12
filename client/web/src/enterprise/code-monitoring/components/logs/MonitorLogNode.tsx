@@ -7,7 +7,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Button } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { CodeMonitorWithEvents } from '../../../../graphql-operations'
+import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
 import styles from './MonitorLogNode.module.scss'
 
@@ -16,7 +16,20 @@ export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithE
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
 
-    const hasError = useMemo(() => monitor.description === 'Test', [monitor.description])
+    // Either there's an error in the trigger itself, or in any of the actions.
+    const hasError = useMemo(
+        () =>
+            monitor.trigger.events.nodes.some(
+                triggerEvent =>
+                    triggerEvent.status === EventStatus.ERROR ||
+                    triggerEvent.actions.nodes.some(action =>
+                        action.events.nodes.some(actionEvent => actionEvent.status === EventStatus.ERROR)
+                    )
+            ),
+        [monitor.trigger.events.nodes]
+    )
+
+    // The most recent event is the first one in the list.
     const lastRun = useMemo(
         () => (monitor.trigger.events.nodes.length > 0 ? monitor.trigger.events.nodes[0].timestamp : 'Never'),
         [monitor.trigger.events.nodes]
