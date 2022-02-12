@@ -26,12 +26,6 @@ import {
     UpdateCodeMonitorVariables,
     TriggerTestEmailActionResult,
     TriggerTestEmailActionVariables,
-    MonitorTriggerEventsResult,
-    MonitorTriggerEventsVariables,
-    MonitorEventsResult,
-    MonitorEventsVariables,
-    CodeMonitorTriggerEvents,
-    ListCodeMonitorWithEvents,
 } from '../../graphql-operations'
 
 const CodeMonitorFragment = gql`
@@ -327,7 +321,22 @@ export const triggerTestEmailAction = ({
     )
 }
 
-const ListCodeMonitorWithEventsFragment = gql`
+export const ListCodeMonitorsWithEventsQuery = gql`
+    query MonitorTriggerEvents($first: Int, $after: String, $triggerEventsFirst: Int, $triggerEventsAfter: String) {
+        currentUser {
+            monitors(first: $first, after: $after) {
+                nodes {
+                    ...CodeMonitorWithEvents
+                }
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+            }
+        }
+    }
+
     fragment CodeMonitorTriggerEvents on MonitorQuery {
         events(first: $triggerEventsFirst, after: $triggerEventsAfter) {
             nodes {
@@ -365,21 +374,14 @@ const ListCodeMonitorWithEventsFragment = gql`
         }
     }
 
-    fragment ListCodeMonitorWithEvents on MonitorConnection {
-        nodes {
-            description
-            id
-            trigger {
-                ... on MonitorQuery {
-                    query
-                    ...CodeMonitorTriggerEvents
-                }
+    fragment CodeMonitorWithEvents on Monitor {
+        description
+        id
+        trigger {
+            ... on MonitorQuery {
+                query
+                ...CodeMonitorTriggerEvents
             }
-        }
-        totalCount
-        pageInfo {
-            endCursor
-            hasNextPage
         }
     }
 
@@ -391,73 +393,3 @@ const ListCodeMonitorWithEventsFragment = gql`
         }
     }
 `
-
-export const fetchUserCodeMonitorEvents = ({
-    first,
-    after,
-}: MonitorTriggerEventsVariables): Observable<ListCodeMonitorWithEvents> => {
-    const query = gql`
-        query MonitorTriggerEvents($first: Int, $after: String, $triggerEventsFirst: Int, $triggerEventsAfter: String) {
-            currentUser {
-                monitors(first: $first, after: $after) {
-                    ...ListCodeMonitorWithEvents
-                }
-            }
-        }
-        ${ListCodeMonitorWithEventsFragment}
-    `
-
-    return requestGraphQL<MonitorTriggerEventsResult, MonitorTriggerEventsVariables>(query, {
-        first,
-        after,
-        triggerEventsFirst: 10,
-        triggerEventsAfter: null,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.currentUser) {
-                throw new Error('user not logged in')
-            }
-
-            return data.currentUser.monitors
-        })
-    )
-}
-
-export const fetchEventsForCodeMonitor = ({
-    id,
-    triggerEventsFirst,
-    triggerEventsAfter,
-}: MonitorEventsVariables): Observable<CodeMonitorTriggerEvents['events']> => {
-    const query = gql`
-        query MonitorEvents($id: ID!, $triggerEventsFirst: Int, $triggerEventsAfter: String) {
-            node(id: $id) {
-                ... on Monitor {
-                    trigger {
-                        ...CodeMonitorTriggerEvents
-                    }
-                }
-            }
-        }
-        ${ListCodeMonitorWithEventsFragment}
-    `
-
-    return requestGraphQL<MonitorEventsResult, MonitorEventsVariables>(query, {
-        id,
-        triggerEventsFirst,
-        triggerEventsAfter,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('user not logged in')
-            }
-
-            if (data.node.__typename !== 'Monitor') {
-                throw new Error('not a monitor')
-            }
-
-            return data.node.trigger.events
-        })
-    )
-}
