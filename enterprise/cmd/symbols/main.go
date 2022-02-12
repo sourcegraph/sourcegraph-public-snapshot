@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
 	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -177,10 +176,6 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 }
 
 func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, status Status) (types.SearchFunc, error) {
-	operations := sharedobservability.NewOperations(observationContext)
-	// TODO use operations
-	_ = operations
-
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
 	f := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
@@ -188,21 +183,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
-		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		// 	otlog.String("repo", string(args.Repo)),
-		// 	otlog.String("commitID", string(args.CommitID)),
-		// 	otlog.String("query", args.Query),
-		// 	otlog.Bool("isRegExp", args.IsRegExp),
-		// 	otlog.Bool("isCaseSensitive", args.IsCaseSensitive),
-		// 	otlog.Int("numIncludePatterns", len(args.IncludePatterns)),
-		// 	otlog.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
-		// 	otlog.String("excludePattern", args.ExcludePattern),
-		// 	otlog.Int("first", args.First),
-		// }})
-		// defer func() {
-		// 	endObservation(1, observation.Args{})
-		// }()
-
 		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
 		defer func() {
 			if results == nil {
