@@ -50,7 +50,7 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 
 	db := mustInitializeCodeIntelDB()
 
-	statuses := NewStatuses()
+	statuses := NewStatus()
 	searchFunc, err := MakeRockskipSearchFunc(observationContext, db, config, statuses)
 	if err != nil {
 		log.Fatalf("Failed to create rockskip search function: %s", err)
@@ -69,8 +69,8 @@ type Status struct {
 	mu              sync.Mutex
 }
 
-func NewStatuses() Status {
-	return Status{
+func NewStatus() *Status {
+	return &Status{
 		requestToStatus: map[int]*rockskip.Status{},
 		nextRequestId:   0,
 		mu:              sync.Mutex{},
@@ -94,7 +94,7 @@ func (status *Status) Begin(repo string, commit string) (*rockskip.Status, func(
 	}
 }
 
-func handleStatus(db *sql.DB, statuses Status) func(http.ResponseWriter, *http.Request) {
+func handleStatus(db *sql.DB, statuses *Status) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -178,7 +178,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, status Status) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, status *Status) (types.SearchFunc, error) {
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
 	f := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
