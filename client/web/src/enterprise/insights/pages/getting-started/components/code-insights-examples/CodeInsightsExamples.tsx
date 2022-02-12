@@ -171,7 +171,7 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
             stroke: DATA_SERIES_COLORS.CYAN,
         },
         {
-            dataKey: 'e',
+            dataKey: 'f',
             name: '17.0.1',
             stroke: DATA_SERIES_COLORS.GRAPE,
         },
