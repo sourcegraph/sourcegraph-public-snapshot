@@ -56,7 +56,7 @@ docker build \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
-  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-coursier \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
