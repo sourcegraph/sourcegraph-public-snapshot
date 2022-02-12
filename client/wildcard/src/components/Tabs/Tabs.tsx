@@ -11,9 +11,10 @@ import {
     TabsProps as ReachTabsProps,
     useTabsContext,
 } from '@reach/tabs'
-import { As, PropsWithAs } from '@reach/utils'
 import classNames from 'classnames'
 import React from 'react'
+
+import { ForwardReferenceComponent } from '../../types'
 
 import { TabPanelIndexContext, TabsSettingsContext, useTabsSettings } from './context'
 import styles from './Tabs.module.scss'
@@ -43,11 +44,11 @@ export interface TabsSettings {
     behavior?: 'memoize' | 'forceRender'
 }
 
-export interface TabsProps extends PropsWithAs<As, ReachTabsProps & TabsSettings> {
+export interface TabsProps extends ReachTabsProps, TabsSettings {
     className?: string
 }
 
-export interface TabListProps extends PropsWithAs<As, ReachTabListProps>, React.HTMLAttributes<HTMLDivElement> {
+export interface TabListProps extends ReachTabListProps {
     wrapperClassName?: string
     /*
      * action is used to render content in the left side of
@@ -56,9 +57,9 @@ export interface TabListProps extends PropsWithAs<As, ReachTabListProps>, React.
     actions?: React.ReactNode
 }
 
-export interface TabProps extends PropsWithAs<As, ReachTabProps>, React.HTMLAttributes<HTMLDivElement> {}
-export interface TabPanelsProps extends PropsWithAs<As, ReachTabPanelsProps>, React.HTMLAttributes<HTMLDivElement> {}
-export interface TabPanelProps extends PropsWithAs<As, ReachTabPanelProps>, React.HTMLAttributes<HTMLDivElement> {}
+export interface TabProps extends ReachTabProps {}
+export interface TabPanelsProps extends ReachTabPanelsProps {}
+export interface TabPanelProps extends ReachTabPanelProps {}
 
 /**
  * reach UI tabs component with steroids, this tabs handles how the data should be loaded
@@ -66,7 +67,7 @@ export interface TabPanelProps extends PropsWithAs<As, ReachTabPanelProps>, Reac
  *
  * See: https://reach.tech/tabs/
  */
-export const Tabs: React.FunctionComponent<TabsProps> = React.forwardRef((props, reference) => {
+export const Tabs = React.forwardRef((props, reference) => {
     const { lazy = false, size, behavior = 'forceRender', className, as = 'div', ...reachProps } = props
     return (
         <TabsSettingsContext.Provider value={{ lazy, size, behavior }}>
@@ -79,9 +80,9 @@ export const Tabs: React.FunctionComponent<TabsProps> = React.forwardRef((props,
             />
         </TabsSettingsContext.Provider>
     )
-})
+}) as ForwardReferenceComponent<'div', TabsProps>
 
-export const TabList: React.FunctionComponent<TabListProps> = React.forwardRef((props, reference) => {
+export const TabList = React.forwardRef((props, reference) => {
     const { actions, as = 'div', wrapperClassName, ...reachProps } = props
     return (
         <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
@@ -89,9 +90,9 @@ export const TabList: React.FunctionComponent<TabListProps> = React.forwardRef((
             {actions}
         </div>
     )
-})
+}) as ForwardReferenceComponent<'div', TabListProps>
 
-export const Tab: React.FunctionComponent<TabProps> = React.forwardRef((props, reference) => {
+export const Tab = React.forwardRef((props, reference) => {
     const { as = 'button', ...reachProps } = props
     const { size = 'small' } = useTabsSettings()
     return (
@@ -99,9 +100,9 @@ export const Tab: React.FunctionComponent<TabProps> = React.forwardRef((props, r
             <span className={styles.tabLabel}>{props.children}</span>
         </ReachTab>
     )
-})
+}) as ForwardReferenceComponent<'button', TabProps>
 
-export const TabPanels: React.FunctionComponent<TabPanelsProps> = React.forwardRef((props, reference) => {
+export const TabPanels = React.forwardRef((props, reference) => {
     const { as = 'div', ...reachProps } = props
     return (
         <ReachTabPanels data-testid="wildcard-tab-panel-list" as={as} ref={reference} {...reachProps}>
@@ -110,9 +111,9 @@ export const TabPanels: React.FunctionComponent<TabPanelsProps> = React.forwardR
             ))}
         </ReachTabPanels>
     )
-})
+}) as ForwardReferenceComponent<'div', TabPanelsProps>
 
-export const TabPanel: React.FunctionComponent<TabPanelProps> = React.forwardRef((props, reference) => {
+export const TabPanel = React.forwardRef((props, reference) => {
     const { as = 'div', children, ...reachProps } = props
     const shouldRender = useShouldPanelRender(children)
     return (
@@ -120,4 +121,4 @@ export const TabPanel: React.FunctionComponent<TabPanelProps> = React.forwardRef
             {shouldRender ? children : null}
         </ReachTabPanel>
     )
-})
+}) as ForwardReferenceComponent<'div', TabPanelProps>

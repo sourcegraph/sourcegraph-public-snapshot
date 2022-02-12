@@ -3,12 +3,12 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const {
@@ -52,6 +52,30 @@ const webServerEnvironmentVariables = {
 }
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
+
+const STATOSCOPE_STATS = {
+  all: false, // disable all the stats
+  hash: true, // compilation hash
+  entrypoints: true,
+  chunks: true,
+  chunkModules: true, // modules
+  reasons: true, // modules reasons
+  ids: true, // IDs of modules and chunks (webpack 5)
+  dependentModules: true, // dependent modules of chunks (webpack 5)
+  chunkRelations: true, // chunk parents, children and siblings (webpack 5)
+  cachedAssets: true, // information about the cached assets (webpack 5)
+
+  nestedModules: true, // concatenated modules
+  usedExports: true,
+  providedExports: true, // provided imports
+  assets: true,
+  chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+  version: true, // webpack version
+  builtAt: true, // build at time
+  timings: true, // modules timing information
+  performance: true, // info about oversized assets
+}
+
 if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
@@ -72,13 +96,15 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
-  stats: {
-    // Minimize logging in case if Webpack is used along with multiple other services.
-    // Use `normal` output preset in case of running standalone web server.
-    preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
-    errorDetails: true,
-    timings: true,
-  },
+  stats: shouldAnalyze
+    ? STATOSCOPE_STATS
+    : {
+        // Minimize logging in case if Webpack is used along with multiple other services.
+        // Use `normal` output preset in case of running standalone web server.
+        preset: shouldServeIndexHTML || isProduction ? 'normal' : 'errors-warnings',
+        errorDetails: true,
+        timings: true,
+      },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
@@ -150,7 +176,7 @@ const config = {
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && new BundleAnalyzerPlugin(),
+    shouldAnalyze && new StatoscopeWebpackPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&

@@ -347,6 +347,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 aria-expanded="false"
                 class="btn btnLink list-group-item list-group-item-action button"
                 data-reach-accordion-button=""
+                data-state="collapsed"
                 id="button--1--0"
               >
                 <div
@@ -412,7 +413,6 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 hidden=""
                 id="panel--1--0"
                 role="region"
-                tabindex="-1"
               >
                 <div
                   class="pb-1 detail"
