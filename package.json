@@ -127,6 +127,7 @@
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.4.0",
     "@sourcegraph/tsconfig": "^4.0.1",
+    "@statoscope/webpack-plugin": "^5.20.1",
     "@storybook/addon-a11y": "^6.3.12",
     "@storybook/addon-actions": "^6.3.12",
     "@storybook/addon-console": "^1.2.3",
@@ -330,13 +331,13 @@
     "@apollo/client": "3.4.7",
     "@floating-ui/dom": "^0.1.8",
     "@floating-ui/react-dom": "^0.3.4",
-    "@reach/accordion": "^0.10.2",
-    "@reach/combobox": "^0.15.2",
-    "@reach/dialog": "^0.11.2",
-    "@reach/listbox": "^0.10.1",
-    "@reach/menu-button": "^0.16.1",
-    "@reach/tabs": "^0.13.0",
-    "@reach/visually-hidden": "^0.15.2",
+    "@reach/accordion": "^0.16.1",
+    "@reach/combobox": "^0.16.5",
+    "@reach/dialog": "^0.16.2",
+    "@reach/listbox": "^0.16.2",
+    "@reach/menu-button": "^0.16.2",
+    "@reach/tabs": "^0.16.4",
+    "@reach/visually-hidden": "^0.16.0",
     "@sentry/browser": "^6.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
@@ -399,7 +400,7 @@
     "react-circular-progressbar": "^2.0.3",
     "react-dom": "^16.14.0",
     "react-dom-confetti": "^0.1.4",
-    "react-focus-lock": "^2.4.1",
+    "react-focus-lock": "^2.7.1",
     "react-grid-layout": "1.3.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
@@ -434,6 +435,7 @@
   "resolutions": {
     "history": "4.5.1",
     "cssnano": "4.1.10",
-    "webpack": "5"
+    "webpack": "5",
+    "tslib": "2.1.0"
   }
 }
