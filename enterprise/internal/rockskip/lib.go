@@ -118,6 +118,14 @@ func NewStatus(repo string, commit string) *Status {
 	}
 }
 
+func (s *Status) SetProgress(indexed, total int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.Indexed = indexed
+	s.Total = total
+}
+
 type TaskLog struct {
 	currentName  string
 	currentStart time.Time
@@ -268,6 +276,8 @@ func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, gi
 		return errors.Wrap(err, "RevList")
 	}
 
+	status.SetProgress(0, missingCount)
+
 	if missingCount == 0 {
 		return nil
 	}
@@ -282,13 +292,15 @@ func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, gi
 		delete(status.HeldLocks, "MAX_CONCURRENTLY_INDEXING semaphore")
 	}()
 
-	fmt.Println("Indexing", missingCount, "commits")
-
 	pathToBlobIdCache := map[string]int{}
 
 	tasklog.Start("Log")
+	entriesIndexed := 0
 	err = git.LogReverseEach(givenCommit, missingCount, func(entry LogEntry) error {
 		defer tasklog.Continue("Log")
+
+		status.SetProgress(entriesIndexed, missingCount)
+		entriesIndexed++
 
 		tx, err := db.Begin()
 		if err != nil {
