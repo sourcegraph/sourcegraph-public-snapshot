@@ -582,15 +582,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
 func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
-	// MaxResults depends on the query's `count:` parameter, and we should
-	// use the passed-in query to do this. However, `r.MaxResults()` uses
-	// the query stored on the resolver's SearchInputs rather than the passed-in
-	// query. This means for things like `evaluateAnd`, which modify the query
-	// count, the query on the resolver does not match the query passed in here,
-	// which leads to incorrect counts.
-	inputs := *r.SearchInputs // copy search inputs to update q
-	inputs.Query = q
-	maxResults := inputs.MaxResults()
+	maxResults := q.MaxResults(r.SearchInputs.DefaultLimit)
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
@@ -633,7 +625,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 	var requiredJobs, optionalJobs []run.Job
 	addJob := func(required bool, job run.Job) {
 		// Filter out any jobs that aren't commit jobs as they are added
-		if inputs.CodeMonitorID != nil {
+		if r.SearchInputs.CodeMonitorID != nil {
 			if _, ok := job.(*commit.CommitSearch); !ok {
 				return
 			}
@@ -815,7 +807,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				Diff:                 diff,
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
-				CodeMonitorID:        inputs.CodeMonitorID,
+				CodeMonitorID:        r.SearchInputs.CodeMonitorID,
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
 		}
@@ -1021,7 +1013,7 @@ func (r *searchResolver) toPatternExpressionJob(q query.Basic) (run.Job, error) 
 }
 
 func (r *searchResolver) toEvaluateJob(q query.Basic) (run.Job, error) {
-	maxResults := r.MaxResults()
+	maxResults := q.ToParseTree().MaxResults(r.SearchInputs.DefaultLimit)
 	timeout := search.TimeoutDuration(q)
 
 	if q.Pattern == nil {
