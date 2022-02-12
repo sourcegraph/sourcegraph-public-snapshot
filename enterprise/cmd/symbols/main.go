@@ -203,7 +203,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 		// 	endObservation(1, observation.Args{})
 		// }()
 
-		fmt.Println(".")
 		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
 		defer func() {
 			if results == nil {
@@ -213,7 +212,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 					fmt.Println("  -", result.Path+":"+fmt.Sprint(result.Line), result.Name)
 				}
 				fmt.Println("🔴 Rockskip search", len(*results))
-				fmt.Println(".")
 			}
 		}()
 
