@@ -118,13 +118,19 @@ func NewStatus(repo string, commit string) *Status {
 	}
 }
 
-func (s *Status) SetProgress(indexed, total int) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.Indexed = indexed
-	s.Total = total
+func (status *Status) Modify(f func()) {
+	status.mu.Lock()
+	defer status.mu.Unlock()
+	f()
 }
+
+func (s *Status) SetProgress(indexed, total int) {
+	s.Modify(func() { s.Indexed = indexed; s.Total = total })
+}
+func (s *Status) SetBlockedOn(name string) { s.Modify(func() { s.BlockedOn = name }) }
+func (s *Status) ClearBlockedOn()          { s.Modify(func() { s.BlockedOn = "" }) }
+func (s *Status) HoldLock(name string)     { s.Modify(func() { s.HeldLocks[name] = struct{}{} }) }
+func (s *Status) ReleaseLock(name string)  { s.Modify(func() { delete(s.HeldLocks, name) }) }
 
 type TaskLog struct {
 	currentName  string
@@ -283,13 +289,14 @@ func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, gi
 	}
 
 	tasklog.Start("Acquire semaphore")
-	status.BlockedOn = "MAX_CONCURRENTLY_INDEXING semaphore"
+	semName := "MAX_CONCURRENTLY_INDEXING semaphore"
+	status.SetBlockedOn(semName)
 	sem.Acquire(context.Background(), 1)
-	status.BlockedOn = ""
-	status.HeldLocks["MAX_CONCURRENTLY_INDEXING semaphore"] = struct{}{}
+	status.ClearBlockedOn()
+	status.HoldLock(semName)
 	defer func() {
 		sem.Release(1)
-		delete(status.HeldLocks, "MAX_CONCURRENTLY_INDEXING semaphore")
+		status.ReleaseLock(semName)
 	}()
 
 	pathToBlobIdCache := map[string]int{}
@@ -473,20 +480,20 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *St
 	txLocks := []string{}
 	clearTxLocks := func() {
 		for _, lock := range txLocks {
-			delete(status.HeldLocks, lock)
+			status.ReleaseLock(lock)
 		}
 	}
 	defer clearTxLocks()
 	addTxLock := func(lock string) {
-		status.HeldLocks[lock] = struct{}{}
+		status.HoldLock(lock)
 		txLocks = append(txLocks, lock)
 	}
 
 	tasklog.Start("Get deletion lock")
 	deletionLock := "deletion lock"
-	status.BlockedOn = deletionLock
+	status.SetBlockedOn(deletionLock)
 	_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, LOCKS_NAMESPACE, DELETION_LOCK_ID)
-	status.BlockedOn = ""
+	status.ClearBlockedOn()
 	if err != nil {
 		return nil, err
 	}
@@ -529,9 +536,9 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *St
 	for _, repoToDelete := range reposToDelete {
 		tasklog.Start("Lock repo")
 		repoLock := fmt.Sprintf("repo lock %s", repoToDelete)
-		status.BlockedOn = repoLock
+		status.SetBlockedOn(repoLock)
 		_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repoToDelete)))
-		status.BlockedOn = ""
+		status.ClearBlockedOn()
 		if err != nil {
 			return nil, err
 		}
@@ -561,20 +568,20 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *St
 
 	tasklog.Start("Lock repo 2")
 	repoLock := fmt.Sprintf("repo lock %s", repo)
-	status.BlockedOn = repoLock
+	status.SetBlockedOn(repoLock)
 	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-	status.BlockedOn = ""
+	status.ClearBlockedOn()
 	if err != nil {
 		return nil, err
 	}
-	status.HeldLocks[repoLock] = struct{}{}
+	status.HoldLock(repoLock)
 
 	repoUnlock := func(err error) error {
 		_, err2 := db.Exec(`SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err != nil || err2 != nil {
 			return multierror.Append(err, err2)
 		}
-		delete(status.HeldLocks, repoLock)
+		status.ReleaseLock(repoLock)
 		return nil
 	}
 
