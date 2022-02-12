@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sync"
 	"time"
 
@@ -18,6 +19,10 @@ import (
 
 var registerOnce sync.Once
 
+func regex(re, s string) (bool, error) {
+	return regexp.MatchString(re, s)
+}
+
 func (r *schemaResolver) Execute(ctx context.Context, args struct{ Query string }) (*ExecutionResult, error) {
 	// TODO this is a bit hacky because it captures the database handle from the first request.
 	// Not a deal-breaker, but also not great. I haven't yet figured out a way to pass request-scoped
@@ -25,6 +30,9 @@ func (r *schemaResolver) Execute(ctx context.Context, args struct{ Query string 
 	registerOnce.Do(func() {
 		sql.Register("sqlite3_with_extensions", &sqlite3.SQLiteDriver{
 			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+				if err := conn.RegisterFunc("regexp", regex, true); err != nil {
+					return err
+				}
 				return conn.CreateModule("search", &searchModule{db: r.db})
 			},
 		})
