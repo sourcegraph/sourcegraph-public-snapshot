@@ -230,7 +230,12 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 		}
 
 		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, rockskipStatus, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
+		conn, err := db.Conn(context.TODO())
+		if err != nil {
+			return nil, err
+		}
+		defer conn.Close()
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), conn, rockskipStatus, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
 		end()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
@@ -240,7 +245,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 		if args.Query != "" {
 			query = &args.Query
 		}
-		blobs, err := rockskip.Search(db, rockskip.NewTaskLog(), string(args.Repo), string(args.CommitID), query)
+		blobs, err := rockskip.Search(conn, rockskip.NewTaskLog(), string(args.Repo), string(args.CommitID), query)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Search")
 		}

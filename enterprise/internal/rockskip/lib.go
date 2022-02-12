@@ -243,7 +243,7 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
+func Index(git Git, db *sql.Conn, status *Status, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
 	tasklog := status.TaskLog
 
 	unlock, err := onVisit(tasklog, db, repo, maxRepos, status)
@@ -309,7 +309,7 @@ func Index(git Git, db *sql.DB, status *Status, parse ParseSymbolsFunc, repo, gi
 		status.SetProgress(entriesIndexed, missingCount)
 		entriesIndexed++
 
-		tx, err := db.Begin()
+		tx, err := db.BeginTx(context.TODO(), nil)
 		if err != nil {
 			return errors.Wrap(err, "begin transaction")
 		}
@@ -470,8 +470,8 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *Status) (_ locker.UnlockFunc, err error) {
-	tx, err := db.Begin()
+func onVisit(tasklog *TaskLog, db *sql.Conn, repo string, maxRepos int, status *Status) (_ locker.UnlockFunc, err error) {
+	tx, err := db.BeginTx(context.TODO(), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
 	}
@@ -569,7 +569,7 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *St
 	tasklog.Start("Lock repo 2")
 	repoLock := fmt.Sprintf("repo lock %s", repo)
 	status.SetBlockedOn(repoLock)
-	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+	_, err = db.ExecContext(context.TODO(), `SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	status.ClearBlockedOn()
 	if err != nil {
 		return nil, err
@@ -577,7 +577,7 @@ func onVisit(tasklog *TaskLog, db *sql.DB, repo string, maxRepos int, status *St
 	status.HoldLock(repoLock)
 
 	repoUnlock := func(err error) error {
-		_, err2 := db.Exec(`SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		_, err2 := db.ExecContext(context.TODO(), `SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err != nil || err2 != nil {
 			return multierror.Append(err, err2)
 		}
@@ -734,7 +734,7 @@ func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(
 }
 
 func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {
-	err = db.QueryRow(`
+	err = db.QueryRowContext(context.TODO(), `
 		SELECT ancestor_id, height
 		FROM rockskip_ancestry
 		WHERE repo = $1 AND commit_id = $2
@@ -748,7 +748,7 @@ func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height 
 }
 
 func InsertCommit(db Queryable, repo, commit string, height int, ancestor string) error {
-	_, err := db.Exec(`
+	_, err := db.ExecContext(context.TODO(), `
 		INSERT INTO rockskip_ancestry (commit_id, repo, height, ancestor_id)
 		VALUES ($1, $2, $3, $4)
 	`, commit, repo, height, ancestor)
@@ -756,7 +756,7 @@ func InsertCommit(db Queryable, repo, commit string, height int, ancestor string
 }
 
 func GetBlob(db Queryable, hop string, path string) (id int, found bool, err error) {
-	err = db.QueryRow(`
+	err = db.QueryRowContext(context.TODO(), `
 		SELECT id
 		FROM rockskip_blobs
 		WHERE path = $1 AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
@@ -772,7 +772,7 @@ func GetBlob(db Queryable, hop string, path string) (id int, found bool, err err
 func UpdateBlobHops(db Queryable, id int, status StatusAD, hop string) error {
 	column := statusADToColumn(status)
 	// TODO also try `||` instead of `array_append``
-	_, err := db.Exec(fmt.Sprintf(`
+	_, err := db.ExecContext(context.TODO(), fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE id = $2
@@ -787,7 +787,7 @@ func InsertBlob(db Queryable, blob Blob, repo string) (id int, err error) {
 	}
 
 	lastInsertId := 0
-	err = db.QueryRow(`
+	err = db.QueryRowContext(context.TODO(), `
 		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
@@ -797,7 +797,7 @@ func InsertBlob(db Queryable, blob Blob, repo string) (id int, err error) {
 
 func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string) error {
 	column := statusADToColumn(givenStatus)
-	_, err := db.Exec(fmt.Sprintf(`
+	_, err := db.ExecContext(context.TODO(), fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE $2 && %s
@@ -805,7 +805,7 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) ([]Blob, error) {
+func Search(db *sql.Conn, tasklog *TaskLog, repo, commit string, query *string) ([]Blob, error) {
 	var err error
 
 	hops, err := getHops(db, repo, commit, tasklog)
@@ -816,7 +816,7 @@ func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) 
 	var rows *sql.Rows
 	if query != nil {
 		tasklog.Start("Search query")
-		rows, err = db.Query(`
+		rows, err = db.QueryContext(context.TODO(), `
 			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
@@ -825,7 +825,7 @@ func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) 
 				AND $2 && symbol_names
 		`, pg.Array(hops), pg.Array([]string{*query}))
 	} else {
-		rows, err = db.Query(`
+		rows, err = db.QueryContext(context.TODO(), `
 			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
@@ -862,7 +862,7 @@ func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) 
 }
 
 func DeleteRedundant(db Queryable, hop string) error {
-	_, err := db.Exec(`
+	_, err := db.ExecContext(context.TODO(), `
 		UPDATE rockskip_blobs
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
 		WHERE $2 && added AND $2 && deleted
@@ -875,7 +875,7 @@ func PrintInternals(db Queryable) error {
 	fmt.Println()
 
 	// print all rows in the rockskip_ancestry table
-	rows, err := db.Query(`
+	rows, err := db.QueryContext(context.TODO(), `
 		SELECT commit_id, height, ancestor_id
 		FROM rockskip_ancestry
 		ORDER BY height ASC
@@ -899,7 +899,7 @@ func PrintInternals(db Queryable) error {
 	fmt.Println("Blobs:")
 	fmt.Println()
 
-	rows, err = db.Query(`
+	rows, err = db.QueryContext(context.TODO(), `
 		SELECT id, path, added, deleted
 		FROM rockskip_blobs
 		ORDER BY id ASC
@@ -1122,7 +1122,7 @@ func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue 
 }
 
 type Queryable interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
