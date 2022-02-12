@@ -149,7 +149,7 @@ func handleStatus(db *sql.DB, statuses *Status) func(http.ResponseWriter, *http.
 			if status.Total != 0 {
 				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
 			}
-			fmt.Fprintf(w, "    %s\n", status.TaskLog)
+			fmt.Fprintf(w, "    %s\n", status.Tasklog)
 			blockedOn := status.BlockedOn
 			if blockedOn != "" {
 				fmt.Fprintf(w, "    blocked on %s\n", blockedOn)
@@ -229,23 +229,18 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			return symbols, nil
 		}
 
-		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
 		conn, err := db.Conn(context.TODO())
 		if err != nil {
 			return nil, err
 		}
 		defer conn.Close()
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), conn, rockskipStatus, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem)
-		end()
-		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.Index")
-		}
 
-		var query *string
-		if args.Query != "" {
-			query = &args.Query
-		}
-		blobs, err := rockskip.Search(conn, rockskip.NewTaskLog(), string(args.Repo), string(args.CommitID), query)
+		git := NewGitserver(f, string(args.Repo))
+
+		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
+		defer end()
+
+		blobs, err := rockskip.Search(args, git, conn, parse, config.MaxRepos, sem, rockskipStatus)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Search")
 		}

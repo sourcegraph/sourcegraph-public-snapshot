@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -104,11 +106,12 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("🚨 db.Conn: %s", err)
 	}
 	defer conn.Close()
-	err = Index(git, conn, status, parser.Parse, repo, commit, 1, semaphore.NewWeighted(1))
+	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+	blobs, err := Search(args, git, conn, parser.Parse, 1, semaphore.NewWeighted(1), status)
 	if err != nil {
-		t.Fatalf("🚨 Index: %s", err)
+		t.Fatalf("🚨 Search: %s", err)
 	}
-	status.TaskLog.Print()
+	status.Tasklog.Print()
 	fmt.Println()
 
 	rows, err := db.Query("SELECT pg_size_pretty(pg_total_relation_size('rockskip_ancestry')) AS rockskip_ancestry, pg_size_pretty(pg_total_relation_size('rockskip_blobs')) AS rockskip_blobs;")
@@ -126,10 +129,6 @@ func TestIndex(t *testing.T) {
 	}
 	fmt.Println()
 
-	blobs, err := Search(conn, NewTaskLog(), repo, commit, nil)
-	if err != nil {
-		t.Fatalf("🚨 PathsAtCommit: %s", err)
-	}
 	paths := []string{}
 	for _, blob := range blobs {
 		paths = append(paths, blob.Path)

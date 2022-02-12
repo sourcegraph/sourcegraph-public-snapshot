@@ -21,6 +21,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
 
@@ -95,7 +96,7 @@ const (
 const NULL = "0000000000000000000000000000000000000000"
 
 type Status struct {
-	TaskLog   *TaskLog
+	Tasklog   *TaskLog
 	Repo      string
 	Commit    string
 	HeldLocks map[string]struct{}
@@ -107,7 +108,7 @@ type Status struct {
 
 func NewStatus(repo string, commit string) *Status {
 	return &Status{
-		TaskLog:   NewTaskLog(),
+		Tasklog:   NewTaskLog(),
 		Repo:      repo,
 		Commit:    commit,
 		HeldLocks: map[string]struct{}{},
@@ -244,7 +245,7 @@ func (t *TaskLog) String() string {
 }
 
 func Index(git Git, db *sql.Conn, status *Status, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
-	tasklog := status.TaskLog
+	tasklog := status.Tasklog
 
 	unlock, err := onVisit(tasklog, db, repo, maxRepos, status)
 	defer func() {
@@ -805,16 +806,23 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(db *sql.Conn, tasklog *TaskLog, repo, commit string, query *string) ([]Blob, error) {
+func Search(args types.SearchArgs, git Git, db *sql.Conn, parse ParseSymbolsFunc, maxRepos int, sem *semaphore.Weighted, status *Status) ([]Blob, error) {
 	var err error
 
-	hops, err := getHops(db, repo, commit, tasklog)
+	err = Index(git, db, status, parse, string(args.Repo), string(args.CommitID), maxRepos, sem)
+	if err != nil {
+		return nil, err
+	}
+
+	tasklog := status.Tasklog
+
+	hops, err := getHops(db, string(args.Repo), string(args.CommitID), tasklog)
 	if err != nil {
 		return nil, err
 	}
 
 	var rows *sql.Rows
-	if query != nil {
+	if args.Query != "" {
 		tasklog.Start("Search query")
 		rows, err = db.QueryContext(context.TODO(), `
 			SELECT id, commit_id, path, added, deleted, symbol_data
@@ -823,7 +831,7 @@ func Search(db *sql.Conn, tasklog *TaskLog, repo, commit string, query *string) 
 				$1 && added
 				AND NOT $1 && deleted
 				AND $2 && symbol_names
-		`, pg.Array(hops), pg.Array([]string{*query}))
+		`, pg.Array(hops), pg.Array([]string{args.Query}))
 	} else {
 		rows, err = db.QueryContext(context.TODO(), `
 			SELECT id, commit_id, path, added, deleted, symbol_data
@@ -852,7 +860,7 @@ func Search(db *sql.Conn, tasklog *TaskLog, repo, commit string, query *string) 
 		}
 		symbols := []Symbol{}
 		for _, symbol := range allSymbols {
-			if query == nil || symbol.Name == *query {
+			if args.Query == "" || symbol.Name == args.Query {
 				symbols = append(symbols, symbol)
 			}
 		}
