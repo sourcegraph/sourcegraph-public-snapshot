@@ -32,6 +32,7 @@ docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier || true
 
 docker build \
   --target p4cli \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
@@ -42,6 +43,7 @@ docker build \
 
 docker build \
   --target p4-fusion \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
   -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
@@ -53,6 +55,7 @@ docker build \
 
 docker build \
   --target coursier \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
@@ -68,6 +71,7 @@ docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion
 docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier
 
 docker build \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:fusion \
   --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
