@@ -279,6 +279,7 @@ commands:
       - internal
       - cmd/symbols
       - enterprise/cmd/symbols
+      - enterprise/internal/rockskip
 
   searcher:
     cmd: .bin/searcher
