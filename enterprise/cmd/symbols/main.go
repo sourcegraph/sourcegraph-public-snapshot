@@ -345,7 +345,7 @@ func (g Gitserver) LogReverseEach(commit string, n int, onLogEntry func(entry ro
 	command.Repo = api.RepoName(g.repo)
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
-	command.EnableTimeout = false
+	command.DisableTimeout()
 	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {
 		return err
