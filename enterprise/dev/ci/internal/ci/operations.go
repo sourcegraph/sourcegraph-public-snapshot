@@ -609,13 +609,17 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
 
-		cmds := []bk.StepOpt{
+		var cmds []bk.StepOpt
+		if bk.FeatureFlags.StatelessBuild && app == "server" {
+			cmds = append(cmds, withYarnCache())
+		}
+		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
-		}
+		)
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
