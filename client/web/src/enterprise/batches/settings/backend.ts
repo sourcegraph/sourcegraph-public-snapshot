@@ -5,6 +5,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
+    BatchChangesCodeHostFields,
     BatchChangesCodeHostsFields,
     BatchChangesCredentialFields,
     CreateBatchChangesCredentialResult,
@@ -17,6 +18,7 @@ import {
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
+import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 
 export const batchChangesCredentialFieldsFragment = gql`
     fragment BatchChangesCredentialFields on BatchChangesCredential {
@@ -73,7 +75,7 @@ export function deleteBatchChangesCredential(id: Scalars['ID']): Promise<void> {
         .toPromise()
 }
 
-const batchChangesCodeHostsFieldsFragment = gql`
+const CODE_HOST_FIELDS_FRAGMENT = gql`
     fragment BatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
         totalCount
         pageInfo {
@@ -97,32 +99,61 @@ const batchChangesCodeHostsFieldsFragment = gql`
     ${batchChangesCredentialFieldsFragment}
 `
 
+const USER_CODE_HOSTS_QUERY = gql`
+    query UserBatchChangesCodeHosts($user: ID!, $first: Int, $after: String) {
+        node(id: $user) {
+            __typename
+            ... on User {
+                batchChangesCodeHosts(first: $first, after: $after) {
+                    ...BatchChangesCodeHostsFields
+                }
+            }
+        }
+    }
+
+    ${CODE_HOST_FIELDS_FRAGMENT}
+`
+
+export const useUserBatchChangesCodeHostConnection = (
+    user: Scalars['ID']
+): UseConnectionResult<BatchChangesCodeHostFields> =>
+    useConnection<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
+        query: USER_CODE_HOSTS_QUERY,
+        variables: {
+            user,
+            after: null,
+            first: 15,
+        },
+        options: {
+            fetchPolicy: 'no-cache',
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
+            if (!node) {
+                throw new Error('User not found')
+            }
+            if (node.__typename !== 'User') {
+                throw new Error(`Node is a ${node.__typename}, not a User`)
+            }
+            if (!node.batchChangesCodeHosts) {
+                throw new Error('No code hosts found')
+            }
+
+            return node.batchChangesCodeHosts
+        },
+    })
+
 export const queryUserBatchChangesCodeHosts = ({
     user,
     first,
     after,
 }: UserBatchChangesCodeHostsVariables): Observable<BatchChangesCodeHostsFields> =>
-    requestGraphQL<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables>(
-        gql`
-            query UserBatchChangesCodeHosts($user: ID!, $first: Int, $after: String) {
-                node(id: $user) {
-                    __typename
-                    ... on User {
-                        batchChangesCodeHosts(first: $first, after: $after) {
-                            ...BatchChangesCodeHostsFields
-                        }
-                    }
-                }
-            }
-
-            ${batchChangesCodeHostsFieldsFragment}
-        `,
-        {
-            user,
-            first,
-            after,
-        }
-    ).pipe(
+    requestGraphQL<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables>(gql``, {
+        user,
+        first,
+        after,
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (data.node === null) {
@@ -135,25 +166,46 @@ export const queryUserBatchChangesCodeHosts = ({
         })
     )
 
+const GLOBAL_CODE_HOSTS_QUERY = gql`
+    query GlobalBatchChangesCodeHosts($first: Int, $after: String) {
+        batchChangesCodeHosts(first: $first, after: $after) {
+            ...BatchChangesCodeHostsFields
+        }
+    }
+
+    ${CODE_HOST_FIELDS_FRAGMENT}
+`
+
+export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<BatchChangesCodeHostFields> =>
+    useConnection<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
+        query: GLOBAL_CODE_HOSTS_QUERY,
+        variables: {
+            after: null,
+            first: 20,
+        },
+        options: {
+            useURL: true,
+            fetchPolicy: 'no-cache',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            if (!data.batchChangesCodeHosts) {
+                throw new Error('No code hosts found')
+            }
+
+            return data.batchChangesCodeHosts
+        },
+    })
+
 export const queryGlobalBatchChangesCodeHosts = ({
     first,
     after,
 }: GlobalBatchChangesCodeHostsVariables): Observable<BatchChangesCodeHostsFields> =>
-    requestGraphQL<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables>(
-        gql`
-            query GlobalBatchChangesCodeHosts($first: Int, $after: String) {
-                batchChangesCodeHosts(first: $first, after: $after) {
-                    ...BatchChangesCodeHostsFields
-                }
-            }
-
-            ${batchChangesCodeHostsFieldsFragment}
-        `,
-        {
-            first,
-            after,
-        }
-    ).pipe(
+    requestGraphQL<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables>(gql``, {
+        first,
+        after,
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.batchChangesCodeHosts)
     )
