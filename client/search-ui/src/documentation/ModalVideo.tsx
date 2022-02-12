@@ -77,7 +77,12 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
                             <h3 id={id}>{title}</h3>
-                            <Button className="btn-icon p-1" onClick={() => toggleDialog(false)} aria-label="Close">
+                            <Button
+                                variant="icon"
+                                className="p-1"
+                                onClick={() => toggleDialog(false)}
+                                aria-label="Close"
+                            >
                                 <CloseIcon className="icon-inline" />
                             </Button>
                         </div>

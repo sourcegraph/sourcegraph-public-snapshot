@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
@@ -374,7 +374,7 @@ func correlateContainsEdge(state *wrappedState, id int, edge Edge) error {
 		if _, ok := state.RangeData[inV]; !ok {
 			return malformedDump(id, inV, "range")
 		}
-		state.Contains.SetAdd(edge.OutV, inV)
+		state.Contains.AddID(edge.OutV, inV)
 	}
 	return nil
 }
@@ -406,7 +406,7 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 			}
 
 			// Link definition data to defining range
-			documentMap.SetAdd(edge.Document, inV)
+			documentMap.AddID(edge.Document, inV)
 		}
 
 		return nil
@@ -423,7 +423,7 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 				}
 
 				// Link reference data to a reference range
-				documentMap.SetAdd(edge.Document, inV)
+				documentMap.AddID(edge.Document, inV)
 			}
 		}
 
@@ -437,7 +437,7 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 			}
 
 			// Link definition data to defining range
-			documentMap.SetAdd(edge.Document, inV)
+			documentMap.AddID(edge.Document, inV)
 		}
 
 		return nil
@@ -517,9 +517,9 @@ func correlateMonikerEdge(state *wrappedState, id int, edge Edge) error {
 	}
 
 	if _, ok := state.RangeData[edge.OutV]; ok {
-		state.Monikers.SetAdd(edge.OutV, edge.InV)
+		state.Monikers.AddID(edge.OutV, edge.InV)
 	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
-		state.Monikers.SetAdd(edge.OutV, edge.InV)
+		state.Monikers.AddID(edge.OutV, edge.InV)
 	} else {
 		return malformedDump(id, edge.OutV, "range", "resultSet")
 	}
@@ -573,6 +573,6 @@ func correlateDiagnosticEdge(state *wrappedState, id int, edge Edge) error {
 		return malformedDump(id, edge.InV, "diagnosticResult")
 	}
 
-	state.Diagnostics.SetAdd(edge.OutV, edge.InV)
+	state.Diagnostics.AddID(edge.OutV, edge.InV)
 	return nil
 }

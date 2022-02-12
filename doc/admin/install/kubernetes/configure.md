@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.36.2"
+  export SOURCEGRAPH_VERSION="v3.36.3"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -702,10 +702,37 @@ Sourcegraph supports specifying a custom Redis server for:
 - caching information (specified via the `REDIS_CACHE_ENDPOINT` environment variable)
 - storing information (session data and job queues) (specified via the `REDIS_STORE_ENDPOINT` environment variable)
 
+If these are not set, they will [default](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) to `redis-cache:6379` & `redis-store:6379` 
+
 If you want to specify a custom Redis server, you'll need specify the corresponding environment variable for each of the following deployments:
+
+<!-- Use ./dev/depgraph/depgraph summary internal/redispool to generate this -->
 
 - `sourcegraph-frontend`
 - `repo-updater`
+- `gitserver`
+- `searcher`
+- `symbols`
+- `worker`
+
+_Kubernetes yaml example_
+
+```
+apiVersion: apps/v1
+kind: <Deployment/StatefulSet>
+spec:
+  template:
+    spec:
+      containers:
+        - name: <frontend>
+        - image: <frontend_image>/<TAG>
+        - env:
+          - name: REDIS_CACHE_ENDPOINT
+            value: "<REDIS_CACHE_DSN>"
+          - name: REDIS_STORE_ENDPOINT
+            value: "<REDIS_STORE_DSN>"
+    
+```
 
 ## Connect to an external Jaeger instance
 

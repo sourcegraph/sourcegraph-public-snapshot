@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { mockAuthenticatedUser } from '../testing/util'
@@ -16,12 +18,13 @@ describe('FormActionArea', () => {
                 id: 'id1',
                 recipients: { nodes: [{ id: mockAuthenticatedUser.id }] },
                 enabled: true,
+                includeResults: false,
             },
         ],
     }
 
     test('Error is shown if code monitor has empty description', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <FormActionArea
                 actions={mockActions}
                 actionsCompleted={true}

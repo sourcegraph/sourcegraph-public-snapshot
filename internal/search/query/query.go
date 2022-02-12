@@ -1,6 +1,6 @@
 package query
 
-import "github.com/hashicorp/go-multierror"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 /*
 Query processing involves multiple steps to produce a query to evaluate.
@@ -59,11 +59,11 @@ func With(enabled bool, step step) step {
 // `contextValue`.
 func SubstituteSearchContexts(lookupQueryString func(contextValue string) (string, error)) step {
 	return func(nodes []Node) ([]Node, error) {
-		errs := new(multierror.Error)
+		errs := new(errors.MultiError)
 		substitutedContext := MapField(nodes, FieldContext, func(value string, negated bool, ann Annotation) Node {
 			queryString, err := lookupQueryString(value)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				return nil
 			}
 
@@ -78,7 +78,7 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 
 			query, err := ParseRegexp(queryString)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				return nil
 			}
 			return Operator{Kind: And, Operands: query}

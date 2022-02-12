@@ -110,6 +110,9 @@ See [configuration](#configuration) to learn more about configuring `sg` behavio
 # Run default environment, Sourcegraph enterprise:
 sg start
 
+# (macOs only) Automatically add exceptions to the system firewall 
+sg start -add-to-macos-firewall
+
 # List available environments (defined under `commandSets` in `sg.config.yaml`):
 sg start -help
 
@@ -232,6 +235,13 @@ sg ci logs --build 123456
 sg ci build 
 # Manually trigger a build on the CI on the current branch, but with a specific commit
 sg ci build --commit my-commit
+# Manually trigger a main-dry-run build of the HEAD commit on the current branch
+sg ci build main-dry-run
+sg ci build --force main-dry-run
+# Manually trigger a main-dry-run build of a specified commit on the current ranch
+sg ci build --force --commit my-commit main-dry-run
+# View the available special build types
+sg ci build --help
 ```
 
 ### `sg teammate` - Get current time or open their handbook page

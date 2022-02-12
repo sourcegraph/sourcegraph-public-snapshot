@@ -40,6 +40,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                 id: action?.id ?? '',
                 recipients: { nodes: [{ id: authenticatedUser.id }] },
                 enabled,
+                includeResults: false,
             })
         },
         [action?.id, authenticatedUser.id, setAction]
@@ -56,6 +57,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     id: '',
                     recipients: { nodes: [{ id: authenticatedUser.id }] },
                     enabled: true,
+                    includeResults: false,
                 })
             }
         },
@@ -77,6 +79,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                             description: monitorName,
                             email: {
                                 enabled: true,
+                                includeResults: false,
                                 priority: MonitorEmailPriority.NORMAL,
                                 recipients: [authenticatedUser.id],
                                 header: '',
@@ -144,7 +147,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             </div>
             <div className="flex mt-1">
                 <Button
-                    className={classNames('mr-2')}
+                    className="mr-2"
                     variant="secondary"
                     outline={!isSendTestEmailButtonDisabled}
                     disabled={isSendTestEmailButtonDisabled}

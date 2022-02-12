@@ -13,4 +13,5 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     title: '',
     repositories: '',
     allRepos: false,
+    dashboardReferenceCount: 0,
 }

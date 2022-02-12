@@ -7,9 +7,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type testRegisterer struct{}

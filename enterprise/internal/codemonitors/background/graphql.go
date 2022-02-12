@@ -8,11 +8,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type graphQLQuery struct {
@@ -120,7 +119,7 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 	}
 }`
 
-func search(ctx context.Context, query string, userID int32, monitorID *int64) (_ *searchResults, err error) {
+func search(ctx context.Context, query string, monitorID *int64) (_ *searchResults, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
 		span.LogFields(log.Error(err))
@@ -174,7 +173,7 @@ func search(ctx context.Context, query string, userID int32, monitorID *int64) (
 	if len(res.Errors) > 0 {
 		var combined error
 		for _, err := range res.Errors {
-			combined = multierror.Append(combined, err)
+			combined = errors.Append(combined, err)
 		}
 		return nil, combined
 	}

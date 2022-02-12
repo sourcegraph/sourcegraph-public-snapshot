@@ -3,8 +3,8 @@ import { fireEvent } from '@testing-library/react'
 import React from 'react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import {
     TestConnectionQueryFields,
@@ -119,7 +119,7 @@ const generateMockResult = ({
 })
 
 describe('useConnection', () => {
-    const fetchNextPage = async (renderResult: RenderWithRouterResult) => {
+    const fetchNextPage = async (renderResult: RenderWithBrandedContextResult) => {
         const fetchMoreButton = renderResult.getByText('Fetch more')
         fireEvent.click(fetchMoreButton)
 
@@ -147,7 +147,7 @@ describe('useConnection', () => {
     ]
 
     const renderWithMocks = async (mocks: MockedResponse<TestConnectionQueryResult>[], route = '/') => {
-        const renderResult = renderWithRouter(
+        const renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
                 <TestComponent />
             </MockedTestProvider>,

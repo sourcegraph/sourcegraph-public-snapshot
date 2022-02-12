@@ -10,12 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -34,17 +33,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.36.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.36.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.36.2")
+	latestReleaseKubernetesBuild = newBuild("3.36.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.36.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.36.3")
 )
 
 func getLatestRelease(deployType string) build {

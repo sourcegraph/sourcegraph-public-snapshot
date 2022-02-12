@@ -2,6 +2,7 @@ package server
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -272,4 +273,52 @@ func TestDecompressTgz(t *testing.T) {
 		}
 		assert.True(t, reflect.DeepEqual(dirEntryNames, testData.expect))
 	}
+}
+
+// Regression test for: https://github.com/sourcegraph/sourcegraph/issues/30554
+func TestDecompressTgzNoOOB(t *testing.T) {
+	testCases := [][]tar.Header{
+		{
+			{Typeflag: tar.TypeDir, Name: "non-empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+		{
+			{Typeflag: tar.TypeDir, Name: "empty"},
+			{Typeflag: tar.TypeDir, Name: "non-empty/"},
+			{Typeflag: tar.TypeReg, Name: "non-empty/f1"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testDecompressTgzNoOOBImpl(t, testCase)
+	}
+}
+
+func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
+	buffer := bytes.NewBuffer([]byte{})
+
+	gzipWriter := gzip.NewWriter(buffer)
+	tarWriter := tar.NewWriter(gzipWriter)
+	for _, entry := range entries {
+		tarWriter.WriteHeader(&entry)
+		if entry.Typeflag == tar.TypeReg {
+			tarWriter.Write([]byte("filler"))
+		}
+	}
+	tarWriter.Close()
+	gzipWriter.Close()
+
+	readSeeker := bytes.NewReader(buffer.Bytes())
+
+	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
+	require.Nil(t, err)
+	defer os.RemoveAll(outDir)
+
+	require.NotPanics(t, func() {
+		decompressTgz(namedReadSeeker{"buffer", readSeeker}, outDir)
+	})
 }

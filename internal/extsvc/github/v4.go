@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // V4Client is a GitHub GraphQL API client.

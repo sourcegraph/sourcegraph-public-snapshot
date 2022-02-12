@@ -4,6 +4,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { FileDiffConnectionFields } from '../../graphql-operations'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
@@ -82,11 +83,9 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
         const baseUrl = props.sourcegraphURL
-        const url = new URL(
-            `/${props.repoName}/-/compare/${props.commit.baseRev}...${
-                props.commit.headRev
-            }?utm_source=${getPlatformName()}`,
-            baseUrl
+        const url = createURLWithUTM(
+            new URL(`/${props.repoName}/-/compare/${props.commit.baseRev}...${props.commit.headRev}`, baseUrl),
+            { utm_source: getPlatformName(), utm_campaign: 'open-diff-on-sourcegraph' }
         )
         const urlToCommit = url.href
 

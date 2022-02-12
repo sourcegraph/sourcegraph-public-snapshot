@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
@@ -284,7 +283,24 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) (commits []*gitdomain.Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	wrappedCommits, err := getWrappedCommits(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering commits")
+	}
+
+	if needMoreCommits(filtered, wrappedCommits, opt, checker) {
+		return getMoreCommits(ctx, repo, opt, checker, filtered)
+	}
+	return filtered, err
+}
+
+func getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -299,7 +315,68 @@ func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, check
 	if err != nil {
 		return nil, err
 	}
-	return filterCommits(ctx, wrappedCommits, repo, checker)
+	return wrappedCommits, nil
+}
+
+func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
+	if !authz.SubRepoEnabled(checker) {
+		return false
+	}
+	if opt.N == 0 || isRequestForSingleCommit(opt) {
+		return false
+	}
+	if len(filtered) < len(commits) {
+		return true
+	}
+	return false
+}
+
+func isRequestForSingleCommit(opt CommitsOptions) bool {
+	return opt.Range != "" && opt.N == 1
+}
+
+// getMoreCommits handles the case where a specific number of commits was requested via CommitsOptions, but after sub-repo
+// filtering, fewer than that requested number was left. This function requests the next N commits (where N was the number
+// originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
+// the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
+func getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
+	// We want to place an upper bound on the number of times we loop here so that we
+	// don't hit pathological conditions where a lot of filtering has been applied.
+	const maxIterations = 5
+
+	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
+	for i := 0; i < maxIterations; i++ {
+		if uint(len(totalCommits)) == opt.N {
+			break
+		}
+		// Increment the Skip number to get the next N commits
+		opt.Skip += opt.N
+		wrappedCommits, err := getWrappedCommits(ctx, repo, opt)
+		if err != nil {
+			return nil, err
+		}
+		filtered, err := filterCommits(ctx, wrappedCommits, repo, checker)
+		if err != nil {
+			return nil, err
+		}
+		// join the new (filtered) commits with those already fetched (potentially truncating the list to have length N if necessary)
+		totalCommits = joinCommits(baselineCommits, filtered, opt.N)
+		baselineCommits = totalCommits
+		if uint(len(wrappedCommits)) < opt.N {
+			// No more commits available before filtering, so return current total commits (e.g. the last "page" of N commits has been reached)
+			break
+		}
+	}
+	return totalCommits, nil
+}
+
+func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdomain.Commit {
+	allCommits := append(previous, next...)
+	// ensure that we don't return more than what was requested
+	if uint(len(allCommits)) > desiredTotal {
+		return allCommits[:desiredTotal]
+	}
+	return allCommits
 }
 
 // runCommitLog sends the git command to gitserver. It interprets missing
@@ -605,15 +682,14 @@ func parseBranchesContaining(lines []string) []string {
 // branch and tag of the given repository.
 func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ map[string][]gitdomain.RefDescription, err error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
-		args := append(make([]string, 0, 3), "for-each-ref")
-		if refPrefix == "refs/tags/" {
-			args = append(args, "--format=%(*objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
-		} else {
-			args = append(args, "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
-		}
-		args = append(args, refPrefix)
+		format := strings.Join([]string{
+			derefField("objectname"),
+			"%(refname)",
+			"%(HEAD)",
+			derefField("creatordate:iso8601-strict"),
+		}, "%00")
 
-		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd := gitserver.DefaultClient.Command("git", "for-each-ref", "--format="+format, refPrefix)
 		cmd.Repo = repo
 
 		out, err := cmd.CombinedOutput(ctx)
@@ -621,7 +697,7 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 			return nil, err
 		}
 
-		return parseRefDescriptions(strings.Split(string(out), "\n"))
+		return parseRefDescriptions(out)
 	}
 
 	aggregate := make(map[string][]gitdomain.RefDescription)
@@ -639,6 +715,10 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 		return filterRefDescriptions(ctx, repo, aggregate, checker), nil
 	}
 	return aggregate, nil
+}
+
+func derefField(field string) string {
+	return "%(if)%(*" + field + ")%(then)%(*" + field + ")%(else)%(" + field + ")%(end)"
 }
 
 func filterRefDescriptions(ctx context.Context,
@@ -661,34 +741,37 @@ var refPrefixes = map[string]gitdomain.RefType{
 }
 
 // parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. Each line should conform to the format
-// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
+// method to a map from commits to RefDescription objects. The output is expected to be a series
+// of lines each conforming to  `%(objectname)%00%(refname)%00%(HEAD)%00%(creatordate)`, where
 //
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription, error) {
+func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
+	lines := bytes.Split(out, []byte("\n"))
 	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
+
+lineLoop:
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
 			continue
 		}
 
-		parts := strings.SplitN(line, ":", 4)
+		parts := bytes.SplitN(line, []byte("\x00"), 4)
 		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref %q`, string(line))
 		}
 
-		commit := parts[0]
-		isDefaultBranch := parts[2] == "*"
+		commit := string(parts[0])
+		isDefaultBranch := string(parts[2]) == "*"
 
 		var name string
 		var refType gitdomain.RefType
 		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(parts[1], prefix) {
-				name = parts[1][len(prefix):]
+			if strings.HasPrefix(string(parts[1]), prefix) {
+				name = string(parts[1])[len(prefix):]
 				refType = typ
 				break
 			}
@@ -697,9 +780,16 @@ func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
-		createdDate, err := time.Parse(time.RFC3339, parts[3])
+		createdDate, err := time.Parse(time.RFC3339, string(parts[3]))
 		if err != nil {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		}
+
+		// Check for duplicates before adding it to the slice
+		for _, candidate := range refDescriptions[commit] {
+			if candidate.Name == name && candidate.Type == refType && candidate.IsDefaultBranch == isDefaultBranch {
+				continue lineLoop
+			}
 		}
 
 		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{

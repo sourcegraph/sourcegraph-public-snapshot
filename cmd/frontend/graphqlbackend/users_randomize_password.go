@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type randomizeUserPasswordResult struct {

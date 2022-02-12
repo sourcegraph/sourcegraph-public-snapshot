@@ -9,7 +9,7 @@ import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourc
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 
-interface DeleteNotebookProps extends TelemetryProps {
+interface DeleteNotebookModalProps extends TelemetryProps {
     notebookId: string
     isOpen: boolean
     toggleDeleteModal: () => void
@@ -18,7 +18,7 @@ interface DeleteNotebookProps extends TelemetryProps {
 
 const LOADING = 'loading' as const
 
-export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> = ({
+export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookModalProps> = ({
     notebookId,
     deleteNotebook,
     isOpen,

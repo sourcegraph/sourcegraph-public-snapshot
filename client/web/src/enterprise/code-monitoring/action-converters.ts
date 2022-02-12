@@ -29,6 +29,7 @@ function isActionSupported(action: MonitorAction): action is IMonitorEmail | IMo
 function convertEmailAction(action: IMonitorEmail, authenticatedUserId: AuthenticatedUser['id']): IMonitorEmailInput {
     return {
         enabled: action.enabled,
+        includeResults: action.includeResults,
         priority: MonitorEmailPriority.NORMAL,
         recipients: [authenticatedUserId],
         header: '',
@@ -38,6 +39,7 @@ function convertEmailAction(action: IMonitorEmail, authenticatedUserId: Authenti
 function convertSlackWebhookAction(action: IMonitorSlackWebhook): IMonitorSlackWebhookInput {
     return {
         enabled: action.enabled,
+        includeResults: action.includeResults,
         url: action.url,
     }
 }
@@ -45,6 +47,7 @@ function convertSlackWebhookAction(action: IMonitorSlackWebhook): IMonitorSlackW
 function convertWebhookAction(action: IMonitorWebhook): IMonitorWebhookInput {
     return {
         enabled: action.enabled,
+        includeResults: action.includeResults,
         url: action.url,
     }
 }

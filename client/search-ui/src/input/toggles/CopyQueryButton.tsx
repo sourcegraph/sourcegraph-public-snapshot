@@ -47,7 +47,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
         <>
             <Button
                 className={classNames('btn-icon', props.className)}
-                variant="link"
+                variant="icon"
                 size="sm"
                 data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-label={copied ? 'Copied!' : copyFullQueryTooltip}

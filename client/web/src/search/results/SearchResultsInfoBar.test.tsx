@@ -1,21 +1,21 @@
-import { render } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
+const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
     platformContext: { forceUpdateTooltip: noop, settings: NEVER },
-    history: createMemoryHistory(),
+    history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
     resultsFound: true,
@@ -31,48 +31,55 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
 describe('SearchResultsInfoBar', () => {
     test('code monitoring feature flag disabled', () => {
         expect(
-            render(
-                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={false} query="foo type:diff" />
+            renderWithBrandedContext(
+                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={false} query="foo type:diff" />,
+                { history }
             ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, cannot create monitor from query', () => {
         expect(
-            render(<SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo" />).asFragment()
+            renderWithBrandedContext(
+                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo" />,
+                { history }
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query', () => {
         expect(
-            renderWithRouter(
-                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />
+            renderWithBrandedContext(
+                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />,
+                { history }
             ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query, user not logged in', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <SearchResultsInfoBar
                     {...COMMON_PROPS}
                     enableCodeMonitoring={true}
                     query="foo type:diff"
                     authenticatedUser={null}
-                />
+                />,
+                { history }
             ).asFragment()
         ).toMatchSnapshot()
     })
 
     test('unauthenticated user', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <SearchResultsInfoBar
                     {...COMMON_PROPS}
                     enableCodeMonitoring={true}
                     query="foo type:diff"
                     authenticatedUser={null}
-                />
+                />,
+                { history }
             ).asFragment()
         ).toMatchSnapshot()
     })

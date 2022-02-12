@@ -51,7 +51,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{},
 				},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 			},
 			{
@@ -62,7 +61,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"a/b/c.go"},
 				},
 				Path:               "a/b",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: false,
 			},
 			{
@@ -73,7 +71,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"d/e/f.go"},
 				},
 				Path:               "d/e",
-				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 			},
 			{
@@ -85,7 +82,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"main.go"},
 				},
 				Path:        "",
-				Steps:       []batcheslib.Step{},
 				Unsupported: true,
 			},
 			{
@@ -97,7 +93,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 					FileMatches: []string{"lol.txt"},
 				},
 				Path:    "",
-				Steps:   []batcheslib.Step{},
 				Ignored: true,
 			},
 		},
@@ -122,8 +117,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "d34db33f",
 			FileMatches:        []string{},
 			Path:               "",
-			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -134,8 +127,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "d34db33f",
 			FileMatches:        []string{"a/b/c.go"},
 			Path:               "a/b",
-			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: false,
 		},
 		{
@@ -146,8 +137,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:             "c0ff33",
 			FileMatches:        []string{"d/e/f.go"},
 			Path:               "d/e",
-			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -157,8 +146,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:           "h0rs3s",
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"main.go"},
-			Steps:            []batcheslib.Step{},
-			SkippedSteps:     []int32{},
 			Unsupported:      true,
 		},
 		{
@@ -168,8 +155,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Commit:           "f00b4r",
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"lol.txt"},
-			Steps:            []batcheslib.Step{},
-			SkippedSteps:     []int32{},
 			Ignored:          true,
 		},
 	}
@@ -201,7 +186,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches: []string{},
 			},
 			Path:               "",
-			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: true,
 		}
 	}
@@ -243,7 +227,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			},
 			workspace.Path,
 			workspace.OnlyFetchWorkspace,
-			workspace.Steps,
+			batchSpec.Spec.Steps,
 		)
 		rawKey, err := key.Key()
 		if err != nil {
@@ -286,8 +270,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				Commit:             "caching-enabled",
 				FileMatches:        []string{},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
-				SkippedSteps:       []int32{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  true,
 			},
@@ -395,8 +377,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				Commit:             "caching-disabled",
 				FileMatches:        []string{},
 				Path:               "",
-				Steps:              []batcheslib.Step{},
-				SkippedSteps:       []int32{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  false,
 			},
