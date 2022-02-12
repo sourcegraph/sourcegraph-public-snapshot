@@ -66,7 +66,7 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
                 </p>
 
                 <p>
-                    Reach out to your Sourcegraph admin or account team to purchase Code Insights. Questions? Please
+                    Reach out to your Sourcegraph admin or account team to purchase Code Insights. Questions? Please{' '}
                     <Link to="mailto:support@sourcegraph.com">contact us</Link>.
                 </p>
             </div>
