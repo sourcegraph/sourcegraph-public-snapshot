@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -101,12 +102,28 @@ type Status struct {
 	BlockedOn string
 	Indexed   int
 	Total     int
+	mu        sync.Mutex
+}
+
+func NewStatus(repo string, commit string, tasklog *TaskLog) *Status {
+	return &Status{
+		TaskLog:   tasklog,
+		Repo:      repo,
+		Commit:    commit,
+		HeldLocks: map[string]struct{}{},
+		BlockedOn: "",
+		Indexed:   -1,
+		Total:     -1,
+		mu:        sync.Mutex{},
+	}
 }
 
 type TaskLog struct {
 	currentName  string
 	currentStart time.Time
 	nameToTask   map[string]*Task
+	// This mutex is only necessary to synchronize with the status page handler.
+	mu sync.Mutex
 }
 
 type Task struct {
@@ -119,10 +136,14 @@ func NewTaskLog() *TaskLog {
 		currentName:  "idle",
 		currentStart: time.Now(),
 		nameToTask:   map[string]*Task{"idle": {Duration: 0, Count: 1}},
+		mu:           sync.Mutex{},
 	}
 }
 
 func (t *TaskLog) Start(name string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	now := time.Now()
 
 	if _, ok := t.nameToTask[t.currentName]; !ok {
@@ -140,6 +161,9 @@ func (t *TaskLog) Start(name string) {
 }
 
 func (t *TaskLog) Continue(name string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	now := time.Now()
 
 	if _, ok := t.nameToTask[t.currentName]; !ok {
@@ -156,6 +180,9 @@ func (t *TaskLog) Continue(name string) {
 }
 
 func (t *TaskLog) Reset() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	t.currentName = "idle"
 	t.currentStart = time.Now()
 	t.nameToTask = map[string]*Task{"idle": {Duration: 0, Count: 1}}
@@ -169,6 +196,9 @@ func (t *TaskLog) String() string {
 	var s strings.Builder
 
 	t.Continue(t.currentName)
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	var total time.Duration = 0
 	totalCount := 0

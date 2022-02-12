@@ -83,7 +83,7 @@ func TestIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("🚨 rev-parse: %s", err)
 	}
-	head := strings.TrimSpace(string(output))
+	commit := strings.TrimSpace(string(output))
 
 	// du -sh
 	du := exec.Command("du", "-sh", HOME+repo)
@@ -94,11 +94,11 @@ func TestIndex(t *testing.T) {
 	}
 	size := strings.Split(string(output), "\t")[0]
 
-	fmt.Println("🔵 Indexing", repo, "at", head, "with git size", size)
+	fmt.Println("🔵 Indexing", repo, "at", commit, "with git size", size)
 	fmt.Println()
 
 	tasklog := NewTaskLog()
-	err = Index(git, db, tasklog, parser.Parse, repo, head, 1, semaphore.NewWeighted(1))
+	err = Index(git, db, tasklog, parser.Parse, repo, commit, 1, semaphore.NewWeighted(1), NewStatus(repo, commit, tasklog))
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
@@ -120,7 +120,7 @@ func TestIndex(t *testing.T) {
 	}
 	fmt.Println()
 
-	blobs, err := Search(db, NewTaskLog(), repo, head, nil)
+	blobs, err := Search(db, NewTaskLog(), repo, commit, nil)
 	if err != nil {
 		t.Fatalf("🚨 PathsAtCommit: %s", err)
 	}
@@ -129,7 +129,7 @@ func TestIndex(t *testing.T) {
 		paths = append(paths, blob.Path)
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", head))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", commit))
 	cmd.Dir = HOME + repo
 	out, err := cmd.Output()
 	if err != nil {

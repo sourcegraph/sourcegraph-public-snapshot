@@ -52,42 +52,69 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 
 	db := mustInitializeCodeIntelDB()
 
-	requestToStatus := RequestToStatus{}
-	searchFunc, err := MakeRockskipSearchFunc(observationContext, db, config, requestToStatus)
+	statuses := NewStatuses()
+	searchFunc, err := MakeRockskipSearchFunc(observationContext, db, config, statuses)
 	if err != nil {
 		log.Fatalf("Failed to create rockskip search function: %s", err)
 	}
 
-	return searchFunc, handleStatus(db, requestToStatus), nil, config.Ctags.Command
+	return searchFunc, handleStatus(db, statuses), nil, config.Ctags.Command
 }
 
-type RequestToStatus = map[RequestId]*rockskip.Status
+// RequestId is a unique int for each HTTP request.
 type RequestId = int
 
-func handleStatus(db *sql.DB, requestToStatus RequestToStatus) func(http.ResponseWriter, *http.Request) {
+// Status contains the status of all requests.
+type Status struct {
+	requestToStatus map[RequestId]*rockskip.Status
+	nextRequestId   RequestId
+	mu              sync.Mutex
+}
+
+func NewStatuses() Status {
+	return Status{
+		requestToStatus: map[int]*rockskip.Status{},
+		nextRequestId:   0,
+		mu:              sync.Mutex{},
+	}
+}
+
+func (status *Status) Begin(repo string, commit string, tasklog *rockskip.TaskLog) (*rockskip.Status, func()) {
+	status.mu.Lock()
+	defer status.mu.Unlock()
+
+	rockskipStatus := rockskip.NewStatus(repo, commit, tasklog)
+
+	requestId := status.nextRequestId
+	status.nextRequestId++
+	status.requestToStatus[requestId] = rockskipStatus
+
+	return rockskipStatus, func() {
+		status.mu.Lock()
+		defer status.mu.Unlock()
+		delete(status.requestToStatus, requestId)
+	}
+}
+
+func handleStatus(db *sql.DB, statuses Status) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
+		ctx := r.Context()
+
 		repositoryCount, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
 		if err != nil {
-			log15.Error("Failed to handle symbol status query", "error", err)
+			log15.Error("Failed to count repos", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		blobCount, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_blobs"))
 		if err != nil {
-			log15.Error("Failed to handle symbol status query", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		reposSize, _, err := basestore.ScanFirstString(db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_repos'))"))
-		if err != nil {
-			log15.Error("Failed to handle symbol status query", "error", err)
+			log15.Error("Failed to count blobs", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		blobsSize, _, err := basestore.ScanFirstString(db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
 		if err != nil {
-			log15.Error("Failed to handle symbol status query", "error", err)
+			log15.Error("Failed to get size of blobs table", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -96,27 +123,29 @@ func handleStatus(db *sql.DB, requestToStatus RequestToStatus) func(http.Respons
 		fmt.Fprintln(w, "This is the symbols service status page.")
 		fmt.Fprintln(w, "")
 
-		fmt.Fprintf(w, "Number of repositories indexed: %d\n", repositoryCount)
+		fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
 		fmt.Fprintf(w, "Number of blobs indexed: %d\n", blobCount)
-		fmt.Fprintf(w, "Size of repos table: %s\n", reposSize)
 		fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
 		fmt.Fprintln(w, "")
 
-		if len(requestToStatus) == 0 {
+		statuses.mu.Lock()
+		defer statuses.mu.Unlock()
+
+		if len(statuses.requestToStatus) == 0 {
 			fmt.Fprintln(w, "No requests in flight.")
 			return
 		}
 		fmt.Fprintln(w, "Here's all in-flight requests:")
 		fmt.Fprintln(w, "")
 
-		ids := make([]int, 0, len(requestToStatus))
-		for status := range requestToStatus {
-			ids = append(ids, status)
+		ids := []int{}
+		for id := range statuses.requestToStatus {
+			ids = append(ids, id)
 		}
 		sort.Ints(ids)
 
 		for _, id := range ids {
-			status := requestToStatus[id]
+			status := statuses.requestToStatus[id]
 
 			fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
 			fmt.Fprintf(w, "    %s\n", status.TaskLog)
@@ -124,7 +153,6 @@ func handleStatus(db *sql.DB, requestToStatus RequestToStatus) func(http.Respons
 			if blockedOn != "" {
 				fmt.Fprintf(w, "    blocked on %s\n", blockedOn)
 			}
-			// TODO avoid concurrent read/write with a RWLock
 			for name := range status.HeldLocks {
 				fmt.Fprintf(w, "    holding %s\n", name)
 			}
@@ -149,7 +177,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, requestToStatus RequestToStatus) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, status Status) (types.SearchFunc, error) {
 	operations := sharedobservability.NewOperations(observationContext)
 	// TODO use operations
 	_ = operations
@@ -160,12 +188,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 
 	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
-	requestCount := 0
-
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
-		requestCount++
-		requestId := requestCount
-
 		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		// 	otlog.String("repo", string(args.Repo)),
 		// 	otlog.String("commitID", string(args.CommitID)),
@@ -244,18 +267,9 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			return symbols, nil
 		}
 
-		status := rockskip.Status{
-			TaskLog:   tasklog,
-			Repo:      string(args.Repo),
-			Commit:    string(args.CommitID),
-			HeldLocks: map[string]struct{}{},
-			BlockedOn: "",
-			Indexed:   -1,
-			Total:     -1,
-		}
-		requestToStatus[requestId] = &status
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem, &status)
-		delete(requestToStatus, requestId)
+		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID), tasklog)
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), config.MaxRepos, sem, rockskipStatus)
+		end()
 		cancel()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
