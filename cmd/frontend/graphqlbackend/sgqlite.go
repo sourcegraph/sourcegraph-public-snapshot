@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -156,7 +157,8 @@ const (
 	COL_COMMIT_COMMITTER_NAME  = 9
 	COL_COMMIT_COMMITTER_EMAIL = 10
 	COL_COMMIT_COMMITTER_DATE  = 11
-	COL_QUERY                  = 12
+	COL_RESULT_COUNT           = 12
+	COL_QUERY                  = 13
 )
 
 func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTab, error) {
@@ -178,6 +180,7 @@ func (m *searchModule) Create(c *sqlite3.SQLiteConn, args []string) (sqlite3.VTa
 			commit_committer_name TEXT,
 			commit_committer_email TEXT,
 			commit_committer_date TEXT,
+			result_count INTEGER,
 			query HIDDEN TEXT
 		)`, args[0]))
 	if err != nil {
@@ -320,6 +323,8 @@ func (vc *searchResultCursor) Column(c *sqlite3.SQLiteContext, col int) error {
 			// null if not a result.CommitMatch
 			c.ResultNull()
 		}
+	case COL_RESULT_COUNT:
+		c.ResultInt(vc.batch[vc.batchIdx].ResultCount())
 	case COL_QUERY:
 		c.ResultText(vc.query)
 	}
@@ -352,12 +357,14 @@ func (vc *searchResultCursor) Filter(idxNum int, idxStr string, vals []interface
 	if err != nil {
 		return errors.Wrap(err, "newSearchImplementor")
 	}
+	log15.Warn("Starting search", "query", vc.query)
 
 	vc.wg = sync.WaitGroup{}
 	vc.wg.Add(1)
 	go func() {
 		defer vc.wg.Done()
 		defer close(resultChan)
+		defer log15.Warn("Finished search", "query", vc.query)
 
 		_, err = imp.Results(ctx)
 		if err != nil {
