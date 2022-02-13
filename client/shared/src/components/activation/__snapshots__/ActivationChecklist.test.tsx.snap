@@ -18,7 +18,6 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
           aria-expanded="false"
           class="btn btnLink list-group-item list-group-item-action button"
           data-reach-accordion-button=""
-          data-state="collapsed"
           id="button--1--0"
         >
           <div
@@ -84,6 +83,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
           hidden=""
           id="panel--1--0"
           role="region"
+          tabindex="-1"
         >
           <div
             class="pb-1 detail"
@@ -111,12 +111,11 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
         data-state="collapsed"
       >
         <button
-          aria-controls="panel--5--0"
+          aria-controls="panel--4--0"
           aria-expanded="false"
           class="btn btnLink list-group-item list-group-item-action button"
           data-reach-accordion-button=""
-          data-state="collapsed"
-          id="button--5--0"
+          id="button--4--0"
         >
           <div
             class="d-flex justify-content-between activationChecklistItem"
@@ -174,13 +173,14 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
           </div>
         </button>
         <div
-          aria-labelledby="button--5--0"
+          aria-labelledby="button--4--0"
           class="px-2"
           data-reach-accordion-panel=""
           data-state="collapsed"
           hidden=""
-          id="panel--5--0"
+          id="panel--4--0"
           role="region"
+          tabindex="-1"
         >
           <div
             class="pb-1 detail"
@@ -208,12 +208,11 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
         data-state="collapsed"
       >
         <button
-          aria-controls="panel--8--0"
+          aria-controls="panel--6--0"
           aria-expanded="false"
           class="btn btnLink list-group-item list-group-item-action button"
           data-reach-accordion-button=""
-          data-state="collapsed"
-          id="button--8--0"
+          id="button--6--0"
         >
           <div
             class="d-flex justify-content-between activationChecklistItem"
@@ -271,13 +270,14 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
           </div>
         </button>
         <div
-          aria-labelledby="button--1--0"
+          aria-labelledby="button--6--0"
           class="px-2"
           data-reach-accordion-panel=""
           data-state="collapsed"
           hidden=""
-          id="panel--1--0"
+          id="panel--6--0"
           role="region"
+          tabindex="-1"
         >
           <div
             class="pb-1 detail"
