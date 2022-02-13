@@ -136,32 +136,42 @@ func (image ImageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
 
-func updateImage(rawImage string, credential credentials.Credentials) (string, error) {
-	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImage))
+func parseImgString(rawImg string) (*ImageReference, error) {
+	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// TODO Handle images without registry specified
 	imgRef := &ImageReference{
-		Registry:    reference.Domain(ref),
-		Credentials: &credential,
+		Registry: reference.Domain(ref),
 	}
+
 	if nameTagged, ok := ref.(reference.NamedTagged); ok {
 		imgRef.Tag = nameTagged.Tag()
 		imgRef.Name = reference.Path(nameTagged)
 		if canonical, ok := ref.(reference.Canonical); ok {
 			newNamed, err := reference.WithName(canonical.Name())
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			newCanonical, err := reference.WithDigest(newNamed, canonical.Digest())
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			imgRef.Digest = newCanonical.Digest()
 		}
 	}
+
+	return imgRef, nil
+}
+
+func updateImage(rawImage string, credential credentials.Credentials) (string, error) {
+	imgRef, err := parseImgString(rawImage)
+	if err != nil {
+		return "", err
+	}
+	imgRef.Credentials = &credential
+
 	if prevRepo, ok := seenImageRepos[imgRef.Name]; ok {
 		if imgRef.Tag == prevRepo.imageRef.Tag {
 			// no update needed
