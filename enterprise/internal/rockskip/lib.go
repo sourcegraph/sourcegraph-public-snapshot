@@ -463,11 +463,22 @@ var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 func deleteOldRepos(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
-		// Select a candidate repo to delete.
-		requestStatus.Tasklog.Start("select repo to delete")
-		var repo string
-		var repoRank int
-		err := db.QueryRowContext(context.TODO(), `
+		retry, err := tryDeleteOldestRepo(db, maxRepos, requestStatus)
+		if err != nil {
+			return err
+		}
+		if !retry {
+			return nil
+		}
+	}
+}
+
+func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (retry bool, err error) {
+	// Select a candidate repo to delete.
+	requestStatus.Tasklog.Start("select repo to delete")
+	var repo string
+	var repoRank int
+	err = db.QueryRowContext(context.TODO(), `
 			SELECT repo, repo_rank
 			FROM (
 				SELECT *, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
@@ -476,89 +487,91 @@ func deleteOldRepos(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) er
 			WHERE repo_rank > $1
 			ORDER BY last_accessed_at ASC
 			LIMIT 1;`, maxRepos,
-		).Scan(&repo, &repoRank)
-		if err == sql.ErrNoRows {
-			// No more repos to delete.
-			return nil
-		}
-		if err != nil {
-			return errors.Wrap(err, "selecting repo to delete")
-		}
+	).Scan(&repo, &repoRank)
+	if err == sql.ErrNoRows {
+		// No more repos to delete.
+		return false, nil
+	}
+	if err != nil {
+		return false, errors.Wrap(err, "selecting repo to delete")
+	}
 
-		// Note: a search request or deletion could have intervened here.
+	// Note: a search request or deletion could have intervened here.
 
-		// Acquire the write lock on the repo.
-		requestStatus.Tasklog.Start("wLock for deletion")
-		releaseWLock, err := wLock(db, repo)
-		requestStatus.HoldLock("wLock")
-		if err != nil {
-			return errors.Wrap(err, "acquiring lock on repo")
-		}
+	// Acquire the write lock on the repo.
+	requestStatus.Tasklog.Start("wLock for deletion")
+	releaseWLock, err := wLock(db, repo)
+	requestStatus.HoldLock("wLock")
+	if err != nil {
+		return false, errors.Wrap(err, "acquiring lock on repo")
+	}
 
-		// Make sure the repo is still old. See note above.
-		var rank int
-		requestStatus.Tasklog.Start("recheck repo rank")
-		err = db.QueryRowContext(context.TODO(), `
+	// Make sure the repo is still old. See note above.
+	var rank int
+	requestStatus.Tasklog.Start("recheck repo rank")
+	err = db.QueryRowContext(context.TODO(), `
 			SELECT repo_rank
 			FROM (
 				SELECT repo, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
 				FROM rockskip_repos
 			) sub
 			WHERE repo = $1;`, repo,
-		).Scan(&rank)
-		if err == sql.ErrNoRows {
-			// The repo was deleted in the meantime.
-			err = releaseWLock()
-			requestStatus.ReleaseLock("wLock")
-			if err != nil {
-				return errors.Wrap(err, "releasing lock on repo")
-			}
-			continue
-		}
+	).Scan(&rank)
+	if err == sql.ErrNoRows {
+		// The repo was deleted in the meantime, so retry.
+		err = releaseWLock()
+		requestStatus.ReleaseLock("wLock")
 		if err != nil {
-			err2 := releaseWLock()
-			requestStatus.ReleaseLock("wLock")
-			return errors.Append(errors.Wrap(err, "selecting repo rank"), err2)
+			return false, errors.Wrap(err, "releasing lock on repo")
 		}
-		if rank <= maxRepos {
-			// An intervening search request must have refreshed the repo.
-			err = releaseWLock()
-			requestStatus.ReleaseLock("wLock")
-			if err != nil {
-				return errors.Wrap(err, "releasing lock on repo")
-			}
-			continue
-		}
-
-		// Delete the repo.
-		requestStatus.Tasklog.Start("delete repo")
-		tx, err := db.BeginTx(context.TODO(), nil)
-		if err != nil {
-			return errors.Append(err, tx.Rollback())
-		}
-		_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_ancestry WHERE repo = $1;", repo)
-		if err != nil {
-			return errors.Append(err, tx.Rollback())
-		}
-		_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_blobs WHERE repo = $1;", repo)
-		if err != nil {
-			return errors.Append(err, tx.Rollback())
-		}
-		_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_repos WHERE repo = $1;", repo)
-		if err != nil {
-			return errors.Append(err, tx.Rollback())
-		}
-		err = tx.Commit()
-		if err != nil {
-			return errors.Append(err, tx.Rollback())
-		}
-
+		return true, nil
+	}
+	if err != nil {
 		err2 := releaseWLock()
 		requestStatus.ReleaseLock("wLock")
-		if err != nil || err2 != nil {
-			return errors.Append(err, err2)
-		}
+		return false, errors.Append(errors.Wrap(err, "selecting repo rank"), err2)
 	}
+	if rank <= maxRepos {
+		// An intervening search request must have refreshed the repo, so retry.
+		err = releaseWLock()
+		requestStatus.ReleaseLock("wLock")
+		if err != nil {
+			return false, errors.Wrap(err, "releasing lock on repo")
+		}
+		return true, nil
+	}
+
+	// Delete the repo.
+	requestStatus.Tasklog.Start("delete repo")
+	tx, err := db.BeginTx(context.TODO(), nil)
+	defer tx.Rollback()
+	if err != nil {
+		return false, err
+	}
+	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_ancestry WHERE repo = $1;", repo)
+	if err != nil {
+		return false, err
+	}
+	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_blobs WHERE repo = $1;", repo)
+	if err != nil {
+		return false, err
+	}
+	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_repos WHERE repo = $1;", repo)
+	if err != nil {
+		return false, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
+
+	err2 := releaseWLock()
+	requestStatus.ReleaseLock("wLock")
+	if err != nil || err2 != nil {
+		return false, errors.Append(err, err2)
+	}
+
+	return true, nil
 }
 
 func updateLastAccessedAt(conn *sql.Conn, repo string) error {
