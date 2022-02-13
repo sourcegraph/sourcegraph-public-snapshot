@@ -44,11 +44,7 @@ describe('ActivationChecklist', () => {
             expect(component.asFragment()).toMatchSnapshot()
         }
     })
-
-    // Has been disabled after version update of @reach/accordion
-    // https://github.com/sourcegraph/sourcegraph/pull/30845 This snapshot became unstable
-    // probably since @reach/accordion changed id mark logic internally
-    test.skip('render 1/1 complete', () => {
+    test('render 1/1 complete', () => {
         const component = renderWithBrandedContext(
             <ActivationChecklist
                 steps={[
