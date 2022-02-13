@@ -153,10 +153,6 @@ func handleStatus(db *sql.DB, statuses *ServerStatus) func(http.ResponseWriter, 
 					fmt.Fprintf(w, "    progress 0%%\n")
 				}
 				fmt.Fprintf(w, "    %s\n", status.Tasklog)
-				blockedOn := status.BlockedOn
-				if blockedOn != "" {
-					fmt.Fprintf(w, "    blocked on %s\n", blockedOn)
-				}
 				for name := range status.HeldLocks {
 					fmt.Fprintf(w, "    holding %s\n", name)
 				}
