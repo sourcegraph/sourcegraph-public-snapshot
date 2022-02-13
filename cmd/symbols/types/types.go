@@ -83,7 +83,7 @@ func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherCon
 	}
 }
 
-type SearchFunc func(ctx context.Context, args SearchArgs) (_ *result.Symbols, err error)
+type SearchFunc func(ctx context.Context, args SearchArgs) (results *result.Symbols, cleanup func() error, err error)
 
 // SearchArgs are the arguments to perform a search on the symbols service.
 type SearchArgs struct {

@@ -185,7 +185,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 
 	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
-	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
+	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, cleanup rockskip.CleanupFunc, err error) {
 		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
 		defer func() {
 			if results == nil {
@@ -197,6 +197,8 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 				fmt.Println("🔴 Rockskip search", len(*results))
 			}
 		}()
+
+		cleanup = func() error { return nil }
 
 		// Lazily create the parser
 		var parser ctags.Parser
@@ -229,20 +231,14 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			return symbols, nil
 		}
 
-		conn, err := db.Conn(context.TODO())
-		if err != nil {
-			return nil, err
-		}
-		defer conn.Close()
-
 		git := NewGitserver(f, string(args.Repo))
 
 		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
 		defer end()
 
-		blobs, err := rockskip.Search(args, git, conn, parse, config.MaxRepos, sem, rockskipStatus)
+		blobs, cleanup, err := rockskip.Search(args, git, db, parse, config.MaxRepos, sem, rockskipStatus)
 		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.Search")
+			return nil, cleanup, errors.Wrap(err, "rockskip.Search")
 		}
 
 		res := []result.Symbol{}
@@ -258,7 +254,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			}
 		}
 
-		return &res, err
+		return &res, cleanup, err
 	}, nil
 }
 

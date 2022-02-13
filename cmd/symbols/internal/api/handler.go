@@ -42,7 +42,15 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 			args.First = maxNumSymbolResults
 		}
 
-		result, err := searchFunc(r.Context(), args)
+		result, cleanup, err := searchFunc(r.Context(), args)
+		if cleanup != nil {
+			go func() {
+				err := cleanup()
+				if err != nil {
+					log15.Error("Symbol search cleanup failed", "error", err)
+				}
+			}()
+		}
 		if err != nil {
 			// Ignore reporting errors where client disconnected
 			if r.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {

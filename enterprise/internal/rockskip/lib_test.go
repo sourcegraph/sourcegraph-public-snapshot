@@ -1,7 +1,6 @@
 package rockskip
 
 import (
-	"context"
 	"fmt"
 	"os/exec"
 	"sort"
@@ -101,15 +100,14 @@ func TestIndex(t *testing.T) {
 	fmt.Println()
 
 	status := NewStatus(repo, commit)
-	conn, err := db.Conn(context.Background())
-	if err != nil {
-		t.Fatalf("🚨 db.Conn: %s", err)
-	}
-	defer conn.Close()
 	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-	blobs, err := Search(args, git, conn, parser.Parse, 1, semaphore.NewWeighted(1), status)
+	blobs, cleanup, err := Search(args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), status)
 	if err != nil {
 		t.Fatalf("🚨 Search: %s", err)
+	}
+	err = cleanup()
+	if err != nil {
+		t.Fatalf("🚨 Search cleanup: %s", err)
 	}
 	status.Tasklog.Print()
 	fmt.Println()
