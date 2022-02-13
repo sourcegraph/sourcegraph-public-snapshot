@@ -47,9 +47,8 @@ RUN apk add --no-cache --verbose \
     python2 \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
-    postgresql=12.9-r0 \
+    postgresql=12.10-r0 \
     postgresql-contrib
-
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
