@@ -147,8 +147,10 @@ func handleStatus(db *sql.DB, statuses *ServerStatus) func(http.ResponseWriter, 
 			status := statuses.requestIdToRequestStatus[id]
 			status.WithLock(func() {
 				fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
-				if status.Total != 0 {
+				if status.Total > 0 {
 					fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
+				} else {
+					fmt.Fprintf(w, "    progress 0%%\n")
 				}
 				fmt.Fprintf(w, "    %s\n", status.Tasklog)
 				blockedOn := status.BlockedOn
