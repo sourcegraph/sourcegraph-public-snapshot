@@ -99,7 +99,7 @@ func TestIndex(t *testing.T) {
 	fmt.Println("🔵 Indexing", repo, "at", commit, "with git size", size)
 	fmt.Println()
 
-	status := NewStatus(repo, commit)
+	status := NewRequestStatus(repo, commit, func() {})
 	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
 	blobs, cleanup, err := Search(args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), status)
 	if err != nil {

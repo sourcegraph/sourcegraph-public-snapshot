@@ -62,39 +62,40 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 // RequestId is a unique int for each HTTP request.
 type RequestId = int
 
-// Status contains the status of all requests.
-type Status struct {
-	requestToStatus map[RequestId]*rockskip.Status
-	nextRequestId   RequestId
-	mu              sync.Mutex
+// ServerStatus contains the status of all requests.
+type ServerStatus struct {
+	requestIdToRequestStatus map[RequestId]*rockskip.RequestStatus
+	nextRequestId            RequestId
+	mu                       sync.Mutex
 }
 
-func NewStatus() *Status {
-	return &Status{
-		requestToStatus: map[int]*rockskip.Status{},
-		nextRequestId:   0,
-		mu:              sync.Mutex{},
+func NewStatus() *ServerStatus {
+	return &ServerStatus{
+		requestIdToRequestStatus: map[int]*rockskip.RequestStatus{},
+		nextRequestId:            0,
+		mu:                       sync.Mutex{},
 	}
 }
 
-func (status *Status) Begin(repo string, commit string) (*rockskip.Status, func()) {
-	status.mu.Lock()
-	defer status.mu.Unlock()
+func (s *ServerStatus) BeginRequest(repo string, commit string) *rockskip.RequestStatus {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	rockskipStatus := rockskip.NewStatus(repo, commit)
+	requestId := s.nextRequestId
+	s.nextRequestId++
 
-	requestId := status.nextRequestId
-	status.nextRequestId++
-	status.requestToStatus[requestId] = rockskipStatus
+	requestStatus := rockskip.NewRequestStatus(repo, commit, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.requestIdToRequestStatus, requestId)
+	})
 
-	return rockskipStatus, func() {
-		status.mu.Lock()
-		defer status.mu.Unlock()
-		delete(status.requestToStatus, requestId)
-	}
+	s.requestIdToRequestStatus[requestId] = requestStatus
+
+	return requestStatus
 }
 
-func handleStatus(db *sql.DB, statuses *Status) func(http.ResponseWriter, *http.Request) {
+func handleStatus(db *sql.DB, statuses *ServerStatus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -129,7 +130,7 @@ func handleStatus(db *sql.DB, statuses *Status) func(http.ResponseWriter, *http.
 		statuses.mu.Lock()
 		defer statuses.mu.Unlock()
 
-		if len(statuses.requestToStatus) == 0 {
+		if len(statuses.requestIdToRequestStatus) == 0 {
 			fmt.Fprintln(w, "No requests in flight.")
 			return
 		}
@@ -137,13 +138,13 @@ func handleStatus(db *sql.DB, statuses *Status) func(http.ResponseWriter, *http.
 		fmt.Fprintln(w, "")
 
 		ids := []int{}
-		for id := range statuses.requestToStatus {
+		for id := range statuses.requestIdToRequestStatus {
 			ids = append(ids, id)
 		}
 		sort.Ints(ids)
 
 		for _, id := range ids {
-			status := statuses.requestToStatus[id]
+			status := statuses.requestIdToRequestStatus[id]
 
 			fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
 			if status.Total != 0 {
@@ -178,28 +179,14 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	}
 }
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, status *Status) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, serverStatus *ServerStatus) (types.SearchFunc, error) {
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
-	f := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 
-	sem := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
+	indexingSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
-	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, cleanup rockskip.CleanupFunc, err error) {
-		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
-		defer func() {
-			if results == nil {
-				fmt.Println("🔴 Rockskip search failed")
-			} else {
-				for _, result := range *results {
-					fmt.Println("  -", result.Path+":"+fmt.Sprint(result.Line), result.Name)
-				}
-				fmt.Println("🔴 Rockskip search", len(*results))
-			}
-		}()
-
-		cleanup = func() error { return nil }
-
+	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, cleanup rockskip.CleanupFunc, err error) {
 		// Lazily create the parser
 		var parser ctags.Parser
 		createParserOnce := sync.Once{}
@@ -231,31 +218,40 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 			return symbols, nil
 		}
 
-		git := NewGitserver(f, string(args.Repo))
+		git := NewGitserver(repositoryFetcher, string(args.Repo))
 
-		rockskipStatus, end := status.Begin(string(args.Repo), string(args.CommitID))
-		defer end()
+		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
-		blobs, cleanup, err := rockskip.Search(args, git, db, parse, config.MaxRepos, sem, rockskipStatus)
+		blobs, cleanupSearch, err := rockskip.Search(args, git, db, parse, config.MaxRepos, indexingSemaphore, requestStatus)
+		cleanup = func() error {
+			err = cleanupSearch()
+			requestStatus.End()
+			return err
+		}
 		if err != nil {
 			return nil, cleanup, errors.Wrap(err, "rockskip.Search")
 		}
 
-		res := []result.Symbol{}
-		for _, blob := range blobs {
-			for _, symbol := range blob.Symbols {
-				res = append(res, result.Symbol{
-					Name:   symbol.Name,
-					Path:   blob.Path,
-					Line:   symbol.Line,
-					Kind:   symbol.Kind,
-					Parent: symbol.Parent,
-				})
-			}
-		}
+		return convertBlobsToSymbols(blobs), cleanup, err
+	}
 
-		return &res, cleanup, err
-	}, nil
+	return searchFunc, nil
+}
+
+func convertBlobsToSymbols(blobs []rockskip.Blob) []result.Symbol {
+	res := []result.Symbol{}
+	for _, blob := range blobs {
+		for _, symbol := range blob.Symbols {
+			res = append(res, result.Symbol{
+				Name:   symbol.Name,
+				Path:   blob.Path,
+				Line:   symbol.Line,
+				Kind:   symbol.Kind,
+				Parent: symbol.Parent,
+			})
+		}
+	}
+	return res
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {

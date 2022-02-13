@@ -94,7 +94,7 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
-type Status struct {
+type RequestStatus struct {
 	Tasklog   *TaskLog
 	Repo      string
 	Commit    string
@@ -103,10 +103,11 @@ type Status struct {
 	Indexed   int
 	Total     int
 	mu        sync.Mutex
+	onEnd     func()
 }
 
-func NewStatus(repo string, commit string) *Status {
-	return &Status{
+func NewRequestStatus(repo string, commit string, onEnd func()) *RequestStatus {
+	return &RequestStatus{
 		Tasklog:   NewTaskLog(),
 		Repo:      repo,
 		Commit:    commit,
@@ -115,22 +116,31 @@ func NewStatus(repo string, commit string) *Status {
 		Indexed:   -1,
 		Total:     -1,
 		mu:        sync.Mutex{},
+		onEnd:     onEnd,
 	}
 }
 
-func (status *Status) Modify(f func()) {
-	status.mu.Lock()
-	defer status.mu.Unlock()
+func (s *RequestStatus) WithLock(f func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	f()
 }
 
-func (s *Status) SetProgress(indexed, total int) {
-	s.Modify(func() { s.Indexed = indexed; s.Total = total })
+func (s *RequestStatus) SetProgress(indexed, total int) {
+	s.WithLock(func() { s.Indexed = indexed; s.Total = total })
 }
-func (s *Status) SetBlockedOn(name string) { s.Modify(func() { s.BlockedOn = name }) }
-func (s *Status) ClearBlockedOn()          { s.Modify(func() { s.BlockedOn = "" }) }
-func (s *Status) HoldLock(name string)     { s.Modify(func() { s.HeldLocks[name] = struct{}{} }) }
-func (s *Status) ReleaseLock(name string)  { s.Modify(func() { delete(s.HeldLocks, name) }) }
+func (s *RequestStatus) SetBlockedOn(name string) { s.WithLock(func() { s.BlockedOn = name }) }
+func (s *RequestStatus) ClearBlockedOn()          { s.WithLock(func() { s.BlockedOn = "" }) }
+func (s *RequestStatus) HoldLock(name string)     { s.WithLock(func() { s.HeldLocks[name] = struct{}{} }) }
+func (s *RequestStatus) ReleaseLock(name string)  { s.WithLock(func() { delete(s.HeldLocks, name) }) }
+
+func (s *RequestStatus) End() {
+	if s.onEnd != nil {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		s.onEnd()
+	}
+}
 
 type TaskLog struct {
 	currentName  string
@@ -243,7 +253,7 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func index(git Git, db *sql.Conn, status *Status, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, sem *semaphore.Weighted) (err error) {
+func index(git Git, db *sql.Conn, status *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
 	tasklog := status.Tasklog
 
 	tipCommit := NULL
@@ -281,11 +291,11 @@ func index(git Git, db *sql.Conn, status *Status, parse ParseSymbolsFunc, repo, 
 	tasklog.Start("Acquire semaphore")
 	semName := "MAX_CONCURRENTLY_INDEXING semaphore"
 	status.SetBlockedOn(semName)
-	sem.Acquire(context.Background(), 1)
+	indexingSemaphore.Acquire(context.Background(), 1)
 	status.ClearBlockedOn()
 	status.HoldLock(semName)
 	defer func() {
-		sem.Release(1)
+		indexingSemaphore.Release(1)
 		status.ReleaseLock(semName)
 	}()
 
@@ -460,7 +470,7 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func deleteOldRepos(db *sql.Conn, maxRepos int) error {
+func deleteOldRepos(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
 		// Select a candidate repo to delete.
@@ -765,7 +775,10 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, sem *semaphore.Weighted, status *Status) (blobs []Blob, cleanup CleanupFunc, err error) {
+func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
+	// Initialize the cleanup function to a noop.
+	cleanup = func() error { return nil }
+
 	// Get a fresh connection from the DB pool so that this indexer can hold overlapping locks (which
 	// would otherwise block each other) to prevent other indexers from intervening.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
@@ -800,7 +813,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 	// Set the cleanup function to delete old repos that were pushed past the maxRepos limit.
 	cleanup = func() error {
-		err := deleteOldRepos(conn, maxRepos)
+		err := deleteOldRepos(conn, maxRepos, requestStatus)
 		err2 := conn.Close()
 		if err != nil || err2 != nil {
 			return errors.Append(err, err2)
@@ -835,7 +848,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 		}
 
 		// Index the commit.
-		err = index(git, conn, status, parse, string(args.Repo), string(args.CommitID), maxRepos, sem)
+		err = index(git, conn, requestStatus, parse, string(args.Repo), string(args.CommitID), maxRepos, indexingSemaphore)
 		if err != nil {
 			// Remember to release the write lock.
 			err2 := releaseWLock()
@@ -853,7 +866,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(conn, args, status)
+	blobs, err = queryBlobs(conn, args, requestStatus)
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -861,7 +874,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	return blobs, cleanup, nil
 }
 
-func queryBlobs(conn *sql.Conn, args types.SearchArgs, status *Status) ([]Blob, error) {
+func queryBlobs(conn *sql.Conn, args types.SearchArgs, status *RequestStatus) ([]Blob, error) {
 	hops, err := getHops(conn, string(args.Repo), string(args.CommitID), status.Tasklog)
 	if err != nil {
 		return nil, err
