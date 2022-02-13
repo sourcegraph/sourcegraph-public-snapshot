@@ -15,8 +15,9 @@ import { getListWindow } from './utils/get-list-window'
  */
 export const DEFAULT_LINE_STROKE = 'var(--gray-07)'
 
-export const getLineStroke = <Datum extends object>(line: LineChartSeries<Datum>): string =>
-    line?.color ?? DEFAULT_LINE_STROKE
+export function getLineStroke<Datum>(line: LineChartSeries<Datum>): string {
+    return line?.color ?? DEFAULT_LINE_STROKE
+}
 
 interface TooltipProps {
     reference?: Target
@@ -70,10 +71,9 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = props => {
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
-export interface TooltipContentProps<Datum extends object> {
+export interface TooltipContentProps<Datum> {
     series: LineChartSeries<Datum>[]
-    data: Datum[]
-    activePoint: Point
+    activePoint: Point<Datum>
     xAxisKey: keyof Datum
 }
 
@@ -81,25 +81,25 @@ export interface TooltipContentProps<Datum extends object> {
  * Display tooltip content for XYChart.
  * It consists of title - datetime for current x point and list of all nearest y points.
  */
-export function TooltipContent<Datum extends object>(props: TooltipContentProps<Datum>): ReactElement | null {
-    const { data, activePoint, series, xAxisKey } = props
+export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactElement | null {
+    const { activePoint, series, xAxisKey } = props
+    const { datum, originalDatum } = activePoint
 
     const lines = useMemo(() => {
         if (!activePoint) {
             return { window: [], leftRemaining: 0, rightRemaining: 0 }
         }
 
-        const currentDatum = data[activePoint.index]
-
         const sortedSeries = [...series]
             .map(line => {
-                const value = currentDatum[line.dataKey]
+                const value = datum[line.dataKey]
+                const selfValue = originalDatum[line.dataKey]
 
-                if (!isValidNumber(value)) {
+                if (!isValidNumber(value) || !isValidNumber(selfValue)) {
                     return
                 }
 
-                return { ...line, value }
+                return { ...line, value, selfValue }
             })
             .filter(isDefined)
             .sort((lineA, lineB) => lineB.value - lineA.value)
@@ -111,9 +111,9 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
         const centerIndex = hoveredSeriesIndex !== -1 ? hoveredSeriesIndex : Math.floor(sortedSeries.length / 2)
 
         return getListWindow(sortedSeries, centerIndex, MAX_ITEMS_IN_TOOLTIP)
-    }, [series, activePoint, data])
+    }, [activePoint, series, datum, originalDatum])
 
-    const dateString = new Date(+data[activePoint.index][xAxisKey]).toDateString()
+    const dateString = new Date(+datum[xAxisKey]).toDateString()
 
     return (
         <>
@@ -122,6 +122,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
                 {lines.window.map(line => {
+                    const selfValue = formatYTick(line.selfValue)
                     const value = formatYTick(line.value)
                     const datumKey = activePoint.seriesKey
                     const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
@@ -134,8 +135,16 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
                             <span className={styles.legendText}>{line?.name ?? 'unknown series'}</span>
 
                             <span className={styles.legendValue}>
-                                {' '}
-                                {value === null || Number.isNaN(value) ? '–' : value}{' '}
+                                {selfValue !== value ? (
+                                    selfValue === null || Number.isNaN(selfValue) ? (
+                                        '–'
+                                    ) : (
+                                        <span className="font-weight-bold">{selfValue}</span>
+                                    )
+                                ) : (
+                                    false
+                                )}{' '}
+                                {value === null || Number.isNaN(value) ? '–' : value}
                             </span>
                         </li>
                     )
