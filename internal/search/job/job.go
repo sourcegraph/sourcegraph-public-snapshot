@@ -46,7 +46,7 @@ type Args struct {
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func ToSearchJob(jargs *Args, q query.Q) (run.Job, error) {
+func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit)
 
 	b, err := query.ToBasicQuery(q)
@@ -88,8 +88,8 @@ func ToSearchJob(jargs *Args, q query.Q) (run.Job, error) {
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	var requiredJobs, optionalJobs []run.Job
-	addJob := func(required bool, job run.Job) {
+	var requiredJobs, optionalJobs []Job
+	addJob := func(required bool, job Job) {
 		// Filter out any jobs that aren't commit jobs as they are added
 		if jargs.SearchInputs.CodeMonitorID != nil {
 			if _, ok := job.(*commit.CommitSearch); !ok {
@@ -397,14 +397,14 @@ func ToSearchJob(jargs *Args, q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	job := run.NewPriorityJob(
-		run.NewParallelJob(requiredJobs...),
-		run.NewParallelJob(optionalJobs...),
+	job := NewPriorityJob(
+		NewParallelJob(requiredJobs...),
+		NewParallelJob(optionalJobs...),
 	)
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
-		job = run.NewFilterJob(job)
+		job = NewFilterJob(job)
 	}
 
 	return job, nil
@@ -543,7 +543,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
-func toAndJob(args *Args, q query.Basic) (run.Job, error) {
+func toAndJob(args *Args, q query.Basic) (Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
@@ -556,25 +556,25 @@ func toAndJob(args *Args, q query.Basic) (run.Job, error) {
 	// kept in memory otherwise.
 	maxTryCount := 40000
 
-	operands := make([]run.Job, 0, len(queryOperands))
+	operands := make([]Job, 0, len(queryOperands))
 	for _, queryOperand := range queryOperands {
 		operand, err := toPatternExpressionJob(args, q.MapPattern(queryOperand))
 		if err != nil {
 			return nil, err
 		}
-		operands = append(operands, run.NewLimitJob(maxTryCount, operand))
+		operands = append(operands, NewLimitJob(maxTryCount, operand))
 	}
 
-	return run.NewAndJob(operands...), nil
+	return NewAndJob(operands...), nil
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
-func toOrJob(args *Args, q query.Basic) (run.Job, error) {
+func toOrJob(args *Args, q query.Basic) (Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
 	queryOperands := q.Pattern.(query.Operator).Operands
 
-	operands := make([]run.Job, 0, len(queryOperands))
+	operands := make([]Job, 0, len(queryOperands))
 	for _, term := range queryOperands {
 		operand, err := toPatternExpressionJob(args, q.MapPattern(term))
 		if err != nil {
@@ -582,14 +582,14 @@ func toOrJob(args *Args, q query.Basic) (run.Job, error) {
 		}
 		operands = append(operands, operand)
 	}
-	return run.NewOrJob(operands...), nil
+	return NewOrJob(operands...), nil
 }
 
-func toPatternExpressionJob(args *Args, q query.Basic) (run.Job, error) {
+func toPatternExpressionJob(args *Args, q query.Basic) (Job, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return run.NewNoopJob(), nil
+			return NewNoopJob(), nil
 		}
 
 		switch term.Kind {
@@ -604,22 +604,22 @@ func toPatternExpressionJob(args *Args, q query.Basic) (run.Job, error) {
 		return ToSearchJob(args, q.ToParseTree())
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return run.NewNoopJob(), nil
+		return NewNoopJob(), nil
 	}
 	// Unreachable.
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func ToEvaluateJob(args *Args, q query.Basic) (run.Job, error) {
+func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit)
 	timeout := search.TimeoutDuration(q)
 
 	if q.Pattern == nil {
 		job, err := ToSearchJob(args, query.ToNodes(q.Parameters))
-		return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
+		return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 	}
 	job, err := toPatternExpressionJob(args, q)
-	return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
+	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
