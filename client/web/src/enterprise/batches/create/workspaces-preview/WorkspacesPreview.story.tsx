@@ -15,7 +15,7 @@ import { mockImportingChangesets, mockWorkspaces } from './WorkspacesPreview.moc
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module)
     .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshots: true } })
+    .addParameters({ chromatic: { disableSnapshot: true } })
 
 const EMPTY_RESOLUTION_CONNECTION: UseConnectionResult<PreviewBatchSpecWorkspaceFields> = {
     connection: {

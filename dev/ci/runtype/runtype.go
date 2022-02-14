@@ -56,6 +56,15 @@ func Compute(tag, branch string, env map[string]string) RunType {
 	return PullRequest
 }
 
+// RunTypes returns all runtypes.
+func RunTypes() []RunType {
+	var results []RunType
+	for runType := PullRequest + 1; runType < None; runType += 1 {
+		results = append(results, runType)
+	}
+	return results
+}
+
 // Is returns true if this run type is one of the given RunTypes
 func (t RunType) Is(oneOfTypes ...RunType) bool {
 	for _, rt := range oneOfTypes {
@@ -214,4 +223,8 @@ func (m *RunTypeMatcher) Matches(tag, branch string, env map[string]string) bool
 	}
 
 	return false
+}
+
+func (m *RunTypeMatcher) IsPrefixMatcher() bool {
+	return m.Branch != "" && !m.BranchExact && !m.BranchRegexp
 }

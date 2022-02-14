@@ -18,7 +18,6 @@ type DBStore interface {
 		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
-		now time.Time,
 	) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 }

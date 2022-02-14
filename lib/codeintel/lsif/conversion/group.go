@@ -83,18 +83,18 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan precise.Ke
 
 func serializeDocument(state *State, documentID int) precise.DocumentData {
 	document := precise.DocumentData{
-		Ranges:             make(map[precise.ID]precise.RangeData, state.Contains.SetLen(documentID)),
+		Ranges:             make(map[precise.ID]precise.RangeData, state.Contains.NumIDsForKey(documentID)),
 		HoverResults:       map[precise.ID]string{},
 		Monikers:           map[precise.ID]precise.MonikerData{},
 		PackageInformation: map[precise.ID]precise.PackageInformationData{},
-		Diagnostics:        make([]precise.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
+		Diagnostics:        make([]precise.DiagnosticData, 0, state.Diagnostics.NumIDsForKey(documentID)),
 	}
 
-	state.Contains.SetEach(documentID, func(rangeID int) {
+	state.Contains.EachID(documentID, func(rangeID int) {
 		rangeData := state.RangeData[rangeID]
 
-		monikerIDs := make([]precise.ID, 0, state.Monikers.SetLen(rangeID))
-		state.Monikers.SetEach(rangeID, func(monikerID int) {
+		monikerIDs := make([]precise.ID, 0, state.Monikers.NumIDsForKey(rangeID))
+		state.Monikers.EachID(rangeID, func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
 			monikerIDs = append(monikerIDs, toID(monikerID))
 
@@ -133,7 +133,7 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 		}
 	})
 
-	state.Diagnostics.SetEach(documentID, func(diagnosticID int) {
+	state.Diagnostics.EachID(documentID, func(diagnosticID int) {
 		for _, diagnostic := range state.DiagnosticResults[diagnosticID] {
 			document.Diagnostics = append(document.Diagnostics, precise.DiagnosticData{
 				Severity:       diagnostic.Severity,
@@ -265,7 +265,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
-			monikers.SetUnion(resultID, state.Monikers.Get(rangeID))
+			monikers.UnionIDSet(resultID, state.Monikers.Get(rangeID))
 		}
 	}
 

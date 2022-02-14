@@ -128,6 +128,11 @@ func (e *uploadExpirer) handleRepository(
 		// retention scan timestamp updated by the following handleUploads call. This guarantees
 		// that the loop will terminate naturally after the entire set of candidate uploads have
 		// been seen and updated with a time necessarily greater than lastRetentionScanBefore.
+		//
+		// Additionally, we skip the set of uploads that have finished processing strictly after
+		// the last update to the commit graph for that repository. This ensures we do not throw
+		// out new uploads that would happen to be visible to no commits since they were never
+		// installed into the commit graph.
 
 		uploads, _, err := e.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
 			State:                   "completed",
@@ -136,6 +141,7 @@ func (e *uploadExpirer) handleRepository(
 			OldestFirst:             true,
 			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
+			InCommitGraph:           true,
 		})
 		if err != nil || len(uploads) == 0 {
 			return err
@@ -226,7 +232,11 @@ func (e *uploadExpirer) handleUploads(
 		}
 	}
 
-	e.metrics.numUploadsExpired.Add(float64(len(expiredUploadIDs)))
+	if count := len(expiredUploadIDs); count > 0 {
+		log15.Info("Expiring codeintel uploads", "count", count)
+		e.metrics.numUploadsExpired.Add(float64(count))
+	}
+
 	return err
 }
 

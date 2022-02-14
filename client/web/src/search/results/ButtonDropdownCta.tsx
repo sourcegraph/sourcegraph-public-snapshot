@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, Position, Popover, PopoverTrigger, PopoverContent, ButtonLink } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
@@ -54,20 +53,12 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     }, [isDropdownOpen])
 
     return (
-        <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
-            <Button
-                className={classNames('text-decoration-none', styles.toggle, className)}
-                nav={true}
-                caret={false}
-                variant="secondary"
-                outline={true}
-                size="sm"
-                as={DropdownToggle}
-            >
+        <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
+            <PopoverTrigger as={Button} outline={true} variant="secondary" size="sm" className={className}>
                 {button}
-            </Button>
-            <DropdownMenu right={true} className={styles.container}>
-                <div className="d-flex mb-3">
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomEnd} className={classNames(styles.container)}>
+                <div className={classNames('d-flex mb-3')}>
                     <div className="d-flex align-items-center mr-3">
                         <div className={styles.icon}>{icon}</div>
                     </div>
@@ -85,7 +76,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                 >
                     Get started
                 </ButtonLink>
-            </DropdownMenu>
-        </ButtonDropdown>
+            </PopoverContent>
+        </Popover>
     )
 }
