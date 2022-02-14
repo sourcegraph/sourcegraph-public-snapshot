@@ -126,7 +126,10 @@ func main() {
 					return "", err
 				}
 
-				if envvar.SourcegraphDotComMode() && svc.Kind == extsvc.KindGitHub {
+				dotcomConfig := conf.SiteConfig().Dotcom
+				if envvar.SourcegraphDotComMode() &&
+					repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
+					svc.Kind == extsvc.KindGitHub {
 					parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 					if err != nil {
 						return "", errors.Wrap(err, "parse config")
@@ -145,11 +148,6 @@ func main() {
 						apiURL, githubDotCom := github.APIRoot(baseURL)
 						if !githubDotCom {
 							return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-						}
-
-						dotcomConfig := conf.SiteConfig().Dotcom
-						if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
-							return "", errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
 						}
 
 						pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
