@@ -202,26 +202,28 @@ interface SideReferencesProps extends ReferencesListProps {
 }
 
 export const SideReferences: React.FunctionComponent<SideReferencesProps> = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.clickedToken.repoName,
-                commit: props.clickedToken.commitID,
-                path: props.clickedToken.filePath,
-                // On the backend the line/character are 0-indexed, but what we
-                // get from hoverifier is 1-indexed.
-                line: props.clickedToken.line - 1,
-                character: props.clickedToken.character - 1,
-                after: null,
-                filter: props.filter || null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
+    const { data: newData, previousData, error, loading } = useQuery<
+        CoolCodeIntelReferencesResult,
+        CoolCodeIntelReferencesVariables
+    >(FETCH_REFERENCES_QUERY, {
+        variables: {
+            repository: props.clickedToken.repoName,
+            commit: props.clickedToken.commitID,
+            path: props.clickedToken.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.clickedToken.line - 1,
+            character: props.clickedToken.character - 1,
+            after: null,
+            filter: props.filter || null,
+        },
+        // Cache this data but always re-request it in the background when we revisit
+        // this page to pick up newer changes.
+        fetchPolicy: 'cache-and-network',
+        nextFetchPolicy: 'network-only',
+    })
+
+    const data = newData || previousData
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
