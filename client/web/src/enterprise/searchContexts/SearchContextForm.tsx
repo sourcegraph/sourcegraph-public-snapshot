@@ -449,13 +449,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
                             <small>
-                                Valid filters: <SyntaxHighlightedSearchQuery query="repo:" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="rev:" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="file:" /> ,{' '}
-                                <SyntaxHighlightedSearchQuery query="lang:" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="case:" />,{' '}
-                                <SyntaxHighlightedSearchQuery query="fork:" />, and{' '}
-                                <SyntaxHighlightedSearchQuery query="visibility:" />.{' '}
+                                Valid filters: <SyntaxHighlightedSearchQuery query="repo" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="rev" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="file" /> ,{' '}
+                                <SyntaxHighlightedSearchQuery query="lang" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="case" />,{' '}
+                                <SyntaxHighlightedSearchQuery query="fork" />, and{' '}
+                                <SyntaxHighlightedSearchQuery query="visibility" />.{' '}
                                 <SyntaxHighlightedSearchQuery query="OR" /> and{' '}
                                 <SyntaxHighlightedSearchQuery query="AND" /> expressions are also allowed.
                             </small>
