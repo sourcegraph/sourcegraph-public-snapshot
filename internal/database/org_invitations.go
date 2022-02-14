@@ -58,6 +58,7 @@ type OrgInvitationStore interface {
 	UpdateEmailSentTimestamp(ctx context.Context, id int64) error
 	Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error)
 	Revoke(ctx context.Context, id int64) error
+	UpdateExpiryTime(ctx context.Context, id int64, expiresAt time.Time) error
 }
 
 type orgInvitationStore struct {
@@ -286,6 +287,22 @@ func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUse
 // it has been revoked.
 func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return NewOrgInvitationNotFoundError(id)
+	}
+	return nil
+}
+
+// UpdateExpiryTime updates the expiry time of the invitation.
+func (s *orgInvitationStore) UpdateExpiryTime(ctx context.Context, id int64, expiresAt time.Time) error {
+	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET expires_at=$2 WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now()", id, expiresAt)
 	if err != nil {
 		return err
 	}
