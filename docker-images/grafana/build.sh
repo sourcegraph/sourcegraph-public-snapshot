@@ -36,7 +36,9 @@ fi
 
 # shellcheck disable=SC2086
 docker pull us.gcr.io/sourcegraph-dev/grafana:insiders || true
-docker build --cache-from us.gcr.io/sourcegraph-dev/grafana:insiders \
+docker build \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from us.gcr.io/sourcegraph-dev/grafana:insiders \
   ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \

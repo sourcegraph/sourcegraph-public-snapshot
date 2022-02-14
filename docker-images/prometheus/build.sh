@@ -50,7 +50,9 @@ fi
 
 # shellcheck disable=SC2086
 docker pull us.gcr.io/sourcegraph-dev/prometheus:insiders
-docker build --cache-from us.gcr.io/sourcegraph-dev/prometheus:insiders \
+docker build \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from us.gcr.io/sourcegraph-dev/prometheus:insiders \
   ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
