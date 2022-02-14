@@ -28,7 +28,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         await deleteBatchChangesCredential({ variables: { id: credential.id } })
         afterDelete()
-    }, [afterDelete, credential.id])
+    }, [afterDelete, credential.id, deleteBatchChangesCredential])
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-remove-credential-modal">

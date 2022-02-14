@@ -1,12 +1,8 @@
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
 
 import { Container, Link } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../graphql-operations'
-
-import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
-import { CodeHostConnectionNode } from './CodeHostConnectionNode'
+import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -16,21 +12,38 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
-export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    userID: Scalars['ID'] | null
+import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
+import { CodeHostConnectionNode } from './CodeHostConnectionNode'
+
+export interface GlobalCodeHostConnectionsProps {
     headerLine: JSX.Element
 }
 
-export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
+export const GlobalCodeHostConnections: React.FunctionComponent<GlobalCodeHostConnectionsProps> = props => (
+    <CodeHostConnections userID={null} connectionResult={useGlobalBatchChangesCodeHostConnection()} {...props} />
+)
+
+export interface UserCodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
+    userID: Scalars['ID']
+}
+
+export const UserCodeHostConnections: React.FunctionComponent<UserCodeHostConnectionsProps> = props => (
+    <CodeHostConnections connectionResult={useUserBatchChangesCodeHostConnection(props.userID)} {...props} />
+)
+
+interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
+    userID: Scalars['ID'] | null
+    connectionResult: UseConnectionResult<BatchChangesCodeHostFields>
+}
+
+const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
     userID,
     headerLine,
-    history,
-    location,
+    connectionResult,
 }) => {
-    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = userID
-        ? useUserBatchChangesCodeHostConnection(userID)
-        : useGlobalBatchChangesCodeHostConnection()
+    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     return (
         <Container>
             <h3>Code host tokens</h3>

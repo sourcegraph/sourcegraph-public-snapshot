@@ -1,10 +1,11 @@
-import { getDocumentNode } from '@sourcegraph/http-client'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import { ExternalServiceKind } from '../../../graphql-operations'
@@ -21,8 +22,7 @@ const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
         },
     })
 
-add('Requires SSH - step 1', () => {
-    return (
+add('Requires SSH - step 1', () => (
         <WebStory>
             {props => (
                 <MockedTestProvider
@@ -64,8 +64,7 @@ add('Requires SSH - step 1', () => {
                 </MockedTestProvider>
             )}
         </WebStory>
-    )
-})
+    ))
 add('Requires SSH - step 2', () => (
     <WebStory>
         {props => (

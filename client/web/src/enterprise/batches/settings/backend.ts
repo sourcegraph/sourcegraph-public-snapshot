@@ -1,5 +1,8 @@
+import { MutationTuple } from '@apollo/client'
+
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
+import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
     BatchChangesCodeHostFields,
     CreateBatchChangesCredentialResult,
@@ -12,8 +15,6 @@ import {
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
-import { MutationTuple } from '@apollo/client'
 
 export const CREDENTIAL_FIELDS_FRAGMENT = gql`
     fragment BatchChangesCredentialFields on BatchChangesCredential {

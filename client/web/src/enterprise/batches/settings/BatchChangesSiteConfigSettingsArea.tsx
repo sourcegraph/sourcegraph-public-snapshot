@@ -1,20 +1,17 @@
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
 
 import { PageHeader, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 
-import { CodeHostConnections } from './CodeHostConnections'
+import { GlobalCodeHostConnections } from './CodeHostConnections'
 
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
-export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
-    Pick<RouteComponentProps, 'history' | 'location'>
-> = props => (
+export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<{}> = () => (
     <>
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />
-        <CodeHostConnections
+        <GlobalCodeHostConnections
             headerLine={
                 <>
                     <p>Add access tokens to enable Batch Changes changeset creation for all users.</p>
@@ -24,8 +21,6 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
                     </Alert>
                 </>
             }
-            userID={null}
-            {...props}
         />
     </>
 )

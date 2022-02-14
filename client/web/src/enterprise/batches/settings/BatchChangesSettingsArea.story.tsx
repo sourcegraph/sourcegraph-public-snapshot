@@ -1,7 +1,8 @@
-import { getDocumentNode } from '@sourcegraph/http-client'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
@@ -10,16 +11,15 @@ import {
     ExternalServiceKind,
     UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
-import { USER_CODE_HOSTS } from './backend'
 
+import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => {
-    return {
+const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => ({
         node: {
             __typename: 'User',
             batchChangesCodeHosts: {
@@ -28,17 +28,14 @@ const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChang
                 nodes: hosts,
             },
         },
-    }
-}
+    })
 
-const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => {
-    return {
+const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => ({
         id: '123',
         isSiteCredential,
         sshPublicKey:
             'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-    }
-}
+    })
 
 add('Overview', () => (
     <WebStory>
