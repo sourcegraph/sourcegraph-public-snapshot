@@ -127,7 +127,7 @@ type matcherContext struct {
 
 type branchRequestMeta struct {
 	isDefaultBranch     bool
-	commitHash          string // commit hash of the tip of the branch
+	commitID            string // commit hash of the tip of the branch
 	policyDurationByIDs map[int]*time.Duration
 }
 
@@ -179,7 +179,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 
 			meta.policyDurationByIDs[policy.ID] = policyDuration
 			meta.isDefaultBranch = meta.isDefaultBranch || refDescription.IsDefaultBranch
-			meta.commitHash = commit
+			meta.commitID = commit
 			context.branchRequests[refDescription.Name] = meta
 		}
 	}
@@ -200,7 +200,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 			maxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(ctx, context.repositoryID, branchRequestMeta.commitHash, branchRequestMeta.isDefaultBranch, maxCommitAge)
+		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(ctx, context.repositoryID, branchRequestMeta.commitID, branchRequestMeta.isDefaultBranch, maxCommitAge)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsUniqueToBranch")
 		}
