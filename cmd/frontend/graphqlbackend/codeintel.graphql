@@ -737,6 +737,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         """
         character: Int!
+
+        """
+        When specified, it filters references by filename.
+        """
+        filter: String
     ): LocationConnection!
 
     """
@@ -767,6 +772,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         how many results to return per page.
         """
         first: Int
+
+        """
+        When specified, it filters references by filename.
+        """
+        filter: String
     ): LocationConnection!
 
     """
@@ -797,6 +807,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         how many results to return per page.
         """
         first: Int
+
+        """
+        When specified, it filters immplementations by filename.
+        """
+        filter: String
     ): LocationConnection!
 
     """

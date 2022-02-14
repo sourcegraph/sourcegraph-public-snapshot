@@ -8,6 +8,7 @@ import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
+import { GlobalCoolCodeIntelProps } from './global/CoolCodeIntel'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
@@ -37,7 +38,8 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        GlobalCoolCodeIntelProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }

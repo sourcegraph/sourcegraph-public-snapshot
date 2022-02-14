@@ -6,8 +6,9 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { useLocalStorage, AlertProps } from '@sourcegraph/wildcard'
+import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
@@ -20,9 +21,12 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-export const WebHoverOverlay: React.FunctionComponent<
-    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
-> = props => {
+interface Props extends HoverOverlayProps, HoverThresholdProps, GlobalCoolCodeIntelProps {
+    hoveredTokenElement?: HTMLElement
+    nav?: (url: string) => void
+}
+
+export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -42,7 +46,7 @@ export const WebHoverOverlay: React.FunctionComponent<
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken } = props
+    const { onHoverShown, hoveredToken, onTokenClick, coolCodeIntelEnabled } = props
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
@@ -87,20 +91,42 @@ export const WebHoverOverlay: React.FunctionComponent<
                         return
                     }
 
-                    const actionType = action === definitionAction ? 'definition' : 'reference'
-                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
-                    nav(url)
+                    if (coolCodeIntelEnabled && onTokenClick !== undefined && hoveredToken !== undefined) {
+                        onTokenClick(hoveredToken)
+                    } else {
+                        const actionType = action === definitionAction ? 'definition' : 'reference'
+                        props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                        nav(url)
+                    }
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
             )
             .subscribe()
 
         return () => subscription.unsubscribe()
-    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
+    }, [
+        props.actionsOrError,
+        props.hoveredTokenElement,
+        props.location.hash,
+        props.nav,
+        props.telemetryService,
+        hoveredToken,
+        coolCodeIntelEnabled,
+        onTokenClick,
+    ])
+
+    const onlyGoToDefinition = Array.isArray(props.actionsOrError)
+        ? props.actionsOrError.filter(
+              a => a.action.id === 'goToDefinition.preloaded' || a.action.id === 'goToDefinition'
+          )
+        : []
 
     return (
         <HoverOverlay
             {...propsToUse}
+            {...(coolCodeIntelEnabled && {
+                actionsOrError: onlyGoToDefinition,
+            })}
             className={styles.webHoverOverlay}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}

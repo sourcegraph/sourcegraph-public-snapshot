@@ -35,7 +35,14 @@ const { add } = storiesOf('web/WebHoverOverlay', module)
         },
     })
 
-add('Loading', () => <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />)
+add('Loading', () => (
+    <WebHoverOverlay
+        {...commonProps()}
+        hoverOrError="loading"
+        actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
+    />
+))
 
 add('Error', () => (
     <WebHoverOverlay
@@ -46,15 +53,21 @@ add('Error', () => (
             )
         }
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
 add('No hover information', () => (
-    <WebHoverOverlay {...commonProps()} hoverOrError={null} actionsOrError={FIXTURE_ACTIONS} />
+    <WebHoverOverlay
+        {...commonProps()}
+        hoverOrError={null}
+        actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
+    />
 ))
 
 add('Common content without actions', () => (
-    <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} />
+    <WebHoverOverlay {...commonProps()} hoverOrError={{ contents: [FIXTURE_CONTENT] }} coolCodeIntelEnabled={false} />
 ))
 
 add('Common content with actions', () => (
@@ -64,6 +77,7 @@ add('Common content with actions', () => (
             contents: [FIXTURE_CONTENT],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -75,6 +89,7 @@ add('Aggregated Badges', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -86,6 +101,7 @@ add('Long code', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -96,6 +112,7 @@ add('Long text only', () => (
             contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -106,6 +123,7 @@ add('Long markdown with <div>', () => (
             contents: [FIXTURE_CONTENT_MARKDOWN],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -117,6 +135,7 @@ add('Multiple MarkupContents', () => (
             aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
         }}
         actionsOrError={FIXTURE_ACTIONS}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -129,6 +148,7 @@ add('With small-text alert', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -148,6 +168,7 @@ add('With one-line alert', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -168,6 +189,7 @@ add('With alert with warning icon', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -190,6 +212,7 @@ add('With dismissible alert with icon', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -203,6 +226,7 @@ add('With long markdown text and dismissible alert with icon.', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
 
@@ -216,5 +240,6 @@ add('Multiple MarkupContents with badges and alerts', () => (
         }}
         actionsOrError={FIXTURE_ACTIONS}
         onAlertDismissed={action('onAlertDismissed')}
+        coolCodeIntelEnabled={false}
     />
 ))
