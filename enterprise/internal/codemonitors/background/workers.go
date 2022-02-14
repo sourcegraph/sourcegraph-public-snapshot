@@ -317,6 +317,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		MonitorURL:         codeMonitorURL,
 		Query:              m.Query,
 		QueryURL:           searchURL,
+		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
 	}
@@ -355,6 +356,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 	args := actionArgs{
 		MonitorDescription: m.Description,
 		MonitorURL:         codeMonitorURL,
+		MonitorOwnerName:   m.OwnerName,
 		Query:              m.Query,
 		QueryURL:           searchURL,
 		Results:            m.Results,

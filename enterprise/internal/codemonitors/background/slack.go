@@ -24,11 +24,19 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		return slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", s, false, false), nil, nil)
 	}
 
-	var resultContentBlocks []slack.Block
+	blocks := []slack.Block{
+		newMarkdownSection(fmt.Sprintf(
+			"%s's Sourcegraph Code monitor, *%s*, detected *%d* new matches.",
+			args.MonitorOwnerName,
+			args.MonitorDescription,
+			len(args.Results),
+		)),
+	}
+
 	if args.IncludeResults {
 		truncatedResults, truncatedCount := truncateResults(args.Results, 5)
 		for _, result := range truncatedResults {
-			resultContentBlocks = append(resultContentBlocks, newMarkdownSection(fmt.Sprintf(
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
 				"%s@%s",
 				result.Commit.Repository.Name,
 				result.Commit.Oid[:8],
@@ -39,23 +47,19 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 			} else {
 				contentRaw = result.MessagePreview.Value
 			}
-			resultContentBlocks = append(resultContentBlocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
 		}
 		if truncatedCount > 0 {
-			resultContentBlocks = append(resultContentBlocks, newMarkdownSection(fmt.Sprintf("...and %d more matches.", truncatedCount)))
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("...and %d more matches.", truncatedCount)))
 		}
 	}
 
-	// To see what this looks like:
-	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%7B%22type%22:%22section%22,%22text%22:%7B%22text%22:%22*New%20results%20for%20code%20monitor*%22,%22type%22:%22mrkdwn%22%7D%7D,%7B%22type%22:%22section%22,%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%225%20new%20results%20for%20query%20%60%60%60type:diff%20repo:github.com/sourcegraph/sourcegraph$%20BEGIN%20PRIVATE%20KEY%60%60%60%22%7D%7D,%7B%22type%22:%22section%22,%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22%3Chttps://sourcegraph.com/search?q=context:global+type:diff+repo:github.com/sourcegraph/sourcegraph%2524+BEGIN+PRIVATE+KEY&patternType=literal%7CView%20Search%20Results%3E%20%7C%20%3Chttps://sourcegraph.com/code-monitoring?visible=1%7CView%20Code%20Monitor%3E%22%7D%7D%5D%7D
-	blocks := []slack.Block{
-		newMarkdownSection(fmt.Sprintf("*New results for Code Monitor \"%s\"*", args.MonitorDescription)),
-		newMarkdownSection(fmt.Sprintf("%d new results for query: `%s`", len(args.Results), args.Query)),
-	}
-	blocks = append(blocks, resultContentBlocks...)
-	blocks = append(
-		blocks,
-		newMarkdownSection(fmt.Sprintf(`<%s|View search on Sourcegraph> | <%s|View code monitor>`, args.QueryURL, args.MonitorURL)),
+	blocks = append(blocks,
+		newMarkdownSection(fmt.Sprintf(
+			`If you are %s, you can <%s|edit your code monitor>`,
+			args.MonitorOwnerName,
+			args.MonitorURL,
+		)),
 	)
 	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}
 }

@@ -18,6 +18,7 @@ func TestSlackWebhook(t *testing.T) {
 	action := actionArgs{
 		MonitorDescription: "My test monitor",
 		MonitorURL:         "https://google.com",
+		MonitorOwnerName:   "Camden Cheek",
 		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 		QueryURL:           "https://youtube.com",
 		Results: cmtypes.CommitSearchResults{{

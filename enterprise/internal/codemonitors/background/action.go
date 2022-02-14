@@ -7,6 +7,7 @@ import cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonit
 type actionArgs struct {
 	MonitorDescription string
 	MonitorURL         string
+	MonitorOwnerName   string
 	Query              string
 	QueryURL           string
 	Results            cmtypes.CommitSearchResults
