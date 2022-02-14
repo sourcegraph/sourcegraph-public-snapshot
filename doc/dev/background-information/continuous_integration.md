@@ -213,6 +213,45 @@ For more details about best practices and additional features and capabilities, 
 
 For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
+#### Observability
+
+##### Pipeline command tracing
+
+Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [Honeycomb.io](https://honeycomb.io).
+See the [Buildkite board on Honeycomb](https://ui.honeycomb.io/sourcegraph/board/sqPvYj5BXNy/Buildkite) for an overview.
+
+Individual commands are tracked from the perspective of a given [step](#step-options): 
+
+
+  ```go
+    pipeline.AddStep(":memo: Check and build docsite",
+      bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+  ```
+
+Will result in a single trace span for the `./dev/check/docsite.sh` script. But the following will have individual trace spans for each `yarn` commands:
+
+  ```go
+    pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			// ...
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+  ```
+
+Therefore, it's beneficial for tracing purposes to split the step in multiple commands, if possible.
+
+##### Test analytics
+
+Our test analytics is currently powered by a tool that Buildkite released in beta to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
+This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness. 
+
+Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating 
+from its historical duration or flakiness. 
+
+In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI. 
+
 ### Buildkite infrastructure
 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
