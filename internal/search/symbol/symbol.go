@@ -3,7 +3,7 @@ package symbol
 import (
 	"context"
 	"fmt"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sort"
 	"time"
 

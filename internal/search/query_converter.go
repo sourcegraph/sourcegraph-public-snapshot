@@ -1,7 +1,7 @@
 package search
 
 import (
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strconv"
 	"strings"
 	"time"
