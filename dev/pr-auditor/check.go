@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"regexp"
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/grafana/regexp"
 )
 
 type checkResult struct {
