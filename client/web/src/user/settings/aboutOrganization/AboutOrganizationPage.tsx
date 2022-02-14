@@ -30,7 +30,7 @@ export const AboutOrganizationPage: React.FunctionComponent<AboutOrganizationPag
                     source repositories. Sourcegraph Cloud for teams brings enterprise advantages to small teams.
                 </p>
                 <ButtonLink
-                    to="https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku/"
+                    to="https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_term=in-product-settings&utm_content=cloud-product-beta-teams"
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="primary"
