@@ -74,6 +74,6 @@ export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
         maxLength={EXTENSION_NAME_MAX_LENGTH}
         disabled={disabled}
         message="The name for this extension."
-        className={className}
+        inputClassName={className}
     />
 )
