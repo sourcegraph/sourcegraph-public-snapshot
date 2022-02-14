@@ -28,7 +28,9 @@ fi
 
 echo "--- docker build $IMAGE"
 docker pull us.gcr.io/sourcegraph-dev/frontend:insiders || true
-docker build --cache-from us.gcr.io/sourcegraph-dev/frotend:insiders ${BUILD_CACHE} -f cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from us.gcr.io/sourcegraph-dev/frotend:insiders ${BUILD_CACHE} \
+  -f cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
