@@ -27,6 +27,7 @@ var (
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
@@ -35,7 +36,7 @@ var (
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
 	gitCommonAllowlist = []string{
-		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges", "--fixed-strings",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
 		"--until", "--since", "--author", "--committer",
