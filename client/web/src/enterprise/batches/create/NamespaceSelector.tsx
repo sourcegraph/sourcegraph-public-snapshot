@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 
 import styles from './NamespaceSelector.module.scss'
 

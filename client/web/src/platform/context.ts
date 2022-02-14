@@ -1,6 +1,7 @@
 import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
+import { gqlToCascade } from '@sourcegraph/client-api'
 import { createAggregateError, asError, LocalStorageSubject, appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
@@ -8,7 +9,6 @@ import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shar
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
     RepoFile,

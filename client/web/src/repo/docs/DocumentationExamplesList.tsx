@@ -5,10 +5,10 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'

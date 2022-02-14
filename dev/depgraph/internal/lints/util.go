@@ -1,9 +1,8 @@
 package lints
 
 import (
+	"regexp"
 	"sort"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )

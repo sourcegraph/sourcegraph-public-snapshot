@@ -4,9 +4,9 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'

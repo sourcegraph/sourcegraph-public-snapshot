@@ -3,11 +3,11 @@ import * as H from 'history'
 import React, { useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 

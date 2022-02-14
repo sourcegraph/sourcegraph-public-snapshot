@@ -3,8 +3,9 @@ import { from, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Unsubscribable } from 'sourcegraph'
 
+import { isSettingsValid } from '@sourcegraph/client-api'
+
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
-import { isSettingsValid } from '../../settings/settings'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'

@@ -1,8 +1,8 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
+import { SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'

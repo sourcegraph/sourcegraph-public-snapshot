@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/grafana/regexp"
 )
 
 const rootPackage = "github.com/sourcegraph/sourcegraph"

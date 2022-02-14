@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/client-api'
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'

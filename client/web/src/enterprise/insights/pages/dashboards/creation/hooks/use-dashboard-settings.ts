@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { InsightDashboard, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 export interface useDashboardSettingsProps extends SettingsCascadeProps<Settings> {
     excludeDashboardIds?: string[]

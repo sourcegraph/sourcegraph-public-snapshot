@@ -4,9 +4,9 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 

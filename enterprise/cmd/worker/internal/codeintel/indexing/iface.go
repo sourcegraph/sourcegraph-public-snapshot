@@ -2,9 +2,8 @@ package indexing
 
 import (
 	"context"
+	"regexp"
 	"time"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"

@@ -2,10 +2,10 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 

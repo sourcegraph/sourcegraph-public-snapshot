@@ -1,9 +1,8 @@
 package query
 
 import (
+	"regexp"
 	"strconv"
-
-	"github.com/grafana/regexp"
 )
 
 // ValueType is the set of types of values in queries.

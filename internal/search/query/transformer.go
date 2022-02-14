@@ -2,9 +2,8 @@ package query
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

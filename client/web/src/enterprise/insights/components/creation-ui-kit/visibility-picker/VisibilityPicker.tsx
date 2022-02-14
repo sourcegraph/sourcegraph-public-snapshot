@@ -1,6 +1,6 @@
 import React, { ChangeEvent } from 'react'
 
-import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 import { Link } from '@sourcegraph/wildcard'
 
 import {

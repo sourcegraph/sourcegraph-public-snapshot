@@ -1,8 +1,8 @@
+import { SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { VSCEState, VSCEStateMachine } from './state'
 

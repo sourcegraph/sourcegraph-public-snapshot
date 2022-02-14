@@ -3,9 +3,8 @@ package compute
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"

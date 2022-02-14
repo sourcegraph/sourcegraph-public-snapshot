@@ -1,10 +1,9 @@
 package main
 
 import (
+	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/grafana/regexp"
 )
 
 // Emojis returns a string of emojis that should be displayed with an issue or a pull request.

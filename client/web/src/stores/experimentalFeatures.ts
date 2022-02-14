@@ -1,8 +1,8 @@
 import create from 'zustand'
 
+import { SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 const defaultSettings: SettingsExperimentalFeatures = {
     apiDocs: true,

@@ -1,6 +1,6 @@
+import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import {
     AddInsight,

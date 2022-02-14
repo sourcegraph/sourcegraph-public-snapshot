@@ -3,8 +3,8 @@ import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/client-api'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_LONG,

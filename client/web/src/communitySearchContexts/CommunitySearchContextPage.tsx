@@ -7,6 +7,7 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SettingsCascadeProps, Settings } from '@sourcegraph/client-api'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -15,7 +16,6 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'

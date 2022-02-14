@@ -2,9 +2,8 @@ package reposource
 
 import (
 	"net/url"
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"

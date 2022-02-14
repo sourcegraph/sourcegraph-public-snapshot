@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link } from '@sourcegraph/wildcard'

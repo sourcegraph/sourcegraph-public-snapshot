@@ -1,9 +1,8 @@
 package reposource
 
 import (
+	"regexp"
 	"testing"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )

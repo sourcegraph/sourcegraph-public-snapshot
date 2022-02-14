@@ -1,8 +1,9 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 
+import { isSettingsValid } from '@sourcegraph/client-api'
+
 import { PlatformContext } from '../../../platform/context'
-import { isSettingsValid } from '../../../settings/settings'
 
 /**
  * A key path that refers to a location in a JSON document.

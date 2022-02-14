@@ -2,8 +2,7 @@ package inference
 
 import (
 	"context"
-
-	"github.com/grafana/regexp"
+	"regexp"
 )
 
 type GitClient interface {

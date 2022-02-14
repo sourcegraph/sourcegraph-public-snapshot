@@ -2,8 +2,7 @@ package compute
 
 import (
 	"fmt"
-
-	"github.com/grafana/regexp"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"

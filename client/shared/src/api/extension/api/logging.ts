@@ -1,7 +1,8 @@
 import { map } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
-import { Settings } from '../../../settings/settings'
+import { Settings } from '@sourcegraph/client-api'
+
 import { ExtensionHostState } from '../extensionHostState'
 
 /**

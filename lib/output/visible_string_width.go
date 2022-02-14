@@ -1,7 +1,8 @@
 package output
 
 import (
-	"github.com/grafana/regexp"
+	"regexp"
+
 	"github.com/mattn/go-runewidth"
 )
 

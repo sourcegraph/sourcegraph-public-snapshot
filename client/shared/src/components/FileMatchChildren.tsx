@@ -5,6 +5,7 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
@@ -15,7 +16,6 @@ import { Link } from '@sourcegraph/wildcard'
 
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
-import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
 

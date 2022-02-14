@@ -1,9 +1,9 @@
 import { render } from '@testing-library/react'
 import React from 'react'
 
+import { ConfiguredSubjectOrError, SettingsSubject } from '@sourcegraph/client-api'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { ConfiguredSubjectOrError, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 
 import { ExtensionToggle } from './ExtensionToggle'
 

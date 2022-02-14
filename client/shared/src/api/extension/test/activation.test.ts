@@ -3,9 +3,9 @@ import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import sourcegraph from 'sourcegraph'
 
-import { SettingsCascade } from '../../../settings/settings'
+import { Contributions, SettingsCascade } from '@sourcegraph/client-api'
+
 import { MainThreadAPI } from '../../contract'
-import { Contributions } from '../../protocol'
 import { pretendRemote } from '../../util'
 import { activateExtensions, ExecutableExtension } from '../activation'
 import { ExtensionHostState } from '../extensionHostState'

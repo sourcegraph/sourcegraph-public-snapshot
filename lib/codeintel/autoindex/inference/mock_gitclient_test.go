@@ -4,9 +4,8 @@ package inference
 
 import (
 	"context"
+	"regexp"
 	"sync"
-
-	"github.com/grafana/regexp"
 )
 
 // MockGitClient is a mock implementation of the GitClient interface (from

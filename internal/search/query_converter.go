@@ -1,14 +1,14 @@
 package search
 
 import (
-	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"regexp"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"

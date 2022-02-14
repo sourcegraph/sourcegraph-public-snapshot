@@ -1,5 +1,5 @@
+import { Settings, SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
-import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 /**
  * Utility for checking if a user has the experimental feature, batch change server-side

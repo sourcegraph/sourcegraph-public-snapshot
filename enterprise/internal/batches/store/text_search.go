@@ -1,7 +1,8 @@
 package store
 
 import (
-	"github.com/grafana/regexp"
+	"regexp"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"

@@ -8,6 +8,7 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/golang/groupcache/lru"
-	"github.com/grafana/regexp"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"

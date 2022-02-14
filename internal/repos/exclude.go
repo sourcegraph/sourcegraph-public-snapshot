@@ -1,9 +1,8 @@
 package repos
 
 import (
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 )
 
 // excludeFunc takes a string and returns true if it should be excluded. In

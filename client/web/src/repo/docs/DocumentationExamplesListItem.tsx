@@ -4,12 +4,12 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'

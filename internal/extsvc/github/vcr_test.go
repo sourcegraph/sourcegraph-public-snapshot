@@ -3,8 +3,7 @@ package github
 import (
 	"flag"
 	"os"
-
-	"github.com/grafana/regexp"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )

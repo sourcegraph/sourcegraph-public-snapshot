@@ -3,11 +3,11 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { FetchFileParameters } from './CodeExcerpt'

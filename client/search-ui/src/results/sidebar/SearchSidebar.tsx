@@ -4,6 +4,7 @@ import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import {
     BuildSearchQueryURLParameters,
     QueryUpdate,
@@ -13,7 +14,6 @@ import {
 } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'

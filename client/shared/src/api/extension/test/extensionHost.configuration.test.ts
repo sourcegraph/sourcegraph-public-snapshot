@@ -1,7 +1,8 @@
 import { proxy } from 'comlink'
 import { BehaviorSubject } from 'rxjs'
 
-import { SettingsCascade } from '../../../settings/settings'
+import { SettingsCascade } from '@sourcegraph/client-api'
+
 import { ClientAPI } from '../../client/api/api'
 import { SettingsEdit } from '../../client/services/settings'
 import { pretendRemote } from '../../util'

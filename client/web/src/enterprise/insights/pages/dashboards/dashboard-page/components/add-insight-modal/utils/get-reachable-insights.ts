@@ -1,6 +1,6 @@
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'
 import { parseInsightFromSubject } from '../../../../../../core/backend/setting-based-api/utils/find-insight-by-id'

@@ -19,9 +19,8 @@ package vcs
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

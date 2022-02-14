@@ -3,11 +3,10 @@ package compute
 import (
 	"context"
 	"os"
+	"regexp"
 	"testing"
 
-	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
-
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 )
 

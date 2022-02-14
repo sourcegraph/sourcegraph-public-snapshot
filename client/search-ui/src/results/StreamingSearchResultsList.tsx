@@ -8,6 +8,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { SearchContextProps } from '@sourcegraph/search'
 import { SearchResult } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -24,7 +25,6 @@ import {
     SearchMatch,
     getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 

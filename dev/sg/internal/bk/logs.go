@@ -1,9 +1,8 @@
 package bk
 
 import (
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 )
 
 // CleanANSI cleans up Buildkite log output markup.

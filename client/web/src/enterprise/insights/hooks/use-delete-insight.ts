@@ -1,8 +1,8 @@
 import { useCallback, useContext, useState } from 'react'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { ErrorLike } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'

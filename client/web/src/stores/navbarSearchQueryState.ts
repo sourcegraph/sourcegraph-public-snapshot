@@ -5,9 +5,9 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
+import { Settings, SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { BuildSearchQueryURLParameters, canSubmitSearch, SearchQueryState, updateQuery } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { parseSearchURL } from '../search'

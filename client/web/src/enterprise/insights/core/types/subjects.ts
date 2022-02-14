@@ -1,9 +1,4 @@
-import {
-    SettingsOrgSubject,
-    SettingsSiteSubject,
-    SettingsSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsSiteSubject, SettingsSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 
 /**
  * Currently we support only two types of subject that can have insights dashboard.

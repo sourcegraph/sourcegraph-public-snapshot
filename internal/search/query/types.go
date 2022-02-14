@@ -2,10 +2,9 @@ package query
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
-
-	"github.com/grafana/regexp"
 )
 
 type ExpectedOperand struct {

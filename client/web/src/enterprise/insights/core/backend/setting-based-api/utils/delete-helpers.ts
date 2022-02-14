@@ -1,8 +1,8 @@
 import { get } from 'lodash'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import {
     RemoveInsight,

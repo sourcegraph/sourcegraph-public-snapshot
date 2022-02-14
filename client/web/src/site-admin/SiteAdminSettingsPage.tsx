@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 

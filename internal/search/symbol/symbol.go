@@ -3,14 +3,14 @@ package symbol
 import (
 	"context"
 	"fmt"
-	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"regexp"
+	"regexp/syntax"
 	"sort"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"

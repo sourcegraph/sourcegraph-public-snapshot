@@ -6,13 +6,9 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { SettingsCascadeProps, SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge } from '@sourcegraph/wildcard'

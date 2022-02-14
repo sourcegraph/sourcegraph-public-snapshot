@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'

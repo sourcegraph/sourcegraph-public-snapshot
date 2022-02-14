@@ -1,7 +1,8 @@
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
 
-import { SettingsCascade } from '../../../settings/settings'
+import { SettingsCascade } from '@sourcegraph/client-api'
+
 import { ClientAPI } from '../../client/api/api'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 import { FileDecorationsByPath } from '../extensionHostApi'

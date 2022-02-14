@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
-
-	"github.com/grafana/regexp"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )

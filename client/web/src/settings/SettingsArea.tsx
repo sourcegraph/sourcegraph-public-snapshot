@@ -7,6 +7,7 @@ import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -15,7 +16,6 @@ import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/exten
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader } from '@sourcegraph/wildcard'

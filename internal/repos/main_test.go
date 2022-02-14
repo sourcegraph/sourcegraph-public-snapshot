@@ -3,9 +3,8 @@ package repos
 import (
 	"flag"
 	"os"
+	"regexp"
 	"testing"
-
-	"github.com/grafana/regexp"
 
 	"github.com/inconshreveable/log15"
 )

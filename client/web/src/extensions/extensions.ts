@@ -1,3 +1,4 @@
+import { Settings } from '@sourcegraph/client-api'
 import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import {
     ConfiguredRegistryExtension,
@@ -5,7 +6,6 @@ import {
     toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 

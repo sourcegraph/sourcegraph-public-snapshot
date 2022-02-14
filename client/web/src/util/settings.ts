@@ -1,7 +1,7 @@
+import { SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'

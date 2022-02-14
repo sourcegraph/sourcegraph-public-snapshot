@@ -3,17 +3,12 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { from, fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
+import { mergeSettings, SettingsCascade, SettingsCascadeOrError, SettingsSubject } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import {
-    mergeSettings,
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
-} from '@sourcegraph/shared/src/settings/settings'
 
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'

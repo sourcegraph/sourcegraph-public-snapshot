@@ -4,8 +4,8 @@ import React, { useState } from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Observable } from 'rxjs'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { RepositoryFields } from '../../graphql-operations'
 

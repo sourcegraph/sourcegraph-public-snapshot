@@ -4,10 +4,10 @@ import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

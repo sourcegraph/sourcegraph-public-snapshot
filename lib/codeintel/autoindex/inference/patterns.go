@@ -1,9 +1,8 @@
 package inference
 
 import (
+	"regexp"
 	"strings"
-
-	"github.com/grafana/regexp"
 )
 
 // Patterns is a regular expression that matches any input that would also match

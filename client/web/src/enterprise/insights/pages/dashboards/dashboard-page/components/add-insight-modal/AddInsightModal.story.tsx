@@ -1,8 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
+import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'

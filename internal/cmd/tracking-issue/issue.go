@@ -1,11 +1,10 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/grafana/regexp"
 )
 
 // Issue represents an existing GitHub Issue.

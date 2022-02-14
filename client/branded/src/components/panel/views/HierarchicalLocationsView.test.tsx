@@ -5,12 +5,12 @@ import React from 'react'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 
+import { SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

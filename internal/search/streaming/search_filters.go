@@ -3,10 +3,9 @@ package streaming
 import (
 	"fmt"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"

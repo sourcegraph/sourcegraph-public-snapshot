@@ -1,16 +1,22 @@
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
+import {
+    Contributions,
+    Evaluated,
+    Raw,
+    TextDocumentPositionParameters,
+    HoverMerged,
+    SettingsCascade,
+} from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { DeepReplace, ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
 import { ConfiguredExtension } from '../extensions/extension'
-import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
-import { HoverMerged } from './client/types/hover'
 import { ExecutableExtension } from './extension/activation'
 import { StatusBarItemWithKey } from './extension/api/codeEditor'
 import { ProxySubscribable } from './extension/api/common'
@@ -24,7 +30,6 @@ import {
     PlainNotification,
     ContributionOptions,
 } from './extension/extensionHostApi'
-import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 /**

@@ -2,8 +2,7 @@ package enqueuer
 
 import (
 	"context"
-
-	"github.com/grafana/regexp"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"

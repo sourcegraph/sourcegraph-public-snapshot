@@ -4,8 +4,8 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ToggleBig } from '@sourcegraph/branded/src/components/ToggleBig'
+import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/client-api'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'

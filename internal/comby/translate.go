@@ -1,10 +1,9 @@
 package comby
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

@@ -1,6 +1,6 @@
+import { ConfiguredSubjectOrError } from '@sourcegraph/client-api'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { ConfiguredSubjectOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { InsightDashboard } from '../../../../types'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../types/dashboard/virtual-dashboard'

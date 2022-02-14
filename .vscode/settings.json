@@ -72,6 +72,7 @@
     "./client/extension-api",
     "./client/template-parser",
     "./client/codeintellify",
+    "./client/client-api",
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

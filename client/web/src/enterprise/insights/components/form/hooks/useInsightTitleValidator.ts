@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash'
 import { useMemo } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { Settings } from '@sourcegraph/client-api'
 
 import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, InsightTypePrefix } from '../../../core/types'
 import { composeValidators, createRequiredValidator } from '../validators'
