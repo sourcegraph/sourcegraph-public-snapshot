@@ -215,17 +215,32 @@ For caching artefacts in steps to speed up steps, see [How to cache CI artefacts
 
 #### Performance
 
-##### Tracing
+##### Pipeline command tracing
 
-Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [HoneyComb.io](https://honeycomb.io).
+Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [Honeycomb.io](https://honeycomb.io).
+See the [Buildkite board on Honeycomb](https://ui.honeycomb.io/sourcegraph/board/sqPvYj5BXNy/Buildkite) for an overview.
 
 Individual commands are tracked from the perspective of a given [step](#step-options): 
 
-<div class="embed">
-  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6OTQ="
-    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
-  </iframe>
-</div>
+
+  ```go
+    pipeline.AddStep(":memo: Check and build docsite",
+      bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+  ```
+
+Will result in a single trace span for the `./dev/check/docsite.sh` script. But the following will have individual trace spans for each `yarn` commands:
+
+  ```go
+    pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			// ...
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+  ```
+
+Therefore, it's beneficial for tracing purposes to split the step in multiple commands, if possible.
 
 ##### Test analytics
 
