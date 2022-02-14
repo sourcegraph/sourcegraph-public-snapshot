@@ -283,12 +283,11 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 	}
 
 	tasklog.Start("Acquire indexing semaphore")
-	semName := "MAX_CONCURRENTLY_INDEXING semaphore"
 	indexingSemaphore.Acquire(context.Background(), 1)
-	requestStatus.HoldLock(semName)
+	requestStatus.HoldLock("indexing semaphore")
 	defer func() {
 		indexingSemaphore.Release(1)
-		requestStatus.ReleaseLock(semName)
+		requestStatus.ReleaseLock("indexing semaphore")
 	}()
 
 	pathToBlobIdCache := map[string]int{}
@@ -797,9 +796,17 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
+func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
 	// Initialize the cleanup function to a noop.
 	cleanup = func() error { return nil }
+
+	requestStatus.Tasklog.Start("Acquire search semaphore")
+	searchSemaphore.Acquire(context.Background(), 1)
+	requestStatus.HoldLock("search semaphore")
+	defer func() {
+		searchSemaphore.Release(1)
+		requestStatus.ReleaseLock("search semaphore")
+	}()
 
 	// Get a fresh connection from the DB pool so that this indexer can hold overlapping locks (which
 	// would otherwise block each other) to prevent other indexers from intervening.
@@ -825,10 +832,10 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	// Acquire a read lock on the repo.
 	requestStatus.Tasklog.Start("rLock")
 	releaseRLock, err = rLock(conn, string(args.Repo))
-	requestStatus.HoldLock("rLock")
 	if err != nil {
 		return nil, cleanup, err
 	}
+	requestStatus.HoldLock("rLock")
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	requestStatus.Tasklog.Start("update last_accessed_at")
@@ -859,6 +866,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 		if err != nil {
 			return nil, cleanup, err
 		}
+		requestStatus.ReleaseLock("rLock")
 
 		// Note: a deletion could have intervened here.
 

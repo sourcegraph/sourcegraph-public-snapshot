@@ -101,7 +101,7 @@ func TestIndex(t *testing.T) {
 
 	status := NewRequestStatus(repo, commit, func() {})
 	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-	blobs, cleanup, err := Search(args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), status)
+	blobs, cleanup, err := Search(args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
 	if err != nil {
 		t.Fatalf("🚨 Search: %s", err)
 	}

@@ -164,6 +164,7 @@ type RockskipConfig struct {
 	Ctags                   types.CtagsConfig
 	RepositoryFetcher       types.RepositoryFetcherConfig
 	MaxRepos                int
+	MaxConcurrentSearches   int
 	MaxConcurrentlyIndexing int
 }
 
@@ -171,8 +172,9 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	return RockskipConfig{
 		Ctags:                   types.LoadCtagsConfig(baseConfig),
 		RepositoryFetcher:       types.LoadRepositoryFetcherConfig(baseConfig),
-		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories for Rockskip to store in Postgres, with LRU eviction"),
-		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
+		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
+		MaxConcurrentSearches:   baseConfig.GetInt("MAX_CONCURRENT_SEARCHES", "10", "maximum number of search requests at a time (also limits concurrent Postgres connections)"),
+		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
 	}
 }
 
@@ -181,6 +183,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 
+	searchSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentSearches))
 	indexingSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
 	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, cleanup rockskip.CleanupFunc, err error) {
@@ -188,7 +191,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 
 		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
-		blobs, cleanupSearch, err := rockskip.Search(args, git, db, lazyParser(config.Ctags), config.MaxRepos, indexingSemaphore, requestStatus)
+		blobs, cleanupSearch, err := rockskip.Search(args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus)
 		cleanup = func() error {
 			err = cleanupSearch()
 			requestStatus.End()
