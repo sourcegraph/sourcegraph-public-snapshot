@@ -38,7 +38,7 @@ export interface LineChartContentProps<D> {
     xAxisKey: keyof D
 
     /**
-     * Whenever a chart component should stack data based on x value for each series
+     * Whether a chart component should stack data based on x value for each series
      */
     stacked?: boolean
 
