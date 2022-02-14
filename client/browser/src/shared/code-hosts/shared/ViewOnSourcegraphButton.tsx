@@ -56,7 +56,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         iconClassName,
     }
 
-    const { rawRepoName, revision, privateRepository } = context
+    const { rawRepoName, revision, filePath, privateRepository } = context
 
     const isPrivateCloudError =
         isDefaultSourcegraphUrl(sourcegraphURL) && repoExistsOrError === false && privateRepository
@@ -74,10 +74,13 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
-    const url = createURLWithUTM(new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}`, sourcegraphURL), {
-        utm_source: getPlatformName(),
-        utm_campaign: 'view-on-sourcegraph',
-    }).href
+    const url = createURLWithUTM(
+        new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}${filePath ? `/-/${filePath}` : ''}`, sourcegraphURL),
+        {
+            utm_source: getPlatformName(),
+            utm_campaign: 'view-on-sourcegraph',
+        }
+    ).href
 
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)
@@ -142,6 +145,8 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     if (minimalUI) {
         return null
     }
+
+    console.log({ url, context })
 
     // Render a "View on Sourcegraph" button
     return (

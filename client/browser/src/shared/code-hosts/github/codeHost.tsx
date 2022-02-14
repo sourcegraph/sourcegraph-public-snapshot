@@ -676,10 +676,12 @@ export const githubCodeHost: GithubCodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: async () => {
         const { repoName, rawRepoName, pageType } = parseURL()
+        const { revision, filePath } = resolveFileInfo().blob
 
         return {
             rawRepoName,
-            revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
+            revision: pageType === 'blob' || pageType === 'tree' ? revision : undefined,
+            filePath: pageType === 'blob' || pageType === 'tree' ? `${pageType}/${filePath}` : undefined,
             privateRepository: await isPrivateRepository(repoName),
         }
     },

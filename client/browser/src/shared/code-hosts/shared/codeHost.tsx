@@ -160,7 +160,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
+export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & Partial<FileSpec> & { privateRepository: boolean }
 
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
