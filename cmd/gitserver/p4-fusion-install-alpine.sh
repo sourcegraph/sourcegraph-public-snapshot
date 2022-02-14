@@ -2,18 +2,19 @@
 
 # This script installs p4-fusion within an alpine container.
 
+set -eu
+
+tmpdir=$(mktemp -d)
+
 cleanup() {
   apk --no-cache --purge del p4-build-deps || true
   cd /
-  rm -rf /usr/local/bin/p4-fusion-src || true
-  rm -rf /usr/local/bin/v1.5.tar.gz || true
+  rm -rf "$tmpdir" || true
 }
 
 trap cleanup EXIT
 
-cd /
-
-set -eux
+set -x
 
 # Runtime dependencies
 apk add --no-cache libstdc++
@@ -29,17 +30,19 @@ apk add --no-cache \
   cmake \
   make
 
+cd "$tmpdir"
+
 # Fetching p4 sources archive
+mkdir p4-fusion-src
 wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz
-mv v1.5.tar.gz /usr/local/bin
-mkdir -p /usr/local/bin/p4-fusion-src
-tar -C /usr/local/bin/p4-fusion-src -xzvf /usr/local/bin/v1.5.tar.gz --strip 1
+tar -C p4-fusion-src -xzf v1.5.tar.gz --strip 1
 
 # We need a specific version of OpenSSL
+mkdir openssl-src
 wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz
-tar -xzvf openssl-1.0.2t.tar.gz
-cd /openssl-1.0.2t
+tar -C openssl-src -xzf openssl-1.0.2t.tar.gz --strip 1
 
+cd openssl-src
 ./config
 # We only need libcrypto and libssl, which "build_libs" covers. We use
 # unbounded concurrency. Experiments on a 32-core machine showed a multiple of
@@ -50,16 +53,16 @@ make install
 cd ..
 
 # We also need Helix Core C++ API to build p4-fusion
+mkdir -p p4-fusion-src/vendor/helix-core-api/linux
 wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz
-mkdir -p /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux
-mv p4api.tgz /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux
-tar -C /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux -xzvf /usr/local/bin/p4-fusion-src/vendor/helix-core-api/linux/p4api.tgz --strip 1
+tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api.tgz --strip 1
 
-cd /usr/local/bin/p4-fusion-src
 
 # Build p4-fusion
+cd p4-fusion-src
 ./generate_cache.sh Release
 ./build.sh
+cd ..
 
 # Move exe file to /usr/local/bin where other executables are located
-mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin
+mv p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin
