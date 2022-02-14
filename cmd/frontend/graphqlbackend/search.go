@@ -83,6 +83,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 
 	// Beta: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
 		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
 		if err != nil {
@@ -95,7 +96,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	var plan query.Plan
 	plan, err = query.Pipeline(
 		query.Init(args.Query, searchType),
-		query.With(true, substituteContextsStep),
+		query.With(searchContextsQueryEnabled, substituteContextsStep),
 	)
 	if err != nil {
 		return NewSearchAlertResolver(search.AlertForQuery(args.Query, err)).wrapSearchImplementer(db), nil
@@ -196,6 +197,13 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		}
 	})
 	return searchType
+}
+
+func getBoolPtr(b *bool, def bool) bool {
+	if b == nil {
+		return def
+	}
+	return *b
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
