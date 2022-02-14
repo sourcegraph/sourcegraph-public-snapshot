@@ -213,7 +213,7 @@ For more details about best practices and additional features and capabilities, 
 
 For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
-#### Performance
+#### Observability
 
 ##### Pipeline command tracing
 
