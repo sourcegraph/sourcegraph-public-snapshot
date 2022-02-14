@@ -40,7 +40,14 @@ wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz
 tar -xzvf openssl-1.0.2t.tar.gz
 cd /openssl-1.0.2t
 
-./config && make && make install
+./config
+# We only need libcrypto and libssl, which "build_libs" covers. We use
+# unbounded concurrency. Experiments on a 32-core machine showed a multiple of
+# 32 didn't help.
+make -j build_libs
+# TODO "install" includes "all". Can we avoid extra work?
+make install
+cd ..
 
 # We also need Helix Core C++ API to build p4-fusion
 wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz
