@@ -170,7 +170,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, isSourcegraphDotCom }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [member, setMemberAdded] = useState<string>()
 
