@@ -5105,6 +5105,10 @@ type OrganizationInvitation implements Node {
     """
     revokedAt: DateTime
     """
+    The date when this invitation is going to expire.
+    """
+    expiresAt: DateTime
+    """
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """
     isVerifiedEmail: Boolean

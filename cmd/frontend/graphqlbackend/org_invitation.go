@@ -20,7 +20,7 @@ func NewOrganizationInvitationResolver(db database.DB, v *database.OrgInvitation
 }
 
 func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*organizationInvitationResolver, error) {
-	orgInvitationID, err := unmarshalOrgInvitationID(id)
+	orgInvitationID, err := UnmarshalOrgInvitationID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -36,12 +36,12 @@ func orgInvitationByIDInt64(ctx context.Context, db database.DB, id int64) (*org
 }
 
 func (r *organizationInvitationResolver) ID() graphql.ID {
-	return marshalOrgInvitationID(r.v.ID)
+	return MarshalOrgInvitationID(r.v.ID)
 }
 
-func marshalOrgInvitationID(id int64) graphql.ID { return relay.MarshalID("OrgInvitation", id) }
+func MarshalOrgInvitationID(id int64) graphql.ID { return relay.MarshalID("OrgInvitation", id) }
 
-func unmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) {
+func UnmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) {
 	err = relay.UnmarshalSpec(id, &orgInvitationID)
 	return
 }
@@ -90,7 +90,7 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 		var url string
 		var err error
 		if orgInvitationConfigDefined() {
-			url, err = orgInvitationURL(r.v.OrgID, r.v.ID, r.v.SenderUserID, r.v.RecipientUserID, "", true)
+			url, err = orgInvitationURL(*r.v, true)
 		} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 			org, err := database.Orgs(r.db).GetByID(ctx, r.v.OrgID)
 			if err != nil {
@@ -108,6 +108,10 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 
 func (r *organizationInvitationResolver) RevokedAt() *DateTime {
 	return DateTimeOrNil(r.v.RevokedAt)
+}
+
+func (r *organizationInvitationResolver) ExpiresAt() *DateTime {
+	return DateTimeOrNil(r.v.ExpiresAt)
 }
 
 func (r *organizationInvitationResolver) IsVerifiedEmail() *bool {
