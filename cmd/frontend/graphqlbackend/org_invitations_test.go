@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/base64"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"math"
 	"strings"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"

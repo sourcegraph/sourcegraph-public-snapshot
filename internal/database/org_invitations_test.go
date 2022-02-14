@@ -335,6 +335,9 @@ func TestOrgInvitations(t *testing.T) {
 
 		// After updating, the new expiry time on invite should be the same as we expect
 		updatedInvite, err := OrgInvitations(db).GetByID(ctx, toUpdateInvite.ID)
+		if err != nil {
+			t.Fatalf("cannot get invite by id %d", toUpdateInvite.ID)
+		}
 		if updatedInvite.ExpiresAt == nil && *updatedInvite.ExpiresAt != newExpiry {
 			t.Fatalf("expiry time differs, expected %v, got %v", newExpiry, updatedInvite.ExpiresAt)
 		}
