@@ -3,151 +3,167 @@ package rockskip
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-ctags"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Ctags struct {
-	parser ctags.Parser
-}
+// simpleParse converts each line into a symbol.
+func simpleParse(path string, bytes []byte) ([]Symbol, error) {
+	symbols := []Symbol{}
 
-func NewCtags() (Ctags, error) {
-	parser, err := ctags.New(ctags.Options{
-		Bin:                "ctags",
-		PatternLengthLimit: 0,
-	})
-	if err != nil {
-		return Ctags{}, err
-	}
-	return Ctags{
-		parser: parser,
-	}, nil
-}
+	for _, line := range strings.Split(string(bytes), "\n") {
+		if line == "" {
+			continue
+		}
 
-func (ctags Ctags) Parse(path string, bytes []byte) (symbols []Symbol, err error) {
-	symbols = []Symbol{}
-	entries, err := ctags.parser.Parse(path, bytes)
-	if err != nil {
-		return nil, err
+		symbols = append(symbols, Symbol{Name: line})
 	}
-	for _, entry := range entries {
-		symbols = append(symbols, Symbol{
-			Name:   entry.Name,
-			Parent: entry.Parent,
-			Kind:   entry.Kind,
-			Line:   entry.Line,
-		})
-	}
+
 	return symbols, nil
 }
 
-func (ctags Ctags) Close() {
-	ctags.parser.Close()
-}
-
-const HOME = "/Users/chrismwendt/"
-
 func TestIndex(t *testing.T) {
-	// repo := "github.com/gorilla/mux"
-	// repo := "github.com/hashicorp/raft"
-	// repo := "github.com/crossplane/crossplane"
-	// repo := "github.com/kubernetes/kubernetes"
-	repo := "github.com/hashicorp/go-multierror"
-
-	git, err := NewSubprocessGit(repo)
-	if err != nil {
-		t.Fatalf("🚨 NewSubprocessGit: %s", err)
+	fatalIfError := func(err error, message string) {
+		if err != nil {
+			t.Fatal(errors.Wrap(err, message))
+		}
 	}
+
+	gitDir, err := os.MkdirTemp("", "rockskip-test-index")
+	fatalIfError(err, "faiMkdirTemp")
+
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Logf("git dir %s left intact for inspection", gitDir)
+		} else {
+			os.RemoveAll(gitDir)
+		}
+	})
+
+	gitCmd := func(args ...string) *exec.Cmd {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = gitDir
+		return cmd
+	}
+
+	gitRun := func(args ...string) {
+		fatalIfError(gitCmd(args...).Run(), "git "+strings.Join(args, " "))
+	}
+
+	gitStdout := func(args ...string) string {
+		stdout, err := gitCmd(args...).Output()
+		fatalIfError(err, "git "+strings.Join(args, " "))
+		return string(stdout)
+	}
+
+	getHead := func() string {
+		return strings.TrimSpace(gitStdout("rev-parse", "HEAD"))
+	}
+
+	state := map[string][]string{}
+
+	add := func(filename string, contents string) {
+		fatalIfError(ioutil.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "ioutil.WriteFile")
+		gitRun("add", filename)
+		symbols, err := simpleParse(filename, []byte(contents))
+		fatalIfError(err, "simpleParse")
+		state[filename] = []string{}
+		for _, symbol := range symbols {
+			state[filename] = append(state[filename], symbol.Name)
+		}
+	}
+
+	rm := func(filename string) {
+		gitRun("rm", filename)
+		delete(state, filename)
+	}
+
+	gitRun("init")
+
+	git, err := NewSubprocessGit(gitDir)
+	fatalIfError(err, "NewSubprocessGit")
 	defer git.Close()
 
 	db := dbtest.NewDB(t)
-	fmt.Println()
 	defer db.Close()
 
-	parser, err := NewCtags()
-	if err != nil {
-		t.Fatalf("🚨 NewCtags: %s", err)
-	}
-	defer parser.Close()
+	verifyBlobs := func() {
+		repo := "somerepo"
+		commit := getHead()
+		status := NewRequestStatus(repo, commit, func() {})
+		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		blobs, cleanup, err := Search(context.Background(), args, git, db, simpleParse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
+		fatalIfError(err, "Search")
+		fatalIfError(cleanup(), "cleanup")
 
-	revParse := exec.Command("git", "rev-parse", "HEAD~1")
-	revParse.Dir = HOME + repo
-	output, err := revParse.Output()
-	if err != nil {
-		t.Fatalf("🚨 rev-parse: %s", err)
-	}
-	commit := strings.TrimSpace(string(output))
-
-	// du -sh
-	du := exec.Command("du", "-sh", HOME+repo)
-	du.Dir = HOME + repo
-	output, err = du.Output()
-	if err != nil {
-		t.Fatalf("🚨 du: %s", err)
-	}
-	size := strings.Split(string(output), "\t")[0]
-
-	fmt.Println("🔵 Indexing", repo, "at", commit, "with git size", size)
-	fmt.Println()
-
-	status := NewRequestStatus(repo, commit, func() {})
-	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-	blobs, cleanup, err := Search(context.TODO(), args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
-	if err != nil {
-		t.Fatalf("🚨 Search: %s", err)
-	}
-	err = cleanup()
-	if err != nil {
-		t.Fatalf("🚨 Search cleanup: %s", err)
-	}
-	status.Tasklog.Print()
-	fmt.Println()
-
-	rows, err := db.Query("SELECT pg_size_pretty(pg_total_relation_size('rockskip_ancestry')) AS rockskip_ancestry, pg_size_pretty(pg_total_relation_size('rockskip_blobs')) AS rockskip_blobs;")
-	if err != nil {
-		t.Fatalf("🚨 db.Query: %s", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rockskip_ancestry, rockskip_blobs string
-		if err := rows.Scan(&rockskip_ancestry, &rockskip_blobs); err != nil {
-			t.Fatalf("🚨 rows.Scan: %s", err)
+		// Make sure the paths match.
+		gotPaths := []string{}
+		for _, blob := range blobs {
+			gotPaths = append(gotPaths, blob.Path)
 		}
-		fmt.Printf("rockskip_ancestry: %s\n", rockskip_ancestry)
-		fmt.Printf("rockskip_blobs   : %s\n", rockskip_blobs)
-	}
-	fmt.Println()
+		wantPaths := []string{}
+		for path := range state {
+			wantPaths = append(wantPaths, path)
+		}
+		sort.Strings(gotPaths)
+		sort.Strings(wantPaths)
+		if diff := cmp.Diff(gotPaths, wantPaths); diff != "" {
+			fmt.Println("unexpected paths (-got +want)")
+			fmt.Println(diff)
+			PrintInternals(context.Background(), db)
+			t.FailNow()
+		}
 
-	paths := []string{}
-	for _, blob := range blobs {
-		paths = append(paths, blob.Path)
+		// Make sure the symbols match.
+		for _, blob := range blobs {
+			gotSymbols := []string{}
+			for _, symbol := range blob.Symbols {
+				gotSymbols = append(gotSymbols, symbol.Name)
+			}
+			wantSymbols := state[blob.Path]
+			sort.Strings(gotSymbols)
+			sort.Strings(wantSymbols)
+			if diff := cmp.Diff(gotSymbols, wantSymbols); diff != "" {
+				fmt.Println("unexpected symbols (-got +want)")
+				fmt.Println(diff)
+				PrintInternals(context.Background(), db)
+				t.FailNow()
+			}
+		}
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", commit))
-	cmd.Dir = HOME + repo
-	out, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
+	commit := func(message string) {
+		gitRun("commit", "--allow-empty", "-m", message)
+		verifyBlobs()
 	}
-	expected := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-	sort.Strings(paths)
-	sort.Strings(expected)
+	add("a.txt", "sym1\n")
+	commit("add a file with 1 symbol")
 
-	if diff := cmp.Diff(paths, expected); diff != "" {
-		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)")
-		fmt.Println(diff)
-		PrintInternals(context.TODO(), db)
-		t.Fail()
-	}
+	add("b.txt", "sym1\n")
+	commit("add another file with 1 symbol")
+
+	add("c.txt", "sym1\nsym2")
+	commit("add another file with 2 symbols")
+
+	add("a.txt", "sym1\nsym2")
+	commit("add a symbol to a.txt")
+
+	commit("empty")
+
+	rm("a.txt")
+	commit("rm a.txt")
 }

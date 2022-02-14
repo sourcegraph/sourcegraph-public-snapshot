@@ -592,15 +592,15 @@ func ruler(n int) int {
 }
 
 type SubprocessGit struct {
-	repo          string
+	gitDir        string
 	catFileCmd    *exec.Cmd
 	catFileStdin  io.WriteCloser
 	catFileStdout bufio.Reader
 }
 
-func NewSubprocessGit(repo string) (*SubprocessGit, error) {
+func NewSubprocessGit(gitDir string) (*SubprocessGit, error) {
 	cmd := exec.Command("git", "cat-file", "--batch")
-	cmd.Dir = "/Users/chrismwendt/" + repo
+	cmd.Dir = gitDir
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -618,7 +618,7 @@ func NewSubprocessGit(repo string) (*SubprocessGit, error) {
 	}
 
 	return &SubprocessGit{
-		repo:          repo,
+		gitDir:        gitDir,
 		catFileCmd:    cmd,
 		catFileStdin:  stdin,
 		catFileStdout: *bufio.NewReader(stdout),
@@ -635,7 +635,7 @@ func (git SubprocessGit) Close() error {
 
 func (git SubprocessGit) LogReverseEach(givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
 	log := exec.Command("git", LogReverseArgs(n, givenCommit)...)
-	log.Dir = "/Users/chrismwendt/" + git.repo
+	log.Dir = git.gitDir
 	output, err := log.StdoutPipe()
 	if err != nil {
 		return err
@@ -657,7 +657,7 @@ func (git SubprocessGit) LogReverseEach(givenCommit string, n int, onLogEntry fu
 
 func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
 	revList := exec.Command("git", RevListArgs(givenCommit)...)
-	revList.Dir = "/Users/chrismwendt/" + git.repo
+	revList.Dir = git.gitDir
 	output, err := revList.StdoutPipe()
 	if err != nil {
 		return err
@@ -681,12 +681,12 @@ func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(
 	for _, path := range paths {
 		_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "writing to cat-file stdin")
 		}
 
 		line, err := git.catFileStdout.ReadString('\n')
 		if err != nil {
-			return err
+			return errors.Wrap(err, "read newline")
 		}
 		line = line[:len(line)-1] // Drop the trailing newline
 		parts := strings.Split(line, " ")
@@ -695,17 +695,17 @@ func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(
 		}
 		size, err := strconv.ParseInt(parts[2], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parse size")
 		}
 
 		fileContents, err := io.ReadAll(io.LimitReader(&git.catFileStdout, size))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "read contents")
 		}
 
 		discarded, err := git.catFileStdout.Discard(1) // Discard the trailing newline
 		if err != nil {
-			return err
+			return errors.Wrap(err, "discard newline")
 		}
 		if discarded != 1 {
 			return fmt.Errorf("expected to discard 1 byte, but discarded %d", discarded)
@@ -713,7 +713,7 @@ func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(
 
 		err = onFile(path, fileContents)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "onFile")
 		}
 	}
 
@@ -1248,6 +1248,10 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 		// A '\n' indicates a list of paths and their statuses is next
 		buf, err = reader.Peek(1)
 		if err == io.EOF {
+			err = onLogEntry(LogEntry{Commit: commit, PathStatuses: []PathStatus{}})
+			if err != nil {
+				return err
+			}
 			break
 		} else if err != nil {
 			return err
