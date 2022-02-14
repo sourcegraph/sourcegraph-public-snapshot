@@ -17,6 +17,7 @@ import (
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -362,11 +363,11 @@ func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error 
 }
 
 func reposLimit(hasTimeFilter bool) int {
-	limits := search.SearchLimits(conf.Get())
+	searchLimits := limits.SearchLimits(conf.Get())
 	if hasTimeFilter {
-		return limits.CommitDiffWithTimeFilterMaxRepos
+		return searchLimits.CommitDiffWithTimeFilterMaxRepos
 	}
-	return limits.CommitDiffMaxRepos
+	return searchLimits.CommitDiffMaxRepos
 }
 
 type DiffCommitError struct {

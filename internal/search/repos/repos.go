@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -123,7 +124,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -405,7 +406,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -700,7 +701,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,

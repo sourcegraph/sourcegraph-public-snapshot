@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -89,7 +90,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-database", "foo/timedout", "foo/no-rev")
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: search.DefaultMaxSearchResults,
+			FileMatchLimit: limits.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		Repos:        repoRevs,
@@ -130,7 +131,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// that should be checked earlier.
 	args = &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: search.DefaultMaxSearchResults,
+			FileMatchLimit: limits.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
@@ -206,7 +207,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: search.DefaultMaxSearchResults,
+			FileMatchLimit: limits.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
@@ -285,7 +286,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: search.DefaultMaxSearchResults,
+			FileMatchLimit: limits.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
@@ -345,7 +346,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 	}
 	defer func() { searcher.MockSearch = nil }()
 	info := &search.TextPatternInfo{
-		FileMatchLimit:               search.DefaultMaxSearchResults,
+		FileMatchLimit:               limits.DefaultMaxSearchResults,
 		Pattern:                      "foo",
 		FilePatternsReposMustInclude: []string{"main"},
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	zoekt "github.com/google/zoekt/query"
@@ -92,14 +93,14 @@ func count(q query.Basic, p Protocol) int {
 	}
 
 	if q.IsStructural() {
-		return DefaultMaxSearchResults
+		return limits.DefaultMaxSearchResults
 	}
 
 	switch p {
 	case Batch:
-		return DefaultMaxSearchResults
+		return limits.DefaultMaxSearchResults
 	case Streaming:
-		return DefaultMaxSearchResultsStreaming
+		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
 }
@@ -176,8 +177,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 }
 
 func TimeoutDuration(b query.Basic) time.Duration {
-	d := DefaultTimeout
-	maxTimeout := time.Duration(SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
+	d := limits.DefaultTimeout
+	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
 	timeout := b.GetTimeout()
 	if timeout != nil {
 		d = *timeout
