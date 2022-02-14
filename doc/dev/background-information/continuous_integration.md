@@ -227,9 +227,9 @@ Individual commands are tracked from the perspective of a given step:
   </iframe>
 </div>
 
-##### Test Analytics
+##### Test analytics
 
-Buildkite released in beta a new tool to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
+Our test analytics is currently powered by a tool that Buildkite released in beta to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
 This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness. 
 
 Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating 
