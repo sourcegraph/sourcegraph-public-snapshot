@@ -66,7 +66,6 @@ mkdir -p p4-fusion-src/vendor/helix-core-api/linux
 wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz
 tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api.tgz --strip 1
 
-
 # Build p4-fusion
 echo "--- p4-fusion build"
 cd p4-fusion-src
@@ -81,4 +80,4 @@ mv p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin
 # Test that p4-fusion runs and is on the path
 echo "--- p4-fusion test"
 ldd "$(which p4-fusion)"
-p4-fusion > /dev/null
+p4-fusion >/dev/null
