@@ -317,4 +317,26 @@ func TestOrgInvitations(t *testing.T) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
+
+	t.Run("UpdateExpiryTime", func(t *testing.T) {
+		org3, err := db.Orgs().Create(ctx, "o3", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		toUpdateInvite, err := OrgInvitations(db).Create(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		newExpiry := timeNow().Add(2 * time.Hour)
+		if err := db.OrgInvitations().UpdateExpiryTime(ctx, toUpdateInvite.ID, newExpiry); err != nil {
+			t.Fatal(err)
+		}
+
+		// After updating, the new expiry time on invite should be the same as we expect
+		updatedInvite, err := OrgInvitations(db).GetByID(ctx, toUpdateInvite.ID)
+		if updatedInvite.ExpiresAt == nil && *updatedInvite.ExpiresAt != newExpiry {
+			t.Fatalf("expiry time differs, expected %v, got %v", newExpiry, updatedInvite.ExpiresAt)
+		}
+	})
 }
