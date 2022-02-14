@@ -306,15 +306,12 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		return err
 	}
 
-	utmSource := "code-monitor-webhook"
-	searchURL := getSearchURL(externalURL, m.Query, utmSource)
-	codeMonitorURL := getCodeMonitorURL(externalURL, w.Monitor, utmSource)
-
 	args := actionArgs{
 		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
+		MonitorID:          w.Monitor,
+		ExternalURL:        externalURL,
+		UTMSource:          "code-monitor-webhook",
 		Query:              m.Query,
-		QueryURL:           searchURL,
 		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
@@ -345,16 +342,13 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		return err
 	}
 
-	utmSource := "code-monitor-slack-webhook"
-	searchURL := getSearchURL(externalURL, m.Query, utmSource)
-	codeMonitorURL := getCodeMonitorURL(externalURL, w.Monitor, utmSource)
-
 	args := actionArgs{
 		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
-		MonitorOwnerName:   m.OwnerName,
+		MonitorID:          w.Monitor,
+		ExternalURL:        externalURL,
+		UTMSource:          "code-monitor-slack-webhook",
 		Query:              m.Query,
-		QueryURL:           searchURL,
+		MonitorOwnerName:   m.OwnerName,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
 	}

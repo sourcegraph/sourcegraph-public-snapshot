@@ -58,7 +58,7 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		newMarkdownSection(fmt.Sprintf(
 			`If you are %s, you can <%s|edit your code monitor>`,
 			args.MonitorOwnerName,
-			args.MonitorURL,
+			getCodeMonitorURL(args.ExternalURL, args.MonitorID, args.UTMSource),
 		)),
 	)
 	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,12 +15,15 @@ import (
 )
 
 func TestWebhook(t *testing.T) {
+	eu, err := url.Parse("https://sourcegraph.com")
+	require.NoError(t, err)
+
 	t.Run("no error", func(t *testing.T) {
 		action := actionArgs{
 			MonitorDescription: "My test monitor",
-			MonitorURL:         "https://google.com",
+			ExternalURL:        eu,
+			MonitorID:          42,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			QueryURL:           "https://youtube.com",
 			Results:            make(cmtypes.CommitSearchResults, 313),
 			IncludeResults:     false,
 		}
@@ -27,7 +31,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -40,9 +44,8 @@ func TestWebhook(t *testing.T) {
 	t.Run("error is returned", func(t *testing.T) {
 		action := actionArgs{
 			MonitorDescription: "My test monitor",
-			MonitorURL:         "https://google.com",
+			ExternalURL:        eu,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			QueryURL:           "https://youtube.com",
 			Results:            make(cmtypes.CommitSearchResults, 313),
 			IncludeResults:     false,
 		}
@@ -50,7 +53,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
