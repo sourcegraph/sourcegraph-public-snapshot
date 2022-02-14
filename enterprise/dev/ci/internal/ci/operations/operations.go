@@ -2,7 +2,8 @@ package operations
 
 import (
 	"fmt"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
