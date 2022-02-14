@@ -18,7 +18,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge, RadioButton } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
@@ -138,7 +138,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNameInput(event.target.value)
-        setNameValid(/^[\w.-]+$/.test(event.target.value))
+        setNameValid(NAME_PATTERN.test(event.target.value))
     }, [])
 
     const history = useHistory()
@@ -171,13 +171,12 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                             namespaces={namespaces}
                             selectedNamespace={selectedNamespace.id}
                             onSelect={setSelectedNamespace}
-                            disabled={!!namespaceID}
                         />
                         <Input
                             label="Batch change name"
                             value={nameInput}
                             onChange={onNameChange}
-                            pattern="^[\\w.-]+$"
+                            pattern={String(NAME_PATTERN)}
                             required={true}
                             status={nameValid === undefined ? undefined : nameValid ? 'valid' : 'error'}
                         />
@@ -190,32 +189,32 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                         </small>
                         <hr className="my-3" />
                         <h3 className="text-muted">
-                            Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Upcoming feature" />
+                            Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Coming soon" />
                         </h3>
                         <div className="form-group text-muted mb-1">
-                            <label>
-                                <input
-                                    type="radio"
-                                    name="visibility"
-                                    value="public"
-                                    className="mr-2"
-                                    checked={true}
-                                    disabled={true}
-                                />
-                                Public
-                            </label>
+                            <RadioButton
+                                name="visibility"
+                                value="public"
+                                className="mr-2"
+                                checked={true}
+                                disabled={true}
+                                label="Public"
+                                aria-label="Public"
+                            />
                         </div>
                         <div className="form-group text-muted mb-0">
-                            <label className="mb-0">
-                                <input
-                                    type="radio"
-                                    name="visibility"
-                                    value="private"
-                                    className="mr-2"
-                                    disabled={true}
-                                />
-                                Private <LockIcon className="text-warning icon-inline" />
-                            </label>
+                            <RadioButton
+                                name="visibility"
+                                value="private"
+                                className="mr-2 mb-0"
+                                disabled={true}
+                                label={
+                                    <>
+                                        Private <LockIcon className="text-warning icon-inline" />
+                                    </>
+                                }
+                                aria-label="Private"
+                            />
                         </div>
                     </Container>
                     <div>
@@ -502,3 +501,5 @@ const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
         {children}
     </div>
 )
+
+const NAME_PATTERN = /^[\w.-]+$/
