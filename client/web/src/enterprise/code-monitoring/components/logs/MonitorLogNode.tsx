@@ -11,7 +11,10 @@ import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operatio
 
 import styles from './MonitorLogNode.module.scss'
 
-export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithEvents }> = ({ monitor }) => {
+export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithEvents; now?: () => Date }> = ({
+    monitor,
+    now,
+}) => {
     const [expanded, setExpanded] = useState(false)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -26,12 +29,12 @@ export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithE
                         action.events.nodes.some(actionEvent => actionEvent.status === EventStatus.ERROR)
                     )
             ),
-        [monitor.trigger.events.nodes]
+        [monitor]
     )
 
     // The most recent event is the first one in the list.
     const lastRun = useMemo(
-        () => (monitor.trigger.events.nodes.length > 0 ? monitor.trigger.events.nodes[0].timestamp : 'Never'),
+        () => (monitor.trigger.events.nodes.length > 0 ? monitor.trigger.events.nodes[0].timestamp : null),
         [monitor.trigger.events.nodes]
     )
 
@@ -43,9 +46,7 @@ export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithE
             </Button>
             {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline')} /> : <span />}
             <span>{monitor.description}</span>
-            <span className="text-nowrap">
-                <Timestamp date={lastRun} />
-            </span>
+            <span className="text-nowrap">{lastRun ? <Timestamp date={lastRun} now={now} /> : <>Never</>}</span>
 
             {expanded && (
                 <div className={styles.expandedRow}>

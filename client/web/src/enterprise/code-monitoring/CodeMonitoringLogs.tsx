@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Card } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
@@ -19,12 +19,84 @@ import {
     MonitorTriggerEventsVariables,
 } from '../../graphql-operations'
 
-import { ListCodeMonitorsWithEventsQuery } from './backend'
 import styles from './CodeMonitoringLogs.module.scss'
 import { CodeMonitorLogsHeader } from './components/logs/CodeMonitorLogsHeader'
 import { MonitorLogNode } from './components/logs/MonitorLogNode'
 
-export const CodeMonitoringLogs: React.FunctionComponent<{}> = () => {
+export const CODE_MONITOR_EVENTS = gql`
+    query MonitorTriggerEvents($first: Int, $after: String, $triggerEventsFirst: Int, $triggerEventsAfter: String) {
+        currentUser {
+            monitors(first: $first, after: $after) {
+                nodes {
+                    ...CodeMonitorWithEvents
+                }
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+            }
+        }
+    }
+
+    fragment CodeMonitorTriggerEvents on MonitorQuery {
+        events(first: $triggerEventsFirst, after: $triggerEventsAfter) {
+            nodes {
+                status
+                message
+                timestamp
+                actions {
+                    nodes {
+                        ... on MonitorWebhook {
+                            __typename
+                            events {
+                                ...MonitorActionEvents
+                            }
+                        }
+                        ... on MonitorEmail {
+                            __typename
+                            events {
+                                ...MonitorActionEvents
+                            }
+                        }
+                        ... on MonitorSlackWebhook {
+                            __typename
+                            events {
+                                ...MonitorActionEvents
+                            }
+                        }
+                    }
+                }
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+        }
+    }
+
+    fragment CodeMonitorWithEvents on Monitor {
+        description
+        id
+        trigger {
+            ... on MonitorQuery {
+                query
+                ...CodeMonitorTriggerEvents
+            }
+        }
+    }
+
+    fragment MonitorActionEvents on MonitorActionEventConnection {
+        nodes {
+            status
+            message
+            timestamp
+        }
+    }
+`
+
+export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date }> = ({ now }) => {
     const pageSize = 20
     const runPageSize = 20
 
@@ -33,7 +105,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<{}> = () => {
         MonitorTriggerEventsVariables,
         CodeMonitorWithEvents
     >({
-        query: ListCodeMonitorsWithEventsQuery,
+        query: CODE_MONITOR_EVENTS,
         variables: { first: pageSize, after: null, triggerEventsFirst: runPageSize, triggerEventsAfter: null },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -44,6 +116,8 @@ export const CodeMonitoringLogs: React.FunctionComponent<{}> = () => {
             return data.currentUser.monitors
         },
     })
+
+    const monitors: CodeMonitorWithEvents[] = useMemo(() => connection?.nodes ?? [], [connection])
 
     return (
         <div>
@@ -59,9 +133,9 @@ export const CodeMonitoringLogs: React.FunctionComponent<{}> = () => {
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     <ConnectionList className={styles.grid}>
-                        {connection?.nodes.length ? <CodeMonitorLogsHeader /> : null}
-                        {connection?.nodes.map(monitor => (
-                            <MonitorLogNode key={monitor.id} monitor={monitor} />
+                        {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
+                        {monitors.map(monitor => (
+                            <MonitorLogNode key={monitor.id} monitor={monitor} now={now} />
                         ))}
                     </ConnectionList>
                     {loading && <ConnectionLoading />}
