@@ -228,12 +228,12 @@ SELECT
 	ctj.query_string,
 	cm.id AS monitorID,
 	ctj.search_results,
-	users.display_name
+	COALESCE(users.display_name, users.username)
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query
 INNER JOIN cm_monitors cm on cm.id = cq.monitor
-INNER JOIN users cm on cm.namespace_user_id = users.id
+INNER JOIN users on cm.namespace_user_id = users.id
 WHERE caj.id = %s
 `
 
