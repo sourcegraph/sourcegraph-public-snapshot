@@ -203,15 +203,11 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
         onClose?.()
     }, [onClose])
 
-    const handleTriggerClick = useCallback(() => {
+    const toggleIsOpen = useCallback(() => {
         setIsOpen(isOpen => !isOpen)
     }, [])
 
-    const triggerElement = ChildrenComponent ? (
-        <ChildrenComponent isOpen={isOpen} onClick={handleTriggerClick} />
-    ) : (
-        children
-    )
+    const triggerElement = ChildrenComponent ? <ChildrenComponent isOpen={isOpen} onClick={toggleIsOpen} /> : children
 
     const contentElement = (
         <FeedbackPromptContent onSubmit={onSubmit} productResearchEnabled={true} onClose={handleClosePrompt} />
@@ -231,7 +227,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     }
 
     return (
-        <Popover isOpen={isOpen} onOpenChange={handleTriggerClick}>
+        <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             {triggerElement}
             <PopoverContent position={position} className={styles.menu}>
                 {contentElement}
