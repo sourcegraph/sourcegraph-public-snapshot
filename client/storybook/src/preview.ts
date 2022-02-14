@@ -45,6 +45,10 @@ if (!document.body.classList.contains('theme-dark')) {
 if (isChromatic()) {
     const style = document.createElement('style')
     style.innerHTML = `
+      * {
+        padding: 10px;
+      }
+
       .monaco-editor .cursor {
         visibility: hidden !important;
       }
