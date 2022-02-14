@@ -252,8 +252,6 @@ from its historical duration or flakiness.
 
 In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI. 
 
-
-
 ### Buildkite infrastructure
 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
