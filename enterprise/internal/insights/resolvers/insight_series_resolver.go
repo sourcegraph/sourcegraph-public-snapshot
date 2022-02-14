@@ -89,28 +89,12 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
 	seriesID := r.series.SeriesID
 
-	totalPoints, err := r.insightsStore.CountData(ctx, store.CountDataOpts{
-		SeriesID: &seriesID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
 	if err != nil {
 		return nil, err
 	}
 
-	return insightStatusResolver{
-		totalPoints: int32(totalPoints),
-
-		// Include errored because they'll be retried before becoming failures
-		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
-
-		completedJobs:    int32(status.Completed),
-		failedJobs:       int32(status.Failed),
-		backfillQueuedAt: r.series.BackfillQueuedAt,
-	}, nil
+	return NewStatusResolver(status, r.series.BackfillQueuedAt), nil
 }
 
 func (r *insightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
@@ -148,11 +132,25 @@ func (i insightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
 	return graphqlbackend.DateTimeOrNil(i.backfillQueuedAt)
 }
 
+func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
+	return &insightStatusResolver{
+		totalPoints: 0,
+
+		// Include errored because they'll be retried before becoming failures
+		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
+
+		completedJobs:    int32(status.Completed),
+		failedJobs:       int32(status.Failed),
+		backfillQueuedAt: queuedAt,
+	}
+}
+
 type precalculatedInsightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
 	series          types.InsightViewSeries
 	metadataStore   store.InsightMetadataStore
+	statusResolver  graphqlbackend.InsightStatusResolver
 
 	seriesId string
 	points   []store.SeriesPoint
@@ -177,13 +175,7 @@ func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, args *g
 }
 
 func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
-	return insightStatusResolver{
-		totalPoints:      0,
-		pendingJobs:      0,
-		completedJobs:    0,
-		failedJobs:       0,
-		backfillQueuedAt: p.series.BackfillQueuedAt,
-	}, nil
+	return p.statusResolver, nil
 }
 
 func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
