@@ -9,10 +9,6 @@
     font-weight: 800;
 }
 
-.no-invites-container {
-    border-top: none;
-}
-
 .invitations-list {
     padding: 0;
     background-color: var(--color-bg-1);
@@ -42,6 +38,10 @@
     }
 }
 
+.no-invites-list {
+    border: none;
+}
+
 .invite-details {
     gap: 1rem;
 }
@@ -60,6 +60,10 @@
     display: flex;
     justify-content: flex-start;
     gap: 1rem;
+}
+
+.revoke-invite {
+    color: var(--danger);
 }
 
 .avatar {

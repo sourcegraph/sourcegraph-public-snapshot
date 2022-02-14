@@ -1,6 +1,7 @@
-import { gql, useQuery } from '@apollo/client'
-// import { MenuItem, MenuList } from '@reach/menu-button'
+import { gql, useMutation, useQuery } from '@apollo/client'
+import { MenuItem, MenuList } from '@reach/menu-button'
 import classNames from 'classnames'
+import copy from 'copy-to-clipboard'
 import CogIcon from 'mdi-react/CogIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -9,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { PendingInvitationsVariables } from '../../graphql-operations'
+import { PendingInvitationsVariables, RevokeInviteResult, RevokeInviteVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -25,23 +26,32 @@ const ORG_PENDING_INVITES_QUERY = gql`
     pendingInvitations(organization: $id) {
         id
         recipientEmail
+        expiresAt
+        respondURL
         recipient {
-        id
-        username
-        displayName
+            id
+            username
+            displayName
         }
         revokedAt
         sender {
-        id
-        displayName
-        username
+            id
+            displayName
+            username
         }
         organization {
-        name
+            name
         }
         createdAt
         notifiedAt
+        }
     }
+`
+const ORG_REVOKE_INVITATION_QUERY = gql`
+    mutation RevokeInvite($id: ID!) {
+        revokeOrganizationInvitation (organizationInvitation: $id) {
+            alwaysNil
+        }
     }
 `
 
@@ -51,6 +61,8 @@ interface OrganizationInvitation {
         revokedAt: string;
         createdAt: string;
         notifiedAt: string;
+        expiresAt: string;
+        respondURL: string;
         recipient?: {
             id: string;
             username: string;
@@ -76,6 +88,44 @@ interface InvitationItemProps {
     viewerCanAdminister: boolean
     orgId: string
     onShouldRefetch: () => void
+}
+
+const getExpiryDateString = (expiring: string): string => {
+
+    const expiryDate = new Date(expiring);
+    const now = new Date().getTime()
+    const diff = expiryDate.getTime() - now;
+    const numberOfDays = diff / (1000 * 3600 * 24);
+    if(numberOfDays < 1) {
+        return 'today';
+    }
+
+    const numberDaysInt = Math.round(numberOfDays);
+
+    if(numberDaysInt === 1) {
+        return 'tomorrow';
+    }
+
+    return `in ${numberDaysInt} days`
+}
+
+const getCreationDateString = (creation: string): string => {
+
+    const creationDate = new Date(creation);
+    const now = new Date().getTime()
+    const diff = now - creationDate.getTime();
+    const numberOfDays = diff / (1000 * 3600 * 24);
+    if(numberOfDays < 1) {
+        return 'today';
+    }
+
+    const numberDaysInt = Math.round(numberOfDays);
+
+    if(numberDaysInt === 1) {
+        return 'yesterday';
+    }
+
+    return `${numberDaysInt} days ago`
 }
 
 const PendingInvitesHeader: React.FunctionComponent = () => (
@@ -106,19 +156,27 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
     viewerCanAdminister,
     onShouldRefetch,
 }) =>
-    // const [removeUserFromOrganization, { loading, error }] = useMutation<
-    //     RemoveUserFromOrganizationResult,
-    //     RemoveUserFromOrganizationVariables
-    // >(ORG_MEMBER_REMOVE_QUERY)
+{
 
-    // const onRemoveClick = useCallback(async () => {
-    //     if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
-    //         await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
-    //         onShouldRefetch()
-    //     }
-    // }, [isSelf, member.username, removeUserFromOrganization, onShouldRefetch, member.id, orgId])
+    const [revokeInvite, { loading, error }] = useMutation<
+        RevokeInviteResult,
+        RevokeInviteVariables
+    >(ORG_REVOKE_INVITATION_QUERY)
 
-  (
+    const onCopyInviteLink= useCallback(() => {
+        copy(`${window.location.origin}${invite.respondURL}`)
+        alert('invite url copied to clipboard!')
+    }, [invite.respondURL])
+
+    const onRevokeInvite = useCallback(async () => {
+        const inviteToText = invite.recipient ? invite.recipient.username : invite.recipientEmail as string;
+        if (window.confirm(`Revoke invitation from ${inviteToText}?`)) {
+            await revokeInvite({ variables: { id: invite.id } })
+            onShouldRefetch()
+        }
+    }, [revokeInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
+
+return (
         <li data-test-username={invite.id}>
             <div className="d-flex align-items-center justify-content-between">
                 <div
@@ -146,36 +204,40 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                     </div>
                 </div>
                 <div className={styles.inviteDate}>
-                    <span className="text-muted">Admin</span>
+                    <span className="text-muted">{getCreationDateString(invite.createdAt)}</span>
                 </div>
                 <div className={styles.inviteExpiration}>
-                    <span className="text-muted">Admin</span>
+                    <span className="text-muted">{getExpiryDateString(invite.expiresAt)}</span>
                 </div>
                 <div className={styles.inviteActions}>
                     {viewerCanAdminister && (
                         <Menu>
                             <MenuButton variant="secondary" outline={false} className={styles.inviteMenu}>
-                                {/* {loading ? <LoadingSpinner /> : <CogIcon />} */}
+                                {loading ? <LoadingSpinner /> : <CogIcon />}
                                 <span aria-hidden={true}>▾</span>
                             </MenuButton>
 
-                            {/* <MenuList>
-                                <MenuItem onSelect={onRemoveClick} disabled={onlyMember || loading}>
-                                    {isSelf ? 'Leave organization' : 'Remove from organization'}
+                            <MenuList>
+                                <MenuItem onSelect={onCopyInviteLink} disabled={loading}>
+                                    <span>Copy invite link</span>
                                 </MenuItem>
-                            </MenuList> */}
+                                <MenuItem onSelect={onRevokeInvite} disabled={loading}>
+                                    <span className={styles.revokeInvite}>Revoke invite</span>
+                                </MenuItem>
+                            </MenuList>
                         </Menu>
                     )}
-                    {/* {error && (
+                    {error && (
                         <ErrorAlert
                             className="mt-2"
-                            error={`Error removing ${member.username}. Please, try refreshing the page.`}
+                            error="Error revoking the invitation. Please, try refreshing the page."
                         />
-                    )} */}
+                    )}
                 </div>
             </div>
         </li>
     )
+}
 
 /**
  * The organization members list page.
@@ -241,11 +303,12 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                     </div>
                 </div>
 
-                <Container className={styles.invitationsList}>
+                <Container className={classNames(styles.invitationsList,data && !data.pendingInvitations.length && styles.noInvitesList)}>
                     {loading && <LoadingSpinner />}
                     {data && (
                         <ul>
-                            <PendingInvitesHeader  />
+                            {data &&
+                    data.pendingInvitations.length > 0 && <PendingInvitesHeader  />}
                             {data.pendingInvitations.map(item => (
                                 <InvitationItem
                                     key={item.id}
@@ -267,9 +330,9 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                 {authenticatedUser &&
                     data &&
                     data.pendingInvitations.length === 0 &&
-                        (<Container className={styles.noInvitesContainer}>
+                        (<Container>
                             <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                                <h3>Look like it's just you!</h3>
+                                <h3>No invites pending</h3>
                                 <div>
                                     <InviteMemberModalHandler
                                         orgName={org.name}
