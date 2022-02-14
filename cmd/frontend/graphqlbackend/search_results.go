@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -44,15 +43,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/subrepoperms"
+	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -701,7 +701,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				addJob(true, &unindexed.RepoUniverseTextSearch{
+				addJob(true, &textsearch.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 
@@ -760,7 +760,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				addJob(true, &unindexed.RepoSubsetTextSearch{
+				addJob(true, &textsearch.RepoSubsetTextSearch{
 					ZoektArgs:        zoektArgs,
 					SearcherArgs:     searcherArgs,
 					NotSearcherOnly:  !searcherOnly,
@@ -840,7 +840,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				UseFullDeadline: args.UseFullDeadline,
 			}
 
-			addJob(true, &unindexed.StructuralSearch{
+			addJob(true, &structural.StructuralSearch{
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
@@ -939,288 +939,106 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	job := run.NewLimitJob(
-		maxResults,
-		run.NewTimeoutJob(
-			args.Timeout,
-			run.NewJobWithOptional(
-				run.NewParallelJob(requiredJobs...),
-				run.NewParallelJob(optionalJobs...),
-			),
-		),
+	job := run.NewPriorityJob(
+		run.NewParallelJob(requiredJobs...),
+		run.NewParallelJob(optionalJobs...),
 	)
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
-		job = subrepoperms.NewFilterJob(job)
+		job = run.NewFilterJob(job)
 	}
 
 	return job, nil
 }
 
-// intersect returns the intersection of two sets of search result content
-// matches, based on whether a single file path contains content matches in both sets.
-func intersect(left, right *SearchResults) *SearchResults {
-	if left == nil || right == nil {
-		return nil
-	}
-	left.Matches = result.Intersect(left.Matches, right.Matches)
-	left.Stats.Update(&right.Stats)
-	return left
-}
-
-// evaluateAnd performs set intersection on result sets. It collects results for
-// all expressions that are ANDed together by searching for each subexpression
-// and then intersects those results that are in the same repo/file path. To
-// collect N results for count:N, we need to opportunistically ask for more than
-// N results for each subexpression (since intersect can never yield more than N,
-// and likely yields fewer than N results). If the intersection does not yield N
-// results, and is not exhaustive for every expression, we rerun the search by
-// doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
-	start := time.Now()
-
+// toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
+func (r *searchResolver) toAndJob(q query.Basic) (run.Job, error) {
 	// Invariant: this function is only reachable from callers that
-	// guarantee a root node with one or more operands.
-	operands := q.Pattern.(query.Operator).Operands
+	// guarantee a root node with one or more queryOperands.
+	queryOperands := q.Pattern.(query.Operator).Operands
 
-	var (
-		result     *SearchResults
-		termResult *SearchResults
-	)
-
-	// The number of results we want. Note that for intersect, this number
-	// corresponds to documents, not line matches. By default, we ask for at
-	// least 5 documents to fill the result page.
-	want := 5
-	// The fraction of file matches two terms share on average
-	averageIntersection := 0.05
-	// When we retry, cap the max search results we request for each expression
-	// if search continues to not be exhaustive. Alert if exceeded.
+	// Limit the number of results from each child to avoid a huge amount of memory bloat.
+	// With streaming, we should re-evaluate this number.
+	//
+	// NOTE: It may be possible to page over repos so that each intersection is only over
+	// a small set of repos, limiting massive number of results that would need to be
+	// kept in memory otherwise.
 	maxTryCount := 40000
 
-	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel := context.WithTimeout(ctx, search.TimeoutDuration(q))
-	defer cancel()
-
-	if count := q.GetCount(); count != "" {
-		want, _ = strconv.Atoi(count) // Invariant: count is validated.
-	} else {
-		q = q.AddCount(want)
-	}
-
-	// tryCount starts small but grows exponentially with the number of operands. It is capped at maxTryCount.
-	tryCount := int(math.Floor(float64(want) / math.Pow(averageIntersection, float64(len(operands)-1))))
-	if tryCount > maxTryCount {
-		tryCount = maxTryCount
-	}
-
-	var exhausted bool
-	for {
-		q = q.MapCount(tryCount)
-		agg := streaming.NewAggregatingStream()
-		alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
+	operands := make([]run.Job, 0, len(queryOperands))
+	for _, queryOperand := range queryOperands {
+		operand, err := r.toPatternExpressionJob(q.MapPattern(queryOperand))
 		if err != nil {
 			return nil, err
 		}
-		result = &SearchResults{
-			Matches: agg.Results,
-			Stats:   agg.Stats,
-			Alert:   alert,
-		}
-
-		if len(result.Matches) == 0 {
-			// result might contain an alert.
-			return result.Alert, nil
-		}
-		exhausted = !result.Stats.IsLimitHit
-		for _, term := range operands[1:] {
-			// check if we exceed the overall time limit before running the next query.
-			select {
-			case <-ctx.Done():
-				usedTime := time.Since(start)
-				suggestTime := longer(2, usedTime)
-				return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
-			default:
-			}
-
-			termAgg := streaming.NewAggregatingStream()
-			termAlert, err := r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
-			if err != nil {
-				return nil, err
-			}
-			termResult = &SearchResults{
-				Matches: termAgg.Results,
-				Stats:   termAgg.Stats,
-				Alert:   termAlert,
-			}
-
-			if len(termResult.Matches) == 0 {
-				// termResult might contain an alert.
-				return termResult.Alert, nil
-			}
-			exhausted = exhausted && !termResult.Stats.IsLimitHit
-			result = intersect(result, termResult)
-		}
-		if exhausted {
-			break
-		}
-		if len(result.Matches) >= want {
-			break
-		}
-		// If the result size set is not big enough, and we haven't
-		// exhausted search on all expressions, double the tryCount and search more.
-		tryCount *= 2
-		if tryCount > maxTryCount {
-			// We've capped out what we're willing to do, throw alert.
-			return search.AlertForCappedAndExpression(), nil
-		}
+		operands = append(operands, run.NewLimitJob(maxTryCount, operand))
 	}
-	result.Stats.IsLimitHit = !exhausted
-	stream.Send(streaming.SearchEvent{
-		Results: result.Matches,
-		Stats:   result.Stats,
-	})
-	return result.Alert, nil
+
+	return run.NewAndJob(operands...), nil
 }
 
-// evaluateOr performs set union on result sets. It collects results for all
-// expressions that are ORed together by searching for each subexpression. If
-// the maximum number of results are reached after evaluating a subexpression,
-// we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
+// toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
+func (r *searchResolver) toOrJob(q query.Basic) (run.Job, error) {
 	// Invariant: this function is only reachable from callers that
-	// guarantee a root node with one or more operands.
-	operands := q.Pattern.(query.Operator).Operands
+	// guarantee a root node with one or more queryOperands.
+	queryOperands := q.Pattern.(query.Operator).Operands
 
-	wantCount := defaultMaxSearchResults
-	if count := q.GetCount(); count != "" {
-		wantCount, _ = strconv.Atoi(count) // Invariant: count is already validated
+	operands := make([]run.Job, 0, len(queryOperands))
+	for _, term := range queryOperands {
+		operand, err := r.toPatternExpressionJob(q.MapPattern(term))
+		if err != nil {
+			return nil, err
+		}
+		operands = append(operands, operand)
 	}
-
-	var (
-		mu     sync.Mutex
-		stats  streaming.Stats
-		alerts []*search.Alert
-		dedup  = result.NewDeduper()
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem = semaphore.NewWeighted(16)
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, term := range operands {
-		term := term
-		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-
-			defer sem.Release(1)
-
-			agg := streaming.NewAggregatingStream()
-			alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
-			if err != nil {
-				return err
-			}
-			new := &SearchResults{
-				Matches: agg.Results,
-				Stats:   agg.Stats,
-				Alert:   alert,
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if new.Alert != nil {
-				alerts = append(alerts, new.Alert)
-			}
-
-			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making OR query evaluation concurrent.
-			stats.Update(&new.Stats)
-
-			for _, m := range new.Matches {
-				wantCount = m.Limit(wantCount)
-				if dedup.Add(m); wantCount <= 0 {
-					return context.Canceled
-				}
-			}
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil && err != context.Canceled {
-		return nil, err
-	}
-
-	var alert *search.Alert
-	if len(alerts) > 0 {
-		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].Priority > alerts[j].Priority
-		})
-		alert = alerts[0]
-	}
-
-	stream.Send(streaming.SearchEvent{
-		Results: dedup.Results(),
-		Stats:   stats,
-	})
-	return alert, nil
+	return run.NewOrJob(operands...), nil
 }
 
-// evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
+func (r *searchResolver) toPatternExpressionJob(q query.Basic) (run.Job, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return nil, nil
+			return run.NewNoopJob(), nil
 		}
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAnd(ctx, stream, q)
+			return r.toAndJob(q)
 		case query.Or:
-			return r.evaluateOr(ctx, stream, q)
+			return r.toOrJob(q)
 		case query.Concat:
-			job, err := r.toSearchJob(q.ToParseTree())
-			if err != nil {
-				return nil, err
-			}
-			return r.evaluateJob(ctx, stream, job)
+			return r.toSearchJob(q.ToParseTree())
 		}
 	case query.Pattern:
-		job, err := r.toSearchJob(q.ToParseTree())
-		if err != nil {
-			return nil, err
-		}
-		return r.evaluateJob(ctx, stream, job)
+		return r.toSearchJob(q.ToParseTree())
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return nil, nil
+		return run.NewNoopJob(), nil
 	}
 	// Unreachable.
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-// evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
+func (r *searchResolver) toEvaluateJob(q query.Basic) (run.Job, error) {
+	maxResults := r.MaxResults()
+	timeout := search.TimeoutDuration(q)
+
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
-		if err != nil {
-			return nil, err
-		}
-		return r.evaluateJob(ctx, stream, job)
+		return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
 	}
-	return r.evaluatePatternExpression(ctx, stream, q)
+	job, err := r.toPatternExpressionJob(q)
+	return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
+}
+
+// evaluate evaluates all expressions of a search query. The value of stream must be non-nil
+func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
+	j, err := r.toEvaluateJob(q)
+	if err != nil {
+		return nil, err
+	}
+	return r.evaluateJob(ctx, stream, j)
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -1568,19 +1386,19 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
-	agg := run.NewAggregator(stream)
-	err = job.Run(ctx, r.db, agg)
-	common, matchCount := agg.Get()
+	countingStream := streaming.NewResultCountingStream(stream)
+	statsObserver := streaming.NewStatsObservingStream(countingStream)
+	jobAlert, err := job.Run(ctx, r.db, statsObserver)
 
 	ao := alert.Observer{
 		Db:           r.db,
 		SearchInputs: r.SearchInputs,
-		HasResults:   matchCount > 0,
+		HasResults:   countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)
 	}
-	alert, err := ao.Done()
+	observerAlert, err := ao.Done()
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1588,7 +1406,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !common.Status.Any(search.RepoStatusTimedout) {
+		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
 			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
@@ -1597,7 +1415,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		}
 	}
 
-	return alert, err
+	return search.MaxPriorityAlert(jobAlert, observerAlert), err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
@@ -1767,7 +1585,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		err = job.Run(ctx, r.db, agg)
+		_, err = job.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}

@@ -1,26 +1,22 @@
-import { ApolloError, OperationVariables } from '@apollo/client'
 import { useCallback } from 'react'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { FeedbackPromptSubmitEventHandler } from '@sourcegraph/wildcard'
 
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../graphql-operations'
+import { LayoutRouteProps } from '../routes'
 
-interface useHandleSubmitFeedbackState {
-    loading: boolean
-    data?: SubmitHappinessFeedbackResult | null
-    error?: ApolloError
-    onSubmit: (text: string, rating: number) => Promise<OperationVariables | undefined>
+import { useRoutesMatch } from './useRoutesMatch'
+
+interface HandleSubmitFeedbackState {
+    handleSubmitFeedback: FeedbackPromptSubmitEventHandler
 }
 
-interface useHandleSubmitFeedbackProps {
-    routeMatch?: string
-    textPrefix?: string
-}
-
-export const useHandleSubmitFeedback = ({
-    textPrefix = '',
-    routeMatch,
-}: useHandleSubmitFeedbackProps): useHandleSubmitFeedbackState => {
+export const useHandleSubmitFeedback = (
+    routes?: readonly LayoutRouteProps<{}>[] | any[],
+    textPrefix = ''
+): HandleSubmitFeedbackState => {
+    const match = useRoutesMatch(routes)
     const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
         mutation SubmitHappinessFeedback($input: HappinessFeedbackSubmissionInput!) {
             submitHappinessFeedback(input: $input) {
@@ -29,25 +25,27 @@ export const useHandleSubmitFeedback = ({
         }
     `
 
-    const [submitFeedback, { loading, data, error }] = useMutation<
-        SubmitHappinessFeedbackResult,
-        SubmitHappinessFeedbackVariables
-    >(SUBMIT_HAPPINESS_FEEDBACK_QUERY)
+    const [submitFeedback] = useMutation<SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables>(
+        SUBMIT_HAPPINESS_FEEDBACK_QUERY
+    )
 
-    const onSubmit = useCallback(
-        (text: string, rating: number) =>
-            submitFeedback({
+    const handleSubmitFeedback = useCallback(
+        async (text: string, rating: number) => {
+            const { data, errors } = await submitFeedback({
                 variables: {
-                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: routeMatch },
+                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: match },
                 },
-            }),
-        [routeMatch, submitFeedback, textPrefix]
+            })
+
+            return {
+                errorMessage: errors?.map(error => error.message).join(', '),
+                isHappinessFeedback: !!data?.submitHappinessFeedback,
+            }
+        },
+        [match, submitFeedback, textPrefix]
     )
 
     return {
-        loading,
-        data,
-        error,
-        onSubmit,
+        handleSubmitFeedback,
     }
 }

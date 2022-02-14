@@ -8,6 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { VSCodeIcon } from '../components/CtaIcons'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
@@ -23,15 +24,6 @@ interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
     onSignUp: (args: SignUpArguments) => Promise<void>
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
 }
-
-const VSCodeIcon: React.FunctionComponent<{}> = () => (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d="M22.0834 21.3325V8.46915L13.5834 14.9008L22.0834 21.3325ZM1.14506 11.0192C0.939444 10.7993 0.822721 10.511 0.817486 10.21C0.812252 9.90905 0.918879 9.61685 1.11672 9.38999L2.81672 7.81749C3.10006 7.56249 3.79422 7.44915 4.30422 7.81749L9.14922 11.515L20.3834 1.24415C20.8367 0.79082 21.6159 0.606653 22.5084 1.07415L28.1751 3.77999C28.6851 4.07749 29.1667 4.54499 29.1667 5.40915V24.5342C29.1667 25.1008 28.7559 25.71 28.3167 25.9508L22.0834 28.9258C21.6301 29.11 20.7801 28.94 20.4826 28.6425L9.12089 18.3008L4.30422 21.9842C3.76589 22.3525 3.10006 22.2533 2.81672 21.9842L1.11672 20.4258C0.663389 19.9583 0.720056 19.1933 1.18756 18.7258L5.43756 14.9008"
-            fill="#339AF0"
-        />
-    </svg>
-)
 
 /**
  * Sign up page specifically from users via our VS Code integration

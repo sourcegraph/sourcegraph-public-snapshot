@@ -253,12 +253,20 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Sends an invitation to join Sourcegraph to the given email address.
+
+    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
+    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
+    or if the user has been invited too recently.
+    """
+    inviteEmailToSourcegraph(email: String!): EmptyResponse!
+    """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -1407,6 +1415,11 @@ type Query {
     organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
 
     """
+    Retrieve all organization feature flag overrides for the current user
+    """
+    organizationFeatureFlagOverrides: [FeatureFlagOverride!]!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
@@ -1475,6 +1488,17 @@ type Query {
         """
         after: String
     ): ExecutorConnection!
+
+    """
+    (experimental)
+    Get invitation based on the JWT in the invitation URL
+    """
+    invitationByToken(
+        """
+        The token that uniquely identifies the invitation
+        """
+        token: String!
+    ): OrganizationInvitation!
 }
 
 """
@@ -4986,9 +5010,13 @@ type Org implements Node & SettingsSubject & Namespace {
             reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
         )
     """
+    DEPRECATED
     A pending invitation for the viewer to join this organization, if any.
     """
     viewerPendingInvitation: OrganizationInvitation
+        @deprecated(
+            reason: "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
+        )
     """
     Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     have admin privileges on the organization.
@@ -5047,7 +5075,11 @@ type OrganizationInvitation implements Node {
     """
     The user who received the invitation.
     """
-    recipient: User!
+    recipient: User
+    """
+    The email address that the invitation was sent to.
+    """
+    recipientEmail: String
     """
     The date when this invitation was created.
     """
@@ -5072,6 +5104,10 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    Boolean flag which returns true if the email on the invite matches a verified email of the user
+    """
+    isVerifiedEmail: Boolean
 }
 
 """

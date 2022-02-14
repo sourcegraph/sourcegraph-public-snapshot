@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Resolve will populate the relationship fields of the registered issues and pull

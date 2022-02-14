@@ -2,17 +2,20 @@ package migration
 
 import (
 	"fmt"
-
-	"github.com/cockroachdb/errors"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-const metadataFileTemplate = `name: %s
-parent: %d
+const newMetadataFileTemplate = `name: %s
+parents: [%s]
 `
 
-const upMigrationFileTemplate = `BEGIN;
+const newUpMigrationFileTemplate = `BEGIN;
 
 -- Perform migration here.
 --
@@ -28,46 +31,59 @@ const upMigrationFileTemplate = `BEGIN;
 COMMIT;
 `
 
-const downMigrationFileTemplate = `BEGIN;
+const newDownMigrationFileTemplate = `BEGIN;
 
 -- Undo the changes made in the up migration
 
 COMMIT;
 `
 
-// Add creates a new up/down migration file pair for the given database and
-// returns the names of the new files. If there was an error, the filesystem should remain
-// unmodified.
-func Add(database db.Database, migrationName string) (up, down, metadata string, _ error) {
-	baseDir, err := migrationDirectoryForDatabase(database)
+// Add creates a new directory with stub migration files in the given schema and returns the
+// names of the newly created files. If there was an error, the filesystem is rolled-back.
+func Add(database db.Database, migrationName string) error {
+	return add(database, migrationName, newUpMigrationFileTemplate, newDownMigrationFileTemplate)
+}
+
+func add(database db.Database, migrationName, upMigrationFileTemplate, downMigrationFileTemplate string) error {
+	definitions, err := readDefinitions(database)
 	if err != nil {
-		return "", "", "", err
+		return err
 	}
 
-	// TODO: We can probably convert to migrations and use getMaxMigrationID
-	names, err := readFilenamesNamesInDirectory(baseDir)
-	if err != nil {
-		return "", "", "", err
+	leaves := definitions.Leaves()
+	parents := make([]int, 0, len(leaves))
+	for _, leaf := range leaves {
+		parents = append(parents, leaf.ID)
 	}
 
-	lastMigrationIndex, ok := parseLastMigrationIndex(names)
-	if !ok {
-		return "", "", "", errors.New("no previous migrations exist")
-	}
-
-	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex+1)
+	files, err := makeMigrationFilenames(database, int(time.Now().UTC().Unix()))
 	if err != nil {
-		return "", "", "", err
+		return err
 	}
 
 	contents := map[string]string{
-		upPath:       upMigrationFileTemplate,
-		downPath:     downMigrationFileTemplate,
-		metadataPath: fmt.Sprintf(metadataFileTemplate, migrationName, lastMigrationIndex),
+		files.UpFile:       upMigrationFileTemplate,
+		files.DownFile:     downMigrationFileTemplate,
+		files.MetadataFile: fmt.Sprintf(newMetadataFileTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
 	}
 	if err := writeMigrationFiles(contents); err != nil {
-		return "", "", "", err
+		return err
 	}
 
-	return upPath, downPath, metadataPath, nil
+	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
+	block.Writef("Up query file: %s", files.UpFile)
+	block.Writef("Down query file: %s", files.DownFile)
+	block.Writef("Metadata file: %s", files.MetadataFile)
+	block.Close()
+
+	return nil
+}
+
+func intsToStrings(ints []int) []string {
+	strs := make([]string, 0, len(ints))
+	for _, value := range ints {
+		strs = append(strs, strconv.Itoa(value))
+	}
+
+	return strs
 }

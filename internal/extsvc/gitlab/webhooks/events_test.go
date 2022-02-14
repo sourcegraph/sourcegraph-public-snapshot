@@ -3,9 +3,8 @@ package webhooks
 import (
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestUnmarshalEvent(t *testing.T) {

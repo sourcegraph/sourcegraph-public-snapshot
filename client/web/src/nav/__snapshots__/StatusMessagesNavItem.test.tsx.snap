@@ -84,7 +84,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/users/user/settings/repositories"
             >
               Manage repositories
@@ -181,7 +181,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/users/user/settings/repositories"
             >
               Manage repositories
@@ -278,7 +278,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/site-admin/repositories"
             >
               Manage repositories
@@ -375,7 +375,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/users/user/settings/repositories"
             >
               Manage repositories
@@ -472,7 +472,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/site-admin/repositories"
             >
               Manage repositories
@@ -569,7 +569,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/users/user/settings/repositories"
             >
               Manage repositories
@@ -666,7 +666,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
               Repositories available for search
             </p>
             <a
-              class="text-primary"
+              class="anchorLink text-primary"
               href="/site-admin/repositories"
             >
               Manage repositories

@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -62,16 +61,6 @@ func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeu
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
-	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
-	defer cancel()
-
-	wrapError := func(err error, message string) error {
-		if errors.Is(err, context.DeadlineExceeded) {
-			err = errors.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
-		}
-
-		return errors.Wrap(err, message)
-	}
 
 	start := time.Now()
 	defer func() {
@@ -91,7 +80,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		flushErr := logger.Flush()
 		if flushErr != nil {
 			if err != nil {
-				err = multierror.Append(err, flushErr)
+				err = errors.Append(err, flushErr)
 			} else {
 				err = flushErr
 			}
@@ -107,7 +96,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
-		return wrapError(err, "failed to prepare workspace")
+		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	defer func() {
 		_ = os.RemoveAll(workingDirectory)
@@ -164,21 +153,21 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 
 	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
-		return wrapError(err, "failed to write virtual machine files")
+		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx); err != nil {
-		return wrapError(err, "failed to setup virtual machine")
+		return errors.Wrap(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
 		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
-			err = multierror.Append(err, teardownErr)
+			err = errors.Append(err, teardownErr)
 		}
 	}()
 
@@ -196,7 +185,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
-			return wrapError(err, "failed to perform docker step")
+			return errors.Wrap(err, "failed to perform docker step")
 		}
 	}
 
@@ -213,7 +202,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
-			return wrapError(err, "failed to perform src-cli step")
+			return errors.Wrap(err, "failed to perform src-cli step")
 		}
 	}
 

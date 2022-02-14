@@ -8,24 +8,19 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/gomodule/redigo/redis"
-	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -41,26 +36,6 @@ var (
 	}
 )
 
-type userContextKey struct{}
-type userContext struct {
-	shellPath       string
-	shellConfigPath string
-}
-
-func buildUserContext(userContext userContext, ctx context.Context) context.Context {
-	return context.WithValue(ctx, userContextKey{}, userContext)
-}
-
-func getUserShellPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellPath
-}
-
-func getUserShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellConfigPath
-}
-
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -72,20 +47,17 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	// extract user environment general informations
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err := usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx = buildUserContext(userContext, ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(usershell.ShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -201,7 +173,7 @@ var macOSDependencies = []dependencyCategory{
 		dependencies: []*dependency{
 			{
 				name:  "brew",
-				check: checkInPath("brew"),
+				check: check.InPath("brew"),
 				instructionsComment: `We depend on having the Homebrew package manager available on macOS.
 
 Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
@@ -212,23 +184,23 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
-			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
-			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
-			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
-			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
-			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
+			{name: "git", check: getCheck("git"), instructionsCommands: `brew install git`},
+			{name: "gnu-sed", check: check.InPath("gsed"), instructionsCommands: "brew install gnu-sed"},
+			{name: "comby", check: check.InPath("comby"), instructionsCommands: "brew install comby"},
+			{name: "pcre", check: check.InPath("pcregrep"), instructionsCommands: `brew install pcre`},
+			{name: "sqlite", check: check.InPath("sqlite3"), instructionsCommands: `brew install sqlite`},
+			{name: "jq", check: check.InPath("jq"), instructionsCommands: `brew install jq`},
+			{name: "bash", check: check.CommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
 			{
 				name: "rosetta",
-				check: anyChecks(
-					checkCommandOutputContains("uname -m", "x86_64"), // will return true on non-m1 macs
-					checkCommandExitCode("pgrep oahd", 0)),           // oahd is the process running rosetta
+				check: check.Any(
+					check.CommandOutputContains("uname -m", "x86_64"), // will return true on non-m1 macs
+					check.CommandExitCode("pgrep oahd", 0)),           // oahd is the process running rosetta
 				instructionsCommands: `softwareupdate --install-rosetta --agree-to-license`,
 			},
 			{
 				name:                 "docker",
-				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
+				check:                getCheck("docker-installed"),
 				instructionsCommands: `brew install --cask docker`,
 			},
 		},
@@ -239,7 +211,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		dependencies: []*dependency{
 			{
 				name:  "SSH authentication with GitHub.com",
-				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
+				check: check.CommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
 				instructionsComment: `` +
 					`Make sure that you can clone git repositories from GitHub via SSH.
 See here on how to set that up:
@@ -288,17 +260,17 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 		autoFixingDependencies: []*dependency{
 			{
 				name:  "asdf",
-				check: checkCommandOutputContains("asdf", "version"),
+				check: getCheck("asdf"),
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
 				}),
 			},
 		},
 		dependencies: []*dependency{
 			{
 				name:  "go",
-				check: combineChecks(checkInPath("go"), checkCommandOutputContains("go version", "go version")),
+				check: getCheck("go"),
 				instructionsComment: `` +
 					`Souregraph requires Go to be installed.
 
@@ -317,7 +289,7 @@ asdf install golang
 			},
 			{
 				name:  "yarn",
-				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
+				check: getCheck("yarn"),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
@@ -332,12 +304,12 @@ Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 brew install gpg
 asdf plugin-add yarn
-asdf install yarn 
+asdf install yarn
 `,
 			},
 			{
 				name:  "node",
-				check: combineChecks(checkInPath("node"), checkCommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
+				check: getCheck("node"),
 				instructionsComment: `` +
 					`Souregraph requires Node.JS to be installed.
 
@@ -350,7 +322,7 @@ programming languages and tools. Find out how to install asdf here:
 
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
+asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `,
@@ -370,7 +342,7 @@ asdf install nodejs
 				//
 				// Because only the latest error is returned, it's better to finish with the real check
 				// for error message clarity.
-				check: anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
+				check: getCheck("postgres"),
 				instructionsComment: `` +
 					`Sourcegraph requires the PostgreSQL database to be running.
 
@@ -386,18 +358,18 @@ createdb || true
 			},
 			{
 				name:  "Connection to 'sourcegraph' database",
-				check: checkSourcegraphDatabase,
+				check: getCheck("sourcegraph-database"),
 				instructionsComment: `` +
 					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},
 			{
 				name:  "psql",
-				check: checkInPath("psql"),
+				check: getCheck("psql"),
 				instructionsComment: `` +
 					`psql, the PostgreSQL CLI client, needs to be available in your $PATH.
 
@@ -414,7 +386,7 @@ If you used another method, make sure psql is available.`,
 		dependencies: []*dependency{
 			{
 				name:  "Connection to Redis",
-				check: retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
+				check: getCheck("redis"),
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running.
 					We recommend installing it with Homebrew and starting it as a system service.`,
@@ -429,7 +401,7 @@ If you used another method, make sure psql is available.`,
 		dependencies: []*dependency{
 			{
 				name:  "/etc/hosts contains sourcegraph.test",
-				check: checkFileContains("/etc/hosts", "sourcegraph.test"),
+				check: getCheck("sourcegraph-test-host"),
 				instructionsComment: `` +
 					`Sourcegraph should be reachable under https://sourcegraph.test:3443.
 					To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
@@ -437,7 +409,7 @@ If you used another method, make sure psql is available.`,
 			},
 			{
 				name:  "Caddy root certificate is trusted by system",
-				check: checkCaddyTrusted,
+				check: getCheck("caddy-trusted"),
 				instructionsComment: `` +
 					`In order to use TLS to access your local Sourcegraph instance, you need to
 trust the certificate created by Caddy, the proxy we use locally.
@@ -790,7 +762,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLinef("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := execFreshShell(ctx, dep.InstructionsCommands(ctx))
+	cmd := usershell.Cmd(ctx, dep.InstructionsCommands(ctx))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -916,262 +888,10 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
-func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		out, _ := combinedSourceExec(ctx, cmd)
-		if !strings.Contains(string(out), contains) {
-			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
-		}
-		return nil
-	}
-}
-
-func checkCommandExitCode(cmd string, exitCode int) func(context.Context) error {
-	return func(ctx context.Context) error {
-		cmd := execFreshShell(ctx, cmd)
-		err := cmd.Run()
-		var execErr *exec.ExitError
-		if err != nil {
-			if errors.As(err, &execErr) && execErr.ExitCode() != exitCode {
-				return errors.Newf("failed to check command exit code, wanted %d but got %d", exitCode, execErr.ExitCode())
-			}
-			return err
-		}
-		return nil
-	}
-}
-
-func checkFileContains(fileName, content string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		file, err := os.Open(fileName)
-		if err != nil {
-			return errors.Wrapf(err, "failed to check that %q contains %q", fileName, content)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.Contains(line, content) {
-				return nil
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			return err
-		}
-
-		return errors.Newf("file %q did not contain %q", fileName, content)
-	}
-}
-
-func guessUserShell() (string, string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", "", err
-	}
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	var shellrc string
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-	switch {
-	case strings.Contains(shell, "bash"):
-		shellrc = ".bashrc"
-	case strings.Contains(shell, "zsh"):
-		shellrc = ".zshrc"
-	}
-	return shell, filepath.Join(home, shellrc), nil
-}
-
-// execFreshShell returns a command wrapped in a new shell process, enabling
-// changes added by various checks to be run. This negates the new to ask the
-// user to restart sg for many checks.
-func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
-	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
-}
-
-// combinedSourceExec runs a command in a fresh shell environment,
-// and returns stderr and stdout combined, along with an error.
-func combinedSourceExec(ctx context.Context, cmd string) ([]byte, error) {
-	return execFreshShell(ctx, cmd).CombinedOutput()
-}
-
-func checkInPath(cmd string) func(context.Context) error {
-	return func(ctx context.Context) error {
-		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
-		_, err := combinedSourceExec(ctx, hashCmd)
-		if err != nil {
-			return errors.Newf("executable %q not found in $PATH", cmd)
-		}
-		return nil
-	}
-}
-
-func checkInMainRepoOrRepoInDirectory(ctx context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
-}
-
-// checkPostgresConnection succeeds connecting to the default user database works, regardless
-// of if it's running locally or with docker.
-func checkPostgresConnection(ctx context.Context) error {
-	dsns, err := dsnCandidates()
-	if err != nil {
-		return err
-	}
-	var errs []error
-	for _, dsn := range dsns {
-		conn, err := pgx.Connect(ctx, dsn)
-		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
-			continue
-		}
-		defer conn.Close(ctx)
-		err = conn.Ping(ctx)
-		if err == nil {
-			// if ping passed
-			return nil
-		}
-		errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
-	}
-
-	messages := []string{"failed all attempts to connect to Postgresql database"}
-	for _, e := range errs {
-		messages = append(messages, "\t"+e.Error())
-	}
-	return errors.New(strings.Join(messages, "\n"))
-}
-
-func dsnCandidates() ([]string, error) {
-	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
-
-	// best case scenario
-	datasource := env("PGDATASOURCE")
-	// most classic dsn
-	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
-	// classic docker dsn
-	dockerURL := baseURL
-	dockerURL.User = url.UserPassword("postgres", "postgres")
-	// other classic docker dsn
-	dockerURL2 := baseURL
-	dockerURL2.User = url.UserPassword("postgres", "password")
-	// env based dsn
-	envURL := baseURL
-	username, ok := os.LookupEnv("PGUSER")
-	if !ok {
-		uinfo, err := user.Current()
-		if err != nil {
-			return nil, err
-		}
-		username = uinfo.Name
-	}
-	envURL.User = url.UserPassword(username, env("PGPASSWORD"))
-	if host, ok := os.LookupEnv("PGHOST"); ok {
-		if port, ok := os.LookupEnv("PGPORT"); ok {
-			envURL.Host = fmt.Sprintf("%s:%s", host, port)
-		}
-		envURL.Host = fmt.Sprintf("%s:%s", host, "5432")
-	}
-	if sslmode := env("PGSSLMODE"); sslmode != "" {
-		qry := envURL.Query()
-		qry.Set("sslmode", sslmode)
-		envURL.RawQuery = qry.Encode()
-	}
-	return []string{
-		datasource,
-		envURL.String(),
-		baseURL.String(),
-		dockerURL.String(),
-		dockerURL2.String(),
-	}, nil
-}
-
-func checkSourcegraphDatabase(ctx context.Context) error {
-	// This check runs only in the `sourcegraph/sourcegraph` repository, so
-	// we try to parse the globalConf and use its `Env` to configure the
-	// Postgres connection.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
-	}
-
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		// Otherwise check in globalConf.Env
-		return globalConf.Env[key]
-	}
-
-	dsn := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
-	}
-	defer conn.Close(ctx)
-	return conn.Ping(ctx)
-}
-
-func checkRedisConnection(context.Context) error {
-	conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
-	}
-
-	if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
-		return errors.Wrap(err, "failed to write to Redis at 127.0.0.1:6379")
-	}
-
-	retval, err := redis.String(conn.Do("GET", "sg-setup"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read from Redis at 127.0.0.1:6379")
-	}
-
-	if retval != "was-here" {
-		return errors.New("failed to test write in Redis")
-	}
-	return nil
-}
-
-type dependencyCheck func(context.Context) error
-
 type dependency struct {
 	name string
 
-	check dependencyCheck
+	check check.CheckFunc
 
 	onlyEmployees bool
 
@@ -1287,54 +1007,7 @@ func getChoice(choices map[int]string) (int, error) {
 	}
 }
 
-func anyChecks(checks ...dependencyCheck) dependencyCheck {
-	return func(ctx context.Context) (err error) {
-		for _, chk := range checks {
-			err = chk(ctx)
-			if err == nil {
-				return nil
-			}
-		}
-		return err
-	}
-}
-
-func combineChecks(checks ...dependencyCheck) dependencyCheck {
-	return func(ctx context.Context) (err error) {
-		for _, chk := range checks {
-			err = chk(ctx)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
-
-func retryCheck(check dependencyCheck, retries int, sleep time.Duration) dependencyCheck {
-	return func(ctx context.Context) (err error) {
-		for i := 0; i < retries; i++ {
-			err = check(ctx)
-			if err == nil {
-				return nil
-			}
-			time.Sleep(sleep)
-		}
-		return err
-	}
-}
-
-func wrapCheckErr(check dependencyCheck, message string) dependencyCheck {
-	return func(ctx context.Context) error {
-		err := check(ctx)
-		if err != nil {
-			return errors.Wrap(err, message)
-		}
-		return nil
-	}
-}
-
-func checkCaddyTrusted(ctx context.Context) error {
+func checkCaddyTrusted(_ context.Context) error {
 	certPath, err := caddySourcegraphCertificatePath()
 	if err != nil {
 		return errors.Wrap(err, "failed to determine path where proxy stores certificates")
@@ -1396,10 +1069,10 @@ func trusted(cert *x509.Certificate) bool {
 func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
 	pemBlock, _ := pem.Decode(pemDER)
 	if pemBlock == nil {
-		return nil, fmt.Errorf("no PEM block found")
+		return nil, errors.Newf("no PEM block found")
 	}
 	if pemBlock.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
+		return nil, errors.Newf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
 	}
 	return x509.ParseCertificate(pemBlock.Bytes)
 }

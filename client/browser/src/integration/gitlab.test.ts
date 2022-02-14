@@ -5,6 +5,7 @@ import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/dri
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
@@ -62,6 +63,9 @@ describe('GitLab', () => {
                     name: rawRepoName,
                 },
             }),
+            ResolveRawRepoName: ({ repoName }) => ({
+                repository: { uri: `${repoName}`, mirrorInfo: { cloned: true } },
+            }),
             BlobContent: () => ({
                 repository: {
                     commit: {
@@ -102,7 +106,12 @@ describe('GitLab', () => {
                             '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                         )?.href
                 ),
-                `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${driver.browserType}-extension`
+                createURLWithUTM(
+                    new URL(
+                        `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                    ),
+                    { utm_source: `${driver.browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                ).href
             )
         })
     })
@@ -166,7 +175,7 @@ describe('GitLab', () => {
             throw new Error(`Found no line with number ${lineNumber}`)
         }
 
-        const [token] = await line.$x('//span[text()="CallOption"]')
+        const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: '[data-testid="hover-overlay-content"] > p',

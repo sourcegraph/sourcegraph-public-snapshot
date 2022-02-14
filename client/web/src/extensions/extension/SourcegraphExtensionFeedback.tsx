@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { Button, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, FeedbackPrompt } from '@sourcegraph/wildcard'
 
 import { useHandleSubmitFeedback } from '../../hooks'
 
@@ -12,19 +12,16 @@ export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphEx
     extensionID,
 }) => {
     const textPrefix = `Sourcegraph extension ${extensionID}: `
-    const feedbackSubmitState = useHandleSubmitFeedback({ textPrefix })
-    const [isOpen, setIsOpen] = useState(false)
-
-    const toggleIsOpen = (): void => setIsOpen(!isOpen)
-    const onClose = (): void => setIsOpen(false)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback(undefined, textPrefix)
+    const labelId = 'sourcegraph-extension-feedback-modal'
 
     return (
-        <>
-            <FeedbackPrompt closePrompt={onClose} {...feedbackSubmitState} open={isOpen}>
-                <PopoverTrigger className="p-0" onClick={toggleIsOpen} as={Button} variant="link">
+        <FeedbackPrompt modal={true} modalLabelId={labelId} onSubmit={handleSubmitFeedback}>
+            {({ onClick }) => (
+                <Button className="p-0" onClick={onClick} variant="link">
                     <small>Message the author</small>
-                </PopoverTrigger>
-            </FeedbackPrompt>
-        </>
+                </Button>
+            )}
+        </FeedbackPrompt>
     )
 }

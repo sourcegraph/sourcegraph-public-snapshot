@@ -5,12 +5,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // AuthenticatorType defines all possible types of authenticators stored in the database.

@@ -2,12 +2,12 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names,
@@ -483,7 +483,7 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 	}
 	return Pattern{
 		Annotation: Annotation{Labels: Regexp},
-		Value:      "(" + strings.Join(values, ").*?(") + ")",
+		Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
 	}
 }
 

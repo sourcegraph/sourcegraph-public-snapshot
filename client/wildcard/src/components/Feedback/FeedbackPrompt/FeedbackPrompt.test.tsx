@@ -1,122 +1,91 @@
-import { ApolloError } from '@apollo/client'
-import { render, fireEvent, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
+import sinon from 'sinon'
 
 import { Button } from '../../Button'
+import { PopoverTrigger } from '../../Popover'
 
-import { FeedbackPrompt, FeedbackPromptTrigger } from '.'
+import { FeedbackPrompt } from '.'
 
-const handleSubmit = (text?: string, rating?: number) => new Promise<undefined>(resolve => resolve(undefined))
+interface SubmitHappinessFeedbackVariables {
+    input: {
+        score: number
+        feedback: string
+        currentPath: string
+    }
+}
+
+const mockData: SubmitHappinessFeedbackVariables = {
+    input: {
+        score: 4,
+        feedback: 'Lorem ipsum dolor sit amet',
+        currentPath: '/some-route',
+    },
+}
 
 describe('FeedbackPrompt', () => {
-    test('Renders heading and textarea correctly', () => {
+    const onSubmit = sinon.stub()
+
+    beforeEach(() => {
         render(
-            <FeedbackPrompt open={true} data={null} loading={false} onSubmit={handleSubmit}>
-                <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                    Share feedback
-                </FeedbackPromptTrigger>
+            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit}>
+                <PopoverTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+                    <span>Feedback</span>
+                </PopoverTrigger>
             </FeedbackPrompt>
         )
-        expect(screen.getByRole('heading', { level: 3 })).toBeVisible()
-        expect(screen.getByPlaceholderText('What’s going well? What could be better?')).toBeVisible()
     })
 
-    test('Renders correct emoji toggles', () => {
-        render(
-            <FeedbackPrompt open={true} data={null} loading={false} onSubmit={handleSubmit}>
-                <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                    Share feedback
-                </FeedbackPromptTrigger>
-            </FeedbackPrompt>
-        )
-        expect(screen.getByLabelText('Very sad')).toBeVisible()
+    afterEach(async () => {
+        await cleanup()
+        onSubmit.resetHistory()
     })
 
-    test('Send button is initially disabled', () => {
-        render(
-            <FeedbackPrompt open={true} loading={true} onSubmit={handleSubmit}>
-                <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                    Share feedback
-                </FeedbackPromptTrigger>
-            </FeedbackPrompt>
-        )
-        expect(screen.getByTestId('send-feedback-btn')).toBeDisabled()
-    })
-
-    test('Send button is disabled when a happiness rating is selected and textarea is empty', () => {
-        render(
-            <FeedbackPrompt open={true} data={null} loading={false} onSubmit={handleSubmit}>
-                <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                    Share feedback
-                </FeedbackPromptTrigger>
-            </FeedbackPrompt>
-        )
-        fireEvent.click(screen.getByLabelText('Very Happy'))
-        expect(screen.getByTestId('send-feedback-btn')).toBeDisabled()
-    })
-
-    test('Send button is not disabled when a textarea is not empty and happiness rating is selected', () => {
-        render(
-            <FeedbackPrompt open={true} data={null} loading={false} onSubmit={handleSubmit}>
-                <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                    Share feedback
-                </FeedbackPromptTrigger>
-            </FeedbackPrompt>
-        )
+    const submitFeedback = () => {
+        userEvent.click(screen.getByLabelText('Very Happy'))
         fireEvent.change(screen.getByPlaceholderText('What’s going well? What could be better?'), {
-            target: { value: 'Lorem ipsum dolor sit amet' },
+            target: { value: mockData.input.feedback },
         })
-        fireEvent.click(screen.getByLabelText('Very Happy'))
-        expect(screen.getByTestId('send-feedback-btn')).toBeEnabled()
-    })
-})
 
-describe('submission', () => {
-    describe('Success', () => {
-        test('Renders success page correctly', () => {
-            const data = {
-                submitHappinessFeedback: {
-                    alwaysNil: null,
-                },
-            }
-            render(
-                <FeedbackPrompt open={true} data={data} loading={false} onSubmit={handleSubmit}>
-                    <FeedbackPromptTrigger
-                        as={Button}
-                        aria-label="Feedback"
-                        variant="secondary"
-                        outline={true}
-                        size="sm"
-                    >
-                        Share feedback
-                    </FeedbackPromptTrigger>
-                </FeedbackPrompt>
-            )
-            expect(screen.getByText(/want to help keep making sourcegraph better?/i)).toBeVisible()
-        })
+        expect(screen.getByText('Send')).toBeEnabled()
+
+        userEvent.click(screen.getByText('Send'))
+    }
+
+    test('should render correctly', () => {
+        expect(document.body).toMatchSnapshot()
     })
 
-    describe('Error', () => {
-        const mockError = new ApolloError({
-            errorMessage: 'Something went really wrong',
-        })
+    test('should enable/disable submit button correctly', () => {
+        userEvent.click(screen.getByLabelText('Very Happy'))
 
-        test('Renders error alert correctly', () => {
-            render(
-                <FeedbackPrompt open={true} data={null} error={mockError} loading={false} onSubmit={handleSubmit}>
-                    <FeedbackPromptTrigger
-                        as={Button}
-                        aria-label="Feedback"
-                        variant="secondary"
-                        outline={true}
-                        size="sm"
-                    >
-                        Share feedback
-                    </FeedbackPromptTrigger>
-                </FeedbackPrompt>
-            )
+        expect(screen.getByText('Send')).toBeDisabled()
 
-            expect(screen.getByText(/error submitting feedback:/i)).toBeVisible()
-        })
+        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), mockData.input.feedback)
+
+        expect(screen.getByText('Send')).toBeEnabled()
+    })
+
+    test('should render submit success correctly', async () => {
+        onSubmit.resolves({ errorMessage: undefined, isHappinessFeedback: true })
+
+        submitFeedback()
+
+        expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
+        sinon.assert.calledWith(onSubmit, mockData.input.feedback, mockData.input.score)
+
+        expect(document.body).toMatchSnapshot()
+    })
+
+    test('should render submit error correctly', async () => {
+        onSubmit.resolves({ errorMessage: 'Something went really wrong', isHappinessFeedback: false })
+
+        submitFeedback()
+
+        expect(await screen.findByText(/something went really wrong/i)).toBeInTheDocument()
+        sinon.assert.calledWith(onSubmit, mockData.input.feedback, mockData.input.score)
+
+        expect(document.body).toMatchSnapshot()
     })
 })

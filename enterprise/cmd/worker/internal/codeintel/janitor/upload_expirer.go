@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadExpirer struct {
@@ -85,7 +84,7 @@ func (e *uploadExpirer) Handle(ctx context.Context) (err error) {
 			if err == nil {
 				err = repositoryErr
 			} else {
-				err = multierror.Append(err, repositoryErr)
+				err = errors.Append(err, repositoryErr)
 			}
 		}
 	}
@@ -129,6 +128,11 @@ func (e *uploadExpirer) handleRepository(
 		// retention scan timestamp updated by the following handleUploads call. This guarantees
 		// that the loop will terminate naturally after the entire set of candidate uploads have
 		// been seen and updated with a time necessarily greater than lastRetentionScanBefore.
+		//
+		// Additionally, we skip the set of uploads that have finished processing strictly after
+		// the last update to the commit graph for that repository. This ensures we do not throw
+		// out new uploads that would happen to be visible to no commits since they were never
+		// installed into the commit graph.
 
 		uploads, _, err := e.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
 			State:                   "completed",
@@ -137,6 +141,7 @@ func (e *uploadExpirer) handleRepository(
 			OldestFirst:             true,
 			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
+			InCommitGraph:           true,
 		})
 		if err != nil || len(uploads) == 0 {
 			return err
@@ -199,7 +204,7 @@ func (e *uploadExpirer) handleUploads(
 			if err == nil {
 				err = checkErr
 			} else {
-				err = multierror.Append(err, checkErr)
+				err = errors.Append(err, checkErr)
 			}
 
 			// Collect errors but not prevent other commits from being successfully processed. We'll leave the
@@ -223,11 +228,15 @@ func (e *uploadExpirer) handleUploads(
 		if updateErr := errors.Wrap(err, "dbstore.UpdateUploadRetention"); err == nil {
 			err = updateErr
 		} else {
-			err = multierror.Append(err, updateErr)
+			err = errors.Append(err, updateErr)
 		}
 	}
 
-	e.metrics.numUploadsExpired.Add(float64(len(expiredUploadIDs)))
+	if count := len(expiredUploadIDs); count > 0 {
+		log15.Info("Expiring codeintel uploads", "count", count)
+		e.metrics.numUploadsExpired.Add(float64(count))
+	}
+
 	return err
 }
 

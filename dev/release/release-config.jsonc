@@ -13,12 +13,12 @@
     "captainSlackUsername": "michael.lin",
     "captainGitHubUsername": "michaellzc",
     // Release versions
-    "previousRelease": "3.36.2",
-    "upcomingRelease": "3.36.3",
+    "previousRelease": "3.35.1",
+    "upcomingRelease": "3.35.2",
     // Release dates
-    "oneWorkingDayBeforeRelease": "1 February 2022 10:00 PST",
-    "releaseDate": "2 February 2022 10:00 PST",
-    "oneWorkingDayAfterRelease": "3 February 2022 10:00 PST",
+    "oneWorkingDayBeforeRelease": "2 February 2022 10:00 PST",
+    "releaseDate": "3 February 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "4 February 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "prod-eng-announce",
     // Email for preparing calendar events

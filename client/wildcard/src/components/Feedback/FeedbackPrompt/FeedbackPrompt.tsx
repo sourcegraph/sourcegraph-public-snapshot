@@ -1,14 +1,13 @@
-import { ApolloError, OperationVariables } from '@apollo/client'
-import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
+import { Modal } from '../../Modal'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 import styles from './FeedbackPrompt.module.scss'
@@ -37,63 +36,68 @@ export const HAPPINESS_FEEDBACK_OPTIONS = [
     },
 ]
 
-interface ContentProps<TData = any> {
-    closePrompt?: () => void
+export type FeedbackPromptSubmitEventHandler = (
+    text: string,
+    rating: number
+) => Promise<{ isHappinessFeedback?: boolean; errorMessage?: string }>
+
+interface FeedbackPromptContentProps {
+    onClose?: () => void
     /** Boolean for displaying the Join Research link */
     productResearchEnabled?: boolean
-    onSubmit: (text: string, rating: number) => Promise<OperationVariables | undefined>
-    loading: boolean
-    data?: TData | null
-    error?: ApolloError
+    onSubmit: FeedbackPromptSubmitEventHandler
 }
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
-    closePrompt,
+const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps> = ({
+    onClose,
     productResearchEnabled,
     onSubmit,
-    loading,
-    data,
-    error,
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const textAreaReference = useRef<HTMLInputElement>(null)
+    const [loading, setLoading] = useState(false)
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
     const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
         setText,
     ])
+    const [error, setError] = useState<string>()
+    const [happinessFeedback, setHappinessFeedback] = useState<boolean>()
 
     const handleSubmit = useCallback<React.FormEventHandler>(
-        event => {
+        async event => {
             event.preventDefault()
 
             if (!rating) {
                 return
             }
-
-            return onSubmit(text, rating)
+            setLoading(true)
+            const { isHappinessFeedback, errorMessage } = await onSubmit(text, rating)
+            setError(errorMessage)
+            setHappinessFeedback(isHappinessFeedback)
+            setLoading(false)
         },
         [rating, onSubmit, text]
     )
 
     useEffect(() => {
-        if (data?.submitHappinessFeedback) {
+        if (happinessFeedback) {
             // Reset local storage when successfully submitted
             localStorage.removeItem(LOCAL_STORAGE_KEY_TEXT)
             localStorage.removeItem(LOCAL_STORAGE_KEY_RATING)
         }
-    }, [data?.submitHappinessFeedback])
+    }, [happinessFeedback])
 
     useAutoFocus({ autoFocus: true, reference: textAreaReference })
 
     return (
         <>
-            <Button className={styles.close} onClick={closePrompt}>
+            <Button className={styles.close} onClick={onClose}>
                 <CloseIcon className={styles.icon} />
             </Button>
-            {data?.submitHappinessFeedback ? (
+            {happinessFeedback ? (
                 <div className={styles.success}>
                     <TickIcon className={styles.successTick} />
                     <h3>We‘ve received your feedback!</h3>
@@ -103,7 +107,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
-                                <Link to="/user/settings/product-research" onClick={closePrompt}>
+                                <Link to="/user/settings/product-research" onClick={onClose}>
                                     Join us for occasional user research
                                 </Link>{' '}
                                 and share your feedback on our latest features and ideas.
@@ -141,8 +145,8 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         role="menuitem"
                         type="submit"
                         variant="secondary"
-                        data-testid="send-feedback-btn"
-                        className={classNames('btn-block', styles.button)}
+                        className={styles.button}
+                        display="block"
                     >
                         {loading ? <LoadingSpinner /> : 'Send'}
                     </Button>
@@ -152,27 +156,70 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     )
 }
 
-interface Props extends ContentProps {
-    open?: boolean
+interface FeedbackPromptTriggerProps {
+    isOpen?: boolean
+    onClick?: React.MouseEventHandler<HTMLElement>
+}
+interface FeedbackPromptProps extends FeedbackPromptContentProps {
+    /**
+     * Determins if Prompt is opened by default, defaults to false
+     */
+    openByDefault?: boolean
+    position?: Position
+    modal?: boolean
+    modalLabelId?: string
+    children: React.FunctionComponent<FeedbackPromptTriggerProps> | ReactNode
 }
 
-export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, onSubmit, loading, error, data, children }) => {
-    const [isOpen, setIsOpen] = useState(() => !!open)
-    const handleToggle = useCallback(() => setIsOpen(open => !open), [])
-    const forceClose = useCallback(() => setIsOpen(false), [])
+export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
+    openByDefault = false,
+    onSubmit,
+    children,
+    onClose,
+    position = Position.bottomEnd,
+    modal = false,
+    modalLabelId,
+}) => {
+    const [isOpen, setIsOpen] = useState(() => !!openByDefault)
+    const ChildrenComponent = typeof children === 'function' && children
+    const handleClosePrompt = useCallback(() => {
+        setIsOpen(false)
+        onClose?.()
+    }, [onClose])
+
+    const handleTriggerClick = useCallback(() => {
+        setIsOpen(isOpen => !isOpen)
+    }, [])
+
+    const triggerElement = ChildrenComponent ? (
+        <ChildrenComponent isOpen={isOpen} onClick={handleTriggerClick} />
+    ) : (
+        children
+    )
+
+    if (modal) {
+        return (
+            <>
+                {triggerElement}
+
+                {isOpen && (
+                    <Modal onDismiss={handleClosePrompt} aria-labelledby={modalLabelId ?? 'sourcegraph-feedback-modal'}>
+                        <FeedbackPromptContent
+                            onSubmit={onSubmit}
+                            productResearchEnabled={true}
+                            onClose={handleClosePrompt}
+                        />
+                    </Modal>
+                )}
+            </>
+        )
+    }
 
     return (
-        <Popover isOpen={isOpen} onOpenChange={handleToggle}>
-            {children}
-            <PopoverContent position={Position.bottom} className={styles.menu}>
-                <FeedbackPromptContent
-                    onSubmit={onSubmit}
-                    productResearchEnabled={true}
-                    closePrompt={forceClose}
-                    data={data}
-                    error={error}
-                    loading={loading}
-                />
+        <Popover isOpen={isOpen} onOpenChange={handleTriggerClick}>
+            {triggerElement}
+            <PopoverContent position={position} className={styles.menu}>
+                <FeedbackPromptContent onSubmit={onSubmit} productResearchEnabled={true} onClose={handleClosePrompt} />
             </PopoverContent>
         </Popover>
     )

@@ -1,13 +1,13 @@
 package zoekt
 
 import (
-	"regexp"
-
-	"github.com/cockroachdb/errors"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DefaultGlobalQueryScope returns a Zoekt query that applies a default

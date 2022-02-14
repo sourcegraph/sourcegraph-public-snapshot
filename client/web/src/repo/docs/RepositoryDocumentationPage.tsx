@@ -22,14 +22,14 @@ import {
     FeedbackPrompt,
     ButtonLink,
     Button,
-    FeedbackPromptTrigger,
+    PopoverTrigger,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
+import { useHandleSubmitFeedback } from '../../hooks'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -75,7 +75,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
-    const routeMatch = useRoutesMatch(routes)
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -83,7 +82,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
-    const feedbackSubmitState = useHandleSubmitFeedback({ routeMatch })
+    const { handleSubmitFeedback } = useHandleSubmitFeedback(routes)
 
     const pagePathID = props.pathID || '/'
     const page =
@@ -213,23 +212,23 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 target="_blank"
                                 rel="noopener"
                                 to="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 text-decoration-none btn-link"
+                                className="mr-1 text-decoration-none"
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
                             >
                                 Learn more
                             </ButtonLink>
-                            <FeedbackPrompt {...feedbackSubmitState}>
-                                <FeedbackPromptTrigger
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                                <PopoverTrigger
                                     as={Button}
                                     aria-label="Feedback"
                                     variant="secondary"
                                     outline={true}
                                     size="sm"
                                 >
-                                    Share feedback
-                                </FeedbackPromptTrigger>
+                                    <span>Feedback</span>
+                                </PopoverTrigger>
                             </FeedbackPrompt>
                         </div>
                         <h1>

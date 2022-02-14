@@ -82,7 +82,7 @@ const getFilters = (withDrafts = false): FilteredConnectionFilter[] => [
         id: 'status',
         label: 'Status',
         type: 'radio',
-        values: [OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER, ALL_FILTER],
+        values: [ALL_FILTER, OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER],
     },
 ]
 
@@ -298,7 +298,7 @@ const GettingStartedFooter: React.FunctionComponent<{}> = () => (
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
-                        <Link to="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
+                        <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
                     </h2>

@@ -9,7 +9,6 @@
     text-align: center;
     width: 20rem;
     padding: 1rem;
-    margin-top: 0.06rem;
 }
 
 .close {
@@ -36,6 +35,7 @@
 .success {
     white-space: normal;
     padding: 0.5rem;
+    text-align: center;
 
     &--tick {
         background-color: var(--success);

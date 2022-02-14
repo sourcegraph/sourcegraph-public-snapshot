@@ -2,7 +2,7 @@ package zoekt
 
 import (
 	"context"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
 	"github.com/google/zoekt"

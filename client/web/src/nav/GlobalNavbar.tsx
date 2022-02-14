@@ -33,7 +33,7 @@ import {
     Link,
     FeedbackPrompt,
     ButtonLink,
-    FeedbackPromptTrigger,
+    PopoverTrigger,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -42,7 +42,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useRoutesMatch } from '../hooks'
 import { useHandleSubmitFeedback } from '../hooks/useHandleSubmitFeedback'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -118,7 +117,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
-    const routeMatch = useRoutesMatch(props.routes)
 
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
@@ -146,7 +144,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
         )
     )
-    const feedbackSubmitState = useHandleSubmitFeedback({ routeMatch })
+    const { handleSubmitFeedback } = useHandleSubmitFeedback(props.routes)
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
@@ -280,16 +278,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     )}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt {...feedbackSubmitState}>
-                                <FeedbackPromptTrigger
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                                <PopoverTrigger
                                     as={Button}
                                     aria-label="Feedback"
                                     variant="secondary"
                                     outline={true}
                                     size="sm"
+                                    className={styles.feedbackTrigger}
                                 >
                                     <span>Feedback</span>
-                                </FeedbackPromptTrigger>
+                                </PopoverTrigger>
                             </FeedbackPrompt>
                         </NavAction>
                     )}
@@ -298,7 +297,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <WebCommandListPopoverButton
                                 {...props}
                                 location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
                                 menu={ContributableMenu.CommandPalette}
                                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
@@ -332,7 +330,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <ButtonLink className={styles.signUp} href={buildGetStartedURL('nav')} size="sm">
+                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
                                         Get started
                                     </ButtonLink>
                                 </div>
@@ -342,7 +340,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavAction>
                             <UserNavItem
                                 {...props}
-                                location={location}
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}

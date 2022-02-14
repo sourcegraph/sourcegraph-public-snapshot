@@ -2,7 +2,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { pluralize } from '@sourcegraph/common'
 import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'

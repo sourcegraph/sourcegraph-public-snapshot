@@ -268,14 +268,16 @@ func TestQueryMonitor(t *testing.T) {
 		},
 		{
 			Webhook: &graphqlbackend.CreateActionWebhookArgs{
-				Enabled: true,
-				URL:     "https://generic.webhook.com",
+				Enabled:        true,
+				IncludeResults: false,
+				URL:            "https://generic.webhook.com",
 			},
 		},
 		{
 			SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
-				Enabled: true,
-				URL:     "https://slack.webhook.com",
+				Enabled:        true,
+				IncludeResults: false,
+				URL:            "https://slack.webhook.com",
 			},
 		},
 	})

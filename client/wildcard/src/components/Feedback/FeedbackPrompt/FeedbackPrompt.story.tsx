@@ -1,25 +1,15 @@
-import { ApolloError } from '@apollo/client'
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { PopoverTrigger } from '../..'
 import { Button } from '../../Button'
 
-import { FeedbackPrompt, FeedbackPromptTrigger } from '.'
+import styles from './FeedbackPrompt.module.scss'
 
-const handleSubmit = (text?: string, rating?: number) => new Promise<undefined>(resolve => resolve(undefined))
-
-const data = {
-    submitHappinessFeedback: {
-        alwaysNil: null,
-    },
-}
-
-const mockError = new ApolloError({
-    errorMessage: 'Something went really wrong',
-})
+import { FeedbackPrompt } from '.'
 
 const config: Meta = {
     title: 'wildcard/FeedbackPrompt',
@@ -41,35 +31,62 @@ const config: Meta = {
 
 export default config
 
-export const FeedbackPromptWithNoData = () => (
+const handleSuccessSubmit = () =>
+    Promise.resolve({
+        errorMessage: undefined,
+        isHappinessFeedback: true,
+    })
+const handleErrorSubmit = () =>
+    Promise.resolve({
+        errorMessage: 'Something went really wrong',
+        isHappinessFeedback: false,
+    })
+
+export const FeedbackPromptWithSuccessResponse = () => (
     <>
-        <h1>This is a feedbackPrompt when no data provided</h1>
-        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false}>
-            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+        <h1>This is a feedbackPrompt with success response</h1>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit}>
+            <PopoverTrigger
+                className={styles.feedbackPrompt}
+                as={Button}
+                aria-label="Feedback"
+                variant="secondary"
+                outline={true}
+                size="sm"
+            >
                 <span>Feedback</span>
-            </FeedbackPromptTrigger>
+            </PopoverTrigger>
         </FeedbackPrompt>
     </>
 )
 
-export const FeedbackPromptWithSuccessMessage = () => (
+export const FeedbackPromptWithErrorResponse: Story = () => (
     <>
-        <h1>This is a feedbackPrompt with success message</h1>
-        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false} data={data}>
-            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+        <h1>This is a feedbackPrompt with error response</h1>
+        <FeedbackPrompt onSubmit={handleErrorSubmit}>
+            <PopoverTrigger
+                className={styles.feedbackPrompt}
+                as={Button}
+                aria-label="Feedback"
+                variant="secondary"
+                outline={true}
+                size="sm"
+            >
                 <span>Feedback</span>
-            </FeedbackPromptTrigger>
+            </PopoverTrigger>
         </FeedbackPrompt>
     </>
 )
 
-export const FeedbackPromptWithErrorMessage = () => (
+export const FeedbackPromptWithInModal: Story = () => (
     <>
-        <h1>This is a feedbackPrompt with error message</h1>
-        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false} error={mockError}>
-            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
-                <span>Feedback</span>
-            </FeedbackPromptTrigger>
+        <h1>This is a feedbackPrompt in modal</h1>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true}>
+            {({ onClick }) => (
+                <Button onClick={onClick} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+                    <small>Feedback</small>
+                </Button>
+            )}
         </FeedbackPrompt>
     </>
 )

@@ -15,13 +15,22 @@ export interface CtaAlertProps {
         onClick?: () => void
     }
     icon: React.ReactNode
-    className: string
+    className?: string
     onClose: () => void
 }
 
 export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
     <Card
-        className={classNames('my-2', 'd-flex', 'p-3', 'pr-5', 'flex-md-row', 'flex-column', props.className || null)}
+        className={classNames(
+            'my-2',
+            'd-flex',
+            'align-items-md-center',
+            'p-3',
+            'pr-5',
+            'flex-md-row',
+            'flex-column',
+            props.className
+        )}
     >
         <div className="mr-md-3">{props.icon}</div>
         <div className="flex-1 my-md-0 my-2">
@@ -29,7 +38,7 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
                 <strong>{props.title}</strong>
             </div>
             <div className={classNames('text-muted', 'mb-2', styles.ctaDescription)}>{props.description}</div>
-            <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link}>
+            <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link} target="_blank">
                 {props.cta.label}
             </Button>
         </div>

@@ -8,10 +8,8 @@ import styles from './CodeInsightsLearnMore.module.scss'
 
 export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => {
     const [isVisible, setVisibility] = useState(false)
-    const feedbackSubmitState = useHandleSubmitFeedback({
-        textPrefix: 'Code Insights: ',
-        routeMatch: '/insights/dashboards',
-    })
+    const { handleSubmitFeedback } = useHandleSubmitFeedback(['/insights/dashboards'], 'Code Insights: ')
+
     return (
         <footer {...props}>
             <h2>Learn more about Code Insights</h2>
@@ -48,7 +46,11 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                         Have a question or idea about code monitoring? We want to hear your feedback!
                     </p>
 
-                    <FeedbackPrompt {...feedbackSubmitState} open={isVisible} closePrompt={() => setVisibility(false)}>
+                    <FeedbackPrompt
+                        onSubmit={handleSubmitFeedback}
+                        openByDefault={isVisible}
+                        onClose={() => setVisibility(false)}
+                    >
                         <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
                             Share your thoughts
                         </PopoverTrigger>

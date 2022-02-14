@@ -60,7 +60,7 @@ interface PopoverCommonProps {
     anchor?: MutableRefObject<HTMLElement | null>
 }
 
-type PopoverProps = PopoverCommonProps & PopoverControlledProps
+export type PopoverProps = PopoverCommonProps & PopoverControlledProps
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
     const { children, anchor, isOpen, onOpenChange = noop } = props
@@ -99,7 +99,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     return <PopoverContext.Provider value={context}>{children}</PopoverContext.Provider>
 }
 
-export interface PopoverTriggerProps {}
+interface PopoverTriggerProps {}
 
 export const PopoverTrigger = forwardRef((props, reference) => {
     const { as: Component = 'button', onClick = noop, ...otherProps } = props

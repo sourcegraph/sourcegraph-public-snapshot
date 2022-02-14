@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter } from 'react-router-dom'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -19,12 +19,13 @@ import { GlobalNavbar } from './GlobalNavbar'
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
 
+const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     authRequired: false,
     extensionsController,
     location: createLocation('/'),
-    history: createMemoryHistory(),
+    history,
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,

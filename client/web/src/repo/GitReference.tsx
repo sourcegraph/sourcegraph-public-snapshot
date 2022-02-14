@@ -3,11 +3,9 @@ import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'

@@ -167,6 +167,15 @@ If Sourcegraph feels sluggish overall, the likely culprit is resource allocation
    1. Alternatively, you can use the [Go net/trace endpoint](#examine-go-net-trace) to pull trace
       data.
 
+#### Scenario: Prometheus scraping metrics outside Sourcegraph Kubernetes namespace 
+
+If you are seeing cAdvisor metrics from a namespace outside of the one Sourcegraph is currently deployed into. 
+
+1. Uncomment our namespaced Prometheus [cAdvisor configuration](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/deploy-sourcegraph%24+cAdvisor-specific+customization+&patternType=literal)
+2. Apply this configuration and restart Prometheus
+
+_Note:_ This is unneeded if you are using the 'namespaced' overlay
+
 #### Scenario: search timeouts
 
 If your users are experiencing search timeouts or search performance issues, please perform the following steps:

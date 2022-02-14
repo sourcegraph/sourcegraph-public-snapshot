@@ -3,15 +3,15 @@ package store
 import (
 	"context"
 	"database/sql"
-	"regexp/syntax"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err error) {

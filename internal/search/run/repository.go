@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 
-	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -14,16 +13,17 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoSearch struct {
 	Args *search.TextParameters
 }
 
-func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -56,7 +56,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		err = nil
 	}
 
-	return err
+	return nil, err
 }
 
 func (*RepoSearch) Name() string {
@@ -114,7 +114,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}
-	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
+	matches, _, err := textsearch.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
 	if err != nil {
 		return nil, err
 	}

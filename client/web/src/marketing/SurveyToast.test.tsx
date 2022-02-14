@@ -10,12 +10,12 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { SurveyToast } from './SurveyToast'
 
 describe('SurveyToast', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
 
     afterEach(() => {
         localStorage.clear()
@@ -37,7 +37,7 @@ describe('SurveyToast', () => {
 
     const renderwithTemporarySettings = (settings: TemporarySettings) => {
         settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend(settings))
-        return renderWithRouter(
+        return renderWithBrandedContext(
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <SurveyToast />
             </TemporarySettingsContext.Provider>
@@ -157,7 +157,7 @@ describe('SurveyToast', () => {
                     'npsSurvey.hasTemporarilyDismissed': true,
                     'user.daysActiveCount': 30,
                 })
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderWithBrandedContext(<SurveyToast />)
             })
 
             it('the user is not surveyed but toast dismissal is set to false', async () => {
