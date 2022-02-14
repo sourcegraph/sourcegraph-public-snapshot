@@ -19,6 +19,7 @@ export interface SearchEntry {
     caseSensitive: boolean
     searchContext?: string
     patternType: SearchPatternType
+    annotation?: string
 }
 
 export interface FileEntry {
@@ -31,6 +32,7 @@ export interface FileEntry {
     repo: string
     revision: string
     lineRange: IHighlightLineRange | null
+    annotation?: string
 }
 
 export type SearchStackEntry = SearchEntry | FileEntry
@@ -108,7 +110,7 @@ export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
             // We have to "remove" the entry if the component unmounts.
             return () => {
                 const currentState = useSearchStackState.getState()
-                if (currentState.addableEntry === newEntry) {
+                if (currentState.addableEntry === entry) {
                     useSearchStackState.setState({ addableEntry: null })
                 }
             }
@@ -123,7 +125,7 @@ export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
  * the whole file or the line range should be added.
  */
 export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'file' | 'range'): void {
-    const { addableEntry, entries } = useSearchStackState.getState()
+    const { entries } = useSearchStackState.getState()
 
     let entry = newEntry
     if (entry.type === 'file' && entry.lineRange && hint === 'file') {
@@ -131,8 +133,6 @@ export function addSearchStackEntry(newEntry: SearchStackEntryInput, hint?: 'fil
     }
 
     const newState = {
-        // Clear addableEntry if that's the entry we are adding
-        addableEntry: addableEntry === newEntry ? null : addableEntry,
         entries: [...entries, { ...entry, id: nextEntryID++ }],
         canRestoreSession: entries.length === 0,
     }
@@ -161,6 +161,18 @@ export function removeSearchStackEntry(entryToDelete: SearchStackEntry): void {
 export function removeAllSearchStackEntries(): void {
     persistSession([])
     useSearchStackState.setState({ entries: [] })
+}
+
+export function setEntryAnnotation(entry: SearchStackEntry, annotation: string): void {
+    useSearchStackState.setState(state => {
+        const index = state.entries.indexOf(entry)
+        if (index > -1) {
+            const entriesCopy = state.entries.slice()
+            entriesCopy.splice(index, 1, { ...state.entries[index], annotation })
+            return { entries: entriesCopy }
+        }
+        return state
+    })
 }
 
 function restoreSession(storage: Storage): SearchStackEntry[] {
