@@ -1587,7 +1587,7 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
-	// SearchContextsQuery description: Enables query based search contexts
+	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`

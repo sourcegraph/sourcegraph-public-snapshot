@@ -7,7 +7,6 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { getExperimentalFeatures } from '../../../stores'
 
 interface CreateSearchContextButtonProps {
     /** Search query string. */
@@ -18,8 +17,7 @@ interface CreateSearchContextButtonProps {
 }
 
 export const CreateSearchContextButton: React.FunctionComponent<CreateSearchContextButtonProps> = props => {
-    const experimentalFeatures = getExperimentalFeatures()
-    if (!experimentalFeatures.searchContextsQuery || !props.query || !props.authenticatedUser) {
+    if (!props.query || !props.authenticatedUser) {
         return null
     }
 

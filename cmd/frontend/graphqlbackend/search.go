@@ -82,8 +82,8 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	// Experimental: create a step to replace each context in the query with its repository query if any.
-	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false)
+	// Beta: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
 		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
 		if err != nil {

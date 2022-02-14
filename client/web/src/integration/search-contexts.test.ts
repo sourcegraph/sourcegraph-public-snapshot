@@ -168,7 +168,7 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    test('Create search context', async () => {
+    test('Create static search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             RepositoriesByNames: ({ names }) => ({
@@ -186,7 +186,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
-                    query: '',
+                    query: searchContext.query,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -217,6 +217,9 @@ describe('Search contexts', () => {
             enterTextMethod: 'type',
         })
 
+        // Select JSON config option
+        await driver.page.click('#search-context-type-static')
+
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
@@ -235,7 +238,75 @@ describe('Search contexts', () => {
         )
 
         // Take Snapshot
-        await percySnapshotWithVariants(driver.page, 'Create search context page')
+        await percySnapshotWithVariants(driver.page, 'Create static search context page')
+
+        // Click create
+        await driver.page.click('[data-testid="search-context-submit-button"]')
+
+        // Wait for submit request to finish and redirect to list page
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
+    })
+
+    test('Create dynamic query search context', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            CreateSearchContext: ({ searchContext, repositories }) => ({
+                createSearchContext: {
+                    __typename: 'SearchContext',
+                    id: 'id1',
+                    spec: searchContext.name,
+                    name: searchContext.name,
+                    namespace: null,
+                    description: searchContext.description,
+                    public: searchContext.public,
+                    autoDefined: false,
+                    updatedAt: '',
+                    viewerCanManage: true,
+                    query: searchContext.query,
+                    repositories: repositories.map(repository => ({
+                        __typename: 'SearchContextRepositoryRevisions',
+                        revisions: repository.revisions,
+                        repository: { name: repository.repositoryID },
+                    })),
+                },
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
+
+        await driver.replaceText({
+            selector: '[data-testid="search-context-name-input"]',
+            newText: 'new-context',
+            enterTextMethod: 'type',
+        })
+
+        // Assert spec preview
+        const specPreview = await driver.page.evaluate(
+            () => document.querySelector('[data-testid="search-context-preview"]')?.textContent
+        )
+        expect(specPreview).toBe('context:@test/new-context')
+
+        // Enter description
+        await driver.replaceText({
+            selector: '[data-testid="search-context-description-input"]',
+            newText: 'Search context description',
+            enterTextMethod: 'type',
+        })
+
+        // Select query option
+        await driver.page.click('#search-context-type-dynamic')
+
+        // Enter query
+        await driver.page.waitForSelector('[data-testid="search-context-dynamic-query"] .monaco-editor')
+        await driver.replaceText({
+            selector: '[data-testid="search-context-dynamic-query"] .monaco-editor',
+            newText: 'repo:abc',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Take Snapshot
+        await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
 
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
@@ -329,7 +400,7 @@ describe('Search contexts', () => {
 
         // Enter repositories
         const repositoriesConfig =
-            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
         await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
         await driver.replaceText({
             selector: '[data-testid="repositories-config-area"] .monaco-editor',
@@ -500,7 +571,7 @@ describe('Search contexts', () => {
         })
 
         // Wait for correct number of total elements to load
-        await driver.page.waitFor(
+        await driver.page.waitForFunction(
             (searchContextsCount: number) =>
                 document.querySelectorAll('[data-testid="search-context-menu-item-name"]').length ===
                 searchContextsCount,

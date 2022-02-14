@@ -71,7 +71,7 @@
           }
         },
         "searchContextsQuery": {
-          "description": "Enables query based search contexts",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
           "default": false,
           "!go": {
