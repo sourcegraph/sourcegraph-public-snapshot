@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -389,7 +390,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 		}
 
-		for _, tc := range tests {
+		for i, tc := range tests {
 			batchSpec := &btypes.BatchSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
@@ -402,7 +403,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if tc.hasBatchChange {
 				batchChange := &btypes.BatchChange{
-					Name:            "not-blank",
+					Name:            fmt.Sprintf("not-blank-%d", i),
 					CreatorID:       1,
 					NamespaceUserID: 1,
 					BatchSpecID:     batchSpec.ID,
