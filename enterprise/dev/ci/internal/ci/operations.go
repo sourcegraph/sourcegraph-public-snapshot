@@ -621,6 +621,10 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("VERSION", version),
 		)
 
+		if app == "server" || app == "frontend" {
+			cmds = append([]bk.StepOpt{withYarnCache()}, cmds...)
+		}
+
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
 			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
