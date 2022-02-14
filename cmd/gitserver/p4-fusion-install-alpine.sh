@@ -50,10 +50,9 @@ tar -C openssl-src -xzf openssl-1.0.2t.tar.gz --strip 1
 echo "--- p4-fusion openssl build"
 cd openssl-src
 ./config
-# We only need libcrypto and libssl, which "build_libs" covers. We use
-# unbounded concurrency. Experiments on a 32-core machine showed a multiple of
-# 32 didn't help.
-make -j build_libs
+# We only need libcrypto and libssl, which "build_libs" covers. Note: using
+# unbounded concurrency caused flakes on CI.
+make build_libs
 
 echo "--- p4-fusion openssl install"
 # TODO "install" includes "all". Can we avoid extra work?
