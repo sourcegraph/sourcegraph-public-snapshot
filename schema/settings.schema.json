@@ -229,6 +229,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "coolCodeIntel": {
+          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
