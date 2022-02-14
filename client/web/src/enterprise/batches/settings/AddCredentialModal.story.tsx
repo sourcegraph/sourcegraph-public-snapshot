@@ -23,48 +23,48 @@ const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
     })
 
 add('Requires SSH - step 1', () => (
-        <WebStory>
-            {props => (
-                <MockedTestProvider
-                    link={
-                        new WildcardMockLink([
-                            {
-                                request: {
-                                    query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
-                                    variables: MATCH_ANY_PARAMETERS,
-                                },
-                                result: {
-                                    data: {
-                                        createBatchChangesCredential: {
-                                            id: '123',
-                                            isSiteCredential: false,
-                                            sshPublicKey:
-                                                'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                        },
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        {
+                            request: {
+                                query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    createBatchChangesCredential: {
+                                        id: '123',
+                                        isSiteCredential: false,
+                                        sshPublicKey:
+                                            'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                     },
                                 },
-                                nMatches: Number.POSITIVE_INFINITY,
                             },
-                        ])
-                    }
-                >
-                    <AddCredentialModal
-                        {...props}
-                        userID="user-id-1"
-                        externalServiceKind={select(
-                            'External service kind',
-                            Object.values(ExternalServiceKind),
-                            ExternalServiceKind.GITHUB
-                        )}
-                        externalServiceURL="https://github.com/"
-                        requiresSSH={true}
-                        afterCreate={noop}
-                        onCancel={noop}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    ))
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <AddCredentialModal
+                    {...props}
+                    userID="user-id-1"
+                    externalServiceKind={select(
+                        'External service kind',
+                        Object.values(ExternalServiceKind),
+                        ExternalServiceKind.GITHUB
+                    )}
+                    externalServiceURL="https://github.com/"
+                    requiresSSH={true}
+                    afterCreate={noop}
+                    onCancel={noop}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
 add('Requires SSH - step 2', () => (
     <WebStory>
         {props => (

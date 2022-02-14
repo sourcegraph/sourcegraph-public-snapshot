@@ -20,22 +20,22 @@ const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', modul
 ))
 
 const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => ({
-        node: {
-            __typename: 'User',
-            batchChangesCodeHosts: {
-                totalCount: hosts.length,
-                pageInfo: { endCursor: null, hasNextPage: false },
-                nodes: hosts,
-            },
+    node: {
+        __typename: 'User',
+        batchChangesCodeHosts: {
+            totalCount: hosts.length,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: hosts,
         },
-    })
+    },
+})
 
 const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => ({
-        id: '123',
-        isSiteCredential,
-        sshPublicKey:
-            'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-    })
+    id: '123',
+    isSiteCredential,
+    sshPublicKey:
+        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+})
 
 add('Overview', () => (
     <WebStory>
