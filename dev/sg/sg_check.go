@@ -5,12 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -58,10 +61,12 @@ var (
 		},
 		{
 			Name:      "docker",
-			ShortHelp: "Check for forbidden docker base images",
+			ShortHelp: "Check Dockerfiles for Sourcegraph best practices",
 			FlagSet:   checkDockerFlagSet,
 			Checks: []checkScriptFn{
+				runCheckScript("Docker lint", "dev/check/docker-lint.sh"),
 				runCheckScript("Docker forbidden alpine base images", "dev/check/no-alpine-guard.sh"),
+				checkDockerfiles,
 			},
 		},
 		{
@@ -219,4 +224,49 @@ func (cs checkTargets) Commands() (cmds []*ffcli.Command) {
 		})
 	}
 	return cmds
+}
+
+func checkDockerfiles(ctx context.Context) *checkReport {
+	start := time.Now()
+	var combinedErrors error
+	for _, dir := range []string{"docker-images", "cmd", "enterprise/cmd"} {
+		if err := filepath.Walk(dir,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !strings.Contains(filepath.Base(path), "Dockerfile") {
+					return nil
+				}
+				data, err := os.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				return docker.ProcessDockerfile(data, func(is []instructions.Stage) error {
+					var errs error
+					for _, i := range is {
+						for _, c := range i.Commands {
+							if err := docker.CheckCommand(c); err != nil {
+								errs = errors.Append(errs, errors.Wrapf(err, "%s:%d", path, c.Location()[0].Start.Line))
+							}
+						}
+					}
+					return errs
+				})
+			},
+		); err != nil {
+			combinedErrors = errors.Append(combinedErrors, err)
+		}
+	}
+	return &checkReport{
+		duration: time.Since(start),
+		header:   "Custom Dockerfile checks",
+		output: func() string {
+			if combinedErrors != nil {
+				return strings.TrimSpace(combinedErrors.Error())
+			}
+			return ""
+		}(),
+		err: combinedErrors,
+	}
 }

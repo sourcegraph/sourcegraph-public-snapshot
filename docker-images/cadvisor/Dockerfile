@@ -16,6 +16,7 @@ RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0 \
     busybox \
     wget
 
+
 # Reflects cAdvisor Dockerfile at https://github.com/google/cadvisor/blob/v0.39.2/deploy/Dockerfile
 # alongside additional Sourcegraph defaults.
 ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
