@@ -112,7 +112,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
             data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
-            className={classNames(hoverOverlayStyle.hoverOverlay, className)}
+            className={classNames(hoverOverlayStyle.card, hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
         >
             <div
