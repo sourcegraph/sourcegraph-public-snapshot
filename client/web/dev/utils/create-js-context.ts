@@ -51,6 +51,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: true,
         githubAppCloudSlug: 'TestApp',
+        githubAppCloudClientID: 'TestClientID',
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
