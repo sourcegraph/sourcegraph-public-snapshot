@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/sync/semaphore"
@@ -923,6 +926,8 @@ func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, par
 }
 
 func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
+	fmt.Printf("args %+v\n", args)
+
 	requestStatus.Tasklog.Start("get hops")
 	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
@@ -930,25 +935,24 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 	}
 
 	requestStatus.Tasklog.Start("run query")
+	q := sqlf.Sprintf(`
+		SELECT id, commit_id, path, added, deleted, symbol_data
+		FROM rockskip_blobs
+		WHERE
+			repo = %s
+			AND     %s && added
+			AND NOT %s && deleted
+			AND %s;`,
+		string(args.Repo),
+		pg.Array(hops),
+		pg.Array(hops),
+		convertSearchArgsToSqlQuery(args),
+	)
+
+	fmt.Println("q", q.Query(sqlf.PostgresBindVar), q.Args())
+
 	var rows *sql.Rows
-	if args.Query != "" {
-		rows, err = conn.QueryContext(ctx, `
-			SELECT id, commit_id, path, added, deleted, symbol_data
-			FROM rockskip_blobs
-			WHERE
-				$1 && added
-				AND NOT $1 && deleted
-				AND $2 && symbol_names
-		`, pg.Array(hops), pg.Array([]string{args.Query}))
-	} else {
-		rows, err = conn.QueryContext(ctx, `
-			SELECT id, commit_id, path, added, deleted, symbol_data
-			FROM rockskip_blobs
-			WHERE
-				$1 && added
-				AND NOT $1 && deleted
-		`, pg.Array(hops))
-	}
+	rows, err = conn.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "Search")
 	}
@@ -965,16 +969,119 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
+
 		symbols := []Symbol{}
-		for _, symbol := range allSymbols {
-			if args.Query == "" || symbol.Name == args.Query {
-				symbols = append(symbols, symbol)
+		if args.Query == "" {
+			symbols = allSymbols
+		} else {
+			for _, symbol := range allSymbols {
+				// check if symbol.Name matches args.Query regex
+				regex, err := regexp.Compile(args.Query)
+				if err != nil {
+					return nil, errors.Wrap(err, "Search compile regex")
+				}
+				if regex.MatchString(symbol.Name) {
+					symbols = append(symbols, symbol)
+				}
 			}
 		}
-		blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
+
+		if len(symbols) > 0 {
+			blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
+		}
 	}
 
 	return blobs, nil
+}
+
+func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
+	// TODO support non regexp queries once the frontend supports it.
+
+	conjunctOrNils := []*sqlf.Query{}
+
+	// Query
+	conjunctOrNils = append(conjunctOrNils, arrayMatchesRegex("symbol_names", args.Query, args.IsCaseSensitive))
+
+	// IncludePatterns
+	for _, includePattern := range args.IncludePatterns {
+		conjunctOrNils = append(conjunctOrNils, arrayMatchesRegex("path", includePattern, args.IsCaseSensitive))
+	}
+
+	// ExcludePattern
+	conjunctOrNils = append(conjunctOrNils, negate(arrayMatchesRegex("path", args.ExcludePattern, args.IsCaseSensitive)))
+
+	// Drop nils
+	conjuncts := []*sqlf.Query{}
+	for _, condition := range conjunctOrNils {
+		if condition != nil {
+			conjuncts = append(conjuncts, condition)
+		}
+	}
+
+	if len(conjuncts) == 0 {
+		return sqlf.Sprintf("TRUE")
+	}
+
+	return sqlf.Join(conjuncts, "AND")
+}
+
+func arrayMatchesRegex(column string, regex string, isCaseSensitive bool) *sqlf.Query {
+	if regex == "" {
+		return nil
+	}
+
+	if literal, isExact, err := isLiteralEquality(regex); err == nil && isExact && isCaseSensitive {
+		return sqlf.Sprintf("%s && %s", pg.Array([]string{literal}), column)
+	}
+
+	operator := "~"
+	if !isCaseSensitive {
+		operator = "~*"
+	}
+
+	return sqlf.Sprintf(
+		fmt.Sprintf(`
+			EXISTS (
+				SELECT
+				FROM   unnest(%s) col
+				WHERE  col %s %%s
+			)`, column, operator),
+		regex,
+	)
+}
+
+// isLiteralEquality returns true if the given regex matches literal strings exactly.
+// If so, this function returns true along with the literal search query. If not, this
+// function returns false.
+func isLiteralEquality(expr string) (string, bool, error) {
+	regexp, err := syntax.Parse(expr, syntax.Perl)
+	if err != nil {
+		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+	}
+
+	// want a concat of size 3 which is [begin, literal, end]
+	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 3 {
+		// starts with ^
+		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+			// is a literal
+			if regexp.Sub[1].Op == syntax.OpLiteral {
+				// ends with $
+				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
+					return string(regexp.Sub[1].Rune), true, nil
+				}
+			}
+		}
+	}
+
+	return "", false, nil
+}
+
+func negate(query *sqlf.Query) *sqlf.Query {
+	if query == nil {
+		return nil
+	}
+
+	return sqlf.Sprintf("NOT %s", query)
 }
 
 type CleanupFunc = func() error
