@@ -26,7 +26,7 @@ import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { getPlatformName } from '../../util/context'
 import { MutationRecordLike, querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
-import { CodeHost, MountGetter } from '../shared/codeHost'
+import { CodeHost, CodeHostContext, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { NativeTooltip } from '../shared/nativeTooltips'
@@ -414,11 +414,6 @@ export const isPrivateRepository = (
 
 export interface GithubCodeHost extends CodeHost {
     /**
-     * Observable used to trigger context updates
-     */
-    contextUpdater: (mutations: Observable<MutationRecordLike[]>) => Observable<unknown>
-
-    /**
      * Configuration for built-in search input enhancement
      */
     searchEnhancement: {
@@ -671,6 +666,18 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
     return new Subscription()
 }
 
+const getContext = async (): Promise<CodeHostContext> => {
+    const { repoName, rawRepoName, pageType } = parseURL()
+    const { revision, filePath } = resolveFileInfo().blob
+
+    return {
+        rawRepoName,
+        revision: pageType === 'blob' || pageType === 'tree' ? revision : undefined,
+        filePath: pageType === 'blob' || pageType === 'tree' ? `${pageType}/${filePath}` : undefined,
+        privateRepository: await isPrivateRepository(repoName),
+    }
+}
+
 export const githubCodeHost: GithubCodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -679,23 +686,9 @@ export const githubCodeHost: GithubCodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
-    getContext: async () => {
-        const { repoName, rawRepoName, pageType } = parseURL()
-        const { revision, filePath } = resolveFileInfo().blob
-
-        return {
-            rawRepoName,
-            revision: pageType === 'blob' || pageType === 'tree' ? revision : undefined,
-            filePath: pageType === 'blob' || pageType === 'tree' ? `${pageType}/${filePath}` : undefined,
-            privateRepository: await isPrivateRepository(repoName),
-        }
-    },
-    contextUpdater: mutations =>
-        mutations.pipe(
-            map(() => document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')?.href),
-            filter(Boolean),
-            distinctUntilChanged()
-        ),
+    getContext,
+    // getReactiveContext: mutations =>
+    //     mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext)),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {

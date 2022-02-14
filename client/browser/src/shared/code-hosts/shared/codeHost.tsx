@@ -183,6 +183,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     getContext?: () => Promise<CodeHostContext>
 
     /**
+     * Track code host mutations to update context.
+     */
+    getReactiveContext?: (mutations: Observable<MutationRecordLike[]>) => Observable<CodeHostContext>
+
+    /**
      * An Observable for whether the code host is in light theme (vs dark theme).
      * Defaults to always light theme.
      */
@@ -941,11 +946,9 @@ export async function handleCodeHost({
 
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
-        const { getContext, contextUpdater, viewOnSourcegraphButtonClassProps } = codeHost
+        const { getContext, getReactiveContext, viewOnSourcegraphButtonClassProps } = codeHost
 
-        const context = contextUpdater
-            ? (contextUpdater(mutations).pipe(mergeMap(getContext)) as Observable<CodeHostContext>)
-            : from(getContext())
+        const context = getReactiveContext ? getReactiveContext(mutations) : from(getContext())
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
         const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), context]).pipe(
