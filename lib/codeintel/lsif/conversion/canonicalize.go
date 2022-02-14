@@ -36,36 +36,52 @@ func canonicalizeDocuments(state *State) {
 		sort.Ints(v)
 	}
 
+	canonicalIDs := make(map[int]int, len(state.DocumentData))
 	for documentID, uri := range state.DocumentData {
 		// Choose canonical document alphabetically
 		if canonicalID := documentIDs[uri][0]; documentID != canonicalID {
-			// Move ranges and diagnostics into the canonical document
-			state.Contains.SetUnion(canonicalID, state.Contains.Get(documentID))
-			state.Diagnostics.SetUnion(canonicalID, state.Diagnostics.Get(documentID))
-
-			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
-			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
-			canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, documentID, canonicalID)
-
-			// Remove non-canonical document
-			delete(state.DocumentData, documentID)
-			state.Contains.Delete(documentID)
-			state.Diagnostics.Delete(documentID)
+			canonicalIDs[documentID] = canonicalID
 		}
+	}
+
+	// Replace references to each document with the canonical references
+	canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, canonicalIDs)
+
+	for documentID, canonicalID := range canonicalIDs {
+		// Move ranges and diagnostics into the canonical document
+		state.Contains.UnionIDSet(canonicalID, state.Contains.Get(documentID))
+		state.Diagnostics.UnionIDSet(canonicalID, state.Diagnostics.Get(documentID))
+
+		// Remove non-canonical documents
+		delete(state.DocumentData, documentID)
+		state.Contains.Delete(documentID)
+		state.Diagnostics.Delete(documentID)
 	}
 }
 
-// canonicalizeDocumentsInDefinitionReferences moves definition or reference result data from the
-// given document to the given canonical document and removes all references to the non-canonical
-// document.
-func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, documentID, canonicalID int) {
+// canonicalizeDocumentsInDefinitionReferences moves definition, reference, and implementation result
+// data from a document to its canonical document (if they differ) and removes all references to the
+// non-canonical document.
+func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
 	for _, documentRanges := range definitionReferenceData {
-		if rangeIDs := documentRanges.Get(documentID); rangeIDs != nil {
-			// Move definition/reference data into the canonical document
-			documentRanges.SetUnion(canonicalID, rangeIDs)
+		// The length of documentRanges will always be less than or equal to
+		// the length of canonicalIDs, since canonicalIDs will have one entry
+		// for each document. So iterate over documentRanges instead of
+		// iterating over canonicalIDs.
 
-			// Remove references to non-canonical document
-			documentRanges.Delete(documentID)
+		// Copy out keys first instead of (incorrectly) iterating over documentRanges while modifying it
+		var documentIDs = documentRanges.UnorderedKeys()
+		for _, documentID := range documentIDs {
+			canonicalID, ok := canonicalIDs[documentID]
+			if !ok {
+				continue
+			}
+			// Remove def/ref data from non-canonical document...
+			rangeIDs := documentRanges.Pop(documentID)
+			// ...and merge it with the data for the canonical document.
+			documentRanges.UnionIDSet(canonicalID, rangeIDs)
 		}
 	}
 }
@@ -93,7 +109,7 @@ func canonicalizeReferenceResults(state *State) {
 
 			// Copy data from the referenced to the referencing set
 			state.ReferenceData[nextID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-				state.ReferenceData[id].SetUnion(documentID, rangeIDs)
+				state.ReferenceData[id].UnionIDSet(documentID, rangeIDs)
 			})
 		}
 	}
@@ -112,7 +128,7 @@ func canonicalizeResultSets(state *State) {
 	}
 
 	for resultSetID := range state.ResultSetData {
-		state.Monikers.SetUnion(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
+		state.Monikers.UnionIDSet(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
 	}
 }
 
@@ -132,7 +148,7 @@ func canonicalizeRanges(state *State) {
 		}
 
 		state.RangeData[rangeID] = rangeData
-		state.Monikers.SetUnion(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
+		state.Monikers.UnionIDSet(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
 	}
 }
 
@@ -173,7 +189,7 @@ func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int
 		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
 	}
 
-	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
+	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
 	return item
 }
 
@@ -197,7 +213,7 @@ func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextIt
 		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
 	}
 
-	state.Monikers.SetUnion(itemID, state.Monikers.Get(nextID))
+	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
 	return item
 }
 

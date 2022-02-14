@@ -26,8 +26,8 @@ func DisjointIDSetWith(pairs ...int) *DisjointIDSet {
 // Link composes the connected components containing the given identifiers. If one or
 // the other value is already in the set, then the sets of the two values will merge.
 func (sm *DisjointIDSet) Link(id1, id2 int) {
-	sm.SetAdd(id1, id2)
-	sm.SetAdd(id2, id1)
+	sm.AddID(id1, id2)
+	sm.AddID(id2, id1)
 }
 
 // ExtractSet returns a set of all values reachable from the given source value. The
