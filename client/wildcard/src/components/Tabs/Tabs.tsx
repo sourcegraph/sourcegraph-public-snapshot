@@ -48,6 +48,7 @@ export interface TabsProps extends PropsWithAs<As, ReachTabsProps & TabsSettings
 }
 
 export interface TabListProps extends PropsWithAs<As, ReachTabListProps>, React.HTMLAttributes<HTMLDivElement> {
+    wrapperClassName?: string
     /*
      * action is used to render content in the left side of
      * the component. e.g. a close button or a list of links.
@@ -81,9 +82,9 @@ export const Tabs: React.FunctionComponent<TabsProps> = React.forwardRef((props,
 })
 
 export const TabList: React.FunctionComponent<TabListProps> = React.forwardRef((props, reference) => {
-    const { actions, as = 'div', ...reachProps } = props
+    const { actions, as = 'div', wrapperClassName, ...reachProps } = props
     return (
-        <div className={styles.tablistWrapper}>
+        <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
             <ReachTabList data-testid="wildcard-tab-list" as={as} ref={reference} {...reachProps} />
             {actions}
         </div>

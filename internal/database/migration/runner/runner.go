@@ -12,13 +12,19 @@ import (
 
 type Runner struct {
 	storeFactories map[string]StoreFactory
+	schemas        []*schemas.Schema
 }
 
 type StoreFactory func(ctx context.Context) (Store, error)
 
 func NewRunner(storeFactories map[string]StoreFactory) *Runner {
+	return NewRunnerWithSchemas(storeFactories, schemas.Schemas)
+}
+
+func NewRunnerWithSchemas(storeFactories map[string]StoreFactory, schemas []*schemas.Schema) *Runner {
 	return &Runner{
 		storeFactories: storeFactories,
+		schemas:        schemas,
 	}
 }
 
@@ -35,6 +41,16 @@ type schemaVersion struct {
 }
 
 type visitFunc func(ctx context.Context, schemaContext schemaContext) error
+
+// Store returns the store associated with the given schema.
+func (r *Runner) Store(ctx context.Context, schemaName string) (Store, error) {
+	if factory, ok := r.storeFactories[schemaName]; ok {
+		return factory(ctx)
+
+	}
+
+	return nil, errors.Newf("unknown store %q", schemaName)
+}
 
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
@@ -93,7 +109,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	schemaMap := make(map[string]*schemas.Schema, len(schemaNames))
 
 	for _, targetSchemaName := range schemaNames {
-		for _, schema := range schemas.Schemas {
+		for _, schema := range r.schemas {
 			if schema.Name == targetSchemaName {
 				schemaMap[schema.Name] = schema
 				break

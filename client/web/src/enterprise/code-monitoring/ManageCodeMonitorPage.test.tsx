@@ -85,6 +85,7 @@ describe('ManageCodeMonitorPage', () => {
                         id: 'test-action-0',
                         update: {
                             enabled: true,
+                            includeResults: false,
                             priority: MonitorEmailPriority.NORMAL,
                             recipients: ['userID'],
                             header: '',
@@ -96,6 +97,7 @@ describe('ManageCodeMonitorPage', () => {
                         id: 'test-action-1',
                         update: {
                             enabled: true,
+                            includeResults: false,
                             url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
                         },
                     },

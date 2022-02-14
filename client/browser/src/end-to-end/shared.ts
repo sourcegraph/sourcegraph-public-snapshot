@@ -5,6 +5,7 @@ import puppeteer from 'puppeteer'
 
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 /**
  * Defines e2e tests for a single-file page of a code host.
@@ -73,9 +74,12 @@ export function testSingleFilePage({
                                 '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
                             )?.href
                     ),
-                    `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${
-                        getDriver().browserType
-                    }-extension`
+                    createURLWithUTM(
+                        new URL(
+                            `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                        ),
+                        { utm_source: `${getDriver().browserType}-extension`, utm_campaign: 'open-on-sourcegraph' }
+                    ).href
                 )
             })
         })

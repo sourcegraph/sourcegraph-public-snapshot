@@ -1,9 +1,8 @@
 package zoekt
 
 import (
-	"regexp"
-
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"

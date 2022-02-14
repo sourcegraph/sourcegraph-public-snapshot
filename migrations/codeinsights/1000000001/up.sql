@@ -1,6 +1,5 @@
 BEGIN;
 
-CREATE EXTENSION IF NOT EXISTS timescaledb;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS citext;
 
@@ -96,10 +95,6 @@ CREATE TABLE series_points (
     FOREIGN KEY (repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE,
     FOREIGN KEY (original_repo_name_id) REFERENCES repo_names(id) ON DELETE CASCADE DEFERRABLE
 );
-
--- Create hypertable, partitioning events by time.
--- See https://docs.timescale.com/latest/using-timescaledb/hypertables
-SELECT create_hypertable('series_points', 'time');
 
 -- Create btree indexes for repository filtering.
 CREATE INDEX series_points_repo_id_btree ON series_points USING btree (repo_id);

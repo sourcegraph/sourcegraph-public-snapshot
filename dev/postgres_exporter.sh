@@ -16,7 +16,7 @@ get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
 PGHOST=${PGHOST-$(get_pg_env HOST)}
 PGUSER=${PGUSER-$(get_pg_env USER)}
 PGPORT=${PGPORT-$(get_pg_env PORT)}
-# we need to be able to query schema_migrations table
+# we need to be able to query migration_logs table
 PGDATABASE=${PGDATABASE-$(get_pg_env DBNAME)}
 
 ADJUSTED_HOST=${PGHOST:-127.0.0.1}

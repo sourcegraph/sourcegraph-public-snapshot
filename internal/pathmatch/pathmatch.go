@@ -5,10 +5,10 @@ package pathmatch
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/regexp"
 )
 
 // PathMatcher reports whether the path was matched.
