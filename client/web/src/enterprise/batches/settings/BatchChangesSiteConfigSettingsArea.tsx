@@ -1,4 +1,5 @@
 import React from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import { PageHeader, Alert } from '@sourcegraph/wildcard'
 
@@ -6,8 +7,10 @@ import { PageTitle } from '../../../components/PageTitle'
 
 import { GlobalCodeHostConnections } from './CodeHostConnections'
 
+export type BatchChangesSiteConfigSettingsAreaProps = Pick<RouteComponentProps, 'history' | 'location'>
+
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
-export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<{}> = () => (
+export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchChangesSiteConfigSettingsAreaProps> = () => (
     <>
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />
