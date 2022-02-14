@@ -146,8 +146,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
-    console.log({ url, context })
-
     // Render a "View on Sourcegraph" button
     return (
         <SourcegraphIconButton

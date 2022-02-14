@@ -414,6 +414,11 @@ export const isPrivateRepository = (
 
 export interface GithubCodeHost extends CodeHost {
     /**
+     * Observable used to trigger context updates
+     */
+    contextUpdater: (mutations: Observable<MutationRecordLike[]>) => Observable<unknown>
+
+    /**
      * Configuration for built-in search input enhancement
      */
     searchEnhancement: {
@@ -685,6 +690,12 @@ export const githubCodeHost: GithubCodeHost = {
             privateRepository: await isPrivateRepository(repoName),
         }
     },
+    contextUpdater: mutations =>
+        mutations.pipe(
+            map(() => document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')?.href),
+            filter(Boolean),
+            distinctUntilChanged()
+        ),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {

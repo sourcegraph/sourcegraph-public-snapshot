@@ -941,10 +941,14 @@ export async function handleCodeHost({
 
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
-        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
+        const { getContext, contextUpdater, viewOnSourcegraphButtonClassProps } = codeHost
+
+        const context = contextUpdater
+            ? (contextUpdater(mutations).pipe(mergeMap(getContext)) as Observable<CodeHostContext>)
+            : from(getContext())
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
-        const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), from(getContext())]).pipe(
+        const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), context]).pipe(
             switchMap(([, { rawRepoName, revision }]) =>
                 resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
@@ -977,7 +981,7 @@ export async function handleCodeHost({
                     map(count => count === 0),
                     distinctUntilChanged()
                 ),
-                from(getContext()),
+                context,
             ]).subscribe(([repoExistsOrError, mount, showSignInButton, context]) => {
                 render(
                     <ViewOnSourcegraphButton
