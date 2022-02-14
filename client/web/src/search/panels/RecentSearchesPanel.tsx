@@ -139,7 +139,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
 
     const contentDisplay = (
         <>
-            <table className={classNames('mt-2', styles.resultsTable)}>
+            <table className={classNames('mt-2', styles.resultsTable)} data-owner="Search">
                 <thead>
                     <tr className={styles.resultsTableRow}>
                         <th>

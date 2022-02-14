@@ -18,7 +18,12 @@ export const Alert = React.forwardRef(
         const brandedClassName = isBranded && classNames(styles.alert, variant && getAlertStyle({ variant }))
 
         return (
-            <Component ref={reference} className={classNames(brandedClassName, className)} {...attributes}>
+            <Component
+                ref={reference}
+                className={classNames(brandedClassName, className)}
+                {...attributes}
+                data-owner="Frontend Platform"
+            >
                 {children}
             </Component>
         )

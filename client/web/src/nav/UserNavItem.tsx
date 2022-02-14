@@ -167,7 +167,12 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             </Tooltip>
                         )}
                     </MenuButton>
-                    <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
+                    <MenuList
+                        position={position}
+                        className={styles.dropdownMenu}
+                        aria-label="User. Open menu"
+                        data-owner="Frontend Platform"
+                    >
                         <MenuHeader>
                             Signed in as <strong>@{props.authenticatedUser.username}</strong>
                         </MenuHeader>
