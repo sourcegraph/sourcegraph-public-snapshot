@@ -45,7 +45,8 @@ func ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*P
 		return nil, err
 	}
 
-	args := []string{"shortlog", "-sne", "--no-merges"}
+	// We split the individual args for the shortlog command instead of -sne for easier arg checking in the allowlist.
+	args := []string{"shortlog", "-s", "-n", "-e", "--no-merges"}
 	if opt.After != "" {
 		args = append(args, "--after="+opt.After)
 	}
@@ -57,7 +58,7 @@ func ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*P
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, errors.Errorf("exec `git shortlog -sne` failed: %v", err)
+		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
 	}
 	return parseShortLog(out)
 }
