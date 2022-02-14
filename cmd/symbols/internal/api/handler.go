@@ -42,7 +42,7 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 			args.First = maxNumSymbolResults
 		}
 
-		result, cleanup, err := searchFunc(r.Context(), args)
+		result, cleanup, err := searchFunc(context.Background(), args)
 		if cleanup != nil {
 			go func() {
 				err := cleanup()

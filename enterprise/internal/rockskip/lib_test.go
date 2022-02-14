@@ -1,6 +1,7 @@
 package rockskip
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"sort"
@@ -101,7 +102,7 @@ func TestIndex(t *testing.T) {
 
 	status := NewRequestStatus(repo, commit, func() {})
 	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-	blobs, cleanup, err := Search(args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
+	blobs, cleanup, err := Search(context.TODO(), args, git, db, parser.Parse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
 	if err != nil {
 		t.Fatalf("🚨 Search: %s", err)
 	}
@@ -146,7 +147,7 @@ func TestIndex(t *testing.T) {
 	if diff := cmp.Diff(paths, expected); diff != "" {
 		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)")
 		fmt.Println(diff)
-		PrintInternals(db)
+		PrintInternals(context.TODO(), db)
 		t.Fail()
 	}
 }

@@ -249,7 +249,7 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
+func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
 	tasklog := requestStatus.Tasklog
 
 	tipCommit := NULL
@@ -261,7 +261,7 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommit")
-		_, height, present, err := GetCommit(db, repo, commit)
+		_, height, present, err := GetCommit(ctx, db, repo, commit)
 		if err != nil {
 			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -283,7 +283,10 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 	}
 
 	tasklog.Start("Acquire indexing semaphore")
-	indexingSemaphore.Acquire(context.Background(), 1)
+	err = indexingSemaphore.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
 	requestStatus.HoldLock("indexing semaphore")
 	defer func() {
 		indexingSemaphore.Release(1)
@@ -300,13 +303,13 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		requestStatus.SetProgress(entriesIndexed, missingCount)
 		entriesIndexed++
 
-		tx, err := db.BeginTx(context.TODO(), nil)
+		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
 			return errors.Wrap(err, "begin transaction")
 		}
 		defer tx.Rollback()
 
-		hops, err := getHops(tx, repo, tipCommit, tasklog)
+		hops, err := getHops(ctx, tx, repo, tipCommit, tasklog)
 		if err != nil {
 			return errors.Wrap(err, "getHops")
 		}
@@ -317,20 +320,20 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		}
 
 		tasklog.Start("InsertCommit")
-		err = InsertCommit(tx, repo, entry.Commit, tipHeight+1, hops[r])
+		err = InsertCommit(ctx, tx, repo, entry.Commit, tipHeight+1, hops[r])
 		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
 		}
 
 		tasklog.Start("AppendHop+")
-		err = AppendHop(tx, hops[0:r], AddedAD, entry.Commit)
+		err = AppendHop(ctx, tx, hops[0:r], AddedAD, entry.Commit)
 		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		tasklog.Start("AppendHop-")
-		err = AppendHop(tx, hops[0:r], DeletedAD, entry.Commit)
+		err = AppendHop(ctx, tx, hops[0:r], DeletedAD, entry.Commit)
 		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
@@ -354,7 +357,7 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 				found := false
 				for _, hop := range hops {
 					tasklog.Start("GetBlob")
-					id, found, err = GetBlob(tx, hop, deletedPath)
+					id, found, err = GetBlob(ctx, tx, hop, deletedPath)
 					tasklog.Continue("idle")
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
@@ -369,7 +372,7 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 			}
 
 			tasklog.Start("UpdateBlobHops")
-			err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
+			err = UpdateBlobHops(ctx, tx, id, DeletedAD, entry.Commit)
 			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "UpdateBlobHops")
@@ -394,7 +397,7 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 				Symbols: symbols,
 			}
 			tasklog.Start("InsertBlob")
-			id, err := InsertBlob(tx, blob, repo)
+			id, err := InsertBlob(ctx, tx, blob, repo)
 			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
@@ -408,7 +411,7 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		}
 
 		tasklog.Start("DeleteRedundant")
-		err = DeleteRedundant(tx, entry.Commit)
+		err = DeleteRedundant(ctx, tx, entry.Commit)
 		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
@@ -435,12 +438,12 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 	return nil
 }
 
-func getHops(tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, error) {
+func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, error) {
 	current := commit
 	spine := []string{current}
 
 	for {
-		ancestor, _, present, err := GetCommit(tx, repo, current)
+		ancestor, _, present, err := GetCommit(ctx, tx, repo, current)
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
 		} else if !present {
@@ -461,10 +464,10 @@ var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
 var DELETION_LOCK_ID = 0
 var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
 
-func deleteOldRepos(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
+func deleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
-		retry, err := tryDeleteOldestRepo(db, maxRepos, requestStatus)
+		retry, err := tryDeleteOldestRepo(ctx, db, maxRepos, requestStatus)
 		if err != nil {
 			return err
 		}
@@ -474,12 +477,12 @@ func deleteOldRepos(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) er
 	}
 }
 
-func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (retry bool, err error) {
+func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (retry bool, err error) {
 	// Select a candidate repo to delete.
 	requestStatus.Tasklog.Start("select repo to delete")
 	var repo string
 	var repoRank int
-	err = db.QueryRowContext(context.TODO(), `
+	err = db.QueryRowContext(ctx, `
 			SELECT repo, repo_rank
 			FROM (
 				SELECT *, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
@@ -501,7 +504,7 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 
 	// Acquire the write lock on the repo.
 	requestStatus.Tasklog.Start("wLock to delete " + repo)
-	releaseWLock, err := wLock(db, repo)
+	releaseWLock, err := wLock(ctx, db, repo)
 	requestStatus.HoldLock("wLock")
 	defer func() {
 		err2 := releaseWLock()
@@ -518,7 +521,7 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 	// Make sure the repo is still old. See note above.
 	var rank int
 	requestStatus.Tasklog.Start("recheck repo rank")
-	err = db.QueryRowContext(context.TODO(), `
+	err = db.QueryRowContext(ctx, `
 			SELECT repo_rank
 			FROM (
 				SELECT repo, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
@@ -540,20 +543,20 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 
 	// Delete the repo.
 	requestStatus.Tasklog.Start("delete repo")
-	tx, err := db.BeginTx(context.TODO(), nil)
+	tx, err := db.BeginTx(ctx, nil)
 	defer tx.Rollback()
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_ancestry WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_ancestry WHERE repo = $1;", repo)
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_blobs WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE repo = $1;", repo)
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(context.TODO(), "DELETE FROM rockskip_repos WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_repos WHERE repo = $1;", repo)
 	if err != nil {
 		return false, err
 	}
@@ -565,8 +568,8 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 	return true, nil
 }
 
-func updateLastAccessedAt(conn *sql.Conn, repo string) error {
-	_, err := conn.ExecContext(context.TODO(), `
+func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string) error {
+	_, err := conn.ExecContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
 			ON CONFLICT (repo)
@@ -724,8 +727,8 @@ func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(
 	return nil
 }
 
-func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {
-	err = db.QueryRowContext(context.TODO(), `
+func GetCommit(ctx context.Context, db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {
+	err = db.QueryRowContext(ctx, `
 		SELECT ancestor_id, height
 		FROM rockskip_ancestry
 		WHERE repo = $1 AND commit_id = $2
@@ -738,16 +741,16 @@ func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height 
 	return ancestor, height, true, nil
 }
 
-func InsertCommit(db Queryable, repo, commit string, height int, ancestor string) error {
-	_, err := db.ExecContext(context.TODO(), `
+func InsertCommit(ctx context.Context, db Queryable, repo, commit string, height int, ancestor string) error {
+	_, err := db.ExecContext(ctx, `
 		INSERT INTO rockskip_ancestry (commit_id, repo, height, ancestor_id)
 		VALUES ($1, $2, $3, $4)
 	`, commit, repo, height, ancestor)
 	return errors.Wrap(err, "InsertCommit")
 }
 
-func GetBlob(db Queryable, hop string, path string) (id int, found bool, err error) {
-	err = db.QueryRowContext(context.TODO(), `
+func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int, found bool, err error) {
+	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_blobs
 		WHERE path = $1 AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
@@ -760,10 +763,10 @@ func GetBlob(db Queryable, hop string, path string) (id int, found bool, err err
 	return id, true, nil
 }
 
-func UpdateBlobHops(db Queryable, id int, status StatusAD, hop string) error {
+func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, hop string) error {
 	column := statusADToColumn(status)
 	// TODO also try `||` instead of `array_append``
-	_, err := db.ExecContext(context.TODO(), fmt.Sprintf(`
+	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE id = $2
@@ -771,14 +774,14 @@ func UpdateBlobHops(db Queryable, id int, status StatusAD, hop string) error {
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func InsertBlob(db Queryable, blob Blob, repo string) (id int, err error) {
+func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id int, err error) {
 	symbolNames := []string{}
 	for _, symbol := range blob.Symbols {
 		symbolNames = append(symbolNames, symbol.Name)
 	}
 
 	lastInsertId := 0
-	err = db.QueryRowContext(context.TODO(), `
+	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
@@ -786,9 +789,9 @@ func InsertBlob(db Queryable, blob Blob, repo string) (id int, err error) {
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
-func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string) error {
+func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus StatusAD, newHop string) error {
 	column := statusADToColumn(givenStatus)
-	_, err := db.ExecContext(context.TODO(), fmt.Sprintf(`
+	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE $2 && %s
@@ -796,12 +799,15 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
+func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
 	// Initialize the cleanup function to a noop.
 	cleanup = func() error { return nil }
 
 	requestStatus.Tasklog.Start("Acquire search semaphore")
-	searchSemaphore.Acquire(context.Background(), 1)
+	err = searchSemaphore.Acquire(ctx, 1)
+	if err != nil {
+		return nil, cleanup, err
+	}
 	requestStatus.HoldLock("search semaphore")
 	defer func() {
 		searchSemaphore.Release(1)
@@ -811,7 +817,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	// Get a fresh connection from the DB pool so that this indexer can hold overlapping locks (which
 	// would otherwise block each other) to prevent other indexers from intervening.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-	conn, err := db.Conn(context.TODO())
+	conn, err := db.Conn(ctx)
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -831,7 +837,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 	// Acquire a read lock on the repo.
 	requestStatus.Tasklog.Start("rLock")
-	releaseRLock, err = rLock(conn, string(args.Repo))
+	releaseRLock, err = rLock(ctx, conn, string(args.Repo))
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -839,14 +845,14 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	requestStatus.Tasklog.Start("update last_accessed_at")
-	err = updateLastAccessedAt(conn, string(args.Repo))
+	err = updateLastAccessedAt(ctx, conn, string(args.Repo))
 	if err != nil {
 		return nil, cleanup, err
 	}
 
 	// Set the cleanup function to delete old repos that were pushed past the maxRepos limit.
 	cleanup = func() error {
-		err := deleteOldRepos(conn, maxRepos, requestStatus)
+		err := deleteOldRepos(ctx, conn, maxRepos, requestStatus)
 		err2 := conn.Close()
 		if err != nil || err2 != nil {
 			return errors.Append(errors.Wrap(err, "deleteOldRepos"), err2)
@@ -856,7 +862,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 	// Check if the commit has already been indexed, and if not then index it.
 	requestStatus.Tasklog.Start("check commit presence")
-	_, _, present, err := GetCommit(conn, string(args.Repo), string(args.CommitID))
+	_, _, present, err := GetCommit(ctx, conn, string(args.Repo), string(args.CommitID))
 	if err != nil {
 		return nil, cleanup, err
 	} else if !present {
@@ -872,7 +878,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 		// Acquire the write lock.
 		requestStatus.Tasklog.Start("wLock")
-		releaseWLock, err := wLock(conn, string(args.Repo))
+		releaseWLock, err := wLock(ctx, conn, string(args.Repo))
 		requestStatus.HoldLock("wLock")
 		if err != nil {
 			return nil, cleanup, err
@@ -880,13 +886,13 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 
 		// In case a deletion intervened, reinsert the repo into the rockskip_repos table. See note above.
 		requestStatus.Tasklog.Start("update last_accessed_at again")
-		err = updateLastAccessedAt(conn, string(args.Repo))
+		err = updateLastAccessedAt(ctx, conn, string(args.Repo))
 		if err != nil {
 			return nil, cleanup, err
 		}
 
 		// Index the commit.
-		err = index(git, conn, requestStatus, parse, string(args.Repo), string(args.CommitID), maxRepos, indexingSemaphore)
+		err = index(ctx, git, conn, requestStatus, parse, string(args.Repo), string(args.CommitID), maxRepos, indexingSemaphore)
 		if err != nil {
 			// Remember to release the write lock.
 			err2 := releaseWLock()
@@ -897,7 +903,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 		// Reacquire a read lock before releasing the write lock. This does not result in deadlock
 		// because we're using the same connection.
 		requestStatus.Tasklog.Start("rLock again")
-		releaseRLock, err = rLock(conn, string(args.Repo))
+		releaseRLock, err = rLock(ctx, conn, string(args.Repo))
 		requestStatus.HoldLock("rLock")
 		// Release the write lock now that we reacquired a read lock.
 		err2 := releaseWLock()
@@ -908,7 +914,7 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(conn, args, requestStatus)
+	blobs, err = queryBlobs(ctx, conn, args, requestStatus)
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -916,9 +922,9 @@ func Search(args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, 
 	return blobs, cleanup, nil
 }
 
-func queryBlobs(conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
+func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
 	requestStatus.Tasklog.Start("get hops")
-	hops, err := getHops(conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
+	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -926,7 +932,7 @@ func queryBlobs(conn *sql.Conn, args types.SearchArgs, requestStatus *RequestSta
 	requestStatus.Tasklog.Start("run query")
 	var rows *sql.Rows
 	if args.Query != "" {
-		rows, err = conn.QueryContext(context.TODO(), `
+		rows, err = conn.QueryContext(ctx, `
 			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
@@ -935,7 +941,7 @@ func queryBlobs(conn *sql.Conn, args types.SearchArgs, requestStatus *RequestSta
 				AND $2 && symbol_names
 		`, pg.Array(hops), pg.Array([]string{args.Query}))
 	} else {
-		rows, err = conn.QueryContext(context.TODO(), `
+		rows, err = conn.QueryContext(ctx, `
 			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
@@ -974,32 +980,32 @@ func queryBlobs(conn *sql.Conn, args types.SearchArgs, requestStatus *RequestSta
 type CleanupFunc = func() error
 
 // rLock acquires a read lock on the repo. It blocks only when another connection holds the write lock.
-func rLock(conn *sql.Conn, repo string) (func() error, error) {
-	_, err := conn.ExecContext(context.TODO(), `SELECT pg_advisory_lock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+func rLock(ctx context.Context, conn *sql.Conn, repo string) (func() error, error) {
+	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, errors.Wrap(err, "rLock")
 	}
 	return func() error {
-		_, err := conn.ExecContext(context.TODO(), `SELECT pg_advisory_unlock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		return errors.Wrap(err, "rLock")
 	}, nil
 }
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(conn *sql.Conn, repo string) (func() error, error) {
-	_, err := conn.ExecContext(context.TODO(), `SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+func wLock(ctx context.Context, conn *sql.Conn, repo string) (func() error, error) {
+	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, errors.Wrap(err, "wLock")
 	}
 	return func() error {
-		_, err := conn.ExecContext(context.TODO(), `SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		return errors.Wrap(err, "wLock")
 	}, nil
 }
 
-func DeleteRedundant(db Queryable, hop string) error {
-	_, err := db.ExecContext(context.TODO(), `
+func DeleteRedundant(ctx context.Context, db Queryable, hop string) error {
+	_, err := db.ExecContext(ctx, `
 		UPDATE rockskip_blobs
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
 		WHERE $2 && added AND $2 && deleted
@@ -1007,12 +1013,12 @@ func DeleteRedundant(db Queryable, hop string) error {
 	return errors.Wrap(err, "DeleteRedundant")
 }
 
-func PrintInternals(db Queryable) error {
+func PrintInternals(ctx context.Context, db Queryable) error {
 	fmt.Println("Commit ancestry:")
 	fmt.Println()
 
 	// print all rows in the rockskip_ancestry table
-	rows, err := db.QueryContext(context.TODO(), `
+	rows, err := db.QueryContext(ctx, `
 		SELECT commit_id, height, ancestor_id
 		FROM rockskip_ancestry
 		ORDER BY height ASC
@@ -1036,7 +1042,7 @@ func PrintInternals(db Queryable) error {
 	fmt.Println("Blobs:")
 	fmt.Println()
 
-	rows, err = db.QueryContext(context.TODO(), `
+	rows, err = db.QueryContext(ctx, `
 		SELECT id, path, added, deleted
 		FROM rockskip_blobs
 		ORDER BY id ASC

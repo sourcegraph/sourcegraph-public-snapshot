@@ -191,7 +191,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 
 		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
-		blobs, cleanupSearch, err := rockskip.Search(args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus)
+		blobs, cleanupSearch, err := rockskip.Search(ctx, args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus)
 		cleanup = func() error {
 			err = cleanupSearch()
 			requestStatus.End()
