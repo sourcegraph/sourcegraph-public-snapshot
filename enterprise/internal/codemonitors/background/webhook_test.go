@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -19,7 +20,7 @@ func TestWebhook(t *testing.T) {
 			MonitorURL:         "https://google.com",
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 			QueryURL:           "https://youtube.com",
-			NumResults:         31313,
+			Results:            make(cmtypes.CommitSearchResults, 313),
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +42,7 @@ func TestWebhook(t *testing.T) {
 			MonitorURL:         "https://google.com",
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 			QueryURL:           "https://youtube.com",
-			NumResults:         31313,
+			Results:            make(cmtypes.CommitSearchResults, 313),
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

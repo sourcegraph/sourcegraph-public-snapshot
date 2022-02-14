@@ -28,7 +28,7 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 	return &slack.WebhookMessage{
 		Blocks: &slack.Blocks{BlockSet: []slack.Block{
 			newMarkdownSection(fmt.Sprintf("*New results for Code Monitor \"%s\"*", args.MonitorDescription)),
-			newMarkdownSection(fmt.Sprintf("%d new results for query: ```%s```", args.NumResults, args.Query)),
+			newMarkdownSection(fmt.Sprintf("%d new results for query: ```%s```", len(args.Results), args.Query)),
 			newMarkdownSection(fmt.Sprintf(`<%s|View search on Sourcegraph> | <%s|View code monitor>`, args.QueryURL, args.MonitorURL)),
 		}},
 	}

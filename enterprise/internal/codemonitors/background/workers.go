@@ -317,7 +317,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		MonitorURL:         codeMonitorURL,
 		Query:              m.Query,
 		QueryURL:           searchURL,
-		NumResults:         len(m.Results),
+		Results:            m.Results,
 	}
 
 	return sendWebhookNotification(ctx, w.URL, args)
@@ -356,7 +356,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		MonitorURL:         codeMonitorURL,
 		Query:              m.Query,
 		QueryURL:           searchURL,
-		NumResults:         len(m.Results),
+		Results:            m.Results,
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)

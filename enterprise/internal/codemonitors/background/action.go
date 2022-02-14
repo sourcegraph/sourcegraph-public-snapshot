@@ -1,5 +1,7 @@
 package background
 
+import cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
+
 // actionArgs is the shared set of arguments needed to execute any
 // action for code monitors.
 type actionArgs struct {
@@ -7,5 +9,5 @@ type actionArgs struct {
 	MonitorURL         string
 	Query              string
 	QueryURL           string
-	NumResults         int
+	Results            cmtypes.CommitSearchResults
 }
