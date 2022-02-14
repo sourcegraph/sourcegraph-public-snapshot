@@ -3,20 +3,17 @@ import React, { Suspense } from 'react'
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import {
-    Alert,
-    AnchorLink,
-    LoadingSpinner,
-    setLinkComponent,
-    WildcardTheme,
-    WildcardThemeContext,
-} from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
 import styles from './EmbeddedWebApp.module.scss'
+import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
-setLinkComponent(AnchorLink)
+// Since we intend to embed the EmbeddedWebApp component within an iframe,
+// we want to open all links in a new tab instead of the current iframe window.
+// Otherwise, we would get an error that we tried to access a non-embed route from within the iframe.
+setLinkComponent(OpenNewTabAnchorLink)
 
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,

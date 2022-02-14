@@ -60,6 +60,11 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
      * CSS class name to be applied to the ResultContainer Component
      */
     containerClassName?: string
+
+    /**
+     * Clicking on a file match result opens the file in a new tab.
+     */
+    openFileMatchesInNewTab?: boolean
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length

@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
-import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -28,6 +27,8 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
+    /* Clicking on a file match result opens the file in a new tab */
+    openFileMatchesInNewTab?: boolean
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -98,16 +99,17 @@ function openLink(
     const link = document.createElement('a')
     link.href = url
     link.style.display = 'none'
+    // Simulate opening a new tab.
+    if (button === 'middle') {
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+    }
     const clickEvent = new window.MouseEvent('click', {
         bubbles: false,
         altKey: event.altKey,
         shiftKey: event.shiftKey,
-        // Regarding middle click: Setting "button: 1:" doesn't seem to suffice:
-        // Firefox doesn't react to the event at all, Chromium opens the tab in
-        // the foreground. So in order to simulate a middle click, we set
-        // ctrlKey and metaKey to `true` instead.
-        ctrlKey: button === 'middle' ? true : event.ctrlKey,
-        metaKey: button === 'middle' ? true : event.metaKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
         view: window,
     })
 
@@ -143,7 +145,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
-    const history = useHistory()
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine) => {
             const startTime = Date.now()
@@ -209,24 +210,25 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
             // Testing for text selection is only necessary for mouse/click
-            // events.
+            // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.
             if (
-                (event.type === 'click' && !isTextSelectionEvent(event as MouseEvent<HTMLElement>)) ||
+                (event.type === 'click' &&
+                    !isTextSelectionEvent(event as MouseEvent<HTMLElement>) &&
+                    (event as MouseEvent<HTMLElement>).button !== 1) ||
                 (event as KeyboardEvent<HTMLElement>).key === 'Enter'
             ) {
                 const href = event.currentTarget.getAttribute('data-href')
-
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    if (event.ctrlKey || event.metaKey || event.shiftKey) {
-                        openLink(href, event, 'primary')
+                    if (props.openFileMatchesInNewTab) {
+                        openLink(href, event, 'middle')
                     } else {
-                        history.push(href)
+                        openLink(href, event, 'primary')
                     }
                 }
             }
         },
-        [history]
+        [props.openFileMatchesInNewTab]
     )
 
     return (
