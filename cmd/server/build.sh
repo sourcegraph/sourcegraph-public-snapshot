@@ -76,7 +76,7 @@ parallel_run go_build {} ::: "${PACKAGES[@]}"
 
 echo "--- build scripts"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
+cp -a ./cmd/server/p4-fusion-install-alpine.sh "$OUTPUT"
 
 echo "--- monitoring generation"
 # For code generation we need to match the local machine so we can run the generator
@@ -104,9 +104,62 @@ echo "--- jaeger-all-in-one binary"
 cmd/server/jaeger.sh
 
 echo "--- docker build"
-docker pull us.gcr.io/sourcegraph-dev/server:insiders || true
 
-docker build --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
+# Can't use it because it's not yet https
+# PRIVATE_REGISTRY="private-docker-registry:5000"
+PRIVATE_REGISTRY="us.gcr.io"
+
+docker pull us.gcr.io/sourcegraph-dev/server:insiders || true
+docker pull $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli || true
+docker pull $PRIVATE_REGISTRY/sourcegraph-dev/server:p4-fusion || true
+docker pull $PRIVATE_REGISTRY/sourcegraph-dev/server:coursier || true
+
+docker build \
+  --target p4cli \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli \
+  -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
+
+docker build \
+  --target p4-fusion \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4-fusion \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/server:p4-fusion \
+  -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
+
+docker build \
+  --target coursier \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4-fusion \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:coursier \
+  -t $PRIVATE_REGISTRY/sourcegraph-dev/server:coursier \
+  -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
+
+docker push $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli
+docker push $PRIVATE_REGISTRY/sourcegraph-dev/server:p4-fusion
+docker push $PRIVATE_REGISTRY/sourcegraph-dev/server:coursier
+
+docker build \
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:p4cli \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:fusion \
+  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/server:coursier \
+  --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
   -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
