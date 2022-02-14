@@ -34,10 +34,10 @@ func ArchiveReader(
 	if authz.SubRepoEnabled(checker) {
 		enabled, err := authz.SubRepoEnabledForRepoID(ctx, checker, repo.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "Sub-repo permissions check:")
+			return nil, errors.Wrap(err, "sub-repo permissions check:")
 		}
 		if enabled {
-			return nil, errors.New("ArchiveReader invoked for a repo with sub-repo permissions")
+			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(format), string(commit), relativePath)
