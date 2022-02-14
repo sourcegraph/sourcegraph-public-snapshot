@@ -19,14 +19,14 @@ import (
 // and exclude patterns.
 const SubRepoPermsVersion = 1
 
-var SubRepoSupportedCodeHostKinds = []string{extsvc.KindPerforce}
-var supportedKindsQuery = make([]*sqlf.Query, len(SubRepoSupportedCodeHostKinds))
+var SubRepoSupportedCodeHostTypes = []string{extsvc.TypePerforce}
+var supportedTypesQuery = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
 
 func init() {
-	// Build this up at startup so we don't need to rebuild it every time
+	// Build this up at startup, so we don't need to rebuild it every time
 	// RepoSupported is called
-	for i, kind := range SubRepoSupportedCodeHostKinds {
-		supportedKindsQuery[i] = sqlf.Sprintf("%s", kind)
+	for i, hostType := range SubRepoSupportedCodeHostTypes {
+		supportedTypesQuery[i] = sqlf.Sprintf("%s", hostType)
 	}
 }
 
@@ -38,6 +38,7 @@ type SubRepoPermsStore interface {
 	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
 }
 
 // subRepoPermsStore is the unified interface for managing sub repository
@@ -176,4 +177,30 @@ WHERE user_id = %s
 	}
 
 	return result, nil
+}
+
+// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
+// (i.e. it is private and its type is one of the SubRepoSupportedCodeHostTypes)
+func (s *subRepoPermsStore) RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error) {
+	q := sqlf.Sprintf(`
+SELECT EXISTS(
+SELECT 1
+FROM repo
+WHERE id = %s
+AND private = TRUE
+AND external_service_type IN (%s)
+)
+`, repoId, sqlf.Join(supportedTypesQuery, ","))
+
+	row := s.QueryRow(ctx, q)
+	var exists *bool
+
+	if err := row.Scan(&exists); err != nil {
+		return false, errors.Wrap(err, "scanning row")
+	}
+
+	if exists == nil {
+		return false, nil
+	}
+	return *exists, nil
 }

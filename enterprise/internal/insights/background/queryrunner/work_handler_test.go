@@ -10,9 +10,10 @@ import (
 	"time"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -76,6 +77,142 @@ func TestGenerateComputeRecordings(t *testing.T) {
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.14 1.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.15 3.000000",
 		}).Equal(t, stringified)
+	})
+
+	t.Run("compute job with sub-repo permissions", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := mockComputeSearch([]computeSearch{
+			{
+				repoName: "github.com/sourcegraph/sourcegraph",
+				repoId:   11,
+				values: []computeValue{
+					{
+						value:   "1.15",
+						count:   3,
+						path:    "package1/go.mod",
+						revhash: "asdfsadf1234qwrar234",
+					},
+					{
+						value:   "1.14",
+						count:   1,
+						path:    "package1/go.mod",
+						revhash: "asdfsadf1234qwrar234",
+					},
+				},
+			},
+		})
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			computeSearch:   mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			if id == 11 {
+				return true, nil
+			} else {
+				return false, errors.New("Wrong repoID, try again")
+			}
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has sub-repo permissions")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
+	})
+
+	t.Run("compute job with sub-repo permissions resulted in error", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := mockComputeSearch([]computeSearch{
+			{
+				repoName: "github.com/sourcegraph/sourcegraph",
+				repoId:   11,
+				values: []computeValue{
+					{
+						value:   "1.15",
+						count:   3,
+						path:    "package1/go.mod",
+						revhash: "asdfsadf1234qwrar234",
+					},
+					{
+						value:   "1.14",
+						count:   1,
+						path:    "package1/go.mod",
+						revhash: "asdfsadf1234qwrar234",
+					},
+				},
+			},
+		})
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			computeSearch:   mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			return false, errors.New("Oops")
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has an error during sub-repo permissions check")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
 	})
 
 	t.Run("compute job with no dependencies multirepo", func(t *testing.T) {
