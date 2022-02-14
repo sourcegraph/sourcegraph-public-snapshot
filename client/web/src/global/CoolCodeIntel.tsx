@@ -671,7 +671,7 @@ const ReferenceGroup: React.FunctionComponent<{
                                         className={styles.referenceLink}
                                     >
                                         <span className={styles.referenceLinkLineNumber}>
-                                            {reference.range?.start?.line}
+                                            {(reference.range?.start?.line ?? 0) + 1}
                                             {': '}
                                         </span>
                                         <code>{getLineContent(reference)}</code>
