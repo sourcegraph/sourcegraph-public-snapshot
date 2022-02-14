@@ -28,6 +28,8 @@ linters-settings:
       - github.com/pkg/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
       - github.com/cockroachdb/errors: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
       - github.com/hashicorp/go-multierror: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+      # More performant regexp
+      - regexp: "Use github.com/grafana/regexp instead"
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives

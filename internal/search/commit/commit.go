@@ -2,10 +2,10 @@ package commit
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"

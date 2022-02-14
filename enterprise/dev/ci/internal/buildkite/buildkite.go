@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/grafana/regexp"
 )
 
 type featureFlags struct {
