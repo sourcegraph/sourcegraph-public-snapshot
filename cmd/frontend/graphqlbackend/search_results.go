@@ -467,14 +467,14 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 	}
 }
 
-func (r *searchResolver) toRepoOptions(q query.Q) search.RepoOptions {
+func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions {
 	repoFilters, minusRepoFilters := q.Repositories()
 
 	var settingForks, settingArchived bool
-	if v := r.UserSettings.SearchIncludeForks; v != nil {
+	if v := userSettings.SearchIncludeForks; v != nil {
 		settingForks = *v
 	}
-	if v := r.UserSettings.SearchIncludeArchived; v != nil {
+	if v := userSettings.SearchIncludeArchived; v != nil {
 		settingArchived = *v
 	}
 
@@ -510,7 +510,7 @@ func (r *searchResolver) toRepoOptions(q query.Q) search.RepoOptions {
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
 		SearchContextSpec: searchContextSpec,
-		UserSettings:      r.UserSettings,
+		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
 		OnlyArchived:      archived == query.Only,
@@ -617,7 +617,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 	}
 	args = withResultTypes(args, forceResultTypes)
 	args = withMode(args, r.PatternType)
-	repoOptions := r.toRepoOptions(args.Query)
+	repoOptions := toRepoOptions(args.Query, r.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
