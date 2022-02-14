@@ -290,11 +290,11 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 		"InsightsGetStartedPageQueryModification",
 		"InsightsGetStartedPageRepositoriesModification",
 		"InsightsGetStartedPrimaryCTAClick",
-		"InsightsGetStartedBigTemplateClick"
+		"InsightsGetStartedBigTemplateClick",
 		"InsightGetStartedTemplateCopyClick",
 		"InsightsGetStartedTabClick",
 		"InsightsGetStartedTabMoreClick",
-		"InsightsGetStartedDocsClicks"
+		"InsightsGetStartedDocsClicks",
 	}
 
 	builder := NewPingBuilder(Week, timeSupplier)
