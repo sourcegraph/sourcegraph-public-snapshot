@@ -74,8 +74,9 @@ PACKAGES+=("$server_pkg")
 
 parallel_run go_build {} ::: "${PACKAGES[@]}"
 
-echo "--- ctags"
+echo "--- build scripts"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
+cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
 echo "--- monitoring generation"
 # For code generation we need to match the local machine so we can run the generator
