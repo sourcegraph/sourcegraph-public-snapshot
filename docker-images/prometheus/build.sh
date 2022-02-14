@@ -48,8 +48,8 @@ if [[ "$CACHE" == "true" ]]; then
   BUILD_CACHE=""
 fi
 
-# shellcheck disable=SC2086
 docker pull us.gcr.io/sourcegraph-dev/prometheus:insiders
+# shellcheck disable=SC2086
 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
   --cache-from us.gcr.io/sourcegraph-dev/prometheus:insiders \
