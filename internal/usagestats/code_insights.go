@@ -53,9 +53,9 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(*) FILTER (WHERE name = 'InsightsGetStartedPageInsightHover')  		AS get_started_hovers,
 		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
 		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks,
-		COUNT(*) FILTER (WHERE name = 'InsightsGetStartedInsightDataPointClick') 	AS get_started_data_point_clicks
+		COUNT(*) FILTER (WHERE name = 'InsightsGetStartedPageInsightDataPointClick') 	AS get_started_data_point_clicks
 	FROM event_logs
-	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightsGetStartedPageInsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightsGetStartedInsightDataPointClick')
+	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightsGetStartedPageInsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightsGetStartedPageInsightDataPointClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp)
 	GROUP BY insight_type;
 	`
@@ -292,6 +292,7 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 		"InsightsGetStartedPrimaryCTAClick",
 		"InsightsGetStartedBigTemplateClick",
 		"InsightGetStartedTemplateCopyClick",
+		"InsightGetStartedTemplateClick",
 		"InsightsGetStartedTabClick",
 		"InsightsGetStartedTabMoreClick",
 		"InsightsGetStartedDocsClicks",
