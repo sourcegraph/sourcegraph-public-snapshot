@@ -21,7 +21,9 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
 
     disabled?: boolean
     onChange?: React.FormEventHandler<HTMLSelectElement>
-}> = ({ value, publishersOrError, disabled, onChange }) => (
+
+    className?: string
+}> = ({ value, publishersOrError, disabled, onChange, className }) => (
     <>
         {isErrorLike(publishersOrError) ? (
             <ErrorAlert error={publishersOrError} />
@@ -34,6 +36,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
                 value={value}
                 aria-label="Publisher"
                 message="The owner of this extension. This can't be changed after creation."
+                className={className}
             >
                 {publishersOrError === 'loading' ? (
                     <option disabled={true}>Loading...</option>
@@ -53,7 +56,8 @@ export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
     value: string
     disabled?: boolean
     onChange: React.FormEventHandler<HTMLInputElement>
-}> = ({ value, disabled, onChange }) => (
+    className?: string
+}> = ({ value, disabled, onChange, className }) => (
     <Input
         label="Name"
         type="text"
@@ -70,5 +74,6 @@ export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
         maxLength={EXTENSION_NAME_MAX_LENGTH}
         disabled={disabled}
         message="The name for this extension."
+        className={className}
     />
 )
