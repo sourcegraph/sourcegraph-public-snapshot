@@ -113,8 +113,8 @@ func (m *Mapper) Map(job Job) Job {
 		return NewOrJob(children...)
 
 	case *ParallelJob:
-		children := make([]Job, 0, len(*j))
-		for _, child := range *j {
+		children := make([]Job, 0, len(j.children))
+		for _, child := range j.children {
 			children = append(children, m.Map(child))
 		}
 		if m.MapParallelJob != nil {
