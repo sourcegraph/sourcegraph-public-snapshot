@@ -21,6 +21,7 @@ func TestWebhook(t *testing.T) {
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 			QueryURL:           "https://youtube.com",
 			Results:            make(cmtypes.CommitSearchResults, 313),
+			IncludeResults:     false,
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +44,7 @@ func TestWebhook(t *testing.T) {
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
 			QueryURL:           "https://youtube.com",
 			Results:            make(cmtypes.CommitSearchResults, 313),
+			IncludeResults:     false,
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

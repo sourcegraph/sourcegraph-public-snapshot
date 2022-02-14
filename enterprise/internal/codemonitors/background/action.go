@@ -10,4 +10,5 @@ type actionArgs struct {
 	Query              string
 	QueryURL           string
 	Results            cmtypes.CommitSearchResults
+	IncludeResults     bool
 }
