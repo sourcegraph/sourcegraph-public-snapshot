@@ -199,6 +199,10 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
+				// This is a blocking call since the repo will be cloned synchronously by gitserver
+				// if it doesn't exist or update it if it does. The timeout of this request depends
+				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
+				// deadline shorter than the value of this config.
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
@@ -207,9 +211,13 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
 					log15.Error("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
 				}
+
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
-				} else if err != nil || (resp != nil && resp.Error != "") {
+					return
+				}
+
+				if err != nil || (resp != nil && resp.Error != "") {
 					// On error we will double the current interval so that we back off and don't
 					// get stuck with problematic repos with low intervals.
 					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {

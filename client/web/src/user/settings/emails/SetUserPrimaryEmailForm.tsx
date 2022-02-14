@@ -12,6 +12,8 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
+import styles from './SetUserPrimaryEmailForm.module.scss'
+
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
@@ -73,30 +75,37 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     return (
         <div className={classNames('add-user-email-form', className)}>
-            <Form className="form-inline" onSubmit={onSubmit}>
-                <Select
-                    label="Primary email address"
-                    id="setUserPrimaryEmailForm-email"
-                    isCustomStyle={true}
-                    selectClassName="form-control-lg mr-sm-2"
-                    value={primaryEmail}
-                    onChange={onPrimaryEmailSelect}
-                    required={true}
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                >
-                    {options.map(email => (
-                        <option key={email} value={email}>
-                            {email}
-                        </option>
-                    ))}
-                </Select>
-                <LoaderButton
-                    loading={statusOrError === 'loading'}
-                    label="Save"
-                    type="submit"
-                    disabled={options.length === 1 || statusOrError === 'loading'}
-                    variant="primary"
-                />
+            <Form onSubmit={onSubmit}>
+                <div className={styles.formLine}>
+                    <div className={styles.formSelect}>
+                        <Select
+                            label="Primary email address"
+                            labelVariant="block"
+                            id="setUserPrimaryEmailForm-email"
+                            isCustomStyle={true}
+                            selectClassName="form-control-lg mr-sm-2"
+                            value={primaryEmail}
+                            onChange={onPrimaryEmailSelect}
+                            required={true}
+                            disabled={options.length === 1 || statusOrError === 'loading'}
+                        >
+                            {options.map(email => (
+                                <option key={email} value={email}>
+                                    {email}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <div className={styles.formButton}>
+                        <LoaderButton
+                            loading={statusOrError === 'loading'}
+                            label="Save"
+                            type="submit"
+                            disabled={options.length === 1 || statusOrError === 'loading'}
+                            variant="primary"
+                        />
+                    </div>
+                </div>
             </Form>
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
         </div>
