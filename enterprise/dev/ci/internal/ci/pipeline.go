@@ -154,17 +154,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExtensionE2ESteps)
 
 	case runtype.ImagePatch:
-		// only build candidate image for the specified image in the branch name
+		// only build image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
-		patchImage := c.Branch[20:]
+		patchImage, err := c.RunType.Matcher().ExtractBranchArgument(c.Branch)
+		if err != nil {
+			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
+		}
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()))
 
-		// Trivy security scans
-		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
+		ops = operations.NewSet(
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
@@ -174,7 +176,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
-		patchImage := c.Branch[27:]
+		patchImage, err := c.RunType.Matcher().ExtractBranchArgument(c.Branch)
+		if err != nil {
+			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
+		}
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}

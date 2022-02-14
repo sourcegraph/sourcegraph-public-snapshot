@@ -187,29 +187,21 @@ Default pipeline:
 
 ### Patch image
 
-The run type for branches matching `docker-images-patch/`.
+The run type for branches matching `docker-images-patch/`, requires a branch argument in the second branch path segment.
 You can create a build of this run type for your changes using:
 
 ```sh
 sg ci build docker-images-patch
 ```
 
-<!--
-no image "" found
--->
-
 ### Patch image without testing
 
-The run type for branches matching `docker-images-patch-notest/`.
+The run type for branches matching `docker-images-patch-notest/`, requires a branch argument in the second branch path segment.
 You can create a build of this run type for your changes using:
 
 ```sh
 sg ci build docker-images-patch-notest
 ```
-
-<!--
-no image "" found
--->
 
 ### Build all candidates without testing
 

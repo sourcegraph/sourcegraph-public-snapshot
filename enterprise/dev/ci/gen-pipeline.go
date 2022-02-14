@@ -148,6 +148,9 @@ func renderPipelineDocs(w io.Writer) {
 					matchName += " (exact match)"
 				}
 				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
+				if m.BranchArgumentRequired {
+					conditions = append(conditions, "requires a branch argument in the second branch path segment")
+				}
 			}
 			if m.TagPrefix != "" {
 				conditions = append(conditions, fmt.Sprintf("tags starting with `%s`", m.TagPrefix))
@@ -158,14 +161,21 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
-			if m.IsPrefixMatcher() {
+			// We currently support 'sg ci build' commands for certain branch matcher types
+			if m.IsBranchPrefixMatcher() {
 				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
 					strings.TrimRight(m.Branch, "/"))
 			}
 
+			// Don't generate a preview for more complicated branch types, since we don't
+			// know what arguments to provide as a sample in advance.
+			if m.BranchArgumentRequired {
+				continue
+			}
+
 			// Generate a sample pipeline with all changes. If it panics just don't bother
-			// generating a sample for now - it's usually because a special branch name
-			// parameter is needed.
+			// generating a sample for now - we should have other tests to ensure this
+			// does not happen.
 			func() {
 				defer func() {
 					if err := recover(); err != nil {

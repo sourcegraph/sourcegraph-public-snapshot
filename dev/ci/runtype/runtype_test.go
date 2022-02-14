@@ -159,3 +159,45 @@ func TestRunTypeMatcherMatches(t *testing.T) {
 		})
 	}
 }
+
+func TestRunTypeMatcherExtractBranchArgument(t *testing.T) {
+	tests := []struct {
+		name            string
+		matcher         *RunTypeMatcher
+		branch          string
+		want            string
+		wantErrContains string
+	}{{
+		name:    "gets 1 segment argument",
+		matcher: &RunTypeMatcher{Branch: "prefix/"},
+		branch:  "prefix/argument",
+		want:    "argument",
+	}, {
+		name:    "gets 2 segment argument",
+		matcher: &RunTypeMatcher{Branch: "prefix/"},
+		branch:  "prefix/argument/name",
+		want:    "argument",
+	}, {
+		name:    "missing unrequired argument",
+		matcher: &RunTypeMatcher{Branch: "prefix/"},
+		branch:  "prefix/",
+	}, {
+		name: "missing required argument",
+		matcher: &RunTypeMatcher{
+			Branch:                 "prefix/",
+			BranchArgumentRequired: true,
+		},
+		branch:          "prefix/",
+		wantErrContains: "branch argument expected",
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.matcher.ExtractBranchArgument(tt.branch)
+			if tt.wantErrContains != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErrContains)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
