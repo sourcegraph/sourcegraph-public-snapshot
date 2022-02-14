@@ -9,26 +9,28 @@ import { useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
-import { isErrorLike } from '@sourcegraph/common'
+import {
+    addLineRangeQueryParameter,
+    appendLineRangeQueryParameter,
+    appendSubtreeQueryParameter,
+    formatSearchParameters,
+    isErrorLike,
+    lprToRange,
+    renderMarkdown,
+    toPositionOrRangeQueryParameter,
+} from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import {
     RepoSpec,
     RevisionSpec,
     FileSpec,
     ResolvedRevisionSpec,
-    toPositionOrRangeQueryParameter,
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
     parseQueryAndHash,
-    formatSearchParameters,
-    addLineRangeQueryParameter,
-    lprToRange,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Tab,
