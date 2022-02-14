@@ -1,0 +1,53 @@
+{
+  "blocks": [
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "*New results for Code Monitor \"My test monitor\"*"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "2 new results for query: `repo:camdentest -file:id_rsa.pub BEGIN`"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "github.com/test/test@78151875"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "```file1.go file2.go\n@ -97,5 +97,5 @ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n```"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "github.com/test/test@78151875"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "```summary line\n\nmessage body\n```"
+    }
+   },
+   {
+    "type": "section",
+    "text": {
+     "type": "mrkdwn",
+     "text": "\u003chttps://youtube.com|View search on Sourcegraph\u003e | \u003chttps://google.com|View code monitor\u003e"
+    }
+   }
+  ]
+ }
