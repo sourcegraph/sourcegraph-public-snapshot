@@ -1,4 +1,4 @@
-package run
+package job
 
 import (
 	"strings"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
@@ -16,7 +17,7 @@ import (
 func prettyPrint(job Job) string {
 	switch j := job.(type) {
 	case
-		*RepoSearch,
+		*run.RepoSearch,
 		*textsearch.RepoSubsetTextSearch,
 		*textsearch.RepoUniverseTextSearch,
 		*structural.StructuralSearch,
