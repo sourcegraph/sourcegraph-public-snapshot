@@ -28,7 +28,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 						AS weekly_insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 						AS weekly_insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'ViewInsightsGetStartedPage', InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+	WHERE name in ('ViewInsights', 'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
@@ -52,7 +52,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
 		COUNT(*) FILTER (WHERE name = 'InsightsGetStartedPageInsightHover')  		AS get_started_hovers,
 		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks
+		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks,
 		COUNT(*) FILTER (WHERE name = 'InsightsGetStartedInsightDataPointClick') 	AS get_started_data_point_clicks
 	FROM event_logs
 	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightsGetStartedPageInsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightsGetStartedInsightDataPointClick')
