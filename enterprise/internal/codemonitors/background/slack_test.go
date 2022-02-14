@@ -58,7 +58,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -72,7 +72,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
@@ -82,10 +82,12 @@ func TestSlackWebhook(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	// If these tests fail, be sure to check that the changes are correct here:
+	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
 	t.Run("golden with results", func(t *testing.T) {
 		actionCopy := action
 		actionCopy.IncludeResults = true
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, slackPayload(actionCopy))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(actionCopy))
 	})
 
 	t.Run("golden with truncated results", func(t *testing.T) {
@@ -94,10 +96,10 @@ func TestSlackWebhook(t *testing.T) {
 		// quadruple the number of results
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, slackPayload(actionCopy))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(actionCopy))
 	})
 
 	t.Run("golden without results", func(t *testing.T) {
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, slackPayload(action))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(action))
 	})
 }
