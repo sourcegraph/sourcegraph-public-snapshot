@@ -276,11 +276,11 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		return errors.Wrap(err, "RevList")
 	}
 
+	requestStatus.SetProgress(0, missingCount)
+
 	if missingCount == 0 {
 		return nil
 	}
-
-	requestStatus.SetProgress(0, missingCount)
 
 	tasklog.Start("Acquire indexing semaphore")
 	semName := "MAX_CONCURRENTLY_INDEXING semaphore"
@@ -431,6 +431,8 @@ func index(git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbo
 		return errors.Wrap(err, "LogReverseEach")
 	}
 
+	requestStatus.SetProgress(entriesIndexed, missingCount)
+
 	return nil
 }
 
@@ -499,9 +501,17 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 	// Note: a search request or deletion could have intervened here.
 
 	// Acquire the write lock on the repo.
-	requestStatus.Tasklog.Start("wLock for deletion")
+	requestStatus.Tasklog.Start("wLock to delete " + repo)
 	releaseWLock, err := wLock(db, repo)
 	requestStatus.HoldLock("wLock")
+	defer func() {
+		err2 := releaseWLock()
+		requestStatus.ReleaseLock("wLock")
+		if err2 != nil {
+			retry = false
+			err = errors.Append(err, err2)
+		}
+	}()
 	if err != nil {
 		return false, errors.Wrap(err, "acquiring lock on repo")
 	}
@@ -519,25 +529,13 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 	).Scan(&rank)
 	if err == sql.ErrNoRows {
 		// The repo was deleted in the meantime, so retry.
-		err = releaseWLock()
-		requestStatus.ReleaseLock("wLock")
-		if err != nil {
-			return false, errors.Wrap(err, "releasing lock on repo")
-		}
 		return true, nil
 	}
 	if err != nil {
-		err2 := releaseWLock()
-		requestStatus.ReleaseLock("wLock")
-		return false, errors.Append(errors.Wrap(err, "selecting repo rank"), err2)
+		return false, errors.Wrap(err, "selecting repo rank")
 	}
 	if rank <= maxRepos {
 		// An intervening search request must have refreshed the repo, so retry.
-		err = releaseWLock()
-		requestStatus.ReleaseLock("wLock")
-		if err != nil {
-			return false, errors.Wrap(err, "releasing lock on repo")
-		}
 		return true, nil
 	}
 
@@ -563,12 +561,6 @@ func tryDeleteOldestRepo(db *sql.Conn, maxRepos int, requestStatus *RequestStatu
 	err = tx.Commit()
 	if err != nil {
 		return false, err
-	}
-
-	err2 := releaseWLock()
-	requestStatus.ReleaseLock("wLock")
-	if err != nil || err2 != nil {
-		return false, errors.Append(err, err2)
 	}
 
 	return true, nil
