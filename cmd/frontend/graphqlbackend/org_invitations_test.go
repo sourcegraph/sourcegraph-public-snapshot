@@ -44,7 +44,7 @@ func mockDefaultSiteConfig() {
 
 func TestCreateJWT(t *testing.T) {
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1)
+		_, err := createInvitationJWT(1, 1, 1, *invitation.ExpiresAt)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -55,7 +55,7 @@ func TestCreateJWT(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3)
+		token, err := createInvitationJWT(1, 2, 3, *invitation.ExpiresAt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,7 +88,7 @@ func TestCreateJWT(t *testing.T) {
 
 func TestOrgInvitationURL(t *testing.T) {
 	t.Run("Fails if site config is not defined", func(t *testing.T) {
-		_, err := orgInvitationURL(1, 1, 1, 1, "foo@bar.baz", true)
+		_, err := orgInvitationURL(invitation, true)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -100,7 +100,7 @@ func TestOrgInvitationURL(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		url, err := orgInvitationURL(1, 2, 3, 0, "foo@bar.baz", true)
+		url, err := orgInvitationURL(invitation, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -359,7 +359,7 @@ func TestInvitationByToken(t *testing.T) {
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1)
+		token, err := createInvitationJWT(1, 1, 1, *invitation.ExpiresAt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -444,7 +444,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "REJECT",
 				},
 				ExpectedResult: `{
@@ -483,7 +483,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
@@ -528,7 +528,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
@@ -573,7 +573,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: "null",
