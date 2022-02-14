@@ -43,8 +43,10 @@ func mockDefaultSiteConfig() {
 }
 
 func TestCreateJWT(t *testing.T) {
+	expiryTime := timeNow().Add(DEFAULT_EXPIRY_TIME)
+
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1, *invitation.ExpiresAt)
+		_, err := createInvitationJWT(1, 1, 1, expiryTime)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -55,7 +57,7 @@ func TestCreateJWT(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3, *invitation.ExpiresAt)
+		token, err := createInvitationJWT(1, 2, 3, expiryTime)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,13 +82,21 @@ func TestCreateJWT(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.ExpiresAt == nil || *claims.ExpiresAt != *jwt.NewNumericDate(expiryTime) {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
 }
 
 func TestOrgInvitationURL(t *testing.T) {
+	//invitation.OrgID, invitation.ID, invitation.SenderUserID, *invitation.ExpiresAt
+	invitation := database.OrgInvitation{
+		OrgID:        1,
+		ID:           2,
+		SenderUserID: 3,
+		ExpiresAt:    timePtr(timeNow().Add(DEFAULT_EXPIRY_TIME)),
+	}
+
 	t.Run("Fails if site config is not defined", func(t *testing.T) {
 		_, err := orgInvitationURL(invitation, true)
 
@@ -161,7 +171,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
-	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1}, nil)
+	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: timePtr(timeNow().Add(DEFAULT_EXPIRY_TIME))}, nil)
 
 	featureFlags := database.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
@@ -222,7 +232,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
 						"sentInvitationEmail": false
 					}
 				}
@@ -286,7 +296,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
 						"sentInvitationEmail": false
 					}
 				}
@@ -359,7 +369,7 @@ func TestInvitationByToken(t *testing.T) {
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1, *invitation.ExpiresAt)
+		token, err := createInvitationJWT(1, 1, 1, timeNow().Add(DEFAULT_EXPIRY_TIME))
 		if err != nil {
 			t.Fatal(err)
 		}

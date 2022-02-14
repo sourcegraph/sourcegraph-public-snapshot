@@ -414,6 +414,9 @@ func orgInvitationURLLegacy(org *types.Org, relative bool) string {
 }
 
 func orgInvitationURL(invitation database.OrgInvitation, relative bool) (string, error) {
+	if invitation.ExpiresAt == nil {
+		return "", errors.New("invitation does not have expiry time defined")
+	}
 	token, err := createInvitationJWT(invitation.OrgID, invitation.ID, invitation.SenderUserID, *invitation.ExpiresAt)
 	if err != nil {
 		return "", err
