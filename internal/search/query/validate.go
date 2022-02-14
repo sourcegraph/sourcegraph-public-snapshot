@@ -1,12 +1,12 @@
 package query
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

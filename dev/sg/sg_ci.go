@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
+	"github.com/grafana/regexp"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -466,6 +466,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		}, {
 			Name:      "docs",
 			ShortHelp: "Render reference documentation for build pipeline types.",
+			LongHelp:  "Render reference documentation for build pipeline types. An online version of this is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
 			Exec: func(ctx context.Context, args []string) error {
 				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
 				out, err := run.InRoot(cmd)

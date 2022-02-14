@@ -8,6 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 )
 
+var newIDSet = datastructures.IDSetWith
+var newIDSetMap = datastructures.DefaultIDSetMapWith
+
+type idSet = datastructures.IDSet
+
 func TestCanonicalizeDocuments(t *testing.T) {
 	state := &State{
 		DocumentData: map[int]string{
@@ -17,18 +22,18 @@ func TestCanonicalizeDocuments(t *testing.T) {
 			1004: "main.go",
 		},
 		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1001: datastructures.IDSetWith(3005)}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1002: datastructures.IDSetWith(3006), 1004: datastructures.IDSetWith(3007)}),
+			2001: newIDSetMap(map[int]*idSet{1001: newIDSet(3005)}),
+			2002: newIDSetMap(map[int]*idSet{1002: newIDSet(3006), 1004: newIDSet(3007)}),
 		},
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1001: datastructures.IDSetWith(3008)}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1003: datastructures.IDSetWith(3009), 1004: datastructures.IDSetWith(3010)}),
+			2003: newIDSetMap(map[int]*idSet{1001: newIDSet(3008)}),
+			2004: newIDSetMap(map[int]*idSet{1003: newIDSet(3009), 1004: newIDSet(3010)}),
 		},
-		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			1001: datastructures.IDSetWith(3001),
-			1002: datastructures.IDSetWith(3002),
-			1003: datastructures.IDSetWith(3003),
-			1004: datastructures.IDSetWith(3004),
+		Contains: newIDSetMap(map[int]*idSet{
+			1001: newIDSet(3001),
+			1002: newIDSet(3002),
+			1003: newIDSet(3003),
+			1004: newIDSet(3004),
 		}),
 		Monikers:    datastructures.NewDefaultIDSetMap(),
 		Diagnostics: datastructures.NewDefaultIDSetMap(),
@@ -42,17 +47,17 @@ func TestCanonicalizeDocuments(t *testing.T) {
 			1003: "bar.go",
 		},
 		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1001: datastructures.IDSetWith(3005)}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1002: datastructures.IDSetWith(3006), 1001: datastructures.IDSetWith(3007)}),
+			2001: newIDSetMap(map[int]*idSet{1001: newIDSet(3005)}),
+			2002: newIDSetMap(map[int]*idSet{1002: newIDSet(3006), 1001: newIDSet(3007)}),
 		},
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1001: datastructures.IDSetWith(3008)}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{1003: datastructures.IDSetWith(3009), 1001: datastructures.IDSetWith(3010)}),
+			2003: newIDSetMap(map[int]*idSet{1001: newIDSet(3008)}),
+			2004: newIDSetMap(map[int]*idSet{1003: newIDSet(3009), 1001: newIDSet(3010)}),
 		},
-		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			1001: datastructures.IDSetWith(3001, 3004),
-			1002: datastructures.IDSetWith(3002),
-			1003: datastructures.IDSetWith(3003),
+		Contains: newIDSetMap(map[int]*idSet{
+			1001: newIDSet(3001, 3004),
+			1002: newIDSet(3002),
+			1003: newIDSet(3003),
 		}),
 		Monikers:    datastructures.NewDefaultIDSetMap(),
 		Diagnostics: datastructures.NewDefaultIDSetMap(),
@@ -77,19 +82,19 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 			5004: {ReferenceResultID: 2004},
 		},
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(3005),
+			2001: newIDSetMap(map[int]*idSet{
+				1001: newIDSet(3005),
 			}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.IDSetWith(3006),
-				1004: datastructures.IDSetWith(3007),
+			2002: newIDSetMap(map[int]*idSet{
+				1002: newIDSet(3006),
+				1004: newIDSet(3007),
 			}),
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(3008),
-				1003: datastructures.IDSetWith(3009),
+			2003: newIDSetMap(map[int]*idSet{
+				1001: newIDSet(3008),
+				1003: newIDSet(3009),
 			}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1004: datastructures.IDSetWith(3010),
+			2004: newIDSetMap(map[int]*idSet{
+				1004: newIDSet(3010),
 			}),
 		},
 		LinkedReferenceResults: map[int][]int{2001: {2003, 2004}, 2002: {2001}},
@@ -106,23 +111,23 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 			5004: {ReferenceResultID: 2004},
 		},
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(3005, 3008),
-				1003: datastructures.IDSetWith(3009),
-				1004: datastructures.IDSetWith(3010),
+			2001: newIDSetMap(map[int]*idSet{
+				1001: newIDSet(3005, 3008),
+				1003: newIDSet(3009),
+				1004: newIDSet(3010),
 			}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(3005, 3008),
-				1002: datastructures.IDSetWith(3006),
-				1003: datastructures.IDSetWith(3009),
-				1004: datastructures.IDSetWith(3007, 3010),
+			2002: newIDSetMap(map[int]*idSet{
+				1001: newIDSet(3005, 3008),
+				1002: newIDSet(3006),
+				1003: newIDSet(3009),
+				1004: newIDSet(3007, 3010),
 			}),
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(3008),
-				1003: datastructures.IDSetWith(3009),
+			2003: newIDSetMap(map[int]*idSet{
+				1001: newIDSet(3008),
+				1003: newIDSet(3009),
 			}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1004: datastructures.IDSetWith(3010),
+			2004: newIDSetMap(map[int]*idSet{
+				1004: newIDSet(3010),
 			}),
 		},
 		LinkedReferenceResults: map[int][]int{2001: {2003, 2004}, 2002: {2001}},
@@ -177,12 +182,12 @@ func TestCanonicalizeResultSets(t *testing.T) {
 			5004: 5005,
 		},
 		LinkedMonikers: linkedMonikers,
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			5001: datastructures.IDSetWith(4001),
-			5002: datastructures.IDSetWith(4002),
-			5003: datastructures.IDSetWith(4003),
-			5004: datastructures.IDSetWith(4004),
-			5005: datastructures.IDSetWith(4005),
+		Monikers: newIDSetMap(map[int]*idSet{
+			5001: newIDSet(4001),
+			5002: newIDSet(4002),
+			5003: newIDSet(4003),
+			5004: newIDSet(4004),
+			5005: newIDSet(4005),
 		}),
 	}
 	canonicalizeResultSets(state)
@@ -224,12 +229,12 @@ func TestCanonicalizeResultSets(t *testing.T) {
 		},
 		NextData:       map[int]int{},
 		LinkedMonikers: linkedMonikers,
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			5001: datastructures.IDSetWith(4001, 4002, 4004, 4005),
-			5002: datastructures.IDSetWith(4002, 4005),
-			5003: datastructures.IDSetWith(4002, 4003, 4005),
-			5004: datastructures.IDSetWith(4002, 4004, 4005),
-			5005: datastructures.IDSetWith(4002, 4005),
+		Monikers: newIDSetMap(map[int]*idSet{
+			5001: newIDSet(4001, 4002, 4004, 4005),
+			5002: newIDSet(4002, 4005),
+			5003: newIDSet(4002, 4003, 4005),
+			5004: newIDSet(4002, 4004, 4005),
+			5005: newIDSet(4002, 4005),
 		}),
 	}
 
@@ -278,12 +283,12 @@ func TestCanonicalizeRanges(t *testing.T) {
 		},
 		LinkedMonikers: linkedMonikers,
 		Contains:       datastructures.NewDefaultIDSetMap(),
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			3001: datastructures.IDSetWith(4001),
-			3002: datastructures.IDSetWith(4002),
-			3003: datastructures.IDSetWith(4003),
-			5001: datastructures.IDSetWith(4004),
-			5002: datastructures.IDSetWith(4005),
+		Monikers: newIDSetMap(map[int]*idSet{
+			3001: newIDSet(4001),
+			3002: newIDSet(4002),
+			3003: newIDSet(4003),
+			5001: newIDSet(4004),
+			5002: newIDSet(4005),
 		}),
 		Diagnostics: datastructures.NewDefaultIDSetMap(),
 	}
@@ -324,12 +329,12 @@ func TestCanonicalizeRanges(t *testing.T) {
 		NextData:       map[int]int{},
 		LinkedMonikers: linkedMonikers,
 		Contains:       datastructures.NewDefaultIDSetMap(),
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			3001: datastructures.IDSetWith(4001, 4004),
-			3002: datastructures.IDSetWith(4002, 4005),
-			3003: datastructures.IDSetWith(4002, 4003, 4005),
-			5001: datastructures.IDSetWith(4004),
-			5002: datastructures.IDSetWith(4005),
+		Monikers: newIDSetMap(map[int]*idSet{
+			3001: newIDSet(4001, 4004),
+			3002: newIDSet(4002, 4005),
+			3003: newIDSet(4002, 4003, 4005),
+			5001: newIDSet(4004),
+			5002: newIDSet(4005),
 		}),
 		Diagnostics: datastructures.NewDefaultIDSetMap(),
 	}

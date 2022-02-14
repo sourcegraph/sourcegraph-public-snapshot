@@ -2,9 +2,12 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 )
 
 type ExpectedOperand struct {
@@ -339,6 +342,22 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 		repos = append(repos, value)
 	})
 	return repos, negatedRepos
+}
+
+func (q Q) MaxResults(defaultLimit int) int {
+	if q == nil {
+		return 0
+	}
+
+	if count := q.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
 }
 
 func parseRegexpOrPanic(field, value string) *regexp.Regexp {

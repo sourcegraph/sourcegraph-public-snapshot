@@ -1,4 +1,4 @@
-package subrepoperms
+package job
 
 import (
 	"context"
