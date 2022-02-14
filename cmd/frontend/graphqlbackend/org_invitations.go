@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net/url"
 	"strconv"
 	"time"
@@ -27,9 +28,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var EMAIL_INVITES_FF = "org-email-invites"
-var SIGNING_KEY_MESSAGE = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
-var DEFAULT_EXPIRY_TIME = 48 * time.Hour
+var EmailInvitesFeatureFlag = "org-email-invites"
+var SigningKeyMessage = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+var DefaultExpiryDuration = 48 * time.Hour
 
 func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = db.Users().GetByUsername(ctx, username)
@@ -110,6 +111,18 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 	return false, nil
 }
 
+func newExpiryDuration() time.Duration {
+	expiryDuration := DefaultExpiryDuration
+	if orgInvitationConfigDefined() && conf.SiteConfig().OrganizationInvitations.ExpiryTime > 0 {
+		expiryDuration = time.Duration(conf.SiteConfig().OrganizationInvitations.ExpiryTime) * time.Hour
+	}
+	return expiryDuration
+}
+
+func newExpiryTime() time.Time {
+	return timeNow().Add(newExpiryDuration())
+}
+
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
@@ -170,7 +183,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 		return nil, err
 	}
 	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EMAIL_INVITES_FF)
+	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
 	// return error if feature flag is not enabled and we got an email as an argument
 	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
 		return nil, errors.New("inviting by email is not supported for this organization")
@@ -201,16 +214,12 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if args.Email != nil {
 		// we only support new URL schema for email invitations
 		if !hasConfig {
-			return nil, errors.New(SIGNING_KEY_MESSAGE)
+			return nil, errors.New(SigningKeyMessage)
 		}
 		recipientEmail = *args.Email
 	}
 
-	var expiryDuration = DEFAULT_EXPIRY_TIME
-	if hasConfig && conf.SiteConfig().OrganizationInvitations.ExpiryTime > 0 {
-		expiryDuration = time.Duration(conf.SiteConfig().OrganizationInvitations.ExpiryTime) * time.Hour
-	}
-	expiryTime := timeNow().Add(expiryDuration)
+	expiryTime := newExpiryTime()
 	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
 	if err != nil {
 		return nil, err
@@ -234,7 +243,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
 	if conf.CanSendEmail() && recipientEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL); err != nil {
+		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *invitation.ExpiresAt); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -330,18 +339,9 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		return nil, err
 	}
 
-	// Prevent reuse. This just prevents annoyance (abuse is prevented by the quota check in the
-	// call to sendOrgInvitationNotification).
-	if !orgInvitation.Pending() {
-		if orgInvitation.RevokedAt != nil {
-			return nil, errors.New("refusing to send notification for revoked invitation")
-		}
-		if orgInvitation.RespondedAt != nil {
-			return nil, errors.New("refusing to send notification for invitation that was already responded to")
-		}
-		if orgInvitation.Expired() {
-			return nil, errors.New("refusing to send notification for expired invitation")
-		}
+	// Do not allow to resend for expired invitation
+	if orgInvitation.Expired() {
+		return nil, errors.New("invitation is expired")
 	}
 
 	if !conf.CanSendEmail() {
@@ -356,13 +356,26 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	recipientEmail, recipientEmailVerified, err := r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
-	if err != nil {
+	var recipientEmail string
+	if orgInvitation.RecipientEmail != "" {
+		recipientEmail = orgInvitation.RecipientEmail
+	} else {
+		recipientEmailVerified := false
+		recipientEmail, recipientEmailVerified, err = r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
+		if err != nil {
+			return nil, err
+		}
+		if !recipientEmailVerified {
+			return nil, errors.New("refusing to send notification because recipient has no verified email address")
+		}
+	}
+
+	expiryTime := newExpiryTime()
+	orgInvitation.ExpiresAt = &expiryTime
+	if err := r.db.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
 		return nil, err
 	}
-	if !recipientEmailVerified {
-		return nil, errors.New("refusing to send notification because recipient has no verified email address")
-	}
+
 	var invitationURL string
 	if orgInvitationConfigDefined() {
 		invitationURL, err = orgInvitationURL(*orgInvitation, false)
@@ -372,7 +385,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL); err != nil {
+	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -430,7 +443,7 @@ func orgInvitationURL(invitation database.OrgInvitation, relative bool) (string,
 
 func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiryTime time.Time) (string, error) {
 	if !orgInvitationConfigDefined() {
-		return "", errors.New(SIGNING_KEY_MESSAGE)
+		return "", errors.New(SigningKeyMessage)
 	}
 	config := conf.SiteConfig().OrganizationInvitations
 
@@ -459,7 +472,7 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiry
 // sendOrgInvitationNotification sends an email to the recipient of an org invitation with a link to
 // respond to the invitation. Callers should check conf.CanSendEmail() if they want to return a nice
 // error if sending email is not enabled.
-func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string, invitationURL string) error {
+func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string, invitationURL string, expiryTime time.Time) error {
 	if envvar.SourcegraphDotComMode() {
 		// Basic abuse prevention for Sourcegraph.com.
 
@@ -495,11 +508,6 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	var expiry = DEFAULT_EXPIRY_TIME
-	if orgInvitationConfigDefined() && conf.SiteConfig().OrganizationInvitations.ExpiryTime > 0 {
-		expiry = time.Duration(conf.SiteConfig().OrganizationInvitations.ExpiryTime) * time.Hour
-	}
-
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
@@ -516,7 +524,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 			FromUserName:    sender.Username,
 			OrgName:         orgName,
 			InvitationUrl:   invitationURL,
-			ExpiryDays:      int(expiry.Hours() / 24), // golang does not have `duration.Days` :(
+			ExpiryDays:      int(math.Round(expiryTime.Sub(timeNow()).Hours() / 24)), // golang does not have `duration.Days` :(
 		},
 	})
 }
