@@ -1,8 +1,9 @@
 package query
 
 import (
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"net"
 	"os"
-	regexpsyntax "regexp/syntax"
 	"strconv"
 	"strings"
 	"time"
 
+	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"

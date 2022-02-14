@@ -3,11 +3,11 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"

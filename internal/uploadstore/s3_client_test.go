@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strconv"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

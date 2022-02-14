@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"regexp"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/grafana/regexp"
 )
 
 func TestRepoPattern(t *testing.T) {

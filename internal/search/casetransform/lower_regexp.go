@@ -1,9 +1,10 @@
 package casetransform
 
 import (
-	"regexp/syntax"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/grafana/regexp/syntax"
 )
 
 // LowerRegexpASCII lowers rune literals and expands char classes to include

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
+
+	"github.com/grafana/regexp"
 )
 
 // parseNames returns a map from package paths to the name declared by that package.

@@ -2,9 +2,9 @@ package reposource
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

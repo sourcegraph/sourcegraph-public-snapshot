@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"

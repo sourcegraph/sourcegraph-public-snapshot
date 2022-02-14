@@ -3,11 +3,11 @@ package enqueuer
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"

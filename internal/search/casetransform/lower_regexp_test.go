@@ -1,8 +1,9 @@
 package casetransform
 
 import (
-	"regexp/syntax"
 	"testing"
+
+	"github.com/grafana/regexp/syntax"
 )
 
 func TestLowerRegexpASCII(t *testing.T) {

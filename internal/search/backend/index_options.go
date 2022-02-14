@@ -3,11 +3,12 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"regexp"
 	"sort"
 
 	"github.com/google/zoekt"
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

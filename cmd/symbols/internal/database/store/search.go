@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
-	"regexp/syntax"
 	"strings"
 
+	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"

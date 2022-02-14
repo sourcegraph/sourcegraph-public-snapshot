@@ -2,7 +2,8 @@ package inference
 
 import (
 	"path/filepath"
-	"regexp"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )

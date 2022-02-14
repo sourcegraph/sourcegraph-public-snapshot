@@ -3,13 +3,13 @@ package repos
 import (
 	"context"
 	"fmt"
-	"regexp"
-	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/grafana/regexp"
+	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"

@@ -2,8 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"regexp"
 
+	"github.com/grafana/regexp"
 	"github.com/mattn/go-sqlite3"
 )
 

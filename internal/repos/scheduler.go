@@ -4,11 +4,11 @@ import (
 	"container/heap"
 	"context"
 	"math/rand"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

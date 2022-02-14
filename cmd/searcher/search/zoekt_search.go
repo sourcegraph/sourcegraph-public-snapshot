@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"context"
 	"io"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sync"
 	"sync/atomic"
 	"time"

@@ -2,11 +2,11 @@ package query
 
 import (
 	"encoding/json"
-	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 )
 

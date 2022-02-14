@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 // RenderTrackingIssue renders the work section of the given tracking issue.

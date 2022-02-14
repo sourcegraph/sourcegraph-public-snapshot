@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"regexp"
 	"sort"
 	"sync"
 
 	"github.com/gobwas/glob"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"

@@ -3,9 +3,9 @@ package gitserver
 import (
 	"context"
 	"os"
-	"regexp"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

@@ -6,12 +6,13 @@ import (
 	"context"
 	"os"
 	"reflect"
-	"regexp"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
+
+	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
