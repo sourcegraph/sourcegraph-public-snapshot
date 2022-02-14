@@ -22,12 +22,12 @@ import {
     ResolvedRevisionSpec,
     toPositionOrRangeQueryParameter,
     appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
     parseQueryAndHash,
     formatSearchParameters,
     addLineRangeQueryParameter,
     lprToRange,
     removeSubtreeQueryParameter,
+    appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 import {
     Tab,
@@ -50,6 +50,8 @@ import {
     CoolCodeIntelHighlightedBlobVariables,
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
+    HoverFields,
+    LocationConnectionFields,
     LocationFields,
     Maybe,
 } from '../graphql-operations'
@@ -261,20 +263,11 @@ export const SideReferences: React.FunctionComponent<SideReferencesProps> = prop
     )
 }
 
-interface LSIFLocationResult {
-    __typename?: 'LocationConnection'
-    nodes: ({ __typename?: 'Location' } & LocationFields)[]
-    pageInfo: { __typename?: 'PageInfo'; endCursor: Maybe<string> }
-}
-
 interface SideReferencesListsProps extends SideReferencesProps {
-    references: LSIFLocationResult
-    definitions: Omit<LSIFLocationResult, 'pageInfo'>
-    implementations: LSIFLocationResult
-    hover: Maybe<{
-        __typename?: 'Hover'
-        markdown: { __typename?: 'Markdown'; html: string; text: string }
-    }>
+    references: LocationConnectionFields
+    definitions: Omit<LocationConnectionFields, 'pageInfo'>
+    implementations: LocationConnectionFields
+    hover: Maybe<HoverFields>
 }
 
 export const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
@@ -371,7 +364,7 @@ export const SideBlob: React.FunctionComponent<SideBlobProps> = props => {
         return (
             <div>
                 <p className="text-danger">
-                    Loading <code>{props.activeLocation.resource.path}</code> failed:
+                    Loading <code>{props.clickedToken.filePath}</code> failed:
                 </p>
                 <pre>{error.message}</pre>
             </div>
@@ -617,7 +610,7 @@ const ReferenceGroup: React.FunctionComponent<{
                             <div>
                                 <Link to={reference.url} className={styles.referenceLink}>
                                     <span>
-                                        {reference.range?.start?.line}
+                                        {reference.range?.start?.line && reference.range?.start?.line + 1}
                                         {': '}
                                     </span>
                                     <code>{getLineContent(reference)}</code>
