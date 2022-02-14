@@ -4,7 +4,7 @@ Are you new to Sourcegraph Cloud? This is your place to start.
 
 [Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your personal code from GitHub.com or GitLab.com, and across more than 2 million open source repositories. Sourcegraph Cloud allows any individual to sign up, connect personal repositories, and search across personal code for free. 
 
-[Sourcegraph Cloud for Teams](https://about.sourcegraph.com/cloud-beta/) is in private beta today. [Join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku) to get access today!
+[Sourcegraph Cloud for Teams](https://about.sourcegraph.com/cloud-beta/) is in private beta today. [Join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams) to get access today!
 
 ## Getting Started
 Getting started with Sourcegraph Cloud takes less than one minute. Follow the below steps to get started
