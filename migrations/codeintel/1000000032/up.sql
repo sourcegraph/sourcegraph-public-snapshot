@@ -17,7 +17,9 @@ CREATE TABLE rockskip_blobs (
     id           SERIAL        PRIMARY KEY,
     repo         TEXT          NOT NULL REFERENCES rockskip_repos(repo),
     commit_id    VARCHAR(40)   NOT NULL,
-    path         TEXT          NOT NULL,
+    -- path is TEXT[] so that it can be added to the GIN index.
+    -- It always has exactly 1 element.
+    path         TEXT[]        NOT NULL,
     added        VARCHAR(40)[] NOT NULL,
     deleted      VARCHAR(40)[] NOT NULL,
     symbol_names TEXT[]        NOT NULL,
@@ -31,6 +33,6 @@ CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at)
 
 CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path);
 
-CREATE INDEX rockskip_blobs_added_deleted_symbol_names ON rockskip_blobs USING GIN (added, deleted, symbol_names);
+CREATE INDEX rockskip_blobs_added_deleted_path_symbol_names ON rockskip_blobs USING GIN (added, deleted, path, symbol_names);
 
 COMMIT;

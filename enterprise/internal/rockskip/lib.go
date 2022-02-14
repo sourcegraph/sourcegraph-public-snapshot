@@ -756,7 +756,7 @@ func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_blobs
-		WHERE path = $1 AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
+		WHERE $1 = ANY (path) AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
 	`, path, hop).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
@@ -788,7 +788,7 @@ func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id i
 		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, repo, blob.Commit, pg.Array([]string{blob.Path}), pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -926,12 +926,15 @@ func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, par
 }
 
 func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
-	fmt.Printf("args %+v\n", args)
-
 	requestStatus.Tasklog.Start("get hops")
 	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
 		return nil, err
+	}
+
+	limit := 100
+	if args.First > 0 {
+		limit = args.First
 	}
 
 	requestStatus.Tasklog.Start("run query")
@@ -942,14 +945,14 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 			repo = %s
 			AND     %s && added
 			AND NOT %s && deleted
-			AND %s;`,
+			AND %s
+		LIMIT %s;`,
 		string(args.Repo),
 		pg.Array(hops),
 		pg.Array(hops),
 		convertSearchArgsToSqlQuery(args),
+		limit,
 	)
-
-	fmt.Println("q", q.Query(sqlf.PostgresBindVar), q.Args())
 
 	var rows *sql.Rows
 	rows, err = conn.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -958,36 +961,49 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 	}
 	defer rows.Close()
 
+	symbolCount := 0
 	blobs := []Blob{}
 	for rows.Next() {
 		var id int
 		var commit string
-		var path string
+		var paths []string
 		var added, deleted []string
 		var allSymbols Symbols
-		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &allSymbols)
+		err = rows.Scan(&id, &commit, pg.Array(&paths), pg.Array(&added), pg.Array(&deleted), &allSymbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
+		if len(paths) != 1 {
+			return nil, fmt.Errorf("Search: expected 1 path, got %d", len(paths))
+		}
+		path := paths[0]
 
 		symbols := []Symbol{}
-		if args.Query == "" {
-			symbols = allSymbols
-		} else {
-			for _, symbol := range allSymbols {
-				// check if symbol.Name matches args.Query regex
+		for _, symbol := range allSymbols {
+			if symbolCount >= limit {
+				break
+			}
+			if args.Query == "" {
+				symbols = append(symbols, symbol)
+				symbolCount++
+			} else {
 				regex, err := regexp.Compile(args.Query)
 				if err != nil {
 					return nil, errors.Wrap(err, "Search compile regex")
 				}
 				if regex.MatchString(symbol.Name) {
 					symbols = append(symbols, symbol)
+					symbolCount++
 				}
 			}
 		}
 
 		if len(symbols) > 0 {
 			blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
+		}
+
+		if symbolCount >= limit {
+			break
 		}
 	}
 
@@ -1160,12 +1176,16 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 
 	for rows.Next() {
 		var id int
-		var path string
+		var paths []string
 		var added, deleted []string
-		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
+		err = rows.Scan(&id, pg.Array(&paths), pg.Array(&added), pg.Array(&deleted))
 		if err != nil {
 			return errors.Wrap(err, "PrintInternals: Scan")
 		}
+		if len(paths) != 1 {
+			return fmt.Errorf("Search: expected 1 path, got %d", len(paths))
+		}
+		path := paths[0]
 		fmt.Printf("  id %d path %-10s\n", id, path)
 		for _, a := range added {
 			fmt.Printf("    + %-40s\n", a)
