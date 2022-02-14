@@ -79,6 +79,24 @@ func (sm *DefaultIDSetMap) Len() int {
 	}
 }
 
+// UnorderedKeys returns a slice with a copy of all keys in an unspecified order.
+func (sm *DefaultIDSetMap) UnorderedKeys() []int {
+	switch sm.state() {
+	case mapStateEmpty:
+		return []int{}
+	case mapStateInline:
+		return []int{sm.inlineKey}
+	case mapStateHeap:
+		var out = make([]int, 0, sm.Len())
+		for k := range sm.m {
+			out = append(out, k)
+		}
+		return out
+	default:
+		panic(ILLEGAL_MAPSTATE)
+	}
+}
+
 // Get returns the identifier set at the given key or nil if it does not exist.
 func (sm *DefaultIDSetMap) Get(key int) *IDSet {
 	switch sm.state() {
