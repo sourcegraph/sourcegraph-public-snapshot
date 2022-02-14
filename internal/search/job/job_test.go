@@ -16,12 +16,10 @@ func TestToSearchInputs(t *testing.T) {
 		q, _ := parser(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
-				Query:        q,
 				UserSettings: &schema.Settings{},
 				PatternType:  query.SearchTypeLiteral,
 			},
 			OnSourcegraphDotCom: true,
-			PatternType:         query.SearchTypeLiteral,
 			Protocol:            protocol,
 		}
 

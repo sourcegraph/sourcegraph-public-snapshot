@@ -31,7 +31,6 @@ type Args struct {
 	SearchInputs        *run.SearchInputs
 	OnSourcegraphDotCom bool
 	Protocol            search.Protocol
-	PatternType         query.SearchType
 	Zoekt               zoekt.Streamer
 	SearcherURLs        *endpoint.Map
 }
@@ -57,11 +56,11 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	p := search.ToTextPatternInfo(b, jargs.Protocol, query.Identity)
 
 	forceResultTypes := result.TypeEmpty
-	if jargs.PatternType == query.SearchTypeStructural {
+	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
 		if p.Pattern == "" {
 			// Fallback to literal search for searching repos and files if
 			// the structural search pattern is empty.
-			jargs.PatternType = query.SearchTypeLiteral
+			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
 			p.IsStructuralPat = false
 			forceResultTypes = result.Types(0)
 		} else {
@@ -82,7 +81,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		SearcherURLs: jargs.SearcherURLs,
 	}
 	args = withResultTypes(args, forceResultTypes)
-	args = withMode(args, jargs.PatternType)
+	args = withMode(args, jargs.SearchInputs.PatternType)
 	repoOptions := toRepoOptions(args.Query, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
@@ -278,7 +277,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			})
 		}
 
-		if jargs.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
