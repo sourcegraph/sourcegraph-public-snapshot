@@ -203,13 +203,28 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader className={classNames('pl-1', styles.referencesSideBlobFilename)}>
+                        <CardHeader
+                            className={classNames(
+                                'pl-1 d-flex justify-content-between',
+                                styles.referencesSideBlobFilename
+                            )}
+                        >
                             <h4>
                                 {activeLocation.resource.path}{' '}
                                 <Link to={activeLocation.url}>
                                     <OpenInAppIcon className="icon-inline" />
                                 </Link>
                             </h4>
+
+                            <Button
+                                onClick={() => setActiveLocation(undefined)}
+                                className={classNames('btn-icon py-0', styles.dismissButton)}
+                                title="Close panel"
+                                data-tooltip="Close panel"
+                                data-placement="left"
+                            >
+                                <CloseIcon className="icon-inline" />
+                            </Button>
                         </CardHeader>
                         <SideBlob
                             {...props}
