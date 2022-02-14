@@ -109,6 +109,10 @@ func getCodeMonitorURL(externalURL *url.URL, monitorID int64, utmSource string) 
 	return sourcegraphURL(externalURL, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
 }
 
+func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string {
+	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
+}
+
 var (
 	externalURLOnce  sync.Once
 	externalURLValue *url.URL

@@ -37,7 +37,8 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		truncatedResults, truncatedCount := truncateResults(args.Results, 5)
 		for _, result := range truncatedResults {
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
-				"%s@%s",
+				"<%s|%s@%s>",
+				getCommitURL(args.ExternalURL, result.Commit.Repository.Name, result.Commit.Oid, args.UTMSource),
 				result.Commit.Repository.Name,
 				result.Commit.Oid[:8],
 			)))

@@ -228,7 +228,10 @@ SELECT
 	ctj.query_string,
 	cm.id AS monitorID,
 	ctj.search_results,
-	COALESCE(users.display_name, users.username)
+	COALESCE(
+		CASE WHEN LENGTH(users.display_name) > 0 THEN users.display_name ELSE NULL END,
+		users.username
+	)
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query

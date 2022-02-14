@@ -16,7 +16,6 @@ type actionArgs struct {
 	MonitorOwnerName   string
 
 	Query          string
-	QueryURL       string
 	Results        cmtypes.CommitSearchResults
 	IncludeResults bool
 }

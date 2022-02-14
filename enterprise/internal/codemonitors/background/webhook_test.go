@@ -31,7 +31,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -53,7 +53,7 @@ func TestWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", true, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
