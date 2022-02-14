@@ -184,42 +184,11 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 	indexingSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
 	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, cleanup rockskip.CleanupFunc, err error) {
-		// Lazily create the parser
-		var parser ctags.Parser
-		createParserOnce := sync.Once{}
-		defer func() {
-			if parser != nil {
-				parser.Close()
-			}
-		}()
-
-		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-			createParserOnce.Do(func() {
-				parser = mustCreateCtagsParser(config.Ctags)
-			})
-			entries, err := parser.Parse(path, bytes)
-			if err != nil {
-				return nil, err
-			}
-
-			symbols = []rockskip.Symbol{}
-			for _, entry := range entries {
-				symbols = append(symbols, rockskip.Symbol{
-					Name:   entry.Name,
-					Parent: entry.Parent,
-					Kind:   entry.Kind,
-					Line:   entry.Line,
-				})
-			}
-
-			return symbols, nil
-		}
-
 		git := NewGitserver(repositoryFetcher, string(args.Repo))
 
 		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
-		blobs, cleanupSearch, err := rockskip.Search(args, git, db, parse, config.MaxRepos, indexingSemaphore, requestStatus)
+		blobs, cleanupSearch, err := rockskip.Search(args, git, db, lazyParser(config.Ctags), config.MaxRepos, indexingSemaphore, requestStatus)
 		cleanup = func() error {
 			err = cleanupSearch()
 			requestStatus.End()
@@ -249,6 +218,40 @@ func convertBlobsToSymbols(blobs []rockskip.Blob) []result.Symbol {
 		}
 	}
 	return res
+}
+
+// lazyParser returns a parsing function which creates the parser when it's first called to parse a file.
+func lazyParser(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
+	var parser ctags.Parser
+	once := sync.Once{}
+	defer func() {
+		if parser != nil {
+			parser.Close()
+		}
+	}()
+
+	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
+		once.Do(func() {
+			parser = mustCreateCtagsParser(config)
+		})
+
+		entries, err := parser.Parse(path, bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		symbols = []rockskip.Symbol{}
+		for _, entry := range entries {
+			symbols = append(symbols, rockskip.Symbol{
+				Name:   entry.Name,
+				Parent: entry.Parent,
+				Kind:   entry.Kind,
+				Line:   entry.Line,
+			})
+		}
+
+		return symbols, nil
+	}
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
