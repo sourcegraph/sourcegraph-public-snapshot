@@ -324,20 +324,17 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 		tasklog.Start("InsertCommit")
 		err = InsertCommit(ctx, tx, repo, entry.Commit, tipHeight+1, hops[r])
-		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
 		}
 
 		tasklog.Start("AppendHop+")
 		err = AppendHop(ctx, tx, hops[0:r], AddedAD, entry.Commit)
-		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		tasklog.Start("AppendHop-")
 		err = AppendHop(ctx, tx, hops[0:r], DeletedAD, entry.Commit)
-		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -361,7 +358,6 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 				for _, hop := range hops {
 					tasklog.Start("GetBlob")
 					id, found, err = GetBlob(ctx, tx, hop, deletedPath)
-					tasklog.Continue("idle")
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
 					}
@@ -376,7 +372,6 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 			tasklog.Start("UpdateBlobHops")
 			err = UpdateBlobHops(ctx, tx, id, DeletedAD, entry.Commit)
-			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "UpdateBlobHops")
 			}
@@ -388,7 +383,6 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 			tasklog.Start("parse")
 			symbols, err := parse(addedPath, contents)
-			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "parse")
 			}
@@ -401,21 +395,18 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 			}
 			tasklog.Start("InsertBlob")
 			id, err := InsertBlob(ctx, tx, blob, repo)
-			tasklog.Continue("idle")
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
 			}
 			pathToBlobIdCache[addedPath] = id
 			return nil
 		})
-		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "while looping ArchiveEach")
 		}
 
 		tasklog.Start("DeleteRedundant")
 		err = DeleteRedundant(ctx, tx, entry.Commit)
-		tasklog.Continue("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
 		}
@@ -425,7 +416,6 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 		if err != nil {
 			return errors.Wrap(err, "commit transaction")
 		}
-		tasklog.Continue("idle")
 
 		tipCommit = entry.Commit
 		tipHeight += 1
