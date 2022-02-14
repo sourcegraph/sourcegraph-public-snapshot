@@ -66,12 +66,22 @@ func canonicalizeDocuments(state *State) {
 // non-canonical document.
 func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
 	for _, documentRanges := range definitionReferenceData {
-		for documentID, canonicalID := range canonicalIDs {
-			// Remove references to non-canonical document...
-			if rangeIDs := documentRanges.Pop(documentID); rangeIDs != nil {
-				// ...and move existing definition/reference data into the canonical document
-				documentRanges.UnionIDSet(canonicalID, rangeIDs)
+		// The length of documentRanges will always be less than or equal to
+		// the length of canonicalIDs, since canonicalIDs will have one entry
+		// for each document. So iterate over documentRanges instead of
+		// iterating over canonicalIDs.
+
+		// Copy out keys first instead of (incorrectly) iterating over documentRanges while modifying it
+		var documentIDs = documentRanges.UnorderedKeys()
+		for _, documentID := range documentIDs {
+			canonicalID, ok := canonicalIDs[documentID]
+			if !ok {
+				continue
 			}
+			// Remove def/ref data from non-canonical document...
+			rangeIDs := documentRanges.Pop(documentID)
+			// ...and merge it with the data for the canonical document.
+			documentRanges.UnionIDSet(canonicalID, rangeIDs)
 		}
 	}
 }
