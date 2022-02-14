@@ -15,4 +15,10 @@
     :last-child {
         margin-bottom: 0 !important;
     }
+
+    pre,
+    code {
+        background-color: var(--subtle-bg);
+        border-radius: var(--border-radius);
+    }
 }
