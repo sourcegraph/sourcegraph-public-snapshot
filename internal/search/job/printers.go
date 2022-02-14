@@ -2,6 +2,7 @@ package job
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -117,6 +118,8 @@ func SexpFormat(job Job, sep, indent string) string {
 			writeSexp(j.child)
 			b.WriteString(")")
 			depth--
+		default:
+			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", job))
 		}
 	}
 	writeSexp(job)
