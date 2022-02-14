@@ -219,7 +219,7 @@ For caching artefacts in steps to speed up steps, see [How to cache CI artefacts
 
 Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [HoneyComb.io](https://honeycomb.io).
 
-Individual commands are tracked from the perspective of a given step: 
+Individual commands are tracked from the perspective of a given [step](#step-options): 
 
 <div class="embed">
   <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6OTQ="
