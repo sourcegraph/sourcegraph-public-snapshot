@@ -3,6 +3,8 @@ package enqueuer
 import (
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -50,7 +52,6 @@ func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	if pkg.Scheme != dbstore.JVMPackagesScheme {
 		return "", "", false
 	}
-	// TODO: [Varun] Is this correct, or do we need extra steps like for NPM?
 	return api.RepoName(pkg.Name), "v" + pkg.Version, true
 }
 
@@ -58,7 +59,10 @@ func inferNPMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	if pkg.Scheme != dbstore.NPMPackagesScheme {
 		return "", "", false
 	}
-	// TODO: [Varun] What should we do about the error here?
-	npmPkg, _ := reposource.ParseNPMPackageFromPackageSyntax(pkg.Name)
+	npmPkg, err := reposource.ParseNPMPackageFromPackageSyntax(pkg.Name)
+	if err != nil {
+		log15.Error("invalid NPM package name in database", "error", err)
+		return "", "", false
+	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true
 }
