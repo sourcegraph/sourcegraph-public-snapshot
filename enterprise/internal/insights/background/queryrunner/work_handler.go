@@ -88,15 +88,10 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 			continue
 		}
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		if authz.SubRepoEnabled(checker) {
-			enabled, checkErr := checkSubRepoPermissionsForRepoId(ctx, checker, repoId, err)
-			if checkErr != nil {
-				err = errors.Append(err, checkErr)
-				continue
-			}
-			if enabled {
-				continue
-			}
+		var subRepoEnabled bool
+		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, repoId, err)
+		if subRepoEnabled {
+			continue
 		}
 		for _, group := range groupedByCapture {
 			capture := group.Value
@@ -165,15 +160,10 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
-		if authz.SubRepoEnabled(checker) {
-			enabled, checkErr := checkSubRepoPermissions(ctx, checker, decoded.RepoID(), err)
-			if checkErr != nil {
-				log15.Error(fmt.Sprintf("Error during sub-repo permissions check for repoID=%s", decoded.RepoID()))
-				continue
-			}
-			if enabled {
-				continue
-			}
+		var subRepoEnabled bool
+		subRepoEnabled, _ = checkSubRepoPermissions(ctx, checker, decoded.RepoID(), err)
+		if subRepoEnabled {
+			continue
 		}
 		repoNames[decoded.RepoID()] = decoded.RepoName()
 		matchesPerRepo[decoded.RepoID()] = matchesPerRepo[decoded.RepoID()] + decoded.MatchCount()
@@ -216,25 +206,42 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 }
 
 // checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions.
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, repoIdStr string, err error) (bool, error) {
-	repoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoIdStr))
-	if idErr != nil {
-		err = errors.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
-		return true, err
+// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
+// Note that repo ID is received untyped and being cast to api.RepoID
+// err is an upstream error to which any new occurring error is appended
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return false, err
 	}
-	return checkSubRepoPermissionsForRepoId(ctx, checker, repoID, err)
-}
 
-// checkSubRepoPermissionsForRepoId returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions.
-func checkSubRepoPermissionsForRepoId(ctx context.Context, checker authz.SubRepoPermissionChecker, repoId api.RepoID, err error) (bool, error) {
-	enabled, checkErr := authz.SubRepoEnabledForRepoId(ctx, checker, repoId)
+	// casting repoID
+	var repoID api.RepoID
+	switch untypedRepoID := untypedRepoID.(type) {
+	case api.RepoID:
+		repoID = untypedRepoID
+	case string:
+		var idErr error
+		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
+		if idErr != nil {
+			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
+			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
+			return true, err
+		}
+	default:
+		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
+			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
+		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
+			untypedRepoID, untypedRepoID))
+	}
+
+	// performing the check itself
+	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 	if checkErr != nil {
+		log15.Error("Error during sub-repo permissions check", "error", checkErr)
 		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
 		return true, err
 	}
-	return enabled, nil
+	return enabled, err
 }
 
 func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
@@ -271,8 +278,16 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 	defer func() { err = tx.Done(err) }()
 
+	checker := authz.DefaultSubRepoPermsChecker
 	for _, match := range streamRepoCounts {
-		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), nil)
+		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
+		var subRepoEnabled bool
+		repoID := api.RepoID(match.RepositoryID)
+		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, repoID, err)
+		if subRepoEnabled {
+			continue
+		}
+		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}

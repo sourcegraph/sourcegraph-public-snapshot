@@ -212,6 +212,13 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 		t.Fatal("Repo is private, therefore sub-repo perms are supported")
 	}
 
+	exists, err = s.RepoIdSupported(ctx, api.RepoID(5))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal("Repo is not perforce, therefore sub-repo perms are not supported")
+	}
 }
 
 func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
@@ -228,6 +235,7 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(3, 'perforce1', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/')`,
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id, private) VALUES(4, 'perforce2', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/2', 'true')`,
+		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id, private) VALUES(5, 'github.com/foo/qux', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOC==', 'github', 'https://github.com/', 'true')`,
 
 		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(1, 1, 'cloneURL')`,
 		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(2, 1, 'cloneURL')`,

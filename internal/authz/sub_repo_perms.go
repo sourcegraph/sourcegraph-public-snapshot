@@ -323,13 +323,13 @@ func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
 	return checker != nil && checker.Enabled()
 }
 
-// SubRepoEnabledForRepoId takes a SubRepoPermissionChecker and repoID and returns true if sub-repo
+// SubRepoEnabledForRepoID takes a SubRepoPermissionChecker and repoID and returns true if sub-repo
 // permissions are enabled for a repo with given repoID
-func SubRepoEnabledForRepoId(ctx context.Context, checker SubRepoPermissionChecker, repoId api.RepoID) (bool, error) {
+func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionChecker, repoID api.RepoID) (bool, error) {
 	if !SubRepoEnabled(checker) {
 		return false, nil
 	}
-	return checker.EnabledForRepoId(ctx, repoId)
+	return checker.EnabledForRepoId(ctx, repoID)
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.
