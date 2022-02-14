@@ -41,6 +41,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     githubAppCloudSlug: string
 
+    githubAppCloudClientID: string
+
     /**
      * siteID is the identifier of the Sourcegraph site.
      */
