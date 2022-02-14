@@ -174,11 +174,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
-		app := c.Branch[27:]
+		patchImage := c.Branch[27:]
+		if !contains(images.SourcegraphDockerImages, patchImage) {
+			panic(fmt.Sprintf("no image %q found", patchImage))
+		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 			wait,
-			publishFinalDockerImage(c, app))
+			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {

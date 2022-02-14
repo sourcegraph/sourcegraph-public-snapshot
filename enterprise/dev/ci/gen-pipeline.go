@@ -163,19 +163,29 @@ func renderPipelineDocs(w io.Writer) {
 					strings.TrimRight(m.Branch, "/"))
 			}
 
-			// Generate a sample pipeline with all changes
-			pipeline, err := ci.GeneratePipeline(ci.Config{
-				RunType: runtype.PullRequest,
-				Diff:    changed.All,
-				Branch:  m.Branch,
-			})
-			if err != nil {
-				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
-			}
-			fmt.Fprint(w, "\nDefault pipeline:\n\n")
-			for _, raw := range pipeline.Steps {
-				printStepSummary(w, "", raw)
-			}
+			// Generate a sample pipeline with all changes. If it panics just don't bother
+			// generating a sample for now - it's usually because a special branch name
+			// parameter is needed.
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						fmt.Fprintf(w, "\n<!--\n%+v\n-->\n", err)
+					}
+				}()
+
+				pipeline, err := ci.GeneratePipeline(ci.Config{
+					RunType: rt,
+					Diff:    changed.All,
+					Branch:  m.Branch,
+				})
+				if err != nil {
+					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+				}
+				fmt.Fprint(w, "\nDefault pipeline:\n\n")
+				for _, raw := range pipeline.Steps {
+					printStepSummary(w, "", raw)
+				}
+			}()
 		}
 	}
 }
@@ -183,7 +193,7 @@ func renderPipelineDocs(w io.Writer) {
 func printStepSummary(w io.Writer, indent string, rawStep interface{}) {
 	switch v := rawStep.(type) {
 	case *buildkite.Step:
-		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
+		fmt.Fprintf(w, "%s- %s\n", indent, trimEmoji(v.Label))
 	case *buildkite.Pipeline:
 		var steps []string
 		for _, step := range v.Steps {
