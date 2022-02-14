@@ -33,19 +33,7 @@ type SearchInputs struct {
 
 // MaxResults computes the limit for the query.
 func (inputs SearchInputs) MaxResults() int {
-	if inputs.Query == nil {
-		return 0
-	}
-
-	if count := inputs.Query.Count(); count != nil {
-		return *count
-	}
-
-	if inputs.DefaultLimit != 0 {
-		return inputs.DefaultLimit
-	}
-
-	return search.DefaultMaxSearchResults
+	return inputs.Query.MaxResults(inputs.DefaultLimit)
 }
 
 // Job is an interface shared by all individual search operations in the
