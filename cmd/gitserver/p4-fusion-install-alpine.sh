@@ -77,3 +77,8 @@ cd ..
 # Move exe file to /usr/local/bin where other executables are located
 echo "--- p4-fusion install"
 mv p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin
+
+# Test that p4-fusion runs and is on the path
+echo "--- p4-fusion test"
+ldd "$(which p4-fusion)"
+p4-fusion > /dev/null
