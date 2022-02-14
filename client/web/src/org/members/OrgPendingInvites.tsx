@@ -32,6 +32,7 @@ const ORG_PENDING_INVITES_QUERY = gql`
             id
             username
             displayName
+            avatarURL
         }
         revokedAt
         sender {

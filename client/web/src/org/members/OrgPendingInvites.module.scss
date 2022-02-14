@@ -28,12 +28,6 @@
             list-style: none;
             padding: 0.8rem 1.5rem;
             border-top: 1px solid var(--border-color);
-
-            div {
-                &:first-child {
-                    gap: 1rem;
-                }
-            }
         }
     }
 }
@@ -55,8 +49,8 @@
 }
 
 .avatar-container {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.8rem;
+    height: 1.8rem;
     display: flex;
     justify-content: flex-start;
     gap: 1rem;
