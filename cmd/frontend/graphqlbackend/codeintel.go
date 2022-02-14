@@ -182,12 +182,14 @@ type LSIFRangesArgs struct {
 type LSIFQueryPositionArgs struct {
 	Line      int32
 	Character int32
+	Filter    *string
 }
 
 type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
 	graphqlutil.ConnectionArgs
-	After *string
+	After  *string
+	Filter *string
 }
 
 type LSIFQueryDocumentationArgs struct {

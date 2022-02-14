@@ -27,7 +27,7 @@ exports[`GlobalNavbar default 1`] = `
     >
       <button
         aria-label="Sections Navigation"
-        class="menuButton"
+        class="btn menuButton"
         type="button"
       >
         <svg
@@ -62,7 +62,7 @@ exports[`GlobalNavbar default 1`] = `
           <button
             aria-controls="menu--1"
             aria-haspopup="true"
-            class="link d-flex align-items-center p-0"
+            class="btn link d-flex align-items-center p-0"
             data-reach-menu-button=""
             id="menu-button--menu"
             type="button"
@@ -185,7 +185,7 @@ exports[`GlobalNavbar default 1`] = `
         class="action"
       >
         <a
-          class="link"
+          class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
           About 
@@ -201,13 +201,13 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="mr-1"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="signUp"
+            class="anchorLink btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
@@ -268,7 +268,7 @@ exports[`GlobalNavbar low-profile 1`] = `
     >
       <button
         aria-label="Sections Navigation"
-        class="menuButton"
+        class="btn menuButton"
         type="button"
       >
         <svg
@@ -303,7 +303,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           <button
             aria-controls="menu--4"
             aria-haspopup="true"
-            class="link d-flex align-items-center p-0"
+            class="btn link d-flex align-items-center p-0"
             data-reach-menu-button=""
             id="menu-button--menu--4"
             type="button"
@@ -426,7 +426,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="action"
       >
         <a
-          class="link"
+          class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
           About 
@@ -442,13 +442,13 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="mr-1"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="signUp"
+            class="anchorLink btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >

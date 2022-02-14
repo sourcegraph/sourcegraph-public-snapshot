@@ -4,19 +4,20 @@ import { gql, useMutation } from '@sourcegraph/http-client'
 import { FeedbackPromptSubmitEventHandler } from '@sourcegraph/wildcard'
 
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../graphql-operations'
-import { LayoutRouteProps } from '../routes'
 
-import { useRoutesMatch } from './useRoutesMatch'
-
-interface HandleSubmitFeedbackState {
+interface UseHandleSubmitFeedbackState {
     handleSubmitFeedback: FeedbackPromptSubmitEventHandler
 }
 
-export const useHandleSubmitFeedback = (
-    routes?: readonly LayoutRouteProps<{}>[] | any[],
-    textPrefix = ''
-): HandleSubmitFeedbackState => {
-    const match = useRoutesMatch(routes)
+interface UseHandleSubmitFeedbackParameters {
+    routeMatch?: string
+    textPrefix?: string
+}
+
+export const useHandleSubmitFeedback = ({
+    routeMatch,
+    textPrefix = '',
+}: UseHandleSubmitFeedbackParameters): UseHandleSubmitFeedbackState => {
     const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
         mutation SubmitHappinessFeedback($input: HappinessFeedbackSubmissionInput!) {
             submitHappinessFeedback(input: $input) {
@@ -33,7 +34,7 @@ export const useHandleSubmitFeedback = (
         async (text: string, rating: number) => {
             const { data, errors } = await submitFeedback({
                 variables: {
-                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: match },
+                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: routeMatch },
                 },
             })
 
@@ -42,7 +43,7 @@ export const useHandleSubmitFeedback = (
                 isHappinessFeedback: !!data?.submitHappinessFeedback,
             }
         },
-        [match, submitFeedback, textPrefix]
+        [routeMatch, submitFeedback, textPrefix]
     )
 
     return {

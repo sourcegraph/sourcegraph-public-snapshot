@@ -29,7 +29,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { useHandleSubmitFeedback } from '../../hooks'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -75,6 +75,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
+    const routeMatch = useRoutesMatch(routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
+
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -82,7 +87,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
-    const { handleSubmitFeedback } = useHandleSubmitFeedback(routes)
 
     const pagePathID = props.pathID || '/'
     const page =

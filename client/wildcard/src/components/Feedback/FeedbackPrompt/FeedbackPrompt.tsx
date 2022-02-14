@@ -36,10 +36,12 @@ export const HAPPINESS_FEEDBACK_OPTIONS = [
     },
 ]
 
-export type FeedbackPromptSubmitEventHandler = (
-    text: string,
-    rating: number
-) => Promise<{ isHappinessFeedback?: boolean; errorMessage?: string }>
+interface FeedbackPromptSubmitResponse {
+    isHappinessFeedback?: boolean
+    errorMessage?: string
+}
+
+export type FeedbackPromptSubmitEventHandler = (text: string, rating: number) => Promise<FeedbackPromptSubmitResponse>
 
 interface FeedbackPromptContentProps {
     onClose?: () => void
@@ -58,13 +60,13 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const textAreaReference = useRef<HTMLInputElement>(null)
-    const [loading, setLoading] = useState(false)
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
     const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
         setText,
     ])
-    const [error, setError] = useState<string>()
-    const [happinessFeedback, setHappinessFeedback] = useState<boolean>()
+
+    const [submitting, setSubmitting] = useState(false)
+    const [submitResponse, setSubmitResponse] = useState<FeedbackPromptSubmitResponse>()
 
     const handleSubmit = useCallback<React.FormEventHandler>(
         async event => {
@@ -73,22 +75,28 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
             if (!rating) {
                 return
             }
-            setLoading(true)
+
+            setSubmitting(true)
+
             const { isHappinessFeedback, errorMessage } = await onSubmit(text, rating)
-            setError(errorMessage)
-            setHappinessFeedback(isHappinessFeedback)
-            setLoading(false)
+
+            setSubmitResponse({
+                isHappinessFeedback,
+                errorMessage,
+            })
+
+            setSubmitting(false)
         },
         [rating, onSubmit, text]
     )
 
     useEffect(() => {
-        if (happinessFeedback) {
+        if (submitResponse?.isHappinessFeedback) {
             // Reset local storage when successfully submitted
             localStorage.removeItem(LOCAL_STORAGE_KEY_TEXT)
             localStorage.removeItem(LOCAL_STORAGE_KEY_RATING)
         }
-    }, [happinessFeedback])
+    }, [submitResponse])
 
     useAutoFocus({ autoFocus: true, reference: textAreaReference })
 
@@ -97,7 +105,7 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
             <Button className={styles.close} onClick={onClose}>
                 <CloseIcon className={styles.icon} />
             </Button>
-            {happinessFeedback ? (
+            {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
                     <TickIcon className={styles.successTick} />
                     <h3>We‘ve received your feedback!</h3>
@@ -135,20 +143,25 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                         icons={HAPPINESS_FEEDBACK_OPTIONS}
                         selected={rating}
                         onChange={handleRateChange}
-                        disabled={loading}
+                        disabled={submitting}
                     />
-                    {error && (
-                        <ErrorAlert error={error} icon={false} className="mt-3" prefix="Error submitting feedback" />
+                    {submitResponse?.errorMessage && (
+                        <ErrorAlert
+                            error={submitResponse?.errorMessage}
+                            icon={false}
+                            className="mt-3"
+                            prefix="Error submitting feedback"
+                        />
                     )}
                     <Button
-                        disabled={!rating || !text || loading}
+                        disabled={!rating || !text || submitting}
                         role="menuitem"
                         type="submit"
+                        display="block"
                         variant="secondary"
                         className={styles.button}
-                        display="block"
                     >
-                        {loading ? <LoadingSpinner /> : 'Send'}
+                        {submitting ? <LoadingSpinner /> : 'Send'}
                     </Button>
                 </Form>
             )}
@@ -160,9 +173,12 @@ interface FeedbackPromptTriggerProps {
     isOpen?: boolean
     onClick?: React.MouseEventHandler<HTMLElement>
 }
+
 interface FeedbackPromptProps extends FeedbackPromptContentProps {
     /**
-     * Determins if Prompt is opened by default, defaults to false
+     * Determines if the prompt is opened by default
+     *
+     * @default false
      */
     openByDefault?: boolean
     position?: Position
@@ -178,7 +194,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     onClose,
     position = Position.bottomEnd,
     modal = false,
-    modalLabelId,
+    modalLabelId = 'sourcegraph-feedback-modal',
 }) => {
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const ChildrenComponent = typeof children === 'function' && children
@@ -197,18 +213,17 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
         children
     )
 
+    const contentElement = (
+        <FeedbackPromptContent onSubmit={onSubmit} productResearchEnabled={true} onClose={handleClosePrompt} />
+    )
+
     if (modal) {
         return (
             <>
                 {triggerElement}
-
                 {isOpen && (
-                    <Modal onDismiss={handleClosePrompt} aria-labelledby={modalLabelId ?? 'sourcegraph-feedback-modal'}>
-                        <FeedbackPromptContent
-                            onSubmit={onSubmit}
-                            productResearchEnabled={true}
-                            onClose={handleClosePrompt}
-                        />
+                    <Modal onDismiss={handleClosePrompt} aria-labelledby={modalLabelId}>
+                        {contentElement}
                     </Modal>
                 )}
             </>
@@ -219,7 +234,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
         <Popover isOpen={isOpen} onOpenChange={handleTriggerClick}>
             {triggerElement}
             <PopoverContent position={position} className={styles.menu}>
-                <FeedbackPromptContent onSubmit={onSubmit} productResearchEnabled={true} onClose={handleClosePrompt} />
+                {contentElement}
             </PopoverContent>
         </Popover>
     )

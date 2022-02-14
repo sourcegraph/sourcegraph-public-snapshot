@@ -1,8 +1,8 @@
-import { render } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
@@ -61,7 +61,7 @@ describe('GlobalNavbar', () => {
     })
 
     test('default', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <MemoryRouter>
                     <GlobalNavbar {...PROPS} />
@@ -72,7 +72,7 @@ describe('GlobalNavbar', () => {
     })
 
     test('low-profile', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <MemoryRouter>
                     <GlobalNavbar {...PROPS} variant="low-profile" />

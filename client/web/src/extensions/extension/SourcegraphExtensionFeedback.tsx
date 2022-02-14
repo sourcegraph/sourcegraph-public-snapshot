@@ -12,8 +12,9 @@ export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphEx
     extensionID,
 }) => {
     const textPrefix = `Sourcegraph extension ${extensionID}: `
-    const { handleSubmitFeedback } = useHandleSubmitFeedback(undefined, textPrefix)
     const labelId = 'sourcegraph-extension-feedback-modal'
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({ textPrefix })
 
     return (
         <FeedbackPrompt modal={true} modalLabelId={labelId} onSubmit={handleSubmitFeedback}>

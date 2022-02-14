@@ -8,20 +8,9 @@ import { PopoverTrigger } from '../../Popover'
 
 import { FeedbackPrompt } from '.'
 
-interface SubmitHappinessFeedbackVariables {
-    input: {
-        score: number
-        feedback: string
-        currentPath: string
-    }
-}
-
-const mockData: SubmitHappinessFeedbackVariables = {
-    input: {
-        score: 4,
-        feedback: 'Lorem ipsum dolor sit amet',
-        currentPath: '/some-route',
-    },
+const sampleFeedback = {
+    score: 4,
+    feedback: 'Lorem ipsum dolor sit amet',
 }
 
 describe('FeedbackPrompt', () => {
@@ -45,7 +34,7 @@ describe('FeedbackPrompt', () => {
     const submitFeedback = () => {
         userEvent.click(screen.getByLabelText('Very Happy'))
         fireEvent.change(screen.getByPlaceholderText('What’s going well? What could be better?'), {
-            target: { value: mockData.input.feedback },
+            target: { value: sampleFeedback.feedback },
         })
 
         expect(screen.getByText('Send')).toBeEnabled()
@@ -62,7 +51,7 @@ describe('FeedbackPrompt', () => {
 
         expect(screen.getByText('Send')).toBeDisabled()
 
-        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), mockData.input.feedback)
+        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), sampleFeedback.feedback)
 
         expect(screen.getByText('Send')).toBeEnabled()
     })
@@ -73,7 +62,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, mockData.input.feedback, mockData.input.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
 
         expect(document.body).toMatchSnapshot()
     })
@@ -84,7 +73,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/something went really wrong/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, mockData.input.feedback, mockData.input.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
 
         expect(document.body).toMatchSnapshot()
     })

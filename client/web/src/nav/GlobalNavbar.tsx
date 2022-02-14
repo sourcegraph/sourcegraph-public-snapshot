@@ -42,7 +42,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useHandleSubmitFeedback } from '../hooks/useHandleSubmitFeedback'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
@@ -144,7 +144,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
         )
     )
-    const { handleSubmitFeedback } = useHandleSubmitFeedback(props.routes)
+
+    const routeMatch = useRoutesMatch(props.routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)

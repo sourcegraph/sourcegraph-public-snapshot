@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'
 
@@ -7,8 +7,10 @@ import { useHandleSubmitFeedback } from '../../../../../../hooks'
 import styles from './CodeInsightsLearnMore.module.scss'
 
 export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => {
-    const [isVisible, setVisibility] = useState(false)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback(['/insights/dashboards'], 'Code Insights: ')
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch: '/insights/dashboards',
+        textPrefix: 'Code Insights: ',
+    })
 
     return (
         <footer {...props}>
@@ -46,11 +48,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                         Have a question or idea about code monitoring? We want to hear your feedback!
                     </p>
 
-                    <FeedbackPrompt
-                        onSubmit={handleSubmitFeedback}
-                        openByDefault={isVisible}
-                        onClose={() => setVisibility(false)}
-                    >
+                    <FeedbackPrompt onSubmit={handleSubmitFeedback}>
                         <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
                             Share your thoughts
                         </PopoverTrigger>

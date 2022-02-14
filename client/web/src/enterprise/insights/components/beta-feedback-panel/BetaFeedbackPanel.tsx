@@ -1,12 +1,14 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { ProductStatusBadge, FeedbackPrompt, PopoverTrigger, Button, Link, Position } from '@sourcegraph/wildcard'
+import { Button, ProductStatusBadge, PopoverTrigger, Link, FeedbackPrompt, Position } from '@sourcegraph/wildcard'
 
 import { useHandleSubmitFeedback } from '../../../../hooks'
 
 export const BetaFeedbackPanel: React.FunctionComponent = () => {
-    const [isVisible, setVisibility] = useState(false)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback(['/insights/dashboards'], 'Code Insights: ')
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch: '/insights/dashboards',
+        textPrefix: 'Code Insights: ',
+    })
 
     return (
         <div className="d-flex align-items-center">
@@ -14,12 +16,7 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
                 <ProductStatusBadge status="beta" className="text-uppercase" />
             </Link>
 
-            <FeedbackPrompt
-                position={Position.bottomStart}
-                openByDefault={isVisible}
-                onSubmit={handleSubmitFeedback}
-                onClose={() => setVisibility(false)}
-            >
+            <FeedbackPrompt position={Position.bottomStart} onSubmit={handleSubmitFeedback}>
                 <PopoverTrigger as={Button} variant="link" size="sm">
                     Share feedback
                 </PopoverTrigger>
