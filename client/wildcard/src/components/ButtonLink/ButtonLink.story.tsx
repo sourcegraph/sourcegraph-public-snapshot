@@ -20,10 +20,10 @@ const Config: Meta = {
     ],
 
     parameters: {
-        chromatic: { disableSnapshot: false },
         component: ButtonLink,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
     },
 }

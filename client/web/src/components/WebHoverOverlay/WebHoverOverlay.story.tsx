@@ -33,6 +33,10 @@ const { add } = storiesOf('web/WebHoverOverlay', module)
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
         },
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
     })
 
 add('Loading', () => (

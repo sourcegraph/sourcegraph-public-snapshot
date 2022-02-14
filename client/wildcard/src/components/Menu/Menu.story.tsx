@@ -18,10 +18,10 @@ const config: Meta = {
     ],
 
     parameters: {
-        chromatic: { disableSnapshot: false },
         component: Menu,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
     },
 }

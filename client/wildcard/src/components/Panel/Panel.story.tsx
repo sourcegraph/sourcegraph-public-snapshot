@@ -20,14 +20,15 @@ const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => 
 
 const config: Meta = {
     title: 'wildcard/Panel',
+    component: Panel,
 
     decorators: [decorator],
 
     parameters: {
-        chromatic: { disableSnapshot: false },
         component: Panel,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: {
             type: 'figma',

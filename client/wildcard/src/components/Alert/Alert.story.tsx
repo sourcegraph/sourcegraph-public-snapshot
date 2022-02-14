@@ -27,10 +27,10 @@ const config: Meta = {
         ),
     ],
     parameters: {
-        chromatic: { disableSnapshot: false },
         component: Alert,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: [
             {
