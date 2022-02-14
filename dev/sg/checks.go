@@ -14,12 +14,10 @@ import (
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // NOTE: These checkFuncs are also used by `sg setup`, so make sure that when
@@ -71,7 +69,7 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
+	// stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
 
 	ctx, err := usershell.Context(ctx)
 	if err != nil {
@@ -81,16 +79,20 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 	var failed []string
 
 	for name, check := range checks {
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
+		// p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
+		fmt.Printf("Running check %q...\n", name)
 
 		if err := check(ctx); err != nil {
-			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
+			// p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
+			fmt.Printf("Check %q failed with the following errors:\n", name)
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", err))
+			// stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", err))
+			fmt.Printf("%s\n", err)
 
 			failed = append(failed, name)
 		} else {
-			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", name))
+			// p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", name))
+			fmt.Printf("Check %q success!\n", name)
 		}
 	}
 
@@ -98,15 +100,16 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
+	// stdout.Out.Write("")
+	// stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
 	for _, name := range failed {
-		stdout.Out.Writef("- %s", name)
+		// stdout.Out.Writef("- %s", name)
+		fmt.Printf("- %s\n", name)
 	}
 
-	stdout.Out.Write("")
-	writeFingerPointingLinef("Run 'sg setup' to make sure your system is setup correctly")
-	stdout.Out.Write("")
+	// stdout.Out.Write("")
+	// writeFingerPointingLinef("Run 'sg setup' to make sure your system is setup correctly")
+	// stdout.Out.Write("")
 
 	return errors.Newf("%d failed checks", len(failed))
 }
