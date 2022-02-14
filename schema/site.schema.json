@@ -1113,6 +1113,14 @@
             "privateKey": {
               "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
               "type": "string"
+            },
+            "clientID": {
+              "type": "string",
+              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+            },
+            "clientSecret": {
+              "type": "string",
+              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
             }
           }
         }
@@ -1533,6 +1541,11 @@
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
+        },
+        "hidden": {
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
           "default": false,
           "type": "boolean"
         }

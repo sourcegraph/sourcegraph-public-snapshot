@@ -71,6 +71,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'
@@ -81,19 +82,23 @@ import { LineDecorator } from './LineDecorator'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-interface BlobProps
+export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        GlobalCoolCodeIntelProps {
     location: H.Location
     history: H.History
     className: string
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
+
+    // Experimental reference panel
+    disableStatusBar: boolean
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -634,15 +639,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         })
                         .toArray()}
             </div>
-            <StatusBar
-                getStatusBarItems={getStatusBarItems}
-                extensionsController={extensionsController}
-                uri={toURIWithPath(blobInfo)}
-                location={location}
-                className={styles.blobStatusBarBody}
-                statusBarRef={nextStatusBarElement}
-                hideWhileInitializing={true}
-            />
+            {!props.disableStatusBar && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    extensionsController={extensionsController}
+                    uri={toURIWithPath(blobInfo)}
+                    location={location}
+                    className={styles.blobStatusBarBody}
+                    statusBarRef={nextStatusBarElement}
+                    hideWhileInitializing={true}
+                />
+            )}
         </>
     )
 }
