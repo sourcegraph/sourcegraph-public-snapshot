@@ -319,11 +319,11 @@ func TestOrgInvitations(t *testing.T) {
 	})
 
 	t.Run("UpdateExpiryTime", func(t *testing.T) {
-		org3, err := db.Orgs().Create(ctx, "o3", nil)
+		org4, err := db.Orgs().Create(ctx, "o4", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		toUpdateInvite, err := OrgInvitations(db).Create(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		toUpdateInvite, err := OrgInvitations(db).Create(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
 		if err != nil {
 			t.Fatal(err)
 		}
