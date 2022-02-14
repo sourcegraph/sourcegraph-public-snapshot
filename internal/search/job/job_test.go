@@ -12,7 +12,7 @@ import (
 )
 
 func TestToSearchInputs(t *testing.T) {
-	test := func(input string, parser func(string) (query.Q, error)) string {
+	test := func(input string, protocol search.Protocol, parser func(string) (query.Q, error)) string {
 		q, _ := parser(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
@@ -22,7 +22,7 @@ func TestToSearchInputs(t *testing.T) {
 			},
 			OnSourcegraphDotCom: true,
 			PatternType:         query.SearchTypeLiteral,
-			Protocol:            search.Batch,
+			Protocol:            protocol,
 		}
 
 		j, _ := ToSearchJob(args, q)
@@ -35,35 +35,35 @@ func TestToSearchInputs(t *testing.T) {
   RepoSubsetText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test(`foo context:@userA`, query.ParseLiteral))
+`).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search context", `
 (PARALLEL
   RepoUniverseText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test(`foo context:global`, query.ParseLiteral))
+`).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search", `
 (PARALLEL
   RepoUniverseText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test(`foo`, query.ParseLiteral))
+`).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo", `
 (PARALLEL
   RepoSubsetText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
+`).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
 (PARALLEL
   RepoSubsetText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
+`).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
 	autogold.Want("supported Repo job", `
@@ -71,47 +71,64 @@ func TestToSearchInputs(t *testing.T) {
   RepoUniverseText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test("ok ok", query.ParseRegexp))
+`).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("supportedRepo job literal", `
 (PARALLEL
   RepoUniverseText
   Repo
   ComputeExcludedRepos)
-`).Equal(t, test("ok @thing", query.ParseLiteral))
+`).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
 	autogold.Want("unsupported Repo job prefix", `
 (PARALLEL
   RepoUniverseText
   ComputeExcludedRepos)
-`).Equal(t, test("@nope", query.ParseRegexp))
+`).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("unsupported Repo job regexp", `
 (PARALLEL
   RepoUniverseText
   ComputeExcludedRepos)
-`).Equal(t, test("foo @bar", query.ParseRegexp))
+`).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
 	autogold.Want("symbol", `
 (PARALLEL
   RepoUniverseSymbol
   ComputeExcludedRepos)
-`).Equal(t, test("type:symbol test", query.ParseRegexp))
+`).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("commit", `
 (PARALLEL
   Commit
   ComputeExcludedRepos)
-`).Equal(t, test("type:commit test", query.ParseRegexp))
+`).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("diff", `
 (PARALLEL
   Diff
   ComputeExcludedRepos)
-`).Equal(t, test("type:diff test", query.ParseRegexp))
+`).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("file or commit", `
+	autogold.Want("Streaming: file or commit", `
+(PARALLEL
+  RepoUniverseText
+  Commit
+  ComputeExcludedRepos)
+`).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
+
+	autogold.Want("Streaming: many types", `
+(PARALLEL
+  RepoSubsetText
+  RepoSubsetSymbol
+  Commit
+  Repo
+  ComputeExcludedRepos)
+`).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
+
+	// Priority jobs for Batched search.
+	autogold.Want("Batched: file or commit", `
 (PRIORITY
   (REQUIRED
     (PARALLEL
@@ -119,9 +136,9 @@ func TestToSearchInputs(t *testing.T) {
       ComputeExcludedRepos))
   (OPTIONAL
     Commit))
-`).Equal(t, test("type:file type:commit test", query.ParseRegexp))
+`).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
-	autogold.Want("many types", `
+	autogold.Want("Batched: many types", `
 (PRIORITY
   (REQUIRED
     (PARALLEL
@@ -132,5 +149,5 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       RepoSubsetSymbol
       Commit)))
-`).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", query.ParseRegexp))
+`).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
