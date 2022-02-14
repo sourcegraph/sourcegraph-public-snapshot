@@ -128,6 +128,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                 telemetryService={props.telemetryService}
+                authenticatedUser={props.authenticatedUser}
             />
         ),
         exact: true,
