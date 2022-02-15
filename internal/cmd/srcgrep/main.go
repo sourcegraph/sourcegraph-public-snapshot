@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"regexp/syntax"
 	"strings"
 
+	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/sync/errgroup"

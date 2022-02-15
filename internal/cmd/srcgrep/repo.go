@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/cmd/srcgrep/internal/fastwalk"
 )
 
