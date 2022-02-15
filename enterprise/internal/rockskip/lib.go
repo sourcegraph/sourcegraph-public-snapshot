@@ -416,14 +416,27 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo, givenCommit string) (err error) {
+	tasklog := requestStatus.Tasklog
+
 	// Acquire the indexing lock on the repo.
-	releaseLock, err := iLock(ctx, conn, requestStatus, repo)
+	locked, releaseLock, err := tryILock(ctx, conn, requestStatus, repo)
 	if err != nil {
 		return err
 	}
+	if !locked {
+		return errors.New("indexing already in progress")
+	}
 	defer func() { err = combineErrors(err, releaseLock()) }()
 
-	tasklog := requestStatus.Tasklog
+	tasklog.Start("Acquire indexing semaphore")
+	if !s.indexingSemaphore.TryAcquire(1) {
+		return errors.Newf("too many indexing operations in progress")
+	}
+	requestStatus.HoldLock("indexing semaphore")
+	defer func() {
+		s.indexingSemaphore.Release(1)
+		requestStatus.ReleaseLock("indexing semaphore")
+	}()
 
 	tipCommit := NULL
 	tipHeight := 0
@@ -454,16 +467,6 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 	if missingCount == 0 {
 		return nil
 	}
-
-	tasklog.Start("Acquire indexing semaphore")
-	if !s.indexingSemaphore.TryAcquire(1) {
-		return errors.Newf("too many indexing operations in progress")
-	}
-	requestStatus.HoldLock("indexing semaphore")
-	defer func() {
-		s.indexingSemaphore.Release(1)
-		requestStatus.ReleaseLock("indexing semaphore")
-	}()
 
 	pathToBlobIdCache := map[string]int{}
 
@@ -1352,6 +1355,31 @@ func iLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, rep
 		}
 		return errors.Wrap(err, "release iLock")
 	}, nil
+}
+
+// tryILock attempts to acquire the indexing lock on the repo.
+func tryILock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (bool, func() error, error) {
+	requestStatus.Tasklog.Start("iLock")
+	locked, _, err := basestore.ScanFirstBool(conn.QueryContext(ctx, `SELECT pg_try_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo))))
+	if err != nil {
+		return false, nil, errors.Wrap(err, "acquire iLock")
+	}
+
+	if !locked {
+		return false, nil, nil
+	}
+
+	requestStatus.HoldLock("iLock")
+
+	release := func() error {
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		if err == nil {
+			requestStatus.ReleaseLock("iLock")
+		}
+		return errors.Wrap(err, "release iLock")
+	}
+
+	return true, release, nil
 }
 
 func DeleteRedundant(ctx context.Context, db Queryable, hop string) error {
