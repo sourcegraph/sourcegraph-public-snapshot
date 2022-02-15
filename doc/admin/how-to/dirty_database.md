@@ -35,7 +35,7 @@ _First, some background:_
 
 When migrations run, the `migration_logs` table is updated. Before each migration attempt, a new row is inserted indicating the migration version and direction and the start time. Once the migration is complete (or fails), the row is updated with the finished time and message with details about any error that occurred.
 
-A failed migration may have explicitly failed due to a SQL/environment error, which allowed the migrator instance to write an error message to the `migration_logs` table. A failed migration may also be left _pending_ if the migrator instance running that migration has disappeared. To handle this case, the validation mechanism that runs on app startup will wait for running migrators to complete their current work. If we do not detect a migrator instance performing any work, we'll correctly interpret those migration logs as implicitily failed. The following example does just this (not the values of the `pendingVersions` and `failedVersions` log fields).
+A failed migration may have explicitly failed due to a SQL/environment error, which allowed the migrator instance to write an error message to the `migration_logs` table. A failed migration may also be left _pending_ if the migrator instance running that migration has disappeared. To handle this case, the validation mechanism that runs on app startup will wait for running migrators to complete their current work. If we do not detect a migrator instance performing any work, we'll correctly interpret those migration logs as implicitly failed. The following example does just this (note the values of the `pendingVersions` and `failedVersions` log fields).
 
 _End background!_
 
