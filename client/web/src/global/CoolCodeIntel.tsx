@@ -1,8 +1,9 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import { capitalize } from 'lodash'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -332,61 +333,66 @@ const SideReferencesLists: React.FunctionComponent<
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
-            <CardHeader>
-                <h4 className="p-1 mb-0">Definitions</h4>
-            </CardHeader>
-            {definitions.length > 0 ? (
-                <LocationsList
-                    locations={definitions}
-                    activeLocation={props.activeLocation}
-                    setActiveLocation={props.setActiveLocation}
-                    filter={props.filter}
-                />
-            ) : (
-                <p className="text-muted my-1 pl-2">
-                    {props.filter ? (
-                        <i>
-                            No definitions matching <strong>{props.filter}</strong> found
-                        </i>
-                    ) : (
-                        <i>No definitions found</i>
-                    )}
-                </p>
-            )}
-            <CardHeader>
-                <h4 className="p-1 mb-0">References</h4>
-            </CardHeader>
-            {references.length > 0 ? (
-                <LocationsList
-                    locations={references}
-                    activeLocation={props.activeLocation}
-                    setActiveLocation={props.setActiveLocation}
-                    filter={props.filter}
-                />
-            ) : (
-                <p className="text-muted pl-2">
-                    {props.filter ? (
-                        <i>
-                            No references matching <strong>{props.filter}</strong> found
-                        </i>
-                    ) : (
-                        <i>No references found</i>
-                    )}
-                </p>
-            )}
+            <CollapsibleLocationList {...props} name="definitions" locations={definitions} />
+            <CollapsibleLocationList {...props} name="references" locations={references} />
             {implementations.length > 0 && (
-                <>
-                    <CardHeader>
-                        <h4 className="p-1 mb-0">Implementations</h4>
-                    </CardHeader>
+                <CollapsibleLocationList {...props} name="implementations" locations={implementations} />
+            )}
+        </>
+    )
+}
+
+const CollapsibleLocationList: React.FunctionComponent<{
+    name: string
+    locations: Location[]
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+}> = props => {
+    const [isOpen, setOpen] = useState<boolean>(true)
+    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+
+    return (
+        <>
+            <CardHeader className="p-0">
+                <Button
+                    aria-expanded={isOpen}
+                    type="button"
+                    onClick={handleOpen}
+                    className="bg-transparent py-1 px-0 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                >
+                    <h4 className="px-1 py-0 mb-0">
+                        {' '}
+                        {isOpen ? (
+                            <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        ) : (
+                            <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        )}{' '}
+                        {capitalize(props.name)}
+                    </h4>
+                </Button>
+            </CardHeader>
+
+            <Collapse id="references" isOpen={isOpen}>
+                {props.locations.length > 0 ? (
                     <LocationsList
-                        locations={implementations}
+                        locations={props.locations}
                         activeLocation={props.activeLocation}
                         setActiveLocation={props.setActiveLocation}
                         filter={props.filter}
                     />
-                </>
-            )}
+                ) : (
+                    <p className="text-muted pl-2">
+                        {props.filter ? (
+                            <i>
+                                No {props.name} matching <strong>{props.filter}</strong> found
+                            </i>
+                        ) : (
+                            <i>No {props.name} found</i>
+                        )}
+                    </p>
+                )}
+            </Collapse>
         </>
     )
 }
@@ -579,15 +585,15 @@ const RepoReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
-                {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                )}
+                <span className="p-0 mb-0">
+                    {isOpen ? (
+                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                    ) : (
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                    )}
 
-                <span>
                     <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
                 </span>
             </Button>
@@ -629,15 +635,14 @@ const ReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
-                {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                )}
-
                 <span className={styles.coolCodeIntelReferenceFilename}>
+                    {isOpen ? (
+                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                    ) : (
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                    )}
                     {highlighted.length === 2 ? (
                         <span>
                             {highlighted[0]}
