@@ -49,7 +49,7 @@ func (s *store) CreateSymbolIndexes(ctx context.Context) error {
 }
 
 func (s *store) DeletePaths(ctx context.Context, paths []string) error {
-	for _, chunkOfPaths := range chunksOf(1000, paths) {
+	for _, chunkOfPaths := range chunksOf1000(paths) {
 		pathQueries := []*sqlf.Query{}
 		for _, path := range chunkOfPaths {
 			pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
@@ -64,11 +64,15 @@ func (s *store) DeletePaths(ctx context.Context, paths []string) error {
 	return nil
 }
 
-func chunksOf(n int, strings []string) [][]string {
-	var chunks [][]string
+func chunksOf1000(strings []string) [][]string {
+	if strings == nil {
+		return nil
+	}
 
-	for i := 0; i < len(strings); i += n {
-		end := i + n
+	chunks := [][]string{}
+
+	for i := 0; i < len(strings); i += 1000 {
+		end := i + 1000
 
 		if end > len(strings) {
 			end = len(strings)
