@@ -13,36 +13,6 @@ import {
 } from '../../../../graphql-operations'
 import { retentionByUploadTitle } from '../components/UploadRetentionStatusNode'
 
-interface UploadRetentionMatchesResult {
-    node: {
-        retentionPolicyOverview: {
-            nodes: {
-                matches: boolean
-                protectingCommits: string[] | null
-                configurationPolicy: {
-                    id: string
-                    name: string
-                    type: GitObjectType
-                    retentionDurationHours: number | null
-                }
-            }[]
-            totalCount: number | null
-            pageInfo: { endCursor: string | null; hasNextPage: boolean }
-        }
-    }
-    lsifUploads: {
-        nodes: {
-            id: string
-            inputCommit: string
-            inputRoot: string
-            projectRoot: {
-                repository: { id: string; name: string }
-            } | null
-        }[]
-        totalCount: number | null
-    }
-}
-
 export type NormalizedUploadRetentionMatch = RetentionPolicyMatch | UploadReferenceMatch
 
 export interface RetentionPolicyMatch {
@@ -140,8 +110,7 @@ export const queryUploadRetentionMatches = (
                 throw new Error('No such LSIFUpload')
             }
 
-            const matchesResult: UploadRetentionMatchesResult = { node, ...rest }
-            return matchesResult
+            return { node, ...rest }
         }),
         map(({ node, lsifUploads }) => {
             const conn: Connection<NormalizedUploadRetentionMatch> = {
