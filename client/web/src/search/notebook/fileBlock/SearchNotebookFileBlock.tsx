@@ -210,11 +210,11 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
 
     // Automatically fetch the highlighted file on each input change, if all inputs are valid
     useEffect(() => {
-        if (!areInputsValid) {
+        if (!showInputs || !areInputsValid) {
             return
         }
         onRunBlock(id)
-    }, [id, input, areInputsValid, onRunBlock])
+    }, [id, input, showInputs, areInputsValid, onRunBlock])
 
     const onFileURLPaste = useCallback(
         (event: ClipboardEvent) => {

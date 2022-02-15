@@ -86,13 +86,9 @@ export class Notebook {
         this.blocks = new Map(blocks.map(block => [block.id, block]))
         this.blockOrder = blocks.map(block => block.id)
 
-        this.renderMarkdownBlocks()
-    }
-
-    private renderMarkdownBlocks(): void {
-        const blocks = this.blocks.values()
+        // Pre-run the markdown and file blocks, for a better user experience.
         for (const block of blocks) {
-            if (block.type === 'md') {
+            if (block.type === 'md' || block.type === 'file') {
                 this.runBlockById(block.id)
             }
         }

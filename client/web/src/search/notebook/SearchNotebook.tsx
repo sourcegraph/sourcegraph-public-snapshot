@@ -95,7 +95,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     const onRunBlock = useCallback(
         (id: string) => {
             notebook.runBlockById(id)
-            updateBlocks()
+            updateBlocks(false)
 
             props.telemetryService.log(
                 'SearchNotebookRunBlock',
@@ -112,7 +112,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                 click.pipe(
                     switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
                     tap(() => {
-                        updateBlocks()
+                        updateBlocks(false)
                         props.telemetryService.log('SearchNotebookRunAllBlocks')
                     })
                 ),
@@ -123,7 +123,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
             notebook.setBlockInputById(id, blockInput)
-            updateBlocks(false)
+            updateBlocks()
         },
         [notebook, updateBlocks]
     )
