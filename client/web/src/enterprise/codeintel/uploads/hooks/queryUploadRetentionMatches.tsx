@@ -43,39 +43,35 @@ interface UploadRetentionMatchesResult {
     }
 }
 
-export type NormalizedUploadRetentionMatch =
-    | {
-          matchType: 'RetentionPolicy'
-          matches: boolean
-          protectingCommits: string[]
-          configurationPolicy: {
-              id: string
-              name: string
-              type: GitObjectType
-              retentionDurationHours: number | null
-          }
-      }
-    | {
-          matchType: 'UploadReference'
-          uploadSlice: {
-              id: string
-              inputCommit: string
-              inputRoot: string
-              projectRoot: {
-                  repository: { id: string; name: string }
-              } | null
-          }[]
-          total: number
-      }
+export type NormalizedUploadRetentionMatch = RetentionPolicyMatch | UploadReferenceMatch
+
+export interface RetentionPolicyMatch {
+    matchType: 'RetentionPolicy'
+    matches: boolean
+    protectingCommits: string[]
+    configurationPolicy: {
+        id: string
+        name: string
+        type: GitObjectType
+        retentionDurationHours: number | null
+    }
+}
+
+export interface UploadReferenceMatch {
+    matchType: 'UploadReference'
+    uploadSlice: {
+        id: string
+        inputCommit: string
+        inputRoot: string
+        projectRoot: {
+            repository: { id: string; name: string }
+        } | null
+    }[]
+    total: number
+}
 
 const UPLOAD_RETENTIONS_QUERY = gql`
-    query LsifUploadRetentionMatches(
-        $id: ID!
-        $matchesOnly: Boolean!
-        $after: String
-        $first: Int
-        $query: String
-    ) {
+    query LsifUploadRetentionMatches($id: ID!, $matchesOnly: Boolean!, $after: String, $first: Int, $query: String) {
         node(id: $id) {
             __typename
             ... on LSIFUpload {
@@ -83,7 +79,6 @@ const UPLOAD_RETENTIONS_QUERY = gql`
                     __typename
                     nodes {
                         __typename
-                        # id
                         configurationPolicy {
                             __typename
                             id
@@ -150,7 +145,8 @@ export const queryUploadRetentionMatches = (
         }),
         map(({ node, lsifUploads }) => {
             const conn: Connection<NormalizedUploadRetentionMatch> = {
-                totalCount: (node.retentionPolicyOverview.totalCount ?? 0) + ((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
+                totalCount:
+                    (node.retentionPolicyOverview.totalCount ?? 0) + ((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
                 nodes: [],
             }
 
