@@ -109,7 +109,11 @@ extend type Mutation {
     """
     Triggers a test Slack webhook message for a code monitor action.
     """
-    triggerTestSlackWebhookAction(namespace: ID!, description: String!, slackWebhook: MonitorSlackWebhookInput!): EmptyResponse!
+    triggerTestSlackWebhookAction(
+        namespace: ID!
+        description: String!
+        slackWebhook: MonitorSlackWebhookInput!
+    ): EmptyResponse!
 }
 
 extend type User {
