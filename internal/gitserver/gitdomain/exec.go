@@ -60,7 +60,9 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
 	for _, allowedArg := range allowedArgs {
-		if splitArg == allowedArg {
+		// We use -- to specify the end of command options.
+		// See: https://unix.stackexchange.com/a/11382/214756.
+		if splitArg == allowedArg || splitArg == "--" {
 			return true
 		}
 	}
