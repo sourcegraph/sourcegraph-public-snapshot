@@ -38,7 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix Code Monitor permissions. [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
+- Fix Code Monitor permissions. For more detail see our [security advisory](https://github.com/sourcegraph/sourcegraph/security/advisories/GHSA-xqv2-x6f2-w3pf) [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
 
 ## 3.36.2
 
@@ -91,7 +91,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix Code Monitor permissions. [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
+- Fix Code Monitor permissions. For more detail see our [security advisory](https://github.com/sourcegraph/sourcegraph/security/advisories/GHSA-xqv2-x6f2-w3pf) [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
 
 ## 3.35.1
 
