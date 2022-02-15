@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RunType indicates the type of this run. Each CI pipeline can only be a single run type.
@@ -30,11 +31,11 @@ const (
 	MainBranch // main branch build
 	MainDryRun // run everything main does, except for deploy-related steps
 
-	// Patches (NOT patch releases)
+	// Build branches (NOT releases)
 
 	ImagePatch          // build a patched image after testing
 	ImagePatchNoTest    // build a patched image without testing
-	CandidatesNoTest    // build all candidates without testing
+	CandidatesNoTest    // build one or all candidate images without testing
 	ExecutorPatchNoTest // build executor image without testing
 
 	// Special test branches
@@ -118,11 +119,13 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 	case ImagePatch:
 		return &RunTypeMatcher{
-			Branch: "docker-images-patch/",
+			Branch:                 "docker-images-patch/",
+			BranchArgumentRequired: true,
 		}
 	case ImagePatchNoTest:
 		return &RunTypeMatcher{
-			Branch: "docker-images-patch-notest/",
+			Branch:                 "docker-images-patch-notest/",
+			BranchArgumentRequired: true,
 		}
 	case CandidatesNoTest:
 		return &RunTypeMatcher{
@@ -187,6 +190,9 @@ type RunTypeMatcher struct {
 	Branch       string
 	BranchExact  bool
 	BranchRegexp bool
+	// BranchArgumentRequired indicates the path segment following the branch prefix match is
+	// expected to be an argument (does not work in conjunction with BranchExact)
+	BranchArgumentRequired bool
 
 	// TagPrefix matches tags that begin with this value.
 	TagPrefix string
@@ -225,6 +231,31 @@ func (m *RunTypeMatcher) Matches(tag, branch string, env map[string]string) bool
 	return false
 }
 
-func (m *RunTypeMatcher) IsPrefixMatcher() bool {
+// IsBranchPrefixMatcher indicates that this matcher matches on branch prefixes.
+func (m *RunTypeMatcher) IsBranchPrefixMatcher() bool {
 	return m.Branch != "" && !m.BranchExact && !m.BranchRegexp
+}
+
+// ExtractBranchArgument extracts the second segment, delimited by '/', of the branch as
+// an argument, for example:
+//
+//   prefix/{argument}
+//   prefix/{argument}/something-else
+//
+// If BranchArgumentRequired, an error is returned if no argument is found.
+//
+// Only works with Branch matches, and does not work with BranchExact.
+func (m *RunTypeMatcher) ExtractBranchArgument(branch string) (string, error) {
+	if m.BranchExact || m.Branch == "" {
+		return "", errors.New("unsupported matcher type")
+	}
+
+	parts := strings.Split(branch, "/")
+	if len(parts) < 2 || len(parts[1]) == 0 {
+		if m.BranchArgumentRequired {
+			return "", errors.New("branch argument expected, but none found")
+		}
+		return "", nil
+	}
+	return parts[1], nil
 }

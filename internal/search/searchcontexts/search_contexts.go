@@ -3,10 +3,10 @@ package searchcontexts
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"

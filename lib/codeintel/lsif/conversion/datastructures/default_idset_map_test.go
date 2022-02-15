@@ -2,6 +2,7 @@ package datastructures
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -172,4 +173,18 @@ func TestDefaultIDSetMap_UnionIDSet(t *testing.T) {
 func TestDefaultIDSetMap_getOrCreate(t *testing.T) {
 	sm := NewDefaultIDSetMap()
 	require.NotNil(t, sm.getOrCreate(0))
+}
+
+func TestDefaultIDSetMap_UnorderedKeys(t *testing.T) {
+	sm := NewDefaultIDSetMap()
+	require.Equal(t, 0, len(sm.UnorderedKeys()))
+	sm.AddID(0, 1)
+	sm.AddID(0, 2)
+	require.Equal(t, []int{0}, sm.UnorderedKeys())
+	sm.AddID(1, 2)
+	sortedKeys := sm.UnorderedKeys()
+	sort.Ints(sortedKeys)
+	require.Equal(t, []int{0, 1}, sortedKeys)
+	sm.Delete(1)
+	require.Equal(t, []int{0}, sm.UnorderedKeys())
 }

@@ -34,6 +34,7 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
@@ -56,7 +57,8 @@ interface RepositoryCompareAreaProps
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        GlobalCoolCodeIntelProps {
     repo: RepositoryFields
     history: H.History
 }

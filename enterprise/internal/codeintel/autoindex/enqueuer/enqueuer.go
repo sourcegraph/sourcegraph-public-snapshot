@@ -8,7 +8,6 @@ import (
 	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -115,14 +114,14 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	trace.Log(log.String("repoName", repoName))
+	trace.Log(log.String("repoName", string(repoName)))
 	trace.Log(log.String("revision", revision))
 
 	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
 		return err
 	}
 
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
+	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
