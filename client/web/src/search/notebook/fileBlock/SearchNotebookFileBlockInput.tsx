@@ -95,7 +95,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         if (event.key === 'Escape') {
             const target = event.target as HTMLElement
             target.blur()
-        } else if (event.key === 'Tab') {
+        } else if (event.key === 'Tab' && !event.shiftKey) {
             // Reach does not support 'Tab' as a select trigger, so we have to manually select the currently highlighted suggestion.
             const element = popoverReference.current?.querySelector<HTMLElement>(
                 '[aria-selected=true] [data-suggestion-value]'
