@@ -40,7 +40,6 @@ func (i *identifier) resolveSymbol(localScope *reproScope, context *reproContext
 			fmt.Println("scope", context.globalScope)
 		}
 		symbol = "local ERROR_UNRESOLVED_SYMBOL"
-		scope = localScope
 	}
 	i.symbol = symbol
 }

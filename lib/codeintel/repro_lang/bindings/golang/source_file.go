@@ -8,12 +8,11 @@ import (
 )
 
 type reproSourceFile struct {
-	Source       *lsif_typed.SourceFile
-	node         *sitter.Node
-	definitions  []*definitionStatement
-	references   []*referenceStatement
-	localScope   *reproScope
-	localCounter int
+	Source      *lsif_typed.SourceFile
+	node        *sitter.Node
+	definitions []*definitionStatement
+	references  []*referenceStatement
+	localScope  *reproScope
 }
 
 func newSourceFile(sourceFile *lsif_typed.SourceFile, node *sitter.Node) *reproSourceFile {
@@ -24,12 +23,6 @@ func newSourceFile(sourceFile *lsif_typed.SourceFile, node *sitter.Node) *reproS
 		references:  nil,
 		localScope:  newScope(),
 	}
-}
-
-func (d *reproSourceFile) enterNewLocalSymbol(name identifier) string {
-	symbol := fmt.Sprintf("local %v", name.value[len("local"):])
-	d.localScope.names[name.value] = symbol
-	return symbol
 }
 
 func (d *reproSourceFile) slicePosition(n *sitter.Node) string {

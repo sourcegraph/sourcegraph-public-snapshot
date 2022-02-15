@@ -29,10 +29,10 @@ func (d *reproSourceFile) resolveDefinitions(context *reproContext) {
 		if def.name.isLocalSymbol() {
 			scope = d.localScope
 		}
-		symbol, ok := scope.names[def.name.value]
+		var symbol string
+		_, ok := scope.names[def.name.value]
 		if ok {
 			symbol = "local ERROR_DUPLICATE_DEFINITION"
-			scope = d.localScope
 		} else if def.name.isLocalSymbol() {
 			symbol = fmt.Sprintf("local %s", def.name.value[len("local"):])
 		} else {
