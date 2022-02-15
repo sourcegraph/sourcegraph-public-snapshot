@@ -53,7 +53,7 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "...and 7 more matches."
+     "text": "...and \u003chttps://sourcegraph.com/search?q=repo%3Acamdentest+-file%3Aid_rsa.pub+BEGIN\u0026utm_source=|7 more matches\u003e."
     }
    },
    {

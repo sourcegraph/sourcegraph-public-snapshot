@@ -63,3 +63,17 @@ func TestWebhook(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestTriggerTestWebhookAction(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+		w.WriteHeader(200)
+	}))
+	defer s.Close()
+
+	client := s.Client()
+	err := SendTestWebhook(context.Background(), client, "My test monitor", s.URL)
+	require.NoError(t, err)
+}
