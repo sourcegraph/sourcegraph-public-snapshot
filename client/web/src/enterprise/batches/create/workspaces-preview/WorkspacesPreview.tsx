@@ -7,7 +7,6 @@ import { animated, useSpring } from 'react-spring'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { Button, useStopwatch } from '@sourcegraph/wildcard'
 import { Button, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
@@ -208,7 +207,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <h4 className={styles.header}>
                 Workspaces preview{' '}
-                {(batchSpecStale || !hasPreviewed) && shouldShowConnection && (
+                {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
                     <WarningIcon
                         className="icon-inline text-muted"
                         data-tooltip="The workspaces previewed below may not be up-to-date."
