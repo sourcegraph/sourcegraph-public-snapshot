@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -32,6 +32,13 @@ const config: Meta = {
         ),
     ],
     parameters: {
+        /**
+         * Uncomment this once Storybook is upgraded to v6.4.* and the `play` function
+         * is used to show the feedback prompt component.
+         *
+         * https://www.chromatic.com/docs/hoverfocus#javascript-triggered-hover-states
+         */
+        // chromatic: { disableSnapshot: false },
         component: FeedbackPrompt,
         design: {
             type: 'figma',
@@ -43,7 +50,7 @@ const config: Meta = {
 
 export default config
 
-export const FeedbackPromptExample = () => (
+export const FeedbackPromptExample: Story = () => (
     <>
         <h1>This is a feedbackPrompt</h1>
         <FeedbackPrompt routes={[]} />

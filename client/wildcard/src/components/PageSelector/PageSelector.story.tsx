@@ -13,47 +13,65 @@ const decorator: DecoratorFn = story => (
 
 const config: Meta = {
     title: 'wildcard/PageSelector',
+    component: PageSelector,
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
 }
 
 export default config
 
-export const Short: Story = () => {
+export const Simple: Story = () => {
     const [page, setPage] = useState(1)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 5)} />
 }
 
-export const Long: Story = () => {
-    const [page, setPage] = useState(1)
-    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+export const AllPageSelectors: Story = () => (
+    <>
+        <h1>Page Selector</h1>
+        <h2>Short</h2>
+        <Short />
+        <h2>Long</h2>
+        <Long />
+        <h2>Long active</h2>
+        <LongActive />
+        <h2>Long complete</h2>
+        <LongComplete />
+        <h2>Long on mobile</h2>
+        <LongOnMobile />
+    </>
+)
+
+AllPageSelectors.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
 }
 
-export const LongOnMobile: Story = () => {
+const Short = () => {
+    const [page, setPage] = useState(1)
+    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={5} />
+}
+
+const Long = () => {
+    const [page, setPage] = useState(1)
+    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={10} />
+}
+
+const LongOnMobile = () => {
     const [page, setPage] = useState(1)
     return (
         <div style={{ width: 320 }}>
-            <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+            <PageSelector currentPage={page} onPageChange={setPage} totalPages={10} />
         </div>
     )
 }
 
-LongOnMobile.storyName = 'Long on mobile'
-
-export const LongActive: Story = () => {
+const LongActive = () => {
     const [page, setPage] = useState(5)
-    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={10} />
 }
 
-LongActive.storyName = 'Long active'
-
-export const LongComplete: Story = () => {
+const LongComplete = () => {
     const [page, setPage] = useState(10)
-    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={10} />
 }
-
-LongComplete.storyName = 'Long complete'

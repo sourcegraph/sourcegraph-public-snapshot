@@ -30,6 +30,7 @@ const config: Meta = {
         component: Alert,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: [
             {

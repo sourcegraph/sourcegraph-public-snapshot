@@ -21,6 +21,7 @@ const config: Meta = {
         component: Menu,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
     },
 }

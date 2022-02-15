@@ -22,6 +22,7 @@ const config: Meta = {
         component: TextArea,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: {
             type: 'figma',
