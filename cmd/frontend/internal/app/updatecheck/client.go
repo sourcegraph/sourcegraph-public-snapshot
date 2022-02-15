@@ -226,15 +226,23 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (message json.RawMessage, totalCount int, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
 	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return json.Marshal(codeInsightsUsage)
+	totalCount = 0
+	if codeInsightsUsage != nil {
+		for _, counts := range codeInsightsUsage.InsightTotalCounts.ViewCounts {
+			totalCount += counts.TotalCount
+		}
+	}
+
+	message, err = json.Marshal(codeInsightsUsage)
+	return
 }
 
 func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -360,6 +368,14 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
 
+	// All Code Insights telemetry is non-critical except for Total Insights. However, the data is all
+	// bundled together in the event_logs and must all be read in order to get the total.
+	codeInsightsUsage, totalInsights, err := getAndMarshalCodeInsightsUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
+	}
+	r.TotalInsights = int32(totalInsights)
+
 	if !conf.Get().DisableNonCriticalTelemetry {
 		// TODO(Dan): migrate this to the new usagestats package.
 		//
@@ -424,10 +440,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
 		}
 
-		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
-		}
+		r.CodeInsightsUsage = codeInsightsUsage
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
