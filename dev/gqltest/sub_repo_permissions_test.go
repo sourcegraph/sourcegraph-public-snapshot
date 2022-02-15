@@ -32,6 +32,10 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
+	if err := client.SetUserEmailVerified(aliceID, "alice@perforce.sgdev.org", true); err != nil {
+		t.Fatal(err)
+	}
+
 	const repoName = "perforce/test-perms"
 
 	// We have not enabled EnforceAuthzForSiteAdmin so they can see this repo
@@ -64,8 +68,9 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantBlob = `This depot is used to test user and group permissions.
-`
+	// TODO: We probably want an error, not an empty string here
+	wantBlob = ``
+
 	if diff := cmp.Diff(wantBlob, blob); diff != "" {
 		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 	}
