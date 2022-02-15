@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { AccessibleFieldProps } from './AccessibleFieldType'
+import styles from './BaseControlInput.module.scss'
 import { FormFieldLabel } from './FormFieldLabel'
 import { FormFieldMessage } from './FormFieldMessage'
 import { getValidStyle } from './utils'
@@ -26,7 +27,7 @@ export const BaseControlInput: React.FunctionComponent<ControlInputProps> = Reac
                 {...props}
             />
             {'label' in props && (
-                <FormFieldLabel htmlFor={props.id} className="form-check-label">
+                <FormFieldLabel htmlFor={props.id} className={classNames('form-check-label', styles.label)}>
                     {props.label}
                 </FormFieldLabel>
             )}
