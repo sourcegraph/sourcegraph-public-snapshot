@@ -2,7 +2,7 @@
 
 > NOTE: If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3_37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'fdirty database' error.
+This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
 
 The error will look something like this:
 
