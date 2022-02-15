@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
-import { defer, Observable, of, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
+import { defer, from, Observable, of, Subscription } from 'rxjs'
+import { distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -692,13 +692,9 @@ export const githubCodeHost: GithubCodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext,
     getReactiveContext: mutations =>
-        mutations.pipe(
-            map(getFilePath),
-            catchError(() => of('')),
-            filter(Boolean),
-            distinctUntilChanged(),
-            mergeMap(getContext)
-        ),
+        ['blob', 'tree'].includes(parseURL().pageType)
+            ? mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext))
+            : from(getContext()),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {
