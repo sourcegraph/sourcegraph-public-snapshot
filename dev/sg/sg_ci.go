@@ -281,6 +281,9 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 							branchArg = args[1]
 						} else {
 							stdout.Out.Write("This run type requires a branch path argument.")
+							if m.BranchArgumentDescription != "" {
+								stdout.Out.Writef("Argument: %s", m.BranchArgumentDescription)
+							}
 							branchArg, err = open.Prompt("Enter your argument input:")
 							if err != nil {
 								return err

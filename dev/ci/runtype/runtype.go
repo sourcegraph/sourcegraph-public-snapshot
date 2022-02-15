@@ -96,9 +96,9 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 	case Targeted:
 		return &RunTypeMatcher{
-			Branch:                 `^targeted/([^/]+)/.+$`,
-			BranchRegexp:           true,
-			BranchArgumentRequired: true,
+			Branch:                    "targeted/",
+			BranchArgumentRequired:    true,
+			BranchArgumentDescription: `A substring of a valid step label, with space replaced by dashes: "backend integration" will match ":chains: Backend integration tests"`,
 		}
 
 	case TaggedRelease:
@@ -205,6 +205,8 @@ type RunTypeMatcher struct {
 	// BranchArgumentRequired indicates the path segment following the branch prefix match is
 	// expected to be an argument (does not work in conjunction with BranchExact)
 	BranchArgumentRequired bool
+	// BranchArgumentDescription indicates what kind of argument must be given.
+	BranchArgumentDescription string
 
 	// TagPrefix matches tags that begin with this value.
 	TagPrefix string
