@@ -95,6 +95,15 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         if (event.key === 'Escape') {
             const target = event.target as HTMLElement
             target.blur()
+        } else if (event.key === 'Tab' && !event.shiftKey) {
+            // Reach does not support 'Tab' as a select trigger, so we have to manually select the currently highlighted suggestion.
+            const element = popoverReference.current?.querySelector<HTMLElement>(
+                '[aria-selected=true] [data-suggestion-value]'
+            )
+            if (element?.dataset.suggestionValue) {
+                event.preventDefault()
+                onSelect(element.dataset.suggestionValue)
+            }
         } else if (
             // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
             !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
@@ -129,8 +138,10 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
                             <ComboboxOption className={styles.suggestionsOption} key={suggestion} value={suggestion}>
-                                {suggestionsIcon}
-                                <ComboboxOptionText />
+                                <span data-suggestion-value={suggestion}>
+                                    {suggestionsIcon}
+                                    <ComboboxOptionText />
+                                </span>
                             </ComboboxOption>
                         ))}
                     </ComboboxList>
