@@ -24,6 +24,7 @@ export interface NotebookContentProps
     isMacPlatform: boolean
     viewerCanManage: boolean
     blocks: NotebookBlock[]
+    exportedFileName: string
     onUpdateBlocks: (blocks: Block[]) => void
     fetchRepository: typeof fetchRepository
     resolveRevision: typeof resolveRevision

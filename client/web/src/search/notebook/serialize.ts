@@ -6,13 +6,25 @@ import { parseBrowserRepoURL } from '../../util/url'
 
 import { Block, BlockInit, BlockInput, FileBlockInput } from '.'
 
-export function serializeBlocks(blocks: BlockInput[], sourcegraphURL: string): string {
+export function serializeBlocksToURL(blocks: BlockInput[], sourcegraphURL: string): string {
     return blocks
         .map(
             block =>
                 `${encodeURIComponent(block.type)}:${encodeURIComponent(serializeBlockInput(block, sourcegraphURL))}`
         )
         .join(',')
+}
+
+export function serializeBlockToMarkdown(block: Block, sourcegraphURL: string): string {
+    const serializedInput = serializeBlockInput(block, sourcegraphURL)
+    switch (block.type) {
+        case 'md':
+            return serializedInput.trimEnd()
+        case 'query':
+            return `\`\`\`sourcegraph\n${serializedInput}\n\`\`\``
+        case 'file':
+            return serializedInput
+    }
 }
 
 export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): string {
@@ -121,4 +133,8 @@ export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInp
                 fileInput: block.fileInput,
             }
     }
+}
+
+export function convertNotebookTitleToFileName(title: string): string {
+    return title.replace(/[^\da-z]/gi, '_').replace(/_+/g, '_')
 }

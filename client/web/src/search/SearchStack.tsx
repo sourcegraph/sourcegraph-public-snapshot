@@ -33,7 +33,7 @@ import {
 } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
-import { serializeBlocks } from './notebook/serialize'
+import { serializeBlocksToURL } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
 export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
@@ -51,7 +51,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const createNotebook = useCallback(() => {
         const location = {
             pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocks(
+            hash: serializeBlocksToURL(
                 entries.map(
                     (entry): BlockInput => {
                         switch (entry.type) {
