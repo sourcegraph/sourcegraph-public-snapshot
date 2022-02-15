@@ -53,6 +53,7 @@ type OrgInvitationStore interface {
 	GetByID(context.Context, int64) (*OrgInvitation, error)
 	GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error)
 	GetPendingByID(ctx context.Context, id int64) (*OrgInvitation, error)
+	GetPendingByOrgID(ctx context.Context, orgID int32) ([]*OrgInvitation, error)
 	List(context.Context, OrgInvitationsListOptions) ([]*OrgInvitation, error)
 	Count(context.Context, OrgInvitationsListOptions) (int, error)
 	UpdateEmailSentTimestamp(ctx context.Context, id int64) error
@@ -131,6 +132,21 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 		return nil, err
 	}
 	return t, nil
+}
+
+// GetPendingByOrgID retrieves the pending invitations for the given organization.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
+func (s *orgInvitationStore) GetPendingByOrgID(ctx context.Context, orgID int32) ([]*OrgInvitation, error) {
+	results, err := s.list(ctx, []*sqlf.Query{
+		sqlf.Sprintf("org_id=%d AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", orgID),
+	}, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // GetByID retrieves the org invitation (if any) given its ID.

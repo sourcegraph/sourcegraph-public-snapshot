@@ -1,4 +1,4 @@
-import { gql, useMutation } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -12,20 +12,9 @@ import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 import styles from './InviteMemberModal.module.scss'
 
-const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
-    mutation InviteUserToOrg($organization: ID!, $username: String, $email: String) {
-        inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
-            ...InviteUserToOrganizationFields
-        }
-    }
-
-    fragment InviteUserToOrganizationFields on InviteUserToOrganizationResult {
-        sentInvitationEmail
-        invitationURL
-    }
-`
 export interface IModalInviteResult {
     username: string
     inviteResult: InviteUserToOrganizationResult
@@ -51,7 +40,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
     const [inviteUserToOrganization, { data, loading: isInviting, error }] = useMutation<
         InviteUserToOrganizationResult,
         InviteUserToOrganizationVariables
-    >(INVITE_USERNAME_OR_EMAIL_TO_ORG)
+    >(INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION)
 
     useEffect(() => {
         if (data) {
