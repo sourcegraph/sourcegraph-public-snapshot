@@ -101,7 +101,7 @@ Default pipeline:
 - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
-- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Upgrade
+- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12.6-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server
 - Upload build trace
 
@@ -120,7 +120,7 @@ Default pipeline:
 - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
-- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Upgrade
+- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12.6-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server, Publish executor image, Publish docker registry mirror image
 - Upload build trace
 
@@ -157,7 +157,7 @@ Default pipeline:
 - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
-- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Upgrade
+- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12.6-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server, Publish executor image, Publish docker registry mirror image
 - Upload build trace
 
@@ -181,7 +181,7 @@ Default pipeline:
 - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
-- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Upgrade
+- **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12.6-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server
 - Upload build trace
 
