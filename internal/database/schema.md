@@ -42,6 +42,8 @@ Referenced by:
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_unique_org_id" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
+    "batch_changes_unique_user_id" UNIQUE, btree (name, namespace_user_id) WHERE namespace_user_id IS NOT NULL
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:

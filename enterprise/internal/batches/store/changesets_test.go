@@ -1529,9 +1529,9 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	// We need batch changes attached to each changeset
-	for _, cs := range changesets {
+	for i, cs := range changesets {
 		c := &btypes.BatchChange{
-			Name:           "ListChangesetSyncData test",
+			Name:           fmt.Sprintf("ListChangesetSyncData-test-%d", i),
 			NamespaceOrgID: 23,
 			LastApplierID:  1,
 			LastAppliedAt:  time.Now(),
