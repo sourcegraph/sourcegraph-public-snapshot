@@ -1,7 +1,7 @@
 package reader
 
 import (
-	"encoding/json"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -346,7 +346,7 @@ func (g *graph) getOrInsertSymbolInformationIDs(symbol string, localResultSetTab
 	return ids
 }
 
-func WriteNDJSON(elements []interface{}, out io.Writer) error {
+func WriteNDJSON(elements []lsifElement, out io.Writer) error {
 	w := writer.NewJSONWriter(out)
 	for _, e := range elements {
 		w.Write(e)
@@ -354,41 +354,100 @@ func WriteNDJSON(elements []interface{}, out io.Writer) error {
 	return w.Flush()
 }
 
-func ElementsToEmptyInterfaces(els []Element) []interface{} {
-	var r []interface{}
+type lsifPosition struct {
+	Line      int `json:"line"`
+	Character int `json:"character"`
+}
+type lsifHoverContent struct {
+	Kind  string `json:"kind,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+type lsifHoverResult struct {
+	Contents lsifHoverContent `json:"contents"`
+}
+type lsifToolInfo struct {
+	Name    string `json:"name,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+type lsifElement struct {
+	ID               int              `json:"id"`
+	Name             string           `json:"name,omitempty"`
+	Version          string           `json:"version,omitempty"`
+	ProjectRoot      string           `json:"projectRoot,omitempty"`
+	PositionEncoding string           `json:"positionEncoding,omitempty"`
+	ToolInfo         *lsifToolInfo    `json:"toolInfo,omitempty"`
+	Type             string           `json:"type,omitempty"`
+	Label            string           `json:"label,omitempty"`
+	Result           *lsifHoverResult `json:"result,omitempty"`
+	Uri              string           `json:"uri,omitempty"`
+	Start            *protocol.Pos    `json:"start,omitempty"`
+	End              *protocol.Pos    `json:"end,omitempty"`
+	InV              int              `json:"inV,omitempty"`
+	InVs             []int            `json:"inVs,omitempty"`
+	OutV             int              `json:"outV,omitempty"`
+	Document         int              `json:"document,omitempty"`
+	Identifier       string           `json:"identifier,omitempty"`
+	Kind             string           `json:"kind,omitempty"`
+	Scheme           string           `json:"scheme,omitempty"`
+}
+
+func ElementsToEmptyInterfaces(els []Element) []lsifElement {
+	var r []lsifElement
 	for _, el := range els {
-		object := map[string]interface{}{
-			"id":    el.ID,
-			"type":  el.Type,
-			"label": el.Label,
+		object := lsifElement{
+			ID:    el.ID,
+			Type:  el.Type,
+			Label: el.Label,
 		}
-		switch el.Label {
-		case "hoverResult":
-			object["result"] = map[string]interface{}{
-				"contents": map[string]interface{}{
-					"kind":  "markdown",
-					"value": el.Payload,
-				},
+		if el.Type == "edge" {
+			edge := el.Payload.(Edge)
+			object.OutV = edge.OutV
+			object.InV = edge.InV
+			object.InVs = edge.InVs
+		} else if el.Type == "vertex" {
+			switch el.Label {
+			case "hoverResult":
+				object.Result = &lsifHoverResult{Contents: lsifHoverContent{
+					Kind:  "markdown",
+					Value: el.Payload.(string),
+				}}
+			case "document":
+				object.Uri = el.Payload.(string)
+			case "range":
+				rng := el.Payload.(Range)
+				object.Start = &rng.Start
+				object.End = &rng.End
+			case "metaData":
+				metaData := el.Payload.(MetaData)
+				object.Version = metaData.Version
+				object.ProjectRoot = metaData.ProjectRoot
+				object.PositionEncoding = metaData.PositionEncoding
+				object.ToolInfo = &lsifToolInfo{
+					Name:    metaData.ToolInfo.Name,
+					Version: metaData.ToolInfo.Version,
+				}
+			case "moniker":
+				moniker := el.Payload.(Moniker)
+				object.Identifier = moniker.Identifier
+				object.Kind = moniker.Kind
+				object.Scheme = moniker.Scheme
+			case "packageInformation":
+				pkg := el.Payload.(PackageInformation)
+				object.Name = pkg.Name
+				object.Version = pkg.Version
+			case "definitionResult",
+				"implementationResult",
+				"referenceResult",
+				"referenceResults",
+				"resultSet",
+				"textDocument/references",
+				"textDocument/hover",
+				"textDocument/definition":
+			default:
+				panic(fmt.Sprintf("unexpected LSIF element: %+v", el))
 			}
-		case "document":
-			object["uri"] = el.Payload
-		default:
-			if el.Payload != nil {
-				payload, err := json.Marshal(el.Payload)
-				if err != nil {
-					panic(err)
-				}
-				var x interface{}
-				err = json.Unmarshal(payload, &x)
-				if err != nil {
-					panic(err)
-				}
-				if x != nil {
-					for key, value := range x.(map[string]interface{}) {
-						object[key] = value
-					}
-				}
-			}
+		} else {
+			panic(el.Type)
 		}
 		r = append(r, object)
 	}
