@@ -15,17 +15,13 @@ import styles from './Popover.story.module.scss'
 
 const config: Meta = {
     title: 'wildcard/Popover',
+    component: Popover,
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
 }
 
 export default config
 
-export const PositionSettingsGallery = () => {
+export const PositionSettingsGallery: Story = () => {
     const [position, setPosition] = useState(Position.top)
 
     return (
@@ -149,7 +145,14 @@ export const PositionSettingsGallery = () => {
     )
 }
 
-export const StandardExample = () => (
+PositionSettingsGallery.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
+
+export const StandardExample: Story = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -173,7 +176,7 @@ export const StandardExample = () => (
     </ScrollCenterBox>
 )
 
-export const AbsoluteStrategyExample = () => (
+export const AbsoluteStrategyExample: Story = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -197,7 +200,7 @@ export const AbsoluteStrategyExample = () => (
     </ScrollCenterBox>
 )
 
-export const WithCustomAnchor = () => {
+export const WithCustomAnchor: Story = () => {
     const customAnchor = useRef<HTMLDivElement>(null)
 
     return (
@@ -251,7 +254,7 @@ const FSM_TRANSITIONS: Record<FSM_STATES, Partial<Record<FSM_ACTIONS, FSM_STATES
     },
 }
 
-export const ShowOnFocus = () => {
+export const ShowOnFocus: Story = () => {
     const [state, setState] = useState<FSM_STATES>(FSM_STATES.Initial)
 
     const handleOpenChange = (event: PopoverOpenEvent): void => {
@@ -311,7 +314,7 @@ export const ShowOnFocus = () => {
     )
 }
 
-export const WithControlledState = () => {
+export const WithControlledState: Story = () => {
     const [open, setOpen] = useState<boolean>(false)
     const handleOpenChange = (event: PopoverOpenEvent): void => {
         setOpen(event.isOpen)
@@ -388,7 +391,7 @@ export const WithNestedScrollParents: Story = () => {
     )
 }
 
-export const WithVirtualTarget = () => {
+export const WithVirtualTarget: Story = () => {
     const [virtualElement, setVirtualElement] = useState<Point | null>(null)
     const activeZoneReference = useRef<HTMLDivElement>(null)
 
@@ -435,7 +438,7 @@ export const WithVirtualTarget = () => {
     )
 }
 
-export const WithTail = () => (
+export const WithTail: Story = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
