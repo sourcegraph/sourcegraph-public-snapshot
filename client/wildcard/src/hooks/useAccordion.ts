@@ -11,6 +11,16 @@ type UseAccordionResult<Element extends HTMLElement = HTMLDivElement> = [
     }
 ]
 
+/**
+ * Custom hook which can animate a collapsible "accordion" element with an automatic
+ * height. Returns a tuple with:
+ * - A React `MutableRefObject` which should be attached to the panel contents.
+ * - A boolean value which indicates whether the accordion is open or not.
+ * - A function which toggles the accordion open/closed.
+ * - A style object which applies an animated height and opacity to the contents.
+ *
+ * @param defaultOpen whether or not the accordion element should start open/expanded
+ */
 export const useAccordion = <Element extends HTMLElement = HTMLDivElement>(
     defaultOpen = false
 ): UseAccordionResult<Element> => {
