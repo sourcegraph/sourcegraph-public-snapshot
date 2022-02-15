@@ -49,16 +49,35 @@ func (s *store) CreateSymbolIndexes(ctx context.Context) error {
 }
 
 func (s *store) DeletePaths(ctx context.Context, paths []string) error {
-	if len(paths) == 0 {
-		return nil
+	for _, chunkOfPaths := range chunksOf(1000, paths) {
+		pathQueries := []*sqlf.Query{}
+		for _, path := range chunkOfPaths {
+			pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+		}
+
+		err := s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
+		if err != nil {
+			return err
+		}
 	}
 
-	pathQueries := make([]*sqlf.Query, 0, len(paths))
-	for _, path := range paths {
-		pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+	return nil
+}
+
+func chunksOf(n int, strings []string) [][]string {
+	var chunks [][]string
+
+	for i := 0; i < len(strings); i += n {
+		end := i + n
+
+		if end > len(strings) {
+			end = len(strings)
+		}
+
+		chunks = append(chunks, strings[i:end])
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
+	return chunks
 }
 
 func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
