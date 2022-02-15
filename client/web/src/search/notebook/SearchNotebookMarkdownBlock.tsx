@@ -35,7 +35,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     onSelectBlock,
     ...props
 }) => {
-    const [isEditing, setIsEditing] = useState(input.length === 0)
+    const [isEditing, setIsEditing] = useState(!isReadOnly && input.length === 0)
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
 

@@ -61,7 +61,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		linterOps.Append(addDockerfileLint)
 	}
 	if diff.Has(changed.Terraform) {
-		linterOps.Append(addTerraformLint)
+		linterOps.Append(addTerraformScan)
 	}
 	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
@@ -123,21 +123,23 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.Cmd("./dev/check/docsite.sh"))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
-func addTerraformLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lock: security - checkov",
+func addTerraformScan(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lock: Checkov Terraform scanning",
 		bk.Cmd("dev/ci/ci-checkov.sh"),
 		bk.SoftFail(222))
 }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":clipboard: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
-		bk.Cmd("./dev/check/all.sh"))
+		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
+			IncludeNames: true,
+		}))
 }
 
 // yarn ~41s + ~30s
@@ -642,7 +644,7 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
 }
 
@@ -657,7 +659,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	vulnerabilityExitCode := 27
 
 	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
 			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
@@ -670,10 +672,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
-			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
-		}
-
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
+			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
+				Type:            bk.AnnotationTypeWarning,
+				MultiJobContext: "docker-security-scans",
+			}))
 	}
 }
 
@@ -744,7 +746,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/build.sh"))
 
-		pipeline.AddStep(":packer: :construction: executor image", stepOpts...)
+		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
 }
 
@@ -766,7 +768,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
-		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
 }
 
@@ -780,7 +782,7 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
 
-		pipeline.AddStep(":packer: :construction: docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":packer: :construction: Build docker registry mirror image", stepOpts...)
 	}
 }
 
@@ -794,7 +796,7 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
-		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}
 }
 

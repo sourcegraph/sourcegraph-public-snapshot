@@ -1,0 +1,8 @@
+# github.com/containerd/containerd use in prometheus does not allow
+# explotation of the CVE. Prometheus has an open PR to update the dependency:
+# https://github.com/prometheus/prometheus/pull/10282
+# Documentation for false-positive report
+# https://github.com/sourcegraph/security-issues/issues/218
+CVE-2021-43816
+
+

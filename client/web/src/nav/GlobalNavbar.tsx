@@ -320,7 +320,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavAction>
                             <UserNavItem
                                 {...props}
-                                location={location}
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 showDotComMarketing={showDotComMarketing}

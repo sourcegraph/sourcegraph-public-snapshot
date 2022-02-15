@@ -9,9 +9,10 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 	"time"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -127,7 +128,7 @@ func renderPipelineDocs(w io.Writer) {
 		}
 		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
-			printStepSummary(w, raw)
+			printStepSummary(w, "  ", raw)
 		}
 	})
 
@@ -141,12 +142,15 @@ func renderPipelineDocs(w io.Writer) {
 			if m.Branch != "" {
 				matchName := fmt.Sprintf("`%s`", m.Branch)
 				if m.BranchRegexp {
-					matchName += " (regexp)"
+					matchName += " (regexp match)"
 				}
 				if m.BranchExact {
-					matchName += " (exact)"
+					matchName += " (exact match)"
 				}
 				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
+				if m.BranchArgumentRequired {
+					conditions = append(conditions, "requires a branch argument in the second branch path segment")
+				}
 			}
 			if m.TagPrefix != "" {
 				conditions = append(conditions, fmt.Sprintf("tags starting with `%s`", m.TagPrefix))
@@ -157,27 +161,49 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
-			// Generate a sample pipeline with all changes
-			pipeline, err := ci.GeneratePipeline(ci.Config{
-				RunType: runtype.PullRequest,
-				Diff:    changed.All,
-				Branch:  m.Branch,
-			})
-			if err != nil {
-				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+			// We currently support 'sg ci build' commands for certain branch matcher types
+			if m.IsBranchPrefixMatcher() {
+				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
+					strings.TrimRight(m.Branch, "/"))
 			}
-			fmt.Fprintln(w, "\n- Default pipeline:")
-			for _, raw := range pipeline.Steps {
-				printStepSummary(w, raw)
+
+			// Don't generate a preview for more complicated branch types, since we don't
+			// know what arguments to provide as a sample in advance.
+			if m.BranchArgumentRequired {
+				continue
 			}
+
+			// Generate a sample pipeline with all changes. If it panics just don't bother
+			// generating a sample for now - we should have other tests to ensure this
+			// does not happen.
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						fmt.Fprintf(w, "\n<!--\n%+v\n-->\n", err)
+					}
+				}()
+
+				pipeline, err := ci.GeneratePipeline(ci.Config{
+					RunType: rt,
+					Diff:    changed.All,
+					Branch:  m.Branch,
+				})
+				if err != nil {
+					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+				}
+				fmt.Fprint(w, "\nDefault pipeline:\n\n")
+				for _, raw := range pipeline.Steps {
+					printStepSummary(w, "", raw)
+				}
+			}()
 		}
 	}
 }
 
-func printStepSummary(w io.Writer, rawStep interface{}) {
+func printStepSummary(w io.Writer, indent string, rawStep interface{}) {
 	switch v := rawStep.(type) {
 	case *buildkite.Step:
-		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
+		fmt.Fprintf(w, "%s- %s\n", indent, trimEmoji(v.Label))
 	case *buildkite.Pipeline:
 		var steps []string
 		for _, step := range v.Steps {
@@ -186,6 +212,6 @@ func printStepSummary(w io.Writer, rawStep interface{}) {
 				steps = append(steps, trimEmoji(s.Label))
 			}
 		}
-		fmt.Fprintf(w, "  - **%s**: %s\n", v.Group.Group, strings.Join(steps, ", "))
+		fmt.Fprintf(w, "%s- **%s**: %s\n", indent, v.Group.Group, strings.Join(steps, ", "))
 	}
 }

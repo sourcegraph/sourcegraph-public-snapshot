@@ -42,6 +42,8 @@ Referenced by:
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_unique_org_id" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
+    "batch_changes_unique_user_id" UNIQUE, btree (name, namespace_user_id) WHERE namespace_user_id IS NOT NULL
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
@@ -430,17 +432,18 @@ Foreign-key constraints:
 
 # Table "public.cm_emails"
 ```
-   Column   |           Type           | Collation | Nullable |                Default                
-------------+--------------------------+-----------+----------+---------------------------------------
- id         | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- enabled    | boolean                  |           | not null | 
- priority   | cm_email_priority        |           | not null | 
- header     | text                     |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                Default                
+-----------------+--------------------------+-----------+----------+---------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ priority        | cm_email_priority        |           | not null | 
+ header          | text                     |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_emails_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -526,16 +529,17 @@ Foreign-key constraints:
 
 # Table "public.cm_slack_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                    Default                    
-------------+--------------------------+-----------+----------+-----------------------------------------------
- id         | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                    Default                    
+-----------------+--------------------------+-----------+----------+-----------------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_slack_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_slack_webhooks_monitor" btree (monitor)
@@ -592,16 +596,17 @@ Referenced by:
 
 # Table "public.cm_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                 Default                 
-------------+--------------------------+-----------+----------+-----------------------------------------
- id         | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                 Default                 
+-----------------+--------------------------+-----------+----------+-----------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_webhooks_monitor" btree (monitor)

@@ -40,6 +40,24 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				repoName: "github.com/sourcegraph/sourcegraph",
 				revision: "de0123456789",
 			},
+			{
+				pkg: precise.Package{
+					Scheme:  "npm",
+					Name:    "mypackage",
+					Version: "1.0.0",
+				},
+				repoName: "npm/mypackage",
+				revision: "v1.0.0",
+			},
+			{
+				pkg: precise.Package{
+					Scheme:  "npm",
+					Name:    "@myscope/mypackage",
+					Version: "1.0.0",
+				},
+				repoName: "npm/myscope/mypackage",
+				revision: "v1.0.0",
+			},
 		}
 
 		for _, testCase := range testCases {
@@ -48,8 +66,8 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				t.Fatalf("expected repository to be inferred")
 			}
 
-			if repoName != testCase.repoName {
-				t.Errorf("unexpected repo name. want=%q have=%q", testCase.repoName, repoName)
+			if string(repoName) != testCase.repoName {
+				t.Errorf("unexpected repo name. want=%q have=%q", testCase.repoName, string(repoName))
 			}
 			if revision != testCase.revision {
 				t.Errorf("unexpected revision. want=%q have=%q", testCase.revision, revision)
