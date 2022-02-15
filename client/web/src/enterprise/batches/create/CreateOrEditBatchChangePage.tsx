@@ -34,6 +34,7 @@ import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import styles from './CreateOrEditBatchChangePage.module.scss'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
+import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
@@ -209,12 +210,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         defaultSelectedNamespace
     )
 
-    const [noCache, setNoCache] = useState<boolean>(false)
-    const toggleNoCache = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setNoCache(event.target.checked),
-        []
-    )
-
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
         initialBatchSpecCode,
@@ -233,6 +228,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         refetchBatchChange().then(noop).catch(noop)
     }, [refetchBatchChange])
 
+    // NOTE: Technically there's only one option, and it's actually a preview option.
+    const [executionOptions, setExecutionOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
+
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
         preview: previewBatchSpec,
@@ -245,7 +243,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     } = useWorkspacesPreview(batchSpec.id, {
         isBatchSpecApplied: isLatestBatchSpecApplied,
         namespaceID: batchChange.namespace.id,
-        noCache,
+        noCache: executionOptions.runWithoutCache,
         onComplete,
         filters,
     })
@@ -286,8 +284,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // - We haven't yet submitted the batch spec to the backend yet for a preview.
     // - The batch spec on the backend is stale.
     // - The current workspaces evaluation is not complete.
-    const [disableExecution, executionTooltip] = useMemo(() => {
-        const disableExecution = Boolean(
+    const [isExecutionDisabled, executionTooltip] = useMemo(() => {
+        const isExecutionDisabled = Boolean(
             isValid !== true ||
                 previewError ||
                 isWorkspacesPreviewInProgress ||
@@ -308,7 +306,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 ? 'Wait for the preview to finish first.'
                 : undefined
 
-        return [disableExecution, executionTooltip]
+        return [isExecutionDisabled, executionTooltip]
     }, [
         hasPreviewed,
         isValid,
@@ -319,26 +317,18 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         resolutionState,
     ])
 
-    const buttons = (
+    const actionButtons = (
         <>
-            <Button
-                className="mb-2"
-                variant="primary"
-                onClick={executeBatchSpec}
-                disabled={disableExecution}
-                data-tooltip={executionTooltip}
-            >
-                Run batch spec
-            </Button>
+            <ExecutionOptionsDropdown
+                execute={executeBatchSpec}
+                isExecutionDisabled={isExecutionDisabled}
+                executionTooltip={executionTooltip}
+                options={executionOptions}
+                onChangeOptions={setExecutionOptions}
+            />
             <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                 or download for src-cli
             </BatchSpecDownloadLink>
-            <div className="form-group">
-                <label>
-                    <input type="checkbox" className="mr-2" checked={noCache} onChange={toggleNoCache} />
-                    Disable cache
-                </label>
-            </div>
         </>
     )
 
@@ -347,7 +337,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             namespace={selectedNamespace}
             title={batchChange.name}
             description={batchChange.description}
-            actionButtons={buttons}
+            actionButtons={actionButtons}
         >
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />

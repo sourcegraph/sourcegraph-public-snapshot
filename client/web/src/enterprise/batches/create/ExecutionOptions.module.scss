@@ -1,0 +1,37 @@
+.execution-button {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.execution-options-menu-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid var(--primary-3);
+}
+
+.execution-option:last-child {
+    padding-bottom: 1rem;
+}
+
+.execution-option-form {
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox {
+    width: 2rem;
+}
+
+.menu-list {
+    width: 20rem;
+    // NOTE: The default provided by reach-ui is 'nowrap', which causes overflow scroll
+    // behavior rather than wrapping.
+    white-space: normal;
+}
+
+.expanded-info {
+    padding: 0 1.5rem 0 2.25rem;
+    overflow-y: hidden;
+    width: 100%;
+}
