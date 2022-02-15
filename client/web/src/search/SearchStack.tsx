@@ -212,7 +212,10 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
         >
             {reversedEntries.length === 0 && addableEntry && <AddEntryButton entry={addableEntry} />}
             {reversedEntries.length > 0 ? (
-                <SearchStackEntryComponent entry={reversedEntries[0]} focus={hasNewEntry} />
+                // `key` is necessary here to force new elemments being created
+                // when the top entry is deleted. Otherwise the annotations
+                // input isn't rendered correctly.
+                <SearchStackEntryComponent key={reversedEntries[0].id} entry={reversedEntries[0]} focus={hasNewEntry} />
             ) : null}
         </div>
     )
