@@ -205,7 +205,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 	}()
 
 	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
-		git := NewGitserver(repositoryFetcher, string(args.Repo))
+		git := NewGitserver(repositoryFetcher)
 
 		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
@@ -309,22 +309,18 @@ func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 
 type Gitserver struct {
 	repositoryFetcher fetcher.RepositoryFetcher
-	repo              string
 }
 
-func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher, repo string) rockskip.Git {
-	return Gitserver{
-		repositoryFetcher: repositoryFetcher,
-		repo:              repo,
-	}
+func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher) Gitserver {
+	return Gitserver{repositoryFetcher: repositoryFetcher}
 }
 
-func (g Gitserver) LogReverseEach(commit string, n int, onLogEntry func(entry rockskip.LogEntry) error) error {
+func (g Gitserver) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry rockskip.LogEntry) error) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	command := gitserver.DefaultClient.Command("git", rockskip.LogReverseArgs(n, commit)...)
-	command.Repo = api.RepoName(g.repo)
+	command.Repo = api.RepoName(repo)
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
 	command.DisableTimeout()
@@ -337,12 +333,12 @@ func (g Gitserver) LogReverseEach(commit string, n int, onLogEntry func(entry ro
 	return errors.Wrap(rockskip.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
 
-func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+func (g Gitserver) RevListEach(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
-	command.Repo = api.RepoName(g.repo)
+	command.Repo = api.RepoName(repo)
 	command.DisableTimeout()
 	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {
@@ -353,12 +349,12 @@ func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shou
 	return rockskip.RevListEach(stdout, onCommit)
 }
 
-func (g Gitserver) ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error {
+func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
 	if len(paths) == 0 {
 		return nil
 	}
 
-	args := types.SearchArgs{Repo: api.RepoName(g.repo), CommitID: api.CommitID(commit)}
+	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
 	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
 	defer func() {
 		// Ensure the channel is drained

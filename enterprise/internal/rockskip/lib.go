@@ -28,9 +28,9 @@ import (
 )
 
 type Git interface {
-	LogReverseEach(commit string, n int, onLogEntry func(logEntry LogEntry) error) error
-	RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
-	ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error
+	LogReverseEach(repo string, commit string, n int, onLogEntry func(logEntry LogEntry) error) error
+	RevListEach(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
+	ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error
 }
 
 type Symbol struct {
@@ -267,7 +267,7 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
+	err = git.RevListEach(repo, givenCommit, func(commit string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommit")
@@ -307,7 +307,7 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = git.LogReverseEach(givenCommit, missingCount, func(entry LogEntry) error {
+	err = git.LogReverseEach(repo, givenCommit, missingCount, func(entry LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		requestStatus.SetProgress(entriesIndexed, missingCount)
@@ -385,7 +385,7 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 		}
 
 		tasklog.Start("ArchiveEach")
-		err = git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
+		err = git.ArchiveEach(repo, entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
 			defer tasklog.Continue("ArchiveEach")
 
 			tasklog.Start("parse")
@@ -647,7 +647,7 @@ func (git SubprocessGit) Close() error {
 	return git.catFileCmd.Wait()
 }
 
-func (git SubprocessGit) LogReverseEach(givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
+func (git SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
 	log := exec.Command("git", LogReverseArgs(n, givenCommit)...)
 	log.Dir = git.gitDir
 	output, err := log.StdoutPipe()
@@ -669,7 +669,7 @@ func (git SubprocessGit) LogReverseEach(givenCommit string, n int, onLogEntry fu
 	return ParseLogReverseEach(output, onLogEntry)
 }
 
-func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
+func (git SubprocessGit) RevListEach(repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
 	revList := exec.Command("git", RevListArgs(givenCommit)...)
 	revList.Dir = git.gitDir
 	output, err := revList.StdoutPipe()
@@ -691,7 +691,7 @@ func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit st
 	return RevListEach(output, onCommit)
 }
 
-func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error {
+func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
 	for _, path := range paths {
 		_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
 		if err != nil {
