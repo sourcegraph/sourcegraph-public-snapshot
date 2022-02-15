@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/base64"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -25,14 +27,20 @@ func mockTimeNow() {
 	}
 }
 
-func mockSiteConfigSigningKey() string {
+func mockSiteConfigSigningKey(withEmails *bool) string {
 	signingKey := "Zm9v"
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			OrganizationInvitations: &schema.OrganizationInvitations{
-				SigningKey: signingKey,
-			},
+
+	siteConfig := schema.SiteConfiguration{
+		OrganizationInvitations: &schema.OrganizationInvitations{
+			SigningKey: signingKey,
 		},
+	}
+	if withEmails != nil && *withEmails {
+		siteConfig.EmailSmtp = &schema.SMTPServerConfig{}
+	}
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: siteConfig,
 	})
 
 	return signingKey
@@ -43,8 +51,10 @@ func mockDefaultSiteConfig() {
 }
 
 func TestCreateJWT(t *testing.T) {
+	expiryTime := timeNow().Add(DefaultExpiryDuration)
+
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1)
+		_, err := createInvitationJWT(1, 1, 1, expiryTime)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -52,10 +62,10 @@ func TestCreateJWT(t *testing.T) {
 		}
 	})
 	t.Run("Returns JWT with encoded parameters", func(t *testing.T) {
-		signingKey := mockSiteConfigSigningKey()
+		signingKey := mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3)
+		token, err := createInvitationJWT(1, 2, 3, expiryTime)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,15 +90,22 @@ func TestCreateJWT(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.ExpiresAt == nil || *claims.ExpiresAt != *jwt.NewNumericDate(expiryTime) {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
 }
 
 func TestOrgInvitationURL(t *testing.T) {
+	invitation := database.OrgInvitation{
+		OrgID:        1,
+		ID:           2,
+		SenderUserID: 3,
+		ExpiresAt:    timePtr(timeNow().Add(DefaultExpiryDuration)),
+	}
+
 	t.Run("Fails if site config is not defined", func(t *testing.T) {
-		_, err := orgInvitationURL(1, 1, 1, 1, "foo@bar.baz", true)
+		_, err := orgInvitationURL(invitation, true)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -97,10 +114,10 @@ func TestOrgInvitationURL(t *testing.T) {
 	})
 
 	t.Run("Returns invitation URL with JWT", func(t *testing.T) {
-		signingKey := mockSiteConfigSigningKey()
+		signingKey := mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
 
-		url, err := orgInvitationURL(1, 2, 3, 0, "foo@bar.baz", true)
+		url, err := orgInvitationURL(invitation, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -161,7 +178,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
-	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1}, nil)
+	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: timePtr(timeNow().Add(DefaultExpiryDuration))}, nil)
 
 	featureFlags := database.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
@@ -202,7 +219,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	})
 
 	t.Run("Returns invitation URL in the response for username invitation", func(t *testing.T) {
-		mockSiteConfigSigningKey()
+		mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
 		RunTests(t, []*Test{
 			{
@@ -222,7 +239,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
 						"sentInvitationEmail": false
 					}
 				}
@@ -232,7 +249,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	})
 
 	t.Run("Fails for email invitation if feature flag is not enabled", func(t *testing.T) {
-		mockSiteConfigSigningKey()
+		mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
 		RunTests(t, []*Test{
 			{
@@ -261,7 +278,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	})
 
 	t.Run("Returns invitation URL in the response for email invitation", func(t *testing.T) {
-		mockSiteConfigSigningKey()
+		mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
 
 		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
@@ -286,7 +303,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.UGJRadHkOsL3PTPgyXTKJE1XYIh-DDDfL_MjIlR5FJJRXPkpEgF97L1S30_n_2Nrj__A3ipXCJ-SQmH8ASMbIg",
 						"sentInvitationEmail": false
 					}
 				}
@@ -357,9 +374,9 @@ func TestInvitationByToken(t *testing.T) {
 	})
 
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
-		mockSiteConfigSigningKey()
+		mockSiteConfigSigningKey(nil)
 		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1)
+		token, err := createInvitationJWT(1, 1, 1, timeNow().Add(DefaultExpiryDuration))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -444,7 +461,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "REJECT",
 				},
 				ExpectedResult: `{
@@ -483,7 +500,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
@@ -528,7 +545,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
@@ -573,7 +590,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 				}
 				`,
 				Variables: map[string]interface{}{
-					"id":       string(marshalOrgInvitationID(invitationID)),
+					"id":       string(MarshalOrgInvitationID(invitationID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: "null",
@@ -581,6 +598,201 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					{
 						Message: "your email addresses [something@else.invalid] do not match the email address on the invitation.",
 						Path:    []interface{}{"respondToOrganizationInvitation"},
+					},
+				},
+			},
+		})
+	})
+}
+
+func TestResendOrganizationInvitationNotification(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", true, nil)
+
+	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+		if userID == 1 {
+			return &types.OrgMembership{}, nil
+		}
+
+		return nil, &database.ErrOrgMemberNotFound{}
+	})
+
+	orgs := database.NewMockOrgStore()
+	orgName := "acme"
+	mockedOrg := types.Org{ID: 1, Name: orgName}
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
+	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
+		return int32(id), nil
+	})
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
+
+	expiryTime := newExpiryTime()
+
+	trueVal := true
+	mockSiteConfigSigningKey(&trueVal)
+
+	t.Run("Can resend a user invitation", func(t *testing.T) {
+		invitationID := int64(2)
+		orgID := int32(2)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
+		emailSent := false
+		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
+			emailSent = true
+			return nil
+		}
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation ResendOrganizationInvitation($id: ID!) {
+					resendOrganizationInvitationNotification(organizationInvitation:$id) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id": string(MarshalOrgInvitationID(invitationID)),
+				},
+				ExpectedResult: `{
+					"resendOrganizationInvitationNotification": {
+						"alwaysNil": null
+					}
+				}`,
+			},
+		})
+
+		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
+		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
+		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
+			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
+		}
+
+		if !emailSent {
+			t.Fatalf("email not sent")
+		}
+	})
+
+	t.Run("Can resend an email invitation", func(t *testing.T) {
+		invitationID := int64(3)
+		orgID := int32(3)
+		email := "foo@bar.baz"
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &expiryTime}, nil)
+		emailSent := false
+		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
+			emailSent = true
+			return nil
+		}
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation ResendOrganizationInvitation($id: ID!) {
+					resendOrganizationInvitationNotification(organizationInvitation:$id) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id": string(MarshalOrgInvitationID(invitationID)),
+				},
+				ExpectedResult: `{
+					"resendOrganizationInvitationNotification": {
+						"alwaysNil": null
+					}
+				}`,
+			},
+		})
+
+		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
+		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
+		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
+			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
+		}
+
+		if !emailSent {
+			t.Fatalf("email not sent")
+		}
+	})
+
+	t.Run("Fails if invitation is expired", func(t *testing.T) {
+		invitationID := int64(3)
+		orgID := int32(3)
+		email := "foo@bar.baz"
+		yesterday := timeNow().Add(-24 * time.Hour)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation ResendOrganizationInvitation($id: ID!) {
+					resendOrganizationInvitationNotification(organizationInvitation:$id) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id": string(MarshalOrgInvitationID(invitationID)),
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Message: "invitation is expired",
+						Path:    []interface{}{"resendOrganizationInvitationNotification"},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("Fails if user invitation email is not verified", func(t *testing.T) {
+		invitationID := int64(4)
+		orgID := int32(4)
+		email := "foo@bar.baz"
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
+		userEmails.GetPrimaryEmailFunc.SetDefaultReturn(email, false, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				mutation ResendOrganizationInvitation($id: ID!) {
+					resendOrganizationInvitationNotification(organizationInvitation:$id) {
+						alwaysNil
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"id": string(MarshalOrgInvitationID(invitationID)),
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Message: "refusing to send notification because recipient has no verified email address",
+						Path:    []interface{}{"resendOrganizationInvitationNotification"},
 					},
 				},
 			},

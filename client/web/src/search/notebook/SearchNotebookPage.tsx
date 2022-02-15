@@ -263,6 +263,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             resolveRevision={resolveRevision}
                             exportedFileName={exportedFileName}
                         />
+                        <div className={styles.spacer} />
                     </>
                 )}
             </Page>

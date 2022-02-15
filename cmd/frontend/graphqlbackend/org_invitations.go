@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net/url"
 	"strconv"
 	"time"
@@ -27,8 +28,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var EMAIL_INVITES_FF = "org-email-invites"
-var SIGNING_KEY_MESSAGE = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+var EmailInvitesFeatureFlag = "org-email-invites"
+var SigningKeyMessage = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+var DefaultExpiryDuration = 48 * time.Hour
 
 func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = db.Users().GetByUsername(ctx, username)
@@ -109,6 +111,18 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 	return false, nil
 }
 
+func newExpiryDuration() time.Duration {
+	expiryDuration := DefaultExpiryDuration
+	if orgInvitationConfigDefined() && conf.SiteConfig().OrganizationInvitations.ExpiryTime > 0 {
+		expiryDuration = time.Duration(conf.SiteConfig().OrganizationInvitations.ExpiryTime) * time.Hour
+	}
+	return expiryDuration
+}
+
+func newExpiryTime() time.Time {
+	return timeNow().Add(newExpiryDuration())
+}
+
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
@@ -169,7 +183,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 		return nil, err
 	}
 	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EMAIL_INVITES_FF)
+	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
 	// return error if feature flag is not enabled and we got an email as an argument
 	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
 		return nil, errors.New("inviting by email is not supported for this organization")
@@ -200,12 +214,13 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if args.Email != nil {
 		// we only support new URL schema for email invitations
 		if !hasConfig {
-			return nil, errors.New(SIGNING_KEY_MESSAGE)
+			return nil, errors.New(SigningKeyMessage)
 		}
 		recipientEmail = *args.Email
 	}
 
-	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail)
+	expiryTime := newExpiryTime()
+	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +228,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// create invitation URL
 	var invitationURL string
 	if args.Email != nil || hasConfig {
-		invitationURL, err = orgInvitationURL(org.ID, invitation.ID, sender.ID, recipientID, recipientEmail, false)
+		invitationURL, err = orgInvitationURL(*invitation, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
 	}
@@ -228,7 +243,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
 	if conf.CanSendEmail() && recipientEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL); err != nil {
+		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *invitation.ExpiresAt); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -245,7 +260,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		return nil, errors.New("no current user")
 	}
 
-	id, err := unmarshalOrgInvitationID(args.OrganizationInvitation)
+	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
 	}
@@ -309,30 +324,31 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
+	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
+	if err != nil {
+		return nil, err
+	}
+
+	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
-	// Prevent reuse. This just prevents annoyance (abuse is prevented by the quota check in the
-	// call to sendOrgInvitationNotification).
-	if orgInvitation.v.RevokedAt != nil {
-		return nil, errors.New("refusing to send notification for revoked invitation")
-	}
-	if orgInvitation.v.RespondedAt != nil {
-		return nil, errors.New("refusing to send notification for invitation that was already responded to")
+	// Do not allow to resend for expired invitation
+	if orgInvitation.Expired() {
+		return nil, errors.New("invitation is expired")
 	}
 
 	if !conf.CanSendEmail() {
 		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
 	}
 
-	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.v.OrgID)
+	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -340,23 +356,36 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	recipientEmail, recipientEmailVerified, err := r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.v.RecipientUserID)
-	if err != nil {
+	var recipientEmail string
+	if orgInvitation.RecipientEmail != "" {
+		recipientEmail = orgInvitation.RecipientEmail
+	} else {
+		recipientEmailVerified := false
+		recipientEmail, recipientEmailVerified, err = r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
+		if err != nil {
+			return nil, err
+		}
+		if !recipientEmailVerified {
+			return nil, errors.New("refusing to send notification because recipient has no verified email address")
+		}
+	}
+
+	expiryTime := newExpiryTime()
+	orgInvitation.ExpiresAt = &expiryTime
+	if err := r.db.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
 		return nil, err
 	}
-	if !recipientEmailVerified {
-		return nil, errors.New("refusing to send notification because recipient has no verified email address")
-	}
+
 	var invitationURL string
 	if orgInvitationConfigDefined() {
-		invitationURL, err = orgInvitationURL(org.ID, orgInvitation.v.ID, sender.ID, orgInvitation.v.RecipientUserID, recipientEmail, false)
+		invitationURL, err = orgInvitationURL(*orgInvitation, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
 	}
 	if err != nil {
 		return nil, err
 	}
-	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL); err != nil {
+	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -365,17 +394,21 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
+	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
+	if err != nil {
+		return nil, err
+	}
+	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
-	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.v.ID); err != nil {
+	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -393,8 +426,11 @@ func orgInvitationURLLegacy(org *types.Org, relative bool) string {
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String()
 }
 
-func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string, relative bool) (string, error) {
-	token, err := createInvitationJWT(orgID, invitationID, senderID)
+func orgInvitationURL(invitation database.OrgInvitation, relative bool) (string, error) {
+	if invitation.ExpiresAt == nil {
+		return "", errors.New("invitation does not have expiry time defined")
+	}
+	token, err := createInvitationJWT(invitation.OrgID, invitation.ID, invitation.SenderUserID, *invitation.ExpiresAt)
 	if err != nil {
 		return "", err
 	}
@@ -405,21 +441,16 @@ func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipient
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), nil
 }
 
-func createInvitationJWT(orgID int32, invitationID int64, senderID int32) (string, error) {
+func createInvitationJWT(orgID int32, invitationID int64, senderID int32, expiryTime time.Time) (string, error) {
 	if !orgInvitationConfigDefined() {
-		return "", errors.New(SIGNING_KEY_MESSAGE)
+		return "", errors.New(SigningKeyMessage)
 	}
 	config := conf.SiteConfig().OrganizationInvitations
-
-	expiryTime := time.Duration(config.ExpiryTime)
-	if expiryTime == 0 {
-		expiryTime = 48 // default expiry time is 2 days
-	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    globals.ExternalURL().String(),
-			ExpiresAt: jwt.NewNumericDate(timeNow().Add(expiryTime * time.Hour)), // TODO: store expiry in DB
+			ExpiresAt: jwt.NewNumericDate(expiryTime),
 			Subject:   strconv.FormatInt(int64(orgID), 10),
 		},
 		InvitationID: invitationID,
@@ -441,7 +472,7 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32) (strin
 // sendOrgInvitationNotification sends an email to the recipient of an org invitation with a link to
 // respond to the invitation. Callers should check conf.CanSendEmail() if they want to return a nice
 // error if sending email is not enabled.
-func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string, invitationURL string) error {
+func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string, invitationURL string, expiryTime time.Time) error {
 	if envvar.SourcegraphDotComMode() {
 		// Basic abuse prevention for Sourcegraph.com.
 
@@ -477,8 +508,6 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	var expiry = 2
-
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
@@ -495,7 +524,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 			FromUserName:    sender.Username,
 			OrgName:         orgName,
 			InvitationUrl:   invitationURL,
-			ExpiryDays:      expiry,
+			ExpiryDays:      int(math.Round(expiryTime.Sub(timeNow()).Hours() / 24)), // golang does not have `duration.Days` :(
 		},
 	})
 }

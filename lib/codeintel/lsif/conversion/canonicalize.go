@@ -45,9 +45,9 @@ func canonicalizeDocuments(state *State) {
 	}
 
 	// Replace references to each document with the canonical references
-	canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, canonicalIDs)
-	canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, canonicalIDs)
-	canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state.DefinitionData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state.ReferenceData, canonicalIDs)
+	canonicalizeDocumentsInDefinitionReferences(state.ImplementationData, canonicalIDs)
 
 	for documentID, canonicalID := range canonicalIDs {
 		// Move ranges and diagnostics into the canonical document
@@ -64,7 +64,7 @@ func canonicalizeDocuments(state *State) {
 // canonicalizeDocumentsInDefinitionReferences moves definition, reference, and implementation result
 // data from a document to its canonical document (if they differ) and removes all references to the
 // non-canonical document.
-func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
+func canonicalizeDocumentsInDefinitionReferences(definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
 	for _, documentRanges := range definitionReferenceData {
 		// The length of documentRanges will always be less than or equal to
 		// the length of canonicalIDs, since canonicalIDs will have one entry

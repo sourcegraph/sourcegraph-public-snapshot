@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gen2brain/beeep"
+	"github.com/grafana/regexp"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -221,6 +221,9 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 
   %s
 
+For run types that require branch arguments, you will be prompted for an argument, or you
+can provide it directly (for example, 'sg ci build [runtype] [argument]').
+
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 				strings.Join(getAllowedBuildTypeArgs(), "\n  ")),
 			Exec: func(ctx context.Context, args []string) error {
@@ -271,6 +274,21 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 					}
 				}
 				if rt != runtype.PullRequest {
+					m := rt.Matcher()
+					if m.BranchArgumentRequired {
+						var branchArg string
+						if len(args) >= 2 {
+							branchArg = args[1]
+						} else {
+							stdout.Out.Write("This run type requires a branch path argument.")
+							branchArg, err = open.Prompt("Enter your argument input:")
+							if err != nil {
+								return err
+							}
+						}
+						branch = fmt.Sprintf("%s/%s", branchArg, branch)
+					}
+
 					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
 					block := stdout.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
 					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch)}
@@ -466,6 +484,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		}, {
 			Name:      "docs",
 			ShortHelp: "Render reference documentation for build pipeline types.",
+			LongHelp:  "Render reference documentation for build pipeline types. An online version of this is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
 			Exec: func(ctx context.Context, args []string) error {
 				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
 				out, err := run.InRoot(cmd)
@@ -482,7 +501,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 func getAllowedBuildTypeArgs() []string {
 	var results []string
 	for _, rt := range runtype.RunTypes() {
-		if rt.Matcher().IsPrefixMatcher() {
+		if rt.Matcher().IsBranchPrefixMatcher() {
 			results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
 		}
 	}

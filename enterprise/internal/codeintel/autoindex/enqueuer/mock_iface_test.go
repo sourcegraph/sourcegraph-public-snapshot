@@ -4,9 +4,9 @@ package enqueuer
 
 import (
 	"context"
-	"regexp"
 	"sync"
 
+	regexp "github.com/grafana/regexp"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
