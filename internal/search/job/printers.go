@@ -135,3 +135,132 @@ func Sexp(job Job) string {
 func PrettySexp(job Job) string {
 	return SexpFormat(job, "\n", "  ")
 }
+
+type NodeStyle int
+
+const (
+	DefaultStyle NodeStyle = iota
+	RoundedStyle
+)
+
+func writeEdge(b *bytes.Buffer, depth, src, dst int) {
+	b.WriteString(strconv.Itoa(src))
+	b.WriteString("---")
+	b.WriteString(strconv.Itoa(dst))
+	writeSep(b, "\n", "  ", depth)
+}
+
+func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label string) {
+	open := "["
+	close := "]"
+	if style == RoundedStyle {
+		open = "(["
+		close = "])"
+	}
+	b.WriteString(strconv.Itoa(*id))
+	b.WriteString(open)
+	b.WriteString(label)
+	b.WriteString(close)
+	writeSep(b, "\n", "  ", depth)
+	*id++
+}
+
+// PrettyMermaid outputs a Mermaid flowchart. See https://mermaid-js.github.io.
+func PrettyMermaid(job Job) string {
+	depth := 0
+	id := 0
+	b := new(bytes.Buffer)
+	b.WriteString("flowchart TB\n")
+	var writeMermaid func(Job) int
+	writeMermaid = func(job Job) int {
+		switch j := job.(type) {
+		case
+			*run.RepoSearch,
+			*textsearch.RepoSubsetTextSearch,
+			*textsearch.RepoUniverseTextSearch,
+			*structural.StructuralSearch,
+			*commit.CommitSearch,
+			*symbol.RepoSubsetSymbolSearch,
+			*symbol.RepoUniverseSymbolSearch,
+			*repos.ComputeExcludedRepos,
+			*noopJob:
+			writeNode(b, depth, RoundedStyle, &id, j.Name())
+		case *AndJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "AND")
+			for _, child := range j.children {
+				writeEdge(b, depth, srcId, id)
+				writeMermaid(child)
+			}
+			depth--
+		case *OrJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "OR")
+			for _, child := range j.children {
+				writeEdge(b, depth, srcId, id)
+				writeMermaid(child)
+			}
+			depth--
+		case *PriorityJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "PRIORITY")
+
+			requiredId := id
+			writeEdge(b, depth, srcId, requiredId)
+			writeNode(b, depth, RoundedStyle, &id, "REQUIRED")
+			writeEdge(b, depth, requiredId, id)
+			writeMermaid(j.required)
+
+			optionalId := id
+			writeEdge(b, depth, srcId, optionalId)
+			writeNode(b, depth, RoundedStyle, &id, "OPTIONAL")
+			writeEdge(b, depth, optionalId, id)
+			writeMermaid(j.optional)
+			depth--
+		case *ParallelJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "PARALLEL")
+			for _, child := range j.children {
+				writeEdge(b, depth, srcId, id)
+				writeMermaid(child)
+			}
+			depth--
+		case *TimeoutJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "TIMEOUT")
+			writeEdge(b, depth, srcId, id)
+			writeNode(b, depth, DefaultStyle, &id, j.timeout.String())
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
+		case *LimitJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "LIMIT")
+			writeEdge(b, depth, srcId, id)
+			writeNode(b, depth, DefaultStyle, &id, strconv.Itoa(j.limit))
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
+		case *subRepoPermsFilterJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "FILTER")
+			writeEdge(b, depth, srcId, id)
+			writeNode(b, depth, DefaultStyle, &id, "SubRepoPermissions")
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
+		default:
+			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
+		}
+		return id
+	}
+	writeMermaid(job)
+	return b.String()
+}
