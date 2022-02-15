@@ -466,7 +466,6 @@ func (r *searchResolver) JobArgs() *job.Args {
 		SearchInputs:        r.SearchInputs,
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
 		Protocol:            r.protocol(),
-		PatternType:         r.PatternType,
 		Zoekt:               r.zoekt,
 		SearcherURLs:        r.searcherURLs,
 	}
@@ -819,7 +818,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *search.Alert, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job job.Job) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)

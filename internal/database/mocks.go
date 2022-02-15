@@ -16918,6 +16918,9 @@ type MockOrgInvitationStore struct {
 	// UpdateEmailSentTimestampFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateEmailSentTimestamp.
 	UpdateEmailSentTimestampFunc *OrgInvitationStoreUpdateEmailSentTimestampFunc
+	// UpdateExpiryTimeFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateExpiryTime.
+	UpdateExpiryTimeFunc *OrgInvitationStoreUpdateExpiryTimeFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *OrgInvitationStoreWithFunc
@@ -16980,6 +16983,11 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 		},
 		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
 			defaultHook: func(context.Context, int64) error {
+				return nil
+			},
+		},
+		UpdateExpiryTimeFunc: &OrgInvitationStoreUpdateExpiryTimeFunc{
+			defaultHook: func(context.Context, int64, time.Time) error {
 				return nil
 			},
 		},
@@ -17051,6 +17059,11 @@ func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
 				panic("unexpected invocation of MockOrgInvitationStore.UpdateEmailSentTimestamp")
 			},
 		},
+		UpdateExpiryTimeFunc: &OrgInvitationStoreUpdateExpiryTimeFunc{
+			defaultHook: func(context.Context, int64, time.Time) error {
+				panic("unexpected invocation of MockOrgInvitationStore.UpdateExpiryTime")
+			},
+		},
 		WithFunc: &OrgInvitationStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) OrgInvitationStore {
 				panic("unexpected invocation of MockOrgInvitationStore.With")
@@ -17096,6 +17109,9 @@ func NewMockOrgInvitationStoreFrom(i OrgInvitationStore) *MockOrgInvitationStore
 		},
 		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
 			defaultHook: i.UpdateEmailSentTimestamp,
+		},
+		UpdateExpiryTimeFunc: &OrgInvitationStoreUpdateExpiryTimeFunc{
+			defaultHook: i.UpdateExpiryTime,
 		},
 		WithFunc: &OrgInvitationStoreWithFunc{
 			defaultHook: i.With,
@@ -18310,6 +18326,118 @@ func (c OrgInvitationStoreUpdateEmailSentTimestampFuncCall) Args() []interface{}
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgInvitationStoreUpdateEmailSentTimestampFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// OrgInvitationStoreUpdateExpiryTimeFunc describes the behavior when the
+// UpdateExpiryTime method of the parent MockOrgInvitationStore instance is
+// invoked.
+type OrgInvitationStoreUpdateExpiryTimeFunc struct {
+	defaultHook func(context.Context, int64, time.Time) error
+	hooks       []func(context.Context, int64, time.Time) error
+	history     []OrgInvitationStoreUpdateExpiryTimeFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateExpiryTime delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockOrgInvitationStore) UpdateExpiryTime(v0 context.Context, v1 int64, v2 time.Time) error {
+	r0 := m.UpdateExpiryTimeFunc.nextHook()(v0, v1, v2)
+	m.UpdateExpiryTimeFunc.appendCall(OrgInvitationStoreUpdateExpiryTimeFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateExpiryTime
+// method of the parent MockOrgInvitationStore instance is invoked and the
+// hook queue is empty.
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) SetDefaultHook(hook func(context.Context, int64, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateExpiryTime method of the parent MockOrgInvitationStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) PushHook(hook func(context.Context, int64, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, time.Time) error {
+		return r0
+	})
+}
+
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) nextHook() func(context.Context, int64, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) appendCall(r0 OrgInvitationStoreUpdateExpiryTimeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgInvitationStoreUpdateExpiryTimeFuncCall
+// objects describing the invocations of this function.
+func (f *OrgInvitationStoreUpdateExpiryTimeFunc) History() []OrgInvitationStoreUpdateExpiryTimeFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgInvitationStoreUpdateExpiryTimeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgInvitationStoreUpdateExpiryTimeFuncCall is an object that describes an
+// invocation of method UpdateExpiryTime on an instance of
+// MockOrgInvitationStore.
+type OrgInvitationStoreUpdateExpiryTimeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgInvitationStoreUpdateExpiryTimeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgInvitationStoreUpdateExpiryTimeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
