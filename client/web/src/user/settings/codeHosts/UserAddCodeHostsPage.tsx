@@ -25,7 +25,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
-import { CodeHostItem } from './CodeHostItem'
+import { CodeHostItem, ParentWindow } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
@@ -77,6 +77,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     telemetryService,
     authenticatedUser,
 }) => {
+    if (window.opener) {
+        const parentWindow: ParentWindow = window.opener as ParentWindow
+        parentWindow.onSuccess()
+        window.close()
+    }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
     const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
@@ -146,6 +151,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             setStatusOrError(asError(error))
         })
     }, [fetchExternalServices])
+
+    const refetchServices = (): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
@@ -379,6 +390,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null
