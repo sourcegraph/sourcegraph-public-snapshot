@@ -945,10 +945,10 @@ export async function handleCodeHost({
     const codeViewCount = new BehaviorSubject<number>(0)
 
     // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+    if (codeHost.getViewContextOnSourcegraphMount && (codeHost.getContext || codeHost.getReactiveContext)) {
         const { getContext, getReactiveContext, viewOnSourcegraphButtonClassProps } = codeHost
 
-        const context = getReactiveContext ? getReactiveContext(mutations) : from(getContext())
+        const context = getReactiveContext ? getReactiveContext(mutations) : from(getContext!())
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
         const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), context]).pipe(

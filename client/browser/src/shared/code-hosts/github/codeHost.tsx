@@ -4,7 +4,7 @@ import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
 import { defer, Observable, of, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -668,14 +668,18 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
 
 const getContext = async (): Promise<CodeHostContext> => {
     const { repoName, rawRepoName, pageType } = parseURL()
-    const { revision, filePath } = resolveFileInfo().blob
-
-    return {
+    const context: CodeHostContext = {
         rawRepoName,
-        revision: pageType === 'blob' || pageType === 'tree' ? revision : undefined,
-        filePath: pageType === 'blob' || pageType === 'tree' ? `${pageType}/${filePath}` : undefined,
         privateRepository: await isPrivateRepository(repoName),
     }
+
+    if (pageType === 'blob' || pageType === 'tree') {
+        const { revision, filePath } = resolveFileInfo().blob
+        context.revision = revision
+        context.filePath = `${pageType}/${filePath}`
+    }
+
+    return context
 }
 
 export const githubCodeHost: GithubCodeHost = {
@@ -688,7 +692,13 @@ export const githubCodeHost: GithubCodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext,
     getReactiveContext: mutations =>
-        mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext)),
+        mutations.pipe(
+            map(getFilePath),
+            catchError(() => of('')),
+            filter(Boolean),
+            distinctUntilChanged(),
+            mergeMap(getContext)
+        ),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {
