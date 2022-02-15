@@ -40,14 +40,15 @@ func getUserToInviteToOrganization(ctx context.Context, db database.DB, username
 
 	if conf.CanSendEmail() {
 		// Look up user's email address so we can send them an email (if needed).
-		email, verified, err := database.UserEmails(db).GetPrimaryEmail(ctx, userToInvite.ID)
+		email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userToInvite.ID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, "", errors.WithMessage(err, "looking up invited user's primary email address")
 		}
-		if verified {
-			// Completely discard unverified emails.
-			userEmailAddress = email
+		if !verified {
+			return nil, "", errors.New("cannot invite user because their primary email address is not verified")
 		}
+
+		userEmailAddress = email
 	}
 
 	if _, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
