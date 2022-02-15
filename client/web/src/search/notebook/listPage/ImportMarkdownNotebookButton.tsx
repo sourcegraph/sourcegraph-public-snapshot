@@ -37,8 +37,24 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
 
     const onImportButtonClick = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
+        // Open the system file picker.
         fileInputReference.current?.click()
     }, [fileInputReference, telemetryService])
+
+    const onFileLoad = useCallback(
+        (event: ProgressEvent<FileReader>, fileName: string): void => {
+            if (!event.target || !event.target.result || typeof event.target.result !== 'string') {
+                setImportState(INVALID_IMPORT_FILE_ERROR)
+                return
+            }
+            const blocks = convertMarkdownToBlocks(event.target.result).map(block =>
+                blockToGQLInput({ id: uuid.v4(), ...block })
+            )
+            const title = fileName.split('.snb.md')[0].trim() || 'New Notebook'
+            importNotebook({ title, blocks, public: false, namespace: authenticatedUser.id })
+        },
+        [authenticatedUser, importNotebook, setImportState]
+    )
 
     const onFileInputChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,26 +71,11 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
 
             setImportState(LOADING)
 
-            const fileName = files[0].name
             const reader = new FileReader()
-            reader.addEventListener('load', event => {
-                if (!event.target || !event.target.result || typeof event.target.result !== 'string') {
-                    setImportState(INVALID_IMPORT_FILE_ERROR)
-                    return
-                }
-                const blocks = convertMarkdownToBlocks(event.target.result).map(block =>
-                    blockToGQLInput({ id: uuid.v4(), ...block })
-                )
-                importNotebook({
-                    title: fileName.split('.snb.md')[0],
-                    blocks,
-                    public: false,
-                    namespace: authenticatedUser.id,
-                })
-            })
+            reader.addEventListener('load', event => onFileLoad(event, files[0].name))
             reader.readAsText(files[0])
         },
-        [authenticatedUser, importNotebook, setImportState]
+        [setImportState, onFileLoad]
     )
 
     return (

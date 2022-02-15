@@ -192,7 +192,7 @@ export class Notebook {
         return (
             this.getBlocks()
                 .map(block => serializeBlockToMarkdown(block, sourcegraphURL))
-                .join('\n\n') + '\n\n'
+                .join('\n\n') + '\n'
         )
     }
 }
