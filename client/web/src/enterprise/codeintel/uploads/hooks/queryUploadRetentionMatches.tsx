@@ -150,7 +150,7 @@ export const queryUploadRetentionMatches = (
         }),
         map(({ node, lsifUploads }) => {
             const conn: Connection<NormalizedUploadRetentionMatch> = {
-                totalCount: (node.retentionPolicyOverview.totalCount ?? 0) + (lsifUploads.totalCount ?? 0) > 0 ? 1 : 0,
+                totalCount: (node.retentionPolicyOverview.totalCount ?? 0) + ((lsifUploads.totalCount ?? 0) > 0 ? 1 : 0),
                 nodes: [],
             }
 
@@ -171,8 +171,6 @@ export const queryUploadRetentionMatches = (
                     })
                 )
             )
-
-            console.log(JSON.stringify(conn.nodes, null, 4))
 
             conn.pageInfo = node.retentionPolicyOverview.pageInfo
 

@@ -55,7 +55,7 @@ func (r *IndexResolver) Failure() *string          { return r.index.FailureMessa
 func (r *IndexResolver) StartedAt() *gql.DateTime  { return gql.DateTimeOrNil(r.index.StartedAt) }
 func (r *IndexResolver) FinishedAt() *gql.DateTime { return gql.DateTimeOrNil(r.index.FinishedAt) }
 func (r *IndexResolver) Steps() gql.IndexStepsResolver {
-	return &indexStepsResolver{db: database.NewDBWith(r.db), index: r.index}
+	return &indexStepsResolver{db: r.db, index: r.index}
 }
 func (r *IndexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
 
