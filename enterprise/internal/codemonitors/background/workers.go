@@ -301,23 +301,20 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		return errors.Wrap(err, "GetWebhookAction")
 	}
 
-	utmSource := "code-monitor-webhook"
-	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
+	externalURL, err := getExternalURL(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetSearchURL")
-	}
-
-	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetCodeMonitorURL")
+		return err
 	}
 
 	args := actionArgs{
 		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
+		MonitorID:          w.Monitor,
+		ExternalURL:        externalURL,
+		UTMSource:          "code-monitor-webhook",
 		Query:              m.Query,
-		QueryURL:           searchURL,
-		NumResults:         len(m.Results),
+		MonitorOwnerName:   m.OwnerName,
+		Results:            m.Results,
+		IncludeResults:     w.IncludeResults,
 	}
 
 	return sendWebhookNotification(ctx, w.URL, args)
@@ -340,23 +337,20 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 		return errors.Wrap(err, "GetSlackWebhookAction")
 	}
 
-	utmSource := "code-monitor-slack-webhook"
-	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
+	externalURL, err := getExternalURL(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetSearchURL")
-	}
-
-	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetCodeMonitorURL")
+		return err
 	}
 
 	args := actionArgs{
 		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
+		MonitorID:          w.Monitor,
+		ExternalURL:        externalURL,
+		UTMSource:          "code-monitor-slack-webhook",
 		Query:              m.Query,
-		QueryURL:           searchURL,
-		NumResults:         len(m.Results),
+		MonitorOwnerName:   m.OwnerName,
+		Results:            m.Results,
+		IncludeResults:     w.IncludeResults,
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)
