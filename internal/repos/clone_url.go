@@ -175,7 +175,12 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
 		return repo.URL, nil
 	}
-	u.User = url.User(cfg.Token)
+
+	if cfg.GithubAppInstallationID != "" {
+		u.User = url.UserPassword("x-access-token", cfg.Token)
+	} else {
+		u.User = url.User(cfg.Token)
+	}
 	return u.String(), nil
 }
 

@@ -5,11 +5,15 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -18,6 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,8 +36,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -106,22 +114,7 @@ func main() {
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			r, err := repoStore.GetByName(ctx, repo)
-			if err != nil {
-				return "", err
-			}
-
-			for _, info := range r.Sources {
-				// build the clone url using the external service config instead of using
-				// the source CloneURL field
-				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-				if err != nil {
-					return "", err
-				}
-
-				return repos.CloneURL(svc.Kind, svc.Config, r)
-			}
-			return "", errors.Errorf("no sources for %q", repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
@@ -282,6 +275,94 @@ func getDB() (*sql.DB, error) {
 		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
 	}
 	return sqlDB, err
+}
+
+func getRemoteURLFunc(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	repoStore database.RepoStore,
+	cli httpcli.Doer,
+	repo api.RepoName,
+) (string, error) {
+	r, err := repoStore.GetByName(ctx, repo)
+	if err != nil {
+		return "", err
+	}
+
+	for _, info := range r.Sources {
+		// build the clone url using the external service config instead of using
+		// the source CloneURL field
+		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+		if err != nil {
+			return "", err
+		}
+
+		dotcomConfig := conf.SiteConfig().Dotcom
+		if envvar.SourcegraphDotComMode() &&
+			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
+			svc.Kind == extsvc.KindGitHub {
+			parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				return "", errors.Wrap(err, "parse config")
+			}
+
+			c, ok := parsed.(*schema.GitHubConnection)
+			if !ok {
+				return "", errors.Errorf("expect *schema.GitHubConnection but got %T", parsed)
+			}
+			if c.GithubAppInstallationID != "" {
+				baseURL, err := url.Parse(c.Url)
+				if err != nil {
+					return "", errors.Wrap(err, "parse base URL")
+				}
+
+				apiURL, githubDotCom := github.APIRoot(baseURL)
+				if !githubDotCom {
+					return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
+				}
+
+				pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+				if err != nil {
+					return "", errors.Wrap(err, "decode private key")
+				}
+
+				auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+				if err != nil {
+					return "", errors.Wrap(err, "new authenticator with GitHub App")
+				}
+
+				client := github.NewV3Client(apiURL, auther, cli)
+
+				installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+				if err != nil {
+					return "", errors.Wrap(err, "parse installation ID")
+				}
+
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+
+				// TODO(cloud-saas): Cache the installation access token until it expires, see
+				// https://sourcegraph.atlassian.net/browse/CLOUD-255
+				token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
+				if err != nil {
+					return "", errors.Wrap(err, "create app installation access token")
+				}
+				if token.Token == nil {
+					return "", errors.New("empty token returned")
+				}
+
+				c.Token = *token.Token
+				config, err := json.Marshal(c)
+				if err != nil {
+					return "", errors.Wrap(err, "marshal config")
+				}
+				svc.Config = string(config)
+			}
+		}
+
+		return repos.CloneURL(svc.Kind, svc.Config, r)
+	}
+	return "", errors.Errorf("no sources for %q", repo)
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
