@@ -27,8 +27,8 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
-    /* Clicking on a file match result opens the file in a new tab */
-    openFileMatchesInNewTab?: boolean
+    /* Clicking on a match opens the link in a new tab */
+    openInNewTab?: boolean
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -220,7 +220,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const href = event.currentTarget.getAttribute('data-href')
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    if (props.openFileMatchesInNewTab) {
+                    if (props.openInNewTab) {
                         openLink(href, event, 'middle')
                     } else {
                         openLink(href, event, 'primary')
@@ -228,8 +228,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 }
             }
         },
-        [props.openFileMatchesInNewTab]
+        [props.openInNewTab]
     )
+
+    const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
@@ -248,6 +250,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
+                    {...openInNewTabProps}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>

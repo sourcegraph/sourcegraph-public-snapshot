@@ -62,9 +62,9 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     containerClassName?: string
 
     /**
-     * Clicking on a file match result opens the file in a new tab.
+     * Clicking on a match opens the link in a new tab.
      */
-    openFileMatchesInNewTab?: boolean
+    openInNewTab?: boolean
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length

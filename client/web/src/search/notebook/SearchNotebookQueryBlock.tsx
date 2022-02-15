@@ -203,7 +203,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             assetsRoot={window.context?.assetsRoot || ''}
                             renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                             platformContext={props.platformContext}
-                            openFileMatchesInNewTab={true}
+                            openMatchesInNewTab={true}
                         />
                     </div>
                 )}

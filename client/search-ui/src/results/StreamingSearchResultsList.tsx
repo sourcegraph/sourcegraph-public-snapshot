@@ -46,8 +46,8 @@ export interface StreamingSearchResultsListProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
-    /** Clicking on a file match result opens the file in a new tab. */
-    openFileMatchesInNewTab?: boolean
+    /** Clicking on a match opens the link in a new tab. */
+    openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
@@ -69,7 +69,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     assetsRoot,
     renderSearchUserNeedsCodeHost,
     platformContext,
-    openFileMatchesInNewTab,
+    openMatchesInNewTab,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -103,7 +103,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
-                            openFileMatchesInNewTab={openFileMatchesInNewTab}
+                            openInNewTab={openMatchesInNewTab}
                         />
                     )
                 case 'commit':
@@ -114,6 +114,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
+                            openInNewTab={openMatchesInNewTab}
                         />
                     )
                 case 'repo':
@@ -136,7 +137,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
-            openFileMatchesInNewTab,
+            openMatchesInNewTab,
         ]
     )
 
