@@ -23,18 +23,18 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 
 # Can't use it because it's not yet https
 # PRIVATE_REGISTRY="private-docker-registry:5000"
-PRIVATE_REGISTRY="us.gcr.io"
+# PRIVATE_REGISTRY="us.gcr.io"
 
-docker pull us.gcr.io/sourcegraph-dev/gitserver:insiders || true
-docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli || true
-docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion || true
-docker pull $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier || true
+docker pull index.docker.io/sourcegraph/gitserver:insiders || true
+docker pull index.docker.io/sourcegraph/gitserver:p4cli || true
+docker pull index.docker.io/sourcegraph/gitserver:p4-fusion || true
+docker pull index.docker.io/sourcegraph/gitserver:coursier || true
 
 docker build \
   --target p4cli \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4cli \
+  -t index.docker.io/sourcegraph/gitserver:p4cli \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
@@ -44,9 +44,9 @@ docker build \
 docker build \
   --target p4-fusion \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
-  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4cli \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4-fusion \
+  -t index.docker.io/sourcegraph/gitserver:p4-fusion \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
@@ -56,25 +56,25 @@ docker build \
 docker build \
   --target coursier \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
-  -t $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4cli \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4-fusion \
+  --cache-from index.docker.io/sourcegraph/gitserver:coursier \
+  -t index.docker.io/sourcegraph/gitserver:coursier \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
 
-docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli
-docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4-fusion
-docker push $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier
+docker push index.docker.io/sourcegraph/gitserver:p4cli
+docker push index.docker.io/sourcegraph/gitserver:p4-fusion
+docker push index.docker.io/sourcegraph/gitserver:coursier
 
 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:p4cli \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:fusion \
-  --cache-from $PRIVATE_REGISTRY/sourcegraph-dev/gitserver:coursier \
+  --cache-from index.docker.io/sourcegraph/gitserver:p4cli \
+  --cache-from index.docker.io/sourcegraph/gitserver:fusion \
+  --cache-from index.docker.io/sourcegraph/gitserver:coursier \
   --cache-from us.gcr.io/sourcegraph-dev/server:insiders \
   -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
