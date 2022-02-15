@@ -84,7 +84,10 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                             repositoryName: entry.repo,
                             revision: entry.revision,
                             filePath: entry.path,
-                            lineRange: entry.lineRange,
+                            // Notebooks expect the end line to be exclusive
+                            lineRange: entry.lineRange
+                                ? { ...entry.lineRange, endLine: entry.lineRange?.endLine + 1 }
+                                : null,
                         },
                     })
                     break
@@ -269,7 +272,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                             }}
                         >
                             + <CodeBracketsIcon className="icon-inline" /> Range (
-                            {entry.lineRange.endLine - entry.lineRange.startLine})
+                            {entry.lineRange.endLine - entry.lineRange.startLine + 1})
                         </Button>
                     )}
                 </span>
@@ -415,8 +418,8 @@ function fileName(path: string): string {
 }
 
 function formatLineRange(lineRange: IHighlightLineRange): string {
-    if (lineRange.startLine === lineRange.endLine - 1) {
-        return `L${lineRange.startLine}`
+    if (lineRange.startLine === lineRange.endLine) {
+        return `L${lineRange.startLine + 1}`
     }
-    return `L${lineRange.startLine}:${lineRange.endLine}`
+    return `L${lineRange.startLine + 1}:${lineRange.endLine + 1}`
 }
