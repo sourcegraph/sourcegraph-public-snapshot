@@ -3,7 +3,6 @@ package rockskip
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -75,7 +74,7 @@ func TestIndex(t *testing.T) {
 	state := map[string][]string{}
 
 	add := func(filename string, contents string) {
-		fatalIfError(ioutil.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "ioutil.WriteFile")
+		fatalIfError(os.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "os.WriteFile")
 		gitRun("add", filename)
 		symbols, err := simpleParse(filename, []byte(contents))
 		fatalIfError(err, "simpleParse")

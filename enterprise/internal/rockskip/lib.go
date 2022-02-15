@@ -457,7 +457,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 
 	tasklog.Start("Acquire indexing semaphore")
 	if !s.indexingSemaphore.TryAcquire(1) {
-		return fmt.Errorf("too many indexing operations in progress")
+		return errors.Newf("too many indexing operations in progress")
 	}
 	requestStatus.HoldLock("indexing semaphore")
 	defer func() {
@@ -490,7 +490,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 
 		r := ruler(tipHeight + 1)
 		if r >= len(hops) {
-			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
+			return errors.Newf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
 		}
 
 		tasklog.Start("InsertCommit")
@@ -537,7 +537,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 					}
 				}
 				if !found {
-					return fmt.Errorf("could not find blob for path %s", deletedPath)
+					return errors.Newf("could not find blob for path %s", deletedPath)
 				}
 			}
 
@@ -869,7 +869,7 @@ func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string,
 		line = line[:len(line)-1] // Drop the trailing newline
 		parts := strings.Split(line, " ")
 		if len(parts) != 3 {
-			return fmt.Errorf("unexpected cat-file output: %q", line)
+			return errors.Newf("unexpected cat-file output: %q", line)
 		}
 		size, err := strconv.ParseInt(parts[2], 10, 64)
 		if err != nil {
@@ -886,7 +886,7 @@ func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string,
 			return errors.Wrap(err, "discard newline")
 		}
 		if discarded != 1 {
-			return fmt.Errorf("expected to discard 1 byte, but discarded %d", discarded)
+			return errors.Newf("expected to discard 1 byte, but discarded %d", discarded)
 		}
 
 		err = onFile(path, fileContents)
@@ -907,7 +907,7 @@ func GetCommit(ctx context.Context, db Queryable, repo, givenCommit string) (anc
 	if err == sql.ErrNoRows {
 		return "", 0, false, nil
 	} else if err != nil {
-		return "", 0, false, fmt.Errorf("GetCommit: %s", err)
+		return "", 0, false, errors.Newf("GetCommit: %s", err)
 	}
 	return ancestor, height, true, nil
 }
@@ -929,7 +929,7 @@ func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
-		return 0, false, fmt.Errorf("GetBlob: %s", err)
+		return 0, false, errors.Newf("GetBlob: %s", err)
 	}
 	return id, true, nil
 }
@@ -979,7 +979,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 
 	requestStatus.Tasklog.Start("Acquire search semaphore")
 	if !s.searchingSemaphore.TryAcquire(1) {
-		return nil, fmt.Errorf("too many searches in flight")
+		return nil, errors.Newf("too many searches in flight")
 	}
 	requestStatus.HoldLock("search semaphore")
 	defer func() {
@@ -1078,7 +1078,7 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
 		if len(paths) != 1 {
-			return nil, fmt.Errorf("Search: expected 1 path, got %d", len(paths))
+			return nil, errors.Newf("Search: expected 1 path, got %d", len(paths))
 		}
 		path := paths[0]
 
@@ -1315,7 +1315,7 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 			return errors.Wrap(err, "PrintInternals: Scan")
 		}
 		if len(paths) != 1 {
-			return fmt.Errorf("Search: expected 1 path, got %d", len(paths))
+			return errors.Newf("Search: expected 1 path, got %d", len(paths))
 		}
 		path := paths[0]
 		fmt.Printf("  id %d path %-10s\n", id, path)
@@ -1404,7 +1404,7 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 			// Skip the '\n'
 			discarded, err := reader.Discard(1)
 			if discarded != 1 {
-				return fmt.Errorf("discarded %d bytes, expected 1", discarded)
+				return errors.Newf("discarded %d bytes, expected 1", discarded)
 			} else if err != nil {
 				return err
 			}
@@ -1429,7 +1429,7 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 				buf = make([]byte, 99)
 				read, err := io.ReadFull(reader, buf)
 				if read != 99 {
-					return fmt.Errorf("read %d bytes, expected 99", read)
+					return errors.Newf("read %d bytes, expected 99", read)
 				} else if err != nil {
 					return err
 				}
@@ -1479,12 +1479,12 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 					continue
 				case 'C':
 					// Copied
-					return fmt.Errorf("unexpected status 'C' given --no-renames was specified")
+					return errors.Newf("unexpected status 'C' given --no-renames was specified")
 				case 'R':
 					// Renamed
-					return fmt.Errorf("unexpected status 'R' given --no-renames was specified")
+					return errors.Newf("unexpected status 'R' given --no-renames was specified")
 				case 'X':
-					return fmt.Errorf("unexpected status 'X' indicates a bug in git")
+					return errors.Newf("unexpected status 'X' indicates a bug in git")
 				default:
 					fmt.Printf("LogReverse commit %q path %q: unrecognized diff status %q, skipping\n", commit, path, string(statusByte))
 					continue
