@@ -57,8 +57,17 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
 		}
 		if truncatedCount > 0 {
-			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("...and %d more matches.", truncatedCount)))
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+				"...and <%s|%d more matches>.",
+				getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
+				truncatedCount,
+			)))
 		}
+	} else {
+		blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+			"<%s|View results>",
+			getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
+		)))
 	}
 
 	blocks = append(blocks,
