@@ -3,17 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"sync"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-ctags"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -24,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -41,7 +36,7 @@ func main() {
 	}
 }
 
-func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string) {
+func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
@@ -49,176 +44,42 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 	}
 
 	db := mustInitializeCodeIntelDB()
-
-	statuses := NewStatus()
-	searchFunc, err := MakeRockskipSearchFunc(observationContext, db, config, statuses)
+	gitserverClient := symbolsGitserver.NewClient(observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
+	git := NewGitserver(repositoryFetcher)
+	createParser := func() rockskip.ParseSymbolsFunc { return lazyParser(config.Ctags) }
+	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxConcurrentlySearching, config.MaxRepos)
 	if err != nil {
-		log.Fatalf("Failed to create rockskip search function: %s", err)
+		return nil, nil, nil, config.Ctags.Command, err
 	}
 
-	return searchFunc, handleStatus(db, statuses), nil, config.Ctags.Command
-}
-
-// RequestId is a unique int for each HTTP request.
-type RequestId = int
-
-// ServerStatus contains the status of all requests.
-type ServerStatus struct {
-	requestIdToRequestStatus map[RequestId]*rockskip.RequestStatus
-	nextRequestId            RequestId
-	mu                       sync.Mutex
-}
-
-func NewStatus() *ServerStatus {
-	return &ServerStatus{
-		requestIdToRequestStatus: map[int]*rockskip.RequestStatus{},
-		nextRequestId:            0,
-		mu:                       sync.Mutex{},
+	search := func(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
+		blobs, err := server.Search(ctx, args)
+		if err != nil {
+			return nil, err
+		}
+		return convertBlobsToSymbols(blobs), nil
 	}
-}
 
-func (s *ServerStatus) BeginRequest(repo string, commit string) *rockskip.RequestStatus {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	requestId := s.nextRequestId
-	s.nextRequestId++
-
-	requestStatus := rockskip.NewRequestStatus(repo, commit, func() {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		delete(s.requestIdToRequestStatus, requestId)
-	})
-
-	s.requestIdToRequestStatus[requestId] = requestStatus
-
-	return requestStatus
-}
-
-func handleStatus(db *sql.DB, statuses *ServerStatus) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		repositoryCount, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
-		if err != nil {
-			log15.Error("Failed to count repos", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		blobCount, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_blobs"))
-		if err != nil {
-			log15.Error("Failed to count blobs", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		blobsSize, _, err := basestore.ScanFirstString(db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
-		if err != nil {
-			log15.Error("Failed to get size of blobs table", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "This is the symbols service status page.")
-		fmt.Fprintln(w, "")
-
-		fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
-		fmt.Fprintf(w, "Number of blobs indexed: %d\n", blobCount)
-		fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
-		fmt.Fprintln(w, "")
-
-		statuses.mu.Lock()
-		defer statuses.mu.Unlock()
-
-		if len(statuses.requestIdToRequestStatus) == 0 {
-			fmt.Fprintln(w, "No requests in flight.")
-			return
-		}
-		fmt.Fprintln(w, "Here's all in-flight requests:")
-		fmt.Fprintln(w, "")
-
-		ids := []int{}
-		for id := range statuses.requestIdToRequestStatus {
-			ids = append(ids, id)
-		}
-		sort.Ints(ids)
-
-		for _, id := range ids {
-			status := statuses.requestIdToRequestStatus[id]
-			status.WithLock(func() {
-				fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
-				if status.Total > 0 {
-					fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
-				}
-				fmt.Fprintf(w, "    %s\n", status.Tasklog)
-				for name := range status.HeldLocks {
-					fmt.Fprintf(w, "    holding %s\n", name)
-				}
-				fmt.Fprintln(w)
-			})
-		}
-	}
+	return search, server.HandleStatus, nil, config.Ctags.Command, nil
 }
 
 type RockskipConfig struct {
-	Ctags                   types.CtagsConfig
-	RepositoryFetcher       types.RepositoryFetcherConfig
-	MaxRepos                int
-	MaxConcurrentSearches   int
-	MaxConcurrentlyIndexing int
+	Ctags                    types.CtagsConfig
+	RepositoryFetcher        types.RepositoryFetcherConfig
+	MaxRepos                 int
+	MaxConcurrentlySearching int
+	MaxConcurrentlyIndexing  int
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	return RockskipConfig{
-		Ctags:                   types.LoadCtagsConfig(baseConfig),
-		RepositoryFetcher:       types.LoadRepositoryFetcherConfig(baseConfig),
-		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
-		MaxConcurrentSearches:   baseConfig.GetInt("MAX_CONCURRENT_SEARCHES", "10", "maximum number of search requests at a time (also limits concurrent Postgres connections)"),
-		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
+		Ctags:                    types.LoadCtagsConfig(baseConfig),
+		RepositoryFetcher:        types.LoadRepositoryFetcherConfig(baseConfig),
+		MaxRepos:                 baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
+		MaxConcurrentlySearching: baseConfig.GetInt("MAX_CONCURRENTLY_SEARCHING", "10", "maximum number of search requests to serve at a time (also limits concurrent Postgres connections)"),
+		MaxConcurrentlyIndexing:  baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
 	}
-}
-
-func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB, config RockskipConfig, serverStatus *ServerStatus) (types.SearchFunc, error) {
-	gitserverClient := symbolsGitserver.NewClient(observationContext)
-
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
-
-	searchSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentSearches))
-	indexingSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
-
-	updateChan := make(chan struct{}, 1)
-	cleanupConn, err := db.Conn(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO convert to a background routine
-	go func() {
-		requestStatus := serverStatus.BeginRequest("cleanup", "status")
-		for range updateChan {
-			// TODO create a new cleanup status instead of a request status
-			err := rockskip.DeleteOldRepos(context.Background(), cleanupConn, config.MaxRepos, requestStatus)
-			if err != nil {
-				log15.Error("Failed to delete old repos", "error", err)
-			}
-		}
-	}()
-
-	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
-		git := NewGitserver(repositoryFetcher)
-
-		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
-
-		blobs, err := rockskip.Search(ctx, args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus, updateChan)
-		requestStatus.End()
-		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.Search")
-		}
-
-		return convertBlobsToSymbols(blobs), err
-	}
-
-	return searchFunc, nil
 }
 
 func convertBlobsToSymbols(blobs []rockskip.Blob) []result.Symbol {
@@ -271,22 +132,6 @@ func lazyParser(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
 	}
 }
 
-func mustInitializeCodeIntelDB() *sql.DB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.CodeIntelPostgresDSN
-	})
-	var (
-		db  *sql.DB
-		err error
-	)
-	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
-	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
-	}
-
-	return db
-}
-
 func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
@@ -305,6 +150,22 @@ func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 	}
 
 	return symbolsParser.NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols)
+}
+
+func mustInitializeCodeIntelDB() *sql.DB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
+	})
+	var (
+		db  *sql.DB
+		err error
+	)
+	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
+	if err != nil {
+		log.Fatalf("Failed to connect to codeintel database: %s", err)
+	}
+
+	return db
 }
 
 type Gitserver struct {

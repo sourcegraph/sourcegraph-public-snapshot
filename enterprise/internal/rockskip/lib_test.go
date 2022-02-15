@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -100,12 +99,16 @@ func TestIndex(t *testing.T) {
 	db := dbtest.NewDB(t)
 	defer db.Close()
 
+	createParser := func() ParseSymbolsFunc { return simpleParse }
+
+	server, err := NewServer(db, git, createParser, 1, 1, 1)
+	fatalIfError(err, "NewServer")
+
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		status := NewRequestStatus(repo, commit, func() {})
 		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-		blobs, err := Search(context.Background(), args, git, db, simpleParse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status, make(chan<- struct{}))
+		blobs, err := server.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
 		// Make sure the paths match.

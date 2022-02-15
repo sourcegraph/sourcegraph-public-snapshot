@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os/exec"
 	"regexp"
 	"regexp/syntax"
@@ -17,11 +18,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -252,9 +255,163 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
+// RequestId is a unique int for each HTTP request.
+type RequestId = int
+
+// ServerStatus contains the status of all requests.
+type ServerStatus struct {
+	requestIdToRequestStatus map[RequestId]*RequestStatus
+	nextRequestId            RequestId
+	mu                       sync.Mutex
+}
+
+func NewStatus() *ServerStatus {
+	return &ServerStatus{
+		requestIdToRequestStatus: map[int]*RequestStatus{},
+		nextRequestId:            0,
+		mu:                       sync.Mutex{},
+	}
+}
+
+func (s *ServerStatus) BeginRequest(repo string, commit string) *RequestStatus {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	requestId := s.nextRequestId
+	s.nextRequestId++
+
+	requestStatus := NewRequestStatus(repo, commit, func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.requestIdToRequestStatus, requestId)
+	})
+
+	s.requestIdToRequestStatus[requestId] = requestStatus
+
+	return requestStatus
+}
+
+type Server struct {
+	db                 *sql.DB
+	git                Git
+	createParser       func() ParseSymbolsFunc
+	status             *ServerStatus
+	updateChan         chan struct{}
+	searchingSemaphore *semaphore.Weighted
+	indexingSemaphore  *semaphore.Weighted
+	maxRepos           int
+}
+
+func NewServer(
+	db *sql.DB,
+	git Git,
+	createParser func() ParseSymbolsFunc,
+	maxConcurrentlyIndexing int,
+	maxConcurrentlySearching int,
+	maxRepos int,
+) (*Server, error) {
+	server := &Server{
+		db:                 db,
+		git:                git,
+		createParser:       createParser,
+		status:             NewStatus(),
+		updateChan:         make(chan struct{}, 1),
+		searchingSemaphore: semaphore.NewWeighted(int64(maxConcurrentlySearching)),
+		indexingSemaphore:  semaphore.NewWeighted(int64(maxConcurrentlyIndexing)),
+		maxRepos:           maxRepos,
+	}
+
+	connForCleanup, err := db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		requestStatus := server.status.BeginRequest("cleanup", "status")
+
+		for range server.updateChan {
+			// TODO create a new cleanup status instead of a request status
+			err := DeleteOldRepos(context.Background(), connForCleanup, server.maxRepos, requestStatus)
+			if err != nil {
+				log15.Error("Failed to delete old repos", "error", err)
+			}
+		}
+	}()
+
+	return server, nil
+}
+
+func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	repositoryCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
+	if err != nil {
+		log15.Error("Failed to count repos", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	blobCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_blobs"))
+	if err != nil {
+		log15.Error("Failed to count blobs", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	blobsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
+	if err != nil {
+		log15.Error("Failed to get size of blobs table", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "This is the symbols service status page.")
+	fmt.Fprintln(w, "")
+
+	fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
+	fmt.Fprintf(w, "Number of blobs indexed: %d\n", blobCount)
+	fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
+	fmt.Fprintln(w, "")
+
+	s.status.mu.Lock()
+	defer s.status.mu.Unlock()
+
+	if len(s.status.requestIdToRequestStatus) == 0 {
+		fmt.Fprintln(w, "No requests in flight.")
+		return
+	}
+	fmt.Fprintln(w, "Here's all in-flight requests:")
+	fmt.Fprintln(w, "")
+
+	ids := []int{}
+	for id := range s.status.requestIdToRequestStatus {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids)
+
+	for _, id := range ids {
+		status := s.status.requestIdToRequestStatus[id]
+		status.WithLock(func() {
+			fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
+			if status.Total > 0 {
+				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
+			}
+			fmt.Fprintf(w, "    %s\n", status.Tasklog)
+			locks := []string{}
+			for lock := range status.HeldLocks {
+				locks = append(locks, lock)
+			}
+			sort.Strings(locks)
+			for _, lock := range locks {
+				fmt.Fprintf(w, "    holding %s\n", lock)
+			}
+			fmt.Fprintln(w)
+		})
+	}
+}
+
+func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo, givenCommit string) (err error) {
 	// Acquire the indexing lock on the repo.
-	releaseLock, err := iLock(ctx, db, requestStatus, repo)
+	releaseLock, err := iLock(ctx, conn, requestStatus, repo)
 	if err != nil {
 		return err
 	}
@@ -267,11 +424,11 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = git.RevListEach(repo, givenCommit, func(commit string) (shouldContinue bool, err error) {
+	err = s.git.RevListEach(repo, givenCommit, func(commit string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommit")
-		_, height, present, err := GetCommit(ctx, db, repo, commit)
+		_, height, present, err := GetCommit(ctx, conn, repo, commit)
 		if err != nil {
 			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -293,27 +450,28 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 	}
 
 	tasklog.Start("Acquire indexing semaphore")
-	err = indexingSemaphore.Acquire(ctx, 1)
-	if err != nil {
-		return err
+	if !s.indexingSemaphore.TryAcquire(1) {
+		return fmt.Errorf("too many indexing operations in progress")
 	}
 	requestStatus.HoldLock("indexing semaphore")
 	defer func() {
-		indexingSemaphore.Release(1)
+		s.indexingSemaphore.Release(1)
 		requestStatus.ReleaseLock("indexing semaphore")
 	}()
 
 	pathToBlobIdCache := map[string]int{}
 
+	parse := s.createParser()
+
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = git.LogReverseEach(repo, givenCommit, missingCount, func(entry LogEntry) error {
+	err = s.git.LogReverseEach(repo, givenCommit, missingCount, func(entry LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		requestStatus.SetProgress(entriesIndexed, missingCount)
 		entriesIndexed++
 
-		tx, err := db.BeginTx(ctx, nil)
+		tx, err := conn.BeginTx(ctx, nil)
 		if err != nil {
 			return errors.Wrap(err, "begin transaction")
 		}
@@ -385,7 +543,7 @@ func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 		}
 
 		tasklog.Start("ArchiveEach")
-		err = git.ArchiveEach(repo, entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
+		err = s.git.ArchiveEach(repo, entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
 			defer tasklog.Continue("ArchiveEach")
 
 			tasklog.Start("parse")
@@ -806,24 +964,26 @@ func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus Sta
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus, updateChan chan<- struct{}) (blobs []Blob, err error) {
+func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, err error) {
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
+	requestStatus := s.status.BeginRequest(repo, commit)
+	defer requestStatus.End()
+
 	requestStatus.Tasklog.Start("Acquire search semaphore")
-	err = searchSemaphore.Acquire(ctx, 1)
-	if err != nil {
-		return nil, err
+	if !s.searchingSemaphore.TryAcquire(1) {
+		return nil, fmt.Errorf("too many searches in flight")
 	}
 	requestStatus.HoldLock("search semaphore")
 	defer func() {
-		searchSemaphore.Release(1)
+		s.searchingSemaphore.Release(1)
 		requestStatus.ReleaseLock("search semaphore")
 	}()
 
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-	conn, err := db.Conn(ctx)
+	conn, err := s.db.Conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -838,7 +998,7 @@ func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, par
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	requestStatus.Tasklog.Start("update last_accessed_at")
-	err = updateLastAccessedAt(ctx, conn, repo, updateChan)
+	err = updateLastAccessedAt(ctx, conn, repo, s.updateChan)
 	if err != nil {
 		return nil, err
 	}
@@ -849,7 +1009,7 @@ func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, par
 	if err != nil {
 		return nil, err
 	} else if !present {
-		err = Index(ctx, git, conn, requestStatus, parse, repo, commit, maxRepos, indexingSemaphore)
+		err = s.Index(ctx, conn, requestStatus, repo, commit)
 		if err != nil {
 			return nil, err
 		}
