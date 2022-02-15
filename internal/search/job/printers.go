@@ -2,6 +2,7 @@ package job
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -263,4 +264,119 @@ func PrettyMermaid(job Job) string {
 	}
 	writeMermaid(job)
 	return b.String()
+}
+
+// toJSON returns a JSON object representing a job. If `verbose` is true, values
+// for all leaf jobs are emitted; if false, only the names of leaf nodes are
+// emitted.
+func toJSON(job Job, verbose bool) interface{} {
+	var emitJSON func(Job) interface{}
+	emitJSON = func(job Job) interface{} {
+		switch j := job.(type) {
+		case
+			*run.RepoSearch,
+			*textsearch.RepoSubsetTextSearch,
+			*textsearch.RepoUniverseTextSearch,
+			*structural.StructuralSearch,
+			*commit.CommitSearch,
+			*symbol.RepoSubsetSymbolSearch,
+			*symbol.RepoUniverseSymbolSearch,
+			*repos.ComputeExcludedRepos,
+			*noopJob:
+			if verbose {
+				return map[string]interface{}{j.Name(): j}
+			}
+			return j.Name()
+
+		case *AndJob:
+			children := make([]interface{}, 0, len(j.children))
+			for _, child := range j.children {
+				children = append(children, emitJSON(child))
+			}
+			return struct {
+				And []interface{} `json:"AND"`
+			}{
+				And: children,
+			}
+
+		case *OrJob:
+			children := make([]interface{}, 0, len(j.children))
+			for _, child := range j.children {
+				children = append(children, emitJSON(child))
+			}
+			return struct {
+				Or []interface{} `json:"OR"`
+			}{
+				Or: children,
+			}
+
+		case *PriorityJob:
+			priority := struct {
+				Required interface{} `json:"REQUIRED"`
+				Optional interface{} `json:"OPTIONAL"`
+			}{
+				Required: emitJSON(j.required),
+				Optional: emitJSON(j.optional),
+			}
+			return struct {
+				Priority interface{} `json:"PRIORITY"`
+			}{
+				Priority: priority,
+			}
+
+		case *ParallelJob:
+			children := make([]interface{}, 0, len(j.children))
+			for _, child := range j.children {
+				children = append(children, emitJSON(child))
+			}
+			return struct {
+				Parallel interface{} `json:"PARALLEL"`
+			}{
+				Parallel: children,
+			}
+
+		case *TimeoutJob:
+			return struct {
+				Timeout interface{} `json:"TIMEOUT"`
+				Value   string      `json:"value"`
+			}{
+				Timeout: emitJSON(j.child),
+				Value:   j.timeout.String(),
+			}
+
+		case *LimitJob:
+			return struct {
+				Limit interface{} `json:"LIMIT"`
+				Value int         `json:"value"`
+			}{
+				Limit: emitJSON(j.child),
+				Value: j.limit,
+			}
+
+		case *subRepoPermsFilterJob:
+			return struct {
+				Filter interface{} `json:"FILTER"`
+				Value  string      `json:"value"`
+			}{
+				Filter: emitJSON(j.child),
+				Value:  "SubRepoPermissions",
+			}
+
+		default:
+			panic(fmt.Sprintf("unsupported job %T for toJSON converter", job))
+		}
+	}
+	return emitJSON(job)
+}
+
+// PrettyJSON returns a summary of a job in formatted JSON.
+func PrettyJSON(job Job) string {
+	result, _ := json.MarshalIndent(toJSON(job, false), "", "  ")
+	return string(result)
+}
+
+// PrettyJSON returns the full fidelity of values that comprise a job in formatted JSON.
+func PrettyJSONVerbose(job Job) string {
+	result, _ := json.MarshalIndent(toJSON(job, true), "", "  ")
+	return string(result)
 }
