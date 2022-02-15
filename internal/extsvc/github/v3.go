@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -46,6 +49,9 @@ type V3Client struct {
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
+
+	// orgsCache is the organizations cache associated with the token.
+	orgsCache *rcache.Cache
 
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
@@ -114,10 +120,16 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
+		orgsCache:        newOrgsCache(apiURL, a),
 		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
 	}
 }
+
+var orgsCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_orgs_github_cache_hit",
+	Help: "Counts cache hits and misses for GitHub orgs list.",
+}, []string{"type"})
 
 // WithAuthenticator returns a new V3Client that uses the same configuration as
 // the current V3Client, except authenticated as the GitHub user with the given
@@ -186,6 +198,20 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	}
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+}
+
+func newOrgsCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
+	if urlIsGitHubDotCom(apiURL) {
+		return nil
+	}
+
+	if a == nil {
+		log15.Warn("Cannot initialize orgsCache for nil auth")
+		return nil
+	}
+
+	// Cache with a 1 hour TTL.
+	return rcache.NewWithTTL("gh_orgs:"+a.Hash(), 3600)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
@@ -473,9 +499,38 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // server instances only. Callers should be careful not to use this for github.com or GitHub
 // enterprise cloud.
 func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org, hasNextPage bool, err error) {
+	// Format of the key: <hash-of-auth-token>-<page-number>
+	key := fmt.Sprintf("%s-%d", strings.ToLower(c.auth.Hash()), page)
+
+	if c.orgsCache == nil {
+		return nil, false, errors.New("ListOrganizations cannot be invoked if orgsCache is nil (client belongs to either github.com or has no authenticator")
+	}
+
+	if b, ok := c.orgsCache.Get(key); ok {
+		orgsCacheCounter.WithLabelValues("hit").Inc()
+
+		if err = json.Unmarshal(b, &orgs); err != nil {
+			return nil, false, errors.Wrap(err, "ListOrganizations: unmarshalling orgs")
+		}
+
+		return orgs, len(orgs) > 0, nil
+	}
+
+	orgsCacheCounter.WithLabelValues("miss").Inc()
+
 	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
 	_, err = c.get(ctx, path, &orgs)
-	return orgs, len(orgs) > 0, err
+	if err != nil {
+		return nil, false, err
+	}
+
+	value, err := json.Marshal(orgs)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "ListOrganizations: marshalling orgs")
+	}
+	c.orgsCache.Set(key, value)
+
+	return orgs, len(orgs) > 0, nil
 }
 
 // ListOrganizationMembers retrieves collaborators in the given organization.

@@ -453,12 +453,17 @@ func TestGetOrganization(t *testing.T) {
 // sourcegraph-vcr which can also be accessed in 1password or under Personal access tokens in the
 // sourcegraph-vcr user account.
 func TestListOrganizations(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListOrganizations")
-	defer save()
+	rcache.SetupForTest(t)
 
-	t.Run("orgs", func(t *testing.T) {
-		ctx := context.Background()
-		orgs, hasNextPage, err := cli.ListOrganizations(ctx, 1)
+	t.Run("enterprise", func(t *testing.T) {
+		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
+		defer save()
+
+		if cli.orgsCache == nil {
+			t.Fatal("expected orgsCache to be initialised but is nil")
+		}
+
+		orgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -473,6 +478,20 @@ func TestListOrganizations(t *testing.T) {
 
 		if !hasNextPage {
 			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		}
+	})
+
+	t.Run("githubdotcom", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "ListOrganizations")
+		defer save()
+
+		if cli.orgsCache != nil {
+			t.Fatal("expected orgsCache to be nil but is initialised")
+		}
+
+		_, _, err := cli.ListOrganizations(context.Background(), 1)
+		if err == nil {
+			t.Fatal("expected error but found none")
 		}
 	})
 }
@@ -616,6 +635,23 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	}
 
 	return NewV3Client(uri, vcrToken, doer), save
+}
+
+func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
+	t.Helper()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	uri, err := url.Parse("https://ghe.sgdev.org/api/v3")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return NewV3Client(uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }
