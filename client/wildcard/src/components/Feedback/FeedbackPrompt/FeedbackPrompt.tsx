@@ -195,6 +195,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     position = Position.bottomEnd,
     modal = false,
     modalLabelId = 'sourcegraph-feedback-modal',
+    productResearchEnabled,
 }) => {
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const ChildrenComponent = typeof children === 'function' && children
@@ -210,7 +211,11 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     const triggerElement = ChildrenComponent ? <ChildrenComponent isOpen={isOpen} onClick={toggleIsOpen} /> : children
 
     const contentElement = (
-        <FeedbackPromptContent onSubmit={onSubmit} productResearchEnabled={true} onClose={handleClosePrompt} />
+        <FeedbackPromptContent
+            onSubmit={onSubmit}
+            productResearchEnabled={productResearchEnabled}
+            onClose={handleClosePrompt}
+        />
     )
 
     if (modal) {

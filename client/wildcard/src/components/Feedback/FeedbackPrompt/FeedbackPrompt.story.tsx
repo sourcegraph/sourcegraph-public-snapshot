@@ -20,6 +20,13 @@ const config: Meta = {
         ),
     ],
     parameters: {
+        /**
+         * Uncomment this once Storybook is upgraded to v6.4.* and the `play` function
+         * is used to show the feedback prompt component.
+         *
+         * https://www.chromatic.com/docs/hoverfocus#javascript-triggered-hover-states
+         */
+        // chromatic: { disableSnapshot: false },
         component: FeedbackPrompt,
         design: {
             type: 'figma',

@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React, { useCallback } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -19,9 +19,6 @@ const config: Meta = {
 
     parameters: {
         component: RadioButton,
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -76,7 +73,7 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
     )
 }
 
-export const RadioExamples: React.FunctionComponent = () => (
+export const RadioExamples: Story = () => (
     <>
         <h1>Radio</h1>
         <Grid columnCount={4}>
@@ -99,3 +96,10 @@ export const RadioExamples: React.FunctionComponent = () => (
         </Grid>
     </>
 )
+
+RadioExamples.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

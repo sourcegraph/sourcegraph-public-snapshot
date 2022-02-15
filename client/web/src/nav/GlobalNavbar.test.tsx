@@ -1,6 +1,5 @@
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
-import { MemoryRouter } from 'react-router-dom'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -63,9 +62,7 @@ describe('GlobalNavbar', () => {
     test('default', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
-                <MemoryRouter>
-                    <GlobalNavbar {...PROPS} />
-                </MemoryRouter>
+                <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
@@ -74,9 +71,7 @@ describe('GlobalNavbar', () => {
     test('low-profile', () => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
-                <MemoryRouter>
-                    <GlobalNavbar {...PROPS} variant="low-profile" />
-                </MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="low-profile" />
             </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()

@@ -282,7 +282,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     )}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
                                 <PopoverTrigger
                                     as={Button}
                                     aria-label="Feedback"
