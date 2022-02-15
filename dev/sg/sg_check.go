@@ -242,7 +242,8 @@ func checkDockerfiles(ctx context.Context) *checkReport {
 				if err != nil {
 					return err
 				}
-				return docker.ProcessDockerfile(data, func(is []instructions.Stage) error {
+
+				if err := docker.ProcessDockerfile(data, func(is []instructions.Stage) error {
 					var errs error
 					for _, i := range is {
 						for _, c := range i.Commands {
@@ -252,7 +253,12 @@ func checkDockerfiles(ctx context.Context) *checkReport {
 						}
 					}
 					return errs
-				})
+				}); err != nil {
+					// track error but don't exit
+					combinedErrors = errors.Append(combinedErrors, err)
+				}
+
+				return nil
 			},
 		); err != nil {
 			combinedErrors = errors.Append(combinedErrors, err)
