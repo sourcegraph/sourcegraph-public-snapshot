@@ -257,6 +257,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             fetchRepository={fetchRepository}
                             resolveRevision={resolveRevision}
                         />
+                        <div className={styles.spacer} />
                     </>
                 )}
             </Page>
