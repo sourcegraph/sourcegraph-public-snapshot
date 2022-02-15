@@ -2,6 +2,7 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import React, { useCallback, useRef } from 'react'
 import * as uuid from 'uuid'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
@@ -10,18 +11,26 @@ import { CreateNotebookVariables } from '../../../graphql-operations'
 import { convertMarkdownToBlocks } from '../convertMarkdownToBlocks'
 import { blockToGQLInput } from '../serialize'
 
+const LOADING = 'loading' as const
+
+const INVALID_IMPORT_FILE_ERROR = new Error(
+    'Cannot read the imported file. Check that the imported file is a Markdown-formatted text file.'
+)
+
+const MAX_FILE_SIZE_IN_BYTES = 1000 * 1000 // 1MB
+
 interface ImportMarkdownNotebookButtonProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
     importNotebook: (notebook: CreateNotebookVariables['notebook']) => void
-    isImporting: boolean
-    setIsImporting: (value: boolean) => void
+    importState: typeof LOADING | ErrorLike | undefined
+    setImportState: (state: typeof LOADING | ErrorLike | undefined) => void
 }
 
 export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdownNotebookButtonProps> = ({
     authenticatedUser,
     telemetryService,
-    isImporting,
-    setIsImporting,
+    importState,
+    setImportState,
     importNotebook,
 }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
@@ -35,21 +44,26 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
         (event: React.ChangeEvent<HTMLInputElement>) => {
             const files = event.target.files
             if (!files || files.length !== 1) {
+                setImportState(INVALID_IMPORT_FILE_ERROR)
                 return
             }
-            setIsImporting(true)
+
+            if (files[0].size > MAX_FILE_SIZE_IN_BYTES) {
+                setImportState(new Error('File too large. Maximum allowed file size is 1MB.'))
+                return
+            }
+
+            setImportState(LOADING)
+
             const fileName = files[0].name
-            // TODO: Check file size
             const reader = new FileReader()
             reader.addEventListener('load', event => {
                 if (!event.target || !event.target.result || typeof event.target.result !== 'string') {
+                    setImportState(INVALID_IMPORT_FILE_ERROR)
                     return
                 }
                 const blocks = convertMarkdownToBlocks(event.target.result).map(block =>
-                    blockToGQLInput({
-                        id: uuid.v4(),
-                        ...block,
-                    })
+                    blockToGQLInput({ id: uuid.v4(), ...block })
                 )
                 importNotebook({
                     title: fileName.split('.snb.md')[0],
@@ -60,15 +74,15 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
             })
             reader.readAsText(files[0])
         },
-        [authenticatedUser, importNotebook, setIsImporting]
+        [authenticatedUser, importNotebook, setImportState]
     )
 
     return (
         <>
             <input type="file" className="d-none" ref={fileInputReference} accept=".md" onChange={onFileInputChange} />
-            <Button variant="secondary" onClick={onImportButtonClick} disabled={isImporting}>
+            <Button variant="secondary" onClick={onImportButtonClick} disabled={importState === LOADING}>
                 <UploadIcon className="icon-inline mr-1" />
-                <span>{isImporting ? 'Importing...' : 'Import Markdown notebook'}</span>
+                <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>
         </>
     )

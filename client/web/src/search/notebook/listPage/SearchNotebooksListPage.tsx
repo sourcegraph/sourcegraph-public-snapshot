@@ -7,7 +7,7 @@ import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -90,7 +90,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
         telemetryService.logViewEvent('SearchNotebooksListPage')
     }, [telemetryService])
 
-    const [isImporting, setIsImporting] = useState(false)
+    const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
 
@@ -210,17 +210,17 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         createNotebook({ notebook }).pipe(
                             startWith(LOADING),
                             catchError(error => {
-                                setIsImporting(false)
-                                return [asError(error)]
+                                setImportState(asError(error))
+                                return []
                             })
                         )
                     )
                 ),
-            [createNotebook, setIsImporting]
+            [createNotebook, setImportState]
         )
     )
 
-    if (importedNotebookOrError && !isErrorLike(importedNotebookOrError) && importedNotebookOrError !== LOADING) {
+    if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
         return <Redirect to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} />
     }
@@ -241,17 +241,17 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                     telemetryService={telemetryService}
                                     authenticatedUser={authenticatedUser}
                                     importNotebook={importNotebook}
-                                    isImporting={isImporting}
-                                    setIsImporting={setIsImporting}
+                                    importState={importState}
+                                    setImportState={setImportState}
                                 />
                             </>
                         )
                     }
                     className="mb-3"
                 />
-                {isErrorLike(importedNotebookOrError) && (
+                {isErrorLike(importState) && (
                     <Alert variant="danger">
-                        Error while importing the notebook: <strong>{importedNotebookOrError.message}</strong>
+                        Error while importing the notebook: <strong>{importState.message}</strong>
                     </Alert>
                 )}
                 <div className="mb-4">
