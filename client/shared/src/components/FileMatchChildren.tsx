@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
+import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -91,7 +92,7 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
  * In order to replicate the standard behvior as much as possible this function
  * dynamically creates an `<a>` element and triggers a click event on it.
  */
-function openLink(
+function openLinkInNewTab(
     url: string,
     event: Pick<MouseEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>,
     button: 'primary' | 'middle'
@@ -99,17 +100,18 @@ function openLink(
     const link = document.createElement('a')
     link.href = url
     link.style.display = 'none'
-    // Simulate opening a new tab.
-    if (button === 'middle') {
-        link.target = '_blank'
-        link.rel = 'noopener noreferrer'
-    }
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
     const clickEvent = new window.MouseEvent('click', {
         bubbles: false,
         altKey: event.altKey,
         shiftKey: event.shiftKey,
-        ctrlKey: event.ctrlKey,
-        metaKey: event.metaKey,
+        // Regarding middle click: Setting "button: 1:" doesn't seem to suffice:
+        // Firefox doesn't react to the event at all, Chromium opens the tab in
+        // the foreground. So in order to simulate a middle click, we set
+        // ctrlKey and metaKey to `true` instead.
+        ctrlKey: button === 'middle' ? true : event.ctrlKey,
+        metaKey: button === 'middle' ? true : event.metaKey,
         view: window,
     })
 
@@ -131,7 +133,7 @@ function openLink(
 function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>): void {
     const href = event.currentTarget.getAttribute('data-href')
     if (href && event.button === 1) {
-        openLink(href, event, 'middle')
+        openLinkInNewTab(href, event, 'middle')
     }
 }
 
@@ -191,6 +193,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
+    const history = useHistory()
     /**
      * This handler implements the logic to simulate the click/keyboard
      * activation behavior of links, while also allowing the selection of text
@@ -220,15 +223,15 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const href = event.currentTarget.getAttribute('data-href')
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    if (props.openInNewTab) {
-                        openLink(href, event, 'middle')
+                    if (props.openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
+                        openLinkInNewTab(href, event, 'primary')
                     } else {
-                        openLink(href, event, 'primary')
+                        history.push(href)
                     }
                 }
             }
         },
-        [props.openInNewTab]
+        [props.openInNewTab, history]
     )
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
