@@ -266,7 +266,7 @@ func PrettyMermaid(job Job) string {
 			writeEdge(b, depth, srcId, id)
 			writeMermaid(j.child)
 			depth--
-		case *selectPath:
+		case *selectJob:
 			srcId := id
 			depth++
 			writeNode(b, depth, RoundedStyle, &id, "SELECT")
