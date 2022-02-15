@@ -44,3 +44,10 @@ func postWebhook(ctx context.Context, doer httpcli.Doer, url string, args action
 
 	return nil
 }
+
+func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string, url string) error {
+	args := actionArgs{
+		MonitorDescription: description,
+	}
+	return postWebhook(ctx, httpcli.ExternalDoer, url, args)
+}
