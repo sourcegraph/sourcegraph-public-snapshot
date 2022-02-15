@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -300,6 +301,59 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		} else {
 			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
 		}
+	}
+
+	if c.RunType.Is(runtype.Targeted) {
+		r := regexp.MustCompile(`^targeted/([^/]+)/.+$`)
+		matches := r.FindStringSubmatch(c.Branch)
+		if len(matches) != 2 {
+			panic(1)
+		}
+
+		target := matches[1]
+		target = strings.ReplaceAll(target, "-", " ")
+		target = strings.ToLower(target)
+
+		var deps []string
+		var newPipeline bk.Pipeline
+
+		// Find the target step to grab its dependencies
+		for _, group := range pipeline.Steps {
+			if p, ok := group.(*bk.Pipeline); ok {
+				for _, s := range p.Steps {
+					if step, ok := s.(*bk.Step); ok {
+						// if step.Label == ":puppeteer::electric_plug: Puppeteer tests finalize" {
+						if strings.Contains(strings.ToLower(step.Label), target) {
+							deps = append(deps, step.DependsOn...)
+							newPipeline.Steps = append(newPipeline.Steps, step)
+						}
+					}
+				}
+			}
+		}
+
+		if len(newPipeline.Steps) != 1 {
+			panic("ambiguous")
+		}
+
+		for len(deps) > 0 {
+			dep := deps[0]
+			deps = deps[1:]
+
+			for _, group := range pipeline.Steps {
+				if p, ok := group.(*bk.Pipeline); ok {
+					for _, s := range p.Steps {
+						if step, ok := s.(*bk.Step); ok {
+							if step.Key == dep {
+								newPipeline.Steps = append(newPipeline.Steps, step)
+							}
+						}
+					}
+				}
+			}
+		}
+
+		pipeline = &newPipeline
 	}
 
 	return pipeline, nil

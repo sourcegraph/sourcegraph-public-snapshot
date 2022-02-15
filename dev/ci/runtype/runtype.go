@@ -15,6 +15,8 @@ const (
 
 	PullRequest RunType = iota // pull request build
 
+	Targeted
+
 	// Nightly builds - must be first because they take precedence
 
 	ReleaseNightly // release branch nightly healthcheck builds
@@ -92,6 +94,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			},
 		}
 
+	case Targeted:
+		return &RunTypeMatcher{
+			Branch:       `^targeted/[^/]+/.+$`,
+			BranchRegexp: true,
+		}
+
 	case TaggedRelease:
 		return &RunTypeMatcher{
 			TagPrefix: "v",
@@ -149,6 +157,9 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
+
+	case Targeted:
+		return "Targeted"
 
 	case ReleaseNightly:
 		return "Release branch nightly healthcheck build"
