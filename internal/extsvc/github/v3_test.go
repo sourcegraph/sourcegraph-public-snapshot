@@ -448,6 +448,35 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
+// Note: To update this test, access the sourcegraph-vcr account saved in 1password. The token used
+// for this test has repo:* and org:read permissions which is more than enough. The token is called
+// sourcegraph-vcr which can also be accessed in 1password or under Personal access tokens in the
+// sourcegraph-vcr user account.
+func TestListOrganizations(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListOrganizations")
+	defer save()
+
+	t.Run("orgs", func(t *testing.T) {
+		ctx := context.Background()
+		orgs, hasNextPage, err := cli.ListOrganizations(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if orgs == nil {
+			t.Fatal("expected orgs but got nil")
+		}
+
+		if len(orgs) != 100 {
+			t.Fatalf("expected 100 orgs but got %d", len(orgs))
+		}
+
+		if !hasNextPage {
+			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		}
+	})
+}
+
 func TestListMembers(t *testing.T) {
 	tests := []struct {
 		name        string
