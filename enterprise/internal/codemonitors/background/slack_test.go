@@ -110,3 +110,17 @@ func TestSlackWebhook(t *testing.T) {
 		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(action))
 	})
 }
+
+func TestTriggerTestSlackWebhookAction(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
+		w.WriteHeader(200)
+	}))
+	defer s.Close()
+
+	client := s.Client()
+	err := SendTestSlackWebhook(context.Background(), client, "My test monitor", s.URL)
+	require.NoError(t, err)
+}

@@ -173,3 +173,22 @@ func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *s
 
 	return nil
 }
+
+func SendTestSlackWebhook(ctx context.Context, doer httpcli.Doer, description, url string) error {
+	testMessage := &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: []slack.Block{
+		slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn",
+				fmt.Sprintf(
+					"Test message for Code Monitor '%s'",
+					description,
+				),
+				false,
+				false,
+			),
+			nil,
+			nil,
+		),
+	}}}
+
+	return postSlackWebhook(ctx, doer, url, testMessage)
+}
