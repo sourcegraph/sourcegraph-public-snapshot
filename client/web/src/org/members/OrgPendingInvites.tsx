@@ -15,7 +15,7 @@ import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_QUERY } from './gqlQueries'
+import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import styles from './OrgPendingInvites.module.scss'
 import { getInvitationCreationDateString, getInvitationExpiryDateString, getLocaleFormattedDateFromString } from './utils'
@@ -23,27 +23,26 @@ import { getInvitationCreationDateString, getInvitationExpiryDateString, getLoca
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 interface OrganizationInvitation {
     id: string;
-        recipientEmail?: string;
-        revokedAt: string;
-        createdAt: string;
-        notifiedAt: string;
-        expiresAt: string;
-        respondURL: string;
-        recipient?: {
-            id: string;
-            username: string;
-            displayName: string;
-            avatarURL: string;
-        };
-        sender: {
-            id: string;
-            displayName?: string;
-            username: string;
-        };
-        organization: {
-            name: string;
-        };
-    }
+    recipientEmail?: string;
+    createdAt: string;
+    notifiedAt: string;
+    expiresAt: string;
+    respondURL: string;
+    recipient?: {
+        id: string;
+        username: string;
+        displayName: string;
+        avatarURL: string;
+    };
+    sender: {
+        id: string;
+        displayName?: string;
+        username: string;
+    };
+    organization: {
+        name: string;
+    };
+}
 
 interface IPendingInvitations {
     pendingInvitations: OrganizationInvitation[]
@@ -87,7 +86,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
     const [revokeInvite, { loading: revokeLoading, error: revokeError }] = useMutation<
         RevokeInviteResult,
         RevokeInviteVariables
-    >(ORG_REVOKE_INVITATION_QUERY)
+    >(ORG_REVOKE_INVITATION_MUTATION)
 
     const [resendInvite, { loading: resendLoading, error: resendError }] = useMutation<
         ResendOrgInvitationResult,

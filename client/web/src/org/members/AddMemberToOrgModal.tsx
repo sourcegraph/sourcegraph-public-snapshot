@@ -11,7 +11,7 @@ import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { ADD_USERNAME_OR_EMAIL_TO_ORG } from './gqlQueries'
+import { ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 import styles from './InviteMemberModal.module.scss'
 
 export interface AddMemberToOrgModalProps {
@@ -38,7 +38,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
     const [addUserToOrganization, { loading, error }] = useMutation<
         AddUserToOrganizationResult,
         AddUserToOrganizationVariables
-    >(ADD_USERNAME_OR_EMAIL_TO_ORG)
+    >(ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION)
 
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsername(event.currentTarget.value)

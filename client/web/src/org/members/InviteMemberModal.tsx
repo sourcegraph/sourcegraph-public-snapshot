@@ -12,7 +12,7 @@ import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { INVITE_USERNAME_OR_EMAIL_TO_ORG } from './gqlQueries'
+import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 import styles from './InviteMemberModal.module.scss'
 
 export interface IModalInviteResult {
@@ -40,7 +40,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
     const [inviteUserToOrganization, { data, loading: isInviting, error }] = useMutation<
         InviteUserToOrganizationResult,
         InviteUserToOrganizationVariables
-    >(INVITE_USERNAME_OR_EMAIL_TO_ORG)
+    >(INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION)
 
     useEffect(() => {
         if (data) {

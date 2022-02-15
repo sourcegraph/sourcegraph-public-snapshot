@@ -71,9 +71,6 @@ type orgInvitationClaims struct {
 
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
-func (r *schemaResolver) toOrganizationInvitation(entry *database.OrgInvitation) *organizationInvitationResolver {
-	return &organizationInvitationResolver{db: r.db, v: entry}
-}
 
 func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, error) {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
@@ -141,7 +138,7 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 
 	var invitations []*organizationInvitationResolver
 	for _, invitation := range pendingInvites {
-		invitations = append(invitations, r.toOrganizationInvitation(invitation))
+		invitations = append(invitations, NewOrganizationInvitationResolver(r.db, invitation))
 	}
 
 	return invitations, nil

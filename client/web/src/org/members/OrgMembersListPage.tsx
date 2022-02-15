@@ -21,7 +21,7 @@ import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { AddMemberNotification, AddMemberToOrgModal } from './AddMemberToOrgModal'
-import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_QUERY } from './gqlQueries'
+import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import styles from './OrgMembersListPage.module.scss'
 
@@ -61,7 +61,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     const [removeUserFromOrganization, { loading, error }] = useMutation<
         RemoveUserFromOrganizationResult,
         RemoveUserFromOrganizationVariables
-    >(ORG_MEMBER_REMOVE_QUERY)
+    >(ORG_MEMBER_REMOVE_MUTATION)
 
     const onRemoveClick = useCallback(async () => {
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {

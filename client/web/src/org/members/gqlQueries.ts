@@ -19,14 +19,14 @@ query OrganizationMembers($id: ID!) {
 }
 `
 
-export  const ORG_MEMBER_REMOVE_QUERY = gql`
+export  const ORG_MEMBER_REMOVE_MUTATION= gql`
 mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
     removeUserFromOrganization(user: $user, organization: $organization) {
         alwaysNil
     }
 }`
 
-export const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
+export const INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION = gql`
     mutation InviteUserToOrg($organization: ID!, $username: String, $email: String) {
         inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
             ...InviteUserToOrganizationFields
@@ -39,7 +39,7 @@ export const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
     }
 `
 
-export const ADD_USERNAME_OR_EMAIL_TO_ORG = gql`
+export const ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION = gql`
     mutation AddUserToOrganization($organization: ID!, $username: String!) {
         addUserToOrganization(organization: $organization, username: $username) {
             alwaysNil
@@ -74,7 +74,7 @@ export const ORG_PENDING_INVITES_QUERY = gql`
         }
     }
 `
-export const ORG_REVOKE_INVITATION_QUERY = gql`
+export const ORG_REVOKE_INVITATION_MUTATION= gql`
     mutation RevokeInvite($id: ID!) {
         revokeOrganizationInvitation (organizationInvitation: $id) {
             alwaysNil
