@@ -1,0 +1,5 @@
+.grid {
+    display: grid;
+    grid-template-columns: [caret] min-content [status] min-content [name] minmax(auto, 1fr) [lastrun] min-content [end];
+    align-items: center;
+}

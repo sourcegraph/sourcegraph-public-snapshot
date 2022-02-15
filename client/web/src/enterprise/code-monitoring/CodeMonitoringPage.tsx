@@ -13,6 +13,7 @@ import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@source
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
+import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
@@ -20,6 +21,7 @@ import {
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
+import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
@@ -28,11 +30,10 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>,
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 
     // For testing purposes only
-    testForceTab?: 'list' | 'getting-started'
+    testForceTab?: 'list' | 'getting-started' | 'logs'
 }
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
-    settingsCascade,
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
@@ -61,7 +62,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started'>('list')
+    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs'>('list')
 
     // If user has no code monitors, default to the getting started tab after loading
     useEffect(() => {
@@ -78,6 +79,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     }, [currentTab, testForceTab])
 
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
+
+    const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs)
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
@@ -151,12 +154,32 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     </span>
                                 </Link>
                             </div>
+                            {showLogsTab && (
+                                <div className="nav-item">
+                                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                    <Link
+                                        to=""
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setCurrentTab('logs')
+                                        }}
+                                        className={classNames('nav-link', currentTab === 'logs' && 'active')}
+                                        role="button"
+                                    >
+                                        <span className="text-content" data-tab-content="Logs">
+                                            Logs
+                                        </span>
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {currentTab === 'getting-started' && (
                         <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
                     )}
+
+                    {currentTab === 'logs' && <CodeMonitoringLogs />}
 
                     {showList && (
                         <CodeMonitorList
