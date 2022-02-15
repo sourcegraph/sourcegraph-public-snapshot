@@ -6,7 +6,11 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    ExternalServiceKind,
+    GlobalBatchChangesCodeHostsResult,
+} from '../../../graphql-operations'
 
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
@@ -15,7 +19,7 @@ const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsAr
     <div className="p-3 container">{story()}</div>
 ))
 
-const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Record<string, unknown>>[] => [
+const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult>[] => [
     {
         request: {
             query: getDocumentNode(GLOBAL_CODE_HOSTS),
