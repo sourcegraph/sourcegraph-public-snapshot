@@ -639,9 +639,27 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				if err != nil {
 					return nil, err
 				}
-				// Pass a nil stream for subqueries so we can use
-				// the results rather than sending them back to the caller
-				return r.resultsRecursive(ctx, nil, plan)
+
+				children := make([]job.Job, 0, len(plan))
+				for _, basicQuery := range plan {
+					child, err := job.ToEvaluateJob(r.JobArgs(), basicQuery)
+					if err != nil {
+						return nil, err
+					}
+					children = append(children, child)
+				}
+
+				agg := streaming.NewAggregatingStream()
+				alert, err := r.evaluateJob(ctx, agg, job.NewOrJob(children...))
+				if err != nil {
+					return nil, err
+				}
+
+				return &SearchResults{
+					Matches: agg.Results,
+					Stats:   agg.Stats,
+					Alert:   alert,
+				}, nil
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				return nil
