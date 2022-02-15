@@ -8,7 +8,7 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TrashIcon from 'mdi-react/TrashCanIcon'
-import React, { useCallback, useState, useMemo, MouseEvent, KeyboardEvent, SyntheticEvent } from 'react'
+import React, { useCallback, useState, useMemo, KeyboardEvent, SyntheticEvent, useRef, useEffect } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -37,6 +37,23 @@ import { BlockInput } from './notebook'
 import { serializeBlocks } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
+const SEARCH_STACK_ID = 'search:search-stack'
+
+/**
+ * Helper hook to determine whether a new entry has been added to the search
+ * stack. Whenever the number of entries increases we have a new entry. It
+ * assumes that the newest entry is the first element in the input array.
+ */
+function useHasNewEntry(entries: SearchStackEntry[]): boolean {
+    const previousLength = useRef<number>()
+
+    useEffect(() => {
+        previousLength.current = entries.length
+    }, [entries])
+
+    return previousLength.current !== undefined && previousLength.current < entries.length
+}
+
 export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
     const history = useHistory()
 
@@ -48,6 +65,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
 
     const reversedEntries = useMemo(() => [...entries].reverse(), [entries])
+    const hasNewEntry = useHasNewEntry(reversedEntries)
 
     const createNotebook = useCallback(() => {
         const blocks: BlockInput[] = []
@@ -86,13 +104,15 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
     if (open) {
         return (
-            <div className={classNames(styles.root, { [styles.open]: open })}>
+            <div className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
                 <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
                     <Button
-                        aria-label={`${open ? 'Close' : 'Open'} search session`}
+                        aria-label="Close search session"
                         variant="icon"
                         className="p-2"
-                        onClick={() => setOpen(open => !open)}
+                        onClick={() => setOpen(false)}
+                        aria-controls={SEARCH_STACK_ID}
+                        aria-expanded="true"
                     >
                         <PencilIcon className="icon-inline" />
                         <h4 className={classNames(styles.openVisible, 'px-1')}>Notepad</h4>
@@ -105,15 +125,17 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         variant="icon"
                         className={classNames('pr-2', styles.closeButton, styles.openVisible)}
                         onClick={() => setOpen(false)}
+                        aria-controls={SEARCH_STACK_ID}
+                        aria-expanded="true"
                     >
                         <CloseIcon className="icon-inline" />
                     </Button>
                 </div>
                 <ul>
                     <li className="d-flex flex-column">{addableEntry && <AddEntryButton entry={addableEntry} />}</li>
-                    {reversedEntries.map(entry => (
+                    {reversedEntries.map((entry, index) => (
                         <li key={entry.id}>
-                            <SearchStackEntryComponent entry={entry} />
+                            <SearchStackEntryComponent entry={entry} focus={hasNewEntry && index === 0} />
                         </li>
                     ))}
                 </ul>
@@ -170,11 +192,27 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const openNotepad = (): void => {
         setOpen(true)
     }
+
+    const handleEnterKey = (event: KeyboardEvent<HTMLDivElement>): void => {
+        if (event.key === 'enter') {
+            openNotepad()
+        }
+    }
+
     return (
-        <div className={classNames(styles.root)}>
+        <div
+            className={classNames(styles.root)}
+            role="button"
+            aria-expanded="false"
+            aria-controls={SEARCH_STACK_ID}
+            onClick={openNotepad}
+            onKeyUp={handleEnterKey}
+            aria-label="Open search session"
+            tabIndex={0}
+        >
             {reversedEntries.length === 0 && addableEntry && <AddEntryButton entry={addableEntry} />}
             {reversedEntries.length > 0 ? (
-                <SearchStackEntryComponent entry={reversedEntries[0]} onSelect={openNotepad} />
+                <SearchStackEntryComponent entry={reversedEntries[0]} focus={hasNewEntry} />
             ) : null}
         </div>
     )
@@ -193,7 +231,10 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                     size="sm"
                     title="Add search"
                     className={styles.button}
-                    onClick={() => addSearchStackEntry(entry)}
+                    onClick={event => {
+                        event.stopPropagation()
+                        addSearchStackEntry(entry)
+                    }}
                 >
                     + <SearchIcon className="icon-inline" /> Search
                 </Button>
@@ -206,7 +247,10 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                         size="sm"
                         title="Add file"
                         className="flex-1 mx-1"
-                        onClick={() => addSearchStackEntry(entry, 'file')}
+                        onClick={event => {
+                            event.stopPropagation()
+                            addSearchStackEntry(entry, 'file')
+                        }}
                     >
                         + <FileDocumentOutlineIcon className="icon-inline" /> File
                     </Button>
@@ -216,7 +260,10 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                             size="sm"
                             title="Add line range"
                             className="flex-1 mx-1"
-                            onClick={() => addSearchStackEntry(entry, 'range')}
+                            onClick={event => {
+                                event.stopPropagation()
+                                addSearchStackEntry(entry, 'range')
+                            }}
                         >
                             + <CodeBracketsIcon className="icon-inline" /> Range (
                             {entry.lineRange.endLine - entry.lineRange.startLine})
@@ -234,47 +281,33 @@ function stopPropagation(event: SyntheticEvent): void {
 interface SearchStackEntryComponentProps {
     entry: SearchStackEntry
     /**
-     * If the notepad is minimized we don't want render a link for the item that
-     * is visible, clicking it should open the notepad instead.
+     * If set to true, show and focus the annotations input.
      */
-    renderLink?: boolean
-    onSelect?: (event: MouseEvent | KeyboardEvent, entry: SearchStackEntry) => void
+    focus?: boolean
 }
 
 const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryComponentProps> = ({
     entry,
-    onSelect,
-    renderLink = true,
+    focus = false,
 }) => {
     const { icon, title, location } = getUIComponentsForEntry(entry)
     const [annotation, setAnnotation] = useState(entry.annotation ?? '')
-    const [showAnnotationInput, setShowAnnotationInput] = useState(false)
+    const [showAnnotationInput, setShowAnnotationInput] = useState(focus)
+    const textarea = useRef<HTMLTextAreaElement | null>(null)
 
-    const titleWrapper = renderLink ? (
-        <Link to={location} className="p-0">
-            {title}
-        </Link>
-    ) : (
-        title
-    )
-
-    function keyHandler(event: KeyboardEvent<HTMLDivElement>): void {
-        if (event.key === 'enter') {
-            onSelect?.(event, entry)
-        }
-    }
+    useEffect(() => {
+        textarea.current?.focus()
+    }, [focus])
 
     return (
-        <div
-            className={styles.entry}
-            onClick={event => onSelect?.(event, entry)}
-            onKeyUp={keyHandler}
-            role="button"
-            tabIndex={0}
-        >
+        <div className={styles.entry}>
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
-                <span className="flex-1">{titleWrapper}</span>
+                <span className="flex-1">
+                    <Link to={location} className="p-0">
+                        {title}
+                    </Link>
+                </span>
                 <span className="ml-1 d-flex">
                     <Button
                         aria-label="Add annotation"
@@ -304,6 +337,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
             </div>
             {showAnnotationInput && (
                 <TextArea
+                    ref={textarea}
                     className="mt-1"
                     placeholder="Type to add annotation..."
                     value={annotation}
