@@ -18,7 +18,7 @@ describe('FeedbackPrompt', () => {
 
     beforeEach(() => {
         render(
-            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit}>
+            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit} productResearchEnabled={true}>
                 <PopoverTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <span>Feedback</span>
                 </PopoverTrigger>
