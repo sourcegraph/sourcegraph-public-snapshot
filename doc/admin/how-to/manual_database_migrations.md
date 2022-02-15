@@ -38,6 +38,12 @@ The `validate` command validates the current state of the database. The `-db` fl
 
 > NOTE: These default behavior applies to all three databases. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the operation will fail. To work around this, explicitly supply database(s) via the `-db` flag (e.g., `-db=frontend,codeintel`).
 
+### add-log
+
+Usage: **`add-log -db=<schema> -version=<version> [-up=true]`**
+
+The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file. The `-db` flag specifies the target schema to modify. The `-version` flag specifies the migration version. The `-up` flag specifies the migration direction.
+
 ## Environments
 
 To run a `migrator` command, follow the guide for your Sourcegraph distribution type:
