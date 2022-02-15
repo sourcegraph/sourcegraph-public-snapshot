@@ -103,9 +103,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
 
-// Note: This also contains some non-transition styles for the .collapse and .fade classNames, we should move this to a separate file and remove the import
-@import 'bootstrap/scss/transitions';
-
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
 
@@ -131,6 +128,7 @@ $spacer: 1rem;
 @import './highlight';
 @import './tabs';
 @import './progress';
+@import './collapse';
 
 * {
     box-sizing: border-box;
