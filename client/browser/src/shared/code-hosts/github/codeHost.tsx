@@ -4,7 +4,7 @@ import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
 import { defer, Observable, of, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -39,7 +39,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL } from './util'
+import { getFileContainers, getFilePath, parseURL } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -687,8 +687,8 @@ export const githubCodeHost: GithubCodeHost = {
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext,
-    // getReactiveContext: mutations =>
-    //     mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext)),
+    getReactiveContext: mutations =>
+        mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext)),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {
