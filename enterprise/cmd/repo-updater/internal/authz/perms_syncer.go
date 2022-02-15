@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -746,6 +746,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		// Skip repo if unimplemented
 		if errors.Is(err, &authz.ErrUnimplemented{}) {
 			log15.Debug("PermsSyncer.syncRepoPerms.unimplemented", "repoID", repo.ID, "err", err)
+
+			// We should still touch the repo perms so that we don't keep scheduling the repo
+			// for permissions syncs on a tight interval.
+			if err = s.permsStore.TouchRepoPermissions(ctx, int32(repoID)); err != nil {
+				log15.Warn("Error touching permissions for unimplemented authz provider", "err", err)
+			}
+
 			return nil
 		}
 

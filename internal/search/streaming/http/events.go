@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // EventMatch is an interface which only the top level match event types

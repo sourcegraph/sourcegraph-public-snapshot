@@ -14,6 +14,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
+	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hexops/autogold v1.3.0
@@ -32,6 +33,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 	golang.org/x/tools v0.1.9 // indirect
 	google.golang.org/protobuf v1.27.1

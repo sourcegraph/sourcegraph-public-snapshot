@@ -4,9 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestCheckGitHubPermissions(t *testing.T) {

@@ -8,14 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.
@@ -89,13 +88,13 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) Validate() []string {
+func (p *Provider) ValidateConnection(ctx context.Context) []string {
 	required := p.requiredAuthScopes()
 	if len(required) == 0 {
 		return []string{}
 	}
 
-	scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
+	scopes, err := p.client.GetAuthenticatedOAuthScopes(ctx)
 	if err != nil {
 		return []string{
 			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),

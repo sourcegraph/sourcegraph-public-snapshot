@@ -5,9 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHTTP(t *testing.T) {

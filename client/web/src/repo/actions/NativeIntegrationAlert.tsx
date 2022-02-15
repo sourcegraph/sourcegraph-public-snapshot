@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AlertLink } from '@sourcegraph/wildcard'
 
+import { ExtensionRadialGradientIcon } from '../../components/CtaIcons'
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
-import { ExtensionRadialGradientIcon } from '../../search/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 export interface NativeIntegrationAlertProps {
-    className: string
+    className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
     externalURLs: ExternalLinkFields[]
 }
@@ -25,12 +26,18 @@ const supportedServiceTypes = new Set<string>([
 
 export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAlertProps> = ({
     className,
+    page,
     onAlertDismissed,
     externalURLs,
 }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('NativeIntegrationInstallShown')
-    }, [])
+        eventLogger.log('NativeIntegrationInstallShown', args, args)
+    }, [args])
+
+    const installLinkClickHandler = useCallback((): void => {
+        eventLogger.log('NativeIntegrationInstallClicked', args, args)
+    }, [args])
 
     const externalLink = externalURLs.find(link => link.serviceKind && supportedServiceTypes.has(link.serviceKind))
     if (!externalLink) {
@@ -61,8 +68,4 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
             onClose={onAlertDismissed}
         />
     )
-}
-
-const installLinkClickHandler = (): void => {
-    eventLogger.log('NativeIntegrationInstallClicked')
 }

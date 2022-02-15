@@ -1,9 +1,8 @@
 import { isPlainObject } from 'lodash'
 
-import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined, parseJSONCOrError } from '@sourcegraph/common'
 
 import { ExtensionManifest as ExtensionManifestSchema, EXTENSION_HEADER_COLORS } from '../schema/extensionSchema'
-import { parseJSONCOrError } from '../util/jsonc'
 
 /**
  * Represents an input object that is validated against a subset of properties of the {@link ExtensionManifest}

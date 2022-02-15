@@ -371,8 +371,8 @@
           "type": "boolean",
           "default": false
         },
-        "enableRepoUpdateIntervalJitter": {
-          "description": "Enable a jitter of 5% in the update interval of a repo in the schedule",
+        "enableGitServerCommandExecFilter": {
+          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
           "type": "boolean",
           "default": false
         }
@@ -699,6 +699,11 @@
       "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
       "type": "boolean",
       "default": false
+    },
+    "authz.refreshInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
@@ -1108,6 +1113,14 @@
             "privateKey": {
               "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
               "type": "string"
+            },
+            "clientID": {
+              "type": "string",
+              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+            },
+            "clientSecret": {
+              "type": "string",
+              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
             }
           }
         }
@@ -1299,7 +1312,7 @@
           "default": 48
         },
         "signingKey": {
-          "description": "HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
           "type": "string"
         }
       }
@@ -1373,6 +1386,11 @@
           "description": "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
           "type": "string",
           "pattern": "^[^<@]"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1523,6 +1541,11 @@
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
+        },
+        "hidden": {
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
           "default": false,
           "type": "boolean"
         }

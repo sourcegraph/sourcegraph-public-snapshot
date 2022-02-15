@@ -3,11 +3,11 @@ package vfsutil
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewGitHubRepoVFS creates a new VFS backed by a GitHub downloadable

@@ -6,7 +6,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     Trigger
   </h3>
   <div
-    class="p-3"
+    class="card p-3"
   >
     <div
       class="font-weight-bold"
@@ -251,7 +251,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           class="p-2 my-2 queryInputPreviewLink"
         >
           <a
-            class="test-preview-link queryInputPreviewLinkText"
+            class="anchorLink test-preview-link queryInputPreviewLinkText"
             href="/search?q=test+repo:test&patternType=literal"
             rel="noopener noreferrer"
             target="_blank"
@@ -294,7 +294,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
   >
      What other events would you like to monitor? 
     <a
-      class=""
+      class="anchorLink"
       href="mailto:feedback@sourcegraph.com"
       rel="noopener"
       target="_blank"

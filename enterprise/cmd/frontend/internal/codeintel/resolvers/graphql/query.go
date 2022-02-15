@@ -2,14 +2,15 @@ package graphql
 
 import (
 	"context"
+	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DefaultReferencesPageSize is the reference result page size when no limit is supplied.
@@ -93,6 +94,16 @@ func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPosi
 		return nil, err
 	}
 
+	if args.Filter != nil && *args.Filter != "" {
+		filtered := locations[:0]
+		for _, loc := range locations {
+			if strings.Contains(loc.Path, *args.Filter) {
+				filtered = append(filtered, loc)
+			}
+		}
+		locations = filtered
+	}
+
 	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
 }
 
@@ -114,6 +125,16 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 		return nil, err
 	}
 
+	if args.Filter != nil && *args.Filter != "" {
+		filtered := locations[:0]
+		for _, loc := range locations {
+			if strings.Contains(loc.Path, *args.Filter) {
+				filtered = append(filtered, loc)
+			}
+		}
+		locations = filtered
+	}
+
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
 
@@ -133,6 +154,16 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 	locations, cursor, err := r.resolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
+	}
+
+	if args.Filter != nil && *args.Filter != "" {
+		filtered := locations[:0]
+		for _, loc := range locations {
+			if strings.Contains(loc.Path, *args.Filter) {
+				filtered = append(filtered, loc)
+			}
+		}
+		locations = filtered
 	}
 
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil

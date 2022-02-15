@@ -5,18 +5,22 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewAuthzProviders returns the set of GitHub authz providers derived from the connections.
-// It also returns any validation problems with the config, separating these into "serious problems" and
-// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func NewAuthzProviders(
 	conns []*types.GitHubConnection,
 	authProviders []schema.AuthProviders,
@@ -73,11 +77,6 @@ func NewAuthzProviders(
 					p.ServiceID()))
 			// Forcibly disable groups cache.
 			p.groupsCache = nil
-		}
-
-		// Check for other validation issues.
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("GitHub config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 
 		// Register this provider.

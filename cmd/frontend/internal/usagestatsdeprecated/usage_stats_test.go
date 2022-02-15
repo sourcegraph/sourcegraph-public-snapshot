@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/stvp/tempredis"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {

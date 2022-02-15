@@ -21,9 +21,6 @@ const config: Meta = {
 
     parameters: {
         component: Tooltip,
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -100,7 +97,7 @@ Positions.parameters = {
     If you take a look at the handleEvent function in useTooltipState, you can see that the listeners are being added to the 'document',
     which means any 'mouseover/click' event will cause the tooltip to disappear.
 */
-const PinnedTooltip: React.FunctionComponent = () => {
+export const Pinned: Story = () => {
     const clickElement = useCallback((element: HTMLElement | null) => {
         if (element) {
             // The tooltip takes some time to set-up.
@@ -126,12 +123,12 @@ const PinnedTooltip: React.FunctionComponent = () => {
     )
 }
 
-export const Pinned: Story = () => <PinnedTooltip />
-
 Pinned.parameters = {
     chromatic: {
         // Chromatic pauses CSS animations by default and resets them to their initial state
         pauseAnimationAtEnd: true,
+        enableDarkMode: true,
+        disableSnapshot: false,
     },
 }
 

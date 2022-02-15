@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // monitor periodically polls Sourcegraph via the GraphQL API for the status of each
@@ -75,7 +74,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						fmt.Printf("[%5s] %s Finished processing index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7])
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
-					return errors.Newf("unexpected state '%s'", uploadState.state)
+					return errors.Newf("unexpected state '%s' for %s@%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7])
 				}
 			}
 
@@ -180,7 +179,7 @@ func makeRepoStateQuery(repoNames, uploadIDs []string) string {
 		fragments = append(fragments, fmt.Sprintf(uploadQueryFragment, i, id))
 	}
 
-	return fmt.Sprintf("{%s}", strings.Join(fragments, "\n"))
+	return fmt.Sprintf("query CodeIntelQA_Upload {%s}", strings.Join(fragments, "\n"))
 }
 
 const repositoryQueryFragment = `

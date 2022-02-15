@@ -10,10 +10,11 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -193,18 +194,42 @@ func TestSyncSearchers(t *testing.T) {
 
 func TestIgnoreDownEndpoints(t *testing.T) {
 	var endpoints atomicMap
-	endpoints.Store(prefixMap{"down", "up"})
+	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "up"})
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Streamer {
 			var client *FakeSearcher
 			switch endpoint {
-			case "down":
+			case "dns-not-found":
 				err := &net.DNSError{
 					Err:        "no such host",
 					Name:       "down",
 					IsNotFound: true,
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
+			case "dial-timeout":
+				// dial tcp 10.164.42.39:6070: i/o timeout
+				err := &net.OpError{
+					Op:   "dial",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.42.39:6070"),
+					Err:  &timeoutError{},
+				}
+				client = &FakeSearcher{
+					SearchError: err,
+					ListError:   err,
+				}
+			case "dial-refused":
+				// dial tcp 10.164.51.47:6070: connect: connection refused
+				err := &net.OpError{
+					Op:   "dial",
+					Net:  "tcp",
+					Addr: fakeAddr("10.164.51.47:6070"),
+					Err:  errors.New("connect: connection refused"),
 				}
 				client = &FakeSearcher{
 					SearchError: err,
@@ -251,7 +276,7 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 
 	// now test we do return errors if they occur
-	endpoints.Store(prefixMap{"down", "up", "error"})
+	endpoints.Store(prefixMap{"dns-not-found", "up", "error"})
 	_, err = searcher.Search(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("Search: expected error")
@@ -262,6 +287,17 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 		t.Fatal("List: expected error")
 	}
 }
+
+// implements net.Addr
+type fakeAddr string
+
+func (a fakeAddr) Network() string { return "tcp" }
+func (a fakeAddr) String() string  { return string(a) }
+
+type timeoutError struct{}
+
+func (e *timeoutError) Error() string { return "i/o timeout" }
+func (e *timeoutError) Timeout() bool { return true }
 
 func TestDedupper(t *testing.T) {
 	parse := func(s string) []zoekt.FileMatch {

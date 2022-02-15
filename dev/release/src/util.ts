@@ -99,3 +99,25 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
 }
+interface ContainerRegistryCredential {
+    username: string
+    password: string
+    hostname: string
+}
+
+export async function getContainerRegistryCredential(registryHostname: string): Promise<ContainerRegistryCredential> {
+    const registryUsername = await readLine(
+        `Enter your container registry (${registryHostname} ) username: `,
+        `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_username.txt`
+    )
+    const registryPassowrd = await readLine(
+        `Enter your container registry (${registryHostname} ) password or access token: `,
+        `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_password.txt`
+    )
+    const credential: ContainerRegistryCredential = {
+        username: registryUsername,
+        password: registryPassowrd,
+        hostname: registryHostname,
+    }
+    return credential
+}

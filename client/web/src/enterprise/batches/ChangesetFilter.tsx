@@ -26,11 +26,7 @@ export const ChangesetFilter = <T extends string>({
 
     return (
         <>
-            <select
-                className={classNames('form-control changeset-filter__dropdown', className)}
-                value={selected}
-                onChange={innerOnChange}
-            >
+            <select className={classNames('form-control', className)} value={selected} onChange={innerOnChange}>
                 <option value="">{label}</option>
                 {values.map(state => (
                     <option value={state} key={state}>

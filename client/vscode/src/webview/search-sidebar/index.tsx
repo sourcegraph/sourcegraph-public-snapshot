@@ -3,7 +3,13 @@ import React, { useMemo } from 'react'
 import { render } from 'react-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { AnchorLink, LoadingSpinner, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    LoadingSpinner,
+    setLinkComponent,
+    useObservable,
+    WildcardThemeContext,
+} from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
@@ -63,7 +69,11 @@ const Main: React.FC = () => {
     // TODO: should we hide the access token form permanently if an unauthenticated user
     // has performed a search before? Or just for this session?
     if (state.status === 'search-home' && !authenticatedUser) {
-        return <AuthSidebarView {...webviewPageProps} />
+        return (
+            <WildcardThemeContext.Provider value={{ isBranded: true }}>
+                <AuthSidebarView {...webviewPageProps} />
+            </WildcardThemeContext.Provider>
+        )
     }
 
     if (state.status === 'remote-browsing') {

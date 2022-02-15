@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TeammateResolver provides an interface to find information about teammates.

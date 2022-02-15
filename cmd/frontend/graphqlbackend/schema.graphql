@@ -253,6 +253,14 @@ type Mutation {
     """
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
     """
+    Sends an invitation to join Sourcegraph to the given email address.
+
+    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
+    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
+    or if the user has been invited too recently.
+    """
+    inviteEmailToSourcegraph(email: String!): EmptyResponse!
+    """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
@@ -1405,6 +1413,11 @@ type Query {
     Retrieve the value of a feature flag for the organization
     """
     organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
+
+    """
+    Retrieve all organization feature flag overrides for the current user
+    """
+    organizationFeatureFlagOverrides: [FeatureFlagOverride!]!
 
     """
     Retrieves the temporary settings for the current user.
@@ -5062,7 +5075,11 @@ type OrganizationInvitation implements Node {
     """
     The user who received the invitation.
     """
-    recipient: User!
+    recipient: User
+    """
+    The email address that the invitation was sent to.
+    """
+    recipientEmail: String
     """
     The date when this invitation was created.
     """
@@ -5087,6 +5104,14 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    The date when this invitation is going to expire.
+    """
+    expiresAt: DateTime
+    """
+    Boolean flag which returns true if the email on the invite matches a verified email of the user
+    """
+    isVerifiedEmail: Boolean
 }
 
 """

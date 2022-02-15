@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServicePermissionLevels(t *testing.T) {
@@ -159,6 +160,14 @@ func TestServicePermissionLevels(t *testing.T) {
 				_, err := svc.ReplaceBatchSpecInput(currentUserCtx, ReplaceBatchSpecInputOpts{
 					BatchSpecRandID: batchSpec.RandID,
 					RawSpec:         ct.TestRawBatchSpecYAML,
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("UpsertBatchSpecInput", func(t *testing.T) {
+				_, err := svc.UpsertBatchSpecInput(currentUserCtx, UpsertBatchSpecInputOpts{
+					RawSpec:         ct.TestRawBatchSpecYAML,
+					NamespaceUserID: tc.batchChangeAuthor,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -697,7 +706,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace", func(t *testing.T) {
-			batchChange := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
+			batchChange := createBatchChange(t, "old-name-1", admin.ID, admin.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org")
 
@@ -717,7 +726,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
-			batchChange := createBatchChange(t, "old-name", user.ID, user.ID, 0)
+			batchChange := createBatchChange(t, "old-name-2", user.ID, user.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
@@ -1533,6 +1542,48 @@ func TestService(t *testing.T) {
 		})
 	})
 
+	t.Run("UpsertBatchSpecInput", func(t *testing.T) {
+		t.Run("new spec", func(t *testing.T) {
+			newSpec, err := svc.UpsertBatchSpecInput(ctx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, newSpec.CreatedFromRaw)
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			assert.Nil(t, err)
+			assert.Equal(t, btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State)
+		})
+
+		t.Run("replaced spec", func(t *testing.T) {
+			oldSpec, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, oldSpec.CreatedFromRaw)
+
+			newSpec, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, newSpec.CreatedFromRaw)
+			assert.Equal(t, oldSpec.RandID, newSpec.RandID)
+			assert.Equal(t, oldSpec.NamespaceUserID, newSpec.NamespaceUserID)
+			assert.Equal(t, oldSpec.NamespaceOrgID, newSpec.NamespaceOrgID)
+
+			// Check that the replaced batch spec was really deleted.
+			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+				ID: oldSpec.ID,
+			})
+			assert.Equal(t, store.ErrNoResults, err)
+		})
+	})
+
 	t.Run("ValidateChangesetSpecs", func(t *testing.T) {
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
 		conflictingRef := "refs/heads/conflicting-head-ref"
@@ -2203,7 +2254,7 @@ func assertChangesetSpecsNotDeleted(t *testing.T, s *store.Store, specs []*btype
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	c := &btypes.BatchChange{
-		Name:            "test-batch-change",
+		Name:            fmt.Sprintf("test-batch-change-%d", time.Now().UnixMicro()),
 		CreatorID:       user,
 		NamespaceUserID: user,
 		BatchSpecID:     spec.ID,

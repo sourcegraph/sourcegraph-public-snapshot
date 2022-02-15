@@ -9,14 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var isTesting = false
 
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs)
@@ -26,12 +24,6 @@ func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 
 	if err := reorderDefinitions(migrationDefinitions); err != nil {
 		return nil, err
-	}
-
-	if !isTesting {
-		if err := validateLinearizedGraph(migrationDefinitions); err != nil {
-			return nil, err
-		}
 	}
 
 	return newDefinitions(migrationDefinitions), nil
@@ -389,8 +381,6 @@ func root(migrationDefinitions []Definition) (int, error) {
 	return roots[0], nil
 }
 
-// children constructs map from migration identifiers to the set of identifiers of all
-// dependent migrations.
 func children(migrationDefinitions []Definition) map[int][]int {
 	childMap := make(map[int][]int, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
@@ -400,31 +390,6 @@ func children(migrationDefinitions []Definition) map[int][]int {
 	}
 
 	return childMap
-}
-
-// validateLinearizedGraph returns an error if the given sequence of migrations are
-// not in linear order. This requires that each migration definition's parent is marked
-// as the one that proceeds it in file order.
-//
-// This check is here to maintain backwards compatibility with the sequential migration
-// numbers required by golang migrate. This will be lifted once we build support for non
-// sequential migrations in the background.
-func validateLinearizedGraph(migrationDefinitions []Definition) error {
-	if len(migrationDefinitions) == 0 {
-		return nil
-	}
-
-	if len(migrationDefinitions[0].Parents) != 0 {
-		return errors.Newf("unexpected parent for root definition")
-	}
-
-	for _, definition := range migrationDefinitions[1:] {
-		if len(definition.Parents) != 1 || definition.Parents[0] != definition.ID-1 {
-			return errors.Newf("unexpected parent declared in definition %d", definition.ID)
-		}
-	}
-
-	return nil
 }
 
 func intsToStrings(ints []int) []string {

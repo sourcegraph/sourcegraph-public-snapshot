@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -12,11 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func UpTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
+func UpTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
 		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s upto", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
-		targetFlag     = flagSet.String("target", "", "The migration to apply.")
+		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
+		targetsFlag    = flagSet.String("target", "", "The migration to apply. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -30,22 +31,33 @@ func UpTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			return flag.ErrHelp
 		}
 
-		if *targetFlag == "" {
+		targets := strings.Split(*targetsFlag, ",")
+		if len(targets) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
 			return flag.ErrHelp
 		}
 
-		version, err := strconv.Atoi(*targetFlag)
+		versions := make([]int, 0, len(targets))
+		for _, target := range targets {
+			version, err := strconv.Atoi(target)
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, version)
+		}
+
+		r, err := factory(ctx, []string{*schemaNameFlag})
 		if err != nil {
 			return err
 		}
 
-		return run(ctx, runner.Options{
+		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:    *schemaNameFlag,
-					Type:          runner.MigrationOperationTypeTargetedUp,
-					TargetVersion: version,
+					SchemaName:     *schemaNameFlag,
+					Type:           runner.MigrationOperationTypeTargetedUp,
+					TargetVersions: versions,
 				},
 			},
 		})

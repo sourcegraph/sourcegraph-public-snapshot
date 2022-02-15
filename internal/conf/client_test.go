@@ -9,10 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestClient_continuouslyUpdate(t *testing.T) {

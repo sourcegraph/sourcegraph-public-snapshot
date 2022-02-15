@@ -3,9 +3,8 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type disabledResolver struct {

@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

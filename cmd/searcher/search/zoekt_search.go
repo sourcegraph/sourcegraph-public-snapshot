@@ -4,12 +4,11 @@ import (
 	"archive/zip"
 	"context"
 	"io"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
@@ -22,6 +21,7 @@ import (
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (

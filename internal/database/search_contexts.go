@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ErrSearchContextNotFound = errors.New("search context not found")
@@ -373,10 +373,6 @@ func (s *searchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx con
 }
 
 func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
-	if len(repositoryRevisions) == 0 {
-		return nil
-	}
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -386,6 +382,10 @@ func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_repos WHERE search_context_id = %d", searchContextID))
 	if err != nil {
 		return err
+	}
+
+	if len(repositoryRevisions) == 0 {
+		return nil
 	}
 
 	values := []*sqlf.Query{}
