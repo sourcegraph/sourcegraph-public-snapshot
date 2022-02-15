@@ -1,30 +1,31 @@
 import { gql } from '@apollo/client'
 
 export const ORG_MEMBERS_QUERY = gql`
-query OrganizationMembers($id: ID!) {
-    node(id: $id) {
-        ... on Org {
-            viewerCanAdminister
-            members {
-                nodes {
-                    id
-                    username
-                    displayName
-                    avatarURL
+    query OrganizationMembers($id: ID!) {
+        node(id: $id) {
+            ... on Org {
+                viewerCanAdminister
+                members {
+                    nodes {
+                        id
+                        username
+                        displayName
+                        avatarURL
+                    }
+                    totalCount
                 }
-                totalCount
             }
         }
     }
-}
 `
 
-export  const ORG_MEMBER_REMOVE_MUTATION= gql`
-mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
-    removeUserFromOrganization(user: $user, organization: $organization) {
-        alwaysNil
+export const ORG_MEMBER_REMOVE_MUTATION = gql`
+    mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
+        removeUserFromOrganization(user: $user, organization: $organization) {
+            alwaysNil
+        }
     }
-}`
+`
 
 export const INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION = gql`
     mutation InviteUserToOrg($organization: ID!, $username: String, $email: String) {
@@ -49,43 +50,43 @@ export const ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION = gql`
 
 export const ORG_PENDING_INVITES_QUERY = gql`
     query PendingInvitations($id: ID!) {
-    pendingInvitations(organization: $id) {
-        id
-        recipientEmail
-        expiresAt
-        respondURL
-        recipient {
+        pendingInvitations(organization: $id) {
             id
-            username
-            displayName
-            avatarURL
-        }
-        revokedAt
-        sender {
-            id
-            displayName
-            username
-        }
-        organization {
-            name
-        }
-        createdAt
-        notifiedAt
+            recipientEmail
+            expiresAt
+            respondURL
+            recipient {
+                id
+                username
+                displayName
+                avatarURL
+            }
+            revokedAt
+            sender {
+                id
+                displayName
+                username
+            }
+            organization {
+                name
+            }
+            createdAt
+            notifiedAt
         }
     }
 `
-export const ORG_REVOKE_INVITATION_MUTATION= gql`
+export const ORG_REVOKE_INVITATION_MUTATION = gql`
     mutation RevokeInvite($id: ID!) {
-        revokeOrganizationInvitation (organizationInvitation: $id) {
+        revokeOrganizationInvitation(organizationInvitation: $id) {
             alwaysNil
         }
     }
 `
 
-export const ORG_RESEND_INVITATION_MUTATION =gql`
-mutation ResendOrgInvitation($id: ID!) {
-    resendOrganizationInvitationNotification(organizationInvitation: $id) {
-        alwaysNil
+export const ORG_RESEND_INVITATION_MUTATION = gql`
+    mutation ResendOrgInvitation($id: ID!) {
+        resendOrganizationInvitationNotification(organizationInvitation: $id) {
+            alwaysNil
+        }
     }
-}
 `

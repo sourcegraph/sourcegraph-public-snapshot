@@ -5,7 +5,16 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Link,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+} from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {
