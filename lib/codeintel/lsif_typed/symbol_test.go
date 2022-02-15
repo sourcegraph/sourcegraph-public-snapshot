@@ -22,6 +22,26 @@ func TestParseSymbol(t *testing.T) {
 			},
 			Descriptors: []*Descriptor{{Name: "method", Suffix: Descriptor_Method}},
 		}},
+		// Backtick-escaped descriptor
+		{Symbol: "a b c d `e f`.", Expected: &Symbol{
+			Scheme: "a",
+			Package: &Package{
+				Manager: "b",
+				Name:    "c",
+				Version: "d",
+			},
+			Descriptors: []*Descriptor{{Name: "e f", Suffix: Descriptor_Term}},
+		}},
+		// Space-escaped package name
+		{Symbol: "a b  c d e f.", Expected: &Symbol{
+			Scheme: "a",
+			Package: &Package{
+				Manager: "b c",
+				Name:    "d",
+				Version: "e",
+			},
+			Descriptors: []*Descriptor{{Name: "f", Suffix: Descriptor_Term}},
+		}},
 		{
 			Symbol: "lsif-java maven package 1.0.0 java/io/File#Entry.method(+1).(param)[TypeParam]",
 			Expected: &Symbol{

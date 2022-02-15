@@ -8,20 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (x *Package) ID() string {
-	return fmt.Sprintf("%s %s %s", x.Manager, x.Name, x.Version)
-}
 func IsGlobalSymbol(symbol string) bool {
 	return !IsLocalSymbol(symbol)
 }
+
 func IsLocalSymbol(symbol string) bool {
 	return strings.HasPrefix(symbol, "local ")
 }
 
+// ParseSymbol parses an LSIF Typed string into the lsif_typed.Symbol message.
 func ParseSymbol(symbol string) (*Symbol, error) {
 	return ParsePartialSymbol(symbol, true)
 }
 
+// ParsePartialSymbol parses an LSIF Typed string into the lsif_typed.Symbol message excluding the `.Descriptor` field.
 func ParsePartialSymbol(symbol string, includeDescriptors bool) (*Symbol, error) {
 	s := newSymbolParser(symbol)
 	scheme, err := s.acceptSpaceEscapedIdentifier("scheme")
@@ -167,11 +167,8 @@ func (s *symbolParser) parseDescriptor() (*Descriptor, error) {
 
 func (s *symbolParser) acceptIdentifier(what string) (string, error) {
 	if s.current() == '`' {
-		ident, err := s.acceptBacktickEscapedIdentifier(what)
-		if err != nil {
-			return "", err
-		}
-		return ident, s.acceptCharacter('`', "closing escaped identifier")
+		s.index++
+		return s.acceptBacktickEscapedIdentifier(what)
 	}
 	start := s.index
 	for s.index < len(s.Symbol) && isIdentifierCharacter(s.current()) {
@@ -190,9 +187,11 @@ func isIdentifierCharacter(r rune) bool {
 func (s *symbolParser) acceptSpaceEscapedIdentifier(what string) (string, error) {
 	return s.acceptEscapedIdentifier(what, ' ')
 }
+
 func (s *symbolParser) acceptBacktickEscapedIdentifier(what string) (string, error) {
-	return s.acceptEscapedIdentifier(what, ' ')
+	return s.acceptEscapedIdentifier(what, '`')
 }
+
 func (s *symbolParser) acceptEscapedIdentifier(what string, escapeCharacter rune) (string, error) {
 	builder := strings.Builder{}
 	for s.index < len(s.Symbol) {
@@ -219,4 +218,8 @@ func (s *symbolParser) acceptCharacter(r rune, what string) error {
 		return nil
 	}
 	return s.error(fmt.Sprintf("expected '%v', obtained '%v', while parsing %v", string(r), string(s.current()), what))
+}
+
+func (x *Package) ID() string {
+	return fmt.Sprintf("%s %s %s", x.Manager, x.Name, x.Version)
 }

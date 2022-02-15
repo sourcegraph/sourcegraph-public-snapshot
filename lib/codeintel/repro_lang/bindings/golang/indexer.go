@@ -6,6 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )
 
+// Index returns an LSIF Typed index for all of the provided source files, which should use the syntax of
+// the "repro_lang" programming language. Search for files with the `*.repro` file extension to see examples
+// of how repro_lang programs looks like. Search for "grammar.js" to see the tree-sitter grammar of the repro_lang syntax.
 func Index(
 	projectRoot, packageName string,
 	sources []*lsif_typed.SourceFile,
@@ -59,7 +62,7 @@ func Index(
 
 	// Phase 2: resolve names for definitions
 	for _, dependency := range reproDependencies {
-		dependency.resolveGlobalDefinitions(ctx)
+		dependency.enterExternalSymbolIntoTheGlobalScope(ctx)
 	}
 	for _, file := range reproSources {
 		file.resolveDefinitions(ctx)

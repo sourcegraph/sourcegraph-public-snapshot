@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// SourceFile includes helper methods to deal with source files.
 type SourceFile struct {
 	AbsolutePath string
 	RelativePath string
@@ -28,7 +29,7 @@ func NewSourcesFromDirectory(directory string) ([]*SourceFile, error) {
 		if err != nil {
 			return err
 		}
-		sourceFile, err := ReadSourceFile(path, relativePath)
+		sourceFile, err := NewSourceFileFromPath(path, relativePath)
 		if err != nil {
 			return err
 		}
@@ -38,14 +39,6 @@ func NewSourcesFromDirectory(directory string) ([]*SourceFile, error) {
 	return result, err
 }
 
-func ReadSourceFile(absolutePath, relativePath string) (*SourceFile, error) {
-	text, err := os.ReadFile(absolutePath)
-	if err != nil {
-		return nil, err
-	}
-	return NewSourceFile(absolutePath, relativePath, string(text)), nil
-}
-
 func NewSourceFile(absolutePath, relativePath, code string) *SourceFile {
 	return &SourceFile{
 		AbsolutePath: absolutePath,
@@ -53,6 +46,14 @@ func NewSourceFile(absolutePath, relativePath, code string) *SourceFile {
 		Text:         code,
 		Lines:        strings.Split(code, "\n"),
 	}
+}
+
+func NewSourceFileFromPath(absolutePath, relativePath string) (*SourceFile, error) {
+	text, err := os.ReadFile(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	return NewSourceFile(absolutePath, relativePath, string(text)), nil
 }
 
 func (d *SourceFile) String() string {

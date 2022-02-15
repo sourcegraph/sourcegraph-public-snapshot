@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// FormatSnapshots renders the provided LSIF indexes into a pretty-printed text format
+// that is suitable for snapshot testing.
 func FormatSnapshots(
 	index *lsif_typed.Index,
 	commentSyntax string,
@@ -36,6 +38,8 @@ func FormatSnapshots(
 	return result, nil
 }
 
+// FormatSnapshot renders the provided LSIF index into a pretty-printed text format
+// that is suitable for snapshot testing.
 func FormatSnapshot(
 	x *lsif_typed.Document,
 	index *lsif_typed.Index,
@@ -56,7 +60,7 @@ func FormatSnapshot(
 	}
 	symtab := x.SymbolTable()
 	sort.SliceStable(x.Occurrences, func(i, j int) bool {
-		return isRangeLess(x.Occurrences[i].Range, x.Occurrences[j].Range)
+		return isLsifRangeLess(x.Occurrences[i].Range, x.Occurrences[j].Range)
 	})
 	var formattingError error
 	formatSymbol := func(symbol string) string {
@@ -135,7 +139,8 @@ func FormatSnapshot(
 	return b.String(), formattingError
 }
 
-func isRangeLess(a []int32, b []int32) bool {
+// isRangeLess compares two LSIF ranges (which are encoded as []int32).
+func isLsifRangeLess(a []int32, b []int32) bool {
 	if a[0] != b[0] { // start line
 		return a[0] < b[0]
 	}

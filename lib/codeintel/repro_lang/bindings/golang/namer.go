@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )
 
-func (d *reproDependency) resolveGlobalDefinitions(context *reproContext) {
+func (d *reproDependency) enterExternalSymbolIntoTheGlobalScope(context *reproContext) {
 	for _, file := range d.Sources {
 		for _, definition := range file.definitions {
 			if definition.name.isLocalSymbol() {

@@ -2,6 +2,9 @@ package lsif_typed
 
 import "strings"
 
+// SymbolFormatter configures how to format an LSIF Typed symbol.
+// Excluding parts of the symbol can be helpful for testing purposes. For example, snapshot tests may hardcode
+// the package version number so it's easier to read the snapshot tests if the version is excluded.
 type SymbolFormatter struct {
 	IncludeScheme         func(scheme string) bool
 	IncludePackageManager func(manager string) bool
@@ -10,6 +13,7 @@ type SymbolFormatter struct {
 	IncludeDescriptor     func(descriptor string) bool
 }
 
+// DescriptorOnlyFormatter formats only the descriptor part of the symbol.
 var DescriptorOnlyFormatter = SymbolFormatter{
 	IncludeScheme:         func(scheme string) bool { return scheme == "local" },
 	IncludePackageManager: func(_unused string) bool { return false },
