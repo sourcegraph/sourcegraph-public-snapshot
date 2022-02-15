@@ -304,7 +304,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	if c.RunType.Is(runtype.Targeted) {
-		r := regexp.MustCompile(`^targeted/([^/]+)/.+$`)
+		r := regexp.MustCompile(runtype.Targeted.Matcher().Branch)
 		matches := r.FindStringSubmatch(c.Branch)
 		if len(matches) != 2 {
 			return nil, fmt.Errorf("targeted RunType: invalid branch name")

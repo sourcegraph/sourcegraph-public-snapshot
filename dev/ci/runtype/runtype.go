@@ -96,8 +96,9 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 	case Targeted:
 		return &RunTypeMatcher{
-			Branch:       `^targeted/[^/]+/.+$`,
-			BranchRegexp: true,
+			Branch:                 `^targeted/([^/]+)/.+$`,
+			BranchRegexp:           true,
+			BranchArgumentRequired: true,
 		}
 
 	case TaggedRelease:
