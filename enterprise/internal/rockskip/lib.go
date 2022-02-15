@@ -1687,17 +1687,19 @@ type Queryable interface {
 
 // combineErrors is like errors.Append, but it returns nil when there are no errors or all errors are
 // nil so that success is propagated.
-func combineErrors(errs ...error) error {
+func combineErrors(errOrNils ...error) error {
+	errs := []error{}
+	for _, err := range errOrNils {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	if len(errs) == 0 {
 		return nil
 	}
 	if len(errs) == 1 {
 		return errs[0]
 	}
-	for _, err := range errs {
-		if err != nil {
-			return errors.Append(errs[0], errs[1:]...)
-		}
-	}
-	return nil
+	return errors.Append(errs[0], errs[1:]...)
 }
