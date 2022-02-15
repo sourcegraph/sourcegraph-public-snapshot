@@ -647,7 +647,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 
 	// Select a candidate repo to delete.
 	requestStatus.Tasklog.Start("select repo to delete")
-	var repo string
+	var repos []string
 	var repoRank int
 	err = db.QueryRowContext(ctx, `
 		SELECT repo, repo_rank
@@ -658,7 +658,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 		WHERE repo_rank > $1
 		ORDER BY last_accessed_at ASC
 		LIMIT 1;`, maxRepos,
-	).Scan(&repo, &repoRank)
+	).Scan(&repos, &repoRank)
 	if err == sql.ErrNoRows {
 		// No more repos to delete.
 		return false, nil
@@ -666,6 +666,10 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	if err != nil {
 		return false, errors.Wrap(err, "selecting repo to delete")
 	}
+	if len(repos) != 1 {
+		return false, errors.Newf("tryDeleteOldestRepo: expected 1 repo, got %d", len(repos))
+	}
+	repo := repos[0]
 
 	// Note: a search request or deletion could have intervened here.
 
@@ -717,7 +721,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && repo;", pg.Array([]string{repo}))
 	if err != nil {
 		return false, err
 	}
@@ -924,8 +928,8 @@ func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_blobs
-		WHERE $1 = ANY (path) AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
-	`, path, hop).Scan(&id)
+		WHERE $1 && path AND $2 && added AND NOT $2 && deleted
+	`, pg.Array([]string{path}), pg.Array([]string{hop})).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
@@ -956,7 +960,7 @@ func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id i
 		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, repo, blob.Commit, pg.Array([]string{blob.Path}), pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, pg.Array([]string{repo}), blob.Commit, pg.Array([]string{blob.Path}), pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -1022,7 +1026,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(ctx, conn, args, requestStatus)
+	blobs, err = queryBlobs(ctx, conn, args, requestStatus, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1030,7 +1034,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	return blobs, nil
 }
 
-func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *ThreadStatus) ([]Blob, error) {
+func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *ThreadStatus, debug bool) ([]Blob, error) {
 	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
 		return nil, err
@@ -1046,17 +1050,24 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 		SELECT id, commit_id, path, added, deleted, symbol_data
 		FROM rockskip_blobs
 		WHERE
-			repo = %s
+			%s && repo
 			AND     %s && added
 			AND NOT %s && deleted
 			AND %s
 		LIMIT %s;`,
-		string(args.Repo),
+		pg.Array([]string{string(args.Repo)}),
 		pg.Array(hops),
 		pg.Array(hops),
 		convertSearchArgsToSqlQuery(args),
 		limit,
 	)
+
+	if debug {
+		err = debugQuery(ctx, conn, args, q)
+		if err != nil {
+			return nil, errors.Wrap(err, "debugQuery")
+		}
+	}
 
 	var rows *sql.Rows
 	rows, err = conn.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -1114,6 +1125,91 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 	return blobs, nil
 }
 
+func debugQuery(ctx context.Context, conn *sql.Conn, args types.SearchArgs, q *sqlf.Query) error {
+	sb := &strings.Builder{}
+
+	fmt.Fprintf(sb, "Search args: %+v\n", args)
+
+	fmt.Fprintln(sb, "Query:")
+	str, err := sqlfToString(q)
+	if err != nil {
+		return errors.Wrap(err, "sqlfToString")
+	}
+
+	explainStr := "EXPLAIN ANALYZE " + str
+	fmt.Fprintln(sb, explainStr)
+
+	rows, err := conn.QueryContext(ctx, explainStr)
+	if err != nil {
+		return errors.Wrap(err, "while explaining")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var line string
+		err = rows.Scan(&line)
+		if err != nil {
+			return errors.Wrap(err, "while scanning explanation")
+		}
+		fmt.Fprintln(sb, line)
+	}
+
+	fmt.Println(bracket(sb.String()))
+
+	return nil
+}
+
+func bracket(text string) string {
+	lines := strings.Split(strings.TrimSpace(text), "\n")
+	for i, line := range lines {
+		if i == 0 {
+			lines[i] = "┌ " + line
+		} else if i == len(lines)-1 {
+			lines[i] = "└ " + line
+		} else {
+			lines[i] = "│ " + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+func sqlfToString(q *sqlf.Query) (string, error) {
+	s := q.Query(sqlf.PostgresBindVar)
+	for i, arg := range q.Args() {
+		argString, err := argToString(arg)
+		if err != nil {
+			return "", err
+		}
+		s = strings.ReplaceAll(s, fmt.Sprintf("$%d", i+1), argString)
+	}
+	return s, nil
+}
+
+func argToString(arg interface{}) (string, error) {
+	switch arg := arg.(type) {
+	case string:
+		return fmt.Sprintf("'%s'", sqlEscapeQuotes(arg)), nil
+	case *pg.StringArray:
+		value, err := arg.Value()
+		if err != nil {
+			return "", err
+		}
+		switch value := value.(type) {
+		case string:
+			return fmt.Sprintf("'%s'", sqlEscapeQuotes(value)), nil
+		default:
+			return "", errors.Newf("unrecognized array type %T", value)
+		}
+	case int:
+		return fmt.Sprintf("%d", arg), nil
+	default:
+		return "", errors.Newf("unrecognized type %T", arg)
+	}
+}
+
+func sqlEscapeQuotes(s string) string {
+	return strings.ReplaceAll(s, "'", "''")
+}
+
 func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	// TODO support non regexp queries once the frontend supports it.
 
@@ -1151,7 +1247,7 @@ func arrayMatchesRegex(column string, regex string, isCaseSensitive bool) *sqlf.
 	}
 
 	if literal, isExact, err := isLiteralEquality(regex); err == nil && isExact && isCaseSensitive {
-		return sqlf.Sprintf("%s && %s", pg.Array([]string{literal}), column)
+		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", column), pg.Array([]string{literal}))
 	}
 
 	operator := "~"

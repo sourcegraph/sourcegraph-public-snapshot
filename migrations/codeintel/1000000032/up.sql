@@ -7,7 +7,7 @@ CREATE TABLE rockskip_repos (
 
 CREATE TABLE rockskip_ancestry (
     commit_id   VARCHAR(40),
-    repo        TEXT        NOT NULL REFERENCES rockskip_repos(repo),
+    repo        TEXT        NOT NULL,
     height      INTEGER     NOT NULL,
     ancestor_id VARCHAR(40) NOT NULL,
     PRIMARY KEY (repo, commit_id)
@@ -15,7 +15,9 @@ CREATE TABLE rockskip_ancestry (
 
 CREATE TABLE rockskip_blobs (
     id           SERIAL        PRIMARY KEY,
-    repo         TEXT          NOT NULL REFERENCES rockskip_repos(repo),
+    -- repo is TEXT[] so that it can be added to the GIN index.
+    -- It always has exactly 1 element.
+    repo         TEXT[]        NOT NULL,
     commit_id    VARCHAR(40)   NOT NULL,
     -- path is TEXT[] so that it can be added to the GIN index.
     -- It always has exactly 1 element.
@@ -33,6 +35,6 @@ CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at)
 
 CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path);
 
-CREATE INDEX rockskip_blobs_added_deleted_path_symbol_names ON rockskip_blobs USING GIN (added, deleted, path, symbol_names);
+CREATE INDEX rockskip_blobs_repo_added_deleted_path_symbol_names ON rockskip_blobs USING GIN (repo, added, deleted, path, symbol_names);
 
 COMMIT;
