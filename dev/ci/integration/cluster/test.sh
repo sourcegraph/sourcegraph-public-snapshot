@@ -97,9 +97,6 @@ function e2e() {
   echo "$SOURCEGRAPH_BASE_URL"
   echo "--- TEST: Running tests"
   yarn run test:regression:core
-  yarn run test:regression:config-settings
-  yarn run test:regression:integrations
-  yarn run test:regression:search
   popd
 }
 
