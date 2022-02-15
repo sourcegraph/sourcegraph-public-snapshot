@@ -307,14 +307,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		r := regexp.MustCompile(`^targeted/([^/]+)/.+$`)
 		matches := r.FindStringSubmatch(c.Branch)
 		if len(matches) != 2 {
-			panic(1)
+			return nil, fmt.Errorf("targeted RunType: invalid branch name")
 		}
 
 		target := matches[1]
 		target = strings.ReplaceAll(target, "-", " ")
 		target = strings.ToLower(target)
 
-		var deps []string
+		if len(pipeline.Steps) < 1 {
+			return nil, fmt.Errorf("targeted RunType: invalid branch name")
+		}
+
+		var deps depSet
 		var newPipeline bk.Pipeline
 
 		// Find the target step to grab its dependencies
@@ -322,9 +326,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			if p, ok := group.(*bk.Pipeline); ok {
 				for _, s := range p.Steps {
 					if step, ok := s.(*bk.Step); ok {
-						// if step.Label == ":puppeteer::electric_plug: Puppeteer tests finalize" {
 						if strings.Contains(strings.ToLower(step.Label), target) {
-							deps = append(deps, step.DependsOn...)
+							deps.add(step.DependsOn...)
 							newPipeline.Steps = append(newPipeline.Steps, step)
 						}
 					}
@@ -333,18 +336,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		if len(newPipeline.Steps) != 1 {
-			panic("ambiguous")
+			return nil, fmt.Errorf("targeted RunType: ambiguous target step")
 		}
 
-		for len(deps) > 0 {
-			dep := deps[0]
-			deps = deps[1:]
+		for deps.Len() > 0 {
+			dep, err := deps.unshift()
+			if err != nil {
+				return nil, err
+			}
 
 			for _, group := range pipeline.Steps {
 				if p, ok := group.(*bk.Pipeline); ok {
 					for _, s := range p.Steps {
 						if step, ok := s.(*bk.Step); ok {
 							if step.Key == dep {
+								// If there are other dependencies, look for them as well.
+								deps.add(step.DependsOn...)
 								newPipeline.Steps = append(newPipeline.Steps, step)
 							}
 						}
@@ -357,6 +364,40 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	return pipeline, nil
+}
+
+type depSet struct {
+	deps []string
+}
+
+func (s *depSet) add(deps ...string) {
+	for _, dep := range deps {
+		if !s.exists(dep) {
+			s.deps = append(s.deps, dep)
+		}
+	}
+}
+
+func (s *depSet) exists(dep string) bool {
+	for _, d := range s.deps {
+		if dep == d {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *depSet) unshift() (string, error) {
+	if len(s.deps) < 1 {
+		return "", fmt.Errorf("empty dep set")
+	}
+	dep := s.deps[0]
+	s.deps = s.deps[1:]
+	return dep, nil
+}
+
+func (s *depSet) Len() int {
+	return len(s.deps)
 }
 
 func ensureUniqueKeys(pipeline *bk.Pipeline) error {
