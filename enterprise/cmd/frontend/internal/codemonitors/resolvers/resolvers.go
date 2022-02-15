@@ -407,8 +407,6 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
-func sendTestWebhook(ctx context.Context) {}
-
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
 	opts := edb.ListActionsOpts{MonitorID: &monitorID}
 	emailActions, err := r.db.CodeMonitors().ListEmailActions(ctx, opts)
