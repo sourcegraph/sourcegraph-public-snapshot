@@ -2,10 +2,15 @@
 
 set -e
 
-echo "--- install hadolint"
-mkdir -p .bin
-curl -sL -o .bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)"
-chmod 700 .bin/hadolint
+HADOLINT=./.bin/hadolint
+HADOLINT_VERSION=v1.15.0
+
+if [[ ! -f "$HADOLINT" ]]; then
+  echo "--- install hadolint"
+  mkdir -p .bin
+  curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/$HADOLINT_VERSION/hadolint-$(uname -s)-$(uname -m)"
+  chmod 700 $HADOLINT
+fi
 
 echo "--- hadolint"
-git ls-files | grep Dockerfile | xargs ./.bin/hadolint
+git ls-files | grep Dockerfile | xargs $HADOLINT
