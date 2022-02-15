@@ -11,7 +11,7 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "\u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
+     "text": "Diff match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
     }
    },
    {
@@ -25,14 +25,14 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "\u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
+     "text": "Message match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
     }
    },
    {
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "```summary line\n\nmessage body\n```"
+     "text": "```summary line\n\nvery\nlong\nmessage\nbody\nwith\nmore\nthan\nten\n...\n```"
     }
    },
    {

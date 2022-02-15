@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"flag"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,8 @@ import (
 	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
+
+var update = flag.Bool("update", false, "Update goldenfiles of tests")
 
 func TestSlackWebhook(t *testing.T) {
 	t.Parallel()
@@ -47,7 +50,7 @@ func TestSlackWebhook(t *testing.T) {
 				Oid:        "7815187511872asbasdfgasd",
 			},
 			MessagePreview: &cmtypes.HighlightedString{
-				Value: "summary line\n\nmessage body\n",
+				Value: "summary line\n\nvery\nlong\nmessage\nbody\nwith\nmore\nthan\nten\nlines\nthat\nwill\nbe\ntruncated\n",
 				Highlights: []cmtypes.Highlight{{
 					Line:      1,
 					Character: 0,
@@ -62,7 +65,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
 			w.WriteHeader(200)
 		}))
 		defer s.Close()
@@ -76,7 +79,7 @@ func TestSlackWebhook(t *testing.T) {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, b)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, b)
 			w.WriteHeader(500)
 		}))
 		defer s.Close()
@@ -91,7 +94,7 @@ func TestSlackWebhook(t *testing.T) {
 	t.Run("golden with results", func(t *testing.T) {
 		actionCopy := action
 		actionCopy.IncludeResults = true
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(actionCopy))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(actionCopy))
 	})
 
 	t.Run("golden with truncated results", func(t *testing.T) {
@@ -100,10 +103,10 @@ func TestSlackWebhook(t *testing.T) {
 		// quadruple the number of results
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
 		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(actionCopy))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(actionCopy))
 	})
 
 	t.Run("golden without results", func(t *testing.T) {
-		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", false, slackPayload(action))
+		testutil.AssertGolden(t, "testdata/"+t.Name()+".json", *update, slackPayload(action))
 	})
 }

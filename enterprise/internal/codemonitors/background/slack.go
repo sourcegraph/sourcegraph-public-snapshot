@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/slack-go/slack"
 
@@ -36,17 +37,22 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 	if args.IncludeResults {
 		truncatedResults, truncatedCount := truncateResults(args.Results, 5)
 		for _, result := range truncatedResults {
+			resultType := "Message"
+			if result.DiffPreview != nil {
+				resultType = "Diff"
+			}
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
-				"<%s|%s@%s>",
+				"%s match: <%s|%s@%s>",
+				resultType,
 				getCommitURL(args.ExternalURL, result.Commit.Repository.Name, result.Commit.Oid, args.UTMSource),
 				result.Commit.Repository.Name,
 				result.Commit.Oid[:8],
 			)))
 			var contentRaw string
 			if result.DiffPreview != nil {
-				contentRaw = result.DiffPreview.Value
+				contentRaw = truncateString(result.DiffPreview.Value, 10)
 			} else {
-				contentRaw = result.MessagePreview.Value
+				contentRaw = truncateString(result.MessagePreview.Value, 10)
 			}
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
 		}
@@ -63,6 +69,15 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		)),
 	)
 	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}
+}
+
+func truncateString(input string, lines int) string {
+	splitLines := strings.SplitAfter(input, "\n")
+	if len(splitLines) > lines {
+		splitLines = splitLines[:lines]
+		splitLines = append(splitLines, "...\n")
+	}
+	return strings.Join(splitLines, "")
 }
 
 func truncateResults(results cmtypes.CommitSearchResults, maxResults int) (cmtypes.CommitSearchResults, int) {
