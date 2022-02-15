@@ -52,7 +52,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-const currentMigrationLogSchemaVersion = 1
+const currentMigrationLogSchemaVersion = 2
 
 // EnsureSchemaTable creates the bookeeping tables required to track this schema
 // if they do not already exist. If old versions of the tables exist, this method
@@ -76,39 +76,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
 	}
 
-	minMigrationVersions := map[string]int{
-		"schema_migrations":              1528395834,
-		"codeintel_schema_migrations":    1000000015,
-		"codeinsights_schema_migrations": 1000000000,
-		"test_migrations_table_backfill": 1000000000, // used in tests
-	}
-	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
-		queries = append(queries, sqlf.Sprintf(`
-			WITH
-				schema_version AS (SELECT * FROM %s LIMIT 1),
-				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
-				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
-			INSERT INTO migration_logs (
-				migration_logs_schema_version,
-				schema,
-				version,
-				up,
-				success,
-				started_at,
-				finished_at
-			)
-			SELECT %s, %s, version, true, true, NOW(), NOW()
-			FROM generate_series(%s, (SELECT version FROM target_version)) version
-			WHERE NOT (SELECT dirty FROM schema_version)
-		`,
-			quote(s.schemaName),
-			s.schemaName,
-			currentMigrationLogSchemaVersion,
-			s.schemaName,
-			minMigrationVersion,
-		))
-	}
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -117,6 +84,65 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 
 	for _, query := range queries {
 		if err := tx.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
+	migrationVersionBounds := map[string][2]int{
+		"schema_migrations":              {1528395834, 1528395973},
+		"codeintel_schema_migrations":    {1000000015, 1000000030},
+		"codeinsights_schema_migrations": {1000000000, 1000000027},
+		"test_migrations_table_backfill": {1000000000, 2000000000}, // used in tests
+	}
+
+	if bounds, ok := migrationVersionBounds[s.schemaName]; ok {
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			`
+				WITH
+					-- Choose the version if it's within the sequential seequence of migrations we want to migrate
+					version_in_bounds AS (SELECT version FROM %s WHERE NOT dirty AND %s <= version AND version <= %s),
+
+					-- Determine if there's any new migration log entry that has already done this
+					new_log_versions_exist AS (SELECT 1 FROM migration_logs WHERE schema = %s AND migration_logs_schema_version > 1),
+
+					-- Delete old migration logs
+					deleted AS (
+						DELETE FROM migration_logs
+						WHERE
+							schema = %s AND
+							migration_logs_schema_version = 1 AND
+							EXISTS (SELECT 1 FROM version_in_bounds) AND      -- only perform if non-dirty and within bounds
+							NOT EXISTS (SELECT 1 FROM new_log_versions_exist) -- only perform once
+					),
+
+					-- Overwrite migration logs
+					inserted AS (
+						INSERT INTO migration_logs (
+							migration_logs_schema_version,
+							schema,
+							version,
+							up,
+							success,
+							started_at,
+							finished_at
+						)
+						SELECT %s, %s, version, true, true, NOW(), NOW()
+						FROM generate_series(%s::int, (SELECT version FROM version_in_bounds)) version
+						WHERE
+							EXISTS (SELECT 1 FROM version_in_bounds) AND      -- only perform if non-dirty and within bounds
+							NOT EXISTS (SELECT 1 FROM new_log_versions_exist) -- only perform once
+					)
+				SELECT 1
+			`,
+			quote(s.schemaName),
+			bounds[0],
+			bounds[1],
+			s.schemaName,
+			s.schemaName,
+			currentMigrationLogSchemaVersion,
+			s.schemaName,
+			bounds[0],
+		)); err != nil {
 			return err
 		}
 	}
