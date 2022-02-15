@@ -139,7 +139,7 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
 func (s *orgInvitationStore) GetPendingByOrgID(ctx context.Context, orgID int32) ([]*OrgInvitation, error) {
 	results, err := s.list(ctx, []*sqlf.Query{
-		sqlf.Sprintf("org_id=%d AND responded_at IS NULL AND revoked_at IS NULL", orgID),
+		sqlf.Sprintf("org_id=%d AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", orgID),
 	}, nil)
 
 	if err != nil {
