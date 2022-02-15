@@ -400,6 +400,7 @@ func ElementsToEmptyInterfaces(els []Element) []lsifElement {
 			object.OutV = edge.OutV
 			object.InV = edge.InV
 			object.InVs = edge.InVs
+			object.Document = edge.Document
 		} else if el.Type == "vertex" {
 			switch el.Label {
 			case "hoverResult":

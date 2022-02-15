@@ -1,0 +1,26 @@
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"repro_lang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":2,"type":"vertex","label":"document","uri":"file:/root/example.repro"}
+{"id":3,"type":"vertex","label":"resultSet"}
+{"id":4,"type":"vertex","label":"referenceResult"}
+{"id":5,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of localExample\n\n---\n\n: local is a local method"}}}
+{"id":6,"type":"edge","label":"textDocument/references","inV":4,"outV":3}
+{"id":7,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
+{"id":8,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":23}}
+{"id":9,"type":"edge","label":"next","inV":3,"outV":8}
+{"id":10,"type":"edge","label":"item","inVs":[8],"outV":4,"document":2}
+{"id":11,"type":"vertex","label":"range","start":{"line":2,"character":10},"end":{"line":2,"character":22}}
+{"id":12,"type":"edge","label":"next","inV":3,"outV":11}
+{"id":13,"type":"edge","label":"item","inVs":[11],"outV":4,"document":2}
+{"id":14,"type":"edge","label":"contains","inVs":[8,11],"outV":2}
+{"id":15,"type":"vertex","label":"document","uri":"file:/root/example2.repro"}
+{"id":16,"type":"vertex","label":"range","start":{"line":0,"character":10},"end":{"line":0,"character":22}}
+{"id":17,"type":"vertex","label":"resultSet"}
+{"id":18,"type":"vertex","label":"referenceResult"}
+{"id":19,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown"}}}
+{"id":20,"type":"edge","label":"textDocument/references","inV":18,"outV":17}
+{"id":21,"type":"edge","label":"textDocument/hover","inV":19,"outV":17}
+{"id":22,"type":"vertex","label":"moniker","identifier":"local ERROR_UNRESOLVED_SYMBOL","kind":"import","scheme":"local"}
+{"id":23,"type":"edge","label":"moniker","inV":22,"outV":17}
+{"id":24,"type":"edge","label":"next","inV":17,"outV":16}
+{"id":25,"type":"edge","label":"item","inVs":[16],"outV":18,"document":15}
+{"id":26,"type":"edge","label":"contains","inVs":[16],"outV":15}
