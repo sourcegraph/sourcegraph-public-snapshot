@@ -162,6 +162,9 @@ func TestInviteUserToOrganization(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", false, nil)
+
 	orgMembers := database.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
@@ -186,6 +189,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
@@ -214,6 +218,39 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
+			},
+		})
+	})
+
+	t.Run("Fails if username to invite does not have verified email address", func(t *testing.T) {
+		// enable send email functionality
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+			EmailSmtp: &schema.SMTPServerConfig{},
+		}})
+		defer mockDefaultSiteConfig()
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				mutation InviteUserToOrganization($organization: ID!, $username: String!) {
+					inviteUserToOrganization(organization: $organization, username: $username) {
+						sentInvitationEmail
+						invitationURL
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"organization": string(MarshalOrgID(1)),
+					"username":     "foo",
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Message: "cannot invite user because their primary email address is not verified",
+						Path:    []interface{}{"inviteUserToOrganization"},
+					},
+				},
 			},
 		})
 	})
