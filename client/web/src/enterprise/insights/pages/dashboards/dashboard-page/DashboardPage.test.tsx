@@ -7,6 +7,7 @@ import { Router, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import { CodeInsightsBackend } from '../../../core/backend/code-insights-backend'
@@ -55,12 +56,14 @@ const renderWithBrandedContext = (
     { route = '/', history = createMemoryHistory({ initialEntries: [route] }), api = {} } = {}
 ) => ({
     ...render(
-        <Wrapper api={api}>
-            <Router history={history}>
-                {component}
-                <Route path={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`}>{ALL_INSIGHTS}</Route>
-            </Router>
-        </Wrapper>
+        <MockedTestProvider>
+            <Wrapper api={api}>
+                <Router history={history}>
+                    {component}
+                    <Route path={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`}>{ALL_INSIGHTS}</Route>
+                </Router>
+            </Wrapper>
+        </MockedTestProvider>
     ),
     history,
 })

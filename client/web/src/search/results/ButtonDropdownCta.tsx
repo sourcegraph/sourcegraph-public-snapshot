@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
@@ -35,10 +35,12 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
-    const toggleDropdownOpen = useCallback(() => {
-        setIsDropdownOpen(isOpen => !isOpen)
-        onToggle?.()
-    }, [onToggle])
+    const toggleDropdownOpen = (isOpen: boolean): void => {
+        if (isOpen !== isDropdownOpen) {
+            setIsDropdownOpen(isOpen)
+            onToggle?.()
+        }
+    }
 
     const onClick = (): void => {
         telemetryService.log(`SignUpPLG${source}_1_Search`)
@@ -53,7 +55,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     }, [isDropdownOpen])
 
     return (
-        <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
+        <Popover isOpen={isDropdownOpen} onOpenChange={event => toggleDropdownOpen(event.isOpen)}>
             <PopoverTrigger as={Button} outline={true} variant="secondary" size="sm" className={className}>
                 {button}
             </PopoverTrigger>
