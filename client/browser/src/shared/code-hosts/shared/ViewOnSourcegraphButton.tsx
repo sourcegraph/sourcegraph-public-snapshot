@@ -76,10 +76,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 
     const url = createURLWithUTM(
         new URL(`/${rawRepoName}${revision ? `@${revision}` : ''}${filePath ? `/-/${filePath}` : ''}`, sourcegraphURL),
-        {
-            utm_source: getPlatformName(),
-            utm_campaign: 'view-on-sourcegraph',
-        }
+        { utm_source: getPlatformName(), utm_campaign: 'view-on-sourcegraph' }
     ).href
 
     if (isErrorLike(repoExistsOrError)) {
