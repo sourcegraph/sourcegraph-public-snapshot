@@ -19,8 +19,25 @@
 .invitable-collaborators {
     height: 15.5rem;
     overflow: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .invite-button {
     height: 1.875rem;
+}
+
+.no-collaborators {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 28rem;
+    margin: auto;
+    text-align: center;
+}
+
+.invite-all-container {
+    height: 3.2rem;
 }
