@@ -190,6 +190,14 @@ function getDiffResolvedRevisionFromPageSource(
     }
 }
 
+export function getPermalinkHref(): string {
+    const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
+    if (!permalink) {
+        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
+    }
+    return permalink.href
+}
+
 /**
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
@@ -207,11 +215,7 @@ function getDiffResolvedRevisionFromPageSource(
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string {
-    const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
-    if (!permalink) {
-        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
-    }
-    const url = new URL(permalink.href)
+    const url = new URL(getPermalinkHref())
     // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , pageType, , ...path] = url.pathname.split('/')

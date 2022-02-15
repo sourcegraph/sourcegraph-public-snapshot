@@ -39,7 +39,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, getFilePath, parseURL } from './util'
+import { getFileContainers, getPermalinkHref, parseURL } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -693,7 +693,7 @@ export const githubCodeHost: GithubCodeHost = {
     getContext,
     getReactiveContext: mutations =>
         ['blob', 'tree'].includes(parseURL().pageType)
-            ? mutations.pipe(map(getFilePath), filter(Boolean), distinctUntilChanged(), mergeMap(getContext))
+            ? mutations.pipe(map(getPermalinkHref), filter(Boolean), distinctUntilChanged(), mergeMap(getContext))
             : from(getContext()),
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
