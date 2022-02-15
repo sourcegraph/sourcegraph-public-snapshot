@@ -104,6 +104,7 @@ require (
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.17
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/moby/buildkit v0.9.3
 	github.com/montanaflynn/stats v0.6.6
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
@@ -183,8 +184,13 @@ require (
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
+	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
+	github.com/docker/docker v20.10.7+incompatible // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -273,7 +279,7 @@ require (
 	github.com/gosimple/slug v1.12.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-retryablehttp v0.6.4 // indirect
+	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -382,7 +388,6 @@ require (
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	gotest.tools/v3 v3.0.3 // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
