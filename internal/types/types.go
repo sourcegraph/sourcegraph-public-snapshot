@@ -1128,7 +1128,6 @@ type CodeInsightsUsageStatistics struct {
 	InsightTimeIntervals           []InsightTimeIntervalPing
 	InsightOrgVisible              []OrgVisibleInsightPing
 	InsightTotalCounts             InsightTotalCounts
-	CriticalTelemetry              *CodeInsightsCriticalTelemetry
 }
 
 type CodeInsightsCriticalTelemetry struct {

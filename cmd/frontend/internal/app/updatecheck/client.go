@@ -226,15 +226,27 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB, criticalOnly bool) (message json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (message json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
-	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db, criticalOnly)
+	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
 	message, err = json.Marshal(codeInsightsUsage)
+	return
+}
+
+func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (message json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+
+	insightsCriticalTelemetry, err := usagestats.GetCodeInsightsCriticalTelemetry(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	message, err = json.Marshal(insightsCriticalTelemetry)
 	return
 }
 
@@ -320,11 +332,6 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-type telemetryClient struct {
-	nonCritical func(ctx context.Context, db database.DB) error
-	critical    func(ctx context.Context, db database.DB) error
-}
-
 func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
@@ -366,9 +373,12 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
 
-	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db, true)
+	// Yes dear reader, this is a feature ping in critical telemetry. Why do you ask? Because for the purposes of
+	// licensing enforcement, we need to know how many insights our customers have created. Please see RFC 584
+	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
+	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
 	if err != nil {
-		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
+		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsCriticalTelemetry failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -435,7 +445,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
 		}
 
-		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db, false)
+		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
 		}

@@ -3,20 +3,21 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func GetCodeInsightsCriticalTelemetry(ctx context.Context, db database.DB) (_ *types.CodeInsightsCriticalTelemetry, err error) {
-	critical := &types.CodeInsightsCriticalTelemetry{}
+	telemetry := &types.CodeInsightsCriticalTelemetry{}
 
 	totalCount, err := totalCountCritical(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	critical.TotalInsights = totalCount
+	telemetry.TotalInsights = totalCount
 
-	return critical, nil
+	return telemetry, nil
 }
 
 func totalCountCritical(ctx context.Context, db database.DB) (int32, error) {

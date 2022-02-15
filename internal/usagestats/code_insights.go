@@ -14,19 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB, criticalOnly bool) (*types.CodeInsightsUsageStatistics, error) {
+func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
 	stats := types.CodeInsightsUsageStatistics{}
-
-	// --------------------- No pings go above this line ---------------------------
-	got, err := GetCodeInsightsCriticalTelemetry(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	stats.CriticalTelemetry = got
-	if criticalOnly {
-		// we are returning early to avoid populating any other fields
-		return &stats, nil
-	}
 
 	const platformQuery = `
 	SELECT
