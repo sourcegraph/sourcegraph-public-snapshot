@@ -226,19 +226,12 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (message json.RawMessage, totalCount int, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB, criticalOnly bool) (message json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
-	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
+	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db, criticalOnly)
 	if err != nil {
-		return nil, 0, err
-	}
-
-	totalCount = 0
-	if codeInsightsUsage != nil {
-		for _, counts := range codeInsightsUsage.InsightTotalCounts.ViewCounts {
-			totalCount += counts.TotalCount
-		}
+		return nil, err
 	}
 
 	message, err = json.Marshal(codeInsightsUsage)
@@ -327,6 +320,11 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
+type telemetryClient struct {
+	nonCritical func(ctx context.Context, db database.DB) error
+	critical    func(ctx context.Context, db database.DB) error
+}
+
 func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
@@ -368,13 +366,10 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
 
-	// All Code Insights telemetry is non-critical except for Total Insights. However, the data is all
-	// bundled together in the event_logs and must all be read in order to get the total.
-	codeInsightsUsage, totalInsights, err := getAndMarshalCodeInsightsUsageJSON(ctx, db)
+	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db, true)
 	if err != nil {
 		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
 	}
-	r.TotalInsights = int32(totalInsights)
 
 	if !conf.Get().DisableNonCriticalTelemetry {
 		// TODO(Dan): migrate this to the new usagestats package.
@@ -440,7 +435,10 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
 		}
 
-		r.CodeInsightsUsage = codeInsightsUsage
+		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db, false)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
+		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {

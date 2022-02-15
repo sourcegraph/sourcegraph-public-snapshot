@@ -199,7 +199,6 @@ type pingRequest struct {
 	HasRepos            bool            `json:"repos"`
 	EverSearched        bool            `json:"searched"`
 	EverFindRefs        bool            `json:"refs"`
-	TotalInsights       int32           `json:"totalInsights"`
 }
 
 type dependencyVersions struct {
