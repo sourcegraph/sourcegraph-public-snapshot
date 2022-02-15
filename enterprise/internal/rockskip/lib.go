@@ -100,10 +100,9 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
-type RequestStatus struct {
+type ThreadStatus struct {
 	Tasklog   *TaskLog
-	Repo      string
-	Commit    string
+	Name      string
 	HeldLocks map[string]struct{}
 	Indexed   int
 	Total     int
@@ -111,11 +110,10 @@ type RequestStatus struct {
 	onEnd     func()
 }
 
-func NewRequestStatus(repo string, commit string, onEnd func()) *RequestStatus {
-	return &RequestStatus{
+func NewThreadStatus(name string, onEnd func()) *ThreadStatus {
+	return &ThreadStatus{
 		Tasklog:   NewTaskLog(),
-		Repo:      repo,
-		Commit:    commit,
+		Name:      name,
 		HeldLocks: map[string]struct{}{},
 		Indexed:   -1,
 		Total:     -1,
@@ -124,19 +122,19 @@ func NewRequestStatus(repo string, commit string, onEnd func()) *RequestStatus {
 	}
 }
 
-func (s *RequestStatus) WithLock(f func()) {
+func (s *ThreadStatus) WithLock(f func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	f()
 }
 
-func (s *RequestStatus) SetProgress(indexed, total int) {
+func (s *ThreadStatus) SetProgress(indexed, total int) {
 	s.WithLock(func() { s.Indexed = indexed; s.Total = total })
 }
-func (s *RequestStatus) HoldLock(name string)    { s.WithLock(func() { s.HeldLocks[name] = struct{}{} }) }
-func (s *RequestStatus) ReleaseLock(name string) { s.WithLock(func() { delete(s.HeldLocks, name) }) }
+func (s *ThreadStatus) HoldLock(name string)    { s.WithLock(func() { s.HeldLocks[name] = struct{}{} }) }
+func (s *ThreadStatus) ReleaseLock(name string) { s.WithLock(func() { delete(s.HeldLocks, name) }) }
 
-func (s *RequestStatus) End() {
+func (s *ThreadStatus) End() {
 	if s.onEnd != nil {
 		s.mu.Lock()
 		defer s.mu.Unlock()
@@ -260,35 +258,35 @@ type RequestId = int
 
 // ServerStatus contains the status of all requests.
 type ServerStatus struct {
-	requestIdToRequestStatus map[RequestId]*RequestStatus
-	nextRequestId            RequestId
-	mu                       sync.Mutex
+	threadIdToThreadStatus map[RequestId]*ThreadStatus
+	nextThreadId           RequestId
+	mu                     sync.Mutex
 }
 
 func NewStatus() *ServerStatus {
 	return &ServerStatus{
-		requestIdToRequestStatus: map[int]*RequestStatus{},
-		nextRequestId:            0,
-		mu:                       sync.Mutex{},
+		threadIdToThreadStatus: map[int]*ThreadStatus{},
+		nextThreadId:           0,
+		mu:                     sync.Mutex{},
 	}
 }
 
-func (s *ServerStatus) BeginRequest(repo string, commit string) *RequestStatus {
+func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	requestId := s.nextRequestId
-	s.nextRequestId++
+	threadId := s.nextThreadId
+	s.nextThreadId++
 
-	requestStatus := NewRequestStatus(repo, commit, func() {
+	threadStatus := NewThreadStatus(name, func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.requestIdToRequestStatus, requestId)
+		delete(s.threadIdToThreadStatus, threadId)
 	})
 
-	s.requestIdToRequestStatus[requestId] = requestStatus
+	s.threadIdToThreadStatus[threadId] = threadStatus
 
-	return requestStatus
+	return threadStatus
 }
 
 type Server struct {
@@ -321,24 +319,32 @@ func NewServer(
 		maxRepos:           maxRepos,
 	}
 
-	connForCleanup, err := db.Conn(context.Background())
+	err := server.startCleanupThread()
 	if err != nil {
 		return nil, err
 	}
 
-	go func() {
-		requestStatus := server.status.BeginRequest("cleanup", "status")
+	return server, nil
+}
 
-		for range server.updateChan {
-			// TODO create a new cleanup status instead of a request status
-			err := DeleteOldRepos(context.Background(), connForCleanup, server.maxRepos, requestStatus)
+func (s *Server) startCleanupThread() error {
+	status := s.status.NewThreadStatus("cleanup")
+
+	connForCleanup, err := s.db.Conn(context.Background())
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for range s.updateChan {
+			err := DeleteOldRepos(context.Background(), connForCleanup, s.maxRepos, status)
 			if err != nil {
 				log15.Error("Failed to delete old repos", "error", err)
 			}
 		}
 	}()
 
-	return server, nil
+	return nil
 }
 
 func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
@@ -375,23 +381,23 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	s.status.mu.Lock()
 	defer s.status.mu.Unlock()
 
-	if len(s.status.requestIdToRequestStatus) == 0 {
+	if len(s.status.threadIdToThreadStatus) == 0 {
 		fmt.Fprintln(w, "No requests in flight.")
 		return
 	}
-	fmt.Fprintln(w, "Here's all in-flight requests:")
+	fmt.Fprintln(w, "Here are all in-flight requests:")
 	fmt.Fprintln(w, "")
 
 	ids := []int{}
-	for id := range s.status.requestIdToRequestStatus {
+	for id := range s.status.threadIdToThreadStatus {
 		ids = append(ids, id)
 	}
 	sort.Ints(ids)
 
 	for _, id := range ids {
-		status := s.status.requestIdToRequestStatus[id]
+		status := s.status.threadIdToThreadStatus[id]
 		status.WithLock(func() {
-			fmt.Fprintf(w, "%s@%s\n", status.Repo, status.Commit)
+			fmt.Fprintf(w, "%s\n", status.Name)
 			if status.Total > 0 {
 				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
 			}
@@ -409,7 +415,7 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo, givenCommit string) (err error) {
+func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo, givenCommit string) (err error) {
 	// Acquire the indexing lock on the repo.
 	releaseLock, err := iLock(ctx, conn, requestStatus, repo)
 	if err != nil {
@@ -623,7 +629,7 @@ func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *Ta
 var RW_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-rw"))
 var INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
 
-func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
+func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *ThreadStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
 		more, err := tryDeleteOldestRepo(ctx, db, maxRepos, requestStatus)
@@ -636,7 +642,7 @@ func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStat
 	}
 }
 
-func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (more bool, err error) {
+func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *ThreadStatus) (more bool, err error) {
 	defer requestStatus.Tasklog.Continue("idle")
 
 	// Select a candidate repo to delete.
@@ -968,7 +974,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
-	requestStatus := s.status.BeginRequest(repo, commit)
+	requestStatus := s.status.NewThreadStatus(fmt.Sprintf("%s@%s", repo, commit))
 	defer requestStatus.End()
 
 	requestStatus.Tasklog.Start("Acquire search semaphore")
@@ -1024,7 +1030,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	return blobs, nil
 }
 
-func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
+func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *ThreadStatus) ([]Blob, error) {
 	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
 		return nil, err
@@ -1199,7 +1205,7 @@ func negate(query *sqlf.Query) *sqlf.Query {
 }
 
 // rLock acquires a read lock on the repo. It blocks only when another connection holds the write lock.
-func rLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+func rLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
 	requestStatus.Tasklog.Start("rLock")
 	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
@@ -1218,7 +1224,7 @@ func rLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, re
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+func wLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
 	requestStatus.Tasklog.Start("wLock")
 	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
@@ -1236,7 +1242,7 @@ func wLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, re
 }
 
 // iLock acquires the indexing lock on the repo.
-func iLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+func iLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
 	requestStatus.Tasklog.Start("iLock")
 	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
