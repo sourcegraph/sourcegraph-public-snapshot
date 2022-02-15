@@ -398,8 +398,8 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Lint",
-		bk.Cmd("./dev/ci/docker-lint.sh"))
+	pipeline.AddStep(":docker: Docker checks",
+		bk.Cmd("go run ./dev/sg check docker"))
 }
 
 // Adds backend integration tests step.

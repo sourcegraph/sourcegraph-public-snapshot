@@ -55,7 +55,7 @@ RUN apk add --no-cache --verbose \
     python2 \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
-    postgresql=12.10-r0 \
+    postgresql>=12.10-r0 \
     postgresql-contrib \
     # We require libstdc++ for p4-fusion
     libstdc++
