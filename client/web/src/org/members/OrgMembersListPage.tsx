@@ -1,12 +1,11 @@
-import { gql, useMutation, useQuery } from '@apollo/client'
-import { MenuItem, MenuList } from '@reach/menu-button'
+import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import CogIcon from 'mdi-react/CogIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import {
@@ -22,37 +21,11 @@ import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { AddMemberNotification, AddMemberToOrgModal } from './AddMemberToOrgModal'
+import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_QUERY } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import styles from './OrgMembersListPage.module.scss'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
-
-const ORG_MEMBERS_QUERY = gql`
-    query OrganizationMembers($id: ID!) {
-        node(id: $id) {
-            ... on Org {
-                viewerCanAdminister
-                members {
-                    nodes {
-                        id
-                        username
-                        displayName
-                        avatarURL
-                    }
-                    totalCount
-                }
-            }
-        }
-    }
-`
-
-const ORG_MEMBER_REMOVE_QUERY = gql`
-    mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
-        removeUserFromOrganization(user: $user, organization: $organization) {
-            alwaysNil
-        }
-    }
-`
 interface Member {
     id: string
     username: string

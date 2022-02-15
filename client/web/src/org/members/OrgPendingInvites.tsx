@@ -1,5 +1,4 @@
-import { gql, useMutation, useQuery } from '@apollo/client'
-import { MenuItem, MenuList } from '@reach/menu-button'
+import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import CogIcon from 'mdi-react/CogIcon'
@@ -7,55 +6,21 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { PendingInvitationsVariables, RevokeInviteResult, RevokeInviteVariables } from '../../graphql-operations'
+import { PendingInvitationsVariables, ResendOrgInvitationResult, ResendOrgInvitationVariables, RevokeInviteResult, RevokeInviteVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
+import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_QUERY } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import styles from './OrgPendingInvites.module.scss'
+import { getInvitationCreationDateString, getInvitationExpiryDateString, getLocaleFormattedDateFromString } from './utils'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
-
-const ORG_PENDING_INVITES_QUERY = gql`
-    query PendingInvitations($id: ID!) {
-    pendingInvitations(organization: $id) {
-        id
-        recipientEmail
-        expiresAt
-        respondURL
-        recipient {
-            id
-            username
-            displayName
-            avatarURL
-        }
-        revokedAt
-        sender {
-            id
-            displayName
-            username
-        }
-        organization {
-            name
-        }
-        createdAt
-        notifiedAt
-        }
-    }
-`
-const ORG_REVOKE_INVITATION_QUERY = gql`
-    mutation RevokeInvite($id: ID!) {
-        revokeOrganizationInvitation (organizationInvitation: $id) {
-            alwaysNil
-        }
-    }
-`
-
 interface OrganizationInvitation {
     id: string;
         recipientEmail?: string;
@@ -84,51 +49,6 @@ interface IPendingInvitations {
     pendingInvitations: OrganizationInvitation[]
 }
 
-interface InvitationItemProps {
-    invite: OrganizationInvitation,
-    viewerCanAdminister: boolean
-    orgId: string
-    onShouldRefetch: () => void
-}
-
-const getExpiryDateString = (expiring: string): string => {
-
-    const expiryDate = new Date(expiring);
-    const now = new Date().getTime()
-    const diff = expiryDate.getTime() - now;
-    const numberOfDays = diff / (1000 * 3600 * 24);
-    if(numberOfDays < 1) {
-        return 'today';
-    }
-
-    const numberDaysInt = Math.round(numberOfDays);
-
-    if(numberDaysInt === 1) {
-        return 'tomorrow';
-    }
-
-    return `in ${numberDaysInt} days`
-}
-
-const getCreationDateString = (creation: string): string => {
-
-    const creationDate = new Date(creation);
-    const now = new Date().getTime()
-    const diff = now - creationDate.getTime();
-    const numberOfDays = diff / (1000 * 3600 * 24);
-    if(numberOfDays < 1) {
-        return 'today';
-    }
-
-    const numberDaysInt = Math.round(numberOfDays);
-
-    if(numberDaysInt === 1) {
-        return 'yesterday';
-    }
-
-    return `${numberDaysInt} days ago`
-}
-
 const PendingInvitesHeader: React.FunctionComponent = () => (
     <li data-test-pendinginvitesheader="pendingInviiteslist-header">
     <div className="d-flex align-items-center justify-content-between">
@@ -151,18 +71,28 @@ const PendingInvitesHeader: React.FunctionComponent = () => (
 </li>
 )
 
+interface InvitationItemProps {
+    invite: OrganizationInvitation,
+    viewerCanAdminister: boolean
+    onShouldRefetch: () => void
+}
+
 const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
     invite,
-    orgId,
     viewerCanAdminister,
     onShouldRefetch,
 }) =>
 {
 
-    const [revokeInvite, { loading, error }] = useMutation<
+    const [revokeInvite, { loading: revokeLoading, error: revokeError }] = useMutation<
         RevokeInviteResult,
         RevokeInviteVariables
     >(ORG_REVOKE_INVITATION_QUERY)
+
+    const [resendInvite, { loading: resendLoading, error: resendError }] = useMutation<
+        ResendOrgInvitationResult,
+        ResendOrgInvitationVariables
+    >(ORG_RESEND_INVITATION_MUTATION)
 
     const onCopyInviteLink= useCallback(() => {
         copy(`${window.location.origin}${invite.respondURL}`)
@@ -176,6 +106,17 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
             onShouldRefetch()
         }
     }, [revokeInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
+
+    const onResendInvite = useCallback(async () => {
+        const inviteToText = invite.recipient ? invite.recipient.username : invite.recipientEmail as string;
+        if (window.confirm(`Resend invitation to ${inviteToText}?`)) {
+            await resendInvite({ variables: { id: invite.id } })
+            onShouldRefetch()
+        }
+    }, [resendInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
+
+    const loading = revokeLoading || resendLoading;
+    const error = resendError || revokeError;
 
 return (
         <li data-test-username={invite.id}>
@@ -205,10 +146,10 @@ return (
                     </div>
                 </div>
                 <div className={styles.inviteDate}>
-                    <span className="text-muted">{getCreationDateString(invite.createdAt)}</span>
+                    <span className="text-muted" title={getLocaleFormattedDateFromString(invite.createdAt)}>{getInvitationCreationDateString(invite.createdAt)}</span>
                 </div>
                 <div className={styles.inviteExpiration}>
-                    <span className="text-muted">{getExpiryDateString(invite.expiresAt)}</span>
+                    <span className="text-muted" title={getLocaleFormattedDateFromString(invite.expiresAt)}>{getInvitationExpiryDateString(invite.expiresAt)}</span>
                 </div>
                 <div className={styles.inviteActions}>
                     {viewerCanAdminister && (
@@ -220,7 +161,10 @@ return (
 
                             <MenuList>
                                 <MenuItem onSelect={onCopyInviteLink} disabled={loading}>
-                                    <span>Copy invite link</span>
+                                    Copy invite link
+                                </MenuItem>
+                                <MenuItem onSelect={onResendInvite} disabled={loading}>
+                                     Resend invite
                                 </MenuItem>
                                 <MenuItem onSelect={onRevokeInvite} disabled={loading}>
                                     <span className={styles.revokeInvite}>Revoke invite</span>
@@ -231,7 +175,7 @@ return (
                     {error && (
                         <ErrorAlert
                             className="mt-2"
-                            error="Error revoking the invitation. Please, try refreshing the page."
+                            error={error}
                         />
                     )}
                 </div>
@@ -276,7 +220,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
         [refetch, org.id]
     )
 
-    const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
+    const viewerCanInviteUserToOrganization = !!authenticatedUser;
 
     return (
         <>
@@ -293,7 +237,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                 <div className="d-flex flex-0 justify-content-between align-items-center mb-3">
                     <PageHeader path={[{ text: 'Pending Invites' }]} headingElement="h2" />
                     <div>
-                        {viewerCanAddUserToOrganization && (
+                        {viewerCanInviteUserToOrganization && (
                             <InviteMemberModalHandler
                                 orgName={org.name}
                                 orgId={org.id}
@@ -314,7 +258,6 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                 <InvitationItem
                                     key={item.id}
                                     invite={item}
-                                    orgId={org.id}
                                     viewerCanAdminister={true}
                                     onShouldRefetch={onShouldRefetch}
                                 />

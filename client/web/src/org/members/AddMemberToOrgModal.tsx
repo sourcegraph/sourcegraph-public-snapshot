@@ -1,4 +1,4 @@
-import { gql, useMutation } from '@apollo/client'
+import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -11,15 +11,8 @@ import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { ADD_USERNAME_OR_EMAIL_TO_ORG } from './gqlQueries'
 import styles from './InviteMemberModal.module.scss'
-
-const ADD_USERNAME_OR_EMAIL_TO_ORG = gql`
-    mutation AddUserToOrganization($organization: ID!, $username: String!) {
-        addUserToOrganization(organization: $organization, username: $username) {
-            alwaysNil
-        }
-    }
-`
 
 export interface AddMemberToOrgModalProps {
     orgName: string
