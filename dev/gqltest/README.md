@@ -22,6 +22,10 @@ export AWS_CODE_COMMIT_PASSWORD=<REDACTED>
 export BITBUCKET_SERVER_URL=<REDACTED>
 export BITBUCKET_SERVER_TOKEN=<REDACTED>
 export BITBUCKET_SERVER_USERNAME=<REDACTED>
+
+export PERFORCE_PORT=<REDACTED>
+export PERFORCE_USER=<REDACTED>
+export PERFORCE_PASSWORD=<REDACTED>
 ```
 
 You need to run `direnv allow` after editing the `.envrc` file (it is suggested to place the `.envrc` file under `dev/gqltest`).

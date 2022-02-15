@@ -34,6 +34,9 @@ var (
 	bbsUsername           = flag.String("bbs-username", os.Getenv("BITBUCKET_SERVER_USERNAME"), "The Bitbucket Server username")
 	azureDevOpsUsername   = flag.String("azure-devops-username", os.Getenv("AZURE_DEVOPS_USERNAME"), "The Azure DevOps username")
 	azureDevOpsToken      = flag.String("azure-devops-token", os.Getenv("AZURE_DEVOPS_TOKEN"), "The Azure DevOps personal access token")
+	perforcePort          = flag.String("perforce-port", os.Getenv("PERFORCE_PORT"), "The URL of the Perforce server")
+	perforceUser          = flag.String("perforce-user", os.Getenv("PERFORCE_USER"), "The username required to access the Perforce server")
+	perforcePassword      = flag.String("perforce-password", os.Getenv("PERFORCE_PASSWORD"), "The password required to access the Perforce server")
 )
 
 func TestMain(m *testing.M) {
