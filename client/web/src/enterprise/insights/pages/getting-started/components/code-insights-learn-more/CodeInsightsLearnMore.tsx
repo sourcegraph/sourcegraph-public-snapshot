@@ -8,7 +8,7 @@ import styles from './CodeInsightsLearnMore.module.scss'
 
 export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => {
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch: '/insights/dashboards',
+        routeMatch: '/insights/about',
         textPrefix: 'Code Insights: ',
     })
 
