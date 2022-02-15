@@ -940,7 +940,6 @@ func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int
 
 func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, hop string) error {
 	column := statusADToColumn(status)
-	// TODO also try `||` instead of `array_append``
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
