@@ -129,7 +129,7 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
