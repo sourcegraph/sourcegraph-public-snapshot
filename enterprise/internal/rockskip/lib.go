@@ -415,11 +415,19 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo, givenCommit string) (err error) {
-	tasklog := requestStatus.Tasklog
+func (s *Server) Index(ctx context.Context, repo, givenCommit string, c chan<- string) (err error) {
+	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
+	defer threadStatus.End()
+	tasklog := threadStatus.Tasklog
+
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = combineErrors(err, conn.Close()) }()
 
 	// Acquire the indexing lock on the repo.
-	locked, releaseLock, err := tryILock(ctx, conn, requestStatus, repo)
+	locked, releaseLock, err := tryILock(ctx, conn, threadStatus, repo)
 	if err != nil {
 		return err
 	}
@@ -432,11 +440,13 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 	if !s.indexingSemaphore.TryAcquire(1) {
 		return errors.Newf("too many indexing operations in progress")
 	}
-	requestStatus.HoldLock("indexing semaphore")
+	threadStatus.HoldLock("indexing semaphore")
 	defer func() {
 		s.indexingSemaphore.Release(1)
-		requestStatus.ReleaseLock("indexing semaphore")
+		threadStatus.ReleaseLock("indexing semaphore")
 	}()
+
+	c <- "began indexing"
 
 	tipCommit := NULL
 	tipHeight := 0
@@ -462,7 +472,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 		return errors.Wrap(err, "RevList")
 	}
 
-	requestStatus.SetProgress(0, missingCount)
+	threadStatus.SetProgress(0, missingCount)
 
 	if missingCount == 0 {
 		return nil
@@ -477,7 +487,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 	err = s.git.LogReverseEach(repo, givenCommit, missingCount, func(entry LogEntry) error {
 		defer tasklog.Continue("Log")
 
-		requestStatus.SetProgress(entriesIndexed, missingCount)
+		threadStatus.SetProgress(entriesIndexed, missingCount)
 		entriesIndexed++
 
 		tx, err := conn.BeginTx(ctx, nil)
@@ -600,7 +610,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, requestStatus *Threa
 		return errors.Wrap(err, "LogReverseEach")
 	}
 
-	requestStatus.SetProgress(entriesIndexed, missingCount)
+	threadStatus.SetProgress(entriesIndexed, missingCount)
 
 	return nil
 }
@@ -632,10 +642,10 @@ func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *Ta
 var RW_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-rw"))
 var INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
 
-func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *ThreadStatus) error {
+func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, threadStatus *ThreadStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
-		more, err := tryDeleteOldestRepo(ctx, db, maxRepos, requestStatus)
+		more, err := tryDeleteOldestRepo(ctx, db, maxRepos, threadStatus)
 		if err != nil {
 			return err
 		}
@@ -645,11 +655,11 @@ func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStat
 	}
 }
 
-func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *ThreadStatus) (more bool, err error) {
-	defer requestStatus.Tasklog.Continue("idle")
+func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, threadStatus *ThreadStatus) (more bool, err error) {
+	defer threadStatus.Tasklog.Continue("idle")
 
 	// Select a candidate repo to delete.
-	requestStatus.Tasklog.Start("select repo to delete")
+	threadStatus.Tasklog.Start("select repo to delete")
 	var repos []string
 	var repoRank int
 	err = db.QueryRowContext(ctx, `
@@ -677,7 +687,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	// Note: a search request or deletion could have intervened here.
 
 	// Acquire the write lock on the repo.
-	releaseWLock, err := wLock(ctx, db, requestStatus, repo)
+	releaseWLock, err := wLock(ctx, db, threadStatus, repo)
 	defer func() { err = combineErrors(err, releaseWLock()) }()
 	if err != nil {
 		return false, errors.Wrap(err, "acquiring write lock on repo")
@@ -685,7 +695,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 
 	// Make sure the repo is still old. See note above.
 	var rank int
-	requestStatus.Tasklog.Start("recheck repo rank")
+	threadStatus.Tasklog.Start("recheck repo rank")
 	err = db.QueryRowContext(ctx, `
 		SELECT repo_rank
 		FROM (
@@ -707,14 +717,14 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	}
 
 	// Acquire the indexing lock on the repo.
-	releaseILock, err := iLock(ctx, db, requestStatus, repo)
+	releaseILock, err := iLock(ctx, db, threadStatus, repo)
 	defer func() { err = combineErrors(err, releaseILock()) }()
 	if err != nil {
 		return false, errors.Wrap(err, "acquiring indexing lock on repo")
 	}
 
 	// Delete the repo.
-	requestStatus.Tasklog.Start("delete repo")
+	threadStatus.Tasklog.Start("delete repo")
 	tx, err := db.BeginTx(ctx, nil)
 	defer tx.Rollback()
 	if err != nil {
@@ -980,17 +990,17 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
-	requestStatus := s.status.NewThreadStatus(fmt.Sprintf("%s@%s", repo, commit))
-	defer requestStatus.End()
+	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("searching %+v", args))
+	defer threadStatus.End()
 
-	requestStatus.Tasklog.Start("Acquire search semaphore")
+	threadStatus.Tasklog.Start("Acquire search semaphore")
 	if !s.searchingSemaphore.TryAcquire(1) {
 		return nil, errors.Newf("too many searches in flight")
 	}
-	requestStatus.HoldLock("search semaphore")
+	threadStatus.HoldLock("search semaphore")
 	defer func() {
 		s.searchingSemaphore.Release(1)
-		requestStatus.ReleaseLock("search semaphore")
+		threadStatus.ReleaseLock("search semaphore")
 	}()
 
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
@@ -1002,33 +1012,45 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	defer func() { err = combineErrors(err, conn.Close()) }()
 
 	// Acquire a read lock on the repo.
-	releaseRLock, err := rLock(ctx, conn, requestStatus, repo)
+	locked, releaseRLock, err := tryRLock(ctx, conn, threadStatus, repo)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = combineErrors(err, releaseRLock()) }()
+	if !locked {
+		return nil, errors.Newf("deletion in progress", repo)
+	}
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
-	requestStatus.Tasklog.Start("update last_accessed_at")
+	threadStatus.Tasklog.Start("update last_accessed_at")
 	err = updateLastAccessedAt(ctx, conn, repo, s.updateChan)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check if the commit has already been indexed, and if not then index it.
-	requestStatus.Tasklog.Start("check commit presence")
+	threadStatus.Tasklog.Start("check commit presence")
 	_, _, present, err := GetCommit(ctx, conn, repo, commit)
 	if err != nil {
 		return nil, err
 	} else if !present {
-		err = s.Index(ctx, conn, requestStatus, repo, commit)
-		if err != nil {
-			return nil, err
-		}
+		indexingStatus := make(chan string, 1)
+
+		go func() {
+			err = s.Index(ctx, repo, commit, indexingStatus)
+			if err != nil {
+				indexingStatus <- err.Error()
+				log15.Error("indexing failed", "error", err)
+				return
+			}
+			indexingStatus <- "completed indexing"
+		}()
+
+		return nil, errors.Newf("missing commit: %s", <-indexingStatus)
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(ctx, conn, args, requestStatus, true)
+	blobs, err = queryBlobs(ctx, conn, args, threadStatus, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1036,8 +1058,8 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	return blobs, nil
 }
 
-func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *ThreadStatus, debug bool) ([]Blob, error) {
-	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
+func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, threadStatus *ThreadStatus, debug bool) ([]Blob, error) {
+	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -1047,7 +1069,7 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requ
 		limit = args.First
 	}
 
-	requestStatus.Tasklog.Start("run query")
+	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
 		SELECT id, commit_id, path, added, deleted, symbol_data
 		FROM rockskip_blobs
@@ -1302,64 +1324,71 @@ func negate(query *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf("NOT %s", query)
 }
 
-// rLock acquires a read lock on the repo. It blocks only when another connection holds the write lock.
-func rLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
-	requestStatus.Tasklog.Start("rLock")
-	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+// tryRLock attempts to acquire the indexing lock on the repo.
+func tryRLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
+	threadStatus.Tasklog.Start("rLock")
+	locked, _, err := basestore.ScanFirstBool(conn.QueryContext(ctx, `SELECT pg_try_advisory_lock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo))))
 	if err != nil {
-		return nil, errors.Wrap(err, "acquire rLock")
+		return false, nil, errors.Wrap(err, "acquire rLock")
 	}
-	requestStatus.HoldLock("rLock")
 
-	return func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+	if !locked {
+		return false, nil, nil
+	}
+
+	threadStatus.HoldLock("rLock")
+
+	release := func() error {
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err == nil {
-			requestStatus.ReleaseLock("rLock")
+			threadStatus.ReleaseLock("rLock")
 		}
 		return errors.Wrap(err, "release rLock")
-	}, nil
+	}
+
+	return true, release, nil
 }
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
-	requestStatus.Tasklog.Start("wLock")
+func wLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (func() error, error) {
+	threadStatus.Tasklog.Start("wLock")
 	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, errors.Wrap(err, "acquire wLock")
 	}
-	requestStatus.HoldLock("wLock")
+	threadStatus.HoldLock("wLock")
 
 	return func() error {
 		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err == nil {
-			requestStatus.ReleaseLock("wLock")
+			threadStatus.ReleaseLock("wLock")
 		}
 		return errors.Wrap(err, "release wLock")
 	}, nil
 }
 
 // iLock acquires the indexing lock on the repo.
-func iLock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (func() error, error) {
-	requestStatus.Tasklog.Start("iLock")
+func iLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (func() error, error) {
+	threadStatus.Tasklog.Start("iLock")
 	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, errors.Wrap(err, "acquire iLock")
 	}
-	requestStatus.HoldLock("iLock")
+	threadStatus.HoldLock("iLock")
 
 	return func() error {
 		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err == nil {
-			requestStatus.ReleaseLock("iLock")
+			threadStatus.ReleaseLock("iLock")
 		}
 		return errors.Wrap(err, "release iLock")
 	}, nil
 }
 
 // tryILock attempts to acquire the indexing lock on the repo.
-func tryILock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, repo string) (bool, func() error, error) {
-	requestStatus.Tasklog.Start("iLock")
+func tryILock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
+	threadStatus.Tasklog.Start("iLock")
 	locked, _, err := basestore.ScanFirstBool(conn.QueryContext(ctx, `SELECT pg_try_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo))))
 	if err != nil {
 		return false, nil, errors.Wrap(err, "acquire iLock")
@@ -1369,12 +1398,12 @@ func tryILock(ctx context.Context, conn *sql.Conn, requestStatus *ThreadStatus, 
 		return false, nil, nil
 	}
 
-	requestStatus.HoldLock("iLock")
+	threadStatus.HoldLock("iLock")
 
 	release := func() error {
 		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err == nil {
-			requestStatus.ReleaseLock("iLock")
+			threadStatus.ReleaseLock("iLock")
 		}
 		return errors.Wrap(err, "release iLock")
 	}
