@@ -102,16 +102,26 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
     const onRevokeInvite = useCallback(async () => {
         const inviteToText = invite.recipient ? invite.recipient.username : invite.recipientEmail as string;
         if (window.confirm(`Revoke invitation from ${inviteToText}?`)) {
-            await revokeInvite({ variables: { id: invite.id } })
-            onShouldRefetch()
+            try {
+                await revokeInvite({ variables: { id: invite.id } })
+                eventLogger.logViewEvent('OrgRevokeInvitation', { id: invite.id })
+                onShouldRefetch()
+            } catch {
+                eventLogger.logViewEvent('OrgRevokeInvitationError', { id: invite.id })
+            }
         }
     }, [revokeInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
 
     const onResendInvite = useCallback(async () => {
         const inviteToText = invite.recipient ? invite.recipient.username : invite.recipientEmail as string;
         if (window.confirm(`Resend invitation to ${inviteToText}?`)) {
-            await resendInvite({ variables: { id: invite.id } })
-            onShouldRefetch()
+            try {
+                await resendInvite({ variables: { id: invite.id } })
+                eventLogger.logViewEvent('OrgResendInvitation', { id: invite.id })
+                onShouldRefetch()
+            } catch {
+                eventLogger.logViewEvent('OrgResendInvitationError', { id: invite.id })
+            }
         }
     }, [resendInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
 
