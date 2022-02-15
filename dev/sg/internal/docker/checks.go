@@ -12,7 +12,7 @@ import (
 
 var (
 	illegalApkAddRegexp = regexp.MustCompile(`[^(\s)>]+[=|<][0-9]+[^\s]+`)
-	illegalAlpineRegexp = regexp.MustCompile(`alpine:[^@]*`)
+	illegalAlpineRegexp = regexp.MustCompile(`^alpine:[^@]*`)
 )
 
 type commandCheck struct {
@@ -67,10 +67,10 @@ var stageCheckNoAlpine = stageCheck{
 			return nil
 		}
 		if s.Name != "" {
-			return errors.Newf("%s (use 'sourcegraph/alpine' instead, or add the comment '%s: %s')",
+			return errors.Newf("%s (use 'sourcegraph/alpine' instead, or add the comment '%s %s')",
 				strings.Join(matches, ", "), s.Name, okayFlag)
 		}
-		return errors.Newf("%s (use 'sourcegraph/alpine' instead, or add a name to the stage and comment 'base_name: %s')",
+		return errors.Newf("%s (use 'sourcegraph/alpine' instead, or add 'AS alpine_base' to the stage and comment 'alpine_base %s')",
 			strings.Join(matches, ", "), okayFlag)
 	},
 }
