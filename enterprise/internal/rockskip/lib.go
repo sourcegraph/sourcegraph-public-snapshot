@@ -252,7 +252,14 @@ func (t *TaskLog) String() string {
 	return s.String()
 }
 
-func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
+func Index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestStatus, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int, indexingSemaphore *semaphore.Weighted) (err error) {
+	// Acquire the indexing lock on the repo.
+	releaseLock, err := iLock(ctx, db, requestStatus, repo)
+	if err != nil {
+		return err
+	}
+	defer func() { err = combineErrors(err, releaseLock()) }()
+
 	tasklog := requestStatus.Tasklog
 
 	tipCommit := NULL
@@ -432,6 +439,8 @@ func index(ctx context.Context, git Git, db *sql.Conn, requestStatus *RequestSta
 }
 
 func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, error) {
+	tasklog.Start("get hops")
+
 	current := commit
 	spine := []string{current}
 
@@ -453,37 +462,38 @@ func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *Ta
 	return spine, nil
 }
 
-var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
-var DELETION_LOCK_ID = 0
-var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
+var RW_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-rw"))
+var INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
 
-func deleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
+func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) error {
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
-		retry, err := tryDeleteOldestRepo(ctx, db, maxRepos, requestStatus)
+		more, err := tryDeleteOldestRepo(ctx, db, maxRepos, requestStatus)
 		if err != nil {
 			return err
 		}
-		if !retry {
+		if !more {
 			return nil
 		}
 	}
 }
 
-func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (retry bool, err error) {
+func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, requestStatus *RequestStatus) (more bool, err error) {
+	defer requestStatus.Tasklog.Continue("idle")
+
 	// Select a candidate repo to delete.
 	requestStatus.Tasklog.Start("select repo to delete")
 	var repo string
 	var repoRank int
 	err = db.QueryRowContext(ctx, `
-			SELECT repo, repo_rank
-			FROM (
-				SELECT *, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
-				FROM rockskip_repos
-			) sub
-			WHERE repo_rank > $1
-			ORDER BY last_accessed_at ASC
-			LIMIT 1;`, maxRepos,
+		SELECT repo, repo_rank
+		FROM (
+			SELECT *, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
+			FROM rockskip_repos
+		) sub
+		WHERE repo_rank > $1
+		ORDER BY last_accessed_at ASC
+		LIMIT 1;`, maxRepos,
 	).Scan(&repo, &repoRank)
 	if err == sql.ErrNoRows {
 		// No more repos to delete.
@@ -496,31 +506,22 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	// Note: a search request or deletion could have intervened here.
 
 	// Acquire the write lock on the repo.
-	requestStatus.Tasklog.Start("wLock to delete " + repo)
-	releaseWLock, err := wLock(ctx, db, repo)
-	requestStatus.HoldLock("wLock")
-	defer func() {
-		err2 := releaseWLock()
-		requestStatus.ReleaseLock("wLock")
-		if err2 != nil {
-			retry = false
-			err = errors.Append(err, err2)
-		}
-	}()
+	releaseWLock, err := wLock(ctx, db, requestStatus, repo)
+	defer func() { err = combineErrors(err, releaseWLock()) }()
 	if err != nil {
-		return false, errors.Wrap(err, "acquiring lock on repo")
+		return false, errors.Wrap(err, "acquiring write lock on repo")
 	}
 
 	// Make sure the repo is still old. See note above.
 	var rank int
 	requestStatus.Tasklog.Start("recheck repo rank")
 	err = db.QueryRowContext(ctx, `
-			SELECT repo_rank
-			FROM (
-				SELECT repo, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
-				FROM rockskip_repos
-			) sub
-			WHERE repo = $1;`, repo,
+		SELECT repo_rank
+		FROM (
+			SELECT repo, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
+			FROM rockskip_repos
+		) sub
+		WHERE repo = $1;`, repo,
 	).Scan(&rank)
 	if err == sql.ErrNoRows {
 		// The repo was deleted in the meantime, so retry.
@@ -532,6 +533,13 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	if rank <= maxRepos {
 		// An intervening search request must have refreshed the repo, so retry.
 		return true, nil
+	}
+
+	// Acquire the indexing lock on the repo.
+	releaseILock, err := iLock(ctx, db, requestStatus, repo)
+	defer func() { err = combineErrors(err, releaseILock()) }()
+	if err != nil {
+		return false, errors.Wrap(err, "acquiring indexing lock on repo")
 	}
 
 	// Delete the repo.
@@ -561,7 +569,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, reques
 	return true, nil
 }
 
-func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string) error {
+func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string, updateChan chan<- struct{}) error {
 	_, err := conn.ExecContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
@@ -570,6 +578,12 @@ func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string) erro
 		`, repo)
 	if err != nil {
 		return err
+	}
+
+	// Non-blocking send on updateChan to notify the background deletion goroutine.
+	select {
+	case updateChan <- struct{}{}:
+	default:
 	}
 
 	return nil
@@ -792,14 +806,14 @@ func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus Sta
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus) (blobs []Blob, cleanup CleanupFunc, err error) {
-	// Initialize the cleanup function to a noop.
-	cleanup = func() error { return nil }
+func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, parse ParseSymbolsFunc, maxRepos int, searchSemaphore *semaphore.Weighted, indexingSemaphore *semaphore.Weighted, requestStatus *RequestStatus, updateChan chan<- struct{}) (blobs []Blob, err error) {
+	repo := string(args.Repo)
+	commit := string(args.CommitID)
 
 	requestStatus.Tasklog.Start("Acquire search semaphore")
 	err = searchSemaphore.Acquire(ctx, 1)
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
 	requestStatus.HoldLock("search semaphore")
 	defer func() {
@@ -807,116 +821,50 @@ func Search(ctx context.Context, args types.SearchArgs, git Git, db *sql.DB, par
 		requestStatus.ReleaseLock("search semaphore")
 	}()
 
-	// Get a fresh connection from the DB pool so that this indexer can hold overlapping locks (which
-	// would otherwise block each other) to prevent other indexers from intervening.
+	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
 	conn, err := db.Conn(ctx)
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
-	cleanup = conn.Close
-
-	// Defer the release of whichever read lock we hold.
-	var releaseRLock func() error
-	defer func() {
-		if releaseRLock != nil {
-			err2 := releaseRLock()
-			requestStatus.ReleaseLock("rLock")
-			if err2 != nil {
-				err = errors.Append(err, err2)
-			}
-		}
-	}()
+	defer func() { err = combineErrors(err, conn.Close()) }()
 
 	// Acquire a read lock on the repo.
-	requestStatus.Tasklog.Start("rLock")
-	releaseRLock, err = rLock(ctx, conn, string(args.Repo))
+	releaseRLock, err := rLock(ctx, conn, requestStatus, repo)
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
-	requestStatus.HoldLock("rLock")
+	defer func() { err = combineErrors(err, releaseRLock()) }()
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	requestStatus.Tasklog.Start("update last_accessed_at")
-	err = updateLastAccessedAt(ctx, conn, string(args.Repo))
+	err = updateLastAccessedAt(ctx, conn, repo, updateChan)
 	if err != nil {
-		return nil, cleanup, err
-	}
-
-	// Set the cleanup function to delete old repos that were pushed past the maxRepos limit.
-	cleanup = func() error {
-		err := deleteOldRepos(ctx, conn, maxRepos, requestStatus)
-		err2 := conn.Close()
-		if err != nil || err2 != nil {
-			return errors.Append(errors.Wrap(err, "deleteOldRepos"), err2)
-		}
-		return nil
+		return nil, err
 	}
 
 	// Check if the commit has already been indexed, and if not then index it.
 	requestStatus.Tasklog.Start("check commit presence")
-	_, _, present, err := GetCommit(ctx, conn, string(args.Repo), string(args.CommitID))
+	_, _, present, err := GetCommit(ctx, conn, repo, commit)
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	} else if !present {
-		// Release the held read lock.
-		err = releaseRLock()
-		releaseRLock = nil
+		err = Index(ctx, git, conn, requestStatus, parse, repo, commit, maxRepos, indexingSemaphore)
 		if err != nil {
-			return nil, cleanup, err
-		}
-		requestStatus.ReleaseLock("rLock")
-
-		// Note: a deletion could have intervened here.
-
-		// Acquire the write lock.
-		requestStatus.Tasklog.Start("wLock")
-		releaseWLock, err := wLock(ctx, conn, string(args.Repo))
-		requestStatus.HoldLock("wLock")
-		if err != nil {
-			return nil, cleanup, err
-		}
-
-		// In case a deletion intervened, reinsert the repo into the rockskip_repos table. See note above.
-		requestStatus.Tasklog.Start("update last_accessed_at again")
-		err = updateLastAccessedAt(ctx, conn, string(args.Repo))
-		if err != nil {
-			return nil, cleanup, err
-		}
-
-		// Index the commit.
-		err = index(ctx, git, conn, requestStatus, parse, string(args.Repo), string(args.CommitID), maxRepos, indexingSemaphore)
-		if err != nil {
-			// Remember to release the write lock.
-			err2 := releaseWLock()
-			requestStatus.ReleaseLock("wLock")
-			return nil, cleanup, errors.Append(err, err2)
-		}
-
-		// Reacquire a read lock before releasing the write lock. This does not result in deadlock
-		// because we're using the same connection.
-		requestStatus.Tasklog.Start("rLock again")
-		releaseRLock, err = rLock(ctx, conn, string(args.Repo))
-		requestStatus.HoldLock("rLock")
-		// Release the write lock now that we reacquired a read lock.
-		err2 := releaseWLock()
-		requestStatus.ReleaseLock("wLock")
-		if err != nil || err2 != nil {
-			return nil, cleanup, errors.Append(err, err2)
+			return nil, err
 		}
 	}
 
 	// Finally search.
 	blobs, err = queryBlobs(ctx, conn, args, requestStatus)
 	if err != nil {
-		return nil, cleanup, err
+		return nil, err
 	}
 
-	return blobs, cleanup, nil
+	return blobs, nil
 }
 
 func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, requestStatus *RequestStatus) ([]Blob, error) {
-	requestStatus.Tasklog.Start("get hops")
 	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), requestStatus.Tasklog)
 	if err != nil {
 		return nil, err
@@ -1090,30 +1038,58 @@ func negate(query *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf("NOT %s", query)
 }
 
-type CleanupFunc = func() error
-
 // rLock acquires a read lock on the repo. It blocks only when another connection holds the write lock.
-func rLock(ctx context.Context, conn *sql.Conn, repo string) (func() error, error) {
-	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+func rLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+	requestStatus.Tasklog.Start("rLock")
+	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
-		return nil, errors.Wrap(err, "rLock")
+		return nil, errors.Wrap(err, "acquire rLock")
 	}
+	requestStatus.HoldLock("rLock")
+
 	return func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		return errors.Wrap(err, "rLock")
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		if err == nil {
+			requestStatus.ReleaseLock("rLock")
+		}
+		return errors.Wrap(err, "release rLock")
 	}, nil
 }
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(ctx context.Context, conn *sql.Conn, repo string) (func() error, error) {
-	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+func wLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+	requestStatus.Tasklog.Start("wLock")
+	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
-		return nil, errors.Wrap(err, "wLock")
+		return nil, errors.Wrap(err, "acquire wLock")
 	}
+	requestStatus.HoldLock("wLock")
+
 	return func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		return errors.Wrap(err, "wLock")
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		if err == nil {
+			requestStatus.ReleaseLock("wLock")
+		}
+		return errors.Wrap(err, "release wLock")
+	}, nil
+}
+
+// iLock acquires the indexing lock on the repo.
+func iLock(ctx context.Context, conn *sql.Conn, requestStatus *RequestStatus, repo string) (func() error, error) {
+	requestStatus.Tasklog.Start("iLock")
+	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+	if err != nil {
+		return nil, errors.Wrap(err, "acquire iLock")
+	}
+	requestStatus.HoldLock("iLock")
+
+	return func() error {
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		if err == nil {
+			requestStatus.ReleaseLock("iLock")
+		}
+		return errors.Wrap(err, "release iLock")
 	}, nil
 }
 
@@ -1389,4 +1365,21 @@ type Queryable interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}
+
+// combineErrors is like errors.Append, but it returns nil when there are no errors or all errors are
+// nil so that success is propagated.
+func combineErrors(errs ...error) error {
+	if len(errs) == 0 {
+		return nil
+	}
+	if len(errs) == 1 {
+		return errs[0]
+	}
+	for _, err := range errs {
+		if err != nil {
+			return errors.Append(errs[0], errs[1:]...)
+		}
+	}
+	return nil
 }

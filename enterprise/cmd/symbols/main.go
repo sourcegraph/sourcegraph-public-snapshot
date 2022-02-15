@@ -186,22 +186,36 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, db *sql.DB,
 	searchSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentSearches))
 	indexingSemaphore := semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing))
 
-	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, cleanup rockskip.CleanupFunc, err error) {
+	updateChan := make(chan struct{}, 1)
+	cleanupConn, err := db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO convert to a background routine
+	go func() {
+		requestStatus := serverStatus.BeginRequest("cleanup", "status")
+		for range updateChan {
+			// TODO create a new cleanup status instead of a request status
+			err := rockskip.DeleteOldRepos(context.Background(), cleanupConn, config.MaxRepos, requestStatus)
+			if err != nil {
+				log15.Error("Failed to delete old repos", "error", err)
+			}
+		}
+	}()
+
+	searchFunc := func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
 		git := NewGitserver(repositoryFetcher, string(args.Repo))
 
 		requestStatus := serverStatus.BeginRequest(string(args.Repo), string(args.CommitID))
 
-		blobs, cleanupSearch, err := rockskip.Search(ctx, args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus)
-		cleanup = func() error {
-			err = cleanupSearch()
-			requestStatus.End()
-			return err
-		}
+		blobs, err := rockskip.Search(ctx, args, git, db, lazyParser(config.Ctags), config.MaxRepos, searchSemaphore, indexingSemaphore, requestStatus, updateChan)
+		requestStatus.End()
 		if err != nil {
-			return nil, cleanup, errors.Wrap(err, "rockskip.Search")
+			return nil, errors.Wrap(err, "rockskip.Search")
 		}
 
-		return convertBlobsToSymbols(blobs), cleanup, err
+		return convertBlobsToSymbols(blobs), err
 	}
 
 	return searchFunc, nil

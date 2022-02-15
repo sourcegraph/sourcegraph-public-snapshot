@@ -21,7 +21,7 @@ import (
 const searchTimeout = 60 * time.Second
 
 func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter) types.SearchFunc {
-	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, cleanup func() error, err error) {
+	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
 			log.String("commitID", string(args.CommitID)),
@@ -41,15 +41,12 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 		}()
 		ctx = observability.SeedParseAmount(ctx)
 
-		// The SQLite implementation doesn't need to perform any cleanup.
-		cleanup = func() error { return nil }
-
 		ctx, cancel := context.WithTimeout(ctx, searchTimeout)
 		defer cancel()
 
 		dbFile, err := cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)
 		if err != nil {
-			return nil, cleanup, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
+			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 		}
 		trace.Log(log.String("dbFile", dbFile))
 
@@ -62,6 +59,6 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			return nil
 		})
 
-		return res, cleanup, err
+		return res, err
 	}
 }

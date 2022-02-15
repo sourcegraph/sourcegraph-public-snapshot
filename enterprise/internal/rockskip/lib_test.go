@@ -105,9 +105,8 @@ func TestIndex(t *testing.T) {
 		commit := getHead()
 		status := NewRequestStatus(repo, commit, func() {})
 		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-		blobs, cleanup, err := Search(context.Background(), args, git, db, simpleParse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status)
+		blobs, err := Search(context.Background(), args, git, db, simpleParse, 1, semaphore.NewWeighted(1), semaphore.NewWeighted(1), status, make(chan<- struct{}))
 		fatalIfError(err, "Search")
-		fatalIfError(cleanup(), "cleanup")
 
 		// Make sure the paths match.
 		gotPaths := []string{}
