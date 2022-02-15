@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConvertTypedIndexToGraphIndex takes an LSIF Typed index and returns the equivalent LSIF Graph index.
@@ -354,10 +354,6 @@ func WriteNDJSON(elements []lsifElement, out io.Writer) error {
 	return w.Flush()
 }
 
-type lsifPosition struct {
-	Line      int `json:"line"`
-	Character int `json:"character"`
-}
 type lsifHoverContent struct {
 	Kind  string `json:"kind,omitempty"`
 	Value string `json:"value,omitempty"`

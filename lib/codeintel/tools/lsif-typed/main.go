@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"

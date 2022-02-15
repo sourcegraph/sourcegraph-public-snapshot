@@ -1,6 +1,8 @@
 package repro_lang
 
 import (
+	"sort"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )
 
@@ -25,6 +27,10 @@ func (d *reproSourceFile) symbols() []*lsif_typed.SymbolInformation {
 			Relationships: def.relationships(),
 		})
 	}
+	// Ensure a stable order of relationships
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Symbol < result[j].Symbol
+	})
 	return result
 }
 

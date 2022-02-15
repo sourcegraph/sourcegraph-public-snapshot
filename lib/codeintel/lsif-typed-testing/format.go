@@ -109,6 +109,9 @@ func FormatSnapshot(
 					}
 					b.WriteString(truncatedDocumentation)
 				}
+				sort.SliceStable(info.Relationships, func(i, j int) bool {
+					return info.Relationships[i].Symbol < info.Relationships[j].Symbol
+				})
 				for _, relationship := range info.Relationships {
 					b.WriteString(prefix)
 					b.WriteString("relationship ")
