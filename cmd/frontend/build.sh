@@ -20,17 +20,11 @@ echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/frontend"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
-# Enable image build caching via CACHE=true
-BUILD_CACHE="--no-cache"
-if [[ "$CACHE" == "true" ]]; then
-  BUILD_CACHE=""
-fi
-
 echo "--- docker build $IMAGE"
-docker pull us.gcr.io/sourcegraph-dev/frontend:insiders || true
+docker pull sourcegraph/frontend:insiders || true
 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
-  --cache-from us.gcr.io/sourcegraph-dev/frontend:insiders "${BUILD_CACHE}" \
+  --cache-from sourcegraph/frontend:insiders \
   -f cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
