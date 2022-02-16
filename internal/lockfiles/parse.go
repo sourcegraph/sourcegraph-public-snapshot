@@ -1,9 +1,10 @@
 package lockfiles
 
 import (
-	"errors"
 	"fmt"
 	"path"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Dependency struct {
