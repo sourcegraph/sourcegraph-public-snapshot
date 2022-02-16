@@ -18,9 +18,9 @@ func TestToSearchInputs(t *testing.T) {
 			SearchInputs: &run.SearchInputs{
 				UserSettings: &schema.Settings{},
 				PatternType:  query.SearchTypeLiteral,
+				Protocol:     protocol,
 			},
 			OnSourcegraphDotCom: true,
-			Protocol:            protocol,
 		}
 
 		j, _ := ToSearchJob(args, q)
