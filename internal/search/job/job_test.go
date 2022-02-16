@@ -149,3 +149,43 @@ func TestToSearchInputs(t *testing.T) {
       Commit)))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
+
+func TestToEvaluateJob(t *testing.T) {
+	test := func(input string, protocol search.Protocol) string {
+		q, _ := query.ParseLiteral(input)
+		args := &Args{
+			SearchInputs: &run.SearchInputs{
+				UserSettings: &schema.Settings{},
+				PatternType:  query.SearchTypeLiteral,
+				Protocol:     protocol,
+			},
+			OnSourcegraphDotCom: true,
+		}
+
+		b, _ := query.ToBasicQuery(q)
+		j, _ := ToEvaluateJob(args, b)
+		return "\n" + PrettySexp(j) + "\n"
+	}
+
+	autogold.Want("root limit for streaming search", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      RepoUniverseText
+      Repo
+      ComputeExcludedRepos)))
+`).Equal(t, test("foo", search.Streaming))
+
+	autogold.Want("root limit for batch search", `
+(TIMEOUT
+  20s
+  (LIMIT
+    30
+    (PARALLEL
+      RepoUniverseText
+      Repo
+      ComputeExcludedRepos)))
+`).Equal(t, test("foo", search.Batch))
+}
