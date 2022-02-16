@@ -600,6 +600,8 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
+// expandPredicates takes a query plan, and replaces any predicates with their expansion. The returned plan
+// is guaranteed to be predicate-free.
 func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Plan) (_ query.Plan, err error) {
 	tr, ctx := trace.New(ctx, "expandPredicates", "")
 	defer func() {
