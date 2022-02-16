@@ -77,13 +77,9 @@ export const useSearchStackState = create<SearchStackStore>(() => {
 })
 
 /**
- * Hook to add a new entry to the search stack. Use `useMemo` to avoid
- * unnecessary triggers. This hook will *update* an existing entry if
- * necessary:
- * - A search entry is considered the same if the query is the same (search
- * type, case and context are updated)
- * - A file entry is considered the same if the repo and the path are the same
- * (revison and line range are updated)
+ * Hook to make a new entry available for adding to the search stack. Use
+ * `useMemo` to avoid unnecessary triggers and to properly remove the entry when
+ * the component gets unmounted.
  */
 export function useSearchStack(newEntry: SearchStackEntryInput | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)

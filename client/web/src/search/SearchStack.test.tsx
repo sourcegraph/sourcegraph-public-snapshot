@@ -84,9 +84,7 @@ describe('Search Stack', () => {
         })
 
         it('opens and closes', () => {
-            const result = renderSearchStack()
-
-            expect(result.asFragment()).toMatchSnapshot()
+            renderSearchStack()
 
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
