@@ -90,7 +90,7 @@ END
 	const q = `
  -- source: internal/usagestats/growth.go:GetCTAUsage
  WITH events_for_today AS (
-     SELECT name,
+     (SELECT name,
             ` + aggregatedUserIDQueryFragment + ` AS user_id,
             DATE_TRUNC('day', timestamp) AS day,
             argument->>'page' AS page
@@ -98,8 +98,15 @@ END
      WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
        AND argument->>'page' IN ('file', 'search')
        AND DATE_TRUNC('day', timestamp) = DATE_TRUNC('day', $1::timestamp)
+     ) UNION (
+      SELECT NULL AS name,
+             0 AS user_id,
+             DATE_TRUNC('day', NOW()::timestamp) AS day,
+             NULL AS page
+    )
  )
- SELECT day, COUNT(DISTINCT user_id) FILTER (
+ SELECT MAX(day) AS day,
+        COUNT(DISTINCT user_id) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
                     AND page = 'file') AS user_count_who_saw_bext_cta_on_file_page,
         COUNT(DISTINCT user_id) FILTER (
@@ -124,7 +131,6 @@ END
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
                     AND page = 'search') AS bext_cta_clicks_on_search_page
    FROM events_for_today
-   GROUP BY day
 `
 
 	var (

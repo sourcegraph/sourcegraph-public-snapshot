@@ -345,6 +345,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		SearchUsage:         []byte("{}"),
 		BatchChangesUsage:   []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
+		CTAUsage:            []byte("{}"),
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
