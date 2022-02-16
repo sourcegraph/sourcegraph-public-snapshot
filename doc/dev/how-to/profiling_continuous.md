@@ -8,5 +8,6 @@ GCP supports [continuous CPU and heap profiling](https://cloud.google.com/profil
 Once the new configuration is deployed to production, you should be able to access profiles for your service in the dashboard.
 
 Other resources:
-* [GCP profiler documentation](https://cloud.google.com/profiler/docs/)
-* [How to do one-off profiling for dogfood and production using pprof](./profiling_one-off.md)
+
+- [GCP profiler documentation](https://cloud.google.com/profiler/docs/)
+- [How to do one-off profiling for dogfood and production using pprof](./profiling_one-off.md)
