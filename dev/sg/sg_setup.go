@@ -327,8 +327,14 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		stdout.Out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
 
 		if dep.instructionsComment != "" {
-			stdout.Out.Write("")
-			stdout.Out.Write(dep.instructionsComment)
+			if dep.requiresSgSetupRestart {
+				// Make sure to highlight the manual fix, if any.
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s", dep.instructionsComment))
+			} else {
+				stdout.Out.Write("")
+				stdout.Out.Write(dep.instructionsComment)
+			}
 		}
 
 		// If we don't have anything do run, we simply print instructions to
@@ -348,11 +354,16 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
-			choice, err := getChoice(map[int]string{
+			choices := map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
 				2: "You can run the command for me",
 				3: "Go back",
-			})
+			}
+			if dep.requiresSgSetupRestart {
+				// Give a staight path to exit if a restart is needed.
+				choices[4] = "Exit (restart is needed)"
+			}
+			choice, err := getChoice(choices)
 			if err != nil {
 				return err
 			}
@@ -367,6 +378,9 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 				}
 			case 3:
 				return nil
+			case 4:
+				writeFingerPointingLinef("Exiting for manual fix (see \"How to fix:\" section)")
+				os.Exit(0)
 			}
 		}
 

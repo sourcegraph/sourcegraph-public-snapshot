@@ -71,8 +71,11 @@ func Context(ctx context.Context) (context.Context, error) {
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func Cmd(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
-	return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
+	// Because we are running an interactive shell, we need to exit explictly.
+	// To avoid messing up with the output checking that depends on this function,
+	// we silence the exit commands, which otherwise, prints "exit".
+	command := fmt.Sprintf("%s; \nexit $? 2>/dev/null", strings.TrimSpace(cmd))
+	return exec.CommandContext(ctx, ShellPath(ctx), "-c", "-i", command)
 }
 
 // CombinedExec runs a command in a fresh shell environment, and returns
