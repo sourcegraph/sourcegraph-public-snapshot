@@ -7,6 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	defaultMaxSearchResults          = 30
+	defaultMaxSearchResultsStreaming = 500
+)
+
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
 	Plan          query.Plan // the comprehensive query plan
@@ -17,12 +22,17 @@ type SearchInputs struct {
 	Features      featureflag.FlagSet
 	CodeMonitorID *int64
 	Protocol      search.Protocol
-
-	// DefaultLimit is the default limit to use if not specified in query.
-	DefaultLimit int
 }
 
 // MaxResults computes the limit for the query.
 func (inputs SearchInputs) MaxResults() int {
-	return inputs.Query.MaxResults(inputs.DefaultLimit)
+	return inputs.Query.MaxResults(inputs.DefaultLimit())
+}
+
+// DefaultLimit is the default limit to use if not specified in query.
+func (inputs SearchInputs) DefaultLimit() int {
+	if inputs.Protocol == search.Batch || inputs.PatternType == query.SearchTypeStructural {
+		return defaultMaxSearchResults
+	}
+	return defaultMaxSearchResultsStreaming
 }
