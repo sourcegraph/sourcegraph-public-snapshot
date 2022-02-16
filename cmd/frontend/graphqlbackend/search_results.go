@@ -530,7 +530,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.Plan)
+	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
 	srr := r.resultsToResolver(&SearchResults{
 		Matches: agg.Results,
 		Stats:   agg.Stats,
@@ -541,7 +541,7 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := r.results(ctx, r.stream, r.Plan)
+	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
 	srr := r.resultsToResolver(&SearchResults{Alert: alert})
 	return srr, err
 }
@@ -552,9 +552,9 @@ func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResult
 	}
 	return &SearchResultsResolver{
 		SearchResults: results,
-		limit:         r.MaxResults(),
+		limit:         r.SearchInputs.MaxResults(),
 		db:            r.db,
-		UserSettings:  r.UserSettings,
+		UserSettings:  r.SearchInputs.UserSettings,
 	}
 }
 
@@ -770,7 +770,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
+			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.SearchInputs.PatternType), nil
 		} else {
 			err = nil
 		}
@@ -943,7 +943,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.Query)
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
 		if err != nil {
 			return nil, err
 		}

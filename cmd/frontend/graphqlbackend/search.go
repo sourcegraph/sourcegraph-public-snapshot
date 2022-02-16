@@ -214,8 +214,8 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	*run.SearchInputs
-	db database.DB
+	SearchInputs *run.SearchInputs
+	db           database.DB
 
 	// stream if non-nil will send all search events we receive down it.
 	stream streaming.Sender
@@ -230,7 +230,7 @@ func (r *searchResolver) Inputs() run.SearchInputs {
 
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
-	return r.OriginalQuery
+	return r.SearchInputs.OriginalQuery
 }
 
 const (
