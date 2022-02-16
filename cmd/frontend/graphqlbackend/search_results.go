@@ -486,16 +486,14 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 
 func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
 	elapsed := time.Since(start)
-	if srr != nil {
-		srr.elapsed = elapsed
-		var wg sync.WaitGroup
-		LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
-		defer wg.Wait()
-	}
+	srr.elapsed = elapsed
+	var wg sync.WaitGroup
+	LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+	defer wg.Wait()
 
 	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.SearchResults.Alert != nil {
+	status = DetermineStatusForLogs(srr.SearchResults.Alert, srr.SearchResults.Stats, err)
+	if srr.SearchResults.Alert != nil {
 		alertType = srr.SearchResults.Alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
@@ -567,17 +565,17 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 
 // DetermineStatusForLogs determines the final status of a search for logging
 // purposes.
-func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
+func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
 	switch {
 	case err == context.DeadlineExceeded:
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
+	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
 		return "timeout"
-	case srr.Stats.Status.Any(search.RepoStatusTimedout):
+	case stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
-	case srr.SearchResults.Alert != nil:
+	case alert != nil:
 		return "alert"
 	default:
 		return "success"

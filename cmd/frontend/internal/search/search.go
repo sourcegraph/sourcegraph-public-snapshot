@@ -247,7 +247,7 @@ LOOP:
 	_ = eventWriter.Event("progress", progress.Final())
 
 	var status, alertType string
-	status = graphqlbackend.DetermineStatusForLogs(resultsResolver, err)
+	status = graphqlbackend.DetermineStatusForLogs(resultsResolver.SearchResults.Alert, resultsResolver.SearchResults.Stats, err)
 	if alert != nil {
 		alertType = alert.PrometheusType()
 	}
