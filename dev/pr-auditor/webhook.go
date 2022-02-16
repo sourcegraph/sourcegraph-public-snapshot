@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // EventPayload describes the payload of the pull_request event we subscribe to:
 // https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
@@ -10,10 +13,16 @@ type EventPayload struct {
 	Repository  RepositoryPayload  `json:"repository"`
 }
 
+func (p EventPayload) Dump() string {
+	return fmt.Sprintf(`Action: %s, PullRequest: { Merged: %v, MergedBy: %+v, Head: %+v }, Repository: %s`,
+		p.Action, p.PullRequest.Merged, p.PullRequest.MergedBy, p.PullRequest.Head, p.Repository.FullName)
+}
+
 type PullRequestPayload struct {
 	Number int    `json:"number"`
 	Title  string `json:"title"`
 	Body   string `json:"body"`
+	Draft  bool   `json:"draft"`
 
 	ReviewComments int `json:"review_comments"`
 
