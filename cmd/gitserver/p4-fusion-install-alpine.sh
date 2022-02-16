@@ -41,7 +41,10 @@ mkdir p4-fusion-src
 wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz
 tar -C p4-fusion-src -xzf v1.5.tar.gz --strip 1
 
-# We need a specific version of OpenSSL
+# It should be possible to build against the latest 1.x version of OpenSSL.
+# However, Perforce recommends linking against the same minor version of
+# OpenSSL that is referenced in the Helix Core C++ API for best compatibility.
+# https://www.perforce.com/manuals/p4api/Content/P4API/client.programming.compiling.html#SSL_support
 echo "--- p4-fusion openssl fetch"
 mkdir openssl-src
 wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz
