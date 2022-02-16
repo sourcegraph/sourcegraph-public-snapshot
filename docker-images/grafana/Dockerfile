@@ -12,7 +12,7 @@ RUN ls '/generated/grafana'
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
 FROM grafana/grafana:7.5.15@sha256:8e6fe7907f8e5c5547bee5e3e8be8165144d86ad98581d6d092044aa5f805c39 as production
-LABEL com.sourcegraph.grafana.version=7.5.13
+LABEL com.sourcegraph.grafana.version=7.5.15
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
