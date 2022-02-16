@@ -1134,15 +1134,13 @@ type CodeInsightsUsageStatistics struct {
 
 // Usage statistics for a type of code insight
 type InsightUsageStatistics struct {
-	InsightType               *string
-	Additions                 *int32
-	Edits                     *int32
-	Removals                  *int32
-	Hovers                    *int32
-	GetStartedHovers          *int32
-	UICustomizations          *int32
-	DataPointClicks           *int32
-	GetStartedDataPointClicks *int32
+	InsightType      *string
+	Additions        *int32
+	Edits            *int32
+	Removals         *int32
+	Hovers           *int32
+	UICustomizations *int32
+	DataPointClicks  *int32
 }
 
 type PingName string
