@@ -24,8 +24,10 @@ func ParseNPM(b []byte) ([]*Dependency, error) {
 		dependencies = append(dependencies, dependency)
 	}
 
+	// TODO: We want to use the json decoder to unmarshal dependencies in
+	// order rather than having to sort here.
 	sort.SliceStable(dependencies, func(i, j int) bool {
-		return dependencies[i].Name < dependencies[j].Name
+		return dependencies[i].Less(dependencies[j])
 	})
 
 	return dependencies, nil

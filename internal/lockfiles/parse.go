@@ -2,6 +2,7 @@ package lockfiles
 
 import (
 	"errors"
+	"fmt"
 	"path"
 )
 
@@ -9,6 +10,22 @@ type Dependency struct {
 	Name    string
 	Version string `json:"version"`
 	Kind    Kind
+}
+
+func (d *Dependency) Less(other *Dependency) bool {
+	if d.Kind != other.Kind {
+		return d.Kind < other.Kind
+	}
+
+	if d.Name != other.Name {
+		return d.Name < other.Name
+	}
+
+	return d.Version < other.Version
+}
+
+func (d *Dependency) String() string {
+	return fmt.Sprintf("%s %s %s", d.Kind, d.Name, d.Version)
 }
 
 type Kind string
