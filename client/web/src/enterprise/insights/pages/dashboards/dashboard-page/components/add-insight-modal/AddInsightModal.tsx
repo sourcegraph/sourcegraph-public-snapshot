@@ -91,6 +91,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 <AddInsightModalContent
                     initialValues={initialValues}
                     insights={insights}
+                    dashboardID={dashboard.id}
                     onCancel={onClose}
                     onSubmit={handleSubmit}
                 />
