@@ -93,7 +93,7 @@ const WithAdvancedSettings: Story = () => {
 
 export const AllOptionsPages: Story = () => (
     <div>
-        <h1>All Options Pages</h1>
+        <h1 className="text-center">All Options Pages</h1>
         <div>
             <div className="d-flex justify-content-between">
                 <div className="mx-2">
