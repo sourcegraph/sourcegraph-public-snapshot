@@ -79,6 +79,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
+                    isEmbedded={true}
                 />
             )}
         </div>

@@ -43,6 +43,7 @@ export interface SearchNotebookProps
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
     exportedFileName: string
+    isEmbedded?: boolean
 }
 
 const LOADING = 'LOADING' as const
@@ -75,6 +76,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     isReadOnly = false,
     extensionsController,
     exportedFileName,
+    isEmbedded,
     ...props
 }) => {
     const notebook = useMemo(
@@ -347,16 +349,18 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                 </Button>
-                <Button
-                    className="mr-2"
-                    variant="secondary"
-                    size="sm"
-                    onClick={exportNotebook}
-                    data-testid="export-notebook-markdown-button"
-                >
-                    <DownloadIcon className="icon-inline mr-1" />
-                    <span>Export as Markdown</span>
-                </Button>
+                {!isEmbedded && (
+                    <Button
+                        className="mr-2"
+                        variant="secondary"
+                        size="sm"
+                        onClick={exportNotebook}
+                        data-testid="export-notebook-markdown-button"
+                    >
+                        <DownloadIcon className="icon-inline mr-1" />
+                        <span>Export as Markdown</span>
+                    </Button>
+                )}
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
