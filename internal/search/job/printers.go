@@ -34,6 +34,9 @@ func SexpFormat(job Job, sep, indent string) string {
 	depth := 0
 	var writeSexp func(Job)
 	writeSexp = func(job Job) {
+		if job == nil {
+			return
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -119,6 +122,15 @@ func SexpFormat(job Job, sep, indent string) string {
 			writeSexp(j.child)
 			b.WriteString(")")
 			depth--
+		case *selectJob:
+			b.WriteString("(SELECT")
+			depth++
+			writeSep(b, sep, indent, depth)
+			b.WriteString(j.path.String())
+			writeSep(b, sep, indent, depth)
+			writeSexp(j.child)
+			b.WriteString(")")
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", job))
 		}
@@ -172,8 +184,11 @@ func PrettyMermaid(job Job) string {
 	id := 0
 	b := new(bytes.Buffer)
 	b.WriteString("flowchart TB\n")
-	var writeMermaid func(Job) int
-	writeMermaid = func(job Job) int {
+	var writeMermaid func(Job)
+	writeMermaid = func(job Job) {
+		if job == nil {
+			return
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -257,10 +272,18 @@ func PrettyMermaid(job Job) string {
 			writeEdge(b, depth, srcId, id)
 			writeMermaid(j.child)
 			depth--
+		case *selectJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "SELECT")
+			writeEdge(b, depth, srcId, id)
+			writeNode(b, depth, DefaultStyle, &id, j.path.String())
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
 		}
-		return id
 	}
 	writeMermaid(job)
 	return b.String()
@@ -272,6 +295,9 @@ func PrettyMermaid(job Job) string {
 func toJSON(job Job, verbose bool) interface{} {
 	var emitJSON func(Job) interface{}
 	emitJSON = func(job Job) interface{} {
+		if job == nil {
+			return struct{}{}
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -360,6 +386,14 @@ func toJSON(job Job, verbose bool) interface{} {
 			}{
 				Filter: emitJSON(j.child),
 				Value:  "SubRepoPermissions",
+			}
+		case *selectJob:
+			return struct {
+				Select interface{} `json:"SELECT"`
+				Value  string      `json:"value"`
+			}{
+				Select: emitJSON(j.child),
+				Value:  j.path.String(),
 			}
 
 		default:
