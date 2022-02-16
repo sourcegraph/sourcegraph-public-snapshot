@@ -138,4 +138,14 @@ export interface CodeInsightsBackend {
      * @param query - search page query value
      */
     getResolvedSearchRepositories: (query: string) => Promise<string[]>
+
+    /**
+     * Used for the dynamic insight example on the insights landing page.
+     * Attempts to return a repoository that contains the string "TODO"
+     * If a repository is not found it then returns the first repository it finds.
+     *
+     * Under the hood this is calling the search API with "select:repo TODO count:1"
+     * or "select:repo count:1" if no repository is found with the string "TODO"
+     */
+    getFirstExampleRepository: () => Observable<string>
 }
