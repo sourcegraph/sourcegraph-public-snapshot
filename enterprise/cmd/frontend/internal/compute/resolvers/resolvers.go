@@ -202,6 +202,12 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if err != nil {
 			return nil, err
 		}
+
+		if computeResult == nil {
+			// We processed a match that compute doesn't generate a result for.
+			continue
+		}
+
 		repoResolver := getRepoResolver(m.RepoName(), "")
 		path, commit := pathAndCommitFromResult(m)
 		result := toComputeResultResolver(computeResult, repoResolver, path, commit)
