@@ -18,7 +18,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -470,15 +469,6 @@ func (r *searchResolver) JobArgs() *job.Args {
 	}
 }
 
-// evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, args *job.Args, q query.Basic) (*search.Alert, error) {
-	j, err := job.ToEvaluateJob(args, q)
-	if err != nil {
-		return nil, err
-	}
-	return r.evaluateJob(ctx, stream, j)
-}
-
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
@@ -540,7 +530,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, nil, r.Plan)
+	sr, err := r.results(ctx, nil, r.Plan)
 	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
@@ -558,7 +548,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
-	sr, err := r.resultsRecursive(ctx, stream, r.Plan)
+	sr, err := r.results(ctx, stream, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
 }
@@ -601,49 +591,53 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
+// expandPredicates takes a query plan, and replaces any predicates with their expansion. The returned plan
+// is guaranteed to be predicate-free.
+func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Plan) (_ query.Plan, err error) {
+	tr, ctx := trace.New(ctx, "expandPredicates", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	wantCount := defaultMaxSearchResults
-	if count := r.Query.Count(); count != nil {
-		wantCount = *count
-	}
-
 	var (
-		mu     sync.Mutex
-		stats  streaming.Stats
-		alerts []*search.Alert
-		dedup  = result.NewDeduper()
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem = semaphore.NewWeighted(16)
+		mu      sync.Mutex
+		newPlan = make(query.Plan, 0, len(oldPlan))
 	)
-
 	g, ctx := errgroup.WithContext(ctx)
-	for _, q := range plan {
+
+	for _, q := range oldPlan {
 		q := q
 		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-
-			defer sem.Release(1)
-
 			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
 				}
-				// Pass a nil stream for subqueries so we can use
-				// the results rather than sending them back to the caller
-				return r.resultsRecursive(ctx, nil, plan)
+
+				children := make([]job.Job, 0, len(plan))
+				for _, basicQuery := range plan {
+					child, err := job.ToEvaluateJob(r.JobArgs(), basicQuery)
+					if err != nil {
+						return nil, err
+					}
+					children = append(children, child)
+				}
+
+				agg := streaming.NewAggregatingStream()
+				alert, err := r.evaluateJob(ctx, agg, job.NewOrJob(children...))
+				if err != nil {
+					return nil, err
+				}
+
+				return &SearchResults{
+					Matches: agg.Results,
+					Stats:   agg.Stats,
+					Alert:   alert,
+				}, nil
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
+				// The predicate has no results, so neither will this basic query
 				return nil
 			}
 			if err != nil {
@@ -651,84 +645,63 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				return err
 			}
 
-			var newResult *SearchResults
-			if predicatePlan != nil {
-				// If a predicate filter generated a new plan, evaluate that plan.
-				newResult, err = r.resultsRecursive(ctx, stream, predicatePlan)
-			} else if stream != nil {
-				args := r.JobArgs()
-				var alert *search.Alert
-				alert, err = r.evaluate(ctx, stream, args, q)
-				newResult = &SearchResults{Alert: alert}
-			} else {
-				args := r.JobArgs()
-				// Always pass a non-nil stream to evaluate
-				agg := streaming.NewAggregatingStream()
-				var alert *search.Alert
-				alert, err = r.evaluate(ctx, agg, args, q)
-				newResult = &SearchResults{
-					Matches: agg.Results,
-					Stats:   agg.Stats,
-					Alert:   alert,
-				}
-			}
-
-			if err != nil || newResult == nil {
-				// Fail if any subexpression fails.
-				return err
-			}
-
 			mu.Lock()
 			defer mu.Unlock()
 
-			if newResult.Alert != nil {
-				alerts = append(alerts, newResult.Alert)
+			if predicatePlan != nil {
+				// If the predicate generated a new plan, use that
+				newPlan = append(newPlan, predicatePlan...)
+			} else {
+				// Otherwise, just use the original basic query
+				newPlan = append(newPlan, q)
 			}
-
-			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making query evaluation concurrent.
-			stats.Update(&newResult.Stats)
-
-			for _, match := range newResult.Matches {
-				wantCount = match.Limit(wantCount)
-
-				if dedup.Add(match); wantCount <= 0 {
-					return context.Canceled
-				}
-			}
-
 			return nil
 		})
 	}
 
-	if err := g.Wait(); err != nil && err != context.Canceled {
+	return newPlan, g.Wait()
+}
+
+func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "Results", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	plan, err = r.expandPredicates(ctx, plan)
+	if err != nil {
 		return nil, err
 	}
 
-	matches := dedup.Results()
-	if len(matches) > 0 {
-		sort.Sort(matches)
+	args := r.JobArgs()
+	children := make([]job.Job, 0, len(plan))
+	for _, q := range plan {
+		child, err := job.ToEvaluateJob(args, q)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, child)
+	}
+	planJob := job.NewOrJob(children...)
+
+	var newResult SearchResults
+	if stream != nil {
+		newResult.Alert, err = r.evaluateJob(ctx, stream, planJob)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		agg := streaming.NewAggregatingStream()
+		newResult.Alert, err = r.evaluateJob(ctx, agg, planJob)
+		if err != nil {
+			return nil, err
+		}
+		newResult.Matches = agg.Results
+		newResult.Stats = agg.Stats
 	}
 
-	var alert *search.Alert
-	if len(alerts) > 0 {
-		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].Priority > alerts[j].Priority
-		})
-		alert = alerts[0]
-	}
-
-	return &SearchResults{
-		Matches: matches,
-		Stats:   stats,
-		Alert:   alert,
-	}, err
+	return &newResult, nil
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
