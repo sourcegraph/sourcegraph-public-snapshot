@@ -1324,7 +1324,7 @@ func tryRLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, r
 	threadStatus.HoldLock("rLock")
 
 	release := func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err == nil {
 			threadStatus.ReleaseLock("rLock")
 		}
