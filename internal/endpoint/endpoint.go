@@ -189,6 +189,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			hm := newConsistentHash(eps.Endpoints)
 			m.mu.Lock()
 			m.hm = hm
+			m.err = nil
 			m.mu.Unlock()
 		default:
 			m.mu.Lock()

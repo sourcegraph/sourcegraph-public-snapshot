@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
@@ -96,4 +99,68 @@ func TestEndpoints(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
 	}
+}
+
+func TestSync(t *testing.T) {
+	eps := make(chan endpoints, 1)
+	defer close(eps)
+
+	urlspec := "http://test"
+	m := &Map{
+		urlspec: urlspec,
+		discofunk: func(disco chan endpoints) {
+			for {
+				v, ok := <-eps
+				if !ok {
+					return
+				}
+				disco <- v
+			}
+		},
+	}
+
+	// Test that we block m.Get() until eps sends its first value
+	want := []string{"a", "b"}
+	eps <- endpoints{
+		Service:   urlspec,
+		Endpoints: want,
+	}
+	expectEndpoints(t, m, want...)
+
+	// We now rely on sync, so we retry until we see what we want. Set an
+	// error.
+	eps <- endpoints{
+		Service: urlspec,
+		Error:   errors.New("boom"),
+	}
+	if !waitUntil(5*time.Second, func() bool {
+		_, err := m.Get("test")
+		return err != nil
+	}) {
+		t.Fatal("expected map to return error")
+	}
+
+	eps <- endpoints{
+		Service:   urlspec,
+		Endpoints: want,
+	}
+	if !waitUntil(5*time.Second, func() bool {
+		_, err := m.Get("test")
+		return err == nil
+	}) {
+		t.Fatal("expected map to recover from error")
+	}
+}
+
+// waitUntil will wait d. It will return early when pred returns true.
+// Otherwise it will return pred() after d.
+func waitUntil(d time.Duration, pred func() bool) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if pred() {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return pred()
 }
