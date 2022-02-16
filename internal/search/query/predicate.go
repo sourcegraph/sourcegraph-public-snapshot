@@ -1,10 +1,11 @@
 package query
 
 import (
-	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Predicate interface {

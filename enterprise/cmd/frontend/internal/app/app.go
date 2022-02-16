@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	gogithub "github.com/google/go-github/v41/github"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Init initializes the app endpoints.

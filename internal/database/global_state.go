@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GlobalStateStore interface {

@@ -1,9 +1,9 @@
-import { render } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../auth'
@@ -34,7 +34,7 @@ describe('SignUpPage', () => {
 
     it('renders sign up page (server)', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage
@@ -57,7 +57,7 @@ describe('SignUpPage', () => {
 
     it('renders sign up page (cloud)', () => {
         expect(
-            render(
+            renderWithBrandedContext(
                 <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage
@@ -88,7 +88,7 @@ describe('SignUpPage', () => {
         } as AuthenticatedUser
 
         expect(
-            render(
+            renderWithBrandedContext(
                 <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage

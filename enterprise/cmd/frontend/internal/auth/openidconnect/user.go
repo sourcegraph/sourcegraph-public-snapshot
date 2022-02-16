@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-oidc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
@@ -71,7 +71,7 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *provider, idToken *
 			AccountID:   idToken.Subject,
 		},
 		ExternalAccountData: data,
-		CreateIfNotExist:    true,
+		CreateIfNotExist:    p.config.AllowSignup == nil || *p.config.AllowSignup,
 	})
 	if err != nil {
 		return nil, safeErrMsg, err

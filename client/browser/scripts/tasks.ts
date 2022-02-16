@@ -170,6 +170,10 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
 
     if (EXTENSION_PERMISSIONS_ALL_URLS) {
         manifest.permissions!.push('<all_urls>')
+        /** Set key to make extension id deterministic */
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        manifest.key = manifestSpec.dev.key
         signale.info('Adding <all_urls> to permissions because of env var setting')
     }
 

@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,7 +46,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) Validate() []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")

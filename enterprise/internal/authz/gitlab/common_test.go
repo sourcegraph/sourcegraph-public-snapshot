@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/oauth2"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

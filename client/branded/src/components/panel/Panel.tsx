@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -8,7 +7,7 @@ import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -23,8 +22,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
@@ -262,52 +260,52 @@ export const Panel = React.memo<Props>(props => {
 
     return (
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
-            <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
-                <TabList>
-                    <div className="d-flex w-100">
-                        {items.map(({ label, id, trackTabClick }) => (
-                            <Tab key={id}>
-                                <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
-                                    {label}
-                                </span>
-                            </Tab>
-                        ))}
-                    </div>
+            <div className="sticky-top">
+                <TabList
+                    wrapperClassName={styles.header}
+                    actions={
+                        <div className="align-items-center d-flex">
+                            {activeTab && (
+                                <ActionsNavItems
+                                    {...props}
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                    listItemClass="px-2 mx-2"
+                                    actionItemClass="font-weight-medium"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={{
+                                        type: 'panelView',
+                                        id: activeTab.id,
+                                        hasLocations: Boolean(activeTab.hasLocations),
+                                    }}
+                                    wrapInList={true}
+                                    location={location}
+                                    transformContributions={transformPanelContributions}
+                                />
+                            )}
+                            <Button
+                                onClick={handlePanelClose}
+                                variant="icon"
+                                className={classNames('ml-2', styles.dismissButton)}
+                                title="Close panel"
+                                data-tooltip="Close panel"
+                                data-placement="left"
+                            >
+                                <CloseIcon className="icon-inline" />
+                            </Button>
+                        </div>
+                    }
+                >
+                    {items.map(({ label, id, trackTabClick }) => (
+                        <Tab key={id}>
+                            <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
+                                {label}
+                            </span>
+                        </Tab>
+                    ))}
                 </TabList>
-                <div className="align-items-center d-flex">
-                    <small>
-                        {activeTab && (
-                            <ActionsNavItems
-                                {...props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                listItemClass="px-2 mx-2"
-                                actionItemClass="font-weight-medium"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={{
-                                    type: 'panelView',
-                                    id: activeTab.id,
-                                    hasLocations: Boolean(activeTab.hasLocations),
-                                }}
-                                wrapInList={true}
-                                location={location}
-                                transformContributions={transformPanelContributions}
-                            />
-                        )}
-                    </small>
-                    <Button
-                        onClick={handlePanelClose}
-                        variant="icon"
-                        className={classNames('ml-2', styles.dismissButton)}
-                        title="Close panel"
-                        data-tooltip="Close panel"
-                        data-placement="left"
-                    >
-                        <CloseIcon className="icon-inline" />
-                    </Button>
-                </div>
             </div>
             <TabPanels className={styles.tabs}>
                 {activeTab ? (

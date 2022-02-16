@@ -28,7 +28,7 @@ You can see the overall trend of a batch change in the burndown chart, which sho
 The generic term **changeset** is used to refer to any of the following:
 
 - GitHub pull requests.
-- Bitbucket Server and Bitbucket Data Center pull requests.
+- Bitbucket Server / Bitbucket Data Center and Bitbucket Data Center pull requests.
 - GitLab merge requests.
 - Bitbucket Cloud pull requests (not yet supported).
 - Phabricator diffs (not yet supported).

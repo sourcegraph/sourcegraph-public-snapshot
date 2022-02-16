@@ -16,9 +16,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
-	"github.com/cockroachdb/errors"
 	"github.com/gregjones/httpcache"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -31,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Doer captures the Do method of an http.Client. It facilitates decorating
@@ -186,10 +185,10 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	opts = append(opts, f.common...)
 
 	var cli http.Client
-	var err *multierror.Error
+	var err *errors.MultiError
 
 	for _, opt := range opts {
-		err = multierror.Append(err, opt(&cli))
+		err = errors.Append(err, opt(&cli))
 	}
 
 	return &cli, err.ErrorOrNil()

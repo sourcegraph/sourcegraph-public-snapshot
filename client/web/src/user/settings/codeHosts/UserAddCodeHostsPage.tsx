@@ -1,17 +1,25 @@
 import React, { useCallback, useState, useEffect } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined, keyExistsIn } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
-import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
+import {
+    ExternalServiceKind,
+    ListExternalServiceFields,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
+} from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../../org/backend'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -29,6 +37,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
+    authenticatedUser?: AuthenticatedUser
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -66,6 +75,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
+    authenticatedUser,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
@@ -265,7 +275,26 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return accumulator
     }, {})
 
-    const navigateToAuthProvider = useCallback(
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
+
+    const useGitHubApp = data?.organizationFeatureFlagValue || false
+
+    const flagsOverridesResult = useFlagsOverrides()
+    const isGitHubAppEnabled = flagsOverridesResult.data
+        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
+        .some(orgFlag => orgFlag.value)
+    const isGitHubAppLoading = flagsOverridesResult.loading
+
+    const defaultNavigateToAuthProvider = useCallback(
         (kind: ExternalServiceKind): void => {
             const authProvider = authProvidersByKind[kind]
 
@@ -279,6 +308,27 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             }
         },
         [authProvidersByKind]
+    )
+
+    const navigateToAuthProvider = useCallback(
+        (kind: ExternalServiceKind): void => {
+            const authProvider = authProvidersByKind[kind]
+
+            if (authProvider) {
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
+
+                if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
+                    defaultNavigateToAuthProvider(kind)
+                } else {
+                    window.location.assign(
+                        `/.auth/github/login?pc=${encodeURIComponent(
+                            `https://github.com/::${window.context.githubAppCloudClientID}`
+                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
+                    )
+                }
+            }
+        },
+        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled]
     )
 
     return (
@@ -327,6 +377,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
+                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                     />
                                 </CodeHostListItem>
                             ) : null

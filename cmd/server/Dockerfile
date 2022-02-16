@@ -6,6 +6,13 @@ RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
+# Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
+FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c AS p4-fusion
+
+COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
+RUN /p4-fusion-install-alpine.sh
+
+# Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
 FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
@@ -48,8 +55,10 @@ RUN apk add --no-cache --verbose \
     python2 \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
-    postgresql=12.9-r0 \
-    postgresql-contrib
+    postgresql>=12.10-r0 \
+    postgresql-contrib \
+    # We require libstdc++ for p4-fusion
+    libstdc++
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -95,6 +104,8 @@ COPY . /
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
+COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
+
 COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
 # This is a trick to include libraries required by p4,
@@ -109,6 +120,8 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
+
+WORKDIR /
 
 ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

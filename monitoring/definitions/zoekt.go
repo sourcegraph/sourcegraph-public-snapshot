@@ -24,10 +24,10 @@ func Zoekt() *monitoring.Container {
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label: "Instance",
-				Name:  "instance",
-				Query: "label_values(index_num_assigned, instance)",
-				Multi: true,
+				Label:        "Instance",
+				Name:         "instance",
+				OptionsQuery: "label_values(index_num_assigned, instance)",
+				Multi:        true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -164,9 +164,13 @@ func Zoekt() *monitoring.Container {
 							Description: "the number of repositories we failed to get indexing options over 5m",
 							Query:       `sum(increase(get_index_options_error_total[5m]))`,
 							// This value can spike, so only if we have a
-							// sustained error rate do we alert.
-							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(20 * time.Minute),
+							// sustained error rate do we alert. On
+							// Sourcegraph.com gitserver rollouts take a while
+							// and this alert will fire during that time. So
+							// we tuned Critical to atleast be as long as a
+							// gitserver rollout. 2022-02-09 ~25m rollout.
+							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: `

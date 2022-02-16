@@ -7,7 +7,7 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -95,6 +95,15 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         if (event.key === 'Escape') {
             const target = event.target as HTMLElement
             target.blur()
+        } else if (event.key === 'Tab' && !event.shiftKey) {
+            // Reach does not support 'Tab' as a select trigger, so we have to manually select the currently highlighted suggestion.
+            const element = popoverReference.current?.querySelector<HTMLElement>(
+                '[aria-selected=true] [data-suggestion-value]'
+            )
+            if (element?.dataset.suggestionValue) {
+                event.preventDefault()
+                onSelect(element.dataset.suggestionValue)
+            }
         } else if (
             // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
             !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
@@ -102,11 +111,6 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
             event.stopPropagation()
         }
     }
-
-    const hasSingleExactMatchingSuggestion = useMemo(
-        () => suggestions !== undefined && suggestions.length === 1 && suggestions[0] === inputValue,
-        [suggestions, inputValue]
-    )
 
     return (
         <Combobox openOnFocus={true} onSelect={onSelect} className={className} onKeyDown={onKeyDown}>
@@ -127,14 +131,17 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
-            {/* Only show suggestions popover for the latest input value and if it does not contain a single exact match. */}
-            {suggestions && value === inputValue && !hasSingleExactMatchingSuggestion && (
+            {/* Only show suggestions popover for the latest input value and if it does not contain an exact match.
+                This is to prevent opening the suggestions popover when a file URL is pasted into the file block. */}
+            {suggestions && value === inputValue && !suggestions.includes(inputValue) && (
                 <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
                             <ComboboxOption className={styles.suggestionsOption} key={suggestion} value={suggestion}>
-                                {suggestionsIcon}
-                                <ComboboxOptionText />
+                                <span data-suggestion-value={suggestion}>
+                                    {suggestionsIcon}
+                                    <ComboboxOptionText />
+                                </span>
                             </ComboboxOption>
                         ))}
                     </ComboboxList>

@@ -1,10 +1,10 @@
 import { readFile } from 'mz/fs'
 import { Observable, throwError, of } from 'rxjs'
 
+import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { IMutation, IQuery } from '@sourcegraph/shared/src/schema'
-import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import { DiffOrBlobInfo } from '../shared/codeHost'
 import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'

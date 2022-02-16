@@ -4,19 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go

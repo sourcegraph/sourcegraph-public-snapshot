@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -1102,13 +1102,13 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 }
 
-func TestProvider_Validate(t *testing.T) {
+func TestProvider_ValidateConnection(t *testing.T) {
 	t.Run("cache disabled: scopes ok", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: -1,
 		})
-		problems := p.Validate()
+		problems := p.ValidateConnection(context.Background())
 		if len(problems) > 0 {
 			t.Fatal("expected validate to pass")
 		}
@@ -1126,7 +1126,7 @@ func TestProvider_Validate(t *testing.T) {
 					return nil, errors.New("scopes error")
 				},
 			}
-			problems := p.Validate()
+			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
 			}
@@ -1141,7 +1141,7 @@ func TestProvider_Validate(t *testing.T) {
 					return []string{}, nil
 				},
 			}
-			problems := p.Validate()
+			problems := p.ValidateConnection(context.Background())
 			if len(problems) != 1 {
 				t.Fatal("expected 1 problem")
 			}
@@ -1161,7 +1161,7 @@ func TestProvider_Validate(t *testing.T) {
 						return testCase, nil
 					},
 				}
-				problems := p.Validate()
+				problems := p.ValidateConnection(context.Background())
 				if len(problems) != 0 {
 					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
 				}

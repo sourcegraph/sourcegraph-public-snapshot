@@ -2,16 +2,14 @@ package batches
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
@@ -191,13 +189,13 @@ func BuildImportChangesetSpecs(ctx context.Context, importChangesets []ImportCha
 	for _, ic := range importChangesets {
 		repoID, ok := repoNameIDs[ic.Repository]
 		if !ok {
-			errs = multierror.Append(errs, errors.Newf("repository %q not found", ic.Repository))
+			errs = errors.Append(errs, errors.Newf("repository %q not found", ic.Repository))
 			continue
 		}
 		for _, id := range ic.ExternalIDs {
 			extID, err := ParseChangesetSpecExternalID(id)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 			specs = append(specs, &ChangesetSpec{
@@ -235,13 +233,13 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 
 	for _, g := range groups {
 		if _, ok := uniqueBranches[g.Branch]; ok {
-			return NewValidationError(fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
+			return NewValidationError(errors.Newf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
 		} else {
 			uniqueBranches[g.Branch] = struct{}{}
 		}
 
 		if g.Branch == defaultBranch {
-			return NewValidationError(fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
+			return NewValidationError(errors.Newf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
 		}
 	}
 
