@@ -542,18 +542,7 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	stream := r.stream
-	if !query.IsStreamingCompatible(r.Plan) {
-		srr, err := r.resultsBatch(ctx)
-		if srr != nil {
-			stream.Send(streaming.SearchEvent{
-				Results: srr.Matches,
-				Stats:   srr.Stats,
-			})
-		}
-		return srr, err
-	}
-	alert, err := r.results(ctx, stream, r.Plan)
+	alert, err := r.results(ctx, r.stream, r.Plan)
 	srr := r.resultsToResolver(&SearchResults{Alert: alert})
 	return srr, err
 }
