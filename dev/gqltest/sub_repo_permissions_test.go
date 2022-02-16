@@ -37,6 +37,8 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// This is the desired behaviour at the moment, see where we check for
+		// os.IsNotExist error in GitCommitResolver.Blob
 		wantBlob := ``
 
 		if diff := cmp.Diff(wantBlob, blob); diff != "" {
