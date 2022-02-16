@@ -17,7 +17,7 @@ import (
 
 var (
 	runFlagSet              = flag.NewFlagSet("sg run", flag.ExitOnError)
-	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", false, "OSX only; Add required exceptions to the firewall")
+	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", true, "OSX only; Add required exceptions to the firewall")
 	runCommand              = &ffcli.Command{
 		Name:       "run",
 		ShortUsage: "sg run <command>...",
