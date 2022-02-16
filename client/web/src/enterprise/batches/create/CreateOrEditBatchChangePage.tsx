@@ -210,7 +210,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                                 disabled={true}
                                 label={
                                     <>
-                                        Private <LockIcon className="text-warning icon-inline" />
+                                        Private <LockIcon className="text-warning icon-inline" aria-hidden={true} />
                                     </>
                                 }
                                 aria-label="Private"
