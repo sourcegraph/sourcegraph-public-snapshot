@@ -358,7 +358,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	k8s.io/utils v0.0.0-20220127004650-9b3446523e65 // indirect
 	mvdan.cc/gofumpt v0.2.1 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
