@@ -1,4 +1,5 @@
 import VisuallyHidden from '@reach/visually-hidden'
+import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 import { animated } from 'react-spring'
@@ -37,18 +38,11 @@ export const ExecutionOptionsDropdown: React.FunctionComponent<ExecutionOptionsD
 }) => (
     <Menu>
         <ButtonGroup className="mb-2">
-            <Button
-                className={styles.executionButton}
-                variant="primary"
-                onClick={execute}
-                disabled={isExecutionDisabled}
-                data-tooltip={executionTooltip}
-            >
+            <Button variant="primary" onClick={execute} disabled={isExecutionDisabled} data-tooltip={executionTooltip}>
                 Run batch spec
             </Button>
-            <MenuButton variant="primary" className={styles.executionOptionsMenuButton}>
+            <MenuButton variant="primary" className={classNames(styles.executionOptionsMenuButton, 'dropdown-toggle')}>
                 <VisuallyHidden>Options</VisuallyHidden>
-                <span aria-hidden={true}>▾</span>
             </MenuButton>
         </ButtonGroup>
         <MenuList className={styles.menuList} position={Position.bottomEnd}>

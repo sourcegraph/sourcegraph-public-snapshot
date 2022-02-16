@@ -1,12 +1,10 @@
-.execution-button {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
 .execution-options-menu-button {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
     border-left: 1px solid var(--primary-3);
+    &::after {
+        // Overwrite left margin -- otherwise it applies a margin to the `VisuallyHidden`
+        // and shifts too far left
+        margin-left: 0;
+    }
 }
 
 .execution-option:last-child {
@@ -24,14 +22,14 @@
 }
 
 .menu-list {
-    width: 20rem;
+    width: 17rem;
     // NOTE: The default provided by reach-ui is 'nowrap', which causes overflow scroll
     // behavior rather than wrapping.
     white-space: normal;
 }
 
 .expanded-info {
-    padding: 0 1.5rem 0 2.25rem;
+    padding: 0 1rem 0 2.25rem;
     overflow-y: hidden;
     width: 100%;
 }
