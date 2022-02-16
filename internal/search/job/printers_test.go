@@ -190,8 +190,8 @@ func TestPrettyJSON(t *testing.T) {
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
 				UserSettings: &schema.Settings{},
+				Protocol:     search.Streaming,
 			},
-			Protocol: search.Streaming,
 		}
 		j, _ := ToSearchJob(args, q)
 		return PrettyJSONVerbose(j)

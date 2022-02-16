@@ -2,6 +2,7 @@ package run
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -15,6 +16,7 @@ type SearchInputs struct {
 	UserSettings  *schema.Settings
 	Features      featureflag.FlagSet
 	CodeMonitorID *int64
+	Protocol      search.Protocol
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int

@@ -463,7 +463,6 @@ func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
 		SearchInputs:        r.SearchInputs,
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Protocol:            r.protocol(),
 		Zoekt:               r.zoekt,
 		SearcherURLs:        r.searcherURLs,
 	}

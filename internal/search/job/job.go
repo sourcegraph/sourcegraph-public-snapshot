@@ -31,7 +31,6 @@ import (
 type Args struct {
 	SearchInputs        *run.SearchInputs
 	OnSourcegraphDotCom bool
-	Protocol            search.Protocol
 	Zoekt               zoekt.Streamer
 	SearcherURLs        *endpoint.Map
 }
@@ -54,7 +53,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		return nil, err
 	}
 
-	p := search.ToTextPatternInfo(b, jargs.Protocol, query.Identity)
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol, query.Identity)
 
 	forceResultTypes := result.TypeEmpty
 	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
@@ -76,7 +75,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.Protocol == search.Streaming,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
 
 		Zoekt:        jargs.Zoekt,
 		SearcherURLs: jargs.SearcherURLs,
