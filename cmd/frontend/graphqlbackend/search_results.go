@@ -469,15 +469,6 @@ func (r *searchResolver) JobArgs() *job.Args {
 	}
 }
 
-// evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, args *job.Args, q query.Basic) (*search.Alert, error) {
-	j, err := job.ToEvaluateJob(args, q)
-	if err != nil {
-		return nil, err
-	}
-	return r.evaluateJob(ctx, stream, j)
-}
-
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
