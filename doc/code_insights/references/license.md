@@ -1,4 +1,4 @@
-# Licensing and Limitations
+# Licensing and Limited Access
 
 ## License 
 
