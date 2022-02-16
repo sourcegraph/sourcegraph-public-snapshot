@@ -27,7 +27,7 @@ function install_cloudwatch_agent() {
         "collect_list": [
           {
             "file_path": "/var/log/syslog",
-            "log_group_name": "executors",
+            "log_group_name": "executors_docker_mirror",
             "timezone": "UTC"
           }
         ]
