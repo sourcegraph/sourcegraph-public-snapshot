@@ -1,10 +1,10 @@
 .execution-options-menu-button {
-    border-left: 1px solid var(--primary-3);
     &::after {
         // Overwrite left margin -- otherwise it applies a margin to the `VisuallyHidden`
         // and shifts too far left
         margin-left: 0;
     }
+    border-left: 1px solid var(--border-primary-color);
 }
 
 .execution-option:last-child {
