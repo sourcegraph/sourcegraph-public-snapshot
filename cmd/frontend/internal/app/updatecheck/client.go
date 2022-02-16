@@ -226,7 +226,7 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (message json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
 	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
@@ -234,11 +234,10 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (me
 		return nil, err
 	}
 
-	message, err = json.Marshal(codeInsightsUsage)
-	return
+	return json.Marshal(codeInsightsUsage)
 }
 
-func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (message json.RawMessage, err error) {
+func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
 	insightsCriticalTelemetry, err := usagestats.GetCodeInsightsCriticalTelemetry(ctx, db)
@@ -246,8 +245,7 @@ func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db data
 		return nil, err
 	}
 
-	message, err = json.Marshal(insightsCriticalTelemetry)
-	return
+	return json.Marshal(insightsCriticalTelemetry)
 }
 
 func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
