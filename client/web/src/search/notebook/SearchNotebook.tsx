@@ -347,7 +347,13 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                 </Button>
-                <Button className="mr-2" variant="secondary" size="sm" onClick={exportNotebook}>
+                <Button
+                    className="mr-2"
+                    variant="secondary"
+                    size="sm"
+                    onClick={exportNotebook}
+                    data-testid="export-notebook-markdown-button"
+                >
                     <DownloadIcon className="icon-inline mr-1" />
                     <span>Export as Markdown</span>
                 </Button>
