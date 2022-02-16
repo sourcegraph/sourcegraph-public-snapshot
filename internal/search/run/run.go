@@ -3,13 +3,9 @@ package run
 import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
-)
-
-const (
-	defaultMaxSearchResults          = 30
-	defaultMaxSearchResultsStreaming = 500
 )
 
 // SearchInputs contains fields we set before kicking off search.
@@ -32,7 +28,7 @@ func (inputs SearchInputs) MaxResults() int {
 // DefaultLimit is the default limit to use if not specified in query.
 func (inputs SearchInputs) DefaultLimit() int {
 	if inputs.Protocol == search.Batch || inputs.PatternType == query.SearchTypeStructural {
-		return defaultMaxSearchResults
+		return limits.DefaultMaxSearchResults
 	}
-	return defaultMaxSearchResultsStreaming
+	return limits.DefaultMaxSearchResultsStreaming
 }
