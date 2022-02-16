@@ -16,10 +16,6 @@ Summarize what the team wants to achieve this iteration.
 - How do we plan to solve those problems or gather that information?
 -->
 
-### Availability
-
-If you have planned unavailability this iteration (e.g., vacation), you can note that here.
-
 ### Tracked issues
 
 <!-- BEGIN WORK -->
@@ -31,7 +27,7 @@ If you have planned unavailability this iteration (e.g., vacation), you can note
 - 🐛 Bug
 - 🧶 Technical debt
 - 🎩 Quality of life
-- 🛠️ [Roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit#heading=h.5nwl5fv52ess)
+- 🛠️ [Roadmap](https://handbook.sourcegraph.com/departments/product-engineering/process/planning-process#roadmap)
 - 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))
 - 🔒 Security issue
 - 🙆 Stretch goal
