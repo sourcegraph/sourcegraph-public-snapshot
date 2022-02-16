@@ -12,6 +12,7 @@ import { useField } from '../../../../components/form/hooks/useField'
 import { useForm } from '../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
+import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../pings'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightType } from '../../../../core/types'
 import { useCodeInsightViewPings } from '../../../../pings/use-code-insight-view-pings'
@@ -83,8 +84,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
     const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
-        viewType: InsightType.SearchBased,
-        pingEventPrefix: 'InsightsGetStartedPage',
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
     })
 
     const debouncedQuery = useDebounce(query.input.value, 1000)

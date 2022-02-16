@@ -13,7 +13,7 @@ import { SearchExtensionBasedInsight } from '../../../../core/types/insight/sear
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
-import { useCodeInsightViewPings } from '../../../../pings/use-code-insight-view-pings'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
@@ -59,7 +59,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
-        viewType: insight.viewType,
+        insightType: getTrackingTypeByInsightType(insight.viewType),
     })
 
     return (

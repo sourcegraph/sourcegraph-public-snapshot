@@ -16,7 +16,7 @@ import { SearchBasedBackendFilters } from '../../../../core/types/insight/search
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
-import { useCodeInsightViewPings } from '../../../../pings/use-code-insight-view-pings'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -134,7 +134,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
-        viewType: insight.viewType,
+        insightType: getTrackingTypeByInsightType(insight.viewType),
     })
 
     return (

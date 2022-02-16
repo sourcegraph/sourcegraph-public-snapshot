@@ -13,8 +13,7 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
-import { InsightType } from '../../../../core/types'
-import { useCodeInsightViewPings } from '../../../../pings/use-code-insight-view-pings'
+import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../pings'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
@@ -95,8 +94,7 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
     const { telemetryService, className } = props
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
-        viewType: InsightType.SearchBased,
-        pingEventPrefix: 'GetStartedPage',
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
     })
 
     const handleTemplateLinkClick = (): void => {
@@ -216,8 +214,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
     const { telemetryService, className } = props
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
-        viewType: InsightType.SearchBased,
-        pingEventPrefix: 'GetStartedPage',
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
     })
 
     const handleTemplateLinkClick = (): void => {

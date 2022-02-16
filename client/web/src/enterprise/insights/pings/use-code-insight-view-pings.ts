@@ -2,20 +2,14 @@ import { useCallback, useRef } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { InsightType } from '../core/types'
+import { CodeInsightTrackType } from './types'
 
 interface UseCodeInsightViewPingsInput extends TelemetryProps {
     /**
      * View tracking type is used to send a proper pings event (InsightHover, InsightDataPointClick)
      * with view type as a tracking variable.
      */
-    viewType: InsightType
-
-    /**
-     * Prefix for the all code insight view pings (InsightHover, InsightDataPointClick) It's used to be able
-     * to tune pings event names in order to reuse logic but send specific for consumer pings with special names.
-     */
-    pingEventPrefix?: string
+    insightType: CodeInsightTrackType
 }
 
 interface PingHandlers {
@@ -28,7 +22,7 @@ interface PingHandlers {
  * Shared logic for tracking insight related ping events on the insight card component.
  */
 export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): PingHandlers {
-    const { viewType, pingEventPrefix = '', telemetryService } = props
+    const { insightType, telemetryService } = props
     const timeoutID = useRef<number>()
 
     const trackMouseEnter = useCallback(() => {
@@ -36,21 +30,17 @@ export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): Pi
         // view, as opposed to accidentally moving past it. If the mouse leaves
         // the view quickly, clear the timeout for logging the event
         timeoutID.current = window.setTimeout(() => {
-            telemetryService.log(`${pingEventPrefix}InsightHover`, { insightType: viewType }, { insightType: viewType })
+            telemetryService.log('InsightHover', { insightType }, { insightType })
         }, 500)
-    }, [viewType, pingEventPrefix, telemetryService])
+    }, [insightType, telemetryService])
 
     const trackMouseLeave = useCallback(() => {
         window.clearTimeout(timeoutID.current)
     }, [])
 
     const trackDatumClicks = useCallback(() => {
-        telemetryService.log(
-            `${pingEventPrefix}InsightDataPointClick`,
-            { insightType: viewType },
-            { insightType: viewType }
-        )
-    }, [viewType, pingEventPrefix, telemetryService])
+        telemetryService.log('InsightDataPointClick', { insightType }, { insightType })
+    }, [insightType, telemetryService])
 
     return {
         trackDatumClicks,
