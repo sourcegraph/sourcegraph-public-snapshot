@@ -175,43 +175,11 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
-		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
-	}
-
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-		Kind:        extsvc.KindPerforce,
-		DisplayName: "gqltest-perforce-server",
-		Config: mustMarshalJSONString(struct {
-			P4Port                string   `json:"p4.port"`
-			P4User                string   `json:"p4.user"`
-			P4Password            string   `json:"p4.passwd"`
-			Depots                []string `json:"depots"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			P4Port:                *perforcePort,
-			P4User:                *perforceUser,
-			P4Password:            *perforcePassword,
-			Depots:                []string{"//test-perms/"},
-			RepositoryPathPattern: "perforce/{depot}",
-		}),
-	})
-
-	// The repo-updater might not be up yet but it will eventually catch up for the
-	// external service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := client.DeleteExternalService(esID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	checkPerforceEnvironment(t)
+	createPerforceExternalService(t)
 
 	const repoName = "perforce/test-perms"
-	err = client.WaitForReposToBeCloned(repoName)
+	err := client.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,4 +194,53 @@ func TestExternalService_Perforce(t *testing.T) {
 	if diff := cmp.Diff(wantBlob, blob); diff != "" {
 		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func checkPerforceEnvironment(t *testing.T) {
+	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
+		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
+	}
+}
+
+func createPerforceExternalService(t *testing.T) {
+	t.Helper()
+
+	type Authorization = struct {
+		SubRepoPermissions bool `json:"subRepoPermissions"`
+	}
+
+	// Set up external service
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindPerforce,
+		DisplayName: "gqltest-perforce-server",
+		Config: mustMarshalJSONString(struct {
+			P4Port                string        `json:"p4.port"`
+			P4User                string        `json:"p4.user"`
+			P4Password            string        `json:"p4.passwd"`
+			Depots                []string      `json:"depots"`
+			RepositoryPathPattern string        `json:"repositoryPathPattern"`
+			Authorization         Authorization `json:"authorization"`
+		}{
+			P4Port:                *perforcePort,
+			P4User:                *perforceUser,
+			P4Password:            *perforcePassword,
+			Depots:                []string{"//test-perms/"},
+			RepositoryPathPattern: "perforce/{depot}",
+			Authorization: Authorization{
+				SubRepoPermissions: true,
+			},
+		}),
+	})
+
+	// The repo-updater might not be up yet but it will eventually catch up for the
+	// external service we just added, thus it is OK to ignore this transient error.
+	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		err := client.DeleteExternalService(esID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
