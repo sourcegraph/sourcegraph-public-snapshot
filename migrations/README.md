@@ -18,7 +18,7 @@ Up migrations will happen automatically in development on service startup. In pr
 
 ## Adding a migration
 
-**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://docs.sourcegraph.com/dev/background-information/sql/migrations.md) in our developer documentation for additional context.
+**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://docs.sourcegraph.com/dev/background-information/sql/migrations) in our developer documentation for additional context.
 
 To create a new migration file, run the following command.
 
@@ -37,44 +37,6 @@ To pass CI, you'll additionally need to:
 - Ensure that your new migrations run against the current Go unit tests
 - Ensure that your new migrations can be run up, then down, then up again (idempotency test)
 - Ensure that your new migrations do not break the Go unit tests published with the previous release (backwards-compatibility test)
-
-## Customer rollbacks
-
-Running _down_ migrations in a rollback **should NOT** be necessary if all migrations are backward-compatible. In case the customer must run a down migration, they will need perform do the following steps.
-
-- Roll back Sourcegraph to the previous version. On startup, the frontend pods will log a migration warning stating that the schema has been migrated to a newer version. This warning should **NOT** indicate that the database is dirty.
-
-- Determine if a database is dirty by running the following commands.
-
-  **frontend database**:
-
-  ```
-  kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM schema_migrations'
-  ```
-
-  **codeintel database**:
-
-  ```
-  kubectl exec $(kubectl get pod -l app=pgsql-codeintel -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeintel_schema_migrations'
-  ```
-
-  **codeinsights database**:
-
-  ```
-  kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM codeinsights_schema_migrations'
-  ```
-
-  For each dirty database, follow the steps in the _Dirty schema_ section below.
-
-- For each database `<db_name>` with the schema version table `<schema_version_table_name>`, do the following:
-  - Determine the two commits that correspond to the previous and new versions of Sourcegraph. Check out each commit and run `ls -1` in the `migrations/<db_name>` directory. The order of the migrations is the same as the alphabetical order of the migration scripts, so take the diff between the two list outputs to determine which migrations should be run.
-  - Apply the down migration scripts in **reverse chronological order**. Wrap each down migration in a transaction block. If there are any errors, stop and resolve the issue before proceeding with the next down migration.
-  - After all down migrations have been applied, run
-    ```
-    update <schema_version_table_name> set version=$VERSION;
-    ```
-    where `$VERSION` is the numerical prefix of the migration script corresponding to the first migration you _didn't_ just apply. In other words, it is the numerical prefix of the last migration script as of the rolled-back-to commit.
-  - Restart frontend pods. On restart, they should spin up successfully.
 
 ### Reverting a migration
 

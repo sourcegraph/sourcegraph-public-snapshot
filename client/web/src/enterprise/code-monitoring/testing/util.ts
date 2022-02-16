@@ -1,5 +1,10 @@
 import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields, ListCodeMonitors } from '../../../graphql-operations'
+import {
+    CodeMonitorFields,
+    EventStatus,
+    ListCodeMonitors,
+    MonitorTriggerEventsResult,
+} from '../../../graphql-operations'
 
 export const mockUser: AuthenticatedUser = {
     __typename: 'User',
@@ -34,6 +39,7 @@ export const mockCodeMonitorFields: CodeMonitorFields = {
                 __typename: 'MonitorEmail',
                 id: 'test-action-0',
                 enabled: true,
+                includeResults: false,
                 recipients: { nodes: [{ id: 'baz-0' }] },
             },
         ],
@@ -53,12 +59,14 @@ export const mockCodeMonitor = {
                     __typename: 'MonitorEmail',
                     id: 'test-action-0',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] },
                 },
                 {
                     __typename: 'MonitorSlackWebhook',
                     id: 'test-action-1',
                     enabled: true,
+                    includeResults: false,
                     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
                 },
             ],
@@ -78,6 +86,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-0 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-0' }] },
                 },
             ],
@@ -94,6 +103,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorSlackWebhook',
                     id: 'test-action-1 ',
                     enabled: true,
+                    includeResults: false,
                     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
                 },
             ],
@@ -110,12 +120,14 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-2 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-2' }] },
                 },
                 {
                     __typename: 'MonitorSlackWebhook',
                     id: 'test-action-1 ',
                     enabled: true,
+                    includeResults: false,
                     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
                 },
             ],
@@ -132,12 +144,14 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-3 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-3' }] },
                 },
                 {
                     __typename: 'MonitorWebhook',
                     id: 'test-action-4',
                     enabled: true,
+                    includeResults: false,
                     url: 'https://example.com/webhook',
                 },
             ],
@@ -154,6 +168,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorWebhook',
                     id: 'test-action-4',
                     enabled: true,
+                    includeResults: false,
                     url: 'https://example.com/webhook',
                 },
             ],
@@ -170,6 +185,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-5 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-5' }] },
                 },
             ],
@@ -186,6 +202,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-6 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-6' }] },
                 },
             ],
@@ -202,6 +219,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-7 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-7' }] },
                 },
             ],
@@ -218,6 +236,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-9 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-9' }] },
                 },
             ],
@@ -234,6 +253,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-0 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-0' }] },
                 },
             ],
@@ -250,6 +270,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-1 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-1' }] },
                 },
             ],
@@ -266,6 +287,7 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     __typename: 'MonitorEmail',
                     id: 'test-action-2 ',
                     enabled: true,
+                    includeResults: false,
                     recipients: { nodes: [{ id: 'baz-2' }] },
                 },
             ],
@@ -282,3 +304,249 @@ export const mockAuthenticatedUser: AuthenticatedUser = {
     email: 'user@me.com',
     siteAdmin: true,
 } as AuthenticatedUser
+
+export const mockLogs: MonitorTriggerEventsResult = {
+    currentUser: {
+        monitors: {
+            __typename: 'MonitorConnection',
+            nodes: [
+                {
+                    __typename: 'Monitor',
+                    description: 'First test code monitor',
+                    id: '123',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:diff',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'a',
+                                    status: EventStatus.SUCCESS,
+                                    message: null,
+                                    timestamp: '2022-02-11T18:30:50Z',
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.SUCCESS,
+                                                            message: null,
+                                                            timestamp: '2022-02-11T18:30:54Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'b',
+                                    status: EventStatus.SUCCESS,
+                                    message: null,
+                                    timestamp: '2022-02-11T18:24:49Z',
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.SUCCESS,
+                                                            message: null,
+                                                            timestamp: '2022-02-11T18:24:53Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'c',
+                                    status: EventStatus.SUCCESS,
+                                    message: null,
+                                    timestamp: '2022-02-11T17:29:16Z',
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.SUCCESS,
+                                                            message: null,
+                                                            timestamp: '2022-02-11T17:29:21Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 60,
+                            pageInfo: {
+                                endCursor: 'c',
+                                hasNextPage: true,
+                            },
+                        },
+                    },
+                },
+                {
+                    __typename: 'Monitor',
+                    description: 'Second test code monitor (no events)',
+                    id: '456',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [],
+                            totalCount: 0,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
+                {
+                    __typename: 'Monitor',
+                    description: 'Third test code monitor (error in query)',
+                    id: '789',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'd',
+                                    status: EventStatus.ERROR,
+                                    message: null,
+                                    timestamp: '2022-02-14T12:29:21Z',
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.SUCCESS,
+                                                            message: null,
+                                                            timestamp: '2022-02-14T12:29:21Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
+                {
+                    __typename: 'Monitor',
+                    description: 'Fourt test code monitor (error in action)',
+                    id: '101112',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'e',
+                                    status: EventStatus.SUCCESS,
+                                    message: null,
+                                    timestamp: '2022-02-13T12:29:21Z',
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.ERROR,
+                                                            message: null,
+                                                            timestamp: '2022-02-13T12:29:21Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
+            ],
+            pageInfo: {
+                endCursor: '123',
+                hasNextPage: false,
+            },
+            totalCount: 2,
+        },
+    },
+}

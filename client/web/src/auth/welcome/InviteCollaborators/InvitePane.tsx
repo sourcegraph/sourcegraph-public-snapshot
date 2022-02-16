@@ -6,16 +6,19 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
-import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAvatar } from '../../../user/UserAvatar'
+import { useSteps } from '../../Steps'
 
 import { InvitableCollaborator } from './InviteCollaborators'
 import styles from './InviteCollaborators.module.scss'
 import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
+
+const SELECT_REPOS_STEP = 2
 
 interface Props {
     user: AuthenticatedUser
@@ -33,6 +36,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
     const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
     const [query, setQuery] = useState('')
+    const { setStep } = useSteps()
 
     const filteredCollaborators: InvitableCollaborator[] = useMemo(() => {
         if (query.trim() === '') {
@@ -96,6 +100,9 @@ export const InvitePane: React.FunctionComponent<Props> = ({
         setIsInvitingAll(false)
     }, [invitePerson, inviteableCollaborators])
 
+    const hasInviteableCollaborators = isLoadingCollaborators || invitableCollaborators.length > 0
+    const hasFilteredCollaborators = isLoadingCollaborators || filteredCollaborators.length > 0
+
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${user.username}`
     return (
         <div className={classNames(className, 'mx-2')}>
@@ -125,6 +132,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                 autoCorrect="off"
                                 autoCapitalize="off"
                                 spellCheck={false}
+                                disabled={!hasInviteableCollaborators}
                                 onChange={event => {
                                     setQuery(event.target.value)
                                 }}
@@ -172,30 +180,53 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                             <LoadingSpinner inline={false} />
                         </div>
                     )}
-                    {!isLoadingCollaborators && filteredCollaborators.length === 0 && (
-                        <div className="text-muted d-flex justify-content-center mt-3">
-                            No collaborators found. Try sending them a direct link below
+                    {!hasInviteableCollaborators ? (
+                        <div className={styles.noCollaborators}>
+                            <div>No collaborators found in your selected repositories.</div>
+                            <div className="text-muted mt-3">
+                                You can{' '}
+                                <Link
+                                    to="/welcome"
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                        setStep(SELECT_REPOS_STEP)
+                                    }}
+                                >
+                                    select additional repositories
+                                </Link>{' '}
+                                or invite people to Sourcegraph with the direct invite link below.
+                            </div>
                         </div>
-                    )}
+                    ) : !hasFilteredCollaborators ? (
+                        <div className={styles.noCollaborators}>
+                            <div className="d-flex text-muted justify-content-center mt-3">
+                                No collaborators found with your search filter.
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
-
-                <LoaderButton
-                    loading={isInvitingAll}
-                    variant="success"
-                    className="d-block ml-auto mb-3 mr-3"
-                    onClick={inviteAllClicked}
-                    alwaysShowLabel={true}
-                    disabled={isLoadingCollaborators || inviteableCollaborators.length === 0 || isInvitingAll}
-                    label={
-                        inviteableCollaborators.length === 0 && filteredCollaborators.length !== 0
-                            ? `Invited ${filteredCollaborators.length} users`
-                            : `${isInvitingAll ? 'Inviting' : 'Invite'} ${
-                                  isLoadingCollaborators || inviteableCollaborators.length === 0
-                                      ? ''
-                                      : `${inviteableCollaborators.length} `
-                              }users`
-                    }
-                />
+                <div className={styles.inviteAllContainer}>
+                    {hasInviteableCollaborators ? (
+                        <LoaderButton
+                            loading={isInvitingAll}
+                            variant="success"
+                            className="d-block ml-auto mb-3 mr-3"
+                            onClick={inviteAllClicked}
+                            alwaysShowLabel={true}
+                            disabled={isLoadingCollaborators || inviteableCollaborators.length === 0 || isInvitingAll}
+                            label={
+                                inviteableCollaborators.length === 0 && filteredCollaborators.length !== 0
+                                    ? `Invited ${filteredCollaborators.length} users`
+                                    : `${isInvitingAll ? 'Inviting' : 'Invite'} ${
+                                          isLoadingCollaborators || inviteableCollaborators.length === 0
+                                              ? ''
+                                              : `${inviteableCollaborators.length} `
+                                      }users`
+                            }
+                        />
+                    ) : null}
+                </div>
             </div>
             <div>
                 <header>

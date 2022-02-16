@@ -1499,6 +1499,16 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
+
+    """
+    Get pending invitations for the specific organization
+    """
+    pendingInvitations(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): [OrganizationInvitation!]!
 }
 
 """
@@ -5104,6 +5114,10 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    The date when this invitation is going to expire.
+    """
+    expiresAt: DateTime
     """
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """

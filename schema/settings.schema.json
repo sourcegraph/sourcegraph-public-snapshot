@@ -71,7 +71,7 @@
           }
         },
         "searchContextsQuery": {
-          "description": "Enables query based search contexts",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -224,6 +224,22 @@
         },
         "codeMonitoringWebHooks": {
           "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "coolCodeIntel": {
+          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showCodeMonitoringLogs": {
+          "description": "Shows code monitoring logs tab.",
           "type": "boolean",
           "default": false,
           "!go": {

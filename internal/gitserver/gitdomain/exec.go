@@ -27,6 +27,7 @@ var (
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
@@ -35,7 +36,7 @@ var (
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
 	gitCommonAllowlist = []string{
-		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges", "--fixed-strings",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
 		"--regexp-ignore-case", "--glob", "--cherry", "-z",
 		"--until", "--since", "--author", "--committer",
@@ -59,7 +60,9 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
 	for _, allowedArg := range allowedArgs {
-		if splitArg == allowedArg {
+		// We use -- to specify the end of command options.
+		// See: https://unix.stackexchange.com/a/11382/214756.
+		if splitArg == allowedArg || splitArg == "--" {
 			return true
 		}
 	}
@@ -87,6 +90,11 @@ func IsAllowedGitCmd(args []string) bool {
 			// would be no way to safely express a query that began with a '-' character.
 			// (Same for `git show`, where the flag has the same meaning.)
 			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
+				continue // this arg is OK
+			}
+
+			// Special case handling of commands like `git blame -L15,60`.
+			if cmd == "blame" && strings.HasPrefix(arg, "-L") {
 				continue // this arg is OK
 			}
 

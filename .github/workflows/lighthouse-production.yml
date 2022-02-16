@@ -1,9 +1,10 @@
 name: Lighthouse production audit
 on:
-  workflow_dispatch:
-  schedule:
-  # Every Monday at 12pm UTC
-  - cron: '0 12 * * MON'
+  # @umpox: Currently disabled whilst migrating to new format
+  # workflow_dispatch:
+  # schedule:
+  # # Every Monday at 12pm UTC
+  # - cron: '0 12 * * MON'
 
 jobs:
   update:

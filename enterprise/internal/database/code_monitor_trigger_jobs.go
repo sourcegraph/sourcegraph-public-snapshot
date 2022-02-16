@@ -108,7 +108,7 @@ func (o ListTriggerJobsOpts) Conds() *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("query = %s", *o.QueryID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+		conds = append(conds, sqlf.Sprintf("id < %s", *o.After))
 	}
 	return sqlf.Join(conds, "AND")
 }
@@ -125,7 +125,7 @@ SELECT %s
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
 AND %s
-ORDER BY id ASC
+ORDER BY id DESC
 LIMIT %s;
 `
 

@@ -2,16 +2,16 @@ package zoekt
 
 import (
 	"context"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -77,8 +77,8 @@ func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filte
 		MaxWallTime: defaultTimeout,
 	}
 
-	if userProbablyWantsToWaitLonger := fileMatchLimit > search.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
 	}
 
 	if selector.Root() == filter.Repository {
@@ -121,8 +121,8 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 			k = 1
 		}
 	}
-	if fileMatchLimit > search.DefaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(search.DefaultMaxSearchResults))
+	if fileMatchLimit > limits.DefaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(fileMatchLimit) / float64(limits.DefaultMaxSearchResults))
 	}
 	return k
 }

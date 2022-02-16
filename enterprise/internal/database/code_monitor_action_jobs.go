@@ -38,6 +38,7 @@ type ActionJobMetadata struct {
 	Description string
 	MonitorID   int64
 	Results     cmtypes.CommitSearchResults
+	OwnerName   string
 
 	// The query with after: filter.
 	Query string
@@ -226,11 +227,13 @@ SELECT
 	cm.description,
 	ctj.query_string,
 	cm.id AS monitorID,
-	ctj.search_results
+	ctj.search_results,
+	CASE WHEN LENGTH(users.display_name) > 0 THEN users.display_name ELSE users.username END
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query
 INNER JOIN cm_monitors cm on cm.id = cq.monitor
+INNER JOIN users on cm.namespace_user_id = users.id
 WHERE caj.id = %s
 `
 
@@ -238,7 +241,7 @@ WHERE caj.id = %s
 func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, jobID))
 	m := &ActionJobMetadata{}
-	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.Results)
+	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.Results, &m.OwnerName)
 }
 
 const actionJobForIDFmtStr = `
