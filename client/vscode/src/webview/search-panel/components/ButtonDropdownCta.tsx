@@ -54,12 +54,12 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDropdownOpen])
 
-    const signUpURL = new URL(
-        `/sign-up?src=${source}&returnTo=${encodeURIComponent(
-            returnTo
-        )}&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`,
-        instanceURL
-    )
+    // Use cloud url instead of instance url
+    // This will only display for non private uers
+    // Because private users are required use with token = signed up
+    const signUpURL = `https://sourcegraph.com/sign-up?src=${source}&returnTo=${encodeURIComponent(
+        returnTo
+    )}&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
@@ -86,7 +86,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Button to={signUpURL.href} onClick={onClick} variant="primary" as={Link}>
+                <Button to={signUpURL} onClick={onClick} variant="primary" as={Link}>
                     Sign up for Sourcegraph
                 </Button>
             </DropdownMenu>
