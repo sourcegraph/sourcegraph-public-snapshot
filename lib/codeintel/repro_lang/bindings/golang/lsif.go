@@ -14,9 +14,9 @@ func (i *identifier) occurrence(roles lsif_typed.SymbolRole) *lsif_typed.Occurre
 	}
 }
 
-func (d *reproSourceFile) symbols() []*lsif_typed.SymbolInformation {
+func (s *reproSourceFile) symbols() []*lsif_typed.SymbolInformation {
 	var result []*lsif_typed.SymbolInformation
-	for _, def := range d.definitions {
+	for _, def := range s.definitions {
 		documentation := []string{"signature of " + def.name.value}
 		if def.docstring != "" {
 			documentation = append(documentation, def.docstring)
@@ -34,9 +34,9 @@ func (d *reproSourceFile) symbols() []*lsif_typed.SymbolInformation {
 	return result
 }
 
-func (d *reproSourceFile) occurrences() []*lsif_typed.Occurrence {
+func (s *reproSourceFile) occurrences() []*lsif_typed.Occurrence {
 	var result []*lsif_typed.Occurrence
-	for _, def := range d.definitions {
+	for _, def := range s.definitions {
 		result = append(result, def.name.occurrence(lsif_typed.SymbolRole_Definition))
 		for _, ident := range def.relationIdentifiers() {
 			if ident == nil {
@@ -45,7 +45,7 @@ func (d *reproSourceFile) occurrences() []*lsif_typed.Occurrence {
 			result = append(result, ident.occurrence(lsif_typed.SymbolRole_UnspecifiedSymbolRole))
 		}
 	}
-	for _, ref := range d.references {
+	for _, ref := range s.references {
 		result = append(result, ref.name.occurrence(lsif_typed.SymbolRole_UnspecifiedSymbolRole))
 	}
 	return result

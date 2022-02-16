@@ -19,9 +19,9 @@ func parseSourceFile(ctx context.Context, source *lsif_typed.SourceFile) (*repro
 	return reproSource, nil
 }
 
-func (d *reproSourceFile) loadStatements() {
-	for i := uint32(0); i < d.node.ChildCount(); i++ {
-		child := d.node.Child(int(i))
+func (s *reproSourceFile) loadStatements() {
+	for i := uint32(0); i < s.node.ChildCount(); i++ {
+		child := s.node.Child(int(i))
 		name := child.ChildByFieldName("name")
 		if name == nil {
 			continue
@@ -31,27 +31,27 @@ func (d *reproSourceFile) loadStatements() {
 			docstring := ""
 			docstringNode := child.ChildByFieldName("docstring")
 			if docstringNode != nil {
-				docstring = d.slicePosition(docstringNode)[len("# doctring:"):]
+				docstring = s.nodeText(docstringNode)[len("# doctring:"):]
 			}
 			statement := &definitionStatement{
 				docstring: docstring,
-				name:      d.newIdentifier(child.ChildByFieldName("name")),
+				name:      newIdentifier(s, child.ChildByFieldName("name")),
 			}
 			for i := uint32(0); i < child.NamedChildCount(); i++ {
 				relation := child.NamedChild(int(i))
 				switch relation.Type() {
 				case "implementation_relation":
-					statement.implementsRelation = d.newIdentifier(relation.ChildByFieldName("name"))
+					statement.implementsRelation = newIdentifier(s, relation.ChildByFieldName("name"))
 				case "type_definition_relation":
-					statement.typeDefinesRelation = d.newIdentifier(relation.ChildByFieldName("name"))
+					statement.typeDefinesRelation = newIdentifier(s, relation.ChildByFieldName("name"))
 				case "references_relation":
-					statement.referencesRelation = d.newIdentifier(relation.ChildByFieldName("name"))
+					statement.referencesRelation = newIdentifier(s, relation.ChildByFieldName("name"))
 				}
 			}
-			d.definitions = append(d.definitions, statement)
+			s.definitions = append(s.definitions, statement)
 		case "reference_statement":
-			d.references = append(d.references, &referenceStatement{
-				name: d.newIdentifier(child.ChildByFieldName("name")),
+			s.references = append(s.references, &referenceStatement{
+				name: newIdentifier(s, child.ChildByFieldName("name")),
 			})
 		}
 	}

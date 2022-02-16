@@ -26,11 +26,11 @@ func (d *reproDependency) enterGlobalDefinitions(context *reproContext) {
 }
 
 // enterDefinitions inserts the names of the definitions into the appropriate scope (local symbols go into the local scope).
-func (d *reproSourceFile) enterDefinitions(context *reproContext) {
-	for _, def := range d.definitions {
+func (s *reproSourceFile) enterDefinitions(context *reproContext) {
+	for _, def := range s.definitions {
 		scope := context.globalScope
 		if def.name.isLocalSymbol() {
-			scope = d.localScope
+			scope = s.localScope
 		}
 		var symbol string
 		_, ok := scope.names[def.name.value]
@@ -39,7 +39,7 @@ func (d *reproSourceFile) enterDefinitions(context *reproContext) {
 		} else if def.name.isLocalSymbol() {
 			symbol = fmt.Sprintf("local %s", def.name.value[len("local"):])
 		} else {
-			symbol = newGlobalSymbol(context.pkg, d, def)
+			symbol = newGlobalSymbol(context.pkg, s, def)
 		}
 		def.name.symbol = symbol
 		scope.names[def.name.value] = symbol
@@ -47,17 +47,17 @@ func (d *reproSourceFile) enterDefinitions(context *reproContext) {
 }
 
 // resolveReferences updates the .symbol field for all names of reference identifiers.
-func (d *reproSourceFile) resolveReferences(context *reproContext) {
-	for _, def := range d.definitions {
+func (s *reproSourceFile) resolveReferences(context *reproContext) {
+	for _, def := range s.definitions {
 		for _, ident := range def.relationIdentifiers() {
 			if ident == nil {
 				continue
 			}
-			ident.resolveSymbol(d.localScope, context)
+			ident.resolveSymbol(s.localScope, context)
 		}
 	}
-	for _, ref := range d.references {
-		ref.name.resolveSymbol(d.localScope, context)
+	for _, ref := range s.references {
+		ref.name.resolveSymbol(s.localScope, context)
 	}
 }
 

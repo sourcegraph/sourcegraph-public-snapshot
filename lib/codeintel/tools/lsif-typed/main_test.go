@@ -12,7 +12,8 @@ import (
 	reproLang "github.com/sourcegraph/sourcegraph/lib/codeintel/repro_lang/bindings/golang"
 )
 
-func TestLsifTyped(t *testing.T) {
+// TestLsifTypedSnapshots runs all the snapshot tests from the "snapshot-input" directory.
+func TestLsifTypedSnapshots(t *testing.T) {
 	lsiftypedtesting.SnapshotTest(t, func(inputDirectory, outputDirectory string, sources []*lsif_typed.SourceFile) []*lsif_typed.SourceFile {
 		testName := filepath.Base(inputDirectory)
 		var dependencies []*reproLang.Dependency

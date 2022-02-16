@@ -1,4 +1,4 @@
-# docstring: hello2 is a method
+# Test cyclic references between files.
 definition hello2().
 reference hello().
 reference hello2().
