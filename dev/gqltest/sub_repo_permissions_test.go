@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -106,19 +105,4 @@ func enableSubRepoPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func logCurrentSiteConfig(t *testing.T) {
-	t.Helper()
-
-	c, err := client.SiteConfiguration()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := json.Marshal(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf(string(data))
 }
