@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -19,6 +19,9 @@ const config: Meta = {
 
     parameters: {
         component: Select,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -77,7 +80,7 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     )
 }
 
-export const SelectExamples: Story = () => (
+export const SelectExamples: React.FunctionComponent = () => (
     <>
         <h1>Select</h1>
         <h2>Native</h2>
@@ -86,10 +89,3 @@ export const SelectExamples: Story = () => (
         <SelectVariants isCustomStyle={true} />
     </>
 )
-
-SelectExamples.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

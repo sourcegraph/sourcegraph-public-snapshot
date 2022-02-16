@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: '@sourcegraph/eslint-config',
+  extends: ['@sourcegraph/eslint-config', 'plugin:@sourcegraph/wildcard/recommended'],
   env: {
     browser: true,
     node: true,
@@ -31,7 +31,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'monorepo'],
+  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
@@ -48,11 +48,6 @@ const config = {
             name: 'rxjs',
             importNames: ['animationFrameScheduler'],
             message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
-          },
-          {
-            name: 'react-router-dom',
-            importNames: ['Link'],
-            message: "Use the Link component from the @sourcegraph/wildcard package instead of react-router-dom's Link",
           },
         ],
         patterns: [

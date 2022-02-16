@@ -42,7 +42,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 
 func TestGetActionJobMetadata(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	userName, _, _, userCTX := newTestUser(ctx, t, db)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
@@ -70,7 +70,6 @@ func TestGetActionJobMetadata(t *testing.T) {
 		Query:       wantQuery,
 		Results:     wantResults,
 		MonitorID:   fixtures.monitor.ID,
-		OwnerName:   userName,
 	}
 	require.Equal(t, want, got)
 }

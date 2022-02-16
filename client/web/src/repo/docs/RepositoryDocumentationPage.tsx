@@ -19,17 +19,14 @@ import {
     useObservable,
     Link,
     Alert,
-    FeedbackPrompt,
     ButtonLink,
-    Button,
-    PopoverTrigger,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
+import { FeedbackPrompt } from '../../nav/Feedback'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -75,11 +72,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
-    const routeMatch = useRoutesMatch(routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
-
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -223,17 +215,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             >
                                 Learn more
                             </ButtonLink>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
+                            <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />

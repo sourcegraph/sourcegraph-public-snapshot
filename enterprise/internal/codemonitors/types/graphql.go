@@ -75,26 +75,22 @@ type Ref struct {
 }
 
 type HighlightedString struct {
-	Value      string      `json:"value"`
-	Highlights []Highlight `json:"highlights"`
-}
-
-type Highlight struct {
-	Line      int `json:"line"`
-	Character int `json:"character"`
-	Length    int `json:"length"`
+	Value      string `json:"value"`
+	Highlights []struct {
+		Line      int `json:"line"`
+		Character int `json:"character"`
+		Length    int `json:"length"`
+	} `json:"highlights"`
 }
 
 type Commit struct {
-	Repository Repository `json:"repository"`
-	Oid        string     `json:"oid"`
-	Message    string     `json:"message"`
-	Author     Signature  `json:"author"`
-	Committer  Signature  `json:"committer"`
-}
-
-type Repository struct {
-	Name string `json:"name"`
+	Repository struct {
+		Name string `json:"name"`
+	} `json:"repository"`
+	Oid       string    `json:"oid"`
+	Message   string    `json:"message"`
+	Author    Signature `json:"author"`
+	Committer Signature `json:"committer"`
 }
 
 type Signature struct {

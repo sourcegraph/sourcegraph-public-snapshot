@@ -97,9 +97,3 @@ export const _14Completed: Story = () => (
 )
 
 _14Completed.storyName = '1/4 completed'
-_14Completed.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

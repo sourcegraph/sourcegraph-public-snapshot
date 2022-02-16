@@ -38,9 +38,6 @@ func TestParseGitDiffOutput(t *testing.T) {
 			),
 			shouldError: true,
 		},
-		{
-			output: []byte{},
-		},
 	}
 
 	for _, testCase := range testCases {

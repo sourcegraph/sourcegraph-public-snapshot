@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -614,39 +613,12 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit)
 	timeout := search.TimeoutDuration(q)
 
-	var (
-		job Job
-		err error
-	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(args, query.ToNodes(q.Parameters))
-	} else {
-		job, err = toPatternExpressionJob(args, q)
+		job, err := ToSearchJob(args, query.ToNodes(q.Parameters))
+		return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-		job = NewSelectJob(sp, job)
-	}
-
+	job, err := toPatternExpressionJob(args, q)
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
-}
-
-// FromExpandedPlan takes a query plan that has had all predicates expanded,
-// and converts it to a job.
-func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
-	children := make([]Job, 0, len(plan))
-	for _, q := range plan {
-		child, err := ToEvaluateJob(args, q)
-		if err != nil {
-			return nil, err
-		}
-		children = append(children, child)
-	}
-	return NewOrJob(children...), nil
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

@@ -72,8 +72,12 @@ repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) r
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
 
-# mono_rev_symbol_small
-repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+## This query has been disabled due to it causing the symbols service to
+## degrade. We want to enable it again, tracked at
+## https://github.com/sourcegraph/sourcegraph/issues/28457
+##
+## # mono_rev_symbol_small
+## repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
 
 # mono_diff_small
 repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"

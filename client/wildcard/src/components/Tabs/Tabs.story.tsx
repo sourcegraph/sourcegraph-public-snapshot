@@ -33,7 +33,6 @@ const config: Meta = {
     parameters: {
         chromatic: {
             enableDarkMode: true,
-            disableSnapshot: false,
         },
         design: {
             type: 'figma',

@@ -27,6 +27,12 @@ export interface PopoverProps extends MenuItemsProps {
     popoverContentPosition?: Position
 }
 
-const Popover = React.forwardRef(({ popoverContentPosition, ...props }, reference) => (
-    <PopoverContent {...props} ref={reference} position={popoverContentPosition} focusLocked={false} as={MenuItems} />
+const Popover = React.forwardRef((props, reference) => (
+    <PopoverContent
+        {...props}
+        ref={reference}
+        position={props.popoverContentPosition}
+        focusLocked={false}
+        as={MenuItems}
+    />
 )) as ForwardReferenceComponent<'div', PopoverProps>

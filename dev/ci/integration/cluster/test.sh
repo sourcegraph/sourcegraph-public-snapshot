@@ -97,6 +97,9 @@ function e2e() {
   echo "$SOURCEGRAPH_BASE_URL"
   echo "--- TEST: Running tests"
   yarn run test:regression:core
+  yarn run test:regression:config-settings
+  # yarn run test:regression:integrations
+  # yarn run test:regression:search
   popd
 }
 
@@ -104,4 +107,4 @@ function e2e() {
 cluster_setup
 test_setup
 set +o pipefail
-e2e
+e2e || true

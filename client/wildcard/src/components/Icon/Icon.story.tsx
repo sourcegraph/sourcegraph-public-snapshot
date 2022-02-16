@@ -21,7 +21,6 @@ const config: Meta = {
         component: Icon,
         chromatic: {
             enableDarkMode: true,
-            disableSnapshot: false,
         },
     },
 }
