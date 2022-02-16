@@ -46,7 +46,6 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 
 	t.Run("file list excludes excluded files", func(t *testing.T) {
-		// Should not be able to read hack.sh
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
