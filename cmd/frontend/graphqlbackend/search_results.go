@@ -611,7 +611,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 
 	var (
 		mu      sync.Mutex
-		newPlan = make(query.Plan, len(oldPlan))
+		newPlan = make(query.Plan, 0, len(oldPlan))
 	)
 	g, ctx := errgroup.WithContext(ctx)
 
