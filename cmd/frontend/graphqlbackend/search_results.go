@@ -668,6 +668,17 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		return nil, err
 	}
 
+	planJob, err := r.expandedPlanToJob(plan)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.evaluateJob(ctx, stream, planJob)
+}
+
+// expandedPlanToJob takes a query plan that has had all predicates expanded,
+// and converts it to a job.
+func (r *searchResolver) expandedPlanToJob(plan query.Plan) (job.Job, error) {
 	args := r.JobArgs()
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
@@ -677,9 +688,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		}
 		children = append(children, child)
 	}
-	planJob := job.NewOrJob(children...)
-
-	return r.evaluateJob(ctx, stream, planJob)
+	return job.NewOrJob(children...), nil
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
