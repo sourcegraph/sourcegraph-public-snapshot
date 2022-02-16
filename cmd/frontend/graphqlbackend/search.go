@@ -103,15 +103,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	defaultLimit := defaultMaxSearchResults
-	if args.Stream != nil {
-		defaultLimit = defaultMaxSearchResultsStreaming
-	}
-	if searchType == query.SearchTypeStructural {
-		// Set a lower max result count until structural search supports true streaming.
-		defaultLimit = defaultMaxSearchResults
-	}
-
 	var codeMonitorID *int64
 	if args.CodeMonitorID != nil {
 		var i int64
@@ -133,7 +124,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		UserSettings:  settings,
 		Features:      featureflag.FromContext(ctx),
 		PatternType:   searchType,
-		DefaultLimit:  defaultLimit,
 		CodeMonitorID: codeMonitorID,
 		Protocol:      protocol,
 	}
@@ -227,11 +217,6 @@ type searchResolver struct {
 func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
-
-const (
-	defaultMaxSearchResults          = 30
-	defaultMaxSearchResultsStreaming = 500
-)
 
 var mockDecodedViewerFinalSettings *schema.Settings
 

@@ -3,6 +3,7 @@ package run
 import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -17,12 +18,17 @@ type SearchInputs struct {
 	Features      featureflag.FlagSet
 	CodeMonitorID *int64
 	Protocol      search.Protocol
-
-	// DefaultLimit is the default limit to use if not specified in query.
-	DefaultLimit int
 }
 
 // MaxResults computes the limit for the query.
 func (inputs SearchInputs) MaxResults() int {
-	return inputs.Query.MaxResults(inputs.DefaultLimit)
+	return inputs.Query.MaxResults(inputs.DefaultLimit())
+}
+
+// DefaultLimit is the default limit to use if not specified in query.
+func (inputs SearchInputs) DefaultLimit() int {
+	if inputs.Protocol == search.Batch || inputs.PatternType == query.SearchTypeStructural {
+		return limits.DefaultMaxSearchResults
+	}
+	return limits.DefaultMaxSearchResultsStreaming
 }
