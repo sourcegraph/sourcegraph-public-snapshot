@@ -668,16 +668,10 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		return nil, err
 	}
 
-	args := r.JobArgs()
-	children := make([]job.Job, 0, len(plan))
-	for _, q := range plan {
-		child, err := job.ToEvaluateJob(args, q)
-		if err != nil {
-			return nil, err
-		}
-		children = append(children, child)
+	planJob, err := job.FromExpandedPlan(r.JobArgs(), plan)
+	if err != nil {
+		return nil, err
 	}
-	planJob := job.NewOrJob(children...)
 
 	return r.evaluateJob(ctx, stream, planJob)
 }
