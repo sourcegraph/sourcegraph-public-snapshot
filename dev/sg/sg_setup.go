@@ -354,16 +354,11 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
-			choices := map[int]string{
+			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
 				2: "You can run the command for me",
 				3: "Go back",
-			}
-			if dep.requiresSgSetupRestart {
-				// Give a staight path to exit if a restart is needed.
-				choices[4] = "Exit (restart is needed)"
-			}
-			choice, err := getChoice(choices)
+			})
 			if err != nil {
 				return err
 			}
@@ -378,9 +373,6 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 				}
 			case 3:
 				return nil
-			case 4:
-				writeFingerPointingLinef("Exiting for manual fix (see \"How to fix:\" section)")
-				os.Exit(0)
 			}
 		}
 
