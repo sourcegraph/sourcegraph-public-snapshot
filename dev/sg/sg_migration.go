@@ -138,7 +138,7 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 
 	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
 	if err != nil {
-		return nil, errors.Newf("malformed migration definitions: %s", err)
+		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}
 
 	return schema, nil
