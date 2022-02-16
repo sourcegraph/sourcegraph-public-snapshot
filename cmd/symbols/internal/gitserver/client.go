@@ -83,6 +83,10 @@ var NUL = []byte{0}
 // parseGitDiffOutput parses the output of a git diff command, which consists
 // of a repeated sequence of `<status> NUL <path> NUL` where NUL is the 0 byte.
 func parseGitDiffOutput(output []byte) (changes Changes, _ error) {
+	if len(output) == 0 {
+		return Changes{}, nil
+	}
+
 	slices := bytes.Split(bytes.TrimRight(output, string(NUL)), NUL)
 	if len(slices)%2 != 0 {
 		return changes, errors.Newf("uneven pairs")
