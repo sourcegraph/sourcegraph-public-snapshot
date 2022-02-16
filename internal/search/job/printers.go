@@ -34,6 +34,9 @@ func SexpFormat(job Job, sep, indent string) string {
 	depth := 0
 	var writeSexp func(Job)
 	writeSexp = func(job Job) {
+		if job == nil {
+			return
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -183,6 +186,9 @@ func PrettyMermaid(job Job) string {
 	b.WriteString("flowchart TB\n")
 	var writeMermaid func(Job)
 	writeMermaid = func(job Job) {
+		if job == nil {
+			return
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -289,6 +295,9 @@ func PrettyMermaid(job Job) string {
 func toJSON(job Job, verbose bool) interface{} {
 	var emitJSON func(Job) interface{}
 	emitJSON = func(job Job) interface{} {
+		if job == nil {
+			return struct{}{}
+		}
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
