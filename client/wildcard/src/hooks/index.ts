@@ -1,3 +1,4 @@
+export { useAccordion } from './useAccordion'
 export { useAutoFocus } from './useAutoFocus'
 export { useControlledState } from './useControlledState'
 export { useDebounce } from './useDebounce'
