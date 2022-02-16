@@ -29,6 +29,7 @@ var (
 		Subcommands: []*ffcli.Command{opsUpdateImagesCommand},
 	}
 	opsUpdateImagesFlagSet                       = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
+	opsUpdateImagesDeploymentKindFlag            = opsUpdateImagesFlagSet.String("kind", string(images.DeploymentTypeK8S), "The kind of deployment (one of 'k8s', 'helm')")
 	opsUpdateImagesContainerRegistryUsernameFlag = opsUpdateImagesFlagSet.String("cr-username", "", "Username for the container registry")
 	opsUpdateImagesContainerRegistryPasswordFlag = opsUpdateImagesFlagSet.String("cr-password", "", "Password or access token for the container registry")
 	opsUpdateImagesCommand                       = &ffcli.Command{
@@ -74,11 +75,13 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 			// We do not want any error handling here, just fallback to anonymous requests
 			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
 			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
+			dockerCredentials = &credentials.Credentials{ServerURL: "https://index.docker.io/v1/", Username: "", Secret: ""}
 		} else {
 			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
 			opsUpdateImagesContainerRegistryUsernameFlag = &dockerCredentials.Username
 			opsUpdateImagesContainerRegistryPasswordFlag = &dockerCredentials.Secret
 		}
 	}
-	return images.Parse(args[0], *dockerCredentials)
+
+	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(*opsUpdateImagesDeploymentKindFlag))
 }

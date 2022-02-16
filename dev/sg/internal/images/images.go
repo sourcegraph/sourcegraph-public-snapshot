@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -13,6 +16,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+	k8syaml "sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,8 +24,23 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-func Parse(path string, creds credentials.Credentials) error {
+type DeploymentType string
 
+const (
+	DeploymentTypeK8S  DeploymentType = "k8s"
+	DeploymentTypeHelm DeploymentType = "helm"
+)
+
+func Parse(path string, creds credentials.Credentials, deploy DeploymentType) error {
+	if deploy == DeploymentTypeK8S {
+		return ParseK8S(path, creds)
+	} else if deploy == DeploymentTypeHelm {
+		return ParseHelm(path, creds)
+	}
+	return errors.Newf("deployment kind %s is not supported", deploy)
+}
+
+func ParseK8S(path string, creds credentials.Credentials) error {
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
 		PreserveSeqIndent:     true,
@@ -43,6 +62,82 @@ func Parse(path string, creds credentials.Credentials) error {
 	}.Execute()
 
 	return err
+}
+
+func isImgMap(m map[string]interface{}) bool {
+	if m["defaultTag"] != nil && m["name"] != nil {
+		return true
+	}
+	return false
+}
+
+func extraImages(m interface{}, acc *[]string) {
+	for m != nil {
+		switch m := m.(type) {
+		case map[string]interface{}:
+			for k, v := range m {
+				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]interface{})) {
+					imgMap := v.(map[string]interface{})
+					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
+				}
+				extraImages(v, acc)
+			}
+		case []interface{}:
+			for _, v := range m {
+				extraImages(v, acc)
+			}
+		}
+		m = nil
+	}
+}
+
+func ParseHelm(path string, creds credentials.Credentials) error {
+	valuesFilePath := filepath.Join(path, "values.yaml")
+	valuesFile, err := os.ReadFile(valuesFilePath)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read %s", valuesFilePath)
+	}
+
+	var rawValues []byte
+	rawValues, err = k8syaml.YAMLToJSON(valuesFile)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
+	}
+
+	var values map[string]interface{}
+	json.Unmarshal(rawValues, &values)
+
+	var images []string
+	extraImages(values, &images)
+
+	valuesFileString := string(valuesFile)
+	for _, img := range images {
+		var updatedImg string
+		updatedImg, err = updateImage(img, creds)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't update image %s", img)
+		}
+
+		var oldImgRef, newImgRef *ImageReference
+		oldImgRef, err = parseImgString(img)
+		if err != nil {
+			return err
+		}
+		newImgRef, err = parseImgString(updatedImg)
+		if err != nil {
+			return err
+		}
+
+		oldImgDefaultTag := fmt.Sprintf("%s@%s", oldImgRef.Tag, oldImgRef.Digest)
+		newImgDefaultTag := fmt.Sprintf("%s@%s", newImgRef.Tag, newImgRef.Digest)
+		valuesFileString = strings.ReplaceAll(valuesFileString, oldImgDefaultTag, newImgDefaultTag)
+	}
+
+	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0644); err != nil {
+		return errors.Newf("WriteFile: %w", err)
+	}
+
+	return nil
 }
 
 type imageFilter struct {
