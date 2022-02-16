@@ -119,6 +119,15 @@ func SexpFormat(job Job, sep, indent string) string {
 			writeSexp(j.child)
 			b.WriteString(")")
 			depth--
+		case *selectJob:
+			b.WriteString("(SELECT")
+			depth++
+			writeSep(b, sep, indent, depth)
+			b.WriteString(j.path.String())
+			writeSep(b, sep, indent, depth)
+			writeSexp(j.child)
+			b.WriteString(")")
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", job))
 		}
@@ -257,6 +266,15 @@ func PrettyMermaid(job Job) string {
 			writeEdge(b, depth, srcId, id)
 			writeMermaid(j.child)
 			depth--
+		case *selectJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "SELECT")
+			writeEdge(b, depth, srcId, id)
+			writeNode(b, depth, DefaultStyle, &id, j.path.String())
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
 		}
@@ -360,6 +378,14 @@ func toJSON(job Job, verbose bool) interface{} {
 			}{
 				Filter: emitJSON(j.child),
 				Value:  "SubRepoPermissions",
+			}
+		case *selectJob:
+			return struct {
+				Select interface{} `json:"SELECT"`
+				Value  string      `json:"value"`
+			}{
+				Select: emitJSON(j.child),
+				Value:  j.path.String(),
 			}
 
 		default:
