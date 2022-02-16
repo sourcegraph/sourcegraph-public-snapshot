@@ -89,25 +89,26 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         onChange={setPersistedTabIndex}
                         lazy={true}
                     >
-                        <div className="tablist-wrapper d-flex flex-1">
-                            <TabList>
-                                <Tab data-tab-content="files">
-                                    <span className="tablist-wrapper--tab-label">Files</span>
-                                </Tab>
-                                <Tab data-tab-content="symbols">
-                                    <span className="tablist-wrapper--tab-label">Symbols</span>
-                                </Tab>
-                            </TabList>
-                            <Button
-                                onClick={() => handleSidebarToggle(false)}
-                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Hide sidebar"
-                                data-tooltip="Hide sidebar"
-                                data-placement="right"
-                            >
-                                <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
-                            </Button>
-                        </div>
+                        <TabList
+                            actions={
+                                <Button
+                                    onClick={() => handleSidebarToggle(false)}
+                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                    title="Hide sidebar"
+                                    data-tooltip="Hide sidebar"
+                                    data-placement="right"
+                                >
+                                    <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
+                                </Button>
+                            }
+                        >
+                            <Tab data-tab-content="files">
+                                <span className="tablist-wrapper--tab-label">Files</span>
+                            </Tab>
+                            <Tab data-tab-content="symbols">
+                                <span className="tablist-wrapper--tab-label">Symbols</span>
+                            </Tab>
+                        </TabList>
                         <div
                             aria-hidden={true}
                             className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}

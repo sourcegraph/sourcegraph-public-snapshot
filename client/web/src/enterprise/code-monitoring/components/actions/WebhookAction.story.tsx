@@ -23,6 +23,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://example.com',
     enabled: true,
+    includeResults: false,
 }
 
 add('WebhookAction', () => (

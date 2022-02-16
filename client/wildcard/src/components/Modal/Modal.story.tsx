@@ -8,19 +8,13 @@ import { Modal } from '.'
 
 const config: Meta = {
     title: 'wildcard/Modal',
+    component: Modal,
 
     decorators: [
         story => (
             <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
         ),
     ],
-
-    parameters: {
-        component: Modal,
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
 }
 
 export default config
@@ -30,6 +24,13 @@ export const Default: Story = () => (
         <h1>Hello world!</h1>
     </Modal>
 )
+
+Default.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
 
 export const PositionCentered: Story = () => (
     <Modal position="center" aria-label="Welcome message">

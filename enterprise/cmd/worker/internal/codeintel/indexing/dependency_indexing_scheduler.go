@@ -134,12 +134,12 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			Version: packageReference.Package.Version,
 		}
 
-		name, _, ok := enqueuer.InferRepositoryAndRevision(pkg)
+		repoName, _, ok := enqueuer.InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}
-		repoToPackages[api.RepoName(name)] = append(repoToPackages[api.RepoName(name)], pkg)
-		repoNames = append(repoNames, api.RepoName(name))
+		repoToPackages[repoName] = append(repoToPackages[repoName], pkg)
+		repoNames = append(repoNames, repoName)
 	}
 
 	// if this job is not associated with an external service kind that was just synced, then we need to guarantee

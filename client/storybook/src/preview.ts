@@ -28,6 +28,8 @@ export const parameters = {
         light: themeLight,
         dark: themeDark,
     },
+    // disables snapshotting for all stories by default
+    chromatic: { disableSnapshot: true },
 }
 
 configureActions({ depth: 100, limit: 20 })

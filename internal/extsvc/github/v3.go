@@ -483,6 +483,15 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 	return
 }
 
+// ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise
+// server instances only. Callers should be careful not to use this for github.com or GitHub
+// enterprise cloud.
+func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org, hasNextPage bool, err error) {
+	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
+	err = c.requestGet(ctx, path, &orgs)
+	return orgs, len(orgs) > 0, err
+}
+
 // ListOrganizationMembers retrieves collaborators in the given organization.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should

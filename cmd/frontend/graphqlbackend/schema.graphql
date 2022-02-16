@@ -1415,6 +1415,11 @@ type Query {
     organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
 
     """
+    Retrieve all organization feature flag overrides for the current user
+    """
+    organizationFeatureFlagOverrides: [FeatureFlagOverride!]!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
@@ -1494,6 +1499,16 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
+
+    """
+    Get pending invitations for the specific organization
+    """
+    pendingInvitations(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): [OrganizationInvitation!]!
 }
 
 """
@@ -5070,7 +5085,11 @@ type OrganizationInvitation implements Node {
     """
     The user who received the invitation.
     """
-    recipient: User!
+    recipient: User
+    """
+    The email address that the invitation was sent to.
+    """
+    recipientEmail: String
     """
     The date when this invitation was created.
     """
@@ -5095,6 +5114,14 @@ type OrganizationInvitation implements Node {
     The date when this invitation was revoked.
     """
     revokedAt: DateTime
+    """
+    The date when this invitation is going to expire.
+    """
+    expiresAt: DateTime
+    """
+    Boolean flag which returns true if the email on the invite matches a verified email of the user
+    """
+    isVerifiedEmail: Boolean
 }
 
 """
