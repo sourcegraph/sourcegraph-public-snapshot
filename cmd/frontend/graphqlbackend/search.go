@@ -121,6 +121,11 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		codeMonitorID = &i
 	}
 
+	protocol := search.Batch
+	if args.Stream != nil {
+		protocol = search.Streaming
+	}
+
 	inputs := &run.SearchInputs{
 		Plan:          plan,
 		Query:         plan.ToParseTree(),
@@ -130,6 +135,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		PatternType:   searchType,
 		DefaultLimit:  defaultLimit,
 		CodeMonitorID: codeMonitorID,
+		Protocol:      protocol,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -225,15 +231,6 @@ func (r *searchResolver) Inputs() run.SearchInputs {
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
 	return r.OriginalQuery
-}
-
-// protocol returns what type of search we are doing (batch, stream,
-// paginated).
-func (r *searchResolver) protocol() search.Protocol {
-	if r.stream != nil {
-		return search.Streaming
-	}
-	return search.Batch
 }
 
 const (
