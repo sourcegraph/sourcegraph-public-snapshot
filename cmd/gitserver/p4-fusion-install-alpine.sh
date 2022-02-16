@@ -5,21 +5,57 @@
 set -eu
 
 tmpdir=$(mktemp -d)
+cd "$tmpdir"
 
 cleanup() {
   echo "--- cleanup"
-  apk --no-cache --purge del p4-build-deps || true
+  apk --no-cache --purge del p4-build-deps 2>/dev/null || true
   cd /
   rm -rf "$tmpdir" || true
 }
 
 trap cleanup EXIT
 
+test_p4_fusion() {
+  # Test that p4-fusion runs and is on the path
+  echo "--- p4-fusion test"
+  ldd "$(which p4-fusion)"
+  p4-fusion >/dev/null
+}
+
 set -x
+
+# Hello future traveler. Building p4-fusion is one of our slowest steps in CI.
+# Luckily the versions very rarely change and nearly everything is statically
+# linked. This means we can manually upload the output of this build script to
+# a bucket and save lots of time.
+#
+# If the version has changed please add it to the sha256sum in the prebuilt
+# binary check. You can run
+#
+#   docker build -t p4-fusion --target=p4-fusion .
+#
+# then extract the binary from /usr/local/bin/p4-fusion. Please rename it
+# follow the format and upload to the bucket here
+# https://console.cloud.google.com/storage/browser/sourcegraph-artifacts/p4-fusion
+export P4_FUSION_VERSION=v1.5
 
 # Runtime dependencies
 echo "--- p4-fusion apk runtime-deps"
 apk add --no-cache libstdc++
+
+# Check if we have a prebuilt binary
+echo "--- p4-fusion prebuilt binary check"
+if wget https://storage.googleapis.com/sourcegraph-artifacts/p4-fusion/p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64; then
+  src=p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64
+  cat <<EOF | grep "$src" | sha256sum -c
+988c39b163b0419ed1abb71c5ccb656eedfb2fea54803e5275fccb244e344a7e  p4-fusion-v1.5-musl-x86_64
+EOF
+  chmod +x "$src"
+  mv "$src" /usr/local/bin/p4-fusion
+  test_p4_fusion
+  exit 0
+fi
 
 # Build dependencies
 echo "--- p4-fusion apk build-deps"
@@ -33,13 +69,11 @@ apk add --no-cache \
   cmake \
   make
 
-cd "$tmpdir"
-
 # Fetching p4 sources archive
 echo "--- p4-fusion fetch"
 mkdir p4-fusion-src
-wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz
-tar -C p4-fusion-src -xzf v1.5.tar.gz --strip 1
+wget https://github.com/salesforce/p4-fusion/archive/refs/tags/"$P4_FUSION_VERSION".tar.gz
+tar -C p4-fusion-src -xzf "$P4_FUSION_VERSION".tar.gz --strip 1
 
 # It should be possible to build against the latest 1.x version of OpenSSL.
 # However, Perforce recommends linking against the same minor version of
@@ -79,7 +113,4 @@ cd ..
 echo "--- p4-fusion install"
 mv p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin
 
-# Test that p4-fusion runs and is on the path
-echo "--- p4-fusion test"
-ldd "$(which p4-fusion)"
-p4-fusion >/dev/null
+test_p4_fusion
