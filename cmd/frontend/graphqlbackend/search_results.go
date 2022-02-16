@@ -530,8 +530,13 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.results(ctx, nil, r.Plan)
-	srr := r.resultsToResolver(sr)
+	agg := streaming.NewAggregatingStream()
+	alert, err := r.results(ctx, agg, r.Plan)
+	srr := r.resultsToResolver(&SearchResults{
+		Matches: agg.Results,
+		Stats:   agg.Stats,
+		Alert:   alert,
+	})
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
 }
@@ -548,8 +553,8 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
-	sr, err := r.results(ctx, stream, r.Plan)
-	srr := r.resultsToResolver(sr)
+	alert, err := r.results(ctx, stream, r.Plan)
+	srr := r.resultsToResolver(&SearchResults{Alert: alert})
 	return srr, err
 }
 
@@ -662,7 +667,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 	return newPlan, g.Wait()
 }
 
-func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *SearchResults, err error) {
+func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -685,23 +690,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 	}
 	planJob := job.NewOrJob(children...)
 
-	var newResult SearchResults
-	if stream != nil {
-		newResult.Alert, err = r.evaluateJob(ctx, stream, planJob)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		agg := streaming.NewAggregatingStream()
-		newResult.Alert, err = r.evaluateJob(ctx, agg, planJob)
-		if err != nil {
-			return nil, err
-		}
-		newResult.Matches = agg.Results
-		newResult.Stats = agg.Stats
-	}
-
-	return &newResult, nil
+	return r.evaluateJob(ctx, stream, planJob)
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
