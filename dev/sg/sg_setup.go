@@ -265,7 +265,11 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLinef("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := usershell.Cmd(ctx, dep.InstructionsCommands(ctx))
+	cmdStr := dep.InstructionsCommands(ctx)
+	if cmdStr == "" {
+		return nil
+	}
+	cmd := usershell.Cmd(ctx, cmdStr)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

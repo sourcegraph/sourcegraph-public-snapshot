@@ -81,5 +81,8 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 // CombinedExec runs a command in a fresh shell environment, and returns
 // stderr and stdout combined, along with an error.
 func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
+	if cmd == "" {
+		return nil, fmt.Errorf("can't execute empty command")
+	}
 	return Cmd(ctx, cmd).CombinedOutput()
 }
