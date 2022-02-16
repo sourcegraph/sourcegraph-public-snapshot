@@ -31,9 +31,8 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
 
     const [hasAccount, setHasAccount] = useState(false)
 
-    const signUpURL = useMemo(() => new URL('sign-up?editor=vscode&' + SIDEBAR_UTM_PARAMS, instanceURL).href, [
-        instanceURL,
-    ])
+    const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}`
+
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
 
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
