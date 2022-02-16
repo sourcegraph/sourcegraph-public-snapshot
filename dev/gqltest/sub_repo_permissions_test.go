@@ -44,6 +44,23 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("can list README.md", func(t *testing.T) {
+		// Should not be able to read hack.sh
+		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// This is the desired behaviour at the moment, see where we check for
+		// os.IsNotExist error in GitCommitResolver.Blob
+		wantBlob := ``
+
+		if diff := cmp.Diff(wantBlob, blob); diff != "" {
+			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 }
 
 func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
