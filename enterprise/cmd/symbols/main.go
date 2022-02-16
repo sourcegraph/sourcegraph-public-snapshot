@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-ctags"
@@ -47,38 +47,44 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() rockskip.ParseSymbolsFunc { return lazyParser(config.Ctags) }
-	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxConcurrentlySearching, config.MaxRepos)
+	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
+	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.SearchGracePeriod, config.IndexRequestsQueueSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
 	}
 
-	search := func(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
-		blobs, err := server.Search(ctx, args)
+	search := func(ctx context.Context, args types.SearchArgs) (result.Symbols, string, error) {
+		blobs, retryMsg, err := server.Search(ctx, args)
 		if err != nil {
-			return nil, err
+			return nil, "", err
+		} else if retryMsg != "" {
+			return nil, retryMsg, nil
 		}
-		return convertBlobsToSymbols(blobs), nil
+		return convertBlobsToSymbols(blobs), "", nil
 	}
 
 	return search, server.HandleStatus, nil, config.Ctags.Command, nil
 }
 
 type RockskipConfig struct {
-	Ctags                    types.CtagsConfig
-	RepositoryFetcher        types.RepositoryFetcherConfig
-	MaxRepos                 int
-	MaxConcurrentlySearching int
-	MaxConcurrentlyIndexing  int
+	Ctags                   types.CtagsConfig
+	RepositoryFetcher       types.RepositoryFetcherConfig
+	MaxRepos                int
+	LogQueries              bool
+	SearchGracePeriod       time.Duration
+	IndexRequestsQueueSize  int
+	MaxConcurrentlyIndexing int
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 	return RockskipConfig{
-		Ctags:                    types.LoadCtagsConfig(baseConfig),
-		RepositoryFetcher:        types.LoadRepositoryFetcherConfig(baseConfig),
-		MaxRepos:                 baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
-		MaxConcurrentlySearching: baseConfig.GetInt("MAX_CONCURRENTLY_SEARCHING", "10", "maximum number of search requests to serve at a time (also limits concurrent Postgres connections)"),
-		MaxConcurrentlyIndexing:  baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
+		Ctags:                   types.LoadCtagsConfig(baseConfig),
+		RepositoryFetcher:       types.LoadRepositoryFetcherConfig(baseConfig),
+		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
+		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
+		SearchGracePeriod:       baseConfig.GetInterval("SEARCH_GRACE_PERIOD", "3s", "for each search request, wait at most this much time for indexing to complete before responding with an error"),
+		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
+		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
 	}
 }
 
@@ -98,21 +104,10 @@ func convertBlobsToSymbols(blobs []rockskip.Blob) []result.Symbol {
 	return res
 }
 
-// lazyParser returns a parsing function which creates the parser when it's first called to parse a file.
-func lazyParser(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
-	var parser ctags.Parser
-	once := sync.Once{}
-	defer func() {
-		if parser != nil {
-			parser.Close()
-		}
-	}()
+func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
+	parser := mustCreateCtagsParser(config)
 
 	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		once.Do(func() {
-			parser = mustCreateCtagsParser(config)
-		})
-
 		entries, err := parser.Parse(path, bytes)
 		if err != nil {
 			return nil, err

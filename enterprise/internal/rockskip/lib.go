@@ -22,7 +22,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -290,14 +289,15 @@ func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 }
 
 type Server struct {
-	db                 *sql.DB
-	git                Git
-	createParser       func() ParseSymbolsFunc
-	status             *ServerStatus
-	updateChan         chan struct{}
-	searchingSemaphore *semaphore.Weighted
-	indexingSemaphore  *semaphore.Weighted
-	maxRepos           int
+	db                *sql.DB
+	git               Git
+	createParser      func() ParseSymbolsFunc
+	status            *ServerStatus
+	repoUpdates       chan struct{}
+	indexRequests     chan indexRequest
+	maxRepos          int
+	logQueries        bool
+	searchGracePeriod time.Duration
 }
 
 func NewServer(
@@ -305,18 +305,21 @@ func NewServer(
 	git Git,
 	createParser func() ParseSymbolsFunc,
 	maxConcurrentlyIndexing int,
-	maxConcurrentlySearching int,
 	maxRepos int,
+	logQueries bool,
+	searchGracePeriod time.Duration,
+	indexRequestsQueueSize int,
 ) (*Server, error) {
 	server := &Server{
-		db:                 db,
-		git:                git,
-		createParser:       createParser,
-		status:             NewStatus(),
-		updateChan:         make(chan struct{}, 1),
-		searchingSemaphore: semaphore.NewWeighted(int64(maxConcurrentlySearching)),
-		indexingSemaphore:  semaphore.NewWeighted(int64(maxConcurrentlyIndexing)),
-		maxRepos:           maxRepos,
+		db:                db,
+		git:               git,
+		createParser:      createParser,
+		status:            NewStatus(),
+		repoUpdates:       make(chan struct{}, 1),
+		indexRequests:     make(chan indexRequest, indexRequestsQueueSize),
+		maxRepos:          maxRepos,
+		logQueries:        logQueries,
+		searchGracePeriod: searchGracePeriod,
 	}
 
 	err := server.startCleanupThread()
@@ -324,20 +327,61 @@ func NewServer(
 		return nil, err
 	}
 
+	for i := 0; i < maxConcurrentlyIndexing; i++ {
+		err = server.startIndexingThread()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return server, nil
 }
 
-func (s *Server) startCleanupThread() error {
-	status := s.status.NewThreadStatus("cleanup")
+type indexRequest struct {
+	repo   string
+	commit string
+	done   chan<- error
+}
 
-	connForCleanup, err := s.db.Conn(context.Background())
+func (s *Server) startIndexingThread() (err error) {
+	ThreadStatus := s.status.NewThreadStatus("indexing dispatcher")
+	defer ThreadStatus.End()
+
+	parse := s.createParser()
+
+	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+	conn, err := s.db.Conn(context.Background())
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		for range s.updateChan {
-			err := DeleteOldRepos(context.Background(), connForCleanup, s.maxRepos, status)
+		for indexRequest := range s.indexRequests {
+			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, parse)
+			if err != nil {
+				log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
+			}
+			indexRequest.done <- err
+		}
+	}()
+
+	return nil
+}
+
+func (s *Server) startCleanupThread() error {
+	status := s.status.NewThreadStatus("cleanup")
+
+	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+	conn, err := s.db.Conn(context.Background())
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for range s.repoUpdates {
+			err := DeleteOldRepos(context.Background(), conn, s.maxRepos, status)
 			if err != nil {
 				log15.Error("Failed to delete old repos", "error", err)
 			}
@@ -415,38 +459,18 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) Index(ctx context.Context, repo, givenCommit string, c chan<- string) (err error) {
+func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit string, parse ParseSymbolsFunc) (err error) {
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
 	defer threadStatus.End()
+
 	tasklog := threadStatus.Tasklog
 
-	conn, err := s.db.Conn(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = combineErrors(err, conn.Close()) }()
-
 	// Acquire the indexing lock on the repo.
-	locked, releaseLock, err := tryILock(ctx, conn, threadStatus, repo)
+	releaseLock, err := iLock(ctx, conn, threadStatus, repo)
 	if err != nil {
 		return err
-	}
-	if !locked {
-		return errors.New("indexing already in progress")
 	}
 	defer func() { err = combineErrors(err, releaseLock()) }()
-
-	tasklog.Start("Acquire indexing semaphore")
-	if !s.indexingSemaphore.TryAcquire(1) {
-		return errors.Newf("too many indexing operations in progress")
-	}
-	threadStatus.HoldLock("indexing semaphore")
-	defer func() {
-		s.indexingSemaphore.Release(1)
-		threadStatus.ReleaseLock("indexing semaphore")
-	}()
-
-	c <- "began indexing"
 
 	tipCommit := NULL
 	tipHeight := 0
@@ -479,8 +503,6 @@ func (s *Server) Index(ctx context.Context, repo, givenCommit string, c chan<- s
 	}
 
 	pathToBlobIdCache := map[string]int{}
-
-	parse := s.createParser()
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -746,8 +768,8 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	return true, nil
 }
 
-func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string, updateChan chan<- struct{}) error {
-	_, err := conn.ExecContext(ctx, `
+func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) error {
+	_, err := db.ExecContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
 			ON CONFLICT (repo)
@@ -755,12 +777,6 @@ func updateLastAccessedAt(ctx context.Context, conn *sql.Conn, repo string, upda
 		`, repo)
 	if err != nil {
 		return err
-	}
-
-	// Non-blocking send on updateChan to notify the background deletion goroutine.
-	select {
-	case updateChan <- struct{}{}:
-	default:
 	}
 
 	return nil
@@ -982,80 +998,75 @@ func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus Sta
 	return errors.Wrap(err, "AppendHop")
 }
 
-func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, err error) {
+func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, retryMsg string, err error) {
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("searching %+v", args))
 	defer threadStatus.End()
 
-	threadStatus.Tasklog.Start("Acquire search semaphore")
-	if !s.searchingSemaphore.TryAcquire(1) {
-		return nil, errors.Newf("too many searches in flight")
-	}
-	threadStatus.HoldLock("search semaphore")
-	defer func() {
-		s.searchingSemaphore.Release(1)
-		threadStatus.ReleaseLock("search semaphore")
-	}()
-
-	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-	conn, err := s.db.Conn(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = combineErrors(err, conn.Close()) }()
-
 	// Acquire a read lock on the repo.
-	locked, releaseRLock, err := tryRLock(ctx, conn, threadStatus, repo)
+	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer func() { err = combineErrors(err, releaseRLock()) }()
 	if !locked {
-		return nil, errors.Newf("deletion in progress", repo)
+		return nil, "", errors.Newf("deletion in progress", repo)
 	}
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	threadStatus.Tasklog.Start("update last_accessed_at")
-	err = updateLastAccessedAt(ctx, conn, repo, s.updateChan)
+	err = updateLastAccessedAt(ctx, s.db, repo)
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+
+	// Non-blocking send on repoUpdates to notify the background deletion goroutine.
+	select {
+	case s.repoUpdates <- struct{}{}:
+	default:
 	}
 
 	// Check if the commit has already been indexed, and if not then index it.
 	threadStatus.Tasklog.Start("check commit presence")
-	_, _, present, err := GetCommit(ctx, conn, repo, commit)
+	_, _, present, err := GetCommit(ctx, s.db, repo, commit)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	} else if !present {
-		indexingStatus := make(chan string, 1)
+		done := make(chan error, 1)
 
-		go func() {
-			err = s.Index(ctx, repo, commit, indexingStatus)
+		// Try to send an index request.
+		select {
+		case s.indexRequests <- indexRequest{repo: repo, commit: commit, done: done}:
+		default:
+			return nil, "the indexing queue is full", nil
+		}
+
+		// Wait for a short period of time in case indexing completes quickly.
+		ctx2, cancel := context.WithTimeout(ctx, s.searchGracePeriod)
+		defer cancel()
+		select {
+		case err := <-done:
 			if err != nil {
-				indexingStatus <- err.Error()
-				log15.Error("indexing failed", "error", err)
-				return
+				return nil, "", errors.Newf("indexing failed: %s", err)
 			}
-			indexingStatus <- "completed indexing"
-		}()
-
-		return nil, errors.Newf("missing commit: %s", <-indexingStatus)
+		case <-ctx2.Done():
+			return nil, "still indexing", nil
+		}
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(ctx, conn, args, threadStatus, true)
+	blobs, err = queryBlobs(ctx, s.db, args, threadStatus, s.logQueries)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return blobs, nil
+	return blobs, "", nil
 }
 
-func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, threadStatus *ThreadStatus, debug bool) ([]Blob, error) {
-	hops, err := getHops(ctx, conn, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
+func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]Blob, error) {
+	hops, err := getHops(ctx, db, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -1082,15 +1093,15 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, thre
 		limit,
 	)
 
-	if debug {
-		err = debugQuery(ctx, conn, args, q)
+	if logQueries {
+		err = logQuery(ctx, db, args, q)
 		if err != nil {
-			return nil, errors.Wrap(err, "debugQuery")
+			return nil, errors.Wrap(err, "logQuery")
 		}
 	}
 
 	var rows *sql.Rows
-	rows, err = conn.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "Search")
 	}
@@ -1145,7 +1156,7 @@ func queryBlobs(ctx context.Context, conn *sql.Conn, args types.SearchArgs, thre
 	return blobs, nil
 }
 
-func debugQuery(ctx context.Context, conn *sql.Conn, args types.SearchArgs, q *sqlf.Query) error {
+func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.Query) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)
@@ -1305,91 +1316,69 @@ func negate(query *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf("NOT %s", query)
 }
 
-// tryRLock attempts to acquire the indexing lock on the repo.
-func tryRLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
-	threadStatus.Tasklog.Start("rLock")
-	locked, _, err := basestore.ScanFirstBool(conn.QueryContext(ctx, `SELECT pg_try_advisory_lock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo))))
+func lock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (func() error, error) {
+	key := int32(fnv1.HashString32(repo))
+
+	threadStatus.Tasklog.Start(name)
+	_, err := db.ExecContext(ctx, fmt.Sprintf(`SELECT %s($1, $2)`, lockFn), namespace, key)
 	if err != nil {
-		return false, nil, errors.Wrap(err, "acquire rLock")
+		return nil, errors.Newf("acquire %s: %s", name, err)
+	}
+	threadStatus.HoldLock(name)
+
+	release := func() error {
+		_, err := db.ExecContext(ctx, fmt.Sprintf(`SELECT %s($1, $2)`, unlockFn), namespace, key)
+		if err != nil {
+			return errors.Newf("release %s: %s", name, err)
+		}
+		threadStatus.ReleaseLock(name)
+		return nil
+	}
+
+	return release, nil
+}
+
+func tryLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (bool, func() error, error) {
+	key := int32(fnv1.HashString32(repo))
+
+	threadStatus.Tasklog.Start(name)
+	locked, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, fmt.Sprintf(`SELECT %s($1, $2)`, lockFn), namespace, key))
+	if err != nil {
+		return false, nil, errors.Newf("try acquire %s: %s", name, err)
 	}
 
 	if !locked {
 		return false, nil, nil
 	}
 
-	threadStatus.HoldLock("rLock")
+	threadStatus.HoldLock(name)
 
 	release := func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock_shared($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		if err == nil {
-			threadStatus.ReleaseLock("rLock")
+		_, err := db.ExecContext(ctx, fmt.Sprintf(`SELECT %s($1, $2)`, unlockFn), namespace, key)
+		if err != nil {
+			return errors.Newf("release %s: %s", name, err)
 		}
-		return errors.Wrap(err, "release rLock")
+		threadStatus.ReleaseLock(name)
+		return nil
 	}
 
 	return true, release, nil
+}
+
+// tryRLock attempts to acquire a read lock on the repo.
+func tryRLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
+	return tryLock(ctx, db, threadStatus, RW_LOCKS_NAMESPACE, "rLock", repo, "pg_try_advisory_lock_shared", "pg_advisory_unlock_shared")
 }
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (func() error, error) {
-	threadStatus.Tasklog.Start("wLock")
-	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-	if err != nil {
-		return nil, errors.Wrap(err, "acquire wLock")
-	}
-	threadStatus.HoldLock("wLock")
-
-	return func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, RW_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		if err == nil {
-			threadStatus.ReleaseLock("wLock")
-		}
-		return errors.Wrap(err, "release wLock")
-	}, nil
+func wLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (func() error, error) {
+	return lock(ctx, db, threadStatus, RW_LOCKS_NAMESPACE, "wLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
 }
 
 // iLock acquires the indexing lock on the repo.
-func iLock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (func() error, error) {
-	threadStatus.Tasklog.Start("iLock")
-	_, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-	if err != nil {
-		return nil, errors.Wrap(err, "acquire iLock")
-	}
-	threadStatus.HoldLock("iLock")
-
-	return func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		if err == nil {
-			threadStatus.ReleaseLock("iLock")
-		}
-		return errors.Wrap(err, "release iLock")
-	}, nil
-}
-
-// tryILock attempts to acquire the indexing lock on the repo.
-func tryILock(ctx context.Context, conn *sql.Conn, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
-	threadStatus.Tasklog.Start("iLock")
-	locked, _, err := basestore.ScanFirstBool(conn.QueryContext(ctx, `SELECT pg_try_advisory_lock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo))))
-	if err != nil {
-		return false, nil, errors.Wrap(err, "acquire iLock")
-	}
-
-	if !locked {
-		return false, nil, nil
-	}
-
-	threadStatus.HoldLock("iLock")
-
-	release := func() error {
-		_, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, $2)`, INDEXING_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
-		if err == nil {
-			threadStatus.ReleaseLock("iLock")
-		}
-		return errors.Wrap(err, "release iLock")
-	}
-
-	return true, release, nil
+func iLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (func() error, error) {
+	return lock(ctx, db, threadStatus, INDEXING_LOCKS_NAMESPACE, "iLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
 }
 
 func DeleteRedundant(ctx context.Context, db Queryable, hop string) error {

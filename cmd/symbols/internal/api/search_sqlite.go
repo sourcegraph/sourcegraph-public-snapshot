@@ -21,7 +21,7 @@ import (
 const searchTimeout = 60 * time.Second
 
 func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter) types.SearchFunc {
-	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
+	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, retryMsg string, err error) {
 		ctx, trace, endObservation := operations.Search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
 			log.String("commitID", string(args.CommitID)),
@@ -46,7 +46,7 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 
 		dbFile, err := cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)
 		if err != nil {
-			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
+			return nil, "", errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 		}
 		trace.Log(log.String("dbFile", dbFile))
 
@@ -59,6 +59,6 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			return nil
 		})
 
-		return res, err
+		return res, "", err
 	}
 }
