@@ -7,7 +7,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
@@ -25,7 +24,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
-import { CodeHostItem } from './CodeHostItem'
+import { CodeHostItem, ParentWindow } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
@@ -37,7 +36,6 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    authenticatedUser?: AuthenticatedUser
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -75,8 +73,14 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
-    authenticatedUser,
 }) => {
+    if (window.opener) {
+        const parentWindow: ParentWindow = window.opener as ParentWindow
+        if (parentWindow.onSuccess) {
+            parentWindow.onSuccess()
+        }
+        window.close()
+    }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
     const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
@@ -146,6 +150,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             setStatusOrError(asError(error))
         })
     }, [fetchExternalServices])
+
+    const refetchServices = (): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
@@ -379,6 +389,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null
