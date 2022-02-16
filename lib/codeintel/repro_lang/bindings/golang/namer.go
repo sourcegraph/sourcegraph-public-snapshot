@@ -6,7 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )
 
-func (d *reproDependency) enterExternalSymbolIntoTheGlobalScope(context *reproContext) {
+// enterGlobalDefinitions inserts the names of the global symbols that are defined in this
+// dependency into the provided global scope.
+func (d *reproDependency) enterGlobalDefinitions(context *reproContext) {
 	for _, file := range d.Sources {
 		for _, definition := range file.definitions {
 			if definition.name.isLocalSymbol() {
@@ -23,7 +25,8 @@ func (d *reproDependency) enterExternalSymbolIntoTheGlobalScope(context *reproCo
 	}
 }
 
-func (d *reproSourceFile) resolveDefinitions(context *reproContext) {
+// enterDefinitions inserts the names of the definitions into the appropriate scope (local symbols go into the local scope).
+func (d *reproSourceFile) enterDefinitions(context *reproContext) {
 	for _, def := range d.definitions {
 		scope := context.globalScope
 		if def.name.isLocalSymbol() {
@@ -43,6 +46,7 @@ func (d *reproSourceFile) resolveDefinitions(context *reproContext) {
 	}
 }
 
+// resolveReferences updates the .symbol field for all names of reference identifiers.
 func (d *reproSourceFile) resolveReferences(context *reproContext) {
 	for _, def := range d.definitions {
 		for _, ident := range def.relationIdentifiers() {
@@ -57,6 +61,7 @@ func (d *reproSourceFile) resolveReferences(context *reproContext) {
 	}
 }
 
+// newGlobalSymbol returns an LSIF Typed symbol for the given definition.
 func newGlobalSymbol(pkg *lsif_typed.Package, document *reproSourceFile, definition *definitionStatement) string {
 	return fmt.Sprintf(
 		"repro_lang repro_manager %v %v %v/%v",
@@ -67,6 +72,7 @@ func newGlobalSymbol(pkg *lsif_typed.Package, document *reproSourceFile, definit
 	)
 }
 
+// newGlobalName returns the name of a symbol that is used to query the scope.
 func newGlobalName(pkg *lsif_typed.Package, symbol *lsif_typed.Symbol) string {
 	formatter := lsif_typed.DescriptorOnlyFormatter
 	formatter.IncludePackageName = func(name string) bool { return name != pkg.Name }

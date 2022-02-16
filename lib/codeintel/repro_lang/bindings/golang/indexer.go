@@ -62,10 +62,10 @@ func Index(
 
 	// Phase 2: resolve names for definitions
 	for _, dependency := range reproDependencies {
-		dependency.enterExternalSymbolIntoTheGlobalScope(ctx)
+		dependency.enterGlobalDefinitions(ctx)
 	}
 	for _, file := range reproSources {
-		file.resolveDefinitions(ctx)
+		file.enterDefinitions(ctx)
 	}
 
 	// Phase 3: resolve names for references

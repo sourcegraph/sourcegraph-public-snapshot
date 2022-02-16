@@ -46,6 +46,19 @@ func (d *reproSourceFile) newIdentifier(n *sitter.Node) *identifier {
 	}
 	return &identifier{
 		value:    value,
-		position: lsif_typed.NewRangePositionFromNode(n),
+		position: NewRangePositionFromTreeSitter(n),
+	}
+}
+
+func NewRangePositionFromTreeSitter(node *sitter.Node) *lsif_typed.Range {
+	return &lsif_typed.Range{
+		Start: lsif_typed.Position{
+			Line:      int(node.StartPoint().Row),
+			Character: int(node.StartPoint().Column),
+		},
+		End: lsif_typed.Position{
+			Line:      int(node.EndPoint().Row),
+			Character: int(node.EndPoint().Column),
+		},
 	}
 }

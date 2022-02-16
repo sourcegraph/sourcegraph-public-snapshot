@@ -26,7 +26,7 @@ type referenceStatement struct {
 type identifier struct {
 	value    string
 	symbol   string
-	position *lsif_typed.RangePosition
+	position *lsif_typed.Range
 }
 
 func (i *identifier) resolveSymbol(localScope *reproScope, context *reproContext) {

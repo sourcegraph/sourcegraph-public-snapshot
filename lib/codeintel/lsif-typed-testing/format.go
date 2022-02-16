@@ -79,7 +79,7 @@ func FormatSnapshot(
 		b.WriteString("\n")
 		for i < len(x.Occurrences) && x.Occurrences[i].Range[0] == int32(lineNumber) {
 			occ := x.Occurrences[i]
-			pos := lsif_typed.NewRangePositionFromLsif(occ.Range)
+			pos := lsif_typed.NewRange(occ.Range)
 			if !pos.IsSingleLine() {
 				continue
 			}

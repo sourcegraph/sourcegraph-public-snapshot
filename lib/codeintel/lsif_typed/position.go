@@ -1,32 +1,22 @@
 package lsif_typed
 
-import sitter "github.com/smacker/go-tree-sitter"
+// Range represents a range between two offset positions.
+// NOTE: the lsif/protocol package contains similarly shaped structs but this
+// one exists primarily to make it easier to work with LSIF Typed encoded positions,
+// which have the type []int32 in Protobuf payloads.
+type Range struct {
+	Start Position
+	End   Position
+}
 
 // Position represents an offset position.
-// TODO: should we replace this type with lsif/protocol package?
 type Position struct {
 	Line      int
 	Character int
 }
 
-// RangePosition represents a range between two offset positions.
-// TODO: should we replace this type with lsif/protocol package?
-type RangePosition struct {
-	Start Position
-	End   Position
-}
-
-func (r RangePosition) IsSingleLine() bool {
-	return r.Start.Line == r.End.Line
-}
-func (r RangePosition) LsifRange() []int32 {
-	if r.Start.Line == r.End.Line {
-		return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Character)}
-	}
-	return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Line), int32(r.End.Character)}
-}
-
-func NewRangePositionFromLsif(lsifRange []int32) *RangePosition {
+// NewRange converts an LSIF Typed range into `Range`
+func NewRange(lsifRange []int32) *Range {
 	var endLine int32
 	var endCharacter int32
 	if len(lsifRange) == 3 { // single line
@@ -36,7 +26,7 @@ func NewRangePositionFromLsif(lsifRange []int32) *RangePosition {
 		endLine = lsifRange[2]
 		endCharacter = lsifRange[3]
 	}
-	return &RangePosition{
+	return &Range{
 		Start: Position{
 			Line:      int(lsifRange[0]),
 			Character: int(lsifRange[1]),
@@ -48,15 +38,13 @@ func NewRangePositionFromLsif(lsifRange []int32) *RangePosition {
 	}
 }
 
-func NewRangePositionFromNode(node *sitter.Node) *RangePosition {
-	return &RangePosition{
-		Start: Position{
-			Line:      int(node.StartPoint().Row),
-			Character: int(node.StartPoint().Column),
-		},
-		End: Position{
-			Line:      int(node.EndPoint().Row),
-			Character: int(node.EndPoint().Column),
-		},
+func (r Range) IsSingleLine() bool {
+	return r.Start.Line == r.End.Line
+}
+
+func (r Range) LsifRange() []int32 {
+	if r.Start.Line == r.End.Line {
+		return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Character)}
 	}
+	return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Line), int32(r.End.Character)}
 }

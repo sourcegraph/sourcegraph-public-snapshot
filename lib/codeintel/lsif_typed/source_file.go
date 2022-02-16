@@ -16,6 +16,16 @@ type SourceFile struct {
 	Lines        []string
 }
 
+func NewSourceFile(absolutePath, relativePath, code string) *SourceFile {
+	return &SourceFile{
+		AbsolutePath: absolutePath,
+		RelativePath: relativePath,
+		Text:         code,
+		Lines:        strings.Split(code, "\n"),
+	}
+}
+
+// NewSourcesFromDirectory recursively walks the provided directory and creates a SourceFile for every regular file.
 func NewSourcesFromDirectory(directory string) ([]*SourceFile, error) {
 	var result []*SourceFile
 	err := filepath.Walk(directory, func(path string, info fs.FileInfo, err error) error {
@@ -39,15 +49,7 @@ func NewSourcesFromDirectory(directory string) ([]*SourceFile, error) {
 	return result, err
 }
 
-func NewSourceFile(absolutePath, relativePath, code string) *SourceFile {
-	return &SourceFile{
-		AbsolutePath: absolutePath,
-		RelativePath: relativePath,
-		Text:         code,
-		Lines:        strings.Split(code, "\n"),
-	}
-}
-
+// NewSourceFileFromPath reads the provided absolute path from disk and returns a SourceFile.
 func NewSourceFileFromPath(absolutePath, relativePath string) (*SourceFile, error) {
 	text, err := os.ReadFile(absolutePath)
 	if err != nil {
@@ -64,7 +66,8 @@ func (d *SourceFile) String() string {
 	return string(data)
 }
 
-func (d *SourceFile) SlicePosition(position RangePosition) string {
+// RangeText returns the substring of the source file contents that enclose the provided range.
+func (d *SourceFile) RangeText(position Range) string {
 	result := strings.Builder{}
 	for line := position.Start.Line; line < position.End.Line; line++ {
 		start := position.Start.Character
