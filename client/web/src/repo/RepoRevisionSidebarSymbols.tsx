@@ -135,7 +135,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             repo: repoID,
             revision,
             // `includePatterns` expects regexes, so first escape the path.
-            includePatterns: [escapeRegExp(activePath)],
+            includePatterns: ['^' + escapeRegExp(activePath)],
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)

@@ -36,7 +36,7 @@ const symbolsMock: MockedResponse<SymbolsResult> = {
             first: 100,
             repo: sidebarProps.repoID,
             revision: sidebarProps.revision,
-            includePatterns: [escapeRegExp(sidebarProps.activePath)],
+            includePatterns: ['^' + escapeRegExp(sidebarProps.activePath)],
         },
     },
     result: {
