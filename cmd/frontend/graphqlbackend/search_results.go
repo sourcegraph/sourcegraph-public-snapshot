@@ -494,7 +494,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	}
 
 	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
+	status = DetermineStatusForLogs(srr.SearchResults.Alert, srr.SearchResults.Stats, err)
 	if srr != nil && srr.SearchResults.Alert != nil {
 		alertType = srr.SearchResults.Alert.PrometheusType
 	}
@@ -567,17 +567,17 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 
 // DetermineStatusForLogs determines the final status of a search for logging
 // purposes.
-func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
+func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
 	switch {
 	case err == context.DeadlineExceeded:
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
+	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
 		return "timeout"
-	case srr.Stats.Status.Any(search.RepoStatusTimedout):
+	case stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
-	case srr.SearchResults.Alert != nil:
+	case alert != nil:
 		return "alert"
 	default:
 		return "success"
