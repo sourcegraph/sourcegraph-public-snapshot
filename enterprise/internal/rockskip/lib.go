@@ -400,12 +400,38 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	type repoRow struct {
+		repo           string
+		lastAccessedAt time.Time
+	}
+
+	repoRows := []repoRow{}
+	repoSqlRows, err := s.db.QueryContext(ctx, "SELECT repo, last_accessed_at FROM rockskip_repos ORDER BY last_accessed_at DESC LIMIT 5")
+	if err != nil {
+		log15.Error("Failed to list repoRows", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer repoSqlRows.Close()
+	for repoSqlRows.Next() {
+		var repo string
+		var lastAccessedAt time.Time
+		if err := repoSqlRows.Scan(&repo, &lastAccessedAt); err != nil {
+			log15.Error("Failed to scan repo", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		repoRows = append(repoRows, repoRow{repo: repo, lastAccessedAt: lastAccessedAt})
+	}
+
 	blobCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_blobs"))
 	if err != nil {
 		log15.Error("Failed to count blobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	blobsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
 	if err != nil {
 		log15.Error("Failed to get size of blobs table", "error", err)
@@ -421,6 +447,14 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Number of blobs indexed: %d\n", blobCount)
 	fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
 	fmt.Fprintln(w, "")
+
+	if repositoryCount > 0 {
+		fmt.Fprintf(w, "Most recently searched repositories (at most 5 shown)\n")
+		for _, repo := range repoRows {
+			fmt.Fprintf(w, "  %s %s\n", repo.lastAccessedAt, repo.repo)
+		}
+		fmt.Fprintln(w, "")
+	}
 
 	s.status.mu.Lock()
 	defer s.status.mu.Unlock()
