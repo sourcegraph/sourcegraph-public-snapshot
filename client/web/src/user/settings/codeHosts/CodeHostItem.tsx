@@ -89,9 +89,13 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 reloadComponent()
             }
         }
-        const popup = browser.open(`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
-            owner.id
-        )}`, 'name', `dependent=${1}, alwaysOnTop=${1}, alwaysRaised=${1}, alwaysRaised=${1}, width=${600}, height=${900}`)
+        const popup = browser.open(
+            `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
+                owner.id
+            )}`,
+            'name',
+            `dependent=${1}, alwaysOnTop=${1}, alwaysRaised=${1}, alwaysRaised=${1}, width=${600}, height=${900}`
+        )
         const popupTick = setInterval(() => {
             if (popup.closed) {
                 setOauthInFlight(false)
