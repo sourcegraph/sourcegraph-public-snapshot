@@ -17,12 +17,10 @@ import {
     formatSearchParameters,
     isErrorLike,
     lprToRange,
-    renderMarkdown,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
-import { useQuery } from '@sourcegraph/http-client'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -47,25 +45,33 @@ import {
     Button,
     useObservable,
     Input,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
-    CoolCodeIntelReferencesResult,
-    CoolCodeIntelReferencesVariables,
-    HoverFields,
-    LocationConnectionFields,
+    CoolCodeIntelMoreDefinitionsResult,
+    CoolCodeIntelMoreDefinitionsVariables,
+    CoolCodeIntelMoreImplementationsResult,
+    CoolCodeIntelMoreImplementationsVariables,
+    CoolCodeIntelMoreReferencesResult,
+    CoolCodeIntelMoreReferencesVariables,
     LocationFields,
-    Maybe,
 } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
 import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import {
+    FETCH_DEFINITIONS_QUERY,
+    FETCH_HIGHLIGHTED_BLOB,
+    FETCH_IMPLEMENTATIONS_QUERY,
+    FETCH_REFERENCES_QUERY,
+} from './CoolCodeIntelQueries'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
@@ -195,12 +201,36 @@ export const ReferencesList: React.FunctionComponent<
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
-                    <SideReferences
+                    {/* {props.hover && (
+                <Markdown
+                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
+                    dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
+                />
+            )} */}
+                    <SideDefinitions
                         {...props}
+                        name="definitions"
+                        connectionHook={useDefinitions}
                         activeLocation={activeLocation}
                         setActiveLocation={onReferenceClick}
                         filter={debouncedFilter}
                     />
+                    <SideReferences
+                        {...props}
+                        name="references"
+                        connectionHook={useReferences}
+                        activeLocation={activeLocation}
+                        setActiveLocation={onReferenceClick}
+                        filter={debouncedFilter}
+                    />
+                    {/* <SideReferences
+                        {...props}
+                        name="implementations"
+                        connectionHook={useImplementations}
+                        activeLocation={activeLocation}
+                        setActiveLocation={onReferenceClick}
+                        filter={debouncedFilter}
+                    /> */}
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
@@ -240,115 +270,103 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-export const SideReferences: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-    }
-> = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.clickedToken.repoName,
-                commit: props.clickedToken.commitID,
-                path: props.clickedToken.filePath,
-                // On the backend the line/character are 0-indexed, but what we
-                // get from hoverifier is 1-indexed.
-                line: props.clickedToken.line - 1,
-                character: props.clickedToken.character - 1,
-                after: null,
-                filter: props.filter || null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
+interface SideReferencesProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+    connectionHook: (token: CoolClickedToken, filter: string | undefined) => UseConnectionResult<LocationFields>
+    name: string
+}
+
+export const SideReferences: React.FunctionComponent<SideReferencesProps> = props => {
+    const { connection, error, fetchMore, loading, hasNextPage } = props.connectionHook(
+        props.clickedToken,
+        props.filter
     )
 
     // If we're loading and haven't received any data yet
-    if (loading && !data) {
+    if (loading && !connection) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
-                    <i>Loading references ...</i>
+                    <i>Loading {props.name}...</i>
                 </p>
             </>
         )
     }
 
     // If we received an error before we had received any data
-    if (error && !data) {
+    if (error && !connection) {
         return (
             <div>
-                <p className="text-danger">Loading references failed:</p>
+                <p className="text-danger">Loading {props.name} failed:</p>
                 <pre>{error.message}</pre>
             </div>
         )
     }
 
+    console.log(props.name, connection?.nodes.length)
+
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif) {
-        return <>Nothing found</>
+    if (!connection || connection.nodes.length === 0) {
+        return <>No {props.name} found</>
     }
 
-    const lsif = data.repository?.commit?.blob?.lsif
-
     return (
-        <SideReferencesLists
-            {...props}
-            references={lsif.references}
-            definitions={lsif.definitions}
-            implementations={lsif.implementations}
-            hover={lsif.hover}
-        />
+        <CollapsibleLocationList {...props} fetchMore={fetchMore} hasMore={hasNextPage} locations={connection.nodes} />
     )
 }
 
-const SideReferencesLists: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-        references: LocationConnectionFields
-        definitions: Omit<LocationConnectionFields, 'pageInfo'>
-        implementations: LocationConnectionFields
-        hover: Maybe<HoverFields>
+export const SideDefinitions: React.FunctionComponent<SideReferencesProps> = props => {
+    const { connection, error, fetchMore, loading, hasNextPage } = useDefinitions(props.clickedToken, props.filter)
+
+    // If we're loading and haven't received any data yet
+    if (loading && !connection) {
+        return (
+            <>
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading {props.name}...</i>
+                </p>
+            </>
+        )
     }
-> = props => {
-    const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
+
+    // If we received an error before we had received any data
+    if (error && !connection) {
+        return (
+            <div>
+                <p className="text-danger">Loading {props.name} failed:</p>
+                <pre>{error.message}</pre>
+            </div>
+        )
+    }
+
+    console.log(props.name, connection?.nodes.length)
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!connection || connection.nodes.length === 0) {
+        return <>No {props.name} found</>
+    }
 
     return (
-        <>
-            {props.hover && (
-                <Markdown
-                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                    dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
-                />
-            )}
-            <CollapsibleLocationList {...props} name="definitions" locations={definitions} />
-            <CollapsibleLocationList {...props} name="references" locations={references} />
-            {implementations.length > 0 && (
-                <CollapsibleLocationList {...props} name="implementations" locations={implementations} />
-            )}
-        </>
+        <CollapsibleLocationList {...props} fetchMore={fetchMore} hasMore={hasNextPage} locations={connection.nodes} />
     )
 }
 
 const CollapsibleLocationList: React.FunctionComponent<{
     name: string
-    locations: Location[]
+    locations: LocationFields[]
+    hasMore: boolean
     setActiveLocation: (location: Location | undefined) => void
     activeLocation: Location | undefined
     filter: string | undefined
+    fetchMore?: () => void
 }> = props => {
+    const locations = useMemo(() => props.locations.map(buildLocation), [props.locations])
+
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
@@ -369,18 +387,38 @@ const CollapsibleLocationList: React.FunctionComponent<{
                             <ChevronRightIcon className="icon-inline" aria-label="Expand" />
                         )}{' '}
                         {capitalize(props.name)}
+                        <Badge pill={true} variant="secondary" className="ml-2">
+                            {props.locations.length}
+                            {props.hasMore && '+'}
+                        </Badge>
                     </h4>
                 </Button>
             </CardHeader>
 
-            <Collapse id="references" isOpen={isOpen}>
+            <Collapse id={props.name} isOpen={isOpen}>
                 {props.locations.length > 0 ? (
-                    <LocationsList
-                        locations={props.locations}
-                        activeLocation={props.activeLocation}
-                        setActiveLocation={props.setActiveLocation}
-                        filter={props.filter}
-                    />
+                    <>
+                        <LocationsList
+                            locations={locations}
+                            activeLocation={props.activeLocation}
+                            setActiveLocation={props.setActiveLocation}
+                            filter={props.filter}
+                        />
+                        {props.hasMore && props.fetchMore !== undefined && (
+                            <p>
+                                <Button
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        if (props.fetchMore !== undefined) {
+                                            props.fetchMore()
+                                        }
+                                    }}
+                                >
+                                    Load more...
+                                </Button>
+                            </p>
+                        )}
+                    </>
                 ) : (
                     <p className="text-muted pl-2">
                         {props.filter ? (
@@ -865,3 +903,127 @@ export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
 
     return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={props.handlePanelClose} />
 }
+
+export const useReferences = (
+    token: CoolClickedToken,
+    filter: string | undefined
+): UseConnectionResult<LocationFields> =>
+    useConnection<CoolCodeIntelMoreReferencesResult, CoolCodeIntelMoreReferencesVariables, LocationFields>({
+        query: FETCH_REFERENCES_QUERY,
+        variables: {
+            repository: token.repoName,
+            commit: token.commitID,
+            path: token.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: token.line - 1,
+            character: token.character - 1,
+            after: null,
+            filter: filter || null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            // If there weren't any errors and we just didn't receive any data
+            if (!data || !data.repository?.commit?.blob?.lsif) {
+                return { nodes: [] }
+            }
+
+            const lsif = data.repository?.commit?.blob?.lsif
+
+            return {
+                nodes: lsif.references.nodes,
+                pageInfo: {
+                    endCursor: lsif.references.pageInfo.endCursor,
+                    hasNextPage: lsif.references.pageInfo.endCursor !== undefined,
+                },
+            }
+        },
+    })
+
+export const useDefinitions = (
+    token: CoolClickedToken,
+    filter: string | undefined
+): UseConnectionResult<LocationFields> =>
+    useConnection<CoolCodeIntelMoreDefinitionsResult, CoolCodeIntelMoreDefinitionsVariables, LocationFields>({
+        query: FETCH_DEFINITIONS_QUERY,
+        variables: {
+            repository: token.repoName,
+            commit: token.commitID,
+            path: token.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: token.line - 1,
+            character: token.character - 1,
+            after: null,
+            filter: filter || null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            // If there weren't any errors and we just didn't receive any data
+            if (!data || !data.repository?.commit?.blob?.lsif) {
+                return { nodes: [] }
+            }
+
+            const lsif = data.repository?.commit?.blob?.lsif
+
+            console.log('definitions', lsif.definitions.nodes)
+            return {
+                nodes: lsif.definitions.nodes,
+                pageInfo: {
+                    endCursor: undefined,
+                    hasNextPage: false,
+                },
+            }
+        },
+    })
+
+export const useImplementations = (
+    token: CoolClickedToken,
+    filter: string | undefined
+): UseConnectionResult<LocationFields> =>
+    useConnection<CoolCodeIntelMoreImplementationsResult, CoolCodeIntelMoreImplementationsVariables, LocationFields>({
+        query: FETCH_IMPLEMENTATIONS_QUERY,
+        variables: {
+            repository: token.repoName,
+            commit: token.commitID,
+            path: token.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: token.line - 1,
+            character: token.character - 1,
+            after: null,
+            filter: filter || null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            // If there weren't any errors and we just didn't receive any data
+            if (!data || !data.repository?.commit?.blob?.lsif) {
+                return { nodes: [] }
+            }
+
+            const lsif = data.repository?.commit?.blob?.lsif
+
+            return {
+                nodes: lsif.implementations.nodes,
+                pageInfo: {
+                    endCursor: lsif.implementations.pageInfo.endCursor,
+                    hasNextPage: lsif.implementations.pageInfo.endCursor !== undefined,
+                },
+            }
+        },
+    })
