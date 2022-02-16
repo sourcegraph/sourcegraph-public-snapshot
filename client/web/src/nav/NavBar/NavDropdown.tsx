@@ -12,6 +12,7 @@ import {
     MenuLink,
     PopoverOpenEvent,
     PopoverOpenEventReason,
+    Strategy,
 } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
@@ -86,7 +87,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     return (
         <>
             {/* Dropdown nav item for bigger screens */}
-            <NavItem className="d-none d-md-flex">
+            <NavItem className="d-none d-md-flex" onMouseLeave={() => setIsDropdownOpen(false)}>
                 <Menu isOpen={isDropdownOpen} onOpenChange={handleOpenChange}>
                     <MenuButton
                         className={classNames(
@@ -96,16 +97,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             'align-items-center',
                             'p-0'
                         )}
-                        onPointerEnter={(event: React.PointerEvent) => {
-                            if (event.pointerType === 'mouse') {
-                                setIsDropdownOpen(true)
-                            }
+                        onMouseEnter={() => {
+                            console.log('Mouse enteirng!')
+                            setIsDropdownOpen(true)
                         }}
-                        onPointerDown={(event: React.PointerEvent) => {
+                        onMouseDown={() => {
                             // Navigate to toggle item path on mouse click.
-                            if (event.pointerType === 'mouse') {
-                                history.push(toggleItem.path)
-                            }
+                            history.push(toggleItem.path)
                         }}
                         onKeyDown={handleKeyDown}
                     >
@@ -124,14 +122,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                     {/* MenuPoper does not have modifiers
                             Add onPointerLeave from ButtonDropdown Reactstrap library */}
 
-                    <MenuList
-                        onPointerLeave={(event: React.PointerEvent) => {
-                            if (event.pointerType === 'mouse') {
-                                closeDropdown()
-                            }
-                        }}
-                        ref={menuListReference}
-                    >
+                    <MenuList strategy={Strategy.Absolute} ref={menuListReference}>
                         {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
                         <MenuLink
                             as={Link}
