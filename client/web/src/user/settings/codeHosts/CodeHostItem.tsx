@@ -83,7 +83,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
 
     const toGitHubApp = function (): void {
         setOauthInFlight(true)
-        const browser: ParentWindow = window.self
+        const browser: ParentWindow = window.self as ParentWindow
         if (reloadComponent) {
             browser.onSuccess = () => {
                 reloadComponent()
@@ -97,7 +97,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             `dependent=${1}, alwaysOnTop=${1}, alwaysRaised=${1}, alwaysRaised=${1}, width=${600}, height=${900}`
         )
         const popupTick = setInterval(() => {
-            if (popup.closed) {
+            if (popup?.closed) {
                 setOauthInFlight(false)
                 clearInterval(popupTick)
             }

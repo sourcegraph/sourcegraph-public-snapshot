@@ -7,7 +7,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
@@ -37,7 +36,6 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    authenticatedUser?: AuthenticatedUser
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -75,11 +73,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
-    authenticatedUser,
 }) => {
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
-        parentWindow.onSuccess()
+        if (parentWindow.onSuccess) {
+            parentWindow.onSuccess()
+        }
         window.close()
     }
     const [statusOrError, setStatusOrError] = useState<Status>()
