@@ -50,6 +50,12 @@ module.exports = {
                 importNames: ['Link'],
                 message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
               },
+              {
+                name: '@sourcegraph/wildcard',
+                importNames: ['Tooltip'],
+                message:
+                  'Please ensure there is only a single `<Tooltip />` component present in the React tree. To display a specific tooltip, you can add the `data-tooltip` attribute to the relevant element.',
+              },
             ],
           },
         ],

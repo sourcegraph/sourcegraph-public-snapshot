@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React, { useCallback } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -19,6 +19,9 @@ const config: Meta = {
 
     parameters: {
         component: Checkbox,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -51,7 +54,7 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
     )
 }
 
-export const CheckboxExamples: Story = () => (
+export const CheckboxExamples: React.FunctionComponent = () => (
     <>
         <h1>Checkbox</h1>
         <Grid columnCount={4}>
@@ -74,10 +77,3 @@ export const CheckboxExamples: Story = () => (
         </Grid>
     </>
 )
-
-CheckboxExamples.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

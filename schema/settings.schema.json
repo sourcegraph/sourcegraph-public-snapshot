@@ -237,14 +237,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "showCodeMonitoringLogs": {
-          "description": "Shows code monitoring logs tab.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
         }
       },
       "group": "Experimental"

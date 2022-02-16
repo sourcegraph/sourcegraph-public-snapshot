@@ -2,7 +2,6 @@ import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -60,20 +59,14 @@ describe('GlobalNavbar', () => {
     })
 
     test('default', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <MockedTestProvider>
-                <GlobalNavbar {...PROPS} />
-            </MockedTestProvider>
-        )
+        const { asFragment } = renderWithBrandedContext(<GlobalNavbar {...PROPS} />, { history })
         expect(asFragment()).toMatchSnapshot()
     })
 
     test('low-profile', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <MockedTestProvider>
-                <GlobalNavbar {...PROPS} variant="low-profile" />
-            </MockedTestProvider>
-        )
+        const { asFragment } = renderWithBrandedContext(<GlobalNavbar {...PROPS} variant="low-profile" />, {
+            history,
+        })
         expect(asFragment()).toMatchSnapshot()
     })
 })

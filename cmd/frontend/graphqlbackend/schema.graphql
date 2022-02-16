@@ -1499,16 +1499,6 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
-
-    """
-    Get pending invitations for the specific organization
-    """
-    pendingInvitations(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): [OrganizationInvitation!]!
 }
 
 """

@@ -5,14 +5,11 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button } from '../Button'
-import { Grid } from '../Grid'
-
-import { Card, CardBody, CardFooter, CardHeader, CardSubtitle, CardText, CardTitle } from '.'
+import { Card, CardBody, CardFooter, CardHeader, CardSubtitle, CardText, CardTitle } from '..'
+import { Button, Grid } from '../..'
 
 const config: Meta = {
     title: 'wildcard/Card',
-    component: Card,
 
     decorators: [
         story => (
@@ -24,7 +21,6 @@ const config: Meta = {
         component: Card,
         chromatic: {
             enableDarkMode: true,
-            disableSnapshot: false,
         },
         design: {
             type: 'figma',

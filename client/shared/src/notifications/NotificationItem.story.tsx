@@ -77,9 +77,3 @@ export const WithProgress: Story = () => {
 }
 
 WithProgress.storyName = 'With progress'
-WithProgress.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

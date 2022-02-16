@@ -14,7 +14,6 @@ import { ButtonVariants } from './ButtonVariants'
 
 const config: Meta = {
     title: 'wildcard/Button',
-    component: Button,
 
     decorators: [
         story => (
@@ -24,6 +23,9 @@ const config: Meta = {
 
     parameters: {
         component: Button,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -104,10 +106,3 @@ export const AllButtons: Story = () => (
         </Button>
     </div>
 )
-
-AllButtons.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}

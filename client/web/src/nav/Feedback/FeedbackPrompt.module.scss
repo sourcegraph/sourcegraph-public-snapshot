@@ -5,6 +5,14 @@
     white-space: normal;
 }
 
+.toggle {
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        border: 1px solid var(--header-icon-color);
+    }
+}
+
 .menu {
     text-align: center;
     width: 20rem;
@@ -35,7 +43,6 @@
 .success {
     white-space: normal;
     padding: 0.5rem;
-    text-align: center;
 
     &--tick {
         background-color: var(--success);
