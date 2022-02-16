@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -130,7 +131,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
 	agg := onlib.NewRepoRevisionAggregator()
 
-	var errs error
+	var errs *errors.MultiError
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
 		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
@@ -154,7 +155,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	for _, rev := range agg.Revisions() {
 		repoRevs = append(repoRevs, rev.(*RepoRevision))
 	}
-	return repoRevs, errs
+	return repoRevs, errs.ErrorOrNil()
 }
 
 func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
@@ -344,6 +345,11 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		return nil, err
 	}
 
+	// If no repos matched the search query, we can early return.
+	if len(repoIDs) == 0 {
+		return []*RepoRevision{}, nil
+	}
+
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
 	// the repositories or not. We also impersonate on the internal search request to
 	// properly respect these permissions.
@@ -361,6 +367,10 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		sort.Strings(fileMatches)
 		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo, fileMatches)
 		if err != nil {
+			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
+			if errcode.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
 		revs = append(revs, rev)
