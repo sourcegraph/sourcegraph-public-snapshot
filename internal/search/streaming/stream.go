@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -175,10 +174,6 @@ type resultCountingStream struct {
 }
 
 func (c *resultCountingStream) Send(event SearchEvent) {
-	for _, r := range event.Results {
-		spew.Dump(r)
-
-	}
 	c.count.Add(int64(event.Results.ResultCount()))
 	c.parent.Send(event)
 }

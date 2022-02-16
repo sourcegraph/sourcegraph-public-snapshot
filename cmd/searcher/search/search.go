@@ -89,7 +89,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
-	matchesBuf := streamhttp.NewJSONArrayBuf(0, func(data []byte) error {
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
