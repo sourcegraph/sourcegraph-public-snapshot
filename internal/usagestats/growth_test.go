@@ -12,14 +12,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCTAUsageUsageStatistics(t *testing.T) {
+func TestCTAUsageUsageStatisticsWithNoRows(t *testing.T) {
 	ctx := context.Background()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	now := time.Date(2021, 1, 20, 12, 55, 0, 0, time.UTC)
+	now := time.Date(2021, 1, 20, 15, 55, 0, 0, time.UTC)
+	mockTimeNow(now)
+
+	db := database.NewDB(dbtest.NewDB(t))
+
+	have, err := GetCTAUsage(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &types.CTAUsage{
+		DailyBrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+			StartTime:             time.Date(2021, 1, 20, 0, 0, 0, 0, time.UTC),
+			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: 0, EventCount: 0},
+			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: 0, EventCount: 0},
+			ClickedOnFilePage:     types.UserAndEventCount{UserCount: 0, EventCount: 0},
+			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: 0, EventCount: 0},
+		},
+	}
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestCTAUsageUsageStatisticsWithRows(t *testing.T) {
+	ctx := context.Background()
+
+	defer func() {
+		timeNow = time.Now
+	}()
+
+	now := time.Date(2021, 1, 20, 15, 55, 0, 0, time.UTC)
 	mockTimeNow(now)
 
 	db := database.NewDB(dbtest.NewDB(t))
