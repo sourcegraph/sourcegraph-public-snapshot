@@ -344,11 +344,6 @@ type indexRequest struct {
 }
 
 func (s *Server) startIndexingThread() (err error) {
-	ThreadStatus := s.status.NewThreadStatus("indexing dispatcher")
-	defer ThreadStatus.End()
-
-	parse := s.createParser()
-
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
 	conn, err := s.db.Conn(context.Background())
@@ -357,6 +352,11 @@ func (s *Server) startIndexingThread() (err error) {
 	}
 
 	go func() {
+		ThreadStatus := s.status.NewThreadStatus("indexing dispatcher")
+		defer ThreadStatus.End()
+
+		parse := s.createParser()
+
 		for indexRequest := range s.indexRequests {
 			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, parse)
 			if err != nil {
