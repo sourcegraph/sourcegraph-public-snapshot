@@ -581,6 +581,9 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 func clusterQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+
+			bk.Skip("flakey: https://github.com/sourcegraph/sourcegraph/issues/31342"),
+
 			bk.DependsOn(candidateImageStepKey("frontend")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
