@@ -660,7 +660,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 
 	// Select a candidate repo to delete.
 	threadStatus.Tasklog.Start("select repo to delete")
-	var repos []string
+	var repo string
 	var repoRank int
 	err = db.QueryRowContext(ctx, `
 		SELECT repo, repo_rank
@@ -671,7 +671,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 		WHERE repo_rank > $1
 		ORDER BY last_accessed_at ASC
 		LIMIT 1;`, maxRepos,
-	).Scan(&repos, &repoRank)
+	).Scan(&repo, &repoRank)
 	if err == sql.ErrNoRows {
 		// No more repos to delete.
 		return false, nil
@@ -679,10 +679,6 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	if err != nil {
 		return false, errors.Wrap(err, "selecting repo to delete")
 	}
-	if len(repos) != 1 {
-		return false, errors.Newf("tryDeleteOldestRepo: expected 1 repo, got %d", len(repos))
-	}
-	repo := repos[0]
 
 	// Note: a search request or deletion could have intervened here.
 
