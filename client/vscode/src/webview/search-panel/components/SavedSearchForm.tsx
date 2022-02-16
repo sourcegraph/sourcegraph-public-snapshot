@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -79,7 +79,7 @@ export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFor
     const onSubmit: SavedSearchFormProps['onSubmit'] = fields => {
         if (!loading) {
             setLoading(true)
-
+            props.platformContext.telemetryService.log('VSCESaveSearchSubmited')
             props.platformContext
                 .requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>({
                     request: createSavedSearchQuery,
@@ -155,13 +155,6 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
         return notifying && !values.query.includes('type:diff') && !values.query.includes('type:commit')
     }, [values])
 
-    const codeMonitoringUrl = useMemo(() => {
-        const searchParameters = new URLSearchParams()
-        searchParameters.set('trigger-query', values.query)
-        searchParameters.set('description', values.description)
-        return `/code-monitoring/new?${searchParameters.toString()}`
-    }, [values.query, values.description])
-
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
     return (
@@ -224,16 +217,6 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                                     <span>Send email notifications to my email</span>
                                 </label>
                             </div>
-
-                            <div className={classNames(styles.codeMonitoringAlert, 'alert alert-primary p-3 mb-0')}>
-                                <div className="mb-2">
-                                    <strong>New:</strong> Watch your code for changes with code monitoring to get
-                                    notifications.
-                                </div>
-                                <Link to={codeMonitoringUrl} className="btn btn-primary">
-                                    Go to code monitoring →
-                                </Link>
-                            </div>
                         </div>
                     )}
 
@@ -278,18 +261,6 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                 </button>
 
                 {props.error && !props.loading && <ErrorAlert className="mb-3" error={props.error} />}
-
-                {!props.defaultValues?.notify && (
-                    <Container className="d-flex p-3 align-items-start">
-                        <ProductStatusBadge status="new" className="mr-3">
-                            New
-                        </ProductStatusBadge>
-                        <span>
-                            Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <Link to={`${props.instanceURL}/code-monitoring`}>code monitoring →</Link>
-                        </span>
-                    </Container>
-                )}
             </Form>
         </div>
     )

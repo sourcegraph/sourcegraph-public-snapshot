@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link } from '@sourcegraph/wildcard'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
@@ -114,15 +115,15 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     </li>
                 </ul>
                 <DropdownItem divider={true} className="mb-0" />
-                <a
+                <Link
                     target="_blank"
                     rel="noopener"
-                    href={`${documentationUrlPrefix}/code_search/reference/queries`}
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
+                    to={`${documentationUrlPrefix}/code_search/reference/queries`}
                 >
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
-                </a>
+                </Link>
                 {isSourcegraphDotCom && (
                     <div className="alert alert-info small rounded-0 mb-0 mt-1">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
