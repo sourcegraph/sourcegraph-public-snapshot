@@ -23,6 +23,11 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1366%3A611',
+        },
     },
 }
 export default config

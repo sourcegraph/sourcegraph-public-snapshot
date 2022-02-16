@@ -4,23 +4,21 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Link } from './Link'
+import { RouterLink } from './RouterLink'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
-    title: 'wildcard/Link',
-    component: Link,
+    title: 'wildcard/Link/RouterLink',
 
     decorators: [decorator],
 
     parameters: {
-        component: Link,
+        component: RouterLink,
         chromatic: {
             enableDarkMode: true,
-            disableSnapshot: false,
         },
         // removed incorrect figma design
     },
@@ -28,8 +26,8 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => (
+export const RouterLinkExample: Story = () => (
     <p>
-        Text can contain links, which <Link to="/">trigger a navigation to a different page</Link>.
+        Text can contain links, which <RouterLink to="/">trigger a navigation to a different page</RouterLink>.
     </p>
 )
