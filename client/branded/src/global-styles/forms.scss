@@ -138,6 +138,11 @@ textarea.form-control {
     height: auto;
 }
 
+textarea.form-control.is-valid {
+    padding-right: calc(1.42857em + 0.75rem);
+    background-position: top calc(0.35714em + 0.1875rem) right calc(0.35714em + 0.1875rem);
+}
+
 // Form groups
 //
 // Designed to help with the organization and spacing of vertical forms. For
