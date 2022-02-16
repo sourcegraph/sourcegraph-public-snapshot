@@ -181,8 +181,8 @@ func PrettyMermaid(job Job) string {
 	id := 0
 	b := new(bytes.Buffer)
 	b.WriteString("flowchart TB\n")
-	var writeMermaid func(Job) int
-	writeMermaid = func(job Job) int {
+	var writeMermaid func(Job)
+	writeMermaid = func(job Job) {
 		switch j := job.(type) {
 		case
 			*run.RepoSearch,
@@ -278,7 +278,6 @@ func PrettyMermaid(job Job) string {
 		default:
 			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
 		}
-		return id
 	}
 	writeMermaid(job)
 	return b.String()
