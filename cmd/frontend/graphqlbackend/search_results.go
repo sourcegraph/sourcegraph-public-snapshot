@@ -668,7 +668,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		return nil, err
 	}
 
-	planJob, err := job.ExpandedPlanToJob(r.JobArgs(), plan)
+	planJob, err := job.FromExpandedPlan(r.JobArgs(), plan)
 	if err != nil {
 		return nil, err
 	}

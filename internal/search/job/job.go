@@ -635,9 +635,9 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 }
 
-// ExpandedPlanToJob takes a query plan that has had all predicates expanded,
+// FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
-func ExpandedPlanToJob(args *Args, plan query.Plan) (Job, error) {
+func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
 	children := make([]Job, 0, len(plan))
 	for _, q := range plan {
 		child, err := ToEvaluateJob(args, q)
