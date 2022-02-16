@@ -1155,27 +1155,12 @@ func debugQuery(ctx context.Context, conn *sql.Conn, args types.SearchArgs, q *s
 	fmt.Fprintf(sb, "Search args: %+v\n", args)
 
 	fmt.Fprintln(sb, "Query:")
-	str, err := sqlfToString(q)
+	query, err := sqlfToString(q)
 	if err != nil {
 		return errors.Wrap(err, "sqlfToString")
 	}
 
-	explainStr := "EXPLAIN ANALYZE " + str
-	fmt.Fprintln(sb, explainStr)
-
-	rows, err := conn.QueryContext(ctx, explainStr)
-	if err != nil {
-		return errors.Wrap(err, "while explaining")
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var line string
-		err = rows.Scan(&line)
-		if err != nil {
-			return errors.Wrap(err, "while scanning explanation")
-		}
-		fmt.Fprintln(sb, line)
-	}
+	fmt.Fprintln(sb, query)
 
 	fmt.Println(bracket(sb.String()))
 
