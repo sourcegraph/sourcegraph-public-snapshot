@@ -39,7 +39,8 @@
           }
         },
         "codeInsightsLandingPage": {
-          "description": "Enables code insights landing page layout.",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
           "type": "boolean",
           "default": false,
           "!go": {

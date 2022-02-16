@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -53,6 +53,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
     const user = useObservable(authenticatedUser)
+
+    useEffect(() => {
+        telemetryService.logViewEvent('Insights')
+    }, [telemetryService, dashboardID])
 
     if (dashboards === undefined) {
         return (
