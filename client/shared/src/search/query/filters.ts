@@ -26,6 +26,7 @@ export enum FilterType {
     repogroup = 'repogroup',
     repohascommitafter = 'repohascommitafter',
     repohasfile = 'repohasfile',
+    dependencies = 'dependencies',
     // eslint-disable-next-line unicorn/prevent-abbreviations
     rev = 'rev',
     select = 'select',
@@ -46,6 +47,7 @@ export enum AliasedFilterType {
     revision = 'rev',
     since = 'after',
     until = 'before',
+    deps = 'dependencies',
 }
 /* eslint-enable unicorn/prevent-abbreviations */
 
@@ -60,6 +62,7 @@ export const ALIASES: Record<string, string> = {
     m: 'message',
     msg: 'message',
     revision: 'rev',
+    deps: 'dependencies',
 }
 
 export const resolveFieldAlias = (field: string): string => ALIASES[field] || field
@@ -256,6 +259,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
+        suggestions: 'repo',
+    },
+    [FilterType.dependencies]: {
+        alias: 'deps',
+        description: 'Include results from dependencies of repositories matching the given regexp.',
         suggestions: 'repo',
     },
     [FilterType.repogroup]: {

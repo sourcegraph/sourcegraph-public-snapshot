@@ -344,6 +344,16 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 	return repos, negatedRepos
 }
 
+func (q Q) Dependencies() (dependencies []string) {
+	VisitField(q, FieldDependencies, func(value string, negated bool, _ Annotation) {
+		if !negated {
+			dependencies = append(dependencies, value)
+			return
+		}
+	})
+	return dependencies
+}
+
 func (q Q) MaxResults(defaultLimit int) int {
 	if q == nil {
 		return 0
@@ -396,6 +406,10 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 
 	case
 		FieldRepo, "r":
+		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
+
+	case
+		FieldDependencies, "deps":
 		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
