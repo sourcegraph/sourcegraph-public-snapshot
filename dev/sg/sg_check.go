@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	checkFlagSet = flag.NewFlagSet("sg check", flag.ExitOnError)
+	checkFlagSet             = flag.NewFlagSet("sg check", flag.ExitOnError)
+	checkGenerateAnnotations = checkFlagSet.Bool("annotations", false, "Write helpful output to annotations directory")
 
 	checkShellFlagSet   = flag.NewFlagSet("sg check shell", flag.ExitOnError)
 	checkURLsFlagSet    = flag.NewFlagSet("sg check urls", flag.ExitOnError)
@@ -183,6 +184,17 @@ func printCheckReport(pending output.Pending, report *checkReport) {
 	if report.err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
 		pending.Verbose(report.output)
+		if *checkGenerateAnnotations {
+			repoRoot, err := root.RepositoryRoot()
+			if err != nil {
+				return // do nothing
+			}
+			annotationPath := filepath.Join(repoRoot, "annotations")
+			os.MkdirAll(annotationPath, os.ModePerm)
+			if err := os.WriteFile(filepath.Join(annotationPath, report.header), []byte(report.output+"\n"), os.ModePerm); err != nil {
+				return // do nothing
+			}
+		}
 		return
 	}
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))

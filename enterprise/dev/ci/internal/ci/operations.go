@@ -399,7 +399,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker: Docker checks",
-		bk.Cmd("go run ./dev/sg check docker"))
+		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
+			IncludeNames: true,
+		}))
 }
 
 // Adds backend integration tests step.
