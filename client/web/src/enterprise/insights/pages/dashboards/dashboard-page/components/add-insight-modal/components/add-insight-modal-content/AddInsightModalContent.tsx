@@ -19,6 +19,7 @@ import styles from './AddInsightModalContent.module.scss'
 interface AddInsightModalContentProps {
     insights: ReachableInsight[]
     initialValues: AddInsightFormValues
+    dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
@@ -29,7 +30,7 @@ export interface AddInsightFormValues {
 }
 
 export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
-    const { initialValues, insights, onSubmit, onCancel } = props
+    const { initialValues, insights, dashboardID, onSubmit, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
         initialValues,
@@ -50,14 +51,13 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     )
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}
                 description={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
-                        <Link to="/insights/create">create a new insight</Link>
+                        <Link to={`/insights/create?dashboardId=${dashboardID}`}>create a new insight</Link>
                     </span>
                 }
                 placeholder="Search insights..."
