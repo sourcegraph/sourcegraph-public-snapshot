@@ -72,9 +72,6 @@ func (i *identifier) resolveSymbol(localScope *reproScope, context *reproContext
 	}
 	symbol, ok := scope.names[i.value]
 	if !ok {
-		if i.value == "global global-workspace hello.repro/hello()." {
-			fmt.Println("scope", context.globalScope)
-		}
 		symbol = "local ERROR_UNRESOLVED_SYMBOL"
 	}
 	i.symbol = symbol

@@ -23,13 +23,13 @@
 {"id":23,"type":"vertex","label":"moniker","identifier":"repro_lang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"implementation","scheme":"repro_lang"}
 {"id":24,"type":"edge","label":"moniker","inV":23,"outV":3}
 {"id":25,"type":"edge","label":"packageInformation","inV":21,"outV":23}
-{"id":26,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":16}}
+{"id":26,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":16}}
 {"id":27,"type":"edge","label":"next","inV":3,"outV":26}
 {"id":28,"type":"edge","label":"item","inVs":[26],"outV":2,"document":13}
 {"id":29,"type":"vertex","label":"implementationResult"}
 {"id":30,"type":"edge","label":"textDocument/implementation","inV":29,"outV":14}
 {"id":31,"type":"edge","label":"item","inVs":[26],"outV":29,"document":13}
-{"id":32,"type":"vertex","label":"range","start":{"line":0,"character":28},"end":{"line":0,"character":70}}
+{"id":32,"type":"vertex","label":"range","start":{"line":1,"character":28},"end":{"line":1,"character":70}}
 {"id":33,"type":"edge","label":"next","inV":14,"outV":32}
 {"id":34,"type":"edge","label":"item","inVs":[32],"outV":15,"document":13}
 {"id":35,"type":"edge","label":"contains","inVs":[26,32],"outV":13}

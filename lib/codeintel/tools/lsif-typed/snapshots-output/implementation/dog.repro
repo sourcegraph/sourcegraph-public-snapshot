@@ -1,6 +1,0 @@
- definition dog# implements animal#
-#           ^^^^ definition dog.repro/dog#
-#           documentation signature of dog#
-#           relationship animal.repro/animal# implementation
-#                           ^^^^^^^ reference animal.repro/animal#
- 

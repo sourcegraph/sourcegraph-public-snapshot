@@ -17,25 +17,23 @@
 {"id":17,"type":"edge","label":"textDocument/definition","inV":13,"outV":14}
 {"id":18,"type":"edge","label":"textDocument/references","inV":15,"outV":14}
 {"id":19,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
-{"id":20,"type":"vertex","label":"moniker","identifier":"repro_lang repro_manager implementation 1.0.0 dog.repro/dog#","kind":"export","scheme":"repro_lang"}
+{"id":20,"type":"vertex","label":"moniker","identifier":"repro_lang repro_manager implementation 1.0.0 animal.repro/dog#","kind":"export","scheme":"repro_lang"}
 {"id":21,"type":"edge","label":"moniker","inV":20,"outV":14}
 {"id":22,"type":"edge","label":"packageInformation","inV":11,"outV":20}
 {"id":23,"type":"vertex","label":"document","uri":"file:/root/animal.repro"}
-{"id":24,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":18}}
+{"id":24,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":18}}
 {"id":25,"type":"edge","label":"next","inV":3,"outV":24}
 {"id":26,"type":"edge","label":"item","inVs":[24],"outV":2,"document":23}
 {"id":27,"type":"vertex","label":"implementationResult"}
 {"id":28,"type":"edge","label":"textDocument/implementation","inV":27,"outV":14}
 {"id":29,"type":"edge","label":"item","inVs":[24],"outV":27,"document":23}
-{"id":30,"type":"edge","label":"contains","inVs":[24],"outV":23}
-{"id":31,"type":"vertex","label":"document","uri":"file:/root/dog.repro"}
-{"id":32,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":15}}
-{"id":33,"type":"edge","label":"next","inV":14,"outV":32}
-{"id":34,"type":"edge","label":"item","inVs":[32],"outV":13,"document":31}
-{"id":35,"type":"vertex","label":"implementationResult"}
-{"id":36,"type":"edge","label":"textDocument/implementation","inV":35,"outV":3}
-{"id":37,"type":"edge","label":"item","inVs":[32],"outV":35,"document":31}
-{"id":38,"type":"vertex","label":"range","start":{"line":0,"character":27},"end":{"line":0,"character":34}}
-{"id":39,"type":"edge","label":"next","inV":3,"outV":38}
-{"id":40,"type":"edge","label":"item","inVs":[38],"outV":4,"document":31}
-{"id":41,"type":"edge","label":"contains","inVs":[32,38],"outV":31}
+{"id":30,"type":"vertex","label":"range","start":{"line":2,"character":11},"end":{"line":2,"character":15}}
+{"id":31,"type":"edge","label":"next","inV":14,"outV":30}
+{"id":32,"type":"edge","label":"item","inVs":[30],"outV":13,"document":23}
+{"id":33,"type":"vertex","label":"implementationResult"}
+{"id":34,"type":"edge","label":"textDocument/implementation","inV":33,"outV":3}
+{"id":35,"type":"edge","label":"item","inVs":[30],"outV":33,"document":23}
+{"id":36,"type":"vertex","label":"range","start":{"line":2,"character":27},"end":{"line":2,"character":34}}
+{"id":37,"type":"edge","label":"next","inV":3,"outV":36}
+{"id":38,"type":"edge","label":"item","inVs":[36],"outV":4,"document":23}
+{"id":39,"type":"edge","label":"contains","inVs":[24,30,36],"outV":23}
