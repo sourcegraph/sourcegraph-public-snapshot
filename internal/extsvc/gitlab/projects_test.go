@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // TestClient_GetProject tests the behavior of GetProject.
@@ -97,6 +99,9 @@ func TestClient_GetProject_nonexistent(t *testing.T) {
 	proj, err := c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "doesnt/exist"})
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
+	}
+	if !errcode.IsNotFound(err) {
+		t.Errorf("expected a not found error")
 	}
 	if proj != nil {
 		t.Error("proj != nil")

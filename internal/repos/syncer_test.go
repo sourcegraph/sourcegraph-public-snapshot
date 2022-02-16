@@ -2038,37 +2038,67 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
-		repoName := api.RepoName("github.com/foo/bar")
-		syncer, dbRepos := setupSyncErroredTest(ctx, s, t, extsvc.KindGitHub,
-			&database.RepoNotFoundErr{Name: repoName}, repoName)
-		if len(dbRepos) != 1 {
-			t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
+		testCases := []struct {
+			label     string
+			svcKind   string
+			repoName  api.RepoName
+			config    string
+			extSvcErr error
+			serviceID string
+		}{
+			{
+				label:     "github test",
+				svcKind:   extsvc.KindGitHub,
+				repoName:  api.RepoName("github.com/foo/bar"),
+				config:    `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				extSvcErr: github.ErrRepoNotFound,
+				serviceID: "https://github.com/",
+			},
+			{
+				label:     "gitlab test",
+				svcKind:   extsvc.KindGitLab,
+				repoName:  api.RepoName("gitlab.com/foo/bar"),
+				config:    `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				extSvcErr: gitlab.ProjectNotFoundError{Name: "/foo/bar"},
+				serviceID: "https://gitlab.com/",
+			},
 		}
 
-		// Run the syncer, which should find the repo with non-empty last_error and delete it
-		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
-		if err != nil {
-			t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
-		}
+		for i, tc := range testCases {
+			t.Run(tc.label, func(t *testing.T) {
+				syncer, dbRepos := setupSyncErroredTest(ctx, s, t, tc.svcKind,
+					tc.extSvcErr, tc.config, tc.serviceID, tc.repoName)
+				if len(dbRepos) != 1 {
+					t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
+				}
 
-		diff := <-syncer.Synced
+				// Run the syncer, which should find the repo with non-empty last_error and delete it
+				err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
+				if err != nil {
+					t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
+				}
 
-		deleted := types.Repos{&types.Repo{ID: dbRepos[0].ID}}
-		if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
-			t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
-		}
+				diff := <-syncer.Synced
 
-		assertDeletedRepoCount(ctx, t, s, 1)
-		// Try to fetch the repo to verify that it was deleted by the syncer
-		myRepo, err := s.RepoStore.GetByName(ctx, repoName)
-		if err == nil {
-			t.Fatalf("repo should've been deleted. expected a repo not found error")
-		}
-		if !errors.Is(err, &database.RepoNotFoundErr{Name: repoName}) {
-			t.Fatalf("expected a RepoNotFound error, got %s", err)
-		}
-		if myRepo != nil {
-			t.Fatalf("repo should've been deleted: %v", myRepo)
+				deleted := types.Repos{&types.Repo{ID: dbRepos[0].ID}}
+				if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
+					t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
+				}
+
+				// each iteration will result in one more deleted repo.
+				assertDeletedRepoCount(ctx, t, s, i+1)
+				// Try to fetch the repo to verify that it was deleted by the syncer
+				myRepo, err := s.RepoStore.GetByName(ctx, tc.repoName)
+				if err == nil {
+					t.Fatalf("repo should've been deleted. expected a repo not found error")
+				}
+				if !errors.Is(err, &database.RepoNotFoundErr{Name: tc.repoName}) {
+					t.Fatalf("expected a RepoNotFound error, got %s", err)
+				}
+				if myRepo != nil {
+					t.Fatalf("repo should've been deleted: %v", myRepo)
+				}
+			})
 		}
 	}
 }
@@ -2080,7 +2110,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 			"github.com/asdf/jkl",
 			"github.com/foo/bar",
 		}
-		syncer, _ := setupSyncErroredTest(ctx, s, t, extsvc.KindGitLab, &database.RepoNotFoundErr{Name: "gitlab.com/asdf/jkl"}, repoNames...)
+		syncer, _ := setupSyncErroredTest(ctx, s, t, extsvc.KindGitLab, github.ErrRepoNotFound, `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`, "https://gitlab.com/", repoNames...)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
@@ -2096,14 +2126,14 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 }
 
 func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
-	serviceType string, externalSvcError error, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
+	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
 	t.Helper()
 	now := time.Now()
 	dbRepos := types.Repos{}
 	service := types.ExternalService{
-		Kind:         extsvc.KindGitHub,
-		DisplayName:  "Github - Test",
-		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Kind:         serviceType,
+		DisplayName:  fmt.Sprintf("%s - Test", serviceType),
+		Config:       config,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 		CloudDefault: true,
@@ -2124,7 +2154,7 @@ func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
 			Description: "",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
-				ServiceID:   "https://github.com/",
+				ServiceID:   serviceID,
 				ServiceType: serviceType,
 			},
 		}).With(typestest.Opt.RepoSources(service.URN()))
