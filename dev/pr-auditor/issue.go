@@ -32,7 +32,7 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, payload.PullRequest.Title)
 		}
 	} else if !result.HasTestPlan() {
-		issueBody = fmt.Sprintf("%s %q **did not provide a test plan**.", payload.PullRequest.URL, payload.PullRequest.Title)
+		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, payload.PullRequest.Title)
 	}
 
 	if !result.HasTestPlan() {
