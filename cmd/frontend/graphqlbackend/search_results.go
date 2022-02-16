@@ -509,7 +509,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			n = len(srr.Matches)
 		}
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: r.rawQuery(),
+			OriginalQuery: r.SearchInputs.OriginalQuery,
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
@@ -770,7 +770,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.SearchInputs.PatternType), nil
+			return search.AlertForTimeout(usedTime, suggestTime, r.SearchInputs.OriginalQuery, r.SearchInputs.PatternType), nil
 		} else {
 			err = nil
 		}
@@ -922,7 +922,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	ctx = context.Background()
 	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
 
-	cacheKey := r.rawQuery()
+	cacheKey := r.SearchInputs.OriginalQuery
 	// Check if value is in the cache.
 	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
 	if ok {

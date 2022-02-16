@@ -228,11 +228,6 @@ func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
 
-// rawQuery returns the original query string input.
-func (r *searchResolver) rawQuery() string {
-	return r.SearchInputs.OriginalQuery
-}
-
 const (
 	defaultMaxSearchResults          = 30
 	defaultMaxSearchResultsStreaming = 500
