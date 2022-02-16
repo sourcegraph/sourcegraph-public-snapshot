@@ -635,6 +635,20 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 }
 
+// FromExpandedPlan takes a query plan that has had all predicates expanded,
+// and converts it to a job.
+func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
+	children := make([]Job, 0, len(plan))
+	for _, q := range plan {
+		child, err := ToEvaluateJob(args, q)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, child)
+	}
+	return NewOrJob(children...), nil
+}
+
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_featureflag_unavailable",
 	Help: "temporary counter to check if we have feature flag available in practice.",
