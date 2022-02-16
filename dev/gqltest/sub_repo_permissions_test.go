@@ -45,22 +45,24 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
-	t.Run("can list README.md", func(t *testing.T) {
+	t.Run("file list excludes excluded files", func(t *testing.T) {
 		// Should not be able to read hack.sh
-		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		// This is the desired behaviour at the moment, see where we check for
-		// os.IsNotExist error in GitCommitResolver.Blob
-		wantBlob := ``
+		// Notice that Security/hack.sh is excluded
+		wantFiles := []string{
+			"Backend/main.go",
+			"Frontend/app.ts",
+			"README.md",
+		}
 
-		if diff := cmp.Diff(wantBlob, blob); diff != "" {
-			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wantFiles, files); diff != "" {
+			t.Fatalf("fileNames mismatch (-want +got):\n%s", diff)
 		}
 	})
-
 }
 
 func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
