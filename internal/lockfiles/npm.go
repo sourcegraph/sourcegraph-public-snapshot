@@ -5,12 +5,9 @@ import (
 	"sort"
 )
 
-type Dependency struct {
-	Name    string
-	Version string `json:"version"`
-}
+const NPMFilename = "package-lock.json"
 
-func ParseNpm(b []byte) ([]*Dependency, error) {
+func ParseNPM(b []byte) ([]*Dependency, error) {
 	var lockfile struct {
 		Dependencies map[string]*Dependency `json:"dependencies"`
 	}
@@ -23,6 +20,7 @@ func ParseNpm(b []byte) ([]*Dependency, error) {
 	var dependencies []*Dependency
 	for name, dependency := range lockfile.Dependencies {
 		dependency.Name = name
+		dependency.Kind = KindNPM
 		dependencies = append(dependencies, dependency)
 	}
 
