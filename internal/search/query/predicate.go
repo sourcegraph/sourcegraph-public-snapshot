@@ -32,6 +32,8 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
+		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
+		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -262,6 +264,56 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	return ToPlan(Dnf(nodes))
 }
 
+// RepoDependenciesPredicate represents the `repo:dependencies(of: regex@rev)` predicate,
+// which filters to repos that are dependencies of the repos matching the given of regex.
+type RepoDependenciesPredicate struct {
+	Repo string
+}
+
+func (f *RepoDependenciesPredicate) ParseParams(params string) error {
+	nodes, err := Parse(params, SearchTypeRegex)
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodes {
+		if err := f.parseNode(node); err != nil {
+			return err
+		}
+	}
+
+	if f.Repo == "" {
+		return errors.New("repo must be set")
+	}
+
+	return nil
+}
+
+func (f *RepoDependenciesPredicate) parseNode(n Node) error {
+	switch v := n.(type) {
+	case Pattern:
+		f.Repo = v.Value
+		return nil
+	}
+
+	return errors.Errorf("unsupported node type %T", n)
+}
+
+func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
+func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
+func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldDependencies,
+		Value: f.Repo,
+	})
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+/* repo:contains.content(pattern) */
+
 type FileContainsContentPredicate struct {
 	Pattern string
 }
@@ -314,7 +366,8 @@ func nonPredicateRepos(q Basic) []Node {
 			FieldFork,
 			FieldArchived,
 			FieldVisibility,
-			FieldCase:
+			FieldCase,
+			FieldDependencies:
 			res = append(res, Parameter{
 				Field:      field,
 				Value:      value,

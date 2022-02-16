@@ -15,13 +15,16 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -106,14 +109,14 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Resolve", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	includePatterns := op.RepoFilters
-	if includePatterns != nil {
+	if len(includePatterns) > 0 {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
@@ -132,6 +135,22 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
+	var (
+		depNames []string
+		depRevs  map[string][]search.RevisionSpecifier
+	)
+
+	if len(op.Dependencies) > 0 {
+		depNames, depRevs, err = r.dependencies(ctx, &op)
+		if err != nil {
+			return Resolved{}, err
+		}
+
+		if len(depNames) == 0 {
+			return Resolved{}, ErrNoResolvedRepos
+		}
+	}
+
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
@@ -139,6 +158,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
+		Names:                 depNames,
 		ExcludePattern:        search.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
@@ -252,11 +272,17 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				revs    []search.RevisionSpecifier
 			)
 
-			if len(searchContextRepositoryRevisions) > 0 {
+			if len(depRevs) > 0 {
+				revs = depRevs[string(repo.Name)]
+			}
+
+			if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
 				if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
 					revs = scRepoRev.Revs
 				}
-			} else {
+			}
+
+			if len(revs) == 0 {
 				var clashingRevs []search.RevisionSpecifier
 				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
@@ -383,7 +409,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 // Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
 func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Excluded", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
 		tr.SetError(err)
@@ -484,6 +510,94 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 	}
 
 	return excluded.ExcludedRepos, g.Wait()
+}
+
+// dependencies resolves `dependency:` filters to a specific list of dependencies for the given
+// repos and revision(s). It does so by:
+//
+// 1. Expanding each `dependencies:regex@revA:revB:...` filter regex to a list of repositories that exist in the DB.
+// 2. For each of those (repo, rev) tuple, computing all their dependencies.
+// 3. On sourcegraph.com, making sure each of those dependencies are synced (i.e. lazy-syncing)
+//    On-prem, we will sync them in the background in the worker service.
+// 4. Return those dependencies to the caller to be included in repository resolution.
+//
+func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (depNames []string, depRevs map[string][]search.RevisionSpecifier, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
+	store := r.DB.Repos()
+	repos := backend.NewRepos(store)
+	sem := semaphore.NewWeighted(16)
+	mu := sync.Mutex{}
+	depRevs = make(map[string][]search.RevisionSpecifier)
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, depFilter := range op.Dependencies {
+		depFilter := depFilter
+		g.Go(func() error {
+			repoPattern, revs := search.ParseRepositoryRevisions(depFilter)
+			if len(revs) == 0 {
+				revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
+			}
+
+			rs, err := store.ListMinimalRepos(ctx, database.ReposListOptions{
+				IncludePatterns:       []string{repoPattern},
+				CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			rg, ctx := errgroup.WithContext(ctx)
+			for _, repo := range rs {
+				for _, rev := range revs {
+					repo, rev := repo, rev
+					rg.Go(func() error {
+						if rev == (search.RevisionSpecifier{}) {
+							rev.RevSpec = "HEAD"
+						} else if rev.RevSpec == "" {
+							return errors.Errorf("unsupported glob rev in dependencies filter: %q", depFilter)
+						}
+
+						if err := sem.Acquire(ctx, 1); err != nil {
+							return err
+						}
+						defer sem.Release(1)
+
+						return svc.StreamDependencies(ctx, repo.Name, rev.RevSpec, func(dep *lockfiles.Dependency) error {
+							mu.Lock()
+							depNames = append(depNames, dep.Name)
+							depRevs[dep.Name] = append(depRevs[dep.Name], search.RevisionSpecifier{RevSpec: dep.Version})
+							mu.Unlock()
+
+							if !envvar.SourcegraphDotComMode() {
+								return nil
+							}
+
+							if _, err := repos.GetByName(ctx, api.RepoName(dep.Name)); err != nil {
+								log15.Warn("failed lazy-syncing dependency", "name", dep.Name, "error", err)
+							}
+
+							return nil
+						})
+					})
+				}
+			}
+
+			return rg.Wait()
+		})
+	}
+
+	if err = g.Wait(); err != nil {
+		return nil, nil, err
+	}
+
+	return depNames, depRevs, nil
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
@@ -589,10 +703,10 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
-			log15.Info("Error is here", "for", repoPattern)
 			return nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
 		}
 		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+
 		includePatterns[i] = repoPattern
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")

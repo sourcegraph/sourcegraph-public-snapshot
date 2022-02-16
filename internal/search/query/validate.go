@@ -281,6 +281,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
+		FieldDependencies:
+		return satisfies(isValidRegexp, isNotNegated)
+	case
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case

@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func TestService_FetchDependencies(t *testing.T) {
+func TestService_ListDependencies(t *testing.T) {
 	s := &Service{
 		GitArchive: func(c context.Context, repo api.RepoName, ao gitserver.ArchiveOptions) (io.ReadCloser, error) {
 			var b bytes.Buffer
@@ -39,14 +39,14 @@ func TestService_FetchDependencies(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	got, err := s.FetchDependencies(ctx, "foo", "HEAD")
+	got, err := s.ListDependencies(ctx, "foo", "HEAD")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := []*Dependency{
-		{Name: "nan", Version: "2.15.0", Kind: KindNPM},
-		{Name: "tree-sitter-cli", Version: "0.20.4", Kind: KindNPM},
+		{Name: "npm/nan", Version: "v2.15.0", Kind: KindNPM},
+		{Name: "npm/tree-sitter-cli", Version: "v0.20.4", Kind: KindNPM},
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
