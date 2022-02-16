@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -613,11 +614,24 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit)
 	timeout := search.TimeoutDuration(q)
 
+	var (
+		job Job
+		err error
+	)
 	if q.Pattern == nil {
-		job, err := ToSearchJob(args, query.ToNodes(q.Parameters))
-		return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
+		job, err = ToSearchJob(args, query.ToNodes(q.Parameters))
+	} else {
+		job, err = toPatternExpressionJob(args, q)
 	}
-	job, err := toPatternExpressionJob(args, q)
+	if err != nil {
+		return nil, err
+	}
+
+	if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		job = NewSelectJob(sp, job)
+	}
+
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
 }
 

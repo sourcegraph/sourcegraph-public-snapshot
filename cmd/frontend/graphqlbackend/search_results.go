@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/alert"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -559,11 +558,6 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
-	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
-		// Ensure downstream events sent on the stream are processed by `select:`.
-		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
-		stream = streaming.WithSelect(stream, selectPath)
-	}
 	sr, err := r.resultsRecursive(ctx, stream, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
@@ -684,18 +678,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				return err
 			}
 
-			var selectMatch func(result.Match) result.Match
-			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-				sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-				selectMatch = func(m result.Match) result.Match {
-					return m.Select(sp)
-				}
-			} else {
-				selectMatch = func(m result.Match) result.Match {
-					return m
-				}
-			}
-
 			mu.Lock()
 			defer mu.Unlock()
 
@@ -713,13 +695,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 			// before, and remains after making query evaluation concurrent.
 			stats.Update(&newResult.Stats)
 
-			for _, m := range newResult.Matches {
-				match := selectMatch(m)
-
-				if match == nil {
-					continue
-				}
-
+			for _, match := range newResult.Matches {
 				wantCount = match.Limit(wantCount)
 
 				if dedup.Add(match); wantCount <= 0 {
