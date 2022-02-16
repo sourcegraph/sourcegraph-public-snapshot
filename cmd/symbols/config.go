@@ -42,7 +42,11 @@ var config = &Config{}
 func (c *Config) Load() {
 	c.ctagsCommand = c.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
 	c.ctagsPatternLengthLimit = c.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags")
-	c.ctagsLogErrors = os.Getenv("DEPLOY_TYPE") == "dev"
+	logCtagsErrorsDefault := "false"
+	if os.Getenv("DEPLOY_TYPE") == "dev" {
+		logCtagsErrorsDefault = "true"
+	}
+	c.ctagsLogErrors = c.GetBool("LOG_CTAGS_ERRORS", logCtagsErrorsDefault, "log ctags errors")
 	c.ctagsDebugLogs = false
 
 	c.sanityCheck = c.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not")

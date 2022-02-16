@@ -59,6 +59,34 @@ mutation DeleteUser($user: ID!, $hard: Boolean) {
 	return nil
 }
 
+// SetUserEmailVerified sets the given user's email address verification status.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) SetUserEmailVerified(user, email string, verified bool) error {
+	const query = `
+mutation setUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+	setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+      alwaysNil
+	}
+}
+`
+	variables := map[string]interface{}{
+		"user":     user,
+		"email":    email,
+		"verified": verified,
+	}
+	var resp struct {
+		Data struct {
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+
+	return nil
+}
+
 // UserOrganizations returns organizations name the given user belongs to.
 func (c *Client) UserOrganizations(username string) ([]string, error) {
 	const query = `

@@ -398,8 +398,10 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Lint",
-		bk.Cmd("./dev/ci/docker-lint.sh"))
+	pipeline.AddStep(":docker: Docker checks",
+		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
+			IncludeNames: true,
+		}))
 }
 
 // Adds backend integration tests step.
@@ -576,23 +578,22 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	}
 }
 
-// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-// func clusterQA(candidateTag string) operations.Operation {
-// 	return func(p *bk.Pipeline) {
-// 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
-// 			bk.DependsOn(candidateImageStepKey("frontend")),
-// 			bk.Env("CANDIDATE_VERSION", candidateTag),
-// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-// 			bk.Env("NO_CLEANUP", "false"),
-// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-// 	}
-// }
+func clusterQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+			bk.DependsOn(candidateImageStepKey("frontend")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.

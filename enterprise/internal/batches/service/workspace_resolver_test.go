@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"sort"
 	"testing"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -56,10 +58,10 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 	u := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 5)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 7)
 	unsupported, _ := ct.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
 	// Allow access to all repos but rs[4].
-	ct.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, unsupported[0].ID)
+	ct.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
 
 	defaultBranches := map[api.RepoName]defaultBranch{
 		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
@@ -67,7 +69,10 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		rs[2].Name:          {branch: "branch-3", commit: api.CommitID("aead85d33485e115b33ec4045c55bac97e03fd26")},
 		rs[3].Name:          {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
 		rs[4].Name:          {branch: "branch-6", commit: api.CommitID("010b133ece7a79187cad209b27099232485a5476")},
+		rs[5].Name:          {branch: "branch-7", commit: api.CommitID("ee0c70114fc1a92c96ceae495519a4d3df979efe")},
 		unsupported[0].Name: {branch: "branch-5", commit: api.CommitID("c167bd633e2868585b86ef129d07f63dee46b84a")},
+		// No entry for rs[6], is not cloned yet. This is to test we don't error when some repos are results of a
+		// search but not yet cloned.
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
 	buildRepoWorkspace := func(repo *types.Repo, branch, commit string, fileMatches []string) *RepoWorkspace {
@@ -106,8 +111,10 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		batchSpec := &batcheslib.BatchSpec{
 			On: []batcheslib.OnQueryOrRepository{
 				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-				// In our test the search API returns the same results for both
+				// In our test the search API returns the same results for both.
 				{RepositoriesMatchingQuery: "repohasfile:horse.txt duplicate"},
+				// This query returns 0 results.
+				{RepositoriesMatchingQuery: "select:repo r:sourcegraph"},
 			},
 			Steps: steps,
 		}
@@ -120,7 +127,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[unsupported[0].Name].commit: false,
 		})
 
-		searchMatches := []streamhttp.EventMatch{
+		eventMatches := []streamhttp.EventMatch{
 			&streamhttp.EventContentMatch{
 				Type:         streamhttp.ContentMatchType,
 				Path:         "repo-0/test",
@@ -150,6 +157,18 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				Path:         "unsupported/path",
 				RepositoryID: int32(unsupported[0].ID),
 			},
+			// Result for rs[6] which is not cloned yet.
+			&streamhttp.EventPathMatch{
+				Type:         streamhttp.RepoMatchType,
+				RepositoryID: int32(rs[6].ID),
+			},
+		}
+		searchMatches := map[string][]streamhttp.EventMatch{
+			"repohasfile:horse.txt count:all":           eventMatches,
+			"repohasfile:horse.txt duplicate count:all": eventMatches,
+			// No results for this one. rs[5] should not appear in the result, as
+			// it didn't match anything in the search results.
+			"select:repo r:sourcegraph count:all": {},
 		}
 
 		want := []*RepoWorkspace{
@@ -192,8 +211,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[unsupported[0].Name].commit: false,
 		})
 
-		searchMatches := []streamhttp.EventMatch{}
-
 		want := []*RepoWorkspace{
 			buildRepoWorkspace(rs[0], "", "", []string{}),
 			buildRepoWorkspace(rs[1], "non-default-branch", "d34db33f", []string{}),
@@ -203,7 +220,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
 	})
 
 	t.Run("repositories overriding previous queries", func(t *testing.T) {
@@ -242,12 +259,14 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[unsupported[0].Name].commit: false,
 		})
 
-		searchMatches := []streamhttp.EventMatch{
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.PathMatchType,
-				Path:         "repo-2/readme",
-				RepositoryID: int32(rs[2].ID),
-				Branches:     []string{"main"},
+		searchMatches := map[string][]streamhttp.EventMatch{
+			"r:rs-2 count:all": {
+				&streamhttp.EventPathMatch{
+					Type:         streamhttp.PathMatchType,
+					Path:         "repo-2/readme",
+					RepositoryID: int32(rs[2].ID),
+					Branches:     []string{"main"},
+				},
 			},
 		}
 
@@ -282,7 +301,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[rs[3].Name].commit: false,
 		})
 
-		searchMatches := []streamhttp.EventMatch{
+		eventMatches := []streamhttp.EventMatch{
 			&streamhttp.EventContentMatch{
 				Type:         streamhttp.ContentMatchType,
 				Path:         "test",
@@ -301,6 +320,9 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				Type:         streamhttp.RepoMatchType,
 				RepositoryID: int32(unsupported[0].ID),
 			},
+		}
+		searchMatches := map[string][]streamhttp.EventMatch{
+			"repohasfile:horse.txt count:all": eventMatches,
 		}
 
 		mockResolveRevision(t, map[string]api.CommitID{
@@ -352,8 +374,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[rs[1].Name].commit: false,
 		})
 
-		searchMatches := []streamhttp.EventMatch{}
-
 		// We want both workspaces, but only one of them has steps that need to run
 		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
 		// ws0.Steps = conditionalSteps
@@ -362,11 +382,11 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		// ws1.Steps = conditionalSteps
 
 		want := []*RepoWorkspace{ws0, ws1}
-		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
 	})
 }
 
-func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
+func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
 	t.Helper()
 
 	wr := &workspaceResolver{
@@ -383,8 +403,25 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, ma
 	}
 }
 
-func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) string {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.EventMatch) string {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		q, err := url.QueryUnescape(req.URL.Query().Get("q"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if q == "" {
+			http.Error(w, "no query passed", http.StatusBadRequest)
+			return
+		}
+
+		match, ok := matches[q]
+		if !ok {
+			t.Logf("unknown query %q", q)
+			http.Error(w, fmt.Sprintf("unknown query %q", q), http.StatusBadRequest)
+			return
+		}
+
 		type ev struct {
 			Name  string
 			Value interface{}
@@ -396,9 +433,9 @@ func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) st
 		}
 		ew.Event("progress", ev{
 			Name:  "progress",
-			Value: &streamapi.Progress{MatchCount: len(matches)},
+			Value: &streamapi.Progress{MatchCount: len(match)},
 		})
-		ew.Event("matches", matches)
+		ew.Event("matches", match)
 		ew.Event("done", struct{}{})
 	}))
 
@@ -417,7 +454,7 @@ func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultB
 		if res, ok := defaultBranches[repo]; ok {
 			return res.branch, res.commit, nil
 		}
-		return "", "", errors.Newf("unknown repo: %s", repo)
+		return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 	}
 	t.Cleanup(func() { git.Mocks.GetDefaultBranch = nil })
 }

@@ -138,6 +138,34 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	}
 }
 
+func TestCanonicalizeDocumentsInDefinitionReferences(t *testing.T) {
+	actualMap := map[int]*datastructures.DefaultIDSetMap{
+		1: newIDSetMap(map[int]*idSet{
+			11: newIDSet(101, 102),
+			12: newIDSet(101, 103),
+		}),
+		2: newIDSetMap(map[int]*idSet{
+			12: newIDSet(104),
+		}),
+	}
+	canonicalizeDocumentsInDefinitionReferences(actualMap, map[int]int{
+		12: 11,
+	})
+
+	expectedMap := map[int]*datastructures.DefaultIDSetMap{
+		1: newIDSetMap(map[int]*idSet{
+			11: newIDSet(101, 102, 103),
+		}),
+		2: newIDSetMap(map[int]*idSet{
+			11: newIDSet(104),
+		}),
+	}
+
+	if diff := cmp.Diff(expectedMap, actualMap, datastructures.Comparers...); diff != "" {
+		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	}
+}
+
 func TestCanonicalizeResultSets(t *testing.T) {
 	linkedMonikers := datastructures.NewDisjointIDSet()
 	linkedMonikers.Link(4002, 4005)

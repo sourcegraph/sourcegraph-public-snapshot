@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { ComponentType, forwardRef, useCallback, useState } from 'react'
+import React, { ComponentType, forwardRef, useState } from 'react'
 
 import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
@@ -25,10 +25,9 @@ export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef
     const { children, openByDefault, as: Component, position = Position.bottomStart } = props
 
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     return (
-        <Menu isOpen={isOpen} onOpenChange={toggleIsOpen} ref={reference} as={Component}>
+        <Menu isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)} ref={reference} as={Component}>
             {({ isExpanded }) => (
                 <>
                     <MenuButton className={classNames('bg-transparent', styles.menuNavItem)}>

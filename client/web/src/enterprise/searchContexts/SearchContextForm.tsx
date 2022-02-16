@@ -6,7 +6,7 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import {
@@ -151,7 +151,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [contextType, setContextType] = useState<ContextType>(
         searchContext ? (searchContext.query.length > 0 ? 'dynamic' : 'static') : 'dynamic'
     )
-    const [query, setQuery] = useState(searchContext?.query || props.query || '')
+    const [queryState, setQueryState] = useState<QueryState>({ query: searchContext?.query || props.query || '' })
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -184,7 +184,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             return (
                 name.length > 0 ||
                 description.length > 0 ||
-                query.length > 0 ||
+                queryState.query.length > 0 ||
                 visibility !== 'public' ||
                 selectedNamespace.type !== 'user' ||
                 hasRepositoriesConfigChanged
@@ -193,11 +193,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         return (
             searchContext.name !== name ||
             searchContext.description !== description ||
-            searchContext.query !== query ||
+            searchContext.query !== queryState.query ||
             searchContextVisibility(searchContext) !== visibility ||
             hasRepositoriesConfigChanged
         )
-    }, [description, name, searchContext, selectedNamespace, visibility, query, hasRepositoriesConfigChanged])
+    }, [description, name, searchContext, selectedNamespace, visibility, queryState, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
@@ -274,10 +274,10 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 map(repositories => ({ input: { ...partialInput, query: '' }, repositories }))
                             )
                         }
-                        if (query.trim().length === 0) {
+                        if (queryState.query.trim().length === 0) {
                             return throwError(new Error('Search query has to be non-empty.'))
                         }
-                        return of({ input: { ...partialInput, query }, repositories: [] })
+                        return of({ input: { ...partialInput, query: queryState.query }, repositories: [] })
                     }),
                     switchMap(({ input, repositories }) =>
                         onSubmit(searchContext?.id, input, repositories).pipe(
@@ -297,7 +297,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 parseRepositories,
                 name,
                 description,
-                query,
+                queryState,
                 visibility,
                 selectedNamespace,
                 history,
@@ -440,8 +440,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
-                                queryState={{ query }}
-                                onChange={({ query }) => setQuery(query)}
+                                queryState={queryState}
+                                onChange={setQueryState}
                                 onSubmit={() => {}}
                                 globbing={false}
                                 preventNewLine={false}
@@ -482,6 +482,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         </div>
                     </div>
                 </div>
+                {isErrorLike(searchContextOrError) && (
+                    <Alert className="mt-3" variant="danger">
+                        Failed to create search context: {searchContextOrError.message}
+                    </Alert>
+                )}
             </Container>
             <div className="d-flex">
                 <Button
@@ -518,11 +523,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     </>
                 )}
             </div>
-            {isErrorLike(searchContextOrError) && (
-                <Alert className="mt-2" variant="danger">
-                    Failed to create search context: {searchContextOrError.message}
-                </Alert>
-            )}
             <AwayPrompt
                 header="Discard unsaved changes?"
                 message="All unsaved changes will be lost."

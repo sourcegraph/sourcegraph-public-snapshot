@@ -16900,6 +16900,9 @@ type MockOrgInvitationStore struct {
 	// GetPendingByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetPendingByID.
 	GetPendingByIDFunc *OrgInvitationStoreGetPendingByIDFunc
+	// GetPendingByOrgIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetPendingByOrgID.
+	GetPendingByOrgIDFunc *OrgInvitationStoreGetPendingByOrgIDFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *OrgInvitationStoreHandleFunc
@@ -16953,6 +16956,11 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 		},
 		GetPendingByIDFunc: &OrgInvitationStoreGetPendingByIDFunc{
 			defaultHook: func(context.Context, int64) (*OrgInvitation, error) {
+				return nil, nil
+			},
+		},
+		GetPendingByOrgIDFunc: &OrgInvitationStoreGetPendingByOrgIDFunc{
+			defaultHook: func(context.Context, int32) ([]*OrgInvitation, error) {
 				return nil, nil
 			},
 		},
@@ -17029,6 +17037,11 @@ func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
 				panic("unexpected invocation of MockOrgInvitationStore.GetPendingByID")
 			},
 		},
+		GetPendingByOrgIDFunc: &OrgInvitationStoreGetPendingByOrgIDFunc{
+			defaultHook: func(context.Context, int32) ([]*OrgInvitation, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.GetPendingByOrgID")
+			},
+		},
 		HandleFunc: &OrgInvitationStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
 				panic("unexpected invocation of MockOrgInvitationStore.Handle")
@@ -17091,6 +17104,9 @@ func NewMockOrgInvitationStoreFrom(i OrgInvitationStore) *MockOrgInvitationStore
 		},
 		GetPendingByIDFunc: &OrgInvitationStoreGetPendingByIDFunc{
 			defaultHook: i.GetPendingByID,
+		},
+		GetPendingByOrgIDFunc: &OrgInvitationStoreGetPendingByOrgIDFunc{
+			defaultHook: i.GetPendingByOrgID,
 		},
 		HandleFunc: &OrgInvitationStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -17680,6 +17696,118 @@ func (c OrgInvitationStoreGetPendingByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgInvitationStoreGetPendingByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// OrgInvitationStoreGetPendingByOrgIDFunc describes the behavior when the
+// GetPendingByOrgID method of the parent MockOrgInvitationStore instance is
+// invoked.
+type OrgInvitationStoreGetPendingByOrgIDFunc struct {
+	defaultHook func(context.Context, int32) ([]*OrgInvitation, error)
+	hooks       []func(context.Context, int32) ([]*OrgInvitation, error)
+	history     []OrgInvitationStoreGetPendingByOrgIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetPendingByOrgID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockOrgInvitationStore) GetPendingByOrgID(v0 context.Context, v1 int32) ([]*OrgInvitation, error) {
+	r0, r1 := m.GetPendingByOrgIDFunc.nextHook()(v0, v1)
+	m.GetPendingByOrgIDFunc.appendCall(OrgInvitationStoreGetPendingByOrgIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetPendingByOrgID
+// method of the parent MockOrgInvitationStore instance is invoked and the
+// hook queue is empty.
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) SetDefaultHook(hook func(context.Context, int32) ([]*OrgInvitation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetPendingByOrgID method of the parent MockOrgInvitationStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) PushHook(hook func(context.Context, int32) ([]*OrgInvitation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) SetDefaultReturn(r0 []*OrgInvitation, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]*OrgInvitation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) PushReturn(r0 []*OrgInvitation, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]*OrgInvitation, error) {
+		return r0, r1
+	})
+}
+
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) nextHook() func(context.Context, int32) ([]*OrgInvitation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) appendCall(r0 OrgInvitationStoreGetPendingByOrgIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgInvitationStoreGetPendingByOrgIDFuncCall
+// objects describing the invocations of this function.
+func (f *OrgInvitationStoreGetPendingByOrgIDFunc) History() []OrgInvitationStoreGetPendingByOrgIDFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgInvitationStoreGetPendingByOrgIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgInvitationStoreGetPendingByOrgIDFuncCall is an object that describes
+// an invocation of method GetPendingByOrgID on an instance of
+// MockOrgInvitationStore.
+type OrgInvitationStoreGetPendingByOrgIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*OrgInvitation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgInvitationStoreGetPendingByOrgIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgInvitationStoreGetPendingByOrgIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

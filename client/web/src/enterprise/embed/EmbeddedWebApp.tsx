@@ -1,22 +1,21 @@
-import classNames from 'classnames'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, RouteComponentProps, Switch } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import {
-    Alert,
-    AnchorLink,
-    LoadingSpinner,
-    setLinkComponent,
-    WildcardTheme,
-    WildcardThemeContext,
-} from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
-import styles from './EmbeddedWebApp.module.scss'
+import { ThemePreference } from '../../stores/themeState'
+import { useTheme } from '../../theme'
 
-setLinkComponent(AnchorLink)
+import styles from './EmbeddedWebApp.module.scss'
+import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
+
+// Since we intend to embed the EmbeddedWebApp component within an iframe,
+// we want to open all links in a new tab instead of the current iframe window.
+// Otherwise, we would get an error that we tried to access a non-embed route from within the iframe.
+setLinkComponent(OpenNewTabAnchorLink)
 
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
@@ -30,8 +29,21 @@ const EmbeddedNotebookPage = lazyComponent(
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
 export const EmbeddedWebApp: React.FunctionComponent = () => {
-    // We only support light theme for now, but this can be made dynamic through a URL param in the embedding link.
-    const isLightTheme = true
+    const { enhancedThemePreference, setThemePreference } = useTheme()
+    const isLightTheme = enhancedThemePreference === ThemePreference.Light
+
+    useEffect(() => {
+        const query = new URLSearchParams(window.location.search)
+        const theme = query.get('theme')
+        setThemePreference(
+            theme === 'dark' ? ThemePreference.Dark : theme === 'light' ? ThemePreference.Light : ThemePreference.System
+        )
+    }, [setThemePreference])
+
+    useEffect(() => {
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [isLightTheme])
 
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
@@ -42,10 +54,10 @@ export const EmbeddedWebApp: React.FunctionComponent = () => {
     return (
         <BrowserRouter>
             <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                <div className={classNames(isLightTheme ? 'theme-light' : 'theme-dark', styles.body)}>
+                <div className={styles.body}>
                     <Suspense
                         fallback={
-                            <div className="d-flex justify-content-center">
+                            <div className="d-flex justify-content-center p-3">
                                 <LoadingSpinner />
                             </div>
                         }

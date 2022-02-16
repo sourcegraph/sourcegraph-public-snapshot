@@ -131,7 +131,7 @@ func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
 	case mapStateHeap:
 		v, ok := sm.m[key]
 		if ok {
-			delete(sm.m, key)
+			sm.deleteFromMap(key)
 		}
 		return v
 	default:
@@ -150,16 +150,20 @@ func (sm *DefaultIDSetMap) Delete(key int) {
 			sm.inlineValue = nil
 		}
 	case mapStateHeap:
-		delete(sm.m, key)
-		if len(sm.m) == 1 {
-			for k, v := range sm.m {
-				sm.inlineKey = k
-				sm.inlineValue = v
-			}
-			sm.m = nil
-		}
+		sm.deleteFromMap(key)
 	default:
 		panic(ILLEGAL_MAPSTATE)
+	}
+}
+
+func (sm *DefaultIDSetMap) deleteFromMap(key int) {
+	delete(sm.m, key)
+	if len(sm.m) == 1 {
+		for k, v := range sm.m {
+			sm.inlineKey = k
+			sm.inlineValue = v
+		}
+		sm.m = nil
 	}
 }
 
