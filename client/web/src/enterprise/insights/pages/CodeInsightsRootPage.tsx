@@ -104,7 +104,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
             )}
 
-            {activeView === CodeInsightsRootPageTab.GettingStarted && <LazyCodeInsightsGettingStartedPage />}
+            {activeView === CodeInsightsRootPageTab.GettingStarted && (
+                <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+            )}
         </Page>
     )
 }
