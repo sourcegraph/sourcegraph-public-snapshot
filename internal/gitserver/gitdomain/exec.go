@@ -1,6 +1,7 @@
 package gitdomain
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -17,7 +18,7 @@ var (
 		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
-		"rev-list":     {"--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
+		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
@@ -38,7 +39,7 @@ var (
 	gitCommonAllowlist = []string{
 		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges", "--fixed-strings",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
-		"--regexp-ignore-case", "--glob", "--cherry", "-z",
+		"--regexp-ignore-case", "--glob", "--cherry", "-z", "--reverse", "--ignore-submodules",
 		"--until", "--since", "--author", "--committer",
 		"--all-match", "--invert-grep", "--extended-regexp",
 		"--no-color", "--decorate", "--no-patch", "--exclude",
@@ -47,6 +48,8 @@ var (
 		"--full-index",
 		"--find-copies",
 		"--find-renames",
+		"--first-parent",
+		"--no-abbrev",
 		"--inter-hunk-context",
 		"--after",
 		"--date.order",
@@ -95,6 +98,11 @@ func IsAllowedGitCmd(args []string) bool {
 
 			// Special case handling of commands like `git blame -L15,60`.
 			if cmd == "blame" && strings.HasPrefix(arg, "-L") {
+				continue // this arg is OK
+			}
+
+			// Special case numeric arguments like `git log -20`.
+			if _, err := strconv.Atoi(arg[1:]); err == nil {
 				continue // this arg is OK
 			}
 
