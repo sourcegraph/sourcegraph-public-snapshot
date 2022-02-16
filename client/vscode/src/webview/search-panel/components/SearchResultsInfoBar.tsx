@@ -148,12 +148,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     icon={<BookmarkRadialGradientIcon />}
                     title="Monitor code for changes"
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
-                    source="Saved"
+                    source="CodeMonitor"
                     viewEventName="VSCECodeMonitorCTAShown"
                     returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     instanceURL={instanceURL}
+                    onToggle={onCreateCodeMonitorButtonClick}
                 />
             </li>
         )
@@ -183,12 +184,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     icon={<BookmarkRadialGradientIcon />}
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
-                    source="Saved"
+                    source="SavedSearches"
                     viewEventName="VSCESaveSearchCTAShown"
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
                     instanceURL={instanceURL}
+                    onToggle={onSaveSearchButtonClick}
                 />
             </li>
         ),
