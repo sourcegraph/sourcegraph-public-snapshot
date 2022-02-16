@@ -11,7 +11,6 @@ const config: Meta = {
     title: 'browser/AfterInstallPage',
     parameters: {
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },

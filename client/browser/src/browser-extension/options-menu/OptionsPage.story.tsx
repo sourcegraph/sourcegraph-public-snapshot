@@ -46,20 +46,11 @@ const OptionsPageWrapper: React.FunctionComponent<Partial<OptionsPageProps>> = p
     />
 )
 
-export const Default: Story = () => <OptionsPageWrapper />
-
-Default.parameters = {
-    chromatic: {
-        delay: 500,
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
-
 export const Interactive: Story = () => {
     const [isActivated, setIsActivated] = useState(false)
     return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} />
 }
+
 export const UrlValidationError: Story = () => {
     const [isActivated, setIsActivated] = useState(false)
     return (
@@ -72,7 +63,11 @@ export const UrlValidationError: Story = () => {
     )
 }
 
-UrlValidationError.storyName = 'URL validation error'
+UrlValidationError.parameters = {
+    chromatic: {
+        disableSnapshot: false,
+    },
+}
 
 export const AskingForPermission: Story = () => (
     <OptionsPageWrapper
@@ -81,14 +76,28 @@ export const AskingForPermission: Story = () => (
     />
 )
 
-AskingForPermission.storyName = 'Asking for permission'
+AskingForPermission.parameters = {
+    chromatic: {
+        disableSnapshot: false,
+    },
+}
 
 export const OnPrivateRepository: Story = () => (
     <OptionsPageWrapper showPrivateRepositoryAlert={true} requestPermissionsHandler={requestPermissionsHandler} />
 )
 
-OnPrivateRepository.storyName = 'On private repository'
+OnPrivateRepository.parameters = {
+    chromatic: {
+        disableSnapshot: false,
+    },
+}
 
 export const OnSourcegraphCloud: Story = () => (
     <OptionsPageWrapper requestPermissionsHandler={requestPermissionsHandler} showSourcegraphCloudAlert={true} />
 )
+
+OnSourcegraphCloud.parameters = {
+    chromatic: {
+        disableSnapshot: false,
+    },
+}

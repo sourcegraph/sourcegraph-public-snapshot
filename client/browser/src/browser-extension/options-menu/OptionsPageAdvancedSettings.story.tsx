@@ -24,7 +24,6 @@ const config: Meta = {
     decorators: [decorator],
     parameters: {
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },
