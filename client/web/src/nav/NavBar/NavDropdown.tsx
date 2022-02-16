@@ -12,7 +12,6 @@ import {
     MenuLink,
     PopoverOpenEvent,
     PopoverOpenEventReason,
-    Strategy,
 } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
@@ -87,8 +86,14 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     return (
         <>
             {/* Dropdown nav item for bigger screens */}
-            <NavItem className="d-none d-md-flex" onMouseLeave={() => setIsDropdownOpen(false)}>
-                <Menu isOpen={isDropdownOpen} onOpenChange={handleOpenChange}>
+            <NavItem className="d-none d-md-flex">
+                <Menu
+                    isOpen={isDropdownOpen}
+                    onOpenChange={handleOpenChange}
+                    as="div"
+                    className="d-flex"
+                    onMouseLeave={() => setIsDropdownOpen(false)}
+                >
                     <MenuButton
                         className={classNames(
                             navItemStyles.link,
@@ -97,10 +102,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             'align-items-center',
                             'p-0'
                         )}
-                        onMouseEnter={() => {
-                            console.log('Mouse enteirng!')
-                            setIsDropdownOpen(true)
-                        }}
+                        onMouseEnter={() => setIsDropdownOpen(true)}
                         onMouseDown={() => {
                             // Navigate to toggle item path on mouse click.
                             history.push(toggleItem.path)
@@ -119,10 +121,15 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             )}
                         </span>
                     </MenuButton>
-                    {/* MenuPoper does not have modifiers
-                            Add onPointerLeave from ButtonDropdown Reactstrap library */}
-
-                    <MenuList strategy={Strategy.Absolute} ref={menuListReference}>
+                    <MenuList
+                        ref={menuListReference}
+                        /**
+                         * No spacing between the list and the button.
+                         * This is important to ensure the dropdown isn't closed as the mouse moves between the elements
+                         */
+                        className="m-0"
+                        onMouseEnter={() => setIsDropdownOpen(true)}
+                    >
                         {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
                         <MenuLink
                             as={Link}

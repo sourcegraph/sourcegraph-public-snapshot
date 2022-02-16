@@ -3,7 +3,7 @@ import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import React, { HTMLAttributes, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
@@ -22,7 +22,7 @@ interface NavGroupProps {
     children: React.ReactNode
 }
 
-interface NavItemProps extends HTMLAttributes<HTMLLIElement> {
+interface NavItemProps {
     icon?: React.ComponentType<{ className?: string }>
     className?: string
     children: React.ReactNode
@@ -96,7 +96,7 @@ export const NavAction: React.FunctionComponent<NavActionsProps> = ({ children }
     </>
 )
 
-export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, className, icon, ...attributes }) => {
+export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, className, icon }) => {
     if (!children) {
         throw new Error('NavItem must be include at least one child')
     }
@@ -104,7 +104,7 @@ export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, class
     return (
         <>
             {React.Children.map(children, child => (
-                <li className={classNames(navItemStyles.item, className)} {...attributes}>
+                <li className={classNames(navItemStyles.item, className)}>
                     {React.cloneElement(child as React.ReactElement, { icon })}
                 </li>
             ))}

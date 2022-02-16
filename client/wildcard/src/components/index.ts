@@ -22,7 +22,7 @@ export * as Typography from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
-export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason, Strategy } from './Popover'
+export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason } from './Popover'
 
 /**
  * Type Exports
