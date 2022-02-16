@@ -17,16 +17,19 @@ import {
     ProductStatusBadge,
     LoadingSpinner,
     useObservable,
-    Button,
     Link,
     Alert,
+    FeedbackPrompt,
+    ButtonLink,
+    Button,
+    PopoverTrigger,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -72,6 +75,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
+    const routeMatch = useRoutesMatch(routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
+
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -204,19 +212,28 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                 <div className={styles.container}>
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <Button
+                            <ButtonLink
                                 target="_blank"
                                 rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 text-decoration-none btn-link"
+                                to="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 text-decoration-none"
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
-                                as="a"
                             >
                                 Learn more
-                            </Button>
-                            <FeedbackPrompt routes={routes} />
+                            </ButtonLink>
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    aria-label="Feedback"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                >
+                                    <span>Feedback</span>
+                                </PopoverTrigger>
+                            </FeedbackPrompt>
                         </div>
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />

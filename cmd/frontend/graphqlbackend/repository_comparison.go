@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepositoryComparisonInput struct {

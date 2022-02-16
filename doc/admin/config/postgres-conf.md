@@ -53,7 +53,7 @@ The setting `max_connections` determines the number of active connections that c
 | `gitserver`                 | `pgsql`                                    |
 | `repo-updater`              | `pgsql`                                    |
 | `precise-code-intel-worker` | `codeintel-db`, `pgsql`                    |
-| `worker`                    | `codeintel-db`, `pgsql`                    |
+| `worker`                    | `codeintel-db`, `pgsql`, `codeinsights-db` |
 
 Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`. _Note that these services do not all connect to the same database, and the frontend generates the majority of database connections_
 

@@ -1,15 +1,14 @@
 package definition
 
 import (
-	"fmt"
-	"sort"
-
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Definition struct {
 	ID                        int
+	Name                      string
 	UpQuery                   *sqlf.Query
 	DownQuery                 *sqlf.Query
 	Parents                   []int
@@ -46,10 +45,6 @@ func (ds *Definitions) All() []Definition {
 	definitions := make([]Definition, len(ds.definitions))
 	copy(definitions, ds.definitions)
 	return ds.definitions
-}
-
-func (ds *Definitions) Count() int {
-	return len(ds.definitions)
 }
 
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
@@ -97,7 +92,7 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 	for _, definition := range filtered {
 		for _, parent := range definition.Parents {
 			if _, ok := idMap[parent]; !ok {
-				return nil, fmt.Errorf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
+				return nil, errors.Newf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
 			}
 		}
 	}
@@ -325,88 +320,10 @@ func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition
 	return filtered, nil
 }
 
-func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
-	if target == 0 {
-		return ds.UpFrom(id, 0)
-	}
-
-	if _, ok := ds.GetByID(target); !ok {
-		return nil, errors.Newf("unknown target %d", target)
-	}
-	if target < id {
-		return nil, errors.Newf("migration %d is behind version %d", target, id)
-	}
-	if target == id {
-		// n == 0 has special meaning; handle case immediately
-		return nil, nil
-	}
-
-	return ds.UpFrom(id, target-id)
-}
-
-func (ds *Definitions) UpFrom(id, n int) ([]Definition, error) {
-	slice := make([]Definition, 0, len(ds.definitions))
-	for _, definition := range ds.definitions {
-		if definition.ID <= id {
-			continue
-		}
-
-		slice = append(slice, definition)
-	}
-
-	if n > 0 && len(slice) > n {
-		slice = slice[:n]
-	}
-
-	if id != 0 && len(slice) != 0 && slice[0].ID != id+1 {
-		return nil, errors.Newf("missing migrations [%d, %d]", id+1, slice[0].ID-1)
-	}
-
-	return slice, nil
-}
-
-func (ds *Definitions) DownTo(id, target int) ([]Definition, error) {
-	if target == 0 {
-		return nil, errors.Newf("illegal downgrade target %d", target)
-	}
-
-	if _, ok := ds.GetByID(target); !ok {
-		return nil, errors.Newf("unknown target %d", target)
-	}
-	if id < target {
-		return nil, errors.Newf("migration %d is ahead of version %d", target, id)
-	}
-
-	return ds.DownFrom(id, id-target)
-}
-
-func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
-	slice := make([]Definition, 0, len(ds.definitions))
-	for _, definition := range ds.definitions {
-		if definition.ID <= id {
-			slice = append(slice, definition)
-		}
-	}
-
-	sort.Slice(slice, func(i, j int) bool {
-		return slice[j].ID < slice[i].ID
-	})
-
-	if len(slice) > n {
-		slice = slice[:n]
-	}
-
-	if id != 0 && len(slice) != 0 && slice[0].ID != id {
-		return nil, errors.Newf("missing migrations [%d, %d]", slice[0].ID+1, id)
-	}
-
-	return slice, nil
-}
-
 func unknownMigrationError(id int, source *int) error {
 	if source == nil {
-		return fmt.Errorf("unknown migration %d", id)
+		return errors.Newf("unknown migration %d", id)
 	}
 
-	return fmt.Errorf("unknown migration %d referenced from migration %d", id, *source)
+	return errors.Newf("unknown migration %d referenced from migration %d", id, *source)
 }

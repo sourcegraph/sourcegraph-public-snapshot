@@ -12,7 +12,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
@@ -732,7 +732,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 		strings.ReplaceAll(countDocumentationSearchRowsQuery, "$SUFFIX", tableSuffix),
 	)))
 	if !exists {
-		return fmt.Errorf("failed to count table size")
+		return errors.Newf("failed to count table size")
 	}
 	if err != nil {
 		return errors.Wrap(err, "counting table size")

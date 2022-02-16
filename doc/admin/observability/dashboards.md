@@ -138,7 +138,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-page-load
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100020` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2049,7 +2049,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-internala
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101502` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2780,7 +2780,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2799,7 +2799,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101901` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2818,7 +2818,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101910` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2837,7 +2837,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101911` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2856,7 +2856,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-bloc
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101920` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2875,7 +2875,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101930` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2894,7 +2894,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101931` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2913,7 +2913,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101932` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3004,7 +3004,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102003` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3156,6 +3156,50 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 <br />
 
+### Frontend: Ranking
+
+#### frontend: mean_position_of_clicked_search_result_6h
+
+<p class="subtitle">Mean position of clicked search result over 6h</p>
+
+The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))`
+
+</details>
+
+<br />
+
+#### frontend: distribution_of_clicked_search_result_type_over_6h_in_percent
+
+<p class="subtitle">Distribution of clicked search result type over 6h in %</p>
+
+The distribution of clicked search results by result type. At every point in time, the values should sum to 100.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)`
+
+</details>
+
+<br />
+
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
 #### frontend: mean_successful_sentinel_duration_over_1h30m
@@ -3166,7 +3210,7 @@ Mean search duration for all successful sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3187,7 +3231,7 @@ Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3208,7 +3252,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3229,7 +3273,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3250,7 +3294,7 @@ Mean search duration for successful sentinel queries, broken down by query. Usef
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102420` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102520` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3271,7 +3315,7 @@ Mean time to first result for successful streaming sentinel queries, broken down
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102421` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3292,7 +3336,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102430` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102530` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3313,7 +3357,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102431` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102531` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3334,7 +3378,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102540` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3355,7 +3399,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102450` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102550` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3376,7 +3420,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102451` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102551` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3397,7 +3441,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102460` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102560` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3418,7 +3462,7 @@ The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102470` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102570` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -4473,7 +4517,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100600` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4492,7 +4536,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100601` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4511,7 +4555,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100610` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4530,7 +4574,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100611` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4549,7 +4593,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#gitserver-mean-blo
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100620` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4568,7 +4612,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100630` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4587,7 +4631,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100631` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4606,7 +4650,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100632` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5126,7 +5170,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-connectio
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5145,7 +5189,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-transacti
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100001` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5168,7 +5212,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-postgres-
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5189,7 +5233,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-invalid-i
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5210,7 +5254,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-pg-export
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100110` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5231,7 +5275,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-migration
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100111` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5254,7 +5298,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5275,7 +5319,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5296,7 +5340,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5317,7 +5361,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5338,7 +5382,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5357,7 +5401,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5376,7 +5420,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100310` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5395,7 +5439,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-provision
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100311` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5416,7 +5460,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#postgres-pods-avai
 
 To see this panel, visit `/-/debug/grafana/d/postgres/postgres?viewPanel=100400` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6301,7 +6345,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100800` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6320,7 +6364,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100801` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6339,7 +6383,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100810` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6358,7 +6402,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100811` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6377,7 +6421,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100820` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6396,7 +6440,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100830` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6415,7 +6459,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100831` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6434,7 +6478,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100832` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6525,7 +6569,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100903` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9522,7 +9566,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102500` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9541,7 +9585,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102501` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9560,7 +9604,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102510` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9579,7 +9623,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102511` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9598,7 +9642,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#worker-mean-blocke
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102520` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9617,7 +9661,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102530` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9636,7 +9680,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102531` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9655,7 +9699,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102532` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9746,7 +9790,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102603` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11277,7 +11321,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100800` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11296,7 +11340,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100801` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11315,7 +11359,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100810` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11334,7 +11378,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100811` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11353,7 +11397,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-mean-
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100820` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11372,7 +11416,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100830` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11391,7 +11435,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100831` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11410,7 +11454,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100832` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11798,7 +11842,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100203` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12852,7 +12896,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100603` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -14026,7 +14070,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100603` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -14117,7 +14161,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100703` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -14579,7 +14623,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100303` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -14710,7 +14754,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (queue)(src_executor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker).*"})`
+Query: `max by (queue)(src_executor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
 
 </details>
 
@@ -14735,7 +14779,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (queue)(increase(src_executor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker).*"}[30m])) / sum by (queue)(increase(src_executor_processor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker).*"}[30m]))`
+Query: `sum by (queue)(increase(src_executor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m])) / sum by (queue)(increase(src_executor_processor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m]))`
 
 </details>
 

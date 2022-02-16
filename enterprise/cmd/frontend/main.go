@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
@@ -58,6 +59,13 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"searchcontexts": searchcontexts.Init,
 	"enterprise":     orgrepos.Init,
 	"notebooks":      notebooks.Init,
+	"compute":        compute.Init,
+}
+
+var codeIntelConfig = &codeintel.Config{}
+
+func init() {
+	codeIntelConfig.Load()
 }
 
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -77,12 +85,16 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	services, err := codeintel.NewServices(ctx, conf, db)
+	if err := codeIntelConfig.Validate(); err != nil {
+		log.Fatalf("failed to load codeintel config: %s", err)
+	}
+
+	services, err := codeintel.NewServices(ctx, codeIntelConfig, conf, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := codeintel.Init(ctx, db, conf, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatalf("failed to initialize codeintel: %s", err)
 	}
 

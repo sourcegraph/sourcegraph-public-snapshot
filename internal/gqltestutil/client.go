@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
@@ -277,9 +276,9 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "unmarshal response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs *multierror.Error
+			var errs *errors.MultiError
 			for _, err := range errResp.Errors {
-				errs = multierror.Append(errs, errors.New(err.Message))
+				errs = errors.Append(errs, errors.New(err.Message))
 			}
 			return errs
 		}

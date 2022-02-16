@@ -7,7 +7,9 @@ import { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/WebhookAction', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/actions/WebhookAction', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -21,6 +23,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://example.com',
     enabled: true,
+    includeResults: false,
 }
 
 add('WebhookAction', () => (

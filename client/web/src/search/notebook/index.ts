@@ -3,7 +3,7 @@ import { forkJoin, Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { asError } from '@sourcegraph/common'
+import { asError, renderMarkdown } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -14,7 +14,6 @@ import {
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { LATEST_VERSION } from '../results/StreamingSearchResults'
 
@@ -87,13 +86,9 @@ export class Notebook {
         this.blocks = new Map(blocks.map(block => [block.id, block]))
         this.blockOrder = blocks.map(block => block.id)
 
-        this.renderMarkdownBlocks()
-    }
-
-    private renderMarkdownBlocks(): void {
-        const blocks = this.blocks.values()
+        // Pre-run the markdown and file blocks, for a better user experience.
         for (const block of blocks) {
-            if (block.type === 'md') {
+            if (block.type === 'md' || block.type === 'file') {
                 this.runBlockById(block.id)
             }
         }

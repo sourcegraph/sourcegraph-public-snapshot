@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -33,9 +33,8 @@ var (
 	dbAddUserPasswordFlag = dbAddUserFlagSet.String("password", "sourcegraphsourcegraph", "User password")
 
 	dbCommand = &ffcli.Command{
-		Name:       "db",
-		ShortUsage: "",
-		LongHelp:   "",
+		Name:      "db",
+		ShortHelp: "Interact with Sourcegraph databases for development.",
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
@@ -198,6 +197,10 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
+	r, err := connections.RunnerFromDSNs(dsnMap, "sg", storeFactory)
+	if err != nil {
+		return err
+	}
 
 	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
 	for _, schemaName := range schemaNames {
@@ -207,9 +210,7 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 		})
 	}
 
-	options := runner.Options{
+	return r.Run(ctx, runner.Options{
 		Operations: operations,
-	}
-
-	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)
+	})
 }

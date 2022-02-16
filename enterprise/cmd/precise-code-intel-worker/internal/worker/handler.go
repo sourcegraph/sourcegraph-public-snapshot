@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
@@ -16,16 +15,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -139,7 +139,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
 				// safely assume that the entire index's data is in the codeintel database, as it's
-				// parsed determinstically and written atomically.
+				// parsed deterministically and written atomically.
 				log15.Warn("LSIF data already exists for upload record")
 				trace.Log(log.Bool("rewriting", true))
 			} else {

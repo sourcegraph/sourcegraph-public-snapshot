@@ -149,7 +149,7 @@ func Frontend() *monitoring.Container {
 
 							Critical: monitoring.Alert().GreaterOrEqual(2, nil),
 							Panel:    monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:    monitoring.ObservableOwnerCoreApplication,
+							Owner:    monitoring.ObservableOwnerCloudSaaS,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
@@ -428,7 +428,7 @@ func Frontend() *monitoring.Container {
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerCloudSaaS,
 							PossibleSolutions: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -624,6 +624,57 @@ func Frontend() *monitoring.Container {
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			{
+				Title:  "Ranking",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "mean_position_of_clicked_search_result_6h",
+							Description: "mean position of clicked search result over 6h",
+							Query:       "sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Targets = []sdk.Target{{
+									Expr:         o.Query,
+									LegendFormat: "{{type}}",
+								}, {
+									Expr:         "sum by (app) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (app) (rate(src_search_ranking_result_clicked_count[6h]))",
+									LegendFormat: "all",
+								}}
+								p.GraphPanel.Tooltip.Shared = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.",
+						},
+						{
+							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
+							Description: "distribution of clicked search result type over 6h in %",
+							Query:       "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"commit\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Targets = []sdk.Target{{
+									Expr:         o.Query,
+									LegendFormat: "commit",
+								}, {
+									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+									LegendFormat: "fileMatch",
+								}, {
+									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+									LegendFormat: "repo",
+								}}
+								p.GraphPanel.Tooltip.Shared = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The distribution of clicked search results by result type. At every point in time, the values should sum to 100.",
+						},
+					},
+				},
+			},
 
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",

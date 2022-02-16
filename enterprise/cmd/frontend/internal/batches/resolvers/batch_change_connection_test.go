@@ -76,7 +76,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestBatchChangesListing(t *testing.T) {
 	store := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +205,6 @@ func TestBatchChangesListing(t *testing.T) {
 	createBatchChange := func(t *testing.T, c *btypes.BatchChange) {
 		t.Helper()
 
-		c.Name = "n"
 		if err := store.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
@@ -216,6 +215,7 @@ func TestBatchChangesListing(t *testing.T) {
 		createBatchSpec(t, spec)
 
 		batchChange := &btypes.BatchChange{
+			Name:            "batch-change-1",
 			NamespaceUserID: userID,
 			BatchSpecID:     spec.ID,
 			CreatorID:       userID,
@@ -249,6 +249,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		// This batch change has never been applied -- it is a draft.
 		batchChange2 := &btypes.BatchChange{
+			Name:            "batch-change-2",
 			NamespaceUserID: userID,
 			BatchSpecID:     spec2.ID,
 		}
@@ -298,6 +299,7 @@ func TestBatchChangesListing(t *testing.T) {
 		createBatchSpec(t, spec)
 
 		batchChange := &btypes.BatchChange{
+			Name:           "batch-change-1",
 			NamespaceOrgID: orgID,
 			BatchSpecID:    spec.ID,
 			CreatorID:      userID,
@@ -331,6 +333,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		// This batch change has never been applied -- it is a draft.
 		batchChange2 := &btypes.BatchChange{
+			Name:           "batch-change-2",
 			NamespaceOrgID: orgID,
 			BatchSpecID:    spec2.ID,
 		}

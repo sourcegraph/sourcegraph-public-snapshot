@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/time/rate"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
@@ -481,6 +481,15 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 		err = &OrgNotFoundError{}
 	}
 	return
+}
+
+// ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise
+// server instances only. Callers should be careful not to use this for github.com or GitHub
+// enterprise cloud.
+func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org, hasNextPage bool, err error) {
+	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
+	err = c.requestGet(ctx, path, &orgs)
+	return orgs, len(orgs) > 0, err
 }
 
 // ListOrganizationMembers retrieves collaborators in the given organization.

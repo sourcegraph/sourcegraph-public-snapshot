@@ -19,10 +19,11 @@ package vcs
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ParseURL parses rawurl into a URL structure. Parse first attempts to

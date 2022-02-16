@@ -5,18 +5,17 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitserverproto "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterproto "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxUserPublicRepos = 100

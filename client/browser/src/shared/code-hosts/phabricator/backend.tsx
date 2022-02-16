@@ -2,11 +2,11 @@ import { from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
 
+import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, checkOk } from '@sourcegraph/http-client'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { storage } from '../../../browser-extension/web-extension-api/storage'

@@ -4,15 +4,13 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type InsightPermStore struct {

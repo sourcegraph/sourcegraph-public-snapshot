@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -75,9 +75,17 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	for _, dependency := range dependencies {
 		_, err := coursier.FetchSources(ctx, s.Config, dependency)
 		if err != nil {
+			// Temporary: We shouldn't need both these checks but we're continuing to see the
+			// error in production logs which implies `Is` is not matching.
+			if errors.Is(err, coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+				// We can't do anything and it's leading to increases in our
+				// src_repoupdater_sched_error alert firing more often.
+				continue
+			}
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -133,7 +141,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		if tags[dependency.GitTagFromVersion()] {
 			continue
 		}
-		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
+		// the gitPushDependencyTag method is responsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}

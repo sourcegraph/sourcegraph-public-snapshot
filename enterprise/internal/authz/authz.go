@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
@@ -14,10 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -25,10 +27,16 @@ type ExternalServicesStore interface {
 	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
-// ProvidersFromConfig returns the set of permission-related providers derived from the site config.
-// It also returns any validation problems with the config, separating these into "serious problems"
+// ProvidersFromConfig returns the set of permission-related providers derived from the site config
+// based on `NewAuthzProviders` constructors provided by each provider type's package.
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
 // and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
@@ -175,11 +183,15 @@ func ProvidersFromConfig(
 
 var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error)
 
-// ProviderFromExternalService returns the parsed authz.Provider derived from
-// the site config and the given external service.
+// ProviderFromExternalService returns the parsed authz.Provider derived from the site config
+// and the given external service based on `NewAuthzProviders` constructors provided by each
+// provider type's package.
 //
-// It returns `(nil, nil)` if no authz.Provider can be derived and no error had
-// occurred.
+// It returns `(nil, nil)` if no authz.Provider can be derived and no error had occurred.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
 	if MockProviderFromExternalService != nil {
 		return MockProviderFromExternalService(siteConfig, svc)
@@ -251,4 +263,12 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 		return nil, nil
 	}
 	return providers[0], nil
+}
+
+func RefreshInterval() time.Duration {
+	interval := conf.Get().AuthzRefreshInterval
+	if interval <= 0 {
+		return 5 * time.Second
+	}
+	return time.Duration(interval) * time.Second
 }

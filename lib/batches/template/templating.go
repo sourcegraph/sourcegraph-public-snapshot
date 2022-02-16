@@ -7,11 +7,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const startDelim = "${{"

@@ -35,6 +35,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 id: action ? action.id : '',
                 url,
                 enabled: webhookEnabled,
+                includeResults: false,
             })
         },
         [action, setAction, url, webhookEnabled]
@@ -68,11 +69,14 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
         >
             <Alert variant="info" className="mt-4">
                 Go to{' '}
-                <Link to="https://api.slack.com/" target="_blank" rel="noopener">
+                <Link to="https://api.slack.com/apps" target="_blank" rel="noopener">
                     Slack
                 </Link>{' '}
-                to create a webhook URL. If you already have a Slack webhook URL, paste it in the field below.{' '}
-                Documentation coming soon. {/* TODO: Add link to documentation once #27161 is resolved */}
+                to create a webhook URL.
+                <br />
+                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/slack" target="_blank" rel="noopener">
+                    Read more about how to set up Slack webhooks in the docs.
+                </Link>
             </Alert>
             <div className="form-group">
                 <label htmlFor="code-monitor-slack-webhook-url">Webhook URL</label>

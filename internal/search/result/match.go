@@ -1,6 +1,8 @@
 package result
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -43,14 +45,25 @@ const (
 	rankRepoMatch   = 3
 )
 
-// Key is a sorting or deduplicating key for a Match.
-// It contains all the identifying information for the Match.
+// Key is a sorting or deduplicating key for a Match. It contains all the
+// identifying information for the Match. Keys must be comparable by struct
+// equality. If two matches have keys that are equal by struct equality, they
+// will be treated as the same result for the purpose of deduplication/merging
+// in and/or queries.
 type Key struct {
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
 
 	// Rev is the revision associated with the repo if it exists
 	Rev string
+
+	// AuthorDate is the date a commit was authored if this key is for
+	// a commit match.
+	//
+	// NOTE(@camdencheek): this should probably use committer date,
+	// but the CommitterField on our CommitMatch type is possibly null,
+	// so using AuthorDate here preserves previous sorting behavior.
+	AuthorDate time.Time
 
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
@@ -72,6 +85,10 @@ func (k Key) Less(other Key) bool {
 
 	if k.Rev != other.Rev {
 		return k.Rev < other.Rev
+	}
+
+	if !k.AuthorDate.Equal(other.AuthorDate) {
+		return k.AuthorDate.Before(other.AuthorDate)
 	}
 
 	if k.Commit != other.Commit {

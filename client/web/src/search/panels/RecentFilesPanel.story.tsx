@@ -15,7 +15,7 @@ const { add } = storiesOf('web/search/panels/RecentFilesPanel', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [800] },
+        chromatic: { viewports: [800], disableSnapshot: false },
     })
     .addDecorator(story => <div style={{ width: '800px' }}>{story()}</div>)
 
@@ -34,10 +34,19 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RecentFilesPanel {...props} />}</WebStory>)
+add('RecentFilesPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <h2>Populated</h2>
+                <RecentFilesPanel {...props} />
 
-add('Loading', () => <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />}</WebStory>)
+                <h2>Loading</h2>
+                <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />
 
-add('Empty', () => (
-    <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />}</WebStory>
+                <h2>Empty</h2>
+                <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />
+            </div>
+        )}
+    </WebStory>
 ))

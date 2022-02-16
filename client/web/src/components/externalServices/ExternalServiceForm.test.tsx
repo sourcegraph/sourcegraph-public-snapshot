@@ -2,13 +2,13 @@ jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 
-import { render } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
 import { noop } from 'rxjs'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ExternalServiceForm } from './ExternalServiceForm'
 
@@ -23,7 +23,7 @@ describe('ExternalServiceForm', () => {
     }
 
     test('create GitHub', () => {
-        const component = render(
+        const component = renderWithBrandedContext(
             <ExternalServiceForm
                 {...baseProps}
                 input={{
@@ -39,7 +39,7 @@ describe('ExternalServiceForm', () => {
         expect(component.asFragment()).toMatchSnapshot()
     })
     test('edit GitHub', () => {
-        const component = render(
+        const component = renderWithBrandedContext(
             <ExternalServiceForm
                 {...baseProps}
                 input={{
@@ -55,7 +55,7 @@ describe('ExternalServiceForm', () => {
         expect(component.asFragment()).toMatchSnapshot()
     })
     test('edit GitHub, loading', () => {
-        const component = render(
+        const component = renderWithBrandedContext(
             <ExternalServiceForm
                 {...baseProps}
                 input={{

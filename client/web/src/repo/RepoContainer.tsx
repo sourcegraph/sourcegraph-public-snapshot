@@ -12,7 +12,7 @@ import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
@@ -29,9 +29,8 @@ import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import { Button, ButtonGroup, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -41,6 +40,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
@@ -84,7 +84,8 @@ export interface RepoContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps {
+        FeatureFlagProps,
+        GlobalCoolCodeIntelProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -126,7 +127,8 @@ interface RepoContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        FeatureFlagProps,
+        GlobalCoolCodeIntelProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -224,7 +226,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <div className="d-inline-flex btn-group">
+                        <ButtonGroup className="d-inline-flex">
                             <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
@@ -249,7 +251,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <ChevronDownIcon className="icon-inline" />
                             </Button>
-                        </div>
+                        </ButtonGroup>
                         <UncontrolledPopover
                             placement="bottom-start"
                             target="repo-popover"
@@ -447,6 +449,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                     useActionItemsBar={useActionItemsBar}
+                                    // Experimental ref panel
+                                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
+                                    onTokenClick={props.onTokenClick}
                                 />
                             )}
                         />

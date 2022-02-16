@@ -7,7 +7,9 @@ import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAction', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAction', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 const defaultProps: ActionProps = {
     action: undefined,
@@ -21,6 +23,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
     enabled: true,
+    includeResults: false,
 }
 
 add('SlackWebhookAction', () => (

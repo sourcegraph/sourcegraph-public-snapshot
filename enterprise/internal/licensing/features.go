@@ -5,10 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // EnforceTiers is a temporary flag to indicate whether to enforce new license tier constraints defined in

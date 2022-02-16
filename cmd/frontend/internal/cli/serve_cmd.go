@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -263,6 +263,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
+		enterprise.ComputeResolver,
 	)
 	if err != nil {
 		return err
@@ -316,6 +317,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	if err != nil {

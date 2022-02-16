@@ -1,8 +1,8 @@
-import { render } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -18,12 +18,13 @@ import { GlobalNavbar } from './GlobalNavbar'
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
 
+const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     authRequired: false,
     extensionsController,
     location: createLocation('/'),
-    history: createMemoryHistory(),
+    history,
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,
@@ -59,19 +60,19 @@ describe('GlobalNavbar', () => {
     })
 
     test('default', () => {
-        const { asFragment } = render(
-            <MemoryRouter>
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
-            </MemoryRouter>
+            </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
     })
 
     test('low-profile', () => {
-        const { asFragment } = render(
-            <MemoryRouter>
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
                 <GlobalNavbar {...PROPS} variant="low-profile" />
-            </MemoryRouter>
+            </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
     })

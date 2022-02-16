@@ -12,9 +12,9 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
 
-const { add } = storiesOf('web/searchContexts/SearchContextForm', module)
+const { add } = storiesOf('web/enterprise/searchContexts/SearchContextForm', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
 

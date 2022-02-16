@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchChangeColumns are used by the batch change related Store methods to insert,

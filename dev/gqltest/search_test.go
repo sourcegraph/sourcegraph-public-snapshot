@@ -65,7 +65,7 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndex(
+	err = client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
@@ -285,18 +285,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("context: search query", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchContextsQuery": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		_, err = client.Repository("github.com/sgtest/java-langserver")
+		_, err := client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)
 		_, err = client.Repository("github.com/sgtest/jsonrpc2")
 		require.NoError(t, err)

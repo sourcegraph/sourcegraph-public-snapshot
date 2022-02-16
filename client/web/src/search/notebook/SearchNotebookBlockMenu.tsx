@@ -34,7 +34,7 @@ export type BlockMenuActionComponentProps = {
     Pick<ButtonProps, 'variant'>
 
 const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponentProps> = props => {
-    const { className, label, type, id, isDisabled, icon, iconClassName } = props
+    const { className, label, type, id, isDisabled, icon, iconClassName, variant } = props
 
     const element = type === 'button' ? 'button' : 'a'
     const elementSpecificProps =
@@ -50,6 +50,8 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
             disabled={isDisabled}
             role="menuitem"
             data-testid={label}
+            size="sm"
+            variant={variant}
             {...elementSpecificProps}
         >
             <div className={iconClassName}>{icon}</div>

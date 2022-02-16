@@ -8,15 +8,14 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
+	"github.com/grafana/regexp"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stat returns a FileInfo describing the named file at commit.

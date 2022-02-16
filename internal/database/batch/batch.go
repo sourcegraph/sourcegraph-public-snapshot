@@ -7,12 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
@@ -97,7 +95,7 @@ func WithInserterWithReturn(
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			err = errors.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
 		}
 	}()
 

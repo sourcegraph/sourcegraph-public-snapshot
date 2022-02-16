@@ -1,7 +1,7 @@
 import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
 
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -75,8 +75,8 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     />
                 </form>
                 <p className="mt-5">
-                    If you do not agree, <Link to="/-/sign-out">sign out</Link> and contact your site admin to have your
-                    account deleted.
+                    If you do not agree, <AnchorLink to="/-/sign-out">sign out</AnchorLink> and contact your site admin
+                    to have your account deleted.
                 </p>
                 {error && (
                     <Alert className="mt-4" variant="danger">

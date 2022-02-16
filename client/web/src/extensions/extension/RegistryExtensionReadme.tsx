@@ -1,9 +1,8 @@
 import * as React from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'

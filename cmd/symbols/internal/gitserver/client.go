@@ -3,17 +3,16 @@ package gitserver
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitserverClient interface {
@@ -84,9 +83,13 @@ var NUL = []byte{0}
 // parseGitDiffOutput parses the output of a git diff command, which consists
 // of a repeated sequence of `<status> NUL <path> NUL` where NUL is the 0 byte.
 func parseGitDiffOutput(output []byte) (changes Changes, _ error) {
+	if len(output) == 0 {
+		return Changes{}, nil
+	}
+
 	slices := bytes.Split(bytes.TrimRight(output, string(NUL)), NUL)
 	if len(slices)%2 != 0 {
-		return changes, fmt.Errorf("uneven pairs")
+		return changes, errors.Newf("uneven pairs")
 	}
 
 	for i := 0; i < len(slices); i += 2 {
