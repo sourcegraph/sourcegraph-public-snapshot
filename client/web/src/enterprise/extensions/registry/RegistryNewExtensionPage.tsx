@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
@@ -178,16 +177,21 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             disabled={
                                 isErrorLike(this.state.publishersOrError) ||
                                 this.state.publishersOrError === 'loading' ||
-                                this.state.creationOrError === 'loading'
+                                this.state.creationOrError === 'loading' ||
+                                !this.state.name
                             }
                             variant="primary"
+                            className="mr-2"
                         >
-                            {this.state.creationOrError === 'loading' ? (
-                                <LoadingSpinner />
-                            ) : (
-                                <AddIcon className="icon-inline" />
-                            )}{' '}
+                            {this.state.creationOrError === 'loading' && (
+                                <>
+                                    <LoadingSpinner />{' '}
+                                </>
+                            )}
                             Create extension
+                        </Button>
+                        <Button type="button" variant="secondary" as={Link} to="..">
+                            Cancel
                         </Button>
                     </Form>
                 </div>
