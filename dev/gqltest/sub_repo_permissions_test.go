@@ -14,18 +14,51 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	createPerforceExternalService(t)
+	userClient, repoName := createTestUserAndWaitForRepo(t)
+
+	// Test cases
+
+	t.Run("can read README.md", func(t *testing.T) {
+		blob, err := userClient.GitBlob(repoName, "master", "README.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantBlob := `This depot is used to test user and group permissions.
+`
+		if diff := cmp.Diff(wantBlob, blob); diff != "" {
+			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("cannot read hack.sh", func(t *testing.T) {
+		// Should not be able to read hack.sh
+		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantBlob := ``
+
+		if diff := cmp.Diff(wantBlob, blob); diff != "" {
+			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
+	t.Helper()
 
 	// We need to creat the `alice` user with a specific e-mail address. This user is
 	// configured on our dogfood perforce instance with limited access to the
 	// test-perms depot.
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	aliceClient, err := gqltestutil.SignUp(*baseURL, "alice@perforce.sgdev.org", "alice", alicePassword)
+	userClient, err := gqltestutil.SignUp(*baseURL, "alice@perforce.sgdev.org", "alice", alicePassword)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	aliceID := aliceClient.AuthenticatedUserID()
+	aliceID := userClient.AuthenticatedUserID()
 	t.Cleanup(func() {
 		if err := client.DeleteUser(aliceID, true); err != nil {
 			t.Fatal(err)
@@ -37,43 +70,12 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	}
 
 	const repoName = "perforce/test-perms"
-
-	// We have not enabled EnforceAuthzForSiteAdmin so they can see this repo
-	t.Logf("Waiting for %q as Admin", repoName)
-	err = client.WaitForReposToBeCloned(repoName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Logf("Waiting for %q as Alice", repoName)
-	err = aliceClient.WaitForReposToBeCloned(repoName)
+	err = userClient.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	blob, err := aliceClient.GitBlob(repoName, "master", "README.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wantBlob := `This depot is used to test user and group permissions.
-`
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
-	}
-
-	// Should not be able to read hack.sh
-	blob, err = aliceClient.GitBlob(repoName, "master", "Security/hack.sh")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// TODO: We probably want an error, not an empty string here
-	wantBlob = ``
-
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
-	}
+	return userClient, repoName
 }
 
 func enableSubRepoPermissions(t *testing.T) {
