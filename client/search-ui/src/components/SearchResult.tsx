@@ -22,9 +22,17 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     repoName: string
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
+    openInNewTab?: boolean
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, platformContext, onSelect }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({
+    result,
+    icon,
+    repoName,
+    platformContext,
+    onSelect,
+    openInNewTab,
+}) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -118,7 +126,14 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             )
         }
 
-        return <CommitSearchResultMatch key={result.url} item={result} platformContext={platformContext} />
+        return (
+            <CommitSearchResultMatch
+                key={result.url}
+                item={result}
+                platformContext={platformContext}
+                openInNewTab={openInNewTab}
+            />
+        )
     }
 
     return (
