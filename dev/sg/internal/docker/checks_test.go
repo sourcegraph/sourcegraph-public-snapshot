@@ -47,3 +47,38 @@ func TestCommandCheckApkAdd(t *testing.T) {
 		}
 	})
 }
+
+func makeStage(t testing.TB, line string) instructions.Stage {
+	n, err := parser.Parse(strings.NewReader(line))
+	require.NoError(t, err)
+	is, _, err := instructions.Parse(n.AST)
+	require.NoError(t, err)
+	return is[0]
+}
+
+func TestStageCheckNoAlpine(t *testing.T) {
+	t.Run("pass", func(t *testing.T) {
+		for _, directive := range []string{
+			// allowed base
+			"FROM sourcegraph/alpine-3.12:1234@abcde",
+			// with exception comment
+			"# alpine_base CHECK:ALPINE_OK\nFROM alpine:123@abcde as alpine_base",
+		} {
+			err := stageCheckNoAlpine.check(makeStage(t, directive))
+			assert.Nil(t, err, err)
+		}
+	})
+
+	t.Run("fail", func(t *testing.T) {
+		for _, directive := range []string{
+			// disallowed base
+			"FROM alpine:123@abcde",
+			// malformed exception comment
+			"# alpine_base: CHECK:ALPINE_OK\nFROM alpine:123@abcde as alpine_base",
+			"# CHECK:ALPINE_OK\nFROM alpine:123@abcde",
+		} {
+			err := stageCheckNoAlpine.check(makeStage(t, directive))
+			assert.NotNil(t, err, err)
+		}
+	})
+}
