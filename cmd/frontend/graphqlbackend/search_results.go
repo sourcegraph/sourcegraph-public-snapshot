@@ -484,9 +484,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
-	elapsed := time.Since(start)
-	srr.elapsed = elapsed
+func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
 	LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
 	defer wg.Wait()
@@ -498,9 +496,9 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
+	logPrometheusBatch(status, alertType, requestSource, requestName, srr.elapsed)
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	isSlow := srr.elapsed > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		var n int
 		if srr != nil {
@@ -512,7 +510,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			Source:        requestSource,
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    elapsed.Milliseconds(),
+			DurationMs:    srr.elapsed.Milliseconds(),
 			ResultSize:    n,
 			Error:         err,
 		})
@@ -534,7 +532,8 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 		Stats:   agg.Stats,
 		Alert:   alert,
 	})
-	r.logBatch(ctx, srr, start, err)
+	srr.elapsed = time.Since(start)
+	r.logBatch(ctx, srr, err)
 	return srr, err
 }
 
