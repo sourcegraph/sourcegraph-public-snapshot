@@ -134,11 +134,11 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     )
 
     const [nameInput, setNameInput] = useState('')
-    const [nameValid, setNameValid] = useState<boolean>()
+    const [isNameValid, setIsNameValid] = useState<boolean>()
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNameInput(event.target.value)
-        setNameValid(NAME_PATTERN.test(event.target.value))
+        setIsNameValid(NAME_PATTERN.test(event.target.value))
     }, [])
 
     const history = useHistory()
@@ -178,12 +178,12 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                             onChange={onNameChange}
                             pattern={String(NAME_PATTERN)}
                             required={true}
-                            status={nameValid === undefined ? undefined : nameValid ? 'valid' : 'error'}
+                            status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                         />
                         <small className="text-muted">
                             Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not
                             include confidential information.{' '}
-                            <span className={classNames(nameValid === false && 'text-danger')}>
+                            <span className={classNames(isNameValid === false && 'text-danger')}>
                                 Only regular characters, _ and - are allowed.
                             </span>
                         </small>
@@ -191,7 +191,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                         <h3 className="text-muted">
                             Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Coming soon" />
                         </h3>
-                        <div className="form-group text-muted mb-1">
+                        <div className="form-group mb-1">
                             <RadioButton
                                 name="visibility"
                                 value="public"
@@ -202,7 +202,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                                 aria-label="Public"
                             />
                         </div>
-                        <div className="form-group text-muted mb-0">
+                        <div className="form-group mb-0">
                             <RadioButton
                                 name="visibility"
                                 value="private"
@@ -222,7 +222,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                             variant="primary"
                             type="submit"
                             onClick={handleCreate}
-                            disabled={loading || nameInput === '' || !nameValid}
+                            disabled={loading || nameInput === '' || !isNameValid}
                             className="mr-2"
                         >
                             Create batch change
@@ -501,5 +501,5 @@ const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
         {children}
     </div>
 )
-
+/* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
