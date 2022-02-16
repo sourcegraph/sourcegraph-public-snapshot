@@ -243,8 +243,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
-			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-			// clusterQA(c.candidateImageTag()),
+			clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
