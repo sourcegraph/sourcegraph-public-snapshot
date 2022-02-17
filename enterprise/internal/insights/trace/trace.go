@@ -132,3 +132,13 @@ insert into debug_event_logs (name, time, tags) values (%s, %s, %s);
 `
 
 type DebugEvent []Field
+
+var (
+	seriesIdKey    string = "series_id"
+	viewIdKey      string = "view_id"
+	dashboardIdKey string = "dashboard_id"
+)
+
+func (d DebugEvent) WithSeriesId(seriesId string) {
+
+}
