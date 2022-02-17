@@ -13,7 +13,7 @@ interface IconProps {
     size?: typeof ICON_SIZES[number]
     /**
      * Used to change the element that is rendered.
-     * Always be mindful of potentially accessibiliy pitfalls when using this!
+     * Always be mindful of potentially accessibility pitfalls when using this!
      */
     as?: React.ElementType
 }
