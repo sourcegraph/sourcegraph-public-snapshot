@@ -3,6 +3,14 @@
     &--loading {
         position: relative;
     }
+
+    &--link {
+        padding: 0;
+        display: inline;
+        font-weight: 400;
+        border: 0;
+        vertical-align: baseline;
+    }
 }
 
 .loader {

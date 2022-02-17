@@ -278,7 +278,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                     this.props.className,
                     showLoadingSpinner && styles.actionItemLoading,
                     pressed && [this.props.pressedClassName],
-                    buttonLinkProps.variant === 'link' && 'p-0 font-weight-normal border-0 align-baseline d-inline'
+                    buttonLinkProps.variant === 'link' && styles.actionItemLink
                 )}
                 pressed={pressed}
                 onSelect={this.runAction}
