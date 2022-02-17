@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Code in search results is now selectable (e.g. for copying). Just clicking on the code continues to open the corresponding file as it did before. [#30033](https://github.com/sourcegraph/sourcegraph/pull/30033)
+- Added `experimentalFeatures.enableGitServerCommandExecFilter` (defaults to `true`) to enable a patch for a security issue in gitserver. For more detail see our security advisor [#TBD](insert-link-to-advisory)
 
 ### Changed
 
