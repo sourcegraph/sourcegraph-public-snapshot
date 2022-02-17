@@ -136,44 +136,49 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 60, f: 20 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
+        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
+        { x: 1588965700286, a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: '17.3.1',
-            stroke: DATA_SERIES_COLORS.ORANGE,
+            name: '3.1',
+            stroke: DATA_SERIES_COLORS.INDIGO,
         },
         {
             dataKey: 'b',
-            name: '17.3.0',
-            stroke: DATA_SERIES_COLORS.BLUE,
-        },
-        {
-            dataKey: 'c',
-            name: '17.2.0',
+            name: '3.5',
             stroke: DATA_SERIES_COLORS.RED,
         },
         {
-            dataKey: 'd',
-            name: '17.1.1',
+            dataKey: 'c',
+            name: '3.15',
             stroke: DATA_SERIES_COLORS.GREEN,
         },
         {
+            dataKey: 'd',
+            name: '3.8',
+            stroke: DATA_SERIES_COLORS.GRAPE,
+        },
+        {
             dataKey: 'e',
-            name: '17.1.0',
-            stroke: DATA_SERIES_COLORS.CYAN,
+            name: '3.9',
+            stroke: DATA_SERIES_COLORS.ORANGE,
         },
         {
             dataKey: 'f',
-            name: '17.0.1',
-            stroke: DATA_SERIES_COLORS.GRAPE,
+            name: '3.9.2',
+            stroke: DATA_SERIES_COLORS.TEAL,
+        },
+        {
+            dataKey: 'g',
+            name: '3.14',
+            stroke: DATA_SERIES_COLORS.PINK,
         },
     ],
     xAxis: {
@@ -184,9 +189,9 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
 }
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
-    title: 'Terraform versions (present or most popular)',
+    title: 'Alpine versions over all repos',
     allRepos: true,
-    groupSearchQuery: 'app.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
+    groupSearchQuery: 'patterntype:regexp FROM\\s+alpine:([\\d\\.]+) file:Dockerfile',
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
@@ -194,7 +199,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
 
     return (
         <View.Root
-            title="Terraform versions (present or most popular)"
+            title="Alpine versions over all repos"
             subtitle={
                 <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query="All repositories" className="mt-1" />
             }
@@ -230,7 +235,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
             </div>
             <CodeInsightsQueryBlock
                 as={SyntaxHighlightedSearchQuery}
-                query="app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no"
+                query="patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile"
                 className="mt-2"
             />
         </View.Root>
