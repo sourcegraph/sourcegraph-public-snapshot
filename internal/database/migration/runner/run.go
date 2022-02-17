@@ -256,7 +256,7 @@ func (r *Runner) createIndexConcurrently(
 
 pollIndexStatusLoop:
 	for {
-		// Query the current indexStatus of the target index
+		// Query the current status of the target index
 		indexStatus, exists, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to query state of index")
