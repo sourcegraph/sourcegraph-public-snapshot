@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -30,7 +31,6 @@ import (
 type Args struct {
 	SearchInputs        *run.SearchInputs
 	OnSourcegraphDotCom bool
-	Protocol            search.Protocol
 	Zoekt               zoekt.Streamer
 	SearcherURLs        *endpoint.Map
 }
@@ -46,14 +46,14 @@ type Args struct {
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
 func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
-	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit)
+	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
 
-	p := search.ToTextPatternInfo(b, jargs.Protocol, query.Identity)
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol, query.Identity)
 
 	forceResultTypes := result.TypeEmpty
 	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
@@ -75,7 +75,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.Protocol == search.Streaming,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
 
 		Zoekt:        jargs.Zoekt,
 		SearcherURLs: jargs.SearcherURLs,
@@ -610,15 +610,42 @@ func toPatternExpressionJob(args *Args, q query.Basic) (Job, error) {
 }
 
 func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
-	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit)
+	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit())
 	timeout := search.TimeoutDuration(q)
 
+	var (
+		job Job
+		err error
+	)
 	if q.Pattern == nil {
-		job, err := ToSearchJob(args, query.ToNodes(q.Parameters))
-		return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
+		job, err = ToSearchJob(args, query.ToNodes(q.Parameters))
+	} else {
+		job, err = toPatternExpressionJob(args, q)
 	}
-	job, err := toPatternExpressionJob(args, q)
+	if err != nil {
+		return nil, err
+	}
+
+	if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		job = NewSelectJob(sp, job)
+	}
+
 	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
+}
+
+// FromExpandedPlan takes a query plan that has had all predicates expanded,
+// and converts it to a job.
+func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
+	children := make([]Job, 0, len(plan))
+	for _, q := range plan {
+		child, err := ToEvaluateJob(args, q)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, child)
+	}
+	return NewOrJob(children...), nil
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

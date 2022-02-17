@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var externalURL *url.URL
 
 // To avoid a circular dependency with the codemonitors/resolvers package
 // we have to redeclare the MonitorKind.
@@ -42,20 +41,17 @@ type TemplateDataNewSearchResults struct {
 
 func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *edb.EmailAction, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		searchURL                 string
-		codeMonitorURL            string
 		priority                  string
 		numberOfResultsWithDetail string
 	)
-	searchURL, err = getSearchURL(ctx, queryString, utmSourceEmail)
+
+	externalURL, err := getExternalURL(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
-	if err != nil {
-		return nil, err
-	}
+	searchURL := getSearchURL(externalURL, queryString, utmSourceEmail)
+	codeMonitorURL := getCodeMonitorURL(externalURL, email.Monitor, utmSourceEmail)
 
 	if email.Priority == priorityCritical {
 		priority = "Critical"
@@ -105,31 +101,41 @@ func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, da
 	return nil
 }
 
-func getSearchURL(ctx context.Context, query, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, "search", query, utmSource)
+func getSearchURL(externalURL *url.URL, query, utmSource string) string {
+	return sourcegraphURL(externalURL, "search", query, utmSource)
 }
 
-func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
-	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
+func getCodeMonitorURL(externalURL *url.URL, monitorID int64, utmSource string) string {
+	return sourcegraphURL(externalURL, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
 }
 
-func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string, error) {
+func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string {
+	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
+}
+
+var (
+	externalURLOnce  sync.Once
+	externalURLValue *url.URL
+	externalURLError error
+)
+
+func getExternalURL(ctx context.Context) (*url.URL, error) {
 	if MockExternalURL != nil {
-		externalURL = MockExternalURL()
+		return MockExternalURL(), nil
 	}
-	if externalURL == nil {
-		// Determine the external URL.
+
+	externalURLOnce.Do(func() {
 		externalURLStr, err := internalapi.Client.ExternalURL(ctx)
 		if err != nil {
-			return "", errors.Errorf("failed to get ExternalURL: %w", err)
+			externalURLError = err
+			return
 		}
-		externalURL, err = url.Parse(externalURLStr)
-		if err != nil {
+		externalURLValue, externalURLError = url.Parse(externalURLStr)
+	})
+	return externalURLValue, externalURLError
+}
 
-			return "", errors.Errorf("failed to get ExternalURL: %w", err)
-		}
-	}
-
+func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string {
 	// Construct URL to the search query.
 	u := externalURL.ResolveReference(&url.URL{Path: path})
 	q := u.Query()
@@ -138,5 +144,5 @@ func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string,
 	}
 	q.Set("utm_source", utmSource)
 	u.RawQuery = q.Encode()
-	return u.String(), nil
+	return u.String()
 }

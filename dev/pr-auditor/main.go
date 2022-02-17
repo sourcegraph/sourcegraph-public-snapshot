@@ -49,11 +49,19 @@ func main() {
 	if err := json.Unmarshal(payloadData, &payload); err != nil {
 		log.Fatal("Unmarshal: ", err)
 	}
-	log.Printf("got event for pull request %s, full payload: %+v\n", payload.PullRequest.URL, payload)
+	log.Printf("handling event for pull request %s, payload: %+v\n", payload.PullRequest.URL, payload.Dump())
 
 	// Discard unwanted events
 	if payload.PullRequest.Base.Ref != "main" {
 		log.Printf("unknown pull request base %q - discarding\n", payload.PullRequest.Base.Ref)
+		return
+	}
+	if payload.PullRequest.Draft {
+		log.Printf("skipping event on draft PR")
+		return
+	}
+	if payload.Action == "closed" && !payload.PullRequest.Merged {
+		log.Println("ignoring closure of un-merged pull request")
 		return
 	}
 	if payload.Action == "edited" && payload.PullRequest.Merged {
