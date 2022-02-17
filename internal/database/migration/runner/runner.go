@@ -205,7 +205,7 @@ func (r *Runner) withLockedSchemaState(
 	// Take an advisory lock to determine if there are any migrator instances currently
 	// running queries unrelated to non-concurrent index creation. This will block until
 	// we are able to gain the lock.
-	unlock, err := r.pollLock(ctx, schemaContext.store)
+	unlock, err := r.pollLock(ctx, schemaContext)
 	if err != nil {
 		return false, err
 	} else {
@@ -240,9 +240,9 @@ const lockPollInterval = time.Second
 // pollLock will attempt to acquire a session-level advisory lock while the given context has not
 // been canceled. The caller must eventually invoke the unlock function on successful acquisition
 // of the lock.
-func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err error) error, _ error) {
+func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unlock func(err error) error, _ error) {
 	for {
-		if acquired, unlock, err := store.TryLock(ctx); err != nil {
+		if acquired, unlock, err := schemaContext.store.TryLock(ctx); err != nil {
 			return nil, err
 		} else if acquired {
 			return unlock, nil
