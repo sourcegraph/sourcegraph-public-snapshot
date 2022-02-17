@@ -36,10 +36,10 @@ function qa_test() {
 
   pushd client/web
   yarn run test:regression --reporter mocha-junit-reporter
-  popd
-
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="$?"
+
+  popd
 
   set -eo pipefail # resume being strict about errors
 
@@ -67,14 +67,20 @@ function qa_test() {
 EOF
   )
 
+  set +e
   echo "$data" | curl \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_FRONTEND_E2E_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
-
-  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  local curl_exit="$?"
+  if [ "$curl_exit" -eq 0 ]; then 
+    echo -e "\n:--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  else
+    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
+  fi
+  set -e
 
   unset MOCHA_JUNIT_OUTPUT_DIR
   unset MOCHA_FILE
