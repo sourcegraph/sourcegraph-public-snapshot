@@ -51,7 +51,7 @@ func AddLog(commandName string, factory RunnerFactory, out *output.Output) *ffcl
 			return err
 		}
 
-		log15.Info("Writing new completed migration log", "Schema", *schemaNameFlag, "version", version, "up", *upFlag)
+		log15.Info("Writing new completed migration log", "schema", *schemaNameFlag, "version", version, "up", *upFlag)
 		return store.WithMigrationLog(ctx, definition.Definition{ID: version}, *upFlag, noop)
 	}
 
