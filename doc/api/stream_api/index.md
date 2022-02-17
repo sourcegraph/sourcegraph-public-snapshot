@@ -115,3 +115,7 @@ If you don't want to write your own client, you can also use Sourcegraph's [src-
 ```bash
 src search -stream "secret count:all"
 ```
+
+### Q: Are there plans for parallelization/convenience-wrappers/multiplexing/etc.?
+
+At time of writing, there are no such plans for parallelization/convenience-wrappers/multiplexing/etc. If a user wants these characteristics, we would recommend that user to write their own scripts that handles firing multiple requests, accepting the return values, and formatting/parsing them as needed.
