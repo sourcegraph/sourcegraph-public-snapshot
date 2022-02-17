@@ -35,6 +35,15 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		return nil
 	}
 
+	logger.Warn(
+		"Schema not in expected state",
+		"schema", schemaContext.schema.Name,
+	)
+	logger.Info(
+		"Checking for active migrations",
+		"schema", schemaContext.schema.Name,
+	)
+
 	for {
 		// Attempt to validate the given definitions. We may have to call this several times as
 		// we are unable to hold a consistent advisory lock in the presence of migrations utilizing

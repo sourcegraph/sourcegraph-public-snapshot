@@ -94,6 +94,15 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		}
 	}
 
+	logger.Warn(
+		"Schema not in expected state",
+		"schema", schemaContext.schema.Name,
+	)
+	logger.Info(
+		"Checking for active migrations",
+		"schema", schemaContext.schema.Name,
+	)
+
 	for {
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
 		// to hold a consistent advisory lock in the presence of migrations utilizing concurrent index creation.
