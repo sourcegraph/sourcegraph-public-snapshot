@@ -8,7 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link, Select } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -178,22 +178,20 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             .
                         </small>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="code-monitor-form-owner">Owner</label>
-                        <select
-                            id="code-monitor-form-owner"
-                            className={classNames('form-control mb-2 w-auto', styles.ownerDropdown)}
-                            disabled={true}
-                        >
-                            <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                                {authenticatedUser.username}
-                            </option>
-                        </select>
-                        <small className="text-muted">
-                            Event history and configuration will not be shared. Code monitoring currently only supports
-                            individual owners.
-                        </small>
-                    </div>
+
+                    <Select
+                        label="Owner"
+                        className="w-100"
+                        aria-label="Owner"
+                        selectClassName={classNames('mb-2 w-auto', styles.ownerDropdown)}
+                        disabled={true}
+                        message="Event history and configuration will not be shared. Code monitoring currently only supports individual owners."
+                    >
+                        <option value={authenticatedUser.displayName || authenticatedUser.username}>
+                            {authenticatedUser.username}
+                        </option>
+                    </Select>
+
                     <hr className={classNames('my-3', styles.horizontalRule)} />
                     <div className="mb-4">
                         <FormTriggerArea

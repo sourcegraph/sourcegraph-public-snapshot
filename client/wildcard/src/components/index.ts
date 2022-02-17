@@ -30,6 +30,7 @@ export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReas
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
+export type { SelectProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'

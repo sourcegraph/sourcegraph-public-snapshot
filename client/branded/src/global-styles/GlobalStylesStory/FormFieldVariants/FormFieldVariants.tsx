@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { ReactNode } from 'react'
 
-import { RadioButton, TextArea } from '@sourcegraph/wildcard'
+import { RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
@@ -57,16 +57,21 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                 </fieldset>
             )}
         />
-        <WithVariantsAndMessageElements
-            field={({ className, message, ...props }) => (
-                <fieldset className="form-group">
-                    <select className={classNames('custom-select', className)} {...props}>
-                        <option>Option A</option>
-                        <option>Option B</option>
-                        <option>Option C</option>
-                    </select>
-                    {message}
-                </fieldset>
+        <WithVariants
+            field={({ className, message, variant, ...props }) => (
+                <Select
+                    isCustomStyle={true}
+                    className={className}
+                    isValid={variant === 'invalid' ? false : variant === 'valid' ? true : undefined}
+                    message={message}
+                    disabled={variant === 'disabled'}
+                    aria-label=""
+                    {...props}
+                >
+                    <option>Option A</option>
+                    <option>Option B</option>
+                    <option>Option C</option>
+                </Select>
             )}
         />
         <WithVariants

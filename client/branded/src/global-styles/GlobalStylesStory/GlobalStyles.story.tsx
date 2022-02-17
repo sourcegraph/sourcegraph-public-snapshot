@@ -10,7 +10,7 @@ import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link } from '@sourcegraph/wildcard'
+import { TextArea, Button, ButtonGroup, Link, Select } from '@sourcegraph/wildcard'
 import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
 
 import { BrandedStory } from '../../components/BrandedStory'
@@ -422,14 +422,13 @@ export const Forms: Story = () => (
                 <label htmlFor="example-input-password">Password</label>
                 <input type="password" className="form-control" id="example-input-password" />
             </div>
-            <div className="form-group">
-                <label htmlFor="example-example-select">Example select</label>
-                <select id="example-select" className="custom-select">
-                    <option>Option A</option>
-                    <option>Option B</option>
-                    <option>Option C</option>
-                </select>
-            </div>
+
+            <Select isCustomStyle={true} aria-label="Example select" label="Example select">
+                <option>Option A</option>
+                <option>Option B</option>
+                <option>Option C</option>
+            </Select>
+
             <div className="form-group">
                 <TextArea label="Example textarea" id="example-textarea" rows={3} />
             </div>
@@ -451,12 +450,16 @@ export const Forms: Story = () => (
                     <label htmlFor="disabledTextInput">Disabled input</label>
                     <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="disabledSelect">Disabled select menu</label>
-                    <select id="disabledSelect" className="custom-select">
-                        <option>Disabled select</option>
-                    </select>
-                </div>
+
+                <Select
+                    isCustomStyle={true}
+                    disabled={true}
+                    label="Disabled select menu"
+                    aria-label="Disabled select menu"
+                >
+                    <option>Disabled select</option>
+                </Select>
+
                 <div className="form-group">
                     <div className="form-check">
                         <input
@@ -486,9 +489,16 @@ export const Forms: Story = () => (
                 <div className="form-group">
                     <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
                     <TextArea size="small" className="mb-1" placeholder="Small textarea" />
-                    <select className="custom-select custom-select-sm mb-1">
+                    <Select
+                        isCustomStyle={true}
+                        selectSize="sm"
+                        className="mb-0"
+                        selectClassName="mb-1"
+                        aria-label=""
+                        id=""
+                    >
                         <option>Small select</option>
-                    </select>
+                    </Select>
                 </div>
             </fieldset>
         </div>
