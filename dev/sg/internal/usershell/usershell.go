@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 type key struct{}
@@ -50,6 +53,11 @@ func GuessUserShell() (string, string, error) {
 	case strings.Contains(shell, "bash"):
 		shellrc = ".bashrc"
 	case strings.Contains(shell, "zsh"):
+		if _, err := os.Stat(path.Join(home, ".zshrc")); errors.Is(err, os.ErrNotExist) {
+			// A fresh mac installation with standard homebrew will tell the user to append
+			// the configuration in .zprofile, not .zshrc.
+			shellrc = ".zprofile"
+		}
 		shellrc = ".zshrc"
 	}
 	return shell, filepath.Join(home, shellrc), nil
@@ -72,8 +80,7 @@ func Context(ctx context.Context) (context.Context, error) {
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func Cmd(ctx context.Context, cmd string) *exec.Cmd {
-	var command string
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS == "linux" {
 		// The default Ubuntu bashrc comes with a caveat that prevents the bashrc to be
 		// reloaded unless the shell is interactive. Therefore, we need to request for an
 		// interactive one.
@@ -81,14 +88,15 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 		// But because we are running an interactive shell, we also need to exit explictly.
 		// To avoid messing up with the output checking that depends on this function,
 		// we silence the exit commands, which otherwise, prints "exit".
-		command = fmt.Sprintf("%s; \nexit $? 2>/dev/null", strings.TrimSpace(cmd))
+		command := fmt.Sprintf("%s; \nexit $? 2>/dev/null", strings.TrimSpace(cmd))
+		return exec.CommandContext(ctx, ShellPath(ctx), "-c", "-i", command)
 	} else {
 		// The above interactive shell approach fails on OSX because the default shell configuration
 		// prints sessions restoration informations that will mess with the output. So we fall back
 		// to manually reloading the shell configuration.
-		command = fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
+		command := fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
+		return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
 	}
-	return exec.CommandContext(ctx, ShellPath(ctx), "-c", "-i", command)
 }
 
 // CombinedExec runs a command in a fresh shell environment, and returns
