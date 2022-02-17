@@ -289,15 +289,14 @@ func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 }
 
 type Server struct {
-	db                *sql.DB
-	git               Git
-	createParser      func() ParseSymbolsFunc
-	status            *ServerStatus
-	repoUpdates       chan struct{}
-	indexRequests     chan indexRequest
-	maxRepos          int
-	logQueries        bool
-	searchGracePeriod time.Duration
+	db            *sql.DB
+	git           Git
+	createParser  func() ParseSymbolsFunc
+	status        *ServerStatus
+	repoUpdates   chan struct{}
+	indexRequests chan indexRequest
+	maxRepos      int
+	logQueries    bool
 }
 
 func NewServer(
@@ -307,19 +306,17 @@ func NewServer(
 	maxConcurrentlyIndexing int,
 	maxRepos int,
 	logQueries bool,
-	searchGracePeriod time.Duration,
 	indexRequestsQueueSize int,
 ) (*Server, error) {
 	server := &Server{
-		db:                db,
-		git:               git,
-		createParser:      createParser,
-		status:            NewStatus(),
-		repoUpdates:       make(chan struct{}, 1),
-		indexRequests:     make(chan indexRequest, indexRequestsQueueSize),
-		maxRepos:          maxRepos,
-		logQueries:        logQueries,
-		searchGracePeriod: searchGracePeriod,
+		db:            db,
+		git:           git,
+		createParser:  createParser,
+		status:        NewStatus(),
+		repoUpdates:   make(chan struct{}, 1),
+		indexRequests: make(chan indexRequest, indexRequestsQueueSize),
+		maxRepos:      maxRepos,
+		logQueries:    logQueries,
 	}
 
 	err := server.startCleanupThread()
@@ -1032,7 +1029,7 @@ func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus Sta
 	return errors.Wrap(err, "AppendHop")
 }
 
-func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, retryMsg string, err error) {
+func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, err error) {
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
@@ -1042,18 +1039,18 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	// Acquire a read lock on the repo.
 	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	defer func() { err = combineErrors(err, releaseRLock()) }()
 	if !locked {
-		return nil, "", errors.Newf("deletion in progress", repo)
+		return nil, errors.Newf("deletion in progress", repo)
 	}
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	threadStatus.Tasklog.Start("update last_accessed_at")
 	err = updateLastAccessedAt(ctx, s.db, repo)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// Non-blocking send on repoUpdates to notify the background deletion goroutine.
@@ -1066,7 +1063,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	threadStatus.Tasklog.Start("check commit presence")
 	_, _, present, err := GetCommit(ctx, s.db, repo, commit)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	} else if !present {
 		done := make(chan error, 1)
 
@@ -1074,29 +1071,27 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 		select {
 		case s.indexRequests <- indexRequest{repo: repo, commit: commit, done: done}:
 		default:
-			return nil, "the indexing queue is full", nil
+			return nil, errors.Newf("the indexing queue is full")
 		}
 
-		// Wait for a short period of time in case indexing completes quickly.
-		ctx2, cancel := context.WithTimeout(ctx, s.searchGracePeriod)
-		defer cancel()
+		// Wait for indexing to complete or the request to be canceled.
 		select {
 		case err := <-done:
 			if err != nil {
-				return nil, "", errors.Newf("indexing failed: %s", err)
+				return nil, errors.Newf("indexing failed: %s", err)
 			}
-		case <-ctx2.Done():
-			return nil, "still indexing", nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
 	}
 
 	// Finally search.
 	blobs, err = queryBlobs(ctx, s.db, args, threadStatus, s.logQueries)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return blobs, "", nil
+	return blobs, nil
 }
 
 func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]Blob, error) {

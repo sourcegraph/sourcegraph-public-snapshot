@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewHandler(
@@ -42,18 +42,15 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 			args.First = maxNumSymbolResults
 		}
 
-		result, retryMsg, err := searchFunc(context.Background(), args)
+		result, err := searchFunc(r.Context(), args)
 		if err != nil {
 			// Ignore reporting errors where client disconnected
-			if r.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+			if r.Context().Err() == context.Canceled && isContextCanceled(err) {
 				return
 			}
 
 			log15.Error("Symbol search failed", "args", args, "error", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else if retryMsg != "" {
-			http.Error(w, retryMsg, http.StatusInternalServerError)
 			return
 		}
 
@@ -82,4 +79,10 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("OK")); err != nil {
 		log15.Error("failed to write response to health check, err: %s", err)
 	}
+}
+
+// isContextCanceled checks if the error is a context canceled error. Although `errors.Is(err,
+// context.Canceled)` appears to be the correct way to check for this, it doesn't work for some reason.
+func isContextCanceled(err error) bool {
+	return strings.HasSuffix(err.Error(), "context canceled")
 }
