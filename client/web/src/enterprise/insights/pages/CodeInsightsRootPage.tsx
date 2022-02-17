@@ -1,8 +1,9 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Link, PageHeader, Tabs, TabList, Tab } from '@sourcegraph/wildcard'
@@ -48,6 +49,14 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         matchPath<{ dashboardId?: string }>(location.pathname, {
             path: `/insights${CodeInsightsRootPageURLPaths.CodeInsights}`,
         }) ?? {}
+
+    const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
+
+    useEffect(() => {
+        if (hasInsightPageBeenViewed === false) {
+            markMainPageAsViewed(true)
+        }
+    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
