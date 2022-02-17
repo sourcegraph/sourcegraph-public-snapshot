@@ -40,9 +40,9 @@ const TERRAFORM_VERSIONS: Template = {
                 name: '1.2.0',
                 query: 'app.terraform.io/(.*)\\n version =(.*)1.2.0 lang:Terraform archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
-        ]
-    }
+            },
+        ],
+    },
 }
 
 const CSS_MODULES_MIGRATION: Template = {
@@ -77,12 +77,14 @@ const LOG4J_FIXED_VERSIONS: Template = {
         series: [
             {
                 name: 'Vulnerable',
-                query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                query:
+                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'Fixed',
-                query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                query:
+                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -92,7 +94,8 @@ const LOG4J_FIXED_VERSIONS: Template = {
 const YARN_ADOPTION: Template = {
     type: InsightType.SearchBased,
     title: 'Yarn adoption',
-    description: 'Are more repos increasingly using yarn? Track yarn adoption across teams and groups in your organization.',
+    description:
+        'Are more repos increasingly using yarn? Track yarn adoption across teams and groups in your organization.',
     templateValues: {
         title: 'Yarn adoption',
         allRepos: true,
@@ -168,9 +171,9 @@ const CONFIG_OR_DOC_FILE: Template = {
                 name: 'Repositories with doc',
                 query: 'select:repo file:docs/*/new_config_filename archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.PINK,
-            }
-        ]
-    }
+            },
+        ],
+    },
 }
 
 const ALLOW_DENY_LIST_TRACKING: Template = {
@@ -184,15 +187,15 @@ const ALLOW_DENY_LIST_TRACKING: Template = {
             {
                 name: 'blacklist/whitelist',
                 query: 'select:file blacklist OR whitelist archived:no fork:no',
-                stroke: DATA_SERIES_COLORS.RED
+                stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'denylist/allowlist',
                 query: 'select:file denylist OR allowlist archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GREEN,
-            }
-        ]
-    }
+            },
+        ],
+    },
 }
 
 const PYTHON_2_3: Template = {
@@ -213,8 +216,8 @@ const PYTHON_2_3: Template = {
                 query: '#!/usr/bin/env python2 archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
-        ]
-    }
+        ],
+    },
 }
 
 const REACT_FUNCTION_CLASS: Template = {
@@ -288,7 +291,7 @@ const LARGE_PACKAGE_USAGE: Template = {
                 name: 'Repositories with large package usage',
                 query: 'select:repo import\\slargePkg patternType:regexp archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -305,7 +308,7 @@ const REACT_COMPONENT_LIB_USAGE: Template = {
                 name: 'Library imports',
                 query: "from '@sourceLibrary/component' patternType:literal archived:no fork:no",
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -322,7 +325,7 @@ const CI_TOOLING: Template = {
                 name: 'Repo with CircleCI config',
                 query: 'file:\\.circleci/config.yml select:repo fork:no archived:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -339,7 +342,7 @@ const CSS_CLASS: Template = {
                 name: 'Deprecated CSS class',
                 query: 'deprecated-class archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -356,7 +359,7 @@ const ICON_OR_IMAGE: Template = {
                 name: 'Deprecated logo',
                 query: '2018logo.png archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -364,16 +367,18 @@ const ICON_OR_IMAGE: Template = {
 const STRUCTURAL_CODE_PATTERN: Template = {
     type: InsightType.SearchBased,
     title: 'Structural code pattern',
-    description: "Deprecating a structural code pattern in favor of a safer pattern, like how many tries don't have catches.",
+    description:
+        "Deprecating a structural code pattern in favor of a safer pattern, like how many tries don't have catches.",
     templateValues: {
         title: 'Structural code pattern',
         allRepos: true,
         series: [
             {
                 name: 'Try catch',
-                query: 'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural archived:no fork:no',
+                query:
+                    'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -390,7 +395,7 @@ const TOOLING_MIGRATION: Template = {
                 name: 'Deprecated logger',
                 query: 'deprecatedEventLogger.log archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -407,7 +412,7 @@ const VAR_KEYWORDS: Template = {
                 name: 'var statements',
                 query: '(lang:TypeScript OR lang:JavaScript) var ... = archived:no fork:no patterntype:structural',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -452,8 +457,8 @@ const ALL_LOG4J_VERSIONS: Template = {
     templateValues: {
         title: 'All log4j versions',
         allRepos: true,
-        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\. archived:no fork:no'
-    }
+        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\. archived:no fork:no',
+    },
 }
 
 const PYTHON_VERSIONS: Template = {
@@ -463,8 +468,8 @@ const PYTHON_VERSIONS: Template = {
     templateValues: {
         title: 'Python versions',
         allRepos: true,
-        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+) archived:no fork:no'
-    }
+        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+) archived:no fork:no',
+    },
 }
 
 const NODEJS_VERSIONS: Template = {
@@ -474,8 +479,8 @@ const NODEJS_VERSIONS: Template = {
     templateValues: {
         title: 'Node.js versions',
         allRepos: true,
-        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+) archived:no fork:no'
-    }
+        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+) archived:no fork:no',
+    },
 }
 
 const CSS_COLORS: Template = {
@@ -485,8 +490,8 @@ const CSS_COLORS: Template = {
     templateValues: {
         title: 'CSS Colors',
         allRepos: true,
-        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6}) archived:no fork:no'
-    }
+        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6}) archived:no fork:no',
+    },
 }
 
 const CHECKOV_SKIP_TYPES: Template = {
@@ -496,8 +501,8 @@ const CHECKOV_SKIP_TYPES: Template = {
     templateValues: {
         title: 'Types of checkov skips',
         allRepos: true,
-        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*) archived:no fork:no'
-    }
+        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*) archived:no fork:no',
+    },
 }
 
 const TODOS: Template = {
@@ -512,7 +517,7 @@ const TODOS: Template = {
                 name: 'TODOs',
                 query: 'TODO archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.BLUE,
-            }
+            },
         ],
     },
 }
@@ -529,7 +534,7 @@ const REVERT_COMMITS: Template = {
                 name: 'Reverts',
                 query: 'type:commit revert archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -546,7 +551,7 @@ const DEPRECATED_CALLS: Template = {
                 name: '@deprecated',
                 query: 'lang:java @deprecated archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -563,7 +568,7 @@ const STORYBOOK_TESTS: Template = {
                 name: 'Stories',
                 query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\( archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.PINK,
-            }
+            },
         ],
     },
 }
@@ -585,7 +590,7 @@ const REPOS_WITH_README: Template = {
                 name: 'without readme',
                 query: '-repohasfile:readme.md select:repo archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.YELLOW,
-            }
+            },
         ],
     },
 }
@@ -607,7 +612,7 @@ const OWNERSHIP_TRACKING: Template = {
                 name: 'without readme',
                 query: '-repohasfile:CODEOWNERS select:repo archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.YELLOW,
-            }
+            },
         ],
     },
 }
@@ -615,7 +620,8 @@ const OWNERSHIP_TRACKING: Template = {
 const VULNERABLE_OPEN_SOURCE: Template = {
     type: InsightType.SearchBased,
     title: 'Vulnerable open source library',
-    description: 'Confirm that a vulnerable open source library has been fully removed, or the speed of the deprecation.',
+    description:
+        'Confirm that a vulnerable open source library has been fully removed, or the speed of the deprecation.',
     templateValues: {
         title: 'Vulnerable open source library',
         allRepos: true,
@@ -624,7 +630,7 @@ const VULNERABLE_OPEN_SOURCE: Template = {
                 name: 'vulnerableLibrary@14.3.9',
                 query: 'vulnerableLibrary@14.3.9 archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -641,7 +647,7 @@ const API_KEYS_DETECTION: Template = {
                 name: 'API key',
                 query: 'regexMatchingAPIKey patternType:regexp archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.RED,
-            }
+            },
         ],
     },
 }
@@ -658,7 +664,7 @@ const SKIPPED_TESTS: Template = {
                 name: 'Skipped tests',
                 query: 'this.skip() patternType:literal archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.RED,
-            }
+            },
         ],
     },
 }
@@ -685,7 +691,7 @@ const TEST_AMOUNT_AND_TYPES: Template = {
                 name: 'integration tests',
                 query: 'patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$ archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
-            }
+            },
         ],
     },
 }
@@ -724,7 +730,7 @@ const IOS_APP_SCREENS: Template = {
                 name: 'Screens',
                 query: 'struct\\s(.*):\\sview$ patternType:regexp lang:swift archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.YELLOW,
-            }
+            },
         ],
     },
 }
@@ -746,7 +752,7 @@ const ADOPTING_NEW_API: Template = {
                 name: 'Web team',
                 query: 'file:webappTeam newAPI.call archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -768,7 +774,7 @@ const PROBLEMATIC_API_BY_TEAM: Template = {
                 name: 'Web team',
                 query: 'problemAPI file:teamTwoDirectory archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.GRAPE,
-            }
+            },
         ],
     },
 }
@@ -793,10 +799,10 @@ const DATA_FETCHING_GQL: Template = {
             },
             {
                 name: 'Hooks',
-                query: 'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\() archived:no fork:no',
+                query:
+                    'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\() archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
-
         ],
     },
 }
@@ -833,7 +839,7 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             LARGE_PACKAGE_USAGE,
             REACT_COMPONENT_LIB_USAGE,
             CI_TOOLING,
-        ]
+        ],
     },
     {
         title: 'Deprecation',
@@ -844,7 +850,7 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             TOOLING_MIGRATION,
             VAR_KEYWORDS,
             TESTING_LIBRARIES,
-        ]
+        ],
     },
     {
         title: 'Versions and patterns',
@@ -856,7 +862,7 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             NODEJS_VERSIONS,
             CSS_COLORS,
             CHECKOV_SKIP_TYPES,
-        ]
+        ],
     },
     {
         title: 'Code health',
@@ -868,8 +874,8 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             STORYBOOK_TESTS,
             REPOS_WITH_README,
             OWNERSHIP_TRACKING,
-            CI_TOOLING
-        ]
+            CI_TOOLING,
+        ],
     },
     {
         title: 'Security',
@@ -879,16 +885,10 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             LOG4J_FIXED_VERSIONS,
             SKIPPED_TESTS,
             TEST_AMOUNT_AND_TYPES,
-        ]
+        ],
     },
     {
         title: 'Other',
-        templates: [
-            TS_VS_GO,
-            IOS_APP_SCREENS,
-            ADOPTING_NEW_API,
-            PROBLEMATIC_API_BY_TEAM,
-            DATA_FETCHING_GQL
-        ]
-    }
+        templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+    },
 ]
