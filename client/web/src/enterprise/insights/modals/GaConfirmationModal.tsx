@@ -13,7 +13,7 @@ export const GaConfirmationModal: React.FunctionComponent = () => {
     const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
     const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
 
-    const showConfirmationModal = !isLicensed && !isGaAccepted
+    const showConfirmationModal = isLicensed === false && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null
