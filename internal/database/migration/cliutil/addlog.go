@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/inconshreveable/log15"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -50,6 +51,7 @@ func AddLog(commandName string, factory RunnerFactory, out *output.Output) *ffcl
 			return err
 		}
 
+		log15.Info("Writing new completed migration log", "schema", *schemaNameFlag, "version", version, "up", *upFlag)
 		return store.WithMigrationLog(ctx, definition.Definition{ID: version}, *upFlag, noop)
 	}
 

@@ -187,7 +187,7 @@ const versionsQuery = `
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY started_at DESC) AS row_number
 	FROM migration_logs
 	WHERE schema = %s
 )

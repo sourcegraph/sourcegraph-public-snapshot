@@ -61,7 +61,7 @@ The `migration_logs` table can also be queried directly. The following query giv
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY schema, version ORDER BY finished_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY schema, version ORDER BY started_at DESC) AS row_number
 	FROM migration_logs
 )
 SELECT *

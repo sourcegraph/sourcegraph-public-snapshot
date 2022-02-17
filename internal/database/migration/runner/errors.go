@@ -58,7 +58,7 @@ func (e *dirtySchemaError) Error() string {
 	return (instructionalError{
 		class: "dirty database",
 		description: fmt.Sprintf(
-			"schema %q marked the following migrations as failed: %s\n`",
+			"schema %q marked the following migrations as failed: %s\n",
 			e.schemaName,
 			strings.Join(intsToStrings(extractIDs(e.dirtyVersions)), ", "),
 		),
