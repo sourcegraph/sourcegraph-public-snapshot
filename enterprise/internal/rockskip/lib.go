@@ -1075,6 +1075,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 		}
 
 		// Wait for indexing to complete or the request to be canceled.
+		threadStatus.Tasklog.Start("awaiting indexing completion")
 		select {
 		case err := <-done:
 			if err != nil {
