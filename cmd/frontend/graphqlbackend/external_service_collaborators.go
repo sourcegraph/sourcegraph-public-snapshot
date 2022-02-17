@@ -83,18 +83,17 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		}
 	}
 
-	// We'll look in up to 100 repos for collaborators. Each client.RecentCommitters API call uses
+	// We'll look in up to 25 repos for collaborators. Each client.RecentCommitters API call uses
 	// 1 point in GitHub's GraphQL API rate limiting, and we are allowed 5,000 per hour (which we
-	// share with other parts of Sourcegraph such as repo-updater.) When we had searched only 20
-	// repositories here before, we only found collaborators for 13% of users, and so we increased
-	// to 100 repositories instead. Likely anything below 500 would not impact other parts of
-	// Sourcegraph, however that's a lot of network requests to make on behalf of a single user and
-	// we'd need better goroutine scheduling in parallelRecentCommitters to enable that.
+	// share with other parts of Sourcegraph such as repo-updater.) and so we could probably safely
+	// use up to a few hundred here. However, GitHub's recent commits API is quite slow (it appears
+	// to even run separate GraphQL requests for the same client IP in sequence rather than in
+	// parallel) and so that is the true limiting factor here.
 	//
 	// We search within random repositories because many follow a pattern, such as say adding a ton
 	// of `company/lsif-java`, `company/lsif-python`, `company/lsif-typescript` etc repos with likely
 	// the same collaborators, whereas random sampling may give us dissimilar repositories.
-	const maxReposToScan = 100
+	const maxReposToScan = 25
 	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
