@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pushing changesets from Batch Changes to code hosts with self-signed TLS certificates has been fixed. [#31010](https://github.com/sourcegraph/sourcegraph/issues/31010)
 - Fixed LSIF uploads not being expired according to retention policies when the repository contained tags and branches with the same name but pointing to different commits. [#31108](https://github.com/sourcegraph/sourcegraph/pull/31108)
 - Service discovery for the symbols service can transition from no endpoints to endpoints. Previously we always returned an error after the first empty state. [#31225](https://github.com/sourcegraph/sourcegraph/pull/31225)
+- Fixed performance issue in LSIF upload processing, reducing the latency between uploading an LSIF index and accessing precise code intel in the UI. ([#30978](https://github.com/sourcegraph/sourcegraph/pull/30978), [#31143](https://github.com/sourcegraph/sourcegraph/pull/31143))
 
 ### Removed
 
