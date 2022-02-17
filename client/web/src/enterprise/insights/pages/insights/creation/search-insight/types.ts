@@ -1,5 +1,4 @@
-import { InsightVisibility } from '../../../../core/types'
-import { SearchBasedInsightSeries } from '../../../../core/types/insight/search-insight'
+import { InsightVisibility, SearchBasedInsightSeries } from '../../../../core/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
