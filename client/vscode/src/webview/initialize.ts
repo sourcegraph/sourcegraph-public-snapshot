@@ -138,9 +138,11 @@ export function initializeSearchSidebarWebview({
                 src: url(${codiconFontSource.toString()})
             }
         </style>
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: vscode-webview: data: https:; script-src blob: vscode-webview: https:; style-src 'unsafe-inline' vscode-resource: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             webviewView.webview.cspSource
-        } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
+        }; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
+        webviewView.webview.cspSource
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />

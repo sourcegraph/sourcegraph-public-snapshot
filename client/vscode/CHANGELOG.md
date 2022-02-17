@@ -1,6 +1,12 @@
 # Changelog
 
-## Next Release
+## Pre-release - 2.1.0
+
+### Changes
+
+- Add web support for VS Code Web [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
+
+## Next Release - 2.0.9
 
 ### Changes
 

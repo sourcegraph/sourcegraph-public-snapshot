@@ -107,8 +107,8 @@ function EventSource(url, eventSourceInitDict) {
     const options = parse(url)
     let isSecure = options.protocol === 'https:'
     options.headers = {
-      'Cache-Control': 'no-cache',
-      Accept: 'text/event-stream',
+      // 'Cache-Control': 'no-cache',
+      // Accept: 'text/event-stream',
       ...fixedHeaders,
     }
     if (lastEventId) {

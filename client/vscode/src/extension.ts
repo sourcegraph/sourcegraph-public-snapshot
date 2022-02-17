@@ -87,8 +87,8 @@ export function activate(context: vscode.ExtensionContext): void {
     const sidebarQueryStates = new ReplaySubject<VSCEQueryState>(1)
 
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
-
-    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: initialInstanceURL })
+    // Use api endpoint for stream search
+    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: `${initialInstanceURL}/.api` })
 
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
