@@ -252,7 +252,21 @@ func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unl
 		if acquired, unlock, err := schemaContext.store.TryLock(ctx); err != nil {
 			return nil, err
 		} else if acquired {
-			return unlock, nil
+			logger.Info(
+				"Acquired schema migration lock",
+				"schema", schemaContext.schema.Name,
+			)
+
+			loggedUnlock := func(err error) error {
+				logger.Info(
+					"Released schema migration lock",
+					"schema", schemaContext.schema.Name,
+				)
+
+				return unlock(err)
+			}
+
+			return loggedUnlock, nil
 		}
 
 		if numWaits%lockPollLogRatio == 0 {
