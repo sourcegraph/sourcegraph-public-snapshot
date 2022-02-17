@@ -49,6 +49,24 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("file list excludes excluded files", func(t *testing.T) {
+		files, err := userClient.GitListFilenames(repoName, "master")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Notice that Security/hack.sh is excluded
+		wantFiles := []string{
+			"Backend/main.go",
+			"Frontend/app.ts",
+			"README.md",
+		}
+
+		if diff := cmp.Diff(wantFiles, files); diff != "" {
+			t.Fatalf("fileNames mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
