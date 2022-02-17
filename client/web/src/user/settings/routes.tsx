@@ -36,6 +36,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+// const UserSettingsPrivacyPage = lazyComponent(
+//     () => import('./privacy/UserSettingsPrivacyPage'),
+//     'UserSettingsPrivacyPage'
+// )
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -94,6 +99,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
         condition: showAccountSecurityPage,
+    },
+    {
+        path: '/privacy',
+        exact: true,
+        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
     },
     {
         path: '/repositories',
@@ -155,5 +165,5 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/about-organizations',
         exact: true,
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
-    },
+    }
 ]
