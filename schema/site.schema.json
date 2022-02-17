@@ -374,7 +374,7 @@
         "enableGitServerCommandExecFilter": {
           "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
           "type": "boolean",
-          "default": false
+          "default": true
         }
       },
       "examples": [
