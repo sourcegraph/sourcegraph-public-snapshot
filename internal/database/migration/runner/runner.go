@@ -183,25 +183,6 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	}, nil
 }
 
-const lockPollInterval = time.Second
-
-// pollLock will attempt to acquire a session-level advisory lock while the given context has not
-// been canceled. The caller must eventually invoke the unlock function on successful acquisition
-// of the lock.
-func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err error) error, _ error) {
-	for {
-		if acquired, unlock, err := store.TryLock(ctx); err != nil {
-			return nil, err
-		} else if acquired {
-			return unlock, nil
-		}
-
-		if err := wait(ctx, lockPollInterval); err != nil {
-			return nil, err
-		}
-	}
-}
-
 type lockedVersionCallback func(
 	schemaVersion schemaVersion,
 	byState definitionsByState,
@@ -252,4 +233,23 @@ func (r *Runner) withLockedSchemaState(
 
 	// Invoke the callback with the current schema state
 	return false, f(schemaVersion, byState, unlock)
+}
+
+const lockPollInterval = time.Second
+
+// pollLock will attempt to acquire a session-level advisory lock while the given context has not
+// been canceled. The caller must eventually invoke the unlock function on successful acquisition
+// of the lock.
+func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err error) error, _ error) {
+	for {
+		if acquired, unlock, err := store.TryLock(ctx); err != nil {
+			return nil, err
+		} else if acquired {
+			return unlock, nil
+		}
+
+		if err := wait(ctx, lockPollInterval); err != nil {
+			return nil, err
+		}
+	}
 }
