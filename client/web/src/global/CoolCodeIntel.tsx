@@ -21,7 +21,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
-import { useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -55,6 +55,8 @@ import {
     CoolCodeIntelHighlightedBlobVariables,
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
+    GetPreciseCodeIntelResult,
+    GetPreciseCodeIntelVariables,
     HoverFields,
     LocationConnectionFields,
     LocationFields,
@@ -65,7 +67,8 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { usePreciseCodeIntel } from './CoolCodeIntelHook'
+import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY, USE_CODE_INTEL_QUERY } from './CoolCodeIntelQueries'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
@@ -195,7 +198,7 @@ export const ReferencesList: React.FunctionComponent<
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
-                    <SideReferences
+                    <SideReferencesWithHook
                         {...props}
                         activeLocation={activeLocation}
                         setActiveLocation={onReferenceClick}
@@ -240,14 +243,14 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-export const SideReferences: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-    }
-> = props => {
+interface ReferencesComponentProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+}
+
+export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
@@ -306,6 +309,108 @@ export const SideReferences: React.FunctionComponent<
             implementations={lsif.implementations}
             hover={lsif.hover}
         />
+    )
+}
+
+export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponentProps> = props => {
+    const { lsifData, error, loading, hasNextPage, fetchMore } = usePreciseCodeIntel<
+        GetPreciseCodeIntelResult,
+        GetPreciseCodeIntelVariables,
+        LocationFields
+    >({
+        query: USE_CODE_INTEL_QUERY,
+        variables: {
+            repository: props.clickedToken.repoName,
+            commit: props.clickedToken.commitID,
+            path: props.clickedToken.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.clickedToken.line - 1,
+            character: props.clickedToken.character - 1,
+            after: null,
+            filter: props.filter || null,
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            // If there weren't any errors and we just didn't receive any data
+            if (!data || !data.repository?.commit?.blob?.lsif) {
+                return {
+                    references: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                        },
+                    },
+                }
+            }
+
+            const lsif = data.repository?.commit?.blob?.lsif
+
+            return lsif
+        },
+    })
+
+    // If we're loading and haven't received any data yet
+    if (loading && !lsifData) {
+        return (
+            <>
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading precise code intel ...</i>
+                </p>
+            </>
+        )
+    }
+
+    // If we received an error before we had received any data
+    if (error && !lsifData) {
+        return (
+            <div>
+                <p className="text-danger">Loading precise code intel failed:</p>
+                <pre>{error.message}</pre>
+            </div>
+        )
+    }
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!lsifData || lsifData.references.nodes.length === 0) {
+        return <>Nothing found</>
+    }
+
+    const references = lsifData?.references.nodes
+
+    return (
+        <>
+            <h3>References</h3>
+            <ol>
+                {references.map(reference => (
+                    <li key={reference.url}>
+                        <Link to={reference.url}>
+                            <code>{reference.url}</code>
+                        </Link>
+                    </li>
+                ))}
+            </ol>
+            <p>
+                {references.length} references.{' '}
+                {hasNextPage && !loading && (
+                    <Button
+                        onClick={() => fetchMore()}
+                        size="sm"
+                        display="inline"
+                        variant="secondary"
+                        className="mx-auto"
+                    >
+                        Load more
+                    </Button>
+                )}
+                {hasNextPage && loading && <LoadingSpinner inline={true} />}
+            </p>
+        </>
     )
 }
 

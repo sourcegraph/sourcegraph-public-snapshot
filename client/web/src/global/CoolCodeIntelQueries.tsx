@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const FETCH_REFERENCES_QUERY = gql`
+const codeIntelFragments = gql`
     fragment LocationFields on Location {
         resource {
             ...GitBlobFields
@@ -8,6 +8,7 @@ export const FETCH_REFERENCES_QUERY = gql`
         range {
             ...RangeFields
         }
+        url
     }
 
     fragment LocationConnectionFields on LocationConnection {
@@ -40,14 +41,17 @@ export const FETCH_REFERENCES_QUERY = gql`
             character
         }
     }
+`
 
+const hoverFragments = gql`
     fragment HoverFields on Hover {
         markdown {
             html
             text
         }
     }
-
+`
+export const FETCH_REFERENCES_QUERY = gql`
     query CoolCodeIntelReferences(
         $repository: String!
         $commit: String!
@@ -78,6 +82,42 @@ export const FETCH_REFERENCES_QUERY = gql`
             }
         }
     }
+
+    ${codeIntelFragments}
+    ${hoverFragments}
+`
+
+const gitBlobLsifDataQueryFragment = gql`
+    fragment LsifDataFields on GitBlobLSIFData {
+        references(line: $line, character: $character, after: $after, filter: $filter) {
+            ...LocationConnectionFields
+        }
+    }
+`
+
+export const USE_CODE_INTEL_QUERY = gql`
+    query GetPreciseCodeIntel(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $after: String
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    lsif {
+                        ...LsifDataFields
+                    }
+                }
+            }
+        }
+    }
+
+    ${codeIntelFragments}
+    ${gitBlobLsifDataQueryFragment}
 `
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
