@@ -490,7 +490,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 	for _, q := range oldPlan {
 		q := q
 		g.Go(func() error {
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
+			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (result.Matches, error) {
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
@@ -506,16 +506,11 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 				}
 
 				agg := streaming.NewAggregatingStream()
-				alert, err := r.evaluateJob(ctx, agg, job.NewOrJob(children...))
+				_, err = r.evaluateJob(ctx, agg, job.NewOrJob(children...))
 				if err != nil {
 					return nil, err
 				}
-
-				return &SearchResults{
-					Matches: agg.Results,
-					Stats:   agg.Stats,
-					Alert:   alert,
-				}, nil
+				return agg.Results, nil
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				// The predicate has no results, so neither will this basic query
@@ -669,7 +664,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResults, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (result.Matches, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -691,7 +686,7 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		name, params := query.ParseAsPredicate(value)
 		predicate := query.DefaultPredicateRegistry.Get(field, name)
 		predicate.ParseParams(params)
-		srr, err := evaluate(predicate)
+		matches, err := evaluate(predicate)
 		if err != nil {
 			topErr = err
 			return nil
@@ -700,13 +695,13 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		var nodes []query.Node
 		switch predicate.Field() {
 		case query.FieldRepo:
-			nodes, err = searchResultsToRepoNodes(srr.Matches)
+			nodes, err = searchResultsToRepoNodes(matches)
 			if err != nil {
 				topErr = err
 				return nil
 			}
 		case query.FieldFile:
-			nodes, err = searchResultsToFileNodes(srr.Matches)
+			nodes, err = searchResultsToFileNodes(matches)
 			if err != nil {
 				topErr = err
 				return nil
