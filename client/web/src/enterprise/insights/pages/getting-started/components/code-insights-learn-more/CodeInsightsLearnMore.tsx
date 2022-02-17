@@ -30,7 +30,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                 <article>
                     <h3>Detect and track patterns</h3>
                     <p className="text-muted mb-2">
-                        Track versions of languages, packages, terraform, docker images, or anything else that can be
+                        Track versions of languages, packages, infrastructure, docker images, or anything else that can be
                         captured with a regular expression capture group.
                     </p>
                     <Link
@@ -45,7 +45,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                 <article>
                     <h3>Questions and feedback</h3>
                     <p className="text-muted mb-2">
-                        Have a question or idea about code monitoring? We want to hear your feedback!
+                        Have a question or idea about Code Insights? We want to hear your feedback!
                     </p>
 
                     <FeedbackPrompt onSubmit={handleSubmitFeedback}>
