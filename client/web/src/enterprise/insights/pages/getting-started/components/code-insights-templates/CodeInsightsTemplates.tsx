@@ -43,7 +43,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.HTMLAttributes
             <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                 use cases
             </Link>
-            , collected from our beta customers.
+            .
         </p>
 
         <Tabs size="medium" className="mt-3">
