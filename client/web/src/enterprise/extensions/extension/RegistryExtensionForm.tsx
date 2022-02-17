@@ -24,7 +24,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
 
     className?: string
 }> = ({ className = '', value, publishersOrError, disabled, onChange }) => (
-    <div className={className}>
+    <>
         {isErrorLike(publishersOrError) ? (
             <ErrorAlert error={publishersOrError} />
         ) : (
@@ -50,7 +50,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
                 )}
             </Select>
         )}
-    </div>
+    </>
 )
 
 export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
