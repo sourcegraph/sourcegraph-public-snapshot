@@ -61,7 +61,35 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 		return calls[i].Name < calls[j].Name
 	})
 
-	autogold.Want("calls", nil).Equal(t, calls)
+	autogold.Want("calls", []*github.RecentCommittersParams{
+		{
+			Name:  "go",
+			Owner: "golang",
+			First: 100,
+		},
+		{
+			Name:  "mux",
+			Owner: "gorilla",
+			First: 100,
+		},
+		{
+			Name:  "sourcegraph",
+			Owner: "sourcegraph",
+			First: 100,
+		},
+	}).Equal(t, calls)
 
-	autogold.Want("recentCommitters", nil).Equal(t, recentCommitters)
+	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
+		{
+			name: "sourcegraph-joe",
+		},
+		{name: "sourcegraph-jane"},
+		{name: "sourcegraph-janet"},
+		{name: "mux-joe"},
+		{name: "mux-jane"},
+		{name: "mux-janet"},
+		{name: "go-joe"},
+		{name: "go-jane"},
+		{name: "go-janet"},
+	}).Equal(t, recentCommitters)
 }
