@@ -123,8 +123,8 @@ describe('Search Stack', () => {
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
             userEvent.click(screen.getAllByRole('button', { name: 'Remove entry' })[0])
-            const entryLinks = screen.queryAllByRole('link')
-            expect(entryLinks).toHaveLength(1)
+            const entryLinks = screen.queryByRole('link')
+            expect(entryLinks).toBeInTheDocument()
         })
 
         it('opens the text annotation aria', () => {
