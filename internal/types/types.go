@@ -1116,18 +1116,20 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
-	WeeklyInsightsPageViews        *int32
-	WeeklyInsightsUniquePageViews  *int32
-	WeeklyInsightConfigureClick    *int32
-	WeeklyInsightAddMoreClick      *int32
-	WeekStart                      time.Time
-	WeeklyInsightCreators          *int32
-	WeeklyFirstTimeInsightCreators *int32
-	WeeklyAggregatedUsage          []AggregatedPingStats
-	InsightTimeIntervals           []InsightTimeIntervalPing
-	InsightOrgVisible              []OrgVisibleInsightPing
-	InsightTotalCounts             InsightTotalCounts
+	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
+	WeeklyInsightsPageViews                 *int32
+	WeeklyInsightsGetStartedPageViews       *int32
+	WeeklyInsightsUniquePageViews           *int32
+	WeeklyInsightsGetStartedUniquePageViews *int32
+	WeeklyInsightConfigureClick             *int32
+	WeeklyInsightAddMoreClick               *int32
+	WeekStart                               time.Time
+	WeeklyInsightCreators                   *int32
+	WeeklyFirstTimeInsightCreators          *int32
+	WeeklyAggregatedUsage                   []AggregatedPingStats
+	InsightTimeIntervals                    []InsightTimeIntervalPing
+	InsightOrgVisible                       []OrgVisibleInsightPing
+	InsightTotalCounts                      InsightTotalCounts
 }
 
 // Usage statistics for a type of code insight
