@@ -73,44 +73,10 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	var (
-		wg                  sync.WaitGroup
-		mu                  sync.Mutex
-		allRecentCommitters []*invitableCollaboratorResolver
-	)
-	for _, repoName := range fewRepos {
-		owner, name, err := github.SplitRepositoryNameWithOwner(repoName)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to split repository name")
-		}
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			recentCommits, err := client.RecentCommitters(ctx, &github.RecentCommittersParams{
-				Name:  name,
-				Owner: owner,
-				First: 100,
-			})
-			if err != nil {
-				log15.Error("InvitableCollaborators: failed to get recent committers", "err", err)
-				return
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			for _, commit := range recentCommits.Nodes {
-				for _, author := range commit.Authors.Nodes {
-					parsedTime, _ := time.Parse(time.RFC3339, author.Date)
-					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
-						email:     author.Email,
-						name:      author.Name,
-						avatarURL: author.AvatarURL,
-						date:      parsedTime,
-					})
-				}
-			}
-		})
+	allRecentCommitters, err := parallelRecentCommitters(ctx, fewRepos, client.RecentCommitters)
+	if err != nil {
+		return nil, err
 	}
-	wg.Wait()
 
 	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
 	// invite are people who recently committed to code, which means they're more active and more
@@ -164,3 +130,46 @@ func (i *invitableCollaboratorResolver) Email() string       { return i.email }
 func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
 func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarURL }
 func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
+
+type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
+
+func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitters RecentCommittersFunc) (allRecentCommitters []*invitableCollaboratorResolver, err error) {
+	var (
+		wg sync.WaitGroup
+		mu sync.Mutex
+	)
+	for _, repoName := range repos {
+		owner, name, err := github.SplitRepositoryNameWithOwner(repoName)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to split repository name")
+		}
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			recentCommits, err := recentCommitters(ctx, &github.RecentCommittersParams{
+				Name:  name,
+				Owner: owner,
+				First: 100,
+			})
+			if err != nil {
+				log15.Error("InvitableCollaborators: failed to get recent committers", "err", err)
+				return
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			for _, commit := range recentCommits.Nodes {
+				for _, author := range commit.Authors.Nodes {
+					parsedTime, _ := time.Parse(time.RFC3339, author.Date)
+					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
+						email:     author.Email,
+						name:      author.Name,
+						avatarURL: author.AvatarURL,
+						date:      parsedTime,
+					})
+				}
+			}
+		})
+	}
+	wg.Wait()
+	return
+}
