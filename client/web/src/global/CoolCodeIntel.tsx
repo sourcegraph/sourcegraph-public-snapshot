@@ -207,14 +207,14 @@ export const ReferencesList: React.FunctionComponent<
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )} */}
-                    <SideDefinitions
+                    {/* <SideReferences
                         {...props}
                         name="definitions"
                         connectionHook={useDefinitions}
                         activeLocation={activeLocation}
                         setActiveLocation={onReferenceClick}
                         filter={debouncedFilter}
-                    />
+                    /> */}
                     <SideReferences
                         {...props}
                         name="references"
@@ -230,6 +230,7 @@ export const ReferencesList: React.FunctionComponent<
                         activeLocation={activeLocation}
                         setActiveLocation={onReferenceClick}
                         filter={debouncedFilter}
+                        hideIfEmpty={true}
                     /> */}
                 </div>
                 {activeLocation !== undefined && (
@@ -277,6 +278,7 @@ interface SideReferencesProps extends CoolCodeIntelProps {
     filter: string | undefined
     connectionHook: (token: CoolClickedToken, filter: string | undefined) => UseConnectionResult<LocationFields>
     name: string
+    hideIfEmpty?: boolean
 }
 
 export const SideReferences: React.FunctionComponent<SideReferencesProps> = props => {
@@ -307,52 +309,19 @@ export const SideReferences: React.FunctionComponent<SideReferencesProps> = prop
         )
     }
 
-    console.log(props.name, connection?.nodes.length)
-
     // If there weren't any errors and we just didn't receive any data
     if (!connection || connection.nodes.length === 0) {
-        return <>No {props.name} found</>
+        return props.hideIfEmpty ?? false ? null : <>No {props.name} found</>
     }
 
     return (
-        <CollapsibleLocationList {...props} fetchMore={fetchMore} hasMore={hasNextPage} locations={connection.nodes} />
-    )
-}
-
-export const SideDefinitions: React.FunctionComponent<SideReferencesProps> = props => {
-    const { connection, error, fetchMore, loading, hasNextPage } = useDefinitions(props.clickedToken, props.filter)
-
-    // If we're loading and haven't received any data yet
-    if (loading && !connection) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading {props.name}...</i>
-                </p>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !connection) {
-        return (
-            <div>
-                <p className="text-danger">Loading {props.name} failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    console.log(props.name, connection?.nodes.length)
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!connection || connection.nodes.length === 0) {
-        return <>No {props.name} found</>
-    }
-
-    return (
-        <CollapsibleLocationList {...props} fetchMore={fetchMore} hasMore={hasNextPage} locations={connection.nodes} />
+        <CollapsibleLocationList
+            {...props}
+            fetchMore={fetchMore}
+            hasMore={hasNextPage}
+            loading={loading}
+            locations={connection.nodes}
+        />
     )
 }
 
@@ -364,6 +333,7 @@ const CollapsibleLocationList: React.FunctionComponent<{
     activeLocation: Location | undefined
     filter: string | undefined
     fetchMore?: () => void
+    loading: boolean
 }> = props => {
     const locations = useMemo(() => props.locations.map(buildLocation), [props.locations])
 
@@ -404,9 +374,10 @@ const CollapsibleLocationList: React.FunctionComponent<{
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
                         />
-                        {props.hasMore && props.fetchMore !== undefined && (
-                            <p>
+                        {props.hasMore && props.fetchMore !== undefined && !props.loading && (
+                            <p className="text-center">
                                 <Button
+                                    variant="secondary"
                                     onClick={event => {
                                         event.preventDefault()
                                         if (props.fetchMore !== undefined) {
@@ -416,6 +387,12 @@ const CollapsibleLocationList: React.FunctionComponent<{
                                 >
                                     Load more...
                                 </Button>
+                            </p>
+                        )}
+                        {props.loading && (
+                            <p className="text-muted text-center">
+                                <LoadingSpinner inline={true} />
+                                <i>Loading more {props.name}...</i>
                             </p>
                         )}
                     </>
@@ -918,11 +895,14 @@ export const useReferences = (
             // get from hoverifier is 1-indexed.
             line: token.line - 1,
             character: token.character - 1,
+            first: 1,
             after: null,
             filter: filter || null,
         },
         options: {
             useURL: false,
+            // TODO: Cache is turned off because Apollo doesn't know how to
+            // distinguish between 3 queries returning `LocationConnections`
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
@@ -939,7 +919,7 @@ export const useReferences = (
                 nodes: lsif.references.nodes,
                 pageInfo: {
                     endCursor: lsif.references.pageInfo.endCursor,
-                    hasNextPage: lsif.references.pageInfo.endCursor !== undefined,
+                    hasNextPage: lsif.references.pageInfo.endCursor !== null,
                 },
             }
         },
@@ -964,7 +944,9 @@ export const useDefinitions = (
         },
         options: {
             useURL: false,
-            fetchPolicy: 'cache-and-network',
+            // TODO: Cache is turned off because Apollo doesn't know how to
+            // distinguish between 3 queries returning `LocationConnections`
+            fetchPolicy: 'no-cache',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -976,7 +958,6 @@ export const useDefinitions = (
 
             const lsif = data.repository?.commit?.blob?.lsif
 
-            console.log('definitions', lsif.definitions.nodes)
             return {
                 nodes: lsif.definitions.nodes,
                 pageInfo: {
@@ -1006,7 +987,9 @@ export const useImplementations = (
         },
         options: {
             useURL: false,
-            fetchPolicy: 'cache-and-network',
+            // TODO: Cache is turned off because Apollo doesn't know how to
+            // distinguish between 3 queries returning `LocationConnections`
+            fetchPolicy: 'no-cache',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -1022,7 +1005,7 @@ export const useImplementations = (
                 nodes: lsif.implementations.nodes,
                 pageInfo: {
                     endCursor: lsif.implementations.pageInfo.endCursor,
-                    hasNextPage: lsif.implementations.pageInfo.endCursor !== undefined,
+                    hasNextPage: lsif.implementations.pageInfo.endCursor !== null,
                 },
             }
         },

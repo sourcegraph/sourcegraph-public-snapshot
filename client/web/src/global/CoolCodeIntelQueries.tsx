@@ -8,6 +8,7 @@ const codeIntelLocationsFragments = gql`
         range {
             ...RangeFields
         }
+        url
     }
 
     fragment LocationConnectionFields on LocationConnection {
@@ -94,6 +95,7 @@ export const FETCH_REFERENCES_QUERY = gql`
         $path: String!
         $line: Int!
         $character: Int!
+        $first: Int
         $after: String
         $filter: String
     ) {
@@ -101,7 +103,7 @@ export const FETCH_REFERENCES_QUERY = gql`
             commit(rev: $commit) {
                 blob(path: $path) {
                     lsif {
-                        references(line: $line, character: $character, after: $after, filter: $filter) {
+                        references(line: $line, character: $character, first: $first, after: $after, filter: $filter) {
                             ...LocationConnectionFields
                         }
                     }
