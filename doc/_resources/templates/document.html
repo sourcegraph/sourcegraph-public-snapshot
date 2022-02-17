@@ -58,7 +58,15 @@
 {{end}}
 
 {{define "head"}}
-	{{if (or (contains .Content.Path "insights") (or (not .Content) .ContentVersion))}}<meta name="robots" content="noindex">{{end}}
+    {{ if .Content }}
+        {{ if contains .Content.Path "insights" }}
+            <!-- don't index embargoed insights pages -->
+            <meta name="robots" content="noindex">
+        {{end}}
+    {{ else if .ContentVersion }}
+        <!-- don't index version pages -->
+        <meta name="robots" content="noindex">
+    {{ end }}
 {{end}}
 
 {{define "content"}}
