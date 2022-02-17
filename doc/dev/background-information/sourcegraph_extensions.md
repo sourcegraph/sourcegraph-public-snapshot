@@ -42,7 +42,7 @@ Here are all repositories beyond sourcegraph/sourcegraph that relate to extensio
 - [sourcegraph-datadog-metrics](https://github.com/sourcegraph/sourcegraph-datadog-metrics)
 - [sourcegraph-hubspot](https://github.com/sourcegraph/sourcegraph-hubspot)
 - [sourcegraph-sonarqube](https://github.com/sourcegraph/sourcegraph-sonarqube)
-- [sourcegraph-snyk](https://github.com/sourcegraph/sourcegraph-snky)
+- [sourcegraph-snyk](https://github.com/sourcegraph/sourcegraph-snyk)
 - [sourcegraph-link-preview-expander](https://github.com/sourcegraph/sourcegraph-link-preview-expander)
 - [sourcegraph-contact-author](https://github.com/sourcegraph/sourcegraph-contact-author)
 - [sourcegraph-who-knows-about-this](https://github.com/sourcegraph/sourcegraph-who-knows-about-this)
