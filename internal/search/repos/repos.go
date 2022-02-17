@@ -21,13 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -641,41 +639,6 @@ type MissingRepoRevsError struct {
 }
 
 func (MissingRepoRevsError) Error() string { return "missing repo revs" }
-
-// HandleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// returning common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
-	var status search.RepoStatus
-	if limitHit {
-		status |= search.RepoStatusLimitHit
-	}
-
-	if gitdomain.IsRepoNotExist(searchErr) {
-		if gitdomain.IsCloneInProgress(searchErr) {
-			status |= search.RepoStatusCloning
-		} else {
-			status |= search.RepoStatusMissing
-		}
-	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
-		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			fatalErr = searchErr
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= search.RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= search.RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
-	}
-	return streaming.Stats{
-		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		IsLimitHit: limitHit,
-	}, fatalErr
-}
 
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
