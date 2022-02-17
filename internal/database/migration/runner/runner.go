@@ -239,11 +239,14 @@ func (r *Runner) withLockedSchemaState(
 }
 
 const lockPollInterval = time.Second
+const lockPollLogRatio = 5
 
 // pollLock will attempt to acquire a session-level advisory lock while the given context has not
 // been canceled. The caller must eventually invoke the unlock function on successful acquisition
 // of the lock.
 func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unlock func(err error) error, _ error) {
+	numWaits := 0
+
 	for {
 		if acquired, unlock, err := schemaContext.store.TryLock(ctx); err != nil {
 			return nil, err
@@ -251,9 +254,18 @@ func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unl
 			return unlock, nil
 		}
 
+		if numWaits%lockPollLogRatio == 0 {
+			logger.Info(
+				"Schema migration lock is currently held - will re-attempt to acquire lock",
+				"schema", schemaContext.schema.Name,
+			)
+		}
+
 		if err := wait(ctx, lockPollInterval); err != nil {
 			return nil, err
 		}
+
+		numWaits++
 	}
 }
 
