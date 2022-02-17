@@ -6,10 +6,10 @@ import { asGraphQLResult, parseQueryInt } from '@sourcegraph/web/src/components/
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection/ConnectionType'
-import { LsifDataFields } from '../graphql-operations'
+import { RefPanelLsifDataFields } from '../graphql-operations'
 
 export interface UsePreciseCodeIntelResult {
-    lsifData?: LsifDataFields
+    lsifData?: RefPanelLsifDataFields
     error?: ApolloError
     fetchMore: () => void
     refetchAll: () => void
@@ -31,7 +31,7 @@ interface UsePreciseCodeIntelConfig {
 interface UsePreciseCodeIntelParameters<TResult, TVariables> {
     query: string
     variables: TVariables & ConnectionQueryArguments
-    getConnection: (result: GraphQLResult<TResult>) => LsifDataFields
+    getConnection: (result: GraphQLResult<TResult>) => RefPanelLsifDataFields
     options?: UsePreciseCodeIntelConfig
 }
 
@@ -100,7 +100,7 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
      * This ensures good interoperability between `FilteredConnection` and `useConnection`.
      */
-    const getLsifData = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): LsifDataFields => {
+    const getLsifData = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): RefPanelLsifDataFields => {
         const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
         return getLsifDataFromGraphQLResult(result)
     }

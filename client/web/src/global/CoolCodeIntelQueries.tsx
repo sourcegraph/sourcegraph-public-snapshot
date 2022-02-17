@@ -92,7 +92,7 @@ export const FETCH_REFERENCES_QUERY = gql`
 `
 
 const gitBlobLsifDataQueryFragment = gql`
-    fragment LsifDataFields on GitBlobLSIFData {
+    fragment RefPanelLsifDataFields on GitBlobLSIFData {
         references(line: $line, character: $character, first: $first, after: $after, filter: $filter) {
             ...LocationConnectionFields
         }
@@ -120,7 +120,7 @@ export const USE_CODE_INTEL_QUERY = gql`
             commit(rev: $commit) {
                 blob(path: $path) {
                     lsif {
-                        ...LsifDataFields
+                        ...RefPanelLsifDataFields
                     }
                 }
             }

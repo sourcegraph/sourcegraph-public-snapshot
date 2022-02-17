@@ -332,7 +332,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             filter: props.filter || null,
         },
         options: {
-            fetchPolicy: 'cache-and-network',
+            fetchPolicy: 'cache-first',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
