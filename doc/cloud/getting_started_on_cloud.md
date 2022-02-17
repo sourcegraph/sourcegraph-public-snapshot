@@ -8,6 +8,7 @@ Are you new to Sourcegraph Cloud? This is your place to start.
 
 ## Getting Started
 Getting started with Sourcegraph Cloud takes less than one minute. Follow the below steps to get started
+
 1. Sign up for an [account on Sourcegraph Cloud](https://sourcegraph.com/sign-up). After sign-up, you will be guided through the next two steps
 2. Connect a code host using your OAuth flow. Sourcegraph Cloud natively supports Github.com and Gitlab.com repositories. 
 3. Next, [add your repositories to Sourcegraph](https://learn.sourcegraph.com/how-to-add-private-code-repositories-to-sourcegraph). Sourcegraph respects code host permissions, so you should only see repositories which you have permission to view on the code host you connected. 
