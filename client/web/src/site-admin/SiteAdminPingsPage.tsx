@@ -300,10 +300,12 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Browser extension
                             <ul>
                                 <li>
-                                    Number of users who viewed / clicked the "install browser extension" CTA on the file / search pages today
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
                                 </li>
                                 <li>
-                                    Number of views / clicks on the "install browser extension" CTA on the file / search pages today
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
                                 </li>
                             </ul>
                         </li>
@@ -311,10 +313,12 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             IDE extension
                             <ul>
                                 <li>
-                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file / search pages today
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
                                 </li>
                                 <li>
-                                    Number of views / clicks on the "install IDE extension" CTA on the file / search pages today
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
                                 </li>
                             </ul>
                         </li>
