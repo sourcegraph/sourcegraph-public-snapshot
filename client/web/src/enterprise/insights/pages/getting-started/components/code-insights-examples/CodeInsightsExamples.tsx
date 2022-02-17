@@ -191,7 +191,7 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
     title: 'Alpine versions over all repos',
     allRepos: true,
-    groupSearchQuery: 'patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile',
+    groupSearchQuery: 'patterntype:regexp FROM\\s+alpine:([\\d\\.]+) file:Dockerfile',
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
