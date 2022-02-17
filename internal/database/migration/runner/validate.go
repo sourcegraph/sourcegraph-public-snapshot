@@ -16,14 +16,49 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 // expected by the given schema context. This method will block if there are relevant migrations
 // in progress.
 func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
-	definitions := schemaContext.schema.Definitions.All()
+	// Get the set of migrations that need to be applied.
+	definitions, err := schemaContext.schema.Definitions.Up(
+		schemaContext.initialSchemaVersion.appliedVersions,
+		extractIDs(schemaContext.schema.Definitions.Leaves()),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
+	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+
+	logger.Info(
+		"Checked current schema state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+	)
 
 	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
 	// to take an advisory lock and poll index creation status below.
-	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
+		logger.Info(
+			"Schema is in the expected state",
+			"schema", schemaContext.schema.Name,
+		)
+
 		return nil
 	}
+
+	logger.Warn(
+		"Schema not in expected state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+		"targetDefinitions", extractIDs(definitions),
+	)
+	logger.Info(
+		"Checking for active migrations",
+		"schema", schemaContext.schema.Name,
+	)
 
 	for {
 		// Attempt to validate the given definitions. We may have to call this several times as
@@ -40,10 +75,16 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		// There are active index creation operations ongoing; wait a short time before requerying
 		// the state of the migrations so we don't flood the database with constant queries to the
 		// system catalog.
+
 		if err := wait(ctx, indexPollInterval); err != nil {
 			return err
 		}
 	}
+
+	logger.Info(
+		"Schema is in the expected state",
+		"schema", schemaContext.schema.Name,
+	)
 
 	return nil
 }

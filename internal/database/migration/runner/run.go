@@ -2,13 +2,11 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -71,18 +69,53 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		return err
 	}
 
+	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
+	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+
+	logger.Info(
+		"Checked current schema state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+	)
+
 	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
 	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
 	// all migrations are applied (when migrating up) or unapplied (when migrating down).
-	if byState := groupByState(schemaContext.initialSchemaVersion, definitions); len(byState.pending)+len(byState.failed) == 0 {
+
+	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
+			logger.Info(
+				"Schema is in the expected state",
+				"schema", schemaContext.schema.Name,
+			)
+
 			return nil
 		}
 
 		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
+			logger.Info(
+				"Schema is in the expected state",
+				"schema", schemaContext.schema.Name,
+			)
+
 			return nil
 		}
 	}
+
+	logger.Warn(
+		"Schema not in expected state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+		"targetDefinitions", extractIDs(definitions),
+	)
+	logger.Info(
+		"Checking for active migrations",
+		"schema", schemaContext.schema.Name,
+	)
 
 	for {
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
@@ -96,6 +129,11 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 			break
 		}
 	}
+
+	logger.Info(
+		"Schema is in the expected state",
+		"schema", schemaContext.schema.Name,
+	)
 
 	return nil
 }
@@ -158,7 +196,7 @@ func (r *Runner) applyMigrations(
 	} else if retry {
 		// There are active index creation operations ongoing; wait a short time before requerying
 		// the state of the migrations so we don't flood the database with constant queries to the
-		// system catalog. We check here instead of in the caller because we dont' want a delay when
+		// system catalog. We check here instead of in the caller because we don't want a delay when
 		// we drop the lock to create an index concurrently (returning `droppedLock = true` below).
 		return true, wait(ctx, indexPollInterval)
 	}
@@ -197,7 +235,7 @@ func (r *Runner) applyMigration(
 	return nil
 }
 
-const indexPollInterval = time.Second
+const indexPollInterval = time.Second * 5
 
 // createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
 // hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
@@ -219,30 +257,17 @@ func (r *Runner) createIndexConcurrently(
 pollIndexStatusLoop:
 	for {
 		// Query the current status of the target index
-		status, exists, err := schemaContext.store.IndexStatus(ctx, tableName, indexName)
+		indexStatus, exists, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to query state of index")
 		}
 
-		logger.Info(
-			"Checked progress of index creation",
-			append(
-				[]interface{}{
-					"tableName", tableName,
-					"indexName", indexName,
-					"exists", exists,
-					"isValid", status.IsValid,
-				},
-				renderIndexStatus(status)...,
-			)...,
-		)
-
-		if exists && status.IsValid {
+		if exists && indexStatus.IsValid {
 			// Index exists and is valid; nothing to do
 			return unlocked, nil
 		}
 
-		if exists && status.Phase == nil {
+		if exists && indexStatus.Phase == nil {
 			// Index is invalid but no creation operation is in-progress. We can try to repair this
 			// state automatically by dropping the index and re-create it as if it never existed.
 			// Assuming that the down migration drops the index created in the up direction, we'll
@@ -280,14 +305,12 @@ pollIndexStatusLoop:
 
 		// Index is currently being created. Wait a small time and check the index status again. We don't
 		// want to take any action here while the other proceses is working.
-		if exists && status.Phase != nil {
-			select {
-			case <-time.After(indexPollInterval):
-				continue pollIndexStatusLoop
-
-			case <-ctx.Done():
-				return unlocked, ctx.Err()
+		if exists && indexStatus.Phase != nil {
+			if err := wait(ctx, indexPollInterval); err != nil {
+				return true, err
 			}
+
+			continue pollIndexStatusLoop
 		}
 
 		// Create the index. Ignore duplicate table/index already exists errors. This can happen if there
@@ -323,6 +346,21 @@ pollIndexStatusLoop:
 		)
 
 		createIndex := func() error {
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
+			go func() {
+				for {
+					if err := wait(ctx, indexPollInterval); err != nil {
+						return
+					}
+
+					if _, _, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName); err != nil {
+						logger.Error("Failed to retrieve index status", "error", err)
+					}
+				}
+			}()
+
 			return errorFilter(schemaContext.store.Up(ctx, definition))
 		}
 		if err := schemaContext.store.WithMigrationLog(ctx, definition, true, createIndex); err != nil {
@@ -331,7 +369,7 @@ pollIndexStatusLoop:
 			continue
 		}
 
-		return unlocked, nil
+		return true, nil
 	}
 }
 
@@ -362,32 +400,4 @@ func filterAppliedDefinitions(
 	}
 
 	return filtered
-}
-
-// renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
-// call to logger. If the index is currently being created, the progress of the create operation will be
-// summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
-	if progress.Phase == nil {
-		return []interface{}{
-			"in-progress", false,
-		}
-	}
-
-	index := -1
-	for i, phase := range storetypes.CreateIndexConcurrentlyPhases {
-		if phase == *progress.Phase {
-			index = i
-			break
-		}
-	}
-
-	return []interface{}{
-		"in-progress", true,
-		"phase", *progress.Phase,
-		"phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases)),
-		"lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal),
-		"blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal),
-		"tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal),
-	}
 }
