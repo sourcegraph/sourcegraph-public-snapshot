@@ -1839,9 +1839,7 @@ type Search {
     """
     results: SearchResults!
     """
-    A subset of results (excluding actual search results) which are heavily
-    cached and thus quicker to query. Useful for e.g. querying sparkline
-    data.
+    DEPRECATED: removed in favor of compute
     """
     stats: SearchResultsStats!
 }
@@ -1946,7 +1944,7 @@ type SearchResults {
     """
     limitHit: Boolean!
     """
-    Integers representing the sparkline for the search results.
+    DEPRECATED: removed in favor of compute. Will always return an empty result.
     """
     sparkline: [Int!]!
     """
