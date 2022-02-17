@@ -13,7 +13,18 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         url
         name
         namespace {
+            __typename
             id
+            ... on User {
+                username
+                displayName
+                viewerCanAdminister
+            }
+            ... on Org {
+                name
+                displayName
+                viewerCanAdminister
+            }
         }
         description
 

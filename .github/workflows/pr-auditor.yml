@@ -15,5 +15,5 @@ jobs:
       - run: ./dev/pr-auditor/check-pr.sh
         env:
           GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_REPO_TOKEN }}
           GITHUB_RUN_URL: https://github.com/sourcegraph/sourcegraph/actions/runs/${{ github.run_id }}

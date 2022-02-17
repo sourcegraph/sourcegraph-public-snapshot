@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { Button, useStopwatch } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
@@ -163,8 +163,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
         </Button>
     )
 
-    const [exampleOpen, setExampleOpen] = useState(false)
-    const exampleStyle = useSpring({ height: exampleOpen ? '6.5rem' : '0rem', opacity: exampleOpen ? 1 : 0 })
+    const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
 
     const ctaInstructions = isWorkspacesPreviewInProgress ? (
         // We render all of the waiting messages at once on top of each other so that we
@@ -197,7 +196,9 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 </Button>
             </h4>
             <animated.div style={exampleStyle} className={styles.onExample}>
-                <CodeSnippet className="w-100 mt-2" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                <div ref={exampleReference} className="pt-2 pb-3">
+                    <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                </div>
             </animated.div>
         </>
     )
@@ -206,7 +207,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <h4 className={styles.header}>
                 Workspaces preview{' '}
-                {(batchSpecStale || !hasPreviewed) && shouldShowConnection && (
+                {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
                     <WarningIcon
                         className="icon-inline text-muted"
                         data-tooltip="The workspaces previewed below may not be up-to-date."

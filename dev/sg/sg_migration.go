@@ -103,7 +103,11 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory, filesystemSchemas)
+	schemas, err := getFilesystemSchemas()
+	if err != nil {
+		return nil, err
+	}
+	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
@@ -111,28 +115,33 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	return cliutil.NewShim(r), nil
 }
 
-var filesystemSchemas = []*schemas.Schema{
-	mustResolveSchema("frontend"),
-	mustResolveSchema("codeintel"),
-	mustResolveSchema("codeinsights"),
+func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
+	for _, name := range []string{"frontend", "codeintel", "codeinsights"} {
+		schema, err := resolveSchema(name)
+		if err != nil {
+			errs = errors.Append(errs, errors.Newf("%s: %w", name, err))
+		} else {
+			schemas = append(schemas, schema)
+		}
+	}
+	return
 }
 
-func mustResolveSchema(name string) *schemas.Schema {
+func resolveSchema(name string) (*schemas.Schema, error) {
 	repositoryRoot, err := root.RepositoryRoot()
 	if err != nil {
 		if errors.Is(err, root.ErrNotInsideSourcegraph) {
-			panic(fmt.Sprintf("sg migration command use the migrations defined on the local filesystem: %s", err))
+			return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
 		}
-
-		panic(err.Error())
+		return nil, err
 	}
 
 	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		return nil, errors.Newf("malformed migration definitions: %w", err)
 	}
 
-	return schema
+	return schema, nil
 }
 
 func addExec(ctx context.Context, args []string) error {

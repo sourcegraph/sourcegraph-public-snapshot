@@ -463,7 +463,6 @@ func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
 		SearchInputs:        r.SearchInputs,
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Protocol:            r.protocol(),
 		Zoekt:               r.zoekt,
 		SearcherURLs:        r.searcherURLs,
 	}
@@ -485,37 +484,33 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
-	elapsed := time.Since(start)
-	if srr != nil {
-		srr.elapsed = elapsed
-		var wg sync.WaitGroup
-		LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
-		defer wg.Wait()
-	}
+func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, err error) {
+	var wg sync.WaitGroup
+	LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+	defer wg.Wait()
 
 	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.SearchResults.Alert != nil {
+	status = DetermineStatusForLogs(srr.SearchResults.Alert, srr.SearchResults.Stats, err)
+	if srr.SearchResults.Alert != nil {
 		alertType = srr.SearchResults.Alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
+	logPrometheusBatch(status, alertType, requestSource, requestName, srr.elapsed)
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	isSlow := srr.elapsed > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		var n int
 		if srr != nil {
 			n = len(srr.Matches)
 		}
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: r.rawQuery(),
+			OriginalQuery: r.SearchInputs.OriginalQuery,
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    elapsed.Milliseconds(),
+			DurationMs:    srr.elapsed.Milliseconds(),
 			ResultSize:    n,
 			Error:         err,
 		})
@@ -531,18 +526,19 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.Plan)
+	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
 	srr := r.resultsToResolver(&SearchResults{
 		Matches: agg.Results,
 		Stats:   agg.Stats,
 		Alert:   alert,
 	})
-	r.logBatch(ctx, srr, start, err)
+	srr.elapsed = time.Since(start)
+	r.logBatch(ctx, srr, err)
 	return srr, err
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := r.results(ctx, r.stream, r.Plan)
+	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
 	srr := r.resultsToResolver(&SearchResults{Alert: alert})
 	return srr, err
 }
@@ -553,9 +549,9 @@ func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResult
 	}
 	return &SearchResultsResolver{
 		SearchResults: results,
-		limit:         r.MaxResults(),
+		limit:         r.SearchInputs.MaxResults(),
 		db:            r.db,
-		UserSettings:  r.UserSettings,
+		UserSettings:  r.SearchInputs.UserSettings,
 	}
 }
 
@@ -568,17 +564,17 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 
 // DetermineStatusForLogs determines the final status of a search for logging
 // purposes.
-func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
+func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
 	switch {
 	case err == context.DeadlineExceeded:
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
+	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
 		return "timeout"
-	case srr.Stats.Status.Any(search.RepoStatusTimedout):
+	case stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
-	case srr.SearchResults.Alert != nil:
+	case alert != nil:
 		return "alert"
 	default:
 		return "success"
@@ -771,7 +767,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
+			return search.AlertForTimeout(usedTime, suggestTime, r.SearchInputs.OriginalQuery, r.SearchInputs.PatternType), nil
 		} else {
 			err = nil
 		}
@@ -923,7 +919,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	ctx = context.Background()
 	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
 
-	cacheKey := r.rawQuery()
+	cacheKey := r.SearchInputs.OriginalQuery
 	// Check if value is in the cache.
 	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
 	if ok {
@@ -944,7 +940,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.Query)
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
 		if err != nil {
 			return nil, err
 		}

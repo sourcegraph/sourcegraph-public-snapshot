@@ -31,7 +31,6 @@ import (
 type Args struct {
 	SearchInputs        *run.SearchInputs
 	OnSourcegraphDotCom bool
-	Protocol            search.Protocol
 	Zoekt               zoekt.Streamer
 	SearcherURLs        *endpoint.Map
 }
@@ -47,14 +46,14 @@ type Args struct {
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
 func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
-	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit)
+	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
 
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
 
-	p := search.ToTextPatternInfo(b, jargs.Protocol, query.Identity)
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol, query.Identity)
 
 	forceResultTypes := result.TypeEmpty
 	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
@@ -76,7 +75,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.Protocol == search.Streaming,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
 
 		Zoekt:        jargs.Zoekt,
 		SearcherURLs: jargs.SearcherURLs,
@@ -611,7 +610,7 @@ func toPatternExpressionJob(args *Args, q query.Basic) (Job, error) {
 }
 
 func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
-	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit)
+	maxResults := q.ToParseTree().MaxResults(args.SearchInputs.DefaultLimit())
 	timeout := search.TimeoutDuration(q)
 
 	var (

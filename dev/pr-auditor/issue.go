@@ -6,11 +6,15 @@ import (
 	"github.com/google/go-github/v41/github"
 )
 
+const (
+	testPlanDocs = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
+)
+
 func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.IssueRequest {
 	var (
-		exceptionLabels = []string{}
-		issueTitle      string
+		issueTitle      = fmt.Sprintf("pull request %s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, payload.PullRequest.Title)
 		issueBody       string
+		exceptionLabels = []string{}
 		issueAssignees  = []string{}
 	)
 
@@ -22,15 +26,17 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 	}
 
 	if !result.Reviewed {
-		issueTitle = fmt.Sprintf("exception/review: PR %s#%d", payload.Repository.FullName, payload.PullRequest.Number)
-		if !result.HasTestPlan() {
-			issueBody = fmt.Sprintf("%s has a test plan but was not reviewed.", payload.PullRequest.URL)
+		if result.HasTestPlan() {
+			issueBody = fmt.Sprintf("%s %q **has a test plan** but **was not reviewed**.", payload.PullRequest.URL, payload.PullRequest.Title)
 		} else {
-			issueBody = fmt.Sprintf("%s has no test plan and was not reviewed.", payload.PullRequest.URL)
+			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, payload.PullRequest.Title)
 		}
 	} else if !result.HasTestPlan() {
-		issueTitle = fmt.Sprintf("exception/test-plan: PR %s#%d", payload.Repository.FullName, payload.PullRequest.Number)
-		issueBody = fmt.Sprintf("%s did not provide a test plan.", payload.PullRequest.URL)
+		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, payload.PullRequest.Title)
+	}
+
+	if !result.HasTestPlan() {
+		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
 	}
 
 	user := payload.PullRequest.MergedBy.Login
