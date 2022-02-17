@@ -86,10 +86,20 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 
 	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
+			logger.Info(
+				"Schema is in the expected state",
+				"schema", schemaContext.schema.Name,
+			)
+
 			return nil
 		}
 
 		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
+			logger.Info(
+				"Schema is in the expected state",
+				"schema", schemaContext.schema.Name,
+			)
+
 			return nil
 		}
 	}
@@ -115,6 +125,11 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 			break
 		}
 	}
+
+	logger.Info(
+		"Schema is in the expected state",
+		"schema", schemaContext.schema.Name,
+	)
 
 	return nil
 }

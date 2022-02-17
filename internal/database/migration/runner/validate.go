@@ -32,6 +32,11 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
 	// to take an advisory lock and poll index creation status below.
 	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
+		logger.Info(
+			"Schema is in the expected state",
+			"schema", schemaContext.schema.Name,
+		)
+
 		return nil
 	}
 
@@ -64,6 +69,11 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 			return err
 		}
 	}
+
+	logger.Info(
+		"Schema is in the expected state",
+		"schema", schemaContext.schema.Name,
+	)
 
 	return nil
 }
