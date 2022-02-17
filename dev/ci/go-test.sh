@@ -62,6 +62,7 @@ EOF
 
   set +e
   echo "$data" | curl \
+    --fail \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
