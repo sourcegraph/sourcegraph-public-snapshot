@@ -117,8 +117,8 @@ func (g *graph) emitPackage(pkg *lsif_typed.Package) int {
 func (g *graph) emitResultSet(info *lsif_typed.SymbolInformation, monikerKind string) symbolInformationIDs {
 	hover := strings.Join(info.Documentation, "\n\n---\n\n")
 	definitionResult := -1
-	isExported := monikerKind == "export"
-	if isExported {
+	hasDefinition := monikerKind == "export" || monikerKind == "local"
+	if hasDefinition {
 		definitionResult = g.emitVertex("definitionResult", nil)
 	}
 	ids := symbolInformationIDs{
@@ -128,7 +128,7 @@ func (g *graph) emitResultSet(info *lsif_typed.SymbolInformation, monikerKind st
 		ImplementationResult: -1,
 		HoverResult:          g.emitVertex("hoverResult", hover),
 	}
-	if isExported {
+	if hasDefinition {
 		g.emitEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
 	}
 	g.emitEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
@@ -152,7 +152,7 @@ func (g *graph) emitDocument(index *lsif_typed.Index, doc *lsif_typed.Document) 
 
 		// Build symbol information table for Document-local symbols only.
 		if lsif_typed.IsLocalSymbol(info.Symbol) {
-			localSymbolInformationTable[info.Symbol] = g.emitResultSet(info, "")
+			localSymbolInformationTable[info.Symbol] = g.emitResultSet(info, "local")
 		}
 
 		// Emit "implementation" monikers for external symbols (monikers with kind "import")
