@@ -1,6 +1,6 @@
 # How to run `migrator` operations
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
 The `migrator` is a service that runs as an initial step of the upgrade process for [Kubernetes](../install/kubernetes/update.md#database-migrations) and [Docker-compose](../install/docker-compose/operations.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
 

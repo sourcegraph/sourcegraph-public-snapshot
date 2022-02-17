@@ -81,7 +81,7 @@ the following:
 
 ## Database Migrations
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
 By default, database migrations will be performed during application startup by the `frontend` application. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
