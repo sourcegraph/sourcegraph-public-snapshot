@@ -158,6 +158,13 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 				email: "beyang@sourcegraph.com",
 			}}),
 		},
+		{
+			recentCommitters: collaborators("sqs+sourcegraph-bot@sourcegraph.com", "renovatebot@gmail.com", "stephen@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("bots excluded", []*invitableCollaboratorResolver{{
+				email: "stephen@sourcegraph.com",
+			}}),
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
