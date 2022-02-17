@@ -71,10 +71,22 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		return err
 	}
 
+	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
+	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+
+	logger.Info(
+		"Checked current schema state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+	)
+
 	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
 	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
 	// all migrations are applied (when migrating up) or unapplied (when migrating down).
-	if byState := groupByState(schemaContext.initialSchemaVersion, definitions); len(byState.pending)+len(byState.failed) == 0 {
+
+	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
 			return nil
 		}

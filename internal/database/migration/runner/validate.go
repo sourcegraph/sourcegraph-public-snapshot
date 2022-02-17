@@ -18,9 +18,19 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
 	definitions := schemaContext.schema.Definitions.All()
 
+	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
+	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+
+	logger.Info(
+		"Checked current schema state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+	)
+
 	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
 	// to take an advisory lock and poll index creation status below.
-	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
 		return nil
 	}

@@ -168,14 +168,6 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 		return schemaVersion{}, err
 	}
 
-	logger.Info(
-		"Checked current version",
-		"schema", schemaName,
-		"appliedVersions", appliedVersions,
-		"pendingVersions", pendingVersions,
-		"failedVersions", failedVersions,
-	)
-
 	return schemaVersion{
 		appliedVersions,
 		pendingVersions,
@@ -218,7 +210,17 @@ func (r *Runner) withLockedSchemaState(
 	if err != nil {
 		return false, err
 	}
+
+	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaVersion, definitions)
+
+	logger.Info(
+		"Checked current schema state",
+		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+	)
 
 	// Detect failed migrations, and determine if we need to wait longer for concurrent migrator
 	// instances to finish their current work.
