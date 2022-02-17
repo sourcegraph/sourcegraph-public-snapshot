@@ -14,7 +14,8 @@ RUN go build .
 
 # Does not need to use sourcegraph-alpine since this is only deployed for
 # Sourcegraph.com.
-FROM alpine:3.15
+# alpine_base CHECK:ALPINE_OK
+FROM alpine:3.15 as alpine_base
 
 RUN apk add --no-cache git ca-certificates tini
 

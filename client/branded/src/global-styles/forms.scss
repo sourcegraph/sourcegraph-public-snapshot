@@ -1,5 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+// Variables
+$input-font-size-sm: 0.786em;
+$font-size-base: 0.875rem;
+
 :root {
     --input-line-height: 1.429;
     --input-height-border: 2px;
@@ -12,13 +16,15 @@
     --input-padding-y-sm: 0.25rem;
     --input-padding-x-sm: 0.5rem;
     --input-height-sm: calc(1.5em + (var(--input-padding-y-sm) * 2) + var(--input-height-border));
-    --input-font-size-sm: 0.786em;
+    --input-font-size: $font-size-base;
+    --input-font-size-sm: $input-font-size-sm;
     --input-height-inner: calc(1.429em + (var(--input-padding-y) * 2));
     --form-group-margin-bottom: 1rem;
     --form-text-margin-top: 0.25rem;
     --form-check-input-gutter: 1.25rem;
     --form-check-input-margin-x: 0.25rem;
     --input-height-inner-half: calc(0.714em + var(--input-padding-y));
+    --border-radius: 3px;
 }
 
 .theme-light {
@@ -58,14 +64,21 @@
     width: 100%;
     height: var(--input-height);
     padding: var(--input-padding-y) var(--input-padding-x);
-    font-size: 0.875rem;
+    font-size: var(--input-font-size);
     font-weight: var(--input-font-weight);
     line-height: var(--input-line-height);
     color: var(--input-color);
     background-color: var(--input-bg);
     background-clip: padding-box;
     border: var(--input-border-width) solid var(--input-border-color);
-    border-radius: 3px;
+    border-radius: var(--border-radius);
+    transition: none;
+
+    // Remove select outline from select box in FF
+    &:-moz-focusring {
+        color: transparent;
+        text-shadow: 0 0 0 var(--input-color);
+    }
 
     // Placeholder
     &::placeholder {
@@ -123,8 +136,15 @@ select.form-control {
     height: var(--input-height-sm);
     padding: var(--input-padding-y-sm) var(--input-padding-x-sm);
     font-size: var(--input-font-size-sm);
-    line-height: 1rem;
-    border-radius: 3px;
+    line-height: 1rem; // inherit from {Input / Small} in typography.scss
+}
+
+.form-control-lg {
+    height: var(--input-height-lg);
+    padding: var(--input-padding-y-lg) var(--input-padding-x-lg);
+    font-size: 1.25rem;
+    line-height: var(--input-line-height);
+    border-radius: 0.3rem;
 }
 
 // stylelint-disable-next-line no-duplicate-selectors
@@ -255,19 +275,32 @@ textarea.form-control.is-valid {
 
 // Input feedback messages
 .valid-feedback {
-    display: block;
+    display: none;
     color: var(--text-muted);
     width: 100%;
     margin-top: 0.25rem;
     font-size: 0.75rem;
 }
+
 .invalid-feedback {
-    display: block;
+    display: none;
     color: var(--danger);
     width: 100%;
     margin-top: 0.25rem;
     font-size: 0.75rem;
 }
+
+.is-valid.valid-feedback {
+    display: block;
+}
+
+.is-invalid.invalid-feedback {
+    display: block;
+}
+
+// Checkboxes and radios
+//
+// Indent the labels to position radios/checkboxes as hanging controls.
 .form-check {
     position: relative;
     display: block;
@@ -282,6 +315,7 @@ textarea.form-control.is-valid {
         cursor: default;
     }
 }
+
 .form-check-input {
     position: absolute;
     margin-top: var(--form-check-input-margin-y);

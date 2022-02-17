@@ -1,15 +1,16 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
 import { useForm } from '../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../insights/creation/search-insight'
 import { getQueryPatternTypeFilter } from '../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
 import { SearchInsightLivePreview } from '../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
@@ -44,6 +45,8 @@ const createExampleDataSeries = (query: string): EditableDataSeries[] => [
 interface DynamicCodeInsightExampleProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
         touched: true,
@@ -65,6 +68,12 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     })
 
     const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+    const repository = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
+
+    // This is to prevent resetting the name in an endless loop
+    if (repository && repositories.input.value !== repository) {
+        repositories.meta.setState(state => ({ ...state, value: repository }))
+    }
 
     return (
         <Card {...props} className={classNames(styles.wrapper, props.className)}>
