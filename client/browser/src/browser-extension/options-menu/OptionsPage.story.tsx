@@ -95,32 +95,32 @@ export const AllOptionsPages: Story = () => (
     <div>
         <h1 className="text-center">All Options Pages</h1>
         <div>
-            <div className="d-flex justify-content-between">
-                <div className="mx-2">
+            <div className="d-flex justify-content-center">
+                <div className="mx-4">
                     <h2 className="text-center">Interactive</h2>
                     <Interactive />
                 </div>
-                <div className="mx-2">
+                <div className="mx-4">
                     <h2 className="text-center">URL validation error</h2>
                     <UrlValidationError />
                 </div>
-                <div className="mx-2">
-                    <h2 className="text-center">Asking for permission</h2>
-                    <AskingForPermission />
+                <div className="mx-4">
+                    <h2 className="text-center">With advanced settings</h2>
+                    <WithAdvancedSettings />
                 </div>
             </div>
-            <div className="d-flex justify-content-between mt-4">
-                <div className="mx-2">
+            <div className="d-flex justify-content-center mt-5">
+                <div className="mx-4">
                     <h2 className="text-center">On private repository</h2>
                     <OnPrivateRepository />
                 </div>
-                <div className="mx-2">
+                <div className="mx-4">
                     <h2 className="text-center">On Sourcegraph Cloud</h2>
                     <OnSourcegraphCloud />
                 </div>
-                <div className="mx-2">
-                    <h2 className="text-center">With advanced settings</h2>
-                    <WithAdvancedSettings />
+                <div className="mx-4">
+                    <h2 className="text-center">Asking for permission</h2>
+                    <AskingForPermission />
                 </div>
             </div>
         </div>
