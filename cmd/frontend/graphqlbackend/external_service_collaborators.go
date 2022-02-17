@@ -222,5 +222,34 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 		deduplicate[recentCommitter.email] = struct{}{}
 		invitable = append(invitable, recentCommitter)
 	}
+
+	// domain turns "stephen@sourcegraph.com" -> "sourcegraph.com"
+	domain := func(email string) string {
+		idx := strings.LastIndex(email, "@")
+		if idx == -1 {
+			return email
+		}
+		return email[idx:]
+	}
+
+	// Determine the number of invitable people per email domain, then sort so that those with the
+	// most similar email domain to others in the list appear first. e.g. all @sourcegraph.com team
+	// members should appear before a random @gmail.com contributor.
+	invitablePerDomain := map[string]int{}
+	for _, person := range invitable {
+		current := invitablePerDomain[domain(person.email)]
+		invitablePerDomain[domain(person.email)] = current + 1
+	}
+	sort.Slice(invitable, func(i, j int) bool {
+		// Sort by domains with most invitable collaborators first.
+		iPeopleWithDomain := invitablePerDomain[domain(invitable[i].email)]
+		jPeopleWithDomain := invitablePerDomain[domain(invitable[j].email)]
+		if iPeopleWithDomain != jPeopleWithDomain {
+			return iPeopleWithDomain > jPeopleWithDomain
+		}
+
+		// Secondarily, sort by most-recent committers.
+		return invitable[i].date.After(invitable[j].date)
+	})
 	return invitable
 }

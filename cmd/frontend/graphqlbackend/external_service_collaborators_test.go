@@ -168,6 +168,20 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 				email: "stephen@sourcegraph.com",
 			}}),
 		},
+		{
+			recentCommitters: collaborators("steve@github.com", "rando@randi.com", "kimbo@github.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("same domain first", []*invitableCollaboratorResolver{
+				{
+					email: "stephen@sourcegraph.com",
+				},
+				{email: "beyang@sourcegraph.com"},
+				{email: "sqs@sourcegraph.com"},
+				{email: "steve@github.com"},
+				{email: "kimbo@github.com"},
+				{email: "rando@randi.com"},
+			}),
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
