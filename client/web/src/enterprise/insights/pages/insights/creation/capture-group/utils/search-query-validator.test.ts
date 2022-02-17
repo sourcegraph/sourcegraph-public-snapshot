@@ -1,7 +1,6 @@
 import { searchQueryValidator } from './search-query-validator'
 
-// eslint-disable-next-line quotes
-const GOOD_QUERY = `patterntype:regexp required_version = \"(.*)\"  lang:Terraform archived:no fork:no`
+const GOOD_QUERY = 'patterntype:regexp required_version = \\"(.*)\\"  lang:Terraform archived:no fork:no'
 
 const PASSING_VALIDATION = {
     isValidOperator: true,
