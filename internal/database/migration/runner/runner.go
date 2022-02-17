@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -322,6 +323,16 @@ func validateSchemaState(
 			// Explicit failures require administrator intervention
 			return false, newDirtySchemaError(schemaContext.schema.Name, failedDefinitions)
 		} else if len(pendingDefinitions) > 0 {
+			for _, definitionWithStatus := range pendingDefinitions {
+				logIndexStatus(
+					schemaContext,
+					definitionWithStatus.definition.IndexMetadata.TableName,
+					definitionWithStatus.definition.IndexMetadata.IndexName,
+					definitionWithStatus.indexStatus,
+					true,
+				)
+			}
+
 			return true, nil
 		}
 	}
@@ -362,4 +373,62 @@ func partitionPendingMigrations(
 	}
 
 	return pendingDefinitions, failedDefinitions, nil
+}
+
+// getAndLogIndexStatus calls IndexStatus on the given store and returns the results. The result
+// is logged to the package-level logger.
+func getAndLogIndexStatus(ctx context.Context, schemaContext schemaContext, tableName, indexName string) (storetypes.IndexStatus, bool, error) {
+	indexStatus, exists, err := schemaContext.store.IndexStatus(ctx, tableName, indexName)
+	if err != nil {
+		return storetypes.IndexStatus{}, false, errors.Wrap(err, "failed to query state of index")
+	}
+
+	logIndexStatus(schemaContext, tableName, indexName, indexStatus, exists)
+	return indexStatus, exists, nil
+}
+
+// logIndexStatus logs the result of IndexStatus to the package-level logger.
+func logIndexStatus(schemaContext schemaContext, tableName, indexName string, indexStatus storetypes.IndexStatus, exists bool) {
+	logger.Info(
+		"Checked progress of index creation",
+		append(
+			[]interface{}{
+				"schema", schemaContext.schema.Name,
+				"tableName", tableName,
+				"indexName", indexName,
+				"exists", exists,
+				"isValid", indexStatus.IsValid,
+			},
+			renderIndexStatus(indexStatus)...,
+		)...,
+	)
+
+}
+
+// renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
+// call to logger. If the index is currently being created, the progress of the create operation will be
+// summarized.
+func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
+	if progress.Phase == nil {
+		return []interface{}{
+			"in-progress", false,
+		}
+	}
+
+	index := -1
+	for i, phase := range storetypes.CreateIndexConcurrentlyPhases {
+		if phase == *progress.Phase {
+			index = i
+			break
+		}
+	}
+
+	return []interface{}{
+		"in-progress", true,
+		"phase", *progress.Phase,
+		"phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases)),
+		"lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal),
+		"blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal),
+		"tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal),
+	}
 }

@@ -230,31 +230,18 @@ func (r *Runner) createIndexConcurrently(
 
 pollIndexStatusLoop:
 	for {
-		// Query the current status of the target index
-		status, exists, err := schemaContext.store.IndexStatus(ctx, tableName, indexName)
+		// Query the current indexStatus of the target index
+		indexStatus, exists, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to query state of index")
 		}
 
-		logger.Info(
-			"Checked progress of index creation",
-			append(
-				[]interface{}{
-					"tableName", tableName,
-					"indexName", indexName,
-					"exists", exists,
-					"isValid", status.IsValid,
-				},
-				renderIndexStatus(status)...,
-			)...,
-		)
-
-		if exists && status.IsValid {
+		if exists && indexStatus.IsValid {
 			// Index exists and is valid; nothing to do
 			return unlocked, nil
 		}
 
-		if exists && status.Phase == nil {
+		if exists && indexStatus.Phase == nil {
 			// Index is invalid but no creation operation is in-progress. We can try to repair this
 			// state automatically by dropping the index and re-create it as if it never existed.
 			// Assuming that the down migration drops the index created in the up direction, we'll
@@ -292,7 +279,7 @@ pollIndexStatusLoop:
 
 		// Index is currently being created. Wait a small time and check the index status again. We don't
 		// want to take any action here while the other proceses is working.
-		if exists && status.Phase != nil {
+		if exists && indexStatus.Phase != nil {
 			if err := wait(ctx, indexPollInterval); err != nil {
 				return true, err
 			}
@@ -372,32 +359,4 @@ func filterAppliedDefinitions(
 	}
 
 	return filtered
-}
-
-// renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
-// call to logger. If the index is currently being created, the progress of the create operation will be
-// summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
-	if progress.Phase == nil {
-		return []interface{}{
-			"in-progress", false,
-		}
-	}
-
-	index := -1
-	for i, phase := range storetypes.CreateIndexConcurrentlyPhases {
-		if phase == *progress.Phase {
-			index = i
-			break
-		}
-	}
-
-	return []interface{}{
-		"in-progress", true,
-		"phase", *progress.Phase,
-		"phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases)),
-		"lockers", fmt.Sprintf("%d of %d", progress.LockersDone, progress.LockersTotal),
-		"blocks", fmt.Sprintf("%d of %d", progress.BlocksDone, progress.BlocksTotal),
-		"tuples", fmt.Sprintf("%d of %d", progress.TuplesDone, progress.TuplesTotal),
-	}
 }
