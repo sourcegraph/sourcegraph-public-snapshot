@@ -62,7 +62,11 @@ export const FETCH_REFERENCES_QUERY = gql`
         $filter: String
     ) {
         repository(name: $repository) {
+            __typename
+            id
             commit(rev: $commit) {
+                __typename
+                id
                 blob(path: $path) {
                     lsif {
                         references(line: $line, character: $character, after: $after, filter: $filter) {
@@ -89,8 +93,14 @@ export const FETCH_REFERENCES_QUERY = gql`
 
 const gitBlobLsifDataQueryFragment = gql`
     fragment LsifDataFields on GitBlobLSIFData {
-        references(line: $line, character: $character, after: $after, filter: $filter) {
+        references(line: $line, character: $character, first: $first, after: $after, filter: $filter) {
             ...LocationConnectionFields
+        }
+        definitions(line: $line, character: $character, filter: $filter) {
+            ...LocationConnectionFields
+        }
+        hover(line: $line, character: $character) {
+            ...HoverFields
         }
     }
 `
@@ -103,6 +113,7 @@ export const USE_CODE_INTEL_QUERY = gql`
         $line: Int!
         $character: Int!
         $after: String
+        $first: Int
         $filter: String
     ) {
         repository(name: $repository) {
@@ -117,6 +128,7 @@ export const USE_CODE_INTEL_QUERY = gql`
     }
 
     ${codeIntelFragments}
+    ${hoverFragments}
     ${gitBlobLsifDataQueryFragment}
 `
 

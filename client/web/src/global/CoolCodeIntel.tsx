@@ -326,6 +326,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             // On the backend the line/character are 0-indexed, but what we
             // get from hoverifier is 1-indexed.
             line: props.clickedToken.line - 1,
+            first: 50,
             character: props.clickedToken.character - 1,
             after: null,
             filter: props.filter || null,
@@ -339,6 +340,13 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             // If there weren't any errors and we just didn't receive any data
             if (!data || !data.repository?.commit?.blob?.lsif) {
                 return {
+                    hover: null,
+                    definitions: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                        },
+                    },
                     references: {
                         nodes: [],
                         pageInfo: {
@@ -382,9 +390,28 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
     }
 
     const references = lsifData?.references.nodes
+    const definitions = lsifData?.definitions.nodes
+    const hover = lsifData?.hover
 
     return (
         <>
+            <h3>Hover</h3>
+            {hover && (
+                <Markdown
+                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
+                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
+                />
+            )}
+            <h3>Definitions</h3>
+            <ol>
+                {definitions.map(definition => (
+                    <li key={definition.url}>
+                        <Link to={definition.url}>
+                            <code>{definition.url}</code>
+                        </Link>
+                    </li>
+                ))}
+            </ol>
             <h3>References</h3>
             <ol>
                 {references.map(reference => (
