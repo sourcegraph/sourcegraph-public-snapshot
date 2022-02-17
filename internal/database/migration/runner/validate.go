@@ -50,6 +50,7 @@ func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext
 		// There are active index creation operations ongoing; wait a short time before requerying
 		// the state of the migrations so we don't flood the database with constant queries to the
 		// system catalog.
+
 		if err := wait(ctx, indexPollInterval); err != nil {
 			return err
 		}
