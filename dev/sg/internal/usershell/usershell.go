@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type key struct{}
@@ -57,8 +57,9 @@ func GuessUserShell() (string, string, error) {
 			// A fresh mac installation with standard homebrew will tell the user to append
 			// the configuration in .zprofile, not .zshrc.
 			shellrc = ".zprofile"
+		} else {
+			shellrc = ".zshrc"
 		}
-		shellrc = ".zshrc"
 	}
 	return shell, filepath.Join(home, shellrc), nil
 }
@@ -103,7 +104,7 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 // stderr and stdout combined, along with an error.
 func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
 	if cmd == "" {
-		return nil, fmt.Errorf("can't execute empty command")
+		return nil, errors.Errorf("can't execute empty command")
 	}
 	return Cmd(ctx, cmd).CombinedOutput()
 }
