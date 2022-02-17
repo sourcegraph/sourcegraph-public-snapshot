@@ -38,3 +38,35 @@ query Blob($repoName: String!, $revision: String!, $filePath: String!) {
 
 	return resp.Data.Repository.Commit.File.Content, nil
 }
+
+// GitListFilenames lists all files for the repo
+func (c *Client) GitListFilenames(repoName, revision string) ([]string, error) {
+	const gqlQuery = `
+query Files($repoName: String!, $revision: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+            fileNames
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"repoName": repoName,
+		"revision": revision,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					FileNames []string `json:"fileNames"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.FileNames, nil
+}
