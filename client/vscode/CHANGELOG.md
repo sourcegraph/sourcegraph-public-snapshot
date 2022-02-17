@@ -5,6 +5,8 @@
 ### Changes
 
 - Add web support for VS Code Web [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
+- Use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
+- Add configuration settings for custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
 
 ## Next Release - 2.0.9
 

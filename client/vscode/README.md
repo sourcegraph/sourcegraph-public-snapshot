@@ -58,6 +58,7 @@ In addition to searching open source code, you can create a Sourcegraph Cloud ac
 4. Click `Manage repositories`. From here, you can add your repositories to be synced to Sourcegraph.
 
 ### Connecting Sourcegraph Cloud account
+
 Once you have repositories synced to Sourcegraph, you can generate an access token to connect your VS Code extension back to your Sourcegraph Cloud account.
 
 1. Back in Sourcegraph Cloud, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
@@ -66,12 +67,12 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 4. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
 5. The Editor will be reloaded automatically to use the newly added token.
 
-### Connecting to a private Sourcegraph instance 
-1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
-2. Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
-3. Navigate to `Code preferences`, then click `Settings`.
-4. Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL. 
+### Connecting to a private Sourcegraph instance
 
+1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
+2.  Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
+3.  Navigate to `Code preferences`, then click `Settings`.
+4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
 
 ## Keyboard Shortcuts:
 

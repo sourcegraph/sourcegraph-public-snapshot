@@ -72,7 +72,9 @@ export async function initializeSearchPanelWebview({
                 src: url(${codiconFontSource.toString()})
             }
         </style>
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
+            panel.webview.cspSource
+        }; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         panel.webview.cspSource
     } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src ${
         panel.webview.cspSource

@@ -2,7 +2,7 @@ import { asError } from '@sourcegraph/common'
 import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
-import { endpointSetting } from '../settings/endpointSetting'
+import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
 let invalidated = false
 
@@ -26,8 +26,9 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
 
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
-
-    const headers: HeadersInit = []
+    const customHeaders = endpointRequestHeadersSetting()
+    // return empty array if no custom header is provided
+    const headers: HeadersInit = Object.entries(customHeaders)
     const sourcegraphURL = endpointSetting()
     const accessToken = accessTokenSetting()
 

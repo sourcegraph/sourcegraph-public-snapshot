@@ -126,6 +126,7 @@
             "object"
           ],
           "default": {},
+          "examples": [{"github": "gitlab", "master": "main"}],
           "description": "For each item in this object, replace key with value in the remote url."
         },
         "sourcegraph.defaultBranch": {
@@ -133,7 +134,15 @@
             "string"
           ],
           "default": "",
-          "description": "Always open local files on Sourcegraph web at this default branch."
+          "description": "Always open local files on Sourcegraph Web at this default branch."
+        },
+        "sourcegraph.requestHeaders": {
+          "type": [
+            "object"
+          ],
+          "default": {},
+          "examples": [{"Cache-Control": "no-cache", "Access-Control-Allow-Origin": "*"}],
+          "description": "Each value pair will be added to the request headers made to your instance."
         }
       }
     },

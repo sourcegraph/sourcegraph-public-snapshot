@@ -19,7 +19,7 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointSetting } from './settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
@@ -68,13 +68,16 @@ export function activate(context: vscode.ExtensionContext): void {
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
     const initialAccessToken = accessTokenSetting()
-    polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}` } : {})
+    const customHeaders = endpointRequestHeadersSetting()
+    polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
     // Update `EventSource` Authorization header on access token change.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(config => {
             if (config.affectsConfiguration('sourcegraph.accessToken')) {
                 const newAccessToken = accessTokenSetting()
-                polyfillEventSource(newAccessToken ? { Authorization: `token ${newAccessToken}` } : {})
+                polyfillEventSource(
+                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...customHeaders } : {}
+                )
             }
         })
     )
