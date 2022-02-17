@@ -24,19 +24,25 @@ describe('Search Stack', () => {
     describe('inital state', () => {
         it('does not render anything if feature is disabled', () => {
             useExperimentalFeatures.setState({ enableSearchStack: false })
+            useSearchStackState.setState({ addableEntry: mockEntries[0] })
 
             renderSearchStack()
 
-            expect(screen.queryByRole('button', { name: 'Open search session' })).not.toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: 'Add search' })).not.toBeInTheDocument()
         })
 
-        it('renders something if a previous session can be restored', () => {
+        it('shows the add button if an entry can be added', () => {
             useExperimentalFeatures.setState({ enableSearchStack: true })
-            useSearchStackState.setState({ canRestoreSession: true })
+            useSearchStackState.setState({ canRestoreSession: true, addableEntry: mockEntries[0] })
 
-            renderSearchStack()
+            expect(renderSearchStack().asFragment()).toMatchSnapshot()
+        })
 
-            expect(screen.queryByRole('button', { name: 'Open search session' })).toBeInTheDocument()
+        it('shows the top of the stack if entries exist', () => {
+            useExperimentalFeatures.setState({ enableSearchStack: true })
+            useSearchStackState.setState({ canRestoreSession: true, entries: mockEntries })
+
+            expect(renderSearchStack().asFragment()).toMatchSnapshot()
         })
     })
 
@@ -46,7 +52,12 @@ describe('Search Stack', () => {
         })
 
         it('restores the previous session', () => {
-            useSearchStackState.setState({ entries: [], previousEntries: mockEntries, canRestoreSession: true })
+            useSearchStackState.setState({
+                entries: [],
+                previousEntries: mockEntries,
+                canRestoreSession: true,
+                addableEntry: mockEntries[0],
+            })
             renderSearchStack()
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
@@ -74,6 +85,7 @@ describe('Search Stack', () => {
 
         it('opens and closes', () => {
             renderSearchStack()
+
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
             const closeButtons = screen.queryAllByRole('button', { name: 'Close search session' })
@@ -104,6 +116,23 @@ describe('Search Stack', () => {
             expect(result.history.location.hash).toMatchInlineSnapshot(
                 '"#query:TODO,file:http%3A%2F%2Flocalhost%2Ftest%40master%2F-%2Fblob%2Fpath%2Fto%2Ffile"'
             )
+        })
+
+        it('allows to delete entries', () => {
+            renderSearchStack()
+            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+
+            userEvent.click(screen.getAllByRole('button', { name: 'Remove entry' })[0])
+            const entryLinks = screen.queryByRole('link')
+            expect(entryLinks).toBeInTheDocument()
+        })
+
+        it('opens the text annotation aria', () => {
+            renderSearchStack()
+            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+
+            userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
+            expect(screen.queryByPlaceholderText('Type to add annotation...')).toBeInTheDocument()
         })
     })
 })

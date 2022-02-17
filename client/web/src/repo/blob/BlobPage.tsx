@@ -97,7 +97,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 // Need to subtract 1 because IHighlightLineRange is 0-based but
                 // line information in the URL is 1-based.
                 lineRange: lineOrRange.line
-                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line + 1) - 1 }
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line) - 1 }
                     : null,
             }),
             [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
