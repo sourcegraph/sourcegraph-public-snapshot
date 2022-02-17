@@ -54,7 +54,7 @@ func Zoekt() *monitoring.Container {
 									LegendFormat: "tracked",
 								}}
 								p.GraphPanel.Tooltip.Shared = true
-							}),
+							}).MinAuto(),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
@@ -86,7 +86,7 @@ func Zoekt() *monitoring.Container {
 									LegendFormat: "{{instance}} tracked",
 								}}
 								p.GraphPanel.Tooltip.Shared = true
-							}),
+							}).MinAuto(),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
