@@ -294,11 +294,11 @@ type Server struct {
 	createParser       func() ParseSymbolsFunc
 	status             *ServerStatus
 	repoUpdates        chan struct{}
-	indexRequests      chan indexRequest
 	maxRepos           int
 	logQueries         bool
 	repoCommitToDone   map[string]chan struct{}
 	repoCommitToDoneMu sync.Mutex
+	indexRequestQueues []chan indexRequest
 }
 
 func NewServer(
@@ -310,17 +310,22 @@ func NewServer(
 	logQueries bool,
 	indexRequestsQueueSize int,
 ) (*Server, error) {
+	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
+	for i := 0; i < maxConcurrentlyIndexing; i++ {
+		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
+	}
+
 	server := &Server{
 		db:                 db,
 		git:                git,
 		createParser:       createParser,
 		status:             NewStatus(),
 		repoUpdates:        make(chan struct{}, 1),
-		indexRequests:      make(chan indexRequest, indexRequestsQueueSize),
 		maxRepos:           maxRepos,
 		logQueries:         logQueries,
 		repoCommitToDone:   map[string]chan struct{}{},
 		repoCommitToDoneMu: sync.Mutex{},
+		indexRequestQueues: indexRequestQueues,
 	}
 
 	err := server.startCleanupThread()
@@ -329,7 +334,7 @@ func NewServer(
 	}
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		err = server.startIndexingThread()
+		err = server.startIndexingThread(server.indexRequestQueues[i])
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +353,7 @@ type indexRequest struct {
 	done chan struct{}
 }
 
-func (s *Server) startIndexingThread() (err error) {
+func (s *Server) startIndexingThread(indexRequestQueue chan indexRequest) (err error) {
 	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
 	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
 	conn, err := s.db.Conn(context.Background())
@@ -362,7 +367,7 @@ func (s *Server) startIndexingThread() (err error) {
 
 		parse := s.createParser()
 
-		for indexRequest := range s.indexRequests {
+		for indexRequest := range indexRequestQueue {
 			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, parse)
 			close(indexRequest.done)
 			if err != nil {
@@ -1135,8 +1140,11 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 		},
 		done: done}
 
+	// Route the index request to the indexer associated with the repo.
+	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)
+
 	select {
-	case s.indexRequests <- request:
+	case s.indexRequestQueues[ix] <- request:
 	default:
 		return nil, errors.Newf("the indexing queue is full")
 	}
