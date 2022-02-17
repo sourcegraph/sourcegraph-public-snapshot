@@ -159,8 +159,11 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 			}}),
 		},
 		{
-			recentCommitters: collaborators("sqs+sourcegraph-bot@sourcegraph.com", "renovatebot@gmail.com", "stephen@sourcegraph.com"),
-			authUserEmails:   emails(),
+			recentCommitters: append(
+				collaborators("sqs+sourcegraph-bot@sourcegraph.com", "renovatebot@gmail.com", "stephen@sourcegraph.com"),
+				&invitableCollaboratorResolver{email: "campaigns@sourcegraph.com", name: "Sourcegraph Bot"},
+			),
+			authUserEmails: emails(),
 			want: autogold.Want("bots excluded", []*invitableCollaboratorResolver{{
 				email: "stephen@sourcegraph.com",
 			}}),

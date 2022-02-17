@@ -11,6 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 )
 
 // See schema.graphql for an explanation of how this is intended to be used. This is particularly
@@ -202,7 +202,8 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 		deduplicate = map[string]struct{}{}
 	)
 	for _, recentCommitter := range recentCommitters {
-		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
+		likelyBot := strings.Contains(recentCommitter.email, "bot") || strings.Contains(strings.ToLower(recentCommitter.name), "bot")
+		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") || likelyBot {
 			continue
 		}
 		isOurEmail := false
