@@ -59,7 +59,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 
 - [Switch from Oracle OpenGrok to Sourcegraph](how-to/opengrok.md)
 - [Create a saved search](how-to/saved_searches.md)
-- [Create a custom search scope](how-to/scopes.md)
+- [Create a custom search snippet](how-to/snippets.md)
 
 ## [Tutorials](tutorials/index.md)
 
