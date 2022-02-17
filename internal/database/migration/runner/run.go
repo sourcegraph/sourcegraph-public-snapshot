@@ -2,13 +2,11 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
