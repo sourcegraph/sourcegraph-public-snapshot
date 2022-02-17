@@ -24,7 +24,7 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples>
     <section {...props}>
         <h2>Example insights</h2>
         <p className="text-muted">
-            We've created a few common simple insights to show you what the tool can do.{' '}
+            Here are a few example insights to show you what the tool can do.{' '}
             <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                 Explore more use cases.
             </Link>
@@ -50,26 +50,26 @@ type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { s
 
 const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     data: [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 88, b: 410 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 95, b: 410 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 110, b: 315 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 160, b: 180 },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: 310, b: 90 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 520, b: 45 },
-        { x: 1588965700286, a: 700, b: 10 },
+        { x: new Date('May 7, 2021'), a: 88, b: 410 },
+        { x: new Date('June 7, 2021'), a: 95, b: 410 },
+        { x: new Date('July 7, 2021'), a: 110, b: 315 },
+        { x: new Date('August 7, 2021'), a: 160, b: 180 },
+        { x: new Date('September 7, 2021'), a: 310, b: 90 },
+        { x: new Date('October 7, 2021'), a: 520, b: 45 },
+        { x: new Date('November 7, 2021'), a: 700, b: 10 },
     ],
     series: [
         {
             dataKey: 'a',
             name: 'CSS Modules',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'type:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
         },
         {
             dataKey: 'b',
             name: 'Global CSS',
             stroke: DATA_SERIES_COLORS.RED,
-            query: 'type:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
         },
     ],
     xAxis: {
@@ -136,44 +136,49 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 60, f: 20 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: new Date('May 7, 2021'), a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
+        { x: new Date('June 7, 2021'), a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
+        { x: new Date('July 7, 2021'), a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
+        { x: new Date('August 7, 2021'), a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
+        { x: new Date('September 7, 2021'), a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
+        { x: new Date('October 7, 2021'), a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
+        { x: new Date('November 7, 2021'), a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: '17.3.1',
-            stroke: DATA_SERIES_COLORS.ORANGE,
+            name: '3.1',
+            stroke: DATA_SERIES_COLORS.INDIGO,
         },
         {
             dataKey: 'b',
-            name: '17.3.0',
-            stroke: DATA_SERIES_COLORS.BLUE,
-        },
-        {
-            dataKey: 'c',
-            name: '17.2.0',
+            name: '3.5',
             stroke: DATA_SERIES_COLORS.RED,
         },
         {
-            dataKey: 'd',
-            name: '17.1.1',
+            dataKey: 'c',
+            name: '3.15',
             stroke: DATA_SERIES_COLORS.GREEN,
         },
         {
+            dataKey: 'd',
+            name: '3.8',
+            stroke: DATA_SERIES_COLORS.GRAPE,
+        },
+        {
             dataKey: 'e',
-            name: '17.1.0',
-            stroke: DATA_SERIES_COLORS.CYAN,
+            name: '3.9',
+            stroke: DATA_SERIES_COLORS.ORANGE,
         },
         {
             dataKey: 'f',
-            name: '17.0.1',
-            stroke: DATA_SERIES_COLORS.GRAPE,
+            name: '3.9.2',
+            stroke: DATA_SERIES_COLORS.TEAL,
+        },
+        {
+            dataKey: 'g',
+            name: '3.14',
+            stroke: DATA_SERIES_COLORS.PINK,
         },
     ],
     xAxis: {
@@ -184,9 +189,9 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
 }
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
-    title: 'Terraform versions (present or most popular)',
+    title: 'Alpine versions over all repos',
     allRepos: true,
-    groupSearchQuery: 'app.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
+    groupSearchQuery: 'patterntype:regexp FROM\\s+alpine:([\\d\\.]+) file:Dockerfile',
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
@@ -194,7 +199,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
 
     return (
         <View.Root
-            title="Terraform versions (present or most popular)"
+            title="Alpine versions over all repos"
             subtitle={
                 <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query="All repositories" className="mt-1" />
             }
@@ -230,7 +235,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
             </div>
             <CodeInsightsQueryBlock
                 as={SyntaxHighlightedSearchQuery}
-                query="app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no"
+                query="patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile"
                 className="mt-2"
             />
         </View.Root>

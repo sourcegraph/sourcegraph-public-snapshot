@@ -1,15 +1,16 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
 import { useForm } from '../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../insights/creation/search-insight'
 import { getQueryPatternTypeFilter } from '../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
 import { SearchInsightLivePreview } from '../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
@@ -44,6 +45,8 @@ const createExampleDataSeries = (query: string): EditableDataSeries[] => [
 interface DynamicCodeInsightExampleProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
         touched: true,
@@ -65,6 +68,12 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     })
 
     const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+    const repository = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
+
+    // This is to prevent resetting the name in an endless loop
+    if (repository && repositories.input.value !== repository) {
+        repositories.meta.setState(state => ({ ...state, value: repository }))
+    }
 
     return (
         <Card {...props} className={classNames(styles.wrapper, props.className)}>
@@ -85,6 +94,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     title="Data series search query"
                     required={true}
                     as={InsightQueryInput}
+                    repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                     valid={query.meta.touched && query.meta.validState === 'VALID'}
@@ -108,13 +118,13 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
             <section>
                 <h2 className={classNames(styles.cardTitle)}>
-                    Draw insights from your codebase about how different initiatives are tracking over time
+                    Draw insights from your codebase about how different initiatives track over time
                 </h2>
 
                 <p>
-                    Create customizable, visual dashboards with meaningful codebase signals your team can use to answer
-                    questions about how their code is changing and what’s in their code - questions that were difficult
-                    or impossible to answer before.
+                    Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
+                    questions about how your code is changing and what’s in your code {'\u2014'} questions that were
+                    difficult or impossible to answer before.
                 </p>
 
                 <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>

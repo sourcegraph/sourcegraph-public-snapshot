@@ -1,17 +1,23 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
-import { matchPath, useHistory, useRouteMatch } from 'react-router'
+import React, { useEffect } from 'react'
+import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Button, Link, PageHeader, Tabs, TabList, Tab } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
-import { DashboardPageContent } from './dashboards/dashboard-page/DashboardsPage'
-import { CodeInsightsGettingStartedPage } from './getting-started/CodeInsightsGettingStartedPage'
+import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
+
+const LazyCodeInsightsGettingStartedPage = lazyComponent(
+    () => import('./getting-started/CodeInsightsGettingStartedPage'),
+    'CodeInsightsGettingStartedPage'
+)
 
 export enum CodeInsightsRootPageURLPaths {
     CodeInsights = '/dashboards/:dashboardId?',
@@ -35,14 +41,22 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
 
 export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
     const { telemetryService, activeView } = props
-    const match = useRouteMatch()
+    const location = useLocation()
     const query = useQuery()
     const history = useHistory()
 
     const { params } =
-        matchPath<{ dashboardId?: string }>(window.location.pathname, {
-            path: match.path,
+        matchPath<{ dashboardId?: string }>(location.pathname, {
+            path: `/insights${CodeInsightsRootPageURLPaths.CodeInsights}`,
         }) ?? {}
+
+    const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
+
+    useEffect(() => {
+        if (hasInsightPageBeenViewed === false) {
+            markMainPageAsViewed(true)
+        }
+    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
@@ -87,10 +101,10 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
             </Tabs>
 
             {activeView === CodeInsightsRootPageTab.CodeInsights && (
-                <DashboardPageContent telemetryService={telemetryService} dashboardID={params?.dashboardId} />
+                <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
             )}
 
-            {activeView === CodeInsightsRootPageTab.GettingStarted && <CodeInsightsGettingStartedPage />}
+            {activeView === CodeInsightsRootPageTab.GettingStarted && <LazyCodeInsightsGettingStartedPage />}
         </Page>
     )
 }
