@@ -662,7 +662,7 @@ const SKIPPED_TESTS: Template = {
         series: [
             {
                 name: 'Skipped tests',
-                query: 'this.skip() patternType:literal archived:no fork:no',
+                query: '(this.skip() OR it.skip) lang:TypeScript archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.RED,
             },
         ],
