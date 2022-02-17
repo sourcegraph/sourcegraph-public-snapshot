@@ -277,4 +277,6 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories
     public getFirstExampleRepository = (): Observable<string> => of('')
+
+    public isCodeInsightsLicensed = (): Observable<boolean> => of(false)
 }

@@ -11,7 +11,7 @@ export interface TemporarySettingsSchema {
     'search.sidebar.revisions.tab': number
     'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
-    'insights.freeBetaAccepted': boolean
+    'insights.freeGaAccepted': boolean
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
