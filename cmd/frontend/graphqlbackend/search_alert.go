@@ -65,7 +65,9 @@ func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver
 	return &SearchResultsResolver{db: a.db, SearchResults: alertToSearchResults(a.alert.alert)}, nil
 }
 
-func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
+func (alertSearchImplementer) Stats(context.Context) (dummySearchResultsStats, error) {
+	return nil, nil
+}
 func (alertSearchImplementer) Inputs() run.SearchInputs {
 	return run.SearchInputs{}
 }
