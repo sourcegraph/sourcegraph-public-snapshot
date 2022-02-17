@@ -106,7 +106,6 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     } = props
 
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -128,7 +127,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     const targetID = 'target-user-avatar'
 
     return (
-        <Menu isOpen={isOpen} onOpenChange={toggleIsOpen}>
+        <Menu isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             {({ isExpanded }) => (
                 <>
                     <MenuButton

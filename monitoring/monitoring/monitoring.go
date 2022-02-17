@@ -378,6 +378,9 @@ func (c *ContainerVariable) validate() error {
 		return errors.New("ContainerVariable.Label is required")
 	}
 	if c.OptionsQuery == "" && len(c.Options) == 0 {
+		return errors.New("one of ContainerVariable.Query and ContainerVariable.Options must be set")
+	}
+	if c.OptionsQuery != "" && len(c.Options) > 0 {
 		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
 	}
 	return nil

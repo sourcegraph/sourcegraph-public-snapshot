@@ -61,7 +61,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		linterOps.Append(addDockerfileLint)
 	}
 	if diff.Has(changed.Terraform) {
-		linterOps.Append(addTerraformLint)
+		linterOps.Append(addTerraformScan)
 	}
 	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
@@ -127,15 +127,15 @@ func addDocs(pipeline *bk.Pipeline) {
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
-func addTerraformLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lock: security - checkov",
+func addTerraformScan(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lock: Checkov Terraform scanning",
 		bk.Cmd("dev/ci/ci-checkov.sh"),
 		bk.SoftFail(222))
 }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":clipboard: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
 		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
 			IncludeNames: true,
@@ -398,8 +398,10 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Lint",
-		bk.Cmd("./dev/ci/docker-lint.sh"))
+	pipeline.AddStep(":docker: Docker checks",
+		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
+			IncludeNames: true,
+		}))
 }
 
 // Adds backend integration tests step.
@@ -576,23 +578,25 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	}
 }
 
-// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-// func clusterQA(candidateTag string) operations.Operation {
-// 	return func(p *bk.Pipeline) {
-// 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
-// 			bk.DependsOn(candidateImageStepKey("frontend")),
-// 			bk.Env("CANDIDATE_VERSION", candidateTag),
-// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-// 			bk.Env("NO_CLEANUP", "false"),
-// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-// 	}
-// }
+func clusterQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+
+			bk.Skip("flakey: https://github.com/sourcegraph/sourcegraph/issues/31342"),
+
+			bk.DependsOn(candidateImageStepKey("frontend")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
@@ -644,7 +648,7 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
 }
 
@@ -659,7 +663,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	vulnerabilityExitCode := 27
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %s", app),
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
 			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
@@ -746,7 +750,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/build.sh"))
 
-		pipeline.AddStep(":packer: :construction: executor image", stepOpts...)
+		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
 }
 
@@ -768,7 +772,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
-		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
 }
 
@@ -782,7 +786,7 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
 
-		pipeline.AddStep(":packer: :construction: docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":packer: :construction: Build docker registry mirror image", stepOpts...)
 	}
 }
 
@@ -796,7 +800,7 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
-		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}
 }
 

@@ -1,4 +1,5 @@
 import { noop } from 'lodash'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -19,13 +20,14 @@ import { AuthenticatedUser } from '../../auth'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
+import { Notebook } from './notebook'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInit, BlockInput, BlockType, Notebook } from '.'
+import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -40,6 +42,8 @@ export interface SearchNotebookProps
     onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
+    exportedFileName: string
+    isEmbedded?: boolean
 }
 
 const LOADING = 'LOADING' as const
@@ -54,10 +58,25 @@ function countBlockTypes(blocks: Block[]): BlockCounts {
     })
 }
 
+function downloadTextAsFile(text: string, fileName: string): void {
+    const blob = new Blob([text], { type: 'text/plain' })
+    const blobURL = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.style.display = 'none'
+    link.href = blobURL
+    link.download = fileName
+    document.body.append(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(blobURL)
+}
+
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
     extensionsController,
+    exportedFileName,
+    isEmbedded,
     ...props
 }) => {
     const notebook = useMemo(
@@ -95,7 +114,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     const onRunBlock = useCallback(
         (id: string) => {
             notebook.runBlockById(id)
-            updateBlocks()
+            updateBlocks(false)
 
             props.telemetryService.log(
                 'SearchNotebookRunBlock',
@@ -112,7 +131,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                 click.pipe(
                     switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
                     tap(() => {
-                        updateBlocks()
+                        updateBlocks(false)
                         props.telemetryService.log('SearchNotebookRunAllBlocks')
                     })
                 ),
@@ -120,10 +139,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         )
     )
 
+    const exportNotebook = useCallback(() => {
+        const exportedMarkdown = notebook.exportToMarkdown(window.location.origin)
+        downloadTextAsFile(exportedMarkdown, exportedFileName)
+        props.telemetryService.log('SearchNotebookExportNotebook')
+    }, [notebook, exportedFileName, props.telemetryService])
+
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
             notebook.setBlockInputById(id, blockInput)
-            updateBlocks(false)
+            updateBlocks()
         },
         [notebook, updateBlocks]
     )
@@ -324,6 +349,18 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                 </Button>
+                {!isEmbedded && (
+                    <Button
+                        className="mr-2"
+                        variant="secondary"
+                        size="sm"
+                        onClick={exportNotebook}
+                        data-testid="export-notebook-markdown-button"
+                    >
+                        <DownloadIcon className="icon-inline mr-1" />
+                        <span>Export as Markdown</span>
+                    </Button>
+                )}
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>

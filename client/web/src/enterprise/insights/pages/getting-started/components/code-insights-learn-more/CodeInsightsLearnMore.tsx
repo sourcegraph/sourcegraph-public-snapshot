@@ -1,13 +1,16 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { Button, Link, Popover, PopoverContent, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'
 
-import { FeedbackPromptContent } from '../../../../../../nav/Feedback'
+import { useHandleSubmitFeedback } from '../../../../../../hooks'
 
 import styles from './CodeInsightsLearnMore.module.scss'
 
 export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => {
-    const [isVisible, setVisibility] = useState(false)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch: '/insights/about',
+        textPrefix: 'Code Insights: ',
+    })
 
     return (
         <footer {...props}>
@@ -27,8 +30,8 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                 <article>
                     <h3>Detect and track patterns</h3>
                     <p className="text-muted mb-2">
-                        Track versions of languages, packages, terraform, docker images, or anything else that can be
-                        captured with a regular expression capture group.
+                        Track versions of languages, packages, infrastructure, docker images, or anything else that can
+                        be captured with a regular expression capture group.
                     </p>
                     <Link
                         to="/help/code_insights/explanations/automatically_generated_data_series"
@@ -42,22 +45,14 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                 <article>
                     <h3>Questions and feedback</h3>
                     <p className="text-muted mb-2">
-                        Have a question or idea about code monitoring? We want to hear your feedback!
+                        Have a question or idea about Code Insights? We want to hear your feedback!
                     </p>
 
-                    <Popover isOpen={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
+                    <FeedbackPrompt onSubmit={handleSubmitFeedback}>
                         <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
                             Share your thoughts
                         </PopoverTrigger>
-
-                        <PopoverContent className={styles.feedbackPrompt}>
-                            <FeedbackPromptContent
-                                closePrompt={() => setVisibility(false)}
-                                textPrefix="Code Insights: "
-                                routeMatch="/insights/about"
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    </FeedbackPrompt>
                 </article>
             </div>
         </footer>
