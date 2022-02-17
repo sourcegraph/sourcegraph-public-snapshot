@@ -56,7 +56,6 @@ import {
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
     GetPreciseCodeIntelResult,
-    GetPreciseCodeIntelVariables,
     HoverFields,
     LocationConnectionFields,
     LocationFields,
@@ -321,7 +320,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
         implementationsHasNextPage,
         fetchMoreReferences,
         fetchMoreImplementations,
-    } = usePreciseCodeIntel<GetPreciseCodeIntelResult, GetPreciseCodeIntelVariables, LocationFields>({
+    } = usePreciseCodeIntel<GetPreciseCodeIntelResult>({
         query: USE_CODE_INTEL_QUERY,
         variables: {
             repository: props.clickedToken.repoName,

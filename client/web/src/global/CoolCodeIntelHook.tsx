@@ -1,26 +1,28 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useCallback } from 'react'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { getDocumentNode, GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
-import { useInterval } from '@sourcegraph/wildcard'
 
-import { ConnectionQueryArguments } from '../components/FilteredConnection/ConnectionType'
-import { RefPanelLsifDataFields } from '../graphql-operations'
+import { getWebGraphQLClient } from '../backend/graphql'
+import { ConnectionQueryArguments } from '../components/FilteredConnection'
+import {
+    GetPreciseCodeIntelVariables,
+    LoadAdditionalReferencesResult,
+    LoadAdditionalReferencesVariables,
+    RefPanelLsifDataFields,
+} from '../graphql-operations'
+
+import { LOAD_ADDITIONAL_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: RefPanelLsifDataFields
     error?: ApolloError
-    refetchAll: () => void
     loading: boolean
 
     referencesHasNextPage: boolean
     implementationsHasNextPage: boolean
     fetchMoreReferences: () => void
     fetchMoreImplementations: () => void
-
-    startPolling: (pollInterval: number) => void
-    stopPolling: () => void
 }
 
 interface UsePreciseCodeIntelConfig {
@@ -32,20 +34,23 @@ interface UsePreciseCodeIntelConfig {
     pollInterval?: number
 }
 
-interface UsePreciseCodeIntelParameters<TResult, TVariables> {
+interface UsePreciseCodeIntelParameters<TResult> {
     query: string
-    variables: TVariables & ConnectionQueryArguments
+    variables: GetPreciseCodeIntelVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => RefPanelLsifDataFields
     options?: UsePreciseCodeIntelConfig
 }
 
-export const usePreciseCodeIntel = <TResult, TVariables, TData>({
+export const usePreciseCodeIntel = <TResult,>({
     query,
     variables,
     getConnection: getLsifDataFromGraphQLResult,
     options,
-}: UsePreciseCodeIntelParameters<TResult, TVariables>): UsePreciseCodeIntelResult => {
-    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
+}: UsePreciseCodeIntelParameters<TResult>): UsePreciseCodeIntelResult => {
+    const { data, error, loading, fetchMore } = useQuery<
+        TResult,
+        GetPreciseCodeIntelVariables & ConnectionQueryArguments
+    >(query, {
         variables,
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
@@ -62,30 +67,38 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
 
     const lsifData = data ? getLsifData({ data, error }) : undefined
 
+    // TODO: This does not work
     const fetchMoreReferences = async (): Promise<void> => {
         const cursor = lsifData?.references.pageInfo?.endCursor
+        if (!cursor) {
+            return
+        }
 
-        await fetchMore({
+        const client = await getWebGraphQLClient()
+        const { data: additionalData, error } = await client.query<
+            LoadAdditionalReferencesResult,
+            LoadAdditionalReferencesVariables
+        >({
+            query: getDocumentNode(LOAD_ADDITIONAL_REFERENCES_QUERY),
             variables: {
                 ...variables,
                 ...{ afterReferences: cursor },
             },
-            updateQuery: (previousResult, { fetchMoreResult }) => {
-                if (!fetchMoreResult) {
-                    return previousResult
-                }
-
-                const previousData = getLsifData({ data: previousResult })
-                const previousImplementationNodes = previousData.implementations.nodes
-                const previousReferencesNodes = previousData.references.nodes
-
-                const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                fetchMoreData.implementations.nodes = previousImplementationNodes
-                fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
-
-                return fetchMoreResult
-            },
         })
+
+        if (error) {
+            console.log('error', error)
+            return
+        }
+
+        if (!additionalData || !additionalData.repository?.commit?.blob?.lsif) {
+            console.log('empty')
+            return
+        }
+
+        const lsif = additionalData.repository?.commit?.blob?.lsif
+        console.log('current references', lsifData.references.nodes)
+        console.log('additional references', lsif.references.nodes)
     }
 
     const fetchMoreImplementations = async (): Promise<void> => {
@@ -114,32 +127,13 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
         })
     }
 
-    const refetchAll = useCallback(async (): Promise<void> => {
-        const referencesLength = lsifData?.references.nodes.length ?? 50
-        const implementationsLength = lsifData?.implementations.nodes.length ?? 50
-        const first = Math.max(referencesLength, implementationsLength)
-
-        await refetch({
-            ...variables,
-            first,
-        })
-    }, [lsifData?.references.nodes.length, lsifData?.implementations.nodes.length, refetch, variables])
-
-    // We use `refetchAll` to poll for all of the nodes currently loaded in the
-    // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
-    // would only poll for the first page of results.
-    const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
-
     return {
         lsifData,
         loading,
         error,
         fetchMoreReferences,
         fetchMoreImplementations,
-        refetchAll,
         referencesHasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
         implementationsHasNextPage: lsifData ? lsifData.implementations.pageInfo.endCursor !== null : false,
-        startPolling: startExecution,
-        stopPolling: stopExecution,
     }
 }

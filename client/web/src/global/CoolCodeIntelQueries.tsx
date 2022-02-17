@@ -153,6 +153,43 @@ export const USE_CODE_INTEL_QUERY = gql`
     ${gitBlobLsifDataQueryFragment}
 `
 
+export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
+    query LoadAdditionalReferences(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $afterReferences: String
+        $firstReferences: Int
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            __typename
+            id
+            commit(rev: $commit) {
+                __typename
+                id
+                blob(path: $path) {
+                    lsif {
+                        references(
+                            line: $line
+                            character: $character
+                            first: $firstReferences
+                            after: $afterReferences
+                            filter: $filter
+                        ) {
+                            ...LocationConnectionFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${codeIntelFragments}
+`
+
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
         highlight(disableTimeout: false) {
