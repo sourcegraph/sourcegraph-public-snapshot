@@ -94,6 +94,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     title="Data series search query"
                     required={true}
                     as={InsightQueryInput}
+                    repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                     valid={query.meta.touched && query.meta.validState === 'VALID'}

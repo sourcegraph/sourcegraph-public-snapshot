@@ -37,6 +37,9 @@ interface FormSeriesInputProps {
 
     series: EditableDataSeries
 
+    /** Code Insight repositories field string value - repo1, repo2, ... */
+    repositories: string
+
     /** Enable autofocus behavior of first input of form. */
     autofocus?: boolean
 
@@ -65,6 +68,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         className,
         cancel = false,
         autofocus = true,
+        repositories,
         onCancel = noop,
         onSubmit = noop,
         onChange = noop,
@@ -138,6 +142,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 title="Search query"
                 required={true}
                 as={InsightQueryInput}
+                repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
