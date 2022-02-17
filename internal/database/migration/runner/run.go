@@ -107,6 +107,10 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 	logger.Warn(
 		"Schema not in expected state",
 		"schema", schemaContext.schema.Name,
+		"appliedVersions", extractIDs(byState.applied),
+		"pendingVersions", extractIDs(byState.pending),
+		"failedVersions", extractIDs(byState.failed),
+		"expectedDefinitions", extractIDs(definitions),
 	)
 	logger.Info(
 		"Checking for active migrations",
