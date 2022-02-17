@@ -30,8 +30,8 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                 <article>
                     <h3>Detect and track patterns</h3>
                     <p className="text-muted mb-2">
-                        Track versions of languages, packages, infrastructure, docker images, or anything else that can be
-                        captured with a regular expression capture group.
+                        Track versions of languages, packages, infrastructure, docker images, or anything else that can
+                        be captured with a regular expression capture group.
                     </p>
                     <Link
                         to="/help/code_insights/explanations/automatically_generated_data_series"
