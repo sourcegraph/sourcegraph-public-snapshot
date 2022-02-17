@@ -235,7 +235,7 @@ func (r *Runner) applyMigration(
 	return nil
 }
 
-const indexPollInterval = time.Second
+const indexPollInterval = time.Second * 5
 
 // createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
 // hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
