@@ -60,6 +60,7 @@ function go_test() {
 EOF
   )
 
+  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
   set +e
   echo "$data" | curl \
     --fail \
