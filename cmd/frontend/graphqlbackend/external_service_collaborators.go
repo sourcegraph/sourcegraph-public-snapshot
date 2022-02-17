@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 )
 
 // See schema.graphql for an explanation of how this is intended to be used. This is particularly
@@ -58,6 +59,30 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	githubUrl, _ := github.APIRoot(baseURL)
 	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
 
+	possibleRepos := githubCfg.Repos
+	if len(possibleRepos) == 0 {
+		// External service is describing "sync all repos" instead of a specific set. Query a few of
+		// those that we'll look for collaborators in.
+		repos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
+			// SECURITY: This must be the authenticated user's external service ID.
+			ExternalServiceIDs: []int64{r.externalService.ID},
+			OrderBy: database.RepoListOrderBy{{
+				Field:      "name",
+				Descending: false,
+			}},
+			LimitOffset: &database.LimitOffset{Limit: 1000},
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "Repos.List")
+		}
+		for _, repo := range repos {
+			// repo.URI is in "github.com/gorilla/mux" form, we need "gorilla/mux" form to match
+			// githubCfg.Repos and so we parse the URI and use the path.
+			uri, _ := url.Parse("https://" + repo.URI)
+			possibleRepos = append(possibleRepos, uri.Path[1:])
+		}
+	}
+
 	// We'll look in up to 100 repos for collaborators. Each client.RecentCommitters API call uses
 	// 1 point in GitHub's GraphQL API rate limiting, and we are allowed 5,000 per hour (which we
 	// share with other parts of Sourcegraph such as repo-updater.) When we had searched only 20
@@ -70,7 +95,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	// of `company/lsif-java`, `company/lsif-python`, `company/lsif-typescript` etc repos with likely
 	// the same collaborators, whereas random sampling may give us dissimilar repositories.
 	const maxReposToScan = 100
-	pickedRepos := pickReposToScanForCollaborators(githubCfg.Repos, maxReposToScan)
+	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
 	recentCommitters, err := parallelRecentCommitters(ctx, pickedRepos, client.RecentCommitters)
