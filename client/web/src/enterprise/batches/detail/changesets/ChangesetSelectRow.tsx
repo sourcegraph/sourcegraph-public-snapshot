@@ -216,7 +216,6 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         <div className="col ml-0 ml-sm-2">
                             <DropdownButton
                                 actions={actions}
-                                dropdownMenuPosition="right"
                                 initiallyOpen={dropDownInitiallyOpen}
                                 placeholder="Select action"
                             />

@@ -124,7 +124,6 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                         <div className="col ml-0 ml-sm-2">
                             <DropdownButton
                                 actions={actions}
-                                dropdownMenuPosition="right"
                                 initiallyOpen={dropDownInitiallyOpen}
                                 placeholder="Select action on apply"
                             />
