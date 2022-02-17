@@ -314,6 +314,11 @@ func validateSchemaState(
 	return false, nil
 }
 
+type definitionWithStatus struct {
+	definition  definition.Definition
+	indexStatus storetypes.IndexStatus
+}
+
 // partitionPendingMigrations partitions the given migrations into two sets: the set of pending
 // migration definitions, which includes migrations with visible and active create index operation
 // running in the database, and the set of filed migration definitions, which includes migrations
@@ -324,16 +329,16 @@ func partitionPendingMigrations(
 	ctx context.Context,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
-) (pendingDefinitions, failedDefinitions []definition.Definition, _ error) {
+) (pendingDefinitions []definitionWithStatus, failedDefinitions []definition.Definition, _ error) {
 	for _, definition := range definitions {
 		if definition.IsCreateIndexConcurrently {
 			tableName := definition.IndexMetadata.TableName
 			indexName := definition.IndexMetadata.IndexName
 
-			if status, ok, err := schemaContext.store.IndexStatus(ctx, tableName, indexName); err != nil {
+			if indexStatus, ok, err := schemaContext.store.IndexStatus(ctx, tableName, indexName); err != nil {
 				return nil, nil, err
-			} else if ok && status.Phase != nil {
-				pendingDefinitions = append(pendingDefinitions, definition)
+			} else if ok && indexStatus.Phase != nil {
+				pendingDefinitions = append(pendingDefinitions, definitionWithStatus{definition, indexStatus})
 				continue
 			}
 		}
