@@ -3,14 +3,8 @@ import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 import { getDocumentNode, GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
-import { getWebGraphQLClient } from '../backend/graphql'
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
-import {
-    GetPreciseCodeIntelVariables,
-    LoadAdditionalReferencesResult,
-    LoadAdditionalReferencesVariables,
-    RefPanelLsifDataFields,
-} from '../graphql-operations'
+import { GetPreciseCodeIntelVariables, RefPanelLsifDataFields } from '../graphql-operations'
 
 import { LOAD_ADDITIONAL_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
@@ -67,38 +61,34 @@ export const usePreciseCodeIntel = <TResult,>({
 
     const lsifData = data ? getLsifData({ data, error }) : undefined
 
-    // TODO: This does not work
     const fetchMoreReferences = async (): Promise<void> => {
         const cursor = lsifData?.references.pageInfo?.endCursor
-        if (!cursor) {
-            return
-        }
 
-        const client = await getWebGraphQLClient()
-        const { data: additionalData, error } = await client.query<
-            LoadAdditionalReferencesResult,
-            LoadAdditionalReferencesVariables
-        >({
+        await fetchMore({
             query: getDocumentNode(LOAD_ADDITIONAL_REFERENCES_QUERY),
             variables: {
                 ...variables,
                 ...{ afterReferences: cursor },
             },
+            updateQuery: (previousResult, { fetchMoreResult }) => {
+                if (!fetchMoreResult) {
+                    return previousResult
+                }
+
+                if (cursor) {
+                    const previousData = getLsifData({ data: previousResult })
+                    const previousReferencesNodes = previousData.references.nodes
+
+                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                    fetchMoreData.implementations = previousData.implementations
+                    fetchMoreData.definitions = previousData.definitions
+                    fetchMoreData.hover = previousData.hover
+                    fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
+                }
+
+                return fetchMoreResult
+            },
         })
-
-        if (error) {
-            console.log('error', error)
-            return
-        }
-
-        if (!additionalData || !additionalData.repository?.commit?.blob?.lsif) {
-            console.log('empty')
-            return
-        }
-
-        const lsif = additionalData.repository?.commit?.blob?.lsif
-        console.log('current references', lsifData.references.nodes)
-        console.log('additional references', lsif.references.nodes)
     }
 
     const fetchMoreImplementations = async (): Promise<void> => {
@@ -106,6 +96,8 @@ export const usePreciseCodeIntel = <TResult,>({
 
         await fetchMore({
             variables: {
+                // TODO: If I comment this in, then typechecker dies
+                // query: getDocumentNode(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY),
                 ...variables,
                 ...{ afterImplementations: cursor },
             },
@@ -114,13 +106,16 @@ export const usePreciseCodeIntel = <TResult,>({
                     return previousResult
                 }
 
-                const previousData = getLsifData({ data: previousResult })
-                const previousImplementationNodes = previousData.implementations.nodes
-                const previousReferencesNodes = previousData.references.nodes
+                if (cursor) {
+                    const previousData = getLsifData({ data: previousResult })
+                    const previousImplementationNodes = previousData.implementations.nodes
 
-                const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
-                fetchMoreData.references.nodes = previousReferencesNodes
+                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                    fetchMoreData.references = previousData.references
+                    fetchMoreData.definitions = previousData.definitions
+                    fetchMoreData.hover = previousData.hover
+                    fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
+                }
 
                 return fetchMoreResult
             },

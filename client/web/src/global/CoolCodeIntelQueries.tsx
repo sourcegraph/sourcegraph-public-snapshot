@@ -190,6 +190,43 @@ export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
     ${codeIntelFragments}
 `
 
+export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
+    query LoadAdditionalImplementations(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $afterImplementations: String
+        $firstImplementations: Int
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            __typename
+            id
+            commit(rev: $commit) {
+                __typename
+                id
+                blob(path: $path) {
+                    lsif {
+                        implementations(
+                            line: $line
+                            character: $character
+                            first: $firstImplementations
+                            after: $afterImplementations
+                            filter: $filter
+                        ) {
+                            ...LocationConnectionFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${codeIntelFragments}
+`
+
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
         highlight(disableTimeout: false) {
