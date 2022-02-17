@@ -19,9 +19,6 @@
 
 .menu-list {
     width: 17rem;
-    // NOTE: The default provided by reach-ui is 'nowrap', which causes overflow scroll
-    // behavior rather than wrapping.
-    white-space: normal;
 }
 
 .expanded-info {
