@@ -49,7 +49,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
     {
         label: 'Privacy',
         to: '/privacy',
-        exact: true
+        exact: true,
     },
     {
         label: 'Product research',

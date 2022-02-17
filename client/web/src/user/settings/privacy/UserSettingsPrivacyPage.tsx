@@ -29,23 +29,22 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser'> 
 export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
-    const [setUserSearchable, { loading, error }] = useMutation<
-        SetUserSearchableResult,
-        SetUserSearchableVariables
-    >(USER_SEARCHABLE_MUTATION)
+    const [setUserSearchable, { loading, error }] = useMutation<SetUserSearchableResult, SetUserSearchableVariables>(
+        USER_SEARCHABLE_MUTATION
+    )
 
-    const [disableSearchable,setDisableSearchable] = useState(!authenticatedUser.searchable)
+    const [disableSearchable, setDisableSearchable] = useState(!authenticatedUser.searchable)
 
     const onCheckboxChange = useCallback(() => {
         setDisableSearchable(!disableSearchable)
-    },[disableSearchable])
+    }, [disableSearchable])
 
     const onSaveSearchableState = useCallback(async () => {
         eventLogger.log('SaveUserSearchable', !disableSearchable)
         try {
             await setUserSearchable({
                 variables: {
-                   isSearchable: !disableSearchable
+                    isSearchable: !disableSearchable,
                 },
             })
             // The edited user is the current user, immediately reflect the changes in the UI.
@@ -63,38 +62,35 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
     return (
         <div>
             <PageTitle title="Profile" />
-            <PageHeader
-                path={[{ text: 'Privacy' }]}
-                headingElement="h2"
-                className={styles.heading}
-            />
+            <PageHeader path={[{ text: 'Privacy' }]} headingElement="h2" className={styles.heading} />
             <Container>
-            <Checkbox
-                name="userSearchable"
-                id="userSearchable"
-                value="searchable"
-                checked={disableSearchable}
-                onChange={onCheckboxChange}
-                label="Don’t share my profile in autocomplete search results on Sourcegraph Cloud"
-                message="Other Sourcegraph users will only be able to add you to organizations if they know your username"
-            />
-            <div className="d-flex justify-content-start mt-4 mb-3 border-bottom">
-                <Button
-                    type="button"
-                    className="mb-3"
-                    variant="primary"
-                    onClick={debounceSaveSearchableState}
-                    disabled={loading || !hasChanges}
-                >
-                    Save
-                </Button>
-            </div>
-            <div className="d-flex justify-content-start mb-3">
-                <p>
-                Learn more about  <Link to="/">how your data and privacy is protected on Sourcegraph Cloud.</Link>.
-                </p>
-            </div>
-            {error && <ErrorAlert className="mt-2" error={error} />}
+                <Checkbox
+                    name="userSearchable"
+                    id="userSearchable"
+                    value="searchable"
+                    checked={disableSearchable}
+                    onChange={onCheckboxChange}
+                    label="Don’t share my profile in autocomplete search results on Sourcegraph Cloud"
+                    message="Other Sourcegraph users will only be able to add you to organizations if they know your username"
+                />
+                <div className="d-flex justify-content-start mt-4 mb-3 border-bottom">
+                    <Button
+                        type="button"
+                        className="mb-3"
+                        variant="primary"
+                        onClick={debounceSaveSearchableState}
+                        disabled={loading || !hasChanges}
+                    >
+                        Save
+                    </Button>
+                </div>
+                <div className="d-flex justify-content-start mb-3">
+                    <p>
+                        Learn more about{' '}
+                        <Link to="/">how your data and privacy is protected on Sourcegraph Cloud.</Link>.
+                    </p>
+                </div>
+                {error && <ErrorAlert className="mt-2" error={error} />}
             </Container>
         </div>
     )

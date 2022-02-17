@@ -165,5 +165,5 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/about-organizations',
         exact: true,
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
-    }
+    },
 ]
