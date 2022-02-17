@@ -1,12 +1,13 @@
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Keyword } from '@sourcegraph/shared/src/search/query/token'
+import { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
 
 export interface Checks {
     isValidOperator: true | false | undefined
     isValidPatternType: true | false | undefined
     isNotRepo: true | false | undefined
     isNotCommitOrDiff: true | false | undefined
+    isNoNewLines: true | false | undefined
 }
 
 export const searchQueryValidator = (value: string, touched: boolean): Checks => {
@@ -16,6 +17,7 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
             isValidPatternType: undefined,
             isNotRepo: undefined,
             isNotCommitOrDiff: undefined,
+            isNoNewLines: undefined,
         }
     }
 
@@ -24,9 +26,11 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
     if (tokens.type === 'success') {
         const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
         const keywords = tokens.term.filter(token => token.type === 'keyword') as Keyword[]
+        const patterns = tokens.term.filter(token => token.type === 'pattern') as Pattern[]
 
         const hasAnd = keywords.some(filter => filter.kind === 'and')
         const hasOr = keywords.some(filter => filter.kind === 'or')
+        const hasNot = keywords.some(filter => filter.kind === 'not')
 
         const hasLiteralPattern = filters.some(
             filter =>
@@ -51,11 +55,14 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
             filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'diff'
         )
 
+        const hasNewLines = patterns.some(term => term.value === '\\n')
+
         return {
-            isValidOperator: !hasAnd && !hasOr,
+            isValidOperator: !hasAnd && !hasOr && !hasNot,
             isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
             isNotRepo: !hasRepo,
             isNotCommitOrDiff: !hasCommit && !hasDiff,
+            isNoNewLines: !hasNewLines,
         }
     }
 
@@ -64,5 +71,6 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
         isValidPatternType: false,
         isNotRepo: false,
         isNotCommitOrDiff: false,
+        isNoNewLines: false,
     }
 }

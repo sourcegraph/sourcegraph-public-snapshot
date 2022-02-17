@@ -12,6 +12,7 @@ interface SearchQueryChecksProps {
         isValidPatternType: true | false | undefined
         isNotRepo: true | false | undefined
         isNotCommitOrDiff: true | false | undefined
+        isNoNewLines: true | false | undefined
     }
 }
 
@@ -46,9 +47,14 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
     <div className={classNames(styles.checksWrapper)}>
         <ul className={classNames(styles.checks)}>
             <li>
+                <CheckListItem valid={checks.isNoNewLines}>
+                    Does not contain a match over more than a single line.
+                </CheckListItem>
+            </li>
+            <li>
                 <CheckListItem valid={checks.isValidOperator}>
-                    Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular expression boolean
-                    operators can still be used)
+                    Does not contain boolean operators <code>AND</code>, <code>OR</code>, and <code>NOT</code> (regular
+                    expression boolean operators can still be used)
                 </CheckListItem>
             </li>
             <li>
