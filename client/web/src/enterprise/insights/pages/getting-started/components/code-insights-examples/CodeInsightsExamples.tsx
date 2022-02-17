@@ -81,7 +81,6 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
 
 const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
     title: 'Migration to CSS modules',
-    repositories: 'repo:github.com/awesomeOrg/examplerepo',
     series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
 })
 
