@@ -92,3 +92,6 @@ patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
 
 # or_regex
 patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
+
+# or_literal_simple
+patterntype:literal readUInt16LE or readUInt8
