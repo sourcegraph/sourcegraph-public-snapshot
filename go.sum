@@ -437,7 +437,6 @@ github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f/go.mod h1:Vz9D
 github.com/cockroachdb/redact v1.1.1/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
 github.com/cockroachdb/redact v1.1.3 h1:AKZds10rFSIj7qADf0g46UixK8NNLwWTNdCIGS5wfSQ=
 github.com/cockroachdb/redact v1.1.3/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
-github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2 h1:IKgmqgMQlVJIZj19CdocBeSfSaiCbEBZGKODaixqtHM=
 github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2/go.mod h1:8BT+cPK6xvFOcRlk0R8eg+OTkcqI6baNH4xAkpiYVvQ=
 github.com/codahale/hdrhistogram v0.0.0-20160425231609-f8ad88b59a58/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
 github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
@@ -2002,8 +2001,8 @@ github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incomp
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygTOB37ymZVwKlJwWZn+86syPTbrrOAydY=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
-github.com/sourcegraph/go-multierror v1.1.2-0.20220217193056-e5a15eea6d20 h1:TmvkakPNIQlPXl/6jvxNDfIieIc7U3eLETtrsbH4smo=
-github.com/sourcegraph/go-multierror v1.1.2-0.20220217193056-e5a15eea6d20/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
+github.com/sourcegraph/go-multierror v1.1.2-0.20220217225550-731592b6e87c h1:2sQHIUM3knlCWm3JXx0aTcUD9MCiivmvgfiKj0fYICE=
+github.com/sourcegraph/go-multierror v1.1.2-0.20220217225550-731592b6e87c/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d h1:uBLhh66Nf4BcRnvCkMVEuYZ/bQ9ok0rOlEJhfVUpJj4=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d/go.mod h1:IhIP+gIbf0TKVMjcEEwUBjomZRjrPnlZbzT2Wac7XA0=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=

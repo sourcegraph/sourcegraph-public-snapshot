@@ -29,7 +29,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.8.9
-	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/crewjam/saml v0.4.6
@@ -50,6 +49,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getsentry/raven-go v0.2.0
+	github.com/getsentry/sentry-go v0.12.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.8.0
@@ -192,7 +192,6 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
-	github.com/getsentry/sentry-go v0.12.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -400,9 +399,9 @@ require (
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220211090549-756e833d8ebe
-	// WE maintain our own fork of go-multierror since the upstream library does not appear
+	// We maintain our own fork of go-multierror since the upstream library does not appear
 	// actively maintained. This allows us to make tweaks more easily.
-	github.com/hashicorp/go-multierror => github.com/sourcegraph/go-multierror v1.1.2-0.20220217193056-e5a15eea6d20
+	github.com/hashicorp/go-multierror => github.com/sourcegraph/go-multierror v1.1.2-0.20220217225550-731592b6e87c
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
