@@ -1,15 +1,16 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useEffect } from 'react'
+import React, { useContext, useMemo, useEffect } from 'react'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, useObservable } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon } from '../../../insights/Icons'
+import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
@@ -51,12 +52,8 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }) ?? {}
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-
-    useEffect(() => {
-        if (hasInsightPageBeenViewed === false) {
-            markMainPageAsViewed(true)
-        }
-    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
+    const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
+    const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
@@ -70,8 +67,19 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }
     }
 
+    useEffect(() => {
+        if (hasInsightPageBeenViewed === false) {
+            markMainPageAsViewed(true)
+        }
+    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
+
     return (
         <Page>
+            {isLicensed === false && (
+                <Badge variant="info" className="mb-2">
+                    Free trial
+                </Badge>
+            )}
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
                 actions={

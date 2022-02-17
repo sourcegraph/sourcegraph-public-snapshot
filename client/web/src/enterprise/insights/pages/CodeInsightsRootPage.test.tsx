@@ -90,7 +90,12 @@ describe('CodeInsightsRootPage', () => {
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
             />,
-            { route: '/insights/dashboards/' }
+            {
+                route: '/insights/dashboards/',
+                api: {
+                    isCodeInsightsLicensed: () => of(true),
+                },
+            }
         )
 
         expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`)
@@ -107,6 +112,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
+                    isCodeInsightsLicensed: () => of(true),
                 },
             }
         )
@@ -125,6 +131,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
+                    isCodeInsightsLicensed: () => of(true),
                 },
             }
         )
