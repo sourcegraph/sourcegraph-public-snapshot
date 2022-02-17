@@ -506,6 +506,8 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+
+    codeIntelInfo: GitBlobCodeIntelInfo!
 }
 
 """
@@ -1331,4 +1333,42 @@ type IndexConfiguration {
     The raw JSON-encoded index configuration as inferred by the auto-indexer.
     """
     inferredConfiguration: String
+}
+
+type GitBlobCodeIntelInfo {
+    support: CodeIntelSupport!
+
+    lsifUploads: LSIFUploadConnection
+}
+
+type CodeIntelSupport {
+    searchBasedSupport: SearchBasedCodeIntelSupport
+
+    preciseSupport: PreciseCodeIntelSupport!
+}
+
+type PreciseCodeIntelSupport {
+    supportLevel: PreciseSupportLevel!
+    indexers: [CodeIntelIndexer!]
+}
+
+type CodeIntelIndexer {
+    name: String!
+    url: String!
+}
+
+enum PreciseSupportLevel {
+    UNKNOWN
+    NATIVE
+    THIRD_PARTY
+}
+
+type SearchBasedCodeIntelSupport {
+    supportLevel: SearchBasedSupportLevel!
+    language: String
+}
+
+enum SearchBasedSupportLevel {
+    UNSUPPORTED
+    BASIC
 }
