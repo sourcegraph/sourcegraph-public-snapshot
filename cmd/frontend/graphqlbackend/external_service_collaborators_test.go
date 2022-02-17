@@ -177,17 +177,17 @@ func TestExternalServiceCollaborators_pickReposToScanForCollaborators(t *testing
 		{
 			possibleRepos:  []string{"o", "b", "f", "d", "e", "u", "a", "h", "l", "s", "u", "b", "m"},
 			maxReposToScan: 8,
-			want:           autogold.Want("three", nil),
+			want:           autogold.Want("three", []string{"f", "a", "b", "u", "l", "o", "u", "s"}),
 		},
 		{
 			possibleRepos:  []string{"c"},
 			maxReposToScan: 3,
-			want:           autogold.Want("have one", nil),
+			want:           autogold.Want("have one", []string{"c"}),
 		},
 		{
 			possibleRepos:  []string{},
 			maxReposToScan: 3,
-			want:           autogold.Want("have zero", nil),
+			want:           autogold.Want("have zero", []string{}),
 		},
 	}
 	for _, tst := range tests {
