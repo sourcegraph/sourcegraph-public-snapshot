@@ -1,7 +1,3 @@
-//
-// Base styles
-//
-
 .theme-light {
     --input-group-addon-color: var(--gray-08);
     --input-group-addon-bg: var(--gray-03);
@@ -14,6 +10,9 @@
     --input-group-addon-border-color: var(--gray-08);
 }
 
+//
+// Base styles
+//
 .input-group {
     position: relative;
     display: flex;

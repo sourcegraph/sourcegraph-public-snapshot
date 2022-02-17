@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
@@ -21,7 +20,8 @@ import (
 )
 
 var (
-	checkFlagSet = flag.NewFlagSet("sg check", flag.ExitOnError)
+	checkFlagSet             = flag.NewFlagSet("sg check", flag.ExitOnError)
+	checkGenerateAnnotations = checkFlagSet.Bool("annotations", false, "Write helpful output to annotations directory")
 
 	checkShellFlagSet   = flag.NewFlagSet("sg check shell", flag.ExitOnError)
 	checkURLsFlagSet    = flag.NewFlagSet("sg check urls", flag.ExitOnError)
@@ -65,7 +65,6 @@ var (
 			FlagSet:   checkDockerFlagSet,
 			Checks: []checkScriptFn{
 				runCheckScript("Docker lint", "dev/check/docker-lint.sh"),
-				runCheckScript("Docker forbidden alpine base images", "dev/check/no-alpine-guard.sh"),
 				checkDockerfiles,
 			},
 		},
@@ -185,6 +184,17 @@ func printCheckReport(pending output.Pending, report *checkReport) {
 	if report.err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
 		pending.Verbose(report.output)
+		if *checkGenerateAnnotations {
+			repoRoot, err := root.RepositoryRoot()
+			if err != nil {
+				return // do nothing
+			}
+			annotationPath := filepath.Join(repoRoot, "annotations")
+			os.MkdirAll(annotationPath, os.ModePerm)
+			if err := os.WriteFile(filepath.Join(annotationPath, report.header), []byte(report.output+"\n"), os.ModePerm); err != nil {
+				return // do nothing
+			}
+		}
 		return
 	}
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
@@ -229,7 +239,16 @@ func (cs checkTargets) Commands() (cmds []*ffcli.Command) {
 func checkDockerfiles(ctx context.Context) *checkReport {
 	start := time.Now()
 	var combinedErrors error
-	for _, dir := range []string{"docker-images", "cmd", "enterprise/cmd"} {
+	for _, dir := range []string{
+		"docker-images",
+		// cmd dirs
+		"cmd",
+		"enterprise/cmd",
+		"internal/cmd",
+		// dev dirs
+		"dev",
+		"enterprise/dev",
+	} {
 		if err := filepath.Walk(dir,
 			func(path string, info os.FileInfo, err error) error {
 				if err != nil {
@@ -243,17 +262,7 @@ func checkDockerfiles(ctx context.Context) *checkReport {
 					return err
 				}
 
-				if err := docker.ProcessDockerfile(data, func(is []instructions.Stage) error {
-					var errs error
-					for _, i := range is {
-						for _, c := range i.Commands {
-							if err := docker.CheckCommand(c); err != nil {
-								errs = errors.Append(errs, errors.Wrapf(err, "%s:%d", path, c.Location()[0].Start.Line))
-							}
-						}
-					}
-					return errs
-				}); err != nil {
+				if err := docker.ProcessDockerfile(data, docker.CheckDockerfile(path)); err != nil {
 					// track error but don't exit
 					combinedErrors = errors.Append(combinedErrors, err)
 				}
