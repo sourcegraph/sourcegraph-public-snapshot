@@ -346,6 +346,21 @@ pollIndexStatusLoop:
 		)
 
 		createIndex := func() error {
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
+			go func() {
+				for {
+					if err := wait(ctx, indexPollInterval); err != nil {
+						return
+					}
+
+					if _, _, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName); err != nil {
+						logger.Error("Failed to retrieve index status", "error", err)
+					}
+				}
+			}()
+
 			return errorFilter(schemaContext.store.Up(ctx, definition))
 		}
 		if err := schemaContext.store.WithMigrationLog(ctx, definition, true, createIndex); err != nil {
