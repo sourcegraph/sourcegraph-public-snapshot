@@ -234,6 +234,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                             items.map((item, index) => (
                                 <li
                                     className={classNames(
+                                        'd-flex',
                                         this.props.listItemClassName,
                                         index === selectedIndex && this.props.selectedListItemClassName
                                     )}
