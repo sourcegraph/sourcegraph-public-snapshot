@@ -50,13 +50,13 @@ type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { s
 
 const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     data: [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 88, b: 410 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 95, b: 410 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 110, b: 315 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 160, b: 180 },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: 310, b: 90 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 520, b: 45 },
-        { x: 1588965700286, a: 700, b: 10 },
+        { x: new Date('May 7, 2021'), a: 88, b: 410 },
+        { x: new Date('June 7, 2021'), a: 95, b: 410 },
+        { x: new Date('July 7, 2021'), a: 110, b: 315 },
+        { x: new Date('August 7, 2021'), a: 160, b: 180 },
+        { x: new Date('September 7, 2021'), a: 310, b: 90 },
+        { x: new Date('October 7, 2021'), a: 520, b: 45 },
+        { x: new Date('November 7, 2021'), a: 700, b: 10 },
     ],
     series: [
         {
@@ -136,13 +136,13 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
-        { x: 1588965700286, a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
+        { x: new Date('May 7, 2021'), a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
+        { x: new Date('June 7, 2021'), a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
+        { x: new Date('July 7, 2021'), a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
+        { x: new Date('August 7, 2021'), a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
+        { x: new Date('September 7, 2021'), a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
+        { x: new Date('October 7, 2021'), a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
+        { x: new Date('November 7, 2021'), a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
     ],
     series: [
         {
