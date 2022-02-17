@@ -75,15 +75,13 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
                     return previousResult
                 }
 
-                if (cursor) {
-                    const previousData = getLsifData({ data: previousResult })
-                    const previousImplementationNodes = previousData.implementations.nodes
-                    const previousReferencesNodes = previousData.references.nodes
+                const previousData = getLsifData({ data: previousResult })
+                const previousImplementationNodes = previousData.implementations.nodes
+                const previousReferencesNodes = previousData.references.nodes
 
-                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                    fetchMoreData.implementations.nodes = previousImplementationNodes
-                    fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
-                }
+                const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                fetchMoreData.implementations.nodes = previousImplementationNodes
+                fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
 
                 return fetchMoreResult
             },
@@ -103,15 +101,13 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
                     return previousResult
                 }
 
-                if (cursor) {
-                    const previousData = getLsifData({ data: previousResult })
-                    const previousImplementationNodes = previousData.implementations.nodes
-                    const previousReferencesNodes = previousData.references.nodes
+                const previousData = getLsifData({ data: previousResult })
+                const previousImplementationNodes = previousData.implementations.nodes
+                const previousReferencesNodes = previousData.references.nodes
 
-                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                    fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
-                    fetchMoreData.references.nodes = previousReferencesNodes
-                }
+                const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
+                fetchMoreData.references.nodes = previousReferencesNodes
 
                 return fetchMoreResult
             },
