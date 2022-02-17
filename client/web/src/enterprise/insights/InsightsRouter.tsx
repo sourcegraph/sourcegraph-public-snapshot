@@ -19,7 +19,7 @@ import { CodeInsightsContextProps } from '../../insights/types'
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
 import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'
-import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
+import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
     CodeInsightsRootPageTab,
@@ -73,7 +73,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
-            <Route path="*" component={BetaConfirmationModal} />
+            <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
                 <Route path={`${match.url}/create`}>

@@ -148,4 +148,9 @@ export interface CodeInsightsBackend {
      * or "select:repo count:1" if no repository is found with the string "TODO"
      */
     getFirstExampleRepository: () => Observable<string>
+
+    /*
+     * Returns whether Code Insights is licensed
+     */
+    isCodeInsightsLicensed: () => Observable<boolean>
 }

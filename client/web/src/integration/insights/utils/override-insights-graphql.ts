@@ -57,7 +57,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                     'user.daysActiveCount': 1,
                     'user.lastDayActive': new Date().toDateString(),
                     'search.usedNonGlobalContext': true,
-                    'insights.freeBetaAccepted': true,
+                    'insights.freeGaAccepted': true,
                 }),
             },
         }),
