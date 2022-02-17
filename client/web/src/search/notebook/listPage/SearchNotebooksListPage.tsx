@@ -3,25 +3,30 @@ import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
+import { Redirect, useHistory, useLocation } from 'react-router'
+import { Observable } from 'rxjs'
+import { catchError, startWith, switchMap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { NotebooksOrderBy } from '../../../graphql-operations'
+import { CreateNotebookVariables, NotebooksOrderBy } from '../../../graphql-operations'
 import { PageRoutes } from '../../../routes.constants'
-import { fetchNotebooks as _fetchNotebooks } from '../backend'
+import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
+import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { SearchNotebooksList } from './SearchNotebooksList'
 import styles from './SearchNotebooksListPage.module.scss'
 
 export interface SearchNotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     fetchNotebooks?: typeof _fetchNotebooks
+    createNotebook?: typeof _createNotebook
 }
 
 type NotebooksTab =
@@ -73,15 +78,19 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
     }
 }
 
+const LOADING = 'loading' as const
+
 export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksListPageProps> = ({
     authenticatedUser,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
+    createNotebook = _createNotebook,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SearchNotebooksListPage')
     }, [telemetryService])
 
+    const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
 
@@ -193,6 +202,29 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
         [selectedTab, orgTabs]
     )
 
+    const [importNotebook, importedNotebookOrError] = useEventObservable(
+        useCallback(
+            (notebook: Observable<CreateNotebookVariables['notebook']>) =>
+                notebook.pipe(
+                    switchMap(notebook =>
+                        createNotebook({ notebook }).pipe(
+                            startWith(LOADING),
+                            catchError(error => {
+                                setImportState(asError(error))
+                                return []
+                            })
+                        )
+                    )
+                ),
+            [createNotebook, setImportState]
+        )
+    )
+
+    if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
+        telemetryService.log('SearchNotebookImportedFromMarkdown')
+        return <Redirect to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} />
+    }
+
     return (
         <div className="w-100">
             <Page>
@@ -200,14 +232,28 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
-                            <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
-                                <PlusIcon className="icon-inline" />
-                                Create notebook
-                            </Button>
+                            <>
+                                <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="mr-2">
+                                    <PlusIcon className="icon-inline mr-1" />
+                                    Create notebook
+                                </Button>
+                                <ImportMarkdownNotebookButton
+                                    telemetryService={telemetryService}
+                                    authenticatedUser={authenticatedUser}
+                                    importNotebook={importNotebook}
+                                    importState={importState}
+                                    setImportState={setImportState}
+                                />
+                            </>
                         )
                     }
                     className="mb-3"
                 />
+                {isErrorLike(importState) && (
+                    <Alert variant="danger">
+                        Error while importing the notebook: <strong>{importState.message}</strong>
+                    </Alert>
+                )}
                 <div className="mb-4">
                     <div className="nav nav-tabs">
                         {tabs.map(({ tab, title, isActive, logName }) => (

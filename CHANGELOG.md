@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Code in search results is now selectable (e.g. for copying). Just clicking on the code continues to open the corresponding file as it did before. [#30033](https://github.com/sourcegraph/sourcegraph/pull/30033)
+- Search Notebooks now support importing and exporting Markdown-formatted files. [#28586](https://github.com/sourcegraph/sourcegraph/issues/28586)
 
 ### Changed
 

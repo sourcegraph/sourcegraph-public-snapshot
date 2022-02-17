@@ -61,6 +61,7 @@ add('default', () => (
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                exportedFileName="notebook.snb.md"
             />
         )}
     </WebStory>
@@ -88,6 +89,7 @@ add('default read-only', () => (
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                exportedFileName="notebook.snb.md"
             />
         )}
     </WebStory>

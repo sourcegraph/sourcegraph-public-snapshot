@@ -39,7 +39,7 @@ import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
 import styles from './SearchNotebookPage.module.scss'
 import { SearchNotebookPageHeaderActions } from './SearchNotebookPageHeaderActions'
-import { blockToGQLInput, GQLBlockToGQLInput } from './serialize'
+import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from './serialize'
 
 import { Block } from '.'
 
@@ -83,6 +83,11 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const notebookId = props.match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
+
+    const exportedFileName = useMemo(
+        () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
+        [notebookTitle]
+    )
 
     const notebookOrError = useObservable(
         useMemo(
@@ -256,6 +261,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             onUpdateBlocks={onUpdateBlocks}
                             fetchRepository={fetchRepository}
                             resolveRevision={resolveRevision}
+                            exportedFileName={exportedFileName}
                         />
                         <div className={styles.spacer} />
                     </>

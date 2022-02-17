@@ -1,11 +1,15 @@
+import fs from 'fs'
+import path from 'path'
+
 import { subDays } from 'date-fns'
 import expect from 'expect'
 
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../search/notebook'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
@@ -58,82 +62,64 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
 
 const now = new Date()
 
+const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
+    __typename: 'Notebook',
+    id,
+    title,
+    createdAt: subDays(now, 5).toISOString(),
+    updatedAt: subDays(now, 5).toISOString(),
+    public: true,
+    viewerCanManage: true,
+    viewerHasStarred: true,
+    namespace: { __typename: 'User', id: '1', namespaceName: 'user1' },
+    stars: { totalCount: 123 },
+    creator: { __typename: 'User', username: 'user1' },
+    updater: { __typename: 'User', username: 'user1' },
+    blocks,
+})
+
+const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock => {
+    switch (block.type) {
+        case NotebookBlockType.MARKDOWN:
+            return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
+        case NotebookBlockType.QUERY:
+            return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
+        case NotebookBlockType.FILE:
+            return {
+                __typename: 'FileBlock',
+                id: block.id,
+                fileInput: {
+                    __typename: 'FileBlockInput',
+                    repositoryName: block.fileInput?.repositoryName ?? '',
+                    filePath: block.fileInput?.filePath ?? '',
+                    revision: block.fileInput?.revision ?? '',
+                    lineRange: {
+                        __typename: 'FileBlockLineRange',
+                        startLine: block.fileInput?.lineRange?.startLine ?? 0,
+                        endLine: block.fileInput?.lineRange?.endLine ?? 1,
+                    },
+                },
+            }
+    }
+}
+
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
+    ...viewerSettings,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
-        node: {
-            __typename: 'Notebook',
-            id,
-            title: 'Notebook Title',
-            createdAt: subDays(now, 5).toISOString(),
-            updatedAt: subDays(now, 5).toISOString(),
-            public: true,
-            viewerCanManage: true,
-            viewerHasStarred: true,
-            namespace: {
-                __typename: 'User',
-                id: '1',
-                namespaceName: 'user1',
-            },
-            stars: {
-                totalCount: 123,
-            },
-            creator: { __typename: 'User', username: 'user1' },
-            updater: { __typename: 'User', username: 'user1' },
-            blocks: [
-                { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
-                { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
-            ],
-        },
+        node: notebookFixture(id, 'Notebook Title', [
+            { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+            { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+        ]),
     }),
     UpdateNotebook: ({ id, notebook }) => ({
-        updateNotebook: {
-            __typename: 'Notebook',
-            id,
-            title: notebook.title,
-            createdAt: subDays(now, 5).toISOString(),
-            updatedAt: subDays(now, 5).toISOString(),
-            public: notebook.public,
-            viewerCanManage: true,
-            viewerHasStarred: true,
-            namespace: {
-                __typename: 'User',
-                id: '1',
-                namespaceName: 'user1',
-            },
-            stars: {
-                totalCount: 123,
-            },
-            creator: { __typename: 'User', username: 'user1' },
-            updater: { __typename: 'User', username: 'user1' },
-            blocks: notebook.blocks.map(block => {
-                switch (block.type) {
-                    case NotebookBlockType.MARKDOWN:
-                        return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
-                    case NotebookBlockType.QUERY:
-                        return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
-                    case NotebookBlockType.FILE:
-                        return {
-                            __typename: 'FileBlock',
-                            id: block.id,
-                            fileInput: {
-                                __typename: 'FileBlockInput',
-                                repositoryName: block.fileInput?.repositoryName ?? '',
-                                filePath: block.fileInput?.filePath ?? '',
-                                revision: block.fileInput?.revision ?? '',
-                                lineRange: {
-                                    __typename: 'FileBlockLineRange',
-                                    startLine: block.fileInput?.lineRange?.startLine ?? 0,
-                                    endLine: block.fileInput?.lineRange?.endLine ?? 1,
-                                },
-                            },
-                        }
-                }
-            }),
-        },
+        updateNotebook: notebookFixture(id, notebook.title, notebook.blocks.map(GQLBlockInputToResponse)),
+    }),
+    ListNotebooks: () => ({
+        notebooks: { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
     }),
 }
 
@@ -150,7 +136,7 @@ describe('Search Notebook', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettings })
+        testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
@@ -391,5 +377,82 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="share-notebook-option-test-true"]')
 
         await driver.page.click('[data-testid="share-notebook-done-button"]')
+    })
+
+    afterEach(() => {
+        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        // eslint-disable-next-line no-sync
+        if (fs.existsSync(exportedNotebookPath)) {
+            // eslint-disable-next-line no-sync
+            fs.unlinkSync(exportedNotebookPath)
+        }
+    })
+
+    it('Should export a notebook as Markdown file and import it back', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            FetchNotebook: ({ id }) => ({
+                node: notebookFixture(id, 'Exported', [
+                    { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
+                    { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
+                    {
+                        __typename: 'FileBlock',
+                        id: '3',
+                        fileInput: {
+                            __typename: 'FileBlockInput',
+                            repositoryName: 'github.com/sourcegraph/sourcegraph',
+                            filePath: 'client/web/index.ts',
+                            revision: 'main',
+                            lineRange: { __typename: 'FileBlockLineRange', startLine: 1, endLine: 10 },
+                        },
+                    },
+                ]),
+            }),
+            CreateNotebook: ({ notebook }) => ({
+                createNotebook: notebookFixture(
+                    'importedId',
+                    notebook.title,
+                    notebook.blocks.map(GQLBlockInputToResponse)
+                ),
+            }),
+        })
+
+        const expectedExportedMarkdown = `# Title
+
+\`\`\`sourcegraph
+query
+\`\`\`
+
+https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+`
+
+        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: __dirname })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="export-notebook-markdown-button"]', { visible: true })
+
+        await driver.page.click('[data-testid="export-notebook-markdown-button"]')
+        // Wait for the download to complete.
+        await driver.page.waitForTimeout(1000)
+
+        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        // eslint-disable-next-line no-sync
+        expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
+
+        // eslint-disable-next-line no-sync
+        const exportedNotebookFileContents = fs.readFileSync(exportedNotebookPath, 'utf-8')
+        expect(exportedNotebookFileContents).toEqual(expectedExportedMarkdown)
+
+        // Navigate to the notebooks list page to import the notebook.
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks')
+        await driver.page.waitForSelector('[data-testid="import-markdown-notebook-file-input"]')
+        const fileInputElement = await driver.page.$('[data-testid="import-markdown-notebook-file-input"]')
+        await fileInputElement?.uploadFile(exportedNotebookPath)
+        await fileInputElement?.evaluate(upload => upload.dispatchEvent(new Event('change', { bubbles: true })))
+
+        // Should be redirected to the notebook page.
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+        // Verify the redirected URL contains the imported notebook id.
+        expect(driver.page.url()).toContain('/notebooks/importedId')
     })
 })
