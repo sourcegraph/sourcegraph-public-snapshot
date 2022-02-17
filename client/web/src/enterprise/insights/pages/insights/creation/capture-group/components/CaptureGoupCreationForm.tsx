@@ -98,7 +98,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>

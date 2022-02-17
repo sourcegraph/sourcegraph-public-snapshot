@@ -146,7 +146,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>
