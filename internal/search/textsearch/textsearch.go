@@ -285,12 +285,9 @@ func CallSearcherOverRepos(
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					stats, err := searchrepos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
-						Stats: streaming.Stats{
-							Status:     status,
-							IsLimitHit: limitHit,
-						},
+						Stats: stats,
 					})
 					return err
 				})
