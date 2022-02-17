@@ -43,7 +43,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     }, [onToggle])
 
     const onClick = (): void => {
-        telemetryService.log(`SignUpPLG${source}_1_Search`)
+        telemetryService.log(`VSCE${source}SignUpModalClick`)
     }
 
     // Whenever dropdown opens, log view event
