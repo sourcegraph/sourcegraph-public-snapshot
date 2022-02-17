@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 
+import { CollaboratorsPanel } from './CollaboratorsPanel'
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import styles from './HomePanels.module.scss'
 import { RecentFilesPanel } from './RecentFilesPanel'
@@ -23,6 +24,9 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
         <div className="row">
             <RepositoriesPanel {...props} className={classNames('col-lg-4', styles.panel)} />
             <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
+        </div>
+        <div className="row">
+            <CollaboratorsPanel {...props} className={classNames('col-lg-12')} />
         </div>
         <div className="row">
             <RecentFilesPanel {...props} className={classNames('col-lg-7', styles.panel)} />
