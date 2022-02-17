@@ -28,12 +28,6 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: a.UID,
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	// SECURITY: This API should only be exposed for user-added external services, not for example by
 	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
@@ -73,49 +67,18 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	allRecentCommitters, err := parallelRecentCommitters(ctx, fewRepos, client.RecentCommitters)
+	recentCommitters, err := parallelRecentCommitters(ctx, fewRepos, client.RecentCommitters)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
-	// invite are people who recently committed to code, which means they're more active and more
-	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
-	// committer is say no longer working at that organization.)
-	sort.Slice(allRecentCommitters, func(i, j int) bool {
-		a := allRecentCommitters[i].date
-		b := allRecentCommitters[j].date
-		return a.After(b)
+	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: a.UID,
 	})
-
-	// Eliminate committers who are duplicates, don't have an email, have a noreply@github.com
-	// email (which happens when you make edits via the GitHub web UI), or committers with the same
-	// email address as this authenticated user (can't invite ourselves, we already have an account.)
-	var (
-		invitable   []*invitableCollaboratorResolver
-		deduplicate = map[string]struct{}{}
-	)
-	for _, recentCommitter := range allRecentCommitters {
-		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
-			continue
-		}
-		isOurEmail := false
-		for _, email := range authUserEmails {
-			if recentCommitter.email == email.Email {
-				isOurEmail = true
-				continue
-			}
-		}
-		if isOurEmail {
-			continue
-		}
-		if _, duplicate := deduplicate[recentCommitter.email]; duplicate {
-			continue
-		}
-		deduplicate[recentCommitter.email] = struct{}{}
-		invitable = append(invitable, recentCommitter)
+	if err != nil {
+		return nil, err
 	}
-	return invitable, nil
+	return filterInvitableCollaborators(recentCommitters, authUserEmails), nil
 }
 
 type invitableCollaboratorResolver struct {
@@ -172,4 +135,45 @@ func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitt
 	}
 	wg.Wait()
 	return
+}
+
+func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResolver, authUserEmails []*database.UserEmail) []*invitableCollaboratorResolver {
+	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
+	// invite are people who recently committed to code, which means they're more active and more
+	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
+	// committer is say no longer working at that organization.)
+	sort.Slice(recentCommitters, func(i, j int) bool {
+		a := recentCommitters[i].date
+		b := recentCommitters[j].date
+		return a.After(b)
+	})
+
+	// Eliminate committers who are duplicates, don't have an email, have a noreply@github.com
+	// email (which happens when you make edits via the GitHub web UI), or committers with the same
+	// email address as this authenticated user (can't invite ourselves, we already have an account.)
+	var (
+		invitable   []*invitableCollaboratorResolver
+		deduplicate = map[string]struct{}{}
+	)
+	for _, recentCommitter := range recentCommitters {
+		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
+			continue
+		}
+		isOurEmail := false
+		for _, email := range authUserEmails {
+			if recentCommitter.email == email.Email {
+				isOurEmail = true
+				continue
+			}
+		}
+		if isOurEmail {
+			continue
+		}
+		if _, duplicate := deduplicate[recentCommitter.email]; duplicate {
+			continue
+		}
+		deduplicate[recentCommitter.email] = struct{}{}
+		invitable = append(invitable, recentCommitter)
+	}
+	return invitable
 }

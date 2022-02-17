@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"context"
@@ -60,6 +61,9 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].Name < calls[j].Name
 	})
+	sort.Slice(recentCommitters, func(i, j int) bool {
+		return recentCommitters[i].name < recentCommitters[j].name
+	})
 
 	autogold.Want("calls", []*github.RecentCommittersParams{
 		{
@@ -81,15 +85,35 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 
 	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
 		{
-			name: "sourcegraph-joe",
+			name: "go-jane",
 		},
-		{name: "sourcegraph-jane"},
-		{name: "sourcegraph-janet"},
-		{name: "mux-joe"},
+		{name: "go-janet"},
+		{name: "go-joe"},
 		{name: "mux-jane"},
 		{name: "mux-janet"},
-		{name: "go-joe"},
-		{name: "go-jane"},
-		{name: "go-janet"},
+		{name: "mux-joe"},
+		{name: "sourcegraph-jane"},
+		{name: "sourcegraph-janet"},
+		{name: "sourcegraph-joe"},
 	}).Equal(t, recentCommitters)
+}
+
+func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T) {
+	tests := []struct {
+		want             autogold.Value
+		recentCommitters []*invitableCollaboratorResolver
+		authUserEmails   []*database.UserEmail
+	}{
+		{
+			recentCommitters: []*invitableCollaboratorResolver{},
+			authUserEmails:   []*database.UserEmail{},
+			want:             autogold.Want("empty", []*invitableCollaboratorResolver{}),
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.want.Name(), func(t *testing.T) {
+			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails)
+			tst.want.Equal(t, got)
+		})
+	}
 }
