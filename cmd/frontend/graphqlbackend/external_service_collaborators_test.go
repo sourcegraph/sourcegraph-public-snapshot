@@ -99,15 +99,45 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 }
 
 func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T) {
+	collaborators := func(emails ...string) []*invitableCollaboratorResolver {
+		var v []*invitableCollaboratorResolver
+		for _, email := range emails {
+			v = append(v, &invitableCollaboratorResolver{email: email})
+		}
+		return v
+	}
+	emails := func(values ...string) []*database.UserEmail {
+		var v []*database.UserEmail
+		for _, email := range values {
+			v = append(v, &database.UserEmail{Email: email})
+		}
+		return v
+	}
+
 	tests := []struct {
 		want             autogold.Value
 		recentCommitters []*invitableCollaboratorResolver
 		authUserEmails   []*database.UserEmail
 	}{
 		{
-			recentCommitters: []*invitableCollaboratorResolver{},
-			authUserEmails:   []*database.UserEmail{},
-			want:             autogold.Want("empty", []*invitableCollaboratorResolver{}),
+			recentCommitters: collaborators(),
+			authUserEmails:   emails("stephen@sourcegraph.com"),
+			want:             autogold.Want("zero committers", []*invitableCollaboratorResolver{}),
+		},
+		{
+			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "stephen@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want:             autogold.Want("deduplication", []*invitableCollaboratorResolver{}),
+		},
+		{
+			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "stephen@sourcegraph.com"),
+			authUserEmails:   emails("stephen@sourcegraph.com"),
+			want:             autogold.Want("not ourself", []*invitableCollaboratorResolver{}),
+		},
+		{
+			recentCommitters: collaborators("noreply@github.com", "noreply.notifications@github.com", "stephen+noreply@sourcegraph.com", "beyang@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want:             autogold.Want("noreply excluded", []*invitableCollaboratorResolver{}),
 		},
 	}
 	for _, tst := range tests {
