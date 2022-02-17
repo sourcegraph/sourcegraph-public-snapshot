@@ -57,7 +57,7 @@ EOF
     --header 'Content-Type: application/json' \
     --data-binary @-
   local curl_exit="$?"
-  if [ "$curl_exit" -eq 0 ]; then 
+  if [ "$curl_exit" -eq 0 ]; then
     echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
   else
     echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
