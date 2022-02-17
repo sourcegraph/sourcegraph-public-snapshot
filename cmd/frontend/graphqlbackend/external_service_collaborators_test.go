@@ -127,17 +127,29 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 		{
 			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "stephen@sourcegraph.com"),
 			authUserEmails:   emails(),
-			want:             autogold.Want("deduplication", []*invitableCollaboratorResolver{}),
+			want: autogold.Want("deduplication", []*invitableCollaboratorResolver{
+				{
+					email: "stephen@sourcegraph.com",
+				},
+				{email: "sqs@sourcegraph.com"},
+			}),
 		},
 		{
 			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "stephen@sourcegraph.com"),
 			authUserEmails:   emails("stephen@sourcegraph.com"),
-			want:             autogold.Want("not ourself", []*invitableCollaboratorResolver{}),
+			want: autogold.Want("not ourself", []*invitableCollaboratorResolver{
+				{
+					email: "sqs@sourcegraph.com",
+				},
+				{email: "beyang@sourcegraph.com"},
+			}),
 		},
 		{
 			recentCommitters: collaborators("noreply@github.com", "noreply.notifications@github.com", "stephen+noreply@sourcegraph.com", "beyang@sourcegraph.com"),
 			authUserEmails:   emails(),
-			want:             autogold.Want("noreply excluded", []*invitableCollaboratorResolver{}),
+			want: autogold.Want("noreply excluded", []*invitableCollaboratorResolver{{
+				email: "beyang@sourcegraph.com",
+			}}),
 		},
 	}
 	for _, tst := range tests {
