@@ -4,6 +4,8 @@ import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 
+import styles from './MenuItem.module.scss'
+
 export type MenuLinkProps = ReachMenuLinkProps
 
 /**
@@ -15,5 +17,5 @@ export type MenuLinkProps = ReachMenuLinkProps
  * @see — Docs https://reach.tech/menu-button#menulink
  */
 export const MenuLink = React.forwardRef(({ className, ...props }, reference) => (
-    <ReachMenuLink ref={reference} {...props} className={classNames('dropdown-item', className)} />
+    <ReachMenuLink ref={reference} {...props} className={classNames('dropdown-item', styles.item, className)} />
 )) as ForwardReferenceComponent<'a', MenuLinkProps>
