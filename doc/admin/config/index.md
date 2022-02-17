@@ -12,7 +12,7 @@ This page documents how to configure a Sourcegraph instance. For deployment conf
 
 - [Add Git repositories from your code host](../repo/add.md)
 - [Add user authentication providers (SSO)](../auth/index.md)
-- [Configure search scopes](../../code_search/how-to/scopes.md)
+- [Configure search scopes](../../code_search/how-to/snippets.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
 - [Add organizations](../organizations.md)
 - [Set up HTTPS](../http_https_configuration.md)
