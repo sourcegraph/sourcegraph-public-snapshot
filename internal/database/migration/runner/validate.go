@@ -16,7 +16,14 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 // expected by the given schema context. This method will block if there are relevant migrations
 // in progress.
 func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
-	definitions := schemaContext.schema.Definitions.All()
+	// Get the set of migrations that need to be applied.
+	definitions, err := schemaContext.schema.Definitions.Up(
+		schemaContext.initialSchemaVersion.appliedVersions,
+		extractIDs(schemaContext.schema.Definitions.Leaves()),
+	)
+	if err != nil {
+		return err
+	}
 
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
