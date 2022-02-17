@@ -27,7 +27,7 @@ export default config
 
 const OptionsPageWrapper: React.FunctionComponent<Partial<OptionsPageProps>> = props => (
     <OptionsPage
-        isFullPage={true}
+        isFullPage={false}
         isActivated={true}
         onToggleActivated={action('onToggleActivated')}
         optionFlags={[
@@ -46,49 +46,90 @@ const OptionsPageWrapper: React.FunctionComponent<Partial<OptionsPageProps>> = p
     />
 )
 
-export const Default: Story = () => <OptionsPageWrapper />
-
-Default.parameters = {
-    chromatic: {
-        delay: 500,
-        enableDarkMode: true,
-        disableSnapshot: false,
-    },
-}
-
-export const Interactive: Story = () => {
+const Interactive: Story = () => {
     const [isActivated, setIsActivated] = useState(false)
     return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} />
 }
-export const UrlValidationError: Story = () => {
-    const [isActivated, setIsActivated] = useState(false)
-    return (
-        <OptionsPageWrapper
-            isActivated={isActivated}
-            onToggleActivated={setIsActivated}
-            validateSourcegraphUrl={invalidSourcegraphUrl}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-        />
-    )
-}
 
-UrlValidationError.storyName = 'URL validation error'
+const UrlValidationError: Story = () => (
+    <OptionsPageWrapper
+        validateSourcegraphUrl={invalidSourcegraphUrl}
+        sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
+    />
+)
 
-export const AskingForPermission: Story = () => (
+const AskingForPermission: Story = () => (
     <OptionsPageWrapper
         permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
         requestPermissionsHandler={requestPermissionsHandler}
     />
 )
 
-AskingForPermission.storyName = 'Asking for permission'
-
-export const OnPrivateRepository: Story = () => (
+const OnPrivateRepository: Story = () => (
     <OptionsPageWrapper showPrivateRepositoryAlert={true} requestPermissionsHandler={requestPermissionsHandler} />
 )
 
-OnPrivateRepository.storyName = 'On private repository'
-
-export const OnSourcegraphCloud: Story = () => (
+const OnSourcegraphCloud: Story = () => (
     <OptionsPageWrapper requestPermissionsHandler={requestPermissionsHandler} showSourcegraphCloudAlert={true} />
 )
+
+const WithAdvancedSettings: Story = () => {
+    const [optionFlagValues, setOptionFlagValues] = useState([
+        { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
+        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: true },
+    ])
+    const setOptionFlag = (key: string, value: boolean) => {
+        setOptionFlagValues(optionFlagValues.map(flag => (flag.key === key ? { ...flag, value } : flag)))
+    }
+
+    return (
+        <OptionsPageWrapper
+            initialShowAdvancedSettings={true}
+            optionFlags={optionFlagValues}
+            onChangeOptionFlag={setOptionFlag}
+        />
+    )
+}
+
+export const AllOptionsPages: Story = () => (
+    <div>
+        <h1 className="text-center">All Options Pages</h1>
+        <div>
+            <div className="d-flex justify-content-center">
+                <div className="mx-4">
+                    <h2 className="text-center">Interactive</h2>
+                    <Interactive />
+                </div>
+                <div className="mx-4">
+                    <h2 className="text-center">URL validation error</h2>
+                    <UrlValidationError />
+                </div>
+                <div className="mx-4">
+                    <h2 className="text-center">With advanced settings</h2>
+                    <WithAdvancedSettings />
+                </div>
+            </div>
+            <div className="d-flex justify-content-center mt-5">
+                <div className="mx-4">
+                    <h2 className="text-center">On private repository</h2>
+                    <OnPrivateRepository />
+                </div>
+                <div className="mx-4">
+                    <h2 className="text-center">On Sourcegraph Cloud</h2>
+                    <OnSourcegraphCloud />
+                </div>
+                <div className="mx-4">
+                    <h2 className="text-center">Asking for permission</h2>
+                    <AskingForPermission />
+                </div>
+            </div>
+        </div>
+    </div>
+)
+
+OnSourcegraphCloud.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
