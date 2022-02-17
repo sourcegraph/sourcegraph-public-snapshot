@@ -24,7 +24,7 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples>
     <section {...props}>
         <h2>Example insights</h2>
         <p className="text-muted">
-            We've created a few common simple insights to show you what the tool can do.{' '}
+            Here are a few example insights to show you what the tool can do.{' '}
             <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                 Explore more use cases.
             </Link>
@@ -63,13 +63,13 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
             dataKey: 'a',
             name: 'CSS Modules',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'type:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
         },
         {
             dataKey: 'b',
             name: 'Global CSS',
             stroke: DATA_SERIES_COLORS.RED,
-            query: 'type:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
         },
     ],
     xAxis: {
