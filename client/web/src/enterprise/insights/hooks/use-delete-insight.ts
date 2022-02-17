@@ -7,11 +7,14 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { Insight } from '../core/types'
+import { getTrackingTypeByInsightType } from '../pings'
+
+type DeletionInsight = Pick<Insight, 'id' | 'title' | 'viewType'>
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
 export interface UseDeleteInsightAPI {
-    delete: (insight: Pick<Insight, 'id' | 'title' | 'type'>) => Promise<void>
+    delete: (insight: DeletionInsight) => Promise<void>
     loading: boolean
     error: ErrorLike | undefined
 }
@@ -27,7 +30,7 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
     const [error, setError] = useState<ErrorLike | undefined>()
 
     const handleDelete = useCallback(
-        async (insight: Pick<Insight, 'id' | 'title' | 'type'>) => {
+        async (insight: DeletionInsight) => {
             const shouldDelete = window.confirm(`Are you sure you want to delete the insight "${insight.title}"?`)
 
             // Prevent double call if we already have ongoing request
@@ -40,7 +43,9 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
 
             try {
                 await deleteInsight(insight.id).toPromise()
-                eventLogger.log('InsightRemoval', { insightType: insight.type }, { insightType: insight.type })
+                const insightType = getTrackingTypeByInsightType(insight.viewType)
+
+                eventLogger.log('InsightRemoval', { insightType }, { insightType })
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
                 console.error(error)

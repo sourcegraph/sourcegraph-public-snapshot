@@ -10,6 +10,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     LangStatsInsightCreationContent,
@@ -81,8 +82,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 telemetryService.log(
                     'InsightAddition',
-                    { insightType: 'codeStatsInsights' },
-                    { insightType: 'codeStatsInsights' }
+                    { insightType: CodeInsightTrackType.LangStatsInsight },
+                    { insightType: CodeInsightTrackType.LangStatsInsight }
                 )
 
                 onSuccessfulCreation(insight)

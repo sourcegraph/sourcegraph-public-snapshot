@@ -45,8 +45,8 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, className = '', layout = ChartViewContentLayout.ByParentSize, onDatumLinkClick = noop } = props
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
-    // link which we've got from nearest datum point to user cursor position. This allows user
-    // not to aim on small point on the chart and just click somewhere around the point.
+    // link which we've got from the nearest datum point to user cursor position. This allows user
+    // not to aim at small point on the chart and just click somewhere around the point.
     const linkHandler = useCallback(
         (event: DatumZoneClickEvent): void => {
             if (!event.link) {

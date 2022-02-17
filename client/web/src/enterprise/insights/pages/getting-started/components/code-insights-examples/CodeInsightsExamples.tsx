@@ -4,6 +4,7 @@ import React from 'react'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
@@ -12,32 +13,36 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../pings'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsExamples.module.scss'
 
-export interface CodeInsightsExamples extends React.HTMLAttributes<HTMLElement> {}
+export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples> = props => (
-    <section {...props}>
-        <h2>Example insights</h2>
-        <p className="text-muted">
-            Here are a few example insights to show you what the tool can do.{' '}
-            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
-                Explore more use cases.
-            </Link>
-        </p>
+export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
+    const { telemetryService, ...otherProps } = props
+    return (
+        <section {...otherProps}>
+            <h2>Example insights</h2>
+            <p className="text-muted">
+                Here are a few example insights to show you what the tool can do.{' '}
+                <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                    Explore more use cases.
+                </Link>
+            </p>
 
-        <div className={styles.section}>
-            <CodeInsightSearchExample className={styles.card} />
-            <CodeInsightCaptureExample className={styles.card} />
-        </div>
-    </section>
-)
+            <div className={styles.section}>
+                <CodeInsightSearchExample telemetryService={telemetryService} className={styles.card} />
+                <CodeInsightCaptureExample telemetryService={telemetryService} className={styles.card} />
+            </div>
+        </section>
+    )
+}
 
-interface ExampleCardProps {
+interface ExampleCardProps extends TelemetryProps {
     className?: string
 }
 
@@ -86,7 +91,15 @@ const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
 })
 
 const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { className } = props
+    const { telemetryService, className } = props
+    const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
+    })
+
+    const handleTemplateLinkClick = (): void => {
+        telemetryService.log('InsightsGetStartedBigTemplateClick')
+    }
 
     return (
         <View.Root
@@ -106,10 +119,13 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
                     size="sm"
                     className={styles.actionLink}
                     to={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    onClick={handleTemplateLinkClick}
                 >
                     Use as template
                 </Button>
             }
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             <div className={styles.chart}>
                 <ParentSize>
@@ -195,7 +211,15 @@ const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { className } = props
+    const { telemetryService, className } = props
+    const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
+    })
+
+    const handleTemplateLinkClick = (): void => {
+        telemetryService.log('GetStartedBigTemplateClick')
+    }
 
     return (
         <View.Root
@@ -210,11 +234,14 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
                     size="sm"
                     className={styles.actionLink}
                     to={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    onClick={handleTemplateLinkClick}
                 >
                     Use as template
                 </Button>
             }
-            className={classNames(className)}
+            className={className}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             <div className={styles.captureGroup}>
                 <div className={styles.chart}>

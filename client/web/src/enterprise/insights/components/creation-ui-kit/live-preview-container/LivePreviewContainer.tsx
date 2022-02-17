@@ -4,7 +4,6 @@ import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
@@ -29,6 +28,7 @@ export interface LivePreviewContainerProps {
     description?: ReactNode
     className?: string
     onUpdateClick: () => void
+    children?: (data: ChartContent) => ReactNode
 }
 
 export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContainerProps>): ReactElement {
@@ -44,6 +44,7 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
         mockMessage,
         description,
         chartContentClassName,
+        children,
     } = props
 
     return (
@@ -64,12 +65,19 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
                     <View.ErrorContent error={dataOrError} title="" />
                 ) : (
                     <LineChartSettingsContext.Provider value={LINE_CHART_SETTINGS}>
-                        <View.Content
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            content={[dataOrError ?? defaultMock]}
-                            layout={ChartViewContentLayout.ByContentSize}
-                            className={classNames({ [styles.chartWithMock]: !dataOrError })}
-                        />
+                        {dataOrError ? (
+                            children ? (
+                                children(dataOrError)
+                            ) : (
+                                <View.Content content={[dataOrError]} layout={ChartViewContentLayout.ByContentSize} />
+                            )
+                        ) : (
+                            <View.Content
+                                content={[defaultMock]}
+                                layout={ChartViewContentLayout.ByContentSize}
+                                className={styles.chartWithMock}
+                            />
+                        )}
 
                         {!dataOrError && <p className={styles.loadingChartInfo}>{mockMessage}</p>}
                     </LineChartSettingsContext.Provider>

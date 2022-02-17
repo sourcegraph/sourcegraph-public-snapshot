@@ -9,6 +9,7 @@ import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { Insight, isVirtualDashboard } from '../../../../core/types'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
+import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface UseHandleSubmitProps {
     originalInsight: Insight | null | undefined
@@ -42,7 +43,9 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
             }).toPromise()
 
-            eventLogger.log('InsightEdit', { insightType: newInsight.type }, { insightType: newInsight.type })
+            const insightType = getTrackingTypeByInsightType(newInsight.viewType)
+
+            eventLogger.log('InsightEdit', { insightType }, { insightType })
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard

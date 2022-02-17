@@ -40,11 +40,7 @@ export const StaticView = forwardRef<HTMLElement, StaticViewProps>((props, refer
             ) : isErrorLike(view) ? (
                 <View.ErrorContent error={view} title={contentId} />
             ) : (
-                <View.Content
-                    telemetryService={telemetryService}
-                    content={view.content}
-                    containerClassName="insight-content-card"
-                />
+                <View.Content content={view.content} />
             )}
         </View.Root>
     )

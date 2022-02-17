@@ -4,6 +4,7 @@ import React, { MouseEvent, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Card,
@@ -35,47 +36,70 @@ function getTemplateURL(template: Template): string {
     }
 }
 
-export const CodeInsightsTemplates: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => (
-    <section {...props}>
-        <h2>Templates</h2>
-        <p className="text-muted">
-            Some of the most popular{' '}
-            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
-                use cases
-            </Link>
-            .
-        </p>
+interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-        <Tabs size="medium" className="mt-3">
-            <TabList>
-                {TEMPLATE_SECTIONS.map(section => (
-                    <Tab key={section.title}>{section.title}</Tab>
-                ))}
-            </TabList>
-            <TabPanels>
-                {TEMPLATE_SECTIONS.map(section => (
-                    <TemplatesPanel key={section.title} templates={section.templates} />
-                ))}
-            </TabPanels>
-        </Tabs>
-    </section>
-)
+export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
+    const { telemetryService, ...otherProps } = props
 
-interface TemplatesPanelProps {
+    const handleTabChange = (index: number): void => {
+        const template = TEMPLATE_SECTIONS[index]
+
+        telemetryService.log('InsightsGetStartedTabClick', { tabName: template.title }, { tabName: template.title })
+    }
+
+    return (
+        <section {...otherProps}>
+            <h2>Templates</h2>
+            <p className="text-muted">
+                Some of the most popular{' '}
+                <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                    use cases
+                </Link>
+                .
+            </p>
+
+            <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
+                <TabList>
+                    {TEMPLATE_SECTIONS.map(section => (
+                        <Tab key={section.title}>{section.title}</Tab>
+                    ))}
+                </TabList>
+                <TabPanels>
+                    {TEMPLATE_SECTIONS.map(section => (
+                        <TemplatesPanel
+                            key={section.title}
+                            sectionTitle={section.title}
+                            templates={section.templates}
+                            telemetryService={telemetryService}
+                        />
+                    ))}
+                </TabPanels>
+            </Tabs>
+        </section>
+    )
+}
+
+interface TemplatesPanelProps extends TelemetryProps {
+    sectionTitle: string
     templates: Template[]
 }
 
 const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
-    const { templates } = props
+    const { templates, sectionTitle, telemetryService } = props
     const [allVisible, setAllVisible] = useState(false)
 
     const maxNumberOfCards = allVisible ? templates.length : 4
     const hasMoreLessButton = templates.length > 4
 
+    const handleShowMoreButtonClick = (): void => {
+        setAllVisible(!allVisible)
+        telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
+    }
+
     return (
         <TabPanel className={styles.cards}>
             {templates.slice(0, maxNumberOfCards).map(template => (
-                <TemplateCard key={template.title} template={template} />
+                <TemplateCard key={template.title} template={template} telemetryService={telemetryService} />
             ))}
 
             {hasMoreLessButton && (
@@ -83,7 +107,7 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
                     variant="secondary"
                     outline={true}
                     className={styles.cardsFooterButton}
-                    onClick={() => setAllVisible(!allVisible)}
+                    onClick={handleShowMoreButtonClick}
                 >
                     {allVisible ? 'Show less' : 'Show all'}
                 </Button>
@@ -92,17 +116,21 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     )
 }
 
-interface TemplateCardProps {
+interface TemplateCardProps extends TelemetryProps {
     template: Template
 }
 
 const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
-    const { template } = props
+    const { template, telemetryService } = props
 
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
             : [{ query: template.templateValues.groupSearchQuery }]
+
+    const handleUseTemplateLinkClick = (): void => {
+        telemetryService.log('InsightGetStartedTemplateClick')
+    }
 
     return (
         <Card as={CardBody} className={styles.card}>
@@ -110,17 +138,29 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
             <CardText>{template.description}</CardText>
 
             <div className={styles.queries}>
-                {series.map(line => line.query && <QueryPanel key={line.query} query={line.query} />)}
+                {series.map(
+                    line =>
+                        line.query && (
+                            <QueryPanel key={line.query} query={line.query} telemetryService={telemetryService} />
+                        )
+                )}
             </div>
 
-            <Button as={Link} to={getTemplateURL(template)} variant="secondary" outline={true} className="mr-auto">
+            <Button
+                as={Link}
+                to={getTemplateURL(template)}
+                variant="secondary"
+                outline={true}
+                className="mr-auto"
+                onClick={handleUseTemplateLinkClick}
+            >
                 Use this template
             </Button>
         </Card>
     )
 }
 
-interface QueryPanelProps {
+interface QueryPanelProps extends TelemetryProps {
     query: string
 }
 
@@ -128,7 +168,7 @@ const copyTooltip = 'Copy query'
 const copyCompletedTooltip = 'Copied!'
 
 const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
-    const { query } = props
+    const { query, telemetryService } = props
 
     const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
 
@@ -142,6 +182,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
         })
 
         event.preventDefault()
+        telemetryService.log('InsightGetStartedTemplateCopyClick')
     }
 
     return (

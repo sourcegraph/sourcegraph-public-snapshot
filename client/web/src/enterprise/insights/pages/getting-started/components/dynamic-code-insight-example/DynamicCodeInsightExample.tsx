@@ -1,16 +1,19 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Card, Link, useObservable, useDebounce } from '@sourcegraph/wildcard'
 
+import * as View from '../../../../../../views'
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
 import { useForm } from '../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
 import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../pings'
 import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../insights/creation/search-insight'
 import { getQueryPatternTypeFilter } from '../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
 import { SearchInsightLivePreview } from '../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
@@ -42,9 +45,11 @@ const createExampleDataSeries = (query: string): EditableDataSeries[] => [
     },
 ]
 
-interface DynamicCodeInsightExampleProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+    const { telemetryService, ...otherProps } = props
+
     const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
 
     const form = useForm<CodeInsightExampleFormValues>({
@@ -75,8 +80,32 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         repositories.meta.setState(state => ({ ...state, value: repository }))
     }
 
+    const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
+    })
+
+    const debouncedQuery = useDebounce(query.input.value, 1000)
+    const debouncedRepositories = useDebounce(repositories.input.value, 1000)
+
+    useEffect(() => {
+        if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
+            telemetryService.log('InsightsGetStartedPageQueryModification')
+        }
+    }, [debouncedQuery, telemetryService])
+
+    useEffect(() => {
+        if (debouncedRepositories !== INITIAL_INSIGHT_VALUES.repositories) {
+            telemetryService.log('InsightsGetStartedPageRepositoriesModification')
+        }
+    }, [debouncedRepositories, telemetryService])
+
+    const handleGetStartedClick = (): void => {
+        telemetryService.log('InsightsGetStartedPrimaryCTAClick')
+    }
+
     return (
-        <Card {...props} className={classNames(styles.wrapper, props.className)}>
+        <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"
@@ -88,7 +117,17 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     disabled={!hasValidLivePreview}
                     isAllReposMode={false}
                     className={styles.chart}
-                />
+                >
+                    {data => (
+                        <View.Content
+                            onMouseEnter={trackMouseEnter}
+                            onMouseLeave={trackMouseLeave}
+                            onDatumLinkClick={trackDatumClicks}
+                            content={[data]}
+                            layout={View.ChartViewContentLayout.ByContentSize}
+                        />
+                    )}
+                </SearchInsightLivePreview>
 
                 <FormInput
                     title="Data series search query"
@@ -136,7 +175,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     <li>Track code smells, ownership, and configurations</li>
                 </ul>
 
-                <Button variant="primary" as={Link} to="/insights/create">
+                <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
                     <PlusIcon className="icon-inline" /> Create your first insight
                 </Button>
 
