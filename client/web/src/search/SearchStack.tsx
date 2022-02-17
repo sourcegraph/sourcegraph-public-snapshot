@@ -34,7 +34,7 @@ import {
 } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
-import { serializeBlocks } from './notebook/serialize'
+import { serializeBlocksToURL } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
 const SEARCH_STACK_ID = 'search:search-stack'
@@ -96,7 +96,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
         const location = {
             pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocks(blocks, window.location.origin),
+            hash: serializeBlocksToURL(blocks, window.location.origin),
         }
         history.push(location)
     }, [entries, history])

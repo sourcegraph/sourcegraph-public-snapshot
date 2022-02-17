@@ -27,6 +27,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -329,6 +330,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     resolveRevision={resolveRevision}
                     fetchRepository={fetchRepository}
                     showSearchContext={showSearchContext}
+                    exportedFileName={basename(blobInfoOrError.filePath)}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
