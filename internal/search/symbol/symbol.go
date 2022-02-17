@@ -86,10 +86,12 @@ func symbolSearchInRepos(
 			defer run.Release()
 
 			matches, err := searchInRepo(ctx, repoRevs, patternInfo, limit)
-			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
-				Results: matches,
-				Stats:   stats,
+				Stats: streaming.Stats{
+					Status:     status,
+					IsLimitHit: limitHit,
+				},
 			})
 			if err != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
