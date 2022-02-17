@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -85,8 +84,6 @@ func TestSearch(t *testing.T) {
 			Client: client,
 		})
 	})
-
-	testSearchOther(t)
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -1337,47 +1334,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 					t.Fatalf("mismatch (-want +got):\n%s", diff)
 				}
 			})
-		}
-	})
-}
-
-// testSearchOther other contains search tests for parts of the GraphQL API
-// which are not replicated in the streaming API (statistics and suggestions).
-func testSearchOther(t *testing.T) {
-	t.Run("search statistics", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		var lastResult *gqltestutil.SearchStatsResult
-		// Retry because the configuration update endpoint is eventually consistent
-		err = gqltestutil.Retry(5*time.Second, func() error {
-			// This is a substring that appears in the sgtest/go-diff repository.
-			// It is OK if it starts to appear in other repositories, the test just
-			// checks that it is found in at least 1 Go file.
-			result, err := client.SearchStats("Incomplete-Lines")
-			if err != nil {
-				t.Fatal(err)
-			}
-			lastResult = result
-
-			for _, lang := range result.Languages {
-				if strings.EqualFold(lang.Name, "Go") {
-					return nil
-				}
-			}
-
-			return gqltestutil.ErrContinueRetry
-		})
-		if err != nil {
-			t.Fatal(err, "lastResult:", lastResult)
 		}
 	})
 }

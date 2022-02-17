@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -769,38 +768,6 @@ func TestZeroElapsedMilliseconds(t *testing.T) {
 	r := &SearchResultsResolver{}
 	if got := r.ElapsedMilliseconds(); got != 0 {
 		t.Fatalf("got %d, want %d", got, 0)
-	}
-}
-
-func TestIsContextError(t *testing.T) {
-	cases := []struct {
-		err  error
-		want bool
-	}{
-		{
-			context.Canceled,
-			true,
-		},
-		{
-			context.DeadlineExceeded,
-			true,
-		},
-		{
-			errors.Wrap(context.Canceled, "wrapped"),
-			true,
-		},
-		{
-			errors.New("not a context error"),
-			false,
-		},
-	}
-	ctx := context.Background()
-	for _, c := range cases {
-		t.Run(c.err.Error(), func(t *testing.T) {
-			if got := isContextError(ctx, c.err); got != c.want {
-				t.Fatalf("wanted %t, got %t", c.want, got)
-			}
-		})
 	}
 }
 

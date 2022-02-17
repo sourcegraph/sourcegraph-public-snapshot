@@ -50,7 +50,7 @@ type SearchArgs struct {
 type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
-	Stats(context.Context) (*searchResultsStats, error)
+	Stats(context.Context) (dummySearchResultsStats, error)
 
 	Inputs() run.SearchInputs
 }
