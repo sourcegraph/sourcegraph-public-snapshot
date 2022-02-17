@@ -289,14 +289,16 @@ func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 }
 
 type Server struct {
-	db            *sql.DB
-	git           Git
-	createParser  func() ParseSymbolsFunc
-	status        *ServerStatus
-	repoUpdates   chan struct{}
-	indexRequests chan indexRequest
-	maxRepos      int
-	logQueries    bool
+	db                 *sql.DB
+	git                Git
+	createParser       func() ParseSymbolsFunc
+	status             *ServerStatus
+	repoUpdates        chan struct{}
+	indexRequests      chan indexRequest
+	maxRepos           int
+	logQueries         bool
+	repoCommitToDone   map[string]chan struct{}
+	repoCommitToDoneMu sync.Mutex
 }
 
 func NewServer(
@@ -309,14 +311,16 @@ func NewServer(
 	indexRequestsQueueSize int,
 ) (*Server, error) {
 	server := &Server{
-		db:            db,
-		git:           git,
-		createParser:  createParser,
-		status:        NewStatus(),
-		repoUpdates:   make(chan struct{}, 1),
-		indexRequests: make(chan indexRequest, indexRequestsQueueSize),
-		maxRepos:      maxRepos,
-		logQueries:    logQueries,
+		db:                 db,
+		git:                git,
+		createParser:       createParser,
+		status:             NewStatus(),
+		repoUpdates:        make(chan struct{}, 1),
+		indexRequests:      make(chan indexRequest, indexRequestsQueueSize),
+		maxRepos:           maxRepos,
+		logQueries:         logQueries,
+		repoCommitToDone:   map[string]chan struct{}{},
+		repoCommitToDoneMu: sync.Mutex{},
 	}
 
 	err := server.startCleanupThread()
@@ -334,10 +338,14 @@ func NewServer(
 	return server, nil
 }
 
-type indexRequest struct {
+type repoCommit struct {
 	repo   string
 	commit string
-	done   chan<- error
+}
+
+type indexRequest struct {
+	repoCommit
+	done chan struct{}
 }
 
 func (s *Server) startIndexingThread() (err error) {
@@ -356,10 +364,10 @@ func (s *Server) startIndexingThread() (err error) {
 
 		for indexRequest := range s.indexRequests {
 			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, parse)
+			close(indexRequest.done)
 			if err != nil {
 				log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
 			}
-			indexRequest.done <- err
 		}
 	}()
 
@@ -1065,25 +1073,29 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	if err != nil {
 		return nil, err
 	} else if !present {
-		done := make(chan error, 1)
 
 		// Try to send an index request.
-		select {
-		case s.indexRequests <- indexRequest{repo: repo, commit: commit, done: done}:
-		default:
-			return nil, errors.Newf("the indexing queue is full")
+		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commit})
+		if err != nil {
+			return nil, err
 		}
 
 		// Wait for indexing to complete or the request to be canceled.
 		threadStatus.Tasklog.Start("awaiting indexing completion")
 		select {
-		case err := <-done:
+		case <-done:
+			threadStatus.Tasklog.Start("recheck commit presence")
+			_, _, present, err = GetCommit(ctx, s.db, repo, commit)
 			if err != nil {
-				return nil, errors.Newf("indexing failed: %s", err)
+				return nil, err
+			}
+			if !present {
+				return nil, errors.Newf("indexing failed, check server logs")
 			}
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
+
 	}
 
 	// Finally search.
@@ -1093,6 +1105,43 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	}
 
 	return blobs, nil
+}
+
+func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
+	key := fmt.Sprintf("%s@%s", rc.repo, rc.commit)
+
+	s.repoCommitToDoneMu.Lock()
+
+	if done, ok := s.repoCommitToDone[key]; ok {
+		s.repoCommitToDoneMu.Unlock()
+		return done, nil
+	}
+
+	done := make(chan struct{})
+
+	s.repoCommitToDone[key] = done
+	s.repoCommitToDoneMu.Unlock()
+	go func() {
+		<-done
+		s.repoCommitToDoneMu.Lock()
+		delete(s.repoCommitToDone, key)
+		s.repoCommitToDoneMu.Unlock()
+	}()
+
+	request := indexRequest{
+		repoCommit: repoCommit{
+			repo:   rc.repo,
+			commit: rc.commit,
+		},
+		done: done}
+
+	select {
+	case s.indexRequests <- request:
+	default:
+		return nil, errors.Newf("the indexing queue is full")
+	}
+
+	return done, nil
 }
 
 func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]Blob, error) {
