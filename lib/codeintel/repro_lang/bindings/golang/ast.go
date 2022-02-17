@@ -1,4 +1,4 @@
-package repro_lang
+package golang
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package repro_lang
+package golang
 
 import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 

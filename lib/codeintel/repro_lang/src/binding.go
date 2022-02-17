@@ -1,4 +1,4 @@
-package repro_lang
+package src
 
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_repro_lang();
