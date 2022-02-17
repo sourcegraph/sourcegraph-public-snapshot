@@ -33,12 +33,14 @@ const TERRAFORM_VERSIONS: Template = {
         series: [
             {
                 name: '1.1.0',
-                query: 'app.terraform.io/(.*)\\n version =(.*)1.1.0 lang:Terraform archived:no fork:no',
+                query:
+                    'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: '1.2.0',
-                query: 'app.terraform.io/(.*)\\n version =(.*)1.2.0 lang:Terraform archived:no fork:no',
+                query:
+                    'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -151,7 +153,7 @@ const TS_JS_USAGE: Template = {
                 stroke: DATA_SERIES_COLORS.INDIGO,
             },
             {
-                name: 'TypeScript',
+                name: 'JavaScript',
                 query: 'select:file lang:JavaScript',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
