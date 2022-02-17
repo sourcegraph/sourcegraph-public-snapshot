@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -34,7 +35,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -78,7 +79,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			return false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.FakeSearcher{}
 
@@ -156,7 +157,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -196,7 +197,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			return false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.FakeSearcher{}
 
@@ -251,7 +252,7 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -269,7 +270,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			panic("unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	trueVal := true
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
@@ -326,6 +327,44 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
 		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
+	}
+}
+
+func TestRepoShouldBeSearched(t *testing.T) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+		repoName := repo
+		switch repoName {
+		case "foo/one":
+			onMatches([]*protocol.FileMatch{{Path: "main.go"}})
+			return false, nil
+		case "foo/no-filematch":
+			onMatches([]*protocol.FileMatch{})
+			return false, nil
+		default:
+			return false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { searcher.MockSearch = nil }()
+	info := &search.TextPatternInfo{
+		FileMatchLimit:               limits.DefaultMaxSearchResults,
+		Pattern:                      "foo",
+		FilePatternsReposMustInclude: []string{"main"},
+	}
+
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !shouldBeSearched {
+		t.Errorf("expected repo to be searched, got shouldn't be searched")
+	}
+
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouldBeSearched {
+		t.Errorf("expected repo to not be searched, got should be searched")
 	}
 }
 
