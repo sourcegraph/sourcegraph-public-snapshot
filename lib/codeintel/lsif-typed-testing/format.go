@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// FormatSnapshots renders the provided LSIF indexes into a pretty-printed text format
+// FormatSnapshots renders the provided LSIF index into a pretty-printed text format
 // that is suitable for snapshot testing.
 func FormatSnapshots(
 	index *lsif_typed.Index,
@@ -41,13 +41,13 @@ func FormatSnapshots(
 // FormatSnapshot renders the provided LSIF index into a pretty-printed text format
 // that is suitable for snapshot testing.
 func FormatSnapshot(
-	x *lsif_typed.Document,
+	document *lsif_typed.Document,
 	index *lsif_typed.Index,
 	commentSyntax string,
 	formatter lsif_typed.SymbolFormatter,
 ) (string, error) {
 	b := strings.Builder{}
-	uri, err := url.Parse(filepath.Join(index.Metadata.ProjectRoot, x.RelativePath))
+	uri, err := url.Parse(filepath.Join(index.Metadata.ProjectRoot, document.RelativePath))
 	if err != nil {
 		return "", err
 	}
@@ -58,9 +58,9 @@ func FormatSnapshot(
 	if err != nil {
 		return "", err
 	}
-	symtab := x.SymbolTable()
-	sort.SliceStable(x.Occurrences, func(i, j int) bool {
-		return isLsifRangeLess(x.Occurrences[i].Range, x.Occurrences[j].Range)
+	symtab := document.SymbolTable()
+	sort.SliceStable(document.Occurrences, func(i, j int) bool {
+		return isLsifRangeLess(document.Occurrences[i].Range, document.Occurrences[j].Range)
 	})
 	var formattingError error
 	formatSymbol := func(symbol string) string {
@@ -77,18 +77,18 @@ func FormatSnapshot(
 		b.WriteString(strings.Repeat(" ", len(commentSyntax)))
 		b.WriteString(strings.ReplaceAll(line, "\t", " "))
 		b.WriteString("\n")
-		for i < len(x.Occurrences) && x.Occurrences[i].Range[0] == int32(lineNumber) {
-			occ := x.Occurrences[i]
+		for i < len(document.Occurrences) && document.Occurrences[i].Range[0] == int32(lineNumber) {
+			occ := document.Occurrences[i]
 			pos := lsif_typed.NewRange(occ.Range)
 			if !pos.IsSingleLine() {
 				continue
 			}
 			b.WriteString(commentSyntax)
-			for indent := 0; indent < pos.Start.Character; indent++ {
+			for indent := int32(0); indent < pos.Start.Character; indent++ {
 				b.WriteRune(' ')
 			}
 			length := pos.End.Character - pos.Start.Character
-			for caret := 0; caret < length; caret++ {
+			for caret := int32(0); caret < length; caret++ {
 				b.WriteRune('^')
 			}
 			b.WriteRune(' ')
@@ -102,7 +102,7 @@ func FormatSnapshot(
 			b.WriteString(formatSymbol(occ.Symbol))
 
 			if info, ok := symtab[occ.Symbol]; ok && isDefinition {
-				prefix := "\n" + commentSyntax + strings.Repeat(" ", pos.Start.Character)
+				prefix := "\n" + commentSyntax + strings.Repeat(" ", int(pos.Start.Character))
 				for _, documentation := range info.Documentation {
 					b.WriteString(prefix)
 					b.WriteString("documentation ")

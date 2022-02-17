@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseSymbol(t *testing.T) {
@@ -62,9 +63,7 @@ func TestParseSymbol(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Symbol, func(t *testing.T) {
 			obtained, err := ParseSymbol(test.Symbol)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.Nil(t, err)
 			if diff := cmp.Diff(obtained.String(), test.Expected.String()); diff != "" {
 				t.Fatalf("unexpected response (-want +got):\n%s", diff)
 			}

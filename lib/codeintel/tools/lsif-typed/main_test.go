@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 	reproLang "github.com/sourcegraph/sourcegraph/lib/codeintel/repro_lang/bindings/golang"
+	"github.com/stretchr/testify/require"
 )
 
 // TestLsifTypedSnapshots runs all the snapshot tests from the "snapshot-input" directory.
@@ -19,9 +20,7 @@ func TestLsifTypedSnapshots(t *testing.T) {
 		var dependencies []*reproLang.Dependency
 		rootDirectory := filepath.Dir(inputDirectory)
 		dirs, err := os.ReadDir(rootDirectory)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 		for _, dir := range dirs {
 			if !dir.IsDir() {
 				continue
@@ -31,9 +30,7 @@ func TestLsifTypedSnapshots(t *testing.T) {
 			}
 			dependencyRoot := filepath.Join(rootDirectory, dir.Name())
 			dependencySources, err := lsif_typed.NewSourcesFromDirectory(dependencyRoot)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.Nil(t, err)
 			dependencies = append(dependencies, &reproLang.Dependency{
 				Package: &lsif_typed.Package{
 					Manager: "repro_manager",
@@ -44,25 +41,17 @@ func TestLsifTypedSnapshots(t *testing.T) {
 			})
 		}
 		index, err := reproLang.Index("file:/"+inputDirectory, testName, sources, dependencies)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 		symbolFormatter := lsif_typed.DescriptorOnlyFormatter
 		symbolFormatter.IncludePackageName = func(name string) bool { return name != testName }
 		snapshots, err := lsiftypedtesting.FormatSnapshots(index, "#", symbolFormatter)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 		index.Metadata.ProjectRoot = "file:/root"
 		lsif, err := reader.ConvertTypedIndexToGraphIndex(index)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 		var obtained bytes.Buffer
-		err = reader.WriteNDJSON(reader.ElementsToEmptyInterfaces(lsif), &obtained)
-		if err != nil {
-			t.Fatal(err)
-		}
+		err = reader.WriteNDJSON(reader.ElementsToJsonElements(lsif), &obtained)
+		require.Nil(t, err)
 		snapshots = append(snapshots, lsif_typed.NewSourceFile(
 			filepath.Join(outputDirectory, "dump.lsif"),
 			"dump.lsif",

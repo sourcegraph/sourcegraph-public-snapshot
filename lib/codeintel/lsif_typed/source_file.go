@@ -77,7 +77,7 @@ func (d *SourceFile) RangeText(position Range) string {
 		}
 		end := position.End.Character
 		if line < position.End.Line {
-			end = len(d.Lines[line])
+			end = int32(len(d.Lines[line]))
 		}
 		result.WriteString(d.Lines[line][start:end])
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/stretchr/testify/require"
 )
 
 var updateLsifSnapshots = flag.Bool("update-lsif-snapshots", false, "update LSIF snapshots files")
@@ -19,9 +20,7 @@ type indexFunction = func(inputDirectory, outputDirectory string, sources []*lsi
 
 func SnapshotTest(t *testing.T, indexFunction indexFunction) {
 	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	inputDirectory := filepath.Join(cwd, "snapshots-input")
 	outputDirectory := filepath.Join(cwd, "snapshots-output")
 	SnapshotTestDirectories(t, inputDirectory, outputDirectory, indexFunction)
@@ -30,14 +29,10 @@ func SnapshotTest(t *testing.T, indexFunction indexFunction) {
 func SnapshotTestDirectories(t *testing.T, inputDirectory, outputDirectory string, indexFunction indexFunction) {
 	if *updateLsifSnapshots {
 		err := os.RemoveAll(outputDirectory)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 	}
 	testCases, err := os.ReadDir(inputDirectory)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	if len(testCases) == 0 {
 		t.Fatalf("no subdirectories: %v", inputDirectory)
 	}
@@ -50,9 +45,7 @@ func SnapshotTestDirectories(t *testing.T, inputDirectory, outputDirectory strin
 			baseInputDirectory := filepath.Join(inputDirectory, testCase.Name())
 			baseOutputDirectory := filepath.Join(outputDirectory, testCase.Name())
 			sources, err := lsif_typed.NewSourcesFromDirectory(baseInputDirectory)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.Nil(t, err)
 			obtainedSnapshots := indexFunction(baseInputDirectory, baseOutputDirectory, sources)
 			snapshotTestSources(t, baseInputDirectory, baseOutputDirectory, obtainedSnapshots)
 		})
@@ -65,18 +58,14 @@ func snapshotTestSources(t *testing.T, inputDirectory, outputDirectory string, o
 			obtained := document.Text
 			outputFile := filepath.Join(outputDirectory, document.RelativePath)
 			expected, err := os.ReadFile(outputFile)
-			if err != nil {
+			if err == nil {
 				expected = []byte{}
 			}
 			if *updateLsifSnapshots {
 				err = os.MkdirAll(filepath.Dir(outputFile), 0755)
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.Nil(t, err)
 				err = os.WriteFile(outputFile, []byte(obtained), 0755)
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.Nil(t, err)
 			} else {
 				edits := myers.ComputeEdits(span.URIFromPath(outputFile), string(expected), obtained)
 				if len(edits) > 0 {

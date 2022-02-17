@@ -55,12 +55,12 @@ func newIdentifier(s *reproSourceFile, n *sitter.Node) *identifier {
 func NewRangePositionFromNode(node *sitter.Node) *lsif_typed.Range {
 	return &lsif_typed.Range{
 		Start: lsif_typed.Position{
-			Line:      int(node.StartPoint().Row),
-			Character: int(node.StartPoint().Column),
+			Line:      int32(node.StartPoint().Row),
+			Character: int32(node.StartPoint().Column),
 		},
 		End: lsif_typed.Position{
-			Line:      int(node.EndPoint().Row),
-			Character: int(node.EndPoint().Column),
+			Line:      int32(node.EndPoint().Row),
+			Character: int32(node.EndPoint().Column),
 		},
 	}
 }

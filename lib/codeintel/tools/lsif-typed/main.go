@@ -44,7 +44,7 @@ func main() {
 			if err != nil {
 				panic(errors.Wrapf(err, "failed reader.ConvertTypedIndexToGraphIndex"))
 			}
-			err = reader.WriteNDJSON(reader.ElementsToEmptyInterfaces(els), os.Stdout)
+			err = reader.WriteNDJSON(reader.ElementsToJsonElements(els), os.Stdout)
 			if err != nil {
 				panic(err)
 			}

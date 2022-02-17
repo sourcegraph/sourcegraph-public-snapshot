@@ -13,6 +13,11 @@ import (
 )
 
 // ConvertTypedIndexToGraphIndex takes an LSIF Typed index and returns the equivalent LSIF Graph index.
+// There doesn't exist a reliable bijection between LSIF Typed and LSIF Typed.
+// This conversion is lossy because LSIF Typed includes metadata that has no equivalent encoding in
+// LSIF Graph, such as lsif_typed.SymbolRole beyond the definition role.
+// Also, LSIF Graph allows encoding certain behaviors that LSIF Typed current doesn't support,
+// such as asymmetric references/definitions.
 func ConvertTypedIndexToGraphIndex(index *lsif_typed.Index) ([]Element, error) {
 	g := newGraph()
 
@@ -115,6 +120,8 @@ func (g *graph) emitPackage(pkg *lsif_typed.Package) int {
 // emitResultSet emits the associated resultSet, definitionResult, referenceResult, implementationResult and hoverResult
 // for the provided lsif_typed.SymbolInformation.
 func (g *graph) emitResultSet(info *lsif_typed.SymbolInformation, monikerKind string) symbolInformationIDs {
+	// NOTE: merge separate documentation sections with a horizontal Markdown rule. Indexers that emit LSIF graph
+	// directly need to emit this separator directly while with LSIF Typed we render the horizontal rule here.
 	hover := strings.Join(info.Documentation, "\n\n---\n\n")
 	definitionResult := -1
 	hasDefinition := monikerKind == "export" || monikerKind == "local"
@@ -174,6 +181,7 @@ func (g *graph) emitDocument(index *lsif_typed.Index, doc *lsif_typed.Document) 
 		rangeID, err := g.emitRange(occ.Range)
 		if err != nil {
 			// Silently skip invalid ranges.
+			// TODO: add option to print a warning or fail fast here https://github.com/sourcegraph/sourcegraph/issues/31415
 			continue
 		}
 		rangeIDs = append(rangeIDs, rangeID)
@@ -245,6 +253,7 @@ func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int)
 	if err != nil || symbol == nil || symbol.Scheme == "" {
 		// Silently ignore symbols that are missing the scheme. The entire symbol does not have to be formatted
 		// according to the BNF grammar in lsif_typed.Symbol, we only reject symbols that are missing the scheme.
+		// TODO: add option to print a warning or fail fast here https://github.com/sourcegraph/sourcegraph/issues/31415
 		return
 	}
 	// Accept the symbol as long as it has a non-empty scheme. We ignore
@@ -346,7 +355,7 @@ func (g *graph) getOrInsertSymbolInformationIDs(symbol string, localResultSetTab
 	return ids
 }
 
-func WriteNDJSON(elements []lsifElement, out io.Writer) error {
+func WriteNDJSON(elements []jsonElement, out io.Writer) error {
 	w := writer.NewJSONWriter(out)
 	for _, e := range elements {
 		w.Write(e)
@@ -354,27 +363,29 @@ func WriteNDJSON(elements []lsifElement, out io.Writer) error {
 	return w.Flush()
 }
 
-type lsifHoverContent struct {
+type jsonHoverContent struct {
 	Kind  string `json:"kind,omitempty"`
 	Value string `json:"value,omitempty"`
 }
-type lsifHoverResult struct {
-	Contents lsifHoverContent `json:"contents"`
+type jsonHoverResult struct {
+	Contents jsonHoverContent `json:"contents"`
 }
-type lsifToolInfo struct {
+type jsonToolInfo struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
-type lsifElement struct {
+
+// jsonElement is similar to Element but it can be serialized to JSON to emit valid LSIF Graph output.
+type jsonElement struct {
 	ID               int              `json:"id"`
 	Name             string           `json:"name,omitempty"`
 	Version          string           `json:"version,omitempty"`
 	ProjectRoot      string           `json:"projectRoot,omitempty"`
 	PositionEncoding string           `json:"positionEncoding,omitempty"`
-	ToolInfo         *lsifToolInfo    `json:"toolInfo,omitempty"`
+	ToolInfo         *jsonToolInfo    `json:"toolInfo,omitempty"`
 	Type             string           `json:"type,omitempty"`
 	Label            string           `json:"label,omitempty"`
-	Result           *lsifHoverResult `json:"result,omitempty"`
+	Result           *jsonHoverResult `json:"result,omitempty"`
 	Uri              string           `json:"uri,omitempty"`
 	Start            *protocol.Pos    `json:"start,omitempty"`
 	End              *protocol.Pos    `json:"end,omitempty"`
@@ -387,10 +398,10 @@ type lsifElement struct {
 	Scheme           string           `json:"scheme,omitempty"`
 }
 
-func ElementsToEmptyInterfaces(els []Element) []lsifElement {
-	var r []lsifElement
+func ElementsToJsonElements(els []Element) []jsonElement {
+	var r []jsonElement
 	for _, el := range els {
-		object := lsifElement{
+		object := jsonElement{
 			ID:    el.ID,
 			Type:  el.Type,
 			Label: el.Label,
@@ -404,7 +415,7 @@ func ElementsToEmptyInterfaces(els []Element) []lsifElement {
 		} else if el.Type == "vertex" {
 			switch el.Label {
 			case "hoverResult":
-				object.Result = &lsifHoverResult{Contents: lsifHoverContent{
+				object.Result = &jsonHoverResult{Contents: jsonHoverContent{
 					Kind:  "markdown",
 					Value: el.Payload.(string),
 				}}
@@ -419,7 +430,7 @@ func ElementsToEmptyInterfaces(els []Element) []lsifElement {
 				object.Version = metaData.Version
 				object.ProjectRoot = metaData.ProjectRoot
 				object.PositionEncoding = metaData.PositionEncoding
-				object.ToolInfo = &lsifToolInfo{
+				object.ToolInfo = &jsonToolInfo{
 					Name:    metaData.ToolInfo.Name,
 					Version: metaData.ToolInfo.Version,
 				}

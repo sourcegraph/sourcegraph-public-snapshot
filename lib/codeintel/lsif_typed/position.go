@@ -11,8 +11,8 @@ type Range struct {
 
 // Position represents an offset position.
 type Position struct {
-	Line      int
-	Character int
+	Line      int32
+	Character int32
 }
 
 // NewRange converts an LSIF Typed range into `Range`
@@ -28,12 +28,12 @@ func NewRange(lsifRange []int32) *Range {
 	}
 	return &Range{
 		Start: Position{
-			Line:      int(lsifRange[0]),
-			Character: int(lsifRange[1]),
+			Line:      lsifRange[0],
+			Character: lsifRange[1],
 		},
 		End: Position{
-			Line:      int(endLine),
-			Character: int(endCharacter),
+			Line:      endLine,
+			Character: endCharacter,
 		},
 	}
 }
@@ -44,7 +44,7 @@ func (r Range) IsSingleLine() bool {
 
 func (r Range) LsifRange() []int32 {
 	if r.Start.Line == r.End.Line {
-		return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Character)}
+		return []int32{r.Start.Line, r.Start.Character, r.End.Character}
 	}
-	return []int32{int32(r.Start.Line), int32(r.Start.Character), int32(r.End.Line), int32(r.End.Character)}
+	return []int32{r.Start.Line, r.Start.Character, r.End.Line, r.End.Character}
 }

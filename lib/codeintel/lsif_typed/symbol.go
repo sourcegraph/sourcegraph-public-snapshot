@@ -21,7 +21,8 @@ func ParseSymbol(symbol string) (*Symbol, error) {
 	return ParsePartialSymbol(symbol, true)
 }
 
-// ParsePartialSymbol parses an LSIF Typed string into the lsif_typed.Symbol message excluding the `.Descriptor` field.
+// ParsePartialSymbol parses an LSIF Typed string into the lsif_typed.Symbol message
+// with the option to exclude the `.Descriptor` field.
 func ParsePartialSymbol(symbol string, includeDescriptors bool) (*Symbol, error) {
 	s := newSymbolParser(symbol)
 	scheme, err := s.acceptSpaceEscapedIdentifier("scheme")
