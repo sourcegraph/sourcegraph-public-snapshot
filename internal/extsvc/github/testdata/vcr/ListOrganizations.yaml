@@ -29,9 +29,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 15 Feb 2022 22:08:45 GMT
+      - Sat, 26 Feb 2022 22:51:41 GMT
       Etag:
-      - W/"4d5a9a451b020057f31f222a5a57408e0f8ca2aed525b6c5ed904a0f2b8beb4d"
+      - W/"3c307138d4492bfa6544e3ed36db7115549ca91cf550c2bf8b33b00fd8af75e5"
       Link:
       - <https://ghe.sgdev.org/api/v3/organizations?page=1&per_page=100&since=113>;
         rel="next", <https://ghe.sgdev.org/api/v3/organizations{?since}>; rel="first"
@@ -55,13 +55,65 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 7e0f68f1-9dfc-4144-911a-e3aeda79a64a
+      - 50471845-334a-4023-b085-ce6f83cb6c3a
       X-Oauth-Scopes:
       - read:org
       X-Runtime-Rack:
-      - "0.033864"
+      - "0.045883"
       X-Xss-Protection:
       - "0"
     status: 200 OK
     code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+      If-None-Match:
+      - W/"3c307138d4492bfa6544e3ed36db7115549ca91cf550c2bf8b33b00fd8af75e5"
+    url: https://ghe.sgdev.org/api/v3/organizations?page=1&per_page=100
+    method: GET
+  response:
+    body: ""
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Date:
+      - Sat, 26 Feb 2022 22:51:41 GMT
+      Etag:
+      - '"3c307138d4492bfa6544e3ed36db7115549ca91cf550c2bf8b33b00fd8af75e5"'
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Request-Id:
+      - 292e2ede-5e81-4276-9f1d-e59974be824a
+      X-Runtime-Rack:
+      - "0.028158"
+      X-Xss-Protection:
+      - "0"
+    status: 304 Not Modified
+    code: 304
     duration: ""

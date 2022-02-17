@@ -2,6 +2,9 @@ package github
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"sort"
 	"strings"
@@ -448,14 +451,12 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
-// Note: To update this test, access the sourcegraph-vcr account saved in 1password. The token used
-// for this test has repo:* and org:read permissions which is more than enough. The token is called
-// sourcegraph-vcr which can also be accessed in 1password or under Personal access tokens in the
-// sourcegraph-vcr user account.
+// Note: to update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org) with
+// username milton in 1password. The token used for this test is named sourcegraph-vcr-token and is
+// also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	rcache.SetupForTest(t)
-
 	t.Run("enterprise", func(t *testing.T) {
+		rcache.SetupForTest(t)
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
 
@@ -463,6 +464,20 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatal("expected orgsCache to be initialised but is nil")
 		}
 
+		hash := cli.auth.Hash()
+		expectedEtagKey := hash + "-orgs-etag-1"
+		expectedOrgsKey := hash + "-orgs-1"
+
+		// When starting from scratch, the cache should be empty.
+		if val, ok := cli.orgsCache.Get(expectedEtagKey); ok {
+			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedEtagKey, val)
+		}
+
+		if val, ok := cli.orgsCache.Get(expectedOrgsKey); ok {
+			t.Fatalf("expected key %q to be empty in cache, but found %s", expectedOrgsKey, val)
+		}
+
+		// Make the API call. This should also populate the cache.
 		orgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
 		if err != nil {
 			t.Fatal(err)
@@ -479,6 +494,60 @@ func TestListOrganizations(t *testing.T) {
 		if !hasNextPage {
 			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
 		}
+
+		rawEtag, ok := cli.orgsCache.Get(expectedEtagKey)
+		if !ok {
+			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedEtagKey)
+		}
+
+		rawOrgs, ok := cli.orgsCache.Get(expectedOrgsKey)
+		if !ok {
+			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedOrgsKey)
+		}
+
+		expectedOrgs, err := json.Marshal(orgs)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Verify that the value of orgs returned from the call to cli.ListOrganizations is the same
+		// as the one stored in the cache.
+		if diff := cmp.Diff(expectedOrgs, rawOrgs); diff != "" {
+			t.Fatalf("mismatch in cached orgs and orgs returned from API: (-want +got):\n%s", diff)
+		}
+
+		// Make another API call. This should read from the cache since the resource has not been
+		// modified upstream.
+		refetchedOrgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(orgs, refetchedOrgs); diff != "" {
+			t.Fatalf("mismatch in refetched orgs: (-want +got):\n%s", diff)
+		}
+
+		if !hasNextPage {
+			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		}
+
+		// We want to verify that for a cached request, the correct header name and its value is
+		// used. Using an httptest.NewServer helps us accomplish this. We don't care about
+		// replicating the server's response here because we've already tested for that prior to
+		// reacing this point.
+		//
+		// If the testServer exits with the fatal error, this test will panic, which is acceptable.
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got := r.Header.Get(headerIfNoneMatch); got != string(rawEtag) {
+				t.Fatalf("expected request header %q to be set to %q but found %q", headerIfNoneMatch, string(rawEtag), got)
+			}
+
+			w.WriteHeader(304)
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli.ListOrganizations(context.Background(), 1)
 	})
 
 	t.Run("githubdotcom", func(t *testing.T) {

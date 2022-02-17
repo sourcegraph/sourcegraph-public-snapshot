@@ -1509,6 +1509,12 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
+// These headers are used for conditional requests.
+var (
+	headerIfNoneMatch     = "If-None-Match"
+	headerIfModifiedSince = "If-Modified-Since"
+)
+
 func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
@@ -1557,6 +1563,17 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		err.Code = resp.StatusCode
 		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
+
+	// If this is a conditional request (If-None-Match or If-Modified-Since header in the request)
+	// and the response is a 304 (resource not modified), the body is empty. Return early. It is now
+	// the caller's responsibility to read from a cache.
+	//
+	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
+	if (req.Header.Get(headerIfNoneMatch) != "" || req.Header.Get(headerIfModifiedSince) != "") &&
+		resp.StatusCode == 304 {
+		return newHttpResponseState(resp.StatusCode, resp.Header), nil
+	}
+
 	err = json.NewDecoder(resp.Body).Decode(result)
 	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
