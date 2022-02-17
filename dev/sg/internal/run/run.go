@@ -106,25 +106,14 @@ func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool
 		}
 
 		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
-		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
 		for _, cmd := range cmds {
 			if strings.HasPrefix(cmd.Cmd, ".bin/") {
-				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
+				fcmd := exec.CommandContext(ctx, fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
 				err = fcmd.Run()
 				if err != nil {
 					return err
 				}
 			}
-		}
-		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-		err = fcmd.Run()
-		if err != nil {
-			return err
 		}
 		return nil
 	}
