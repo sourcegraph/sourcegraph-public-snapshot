@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"context"
+	"math/rand"
 	"sort"
 	"sync"
 	"testing"
@@ -161,6 +162,37 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
 			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails)
+			tst.want.Equal(t, got)
+		})
+	}
+}
+
+func TestExternalServiceCollaborators_pickReposToScanForCollaborators(t *testing.T) {
+	rand.Seed(0)
+	tests := []struct {
+		possibleRepos  []string
+		maxReposToScan int
+		want           autogold.Value
+	}{
+		{
+			possibleRepos:  []string{"o", "b", "f", "d", "e", "u", "a", "h", "l", "s", "u", "b", "m"},
+			maxReposToScan: 8,
+			want:           autogold.Want("three", nil),
+		},
+		{
+			possibleRepos:  []string{"c"},
+			maxReposToScan: 3,
+			want:           autogold.Want("have one", nil),
+		},
+		{
+			possibleRepos:  []string{},
+			maxReposToScan: 3,
+			want:           autogold.Want("have zero", nil),
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.want.Name(), func(t *testing.T) {
+			got := pickReposToScanForCollaborators(tst.possibleRepos, tst.maxReposToScan)
 			tst.want.Equal(t, got)
 		})
 	}

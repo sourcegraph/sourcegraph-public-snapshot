@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"math/rand"
 	"net/url"
 	"sort"
 	"strings"
@@ -57,17 +58,22 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	githubUrl, _ := github.APIRoot(baseURL)
 	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
 
-	// We'll only look in 20 repos. We limit ourselves here to prevent having our github token run
-	// into rate limits (which could affect repo discovery / cloning / other API operations we need
-	// to perform for the user elsewhere.)
-	const maxReposToScan = 20
-	fewRepos := githubCfg.Repos
-	if len(fewRepos) > maxReposToScan {
-		fewRepos = fewRepos[:maxReposToScan]
-	}
+	// We'll look in up to 100 repos for collaborators. Each client.RecentCommitters API call uses
+	// 1 point in GitHub's GraphQL API rate limiting, and we are allowed 5,000 per hour (which we
+	// share with other parts of Sourcegraph such as repo-updater.) When we had searched only 20
+	// repositories here before, we only found collaborators for 13% of users, and so we increased
+	// to 100 repositories instead. Likely anything below 500 would not impact other parts of
+	// Sourcegraph, however that's a lot of network requests to make on behalf of a single user and
+	// we'd need better goroutine scheduling in parallelRecentCommitters to enable that.
+	//
+	// We search within random repositories because many follow a pattern, such as say adding a ton
+	// of `company/lsif-java`, `company/lsif-python`, `company/lsif-typescript` etc repos with likely
+	// the same collaborators, whereas random sampling may give us dissimilar repositories.
+	const maxReposToScan = 100
+	pickedRepos := pickReposToScanForCollaborators(githubCfg.Repos, maxReposToScan)
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters, err := parallelRecentCommitters(ctx, fewRepos, client.RecentCommitters)
+	recentCommitters, err := parallelRecentCommitters(ctx, pickedRepos, client.RecentCommitters)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +84,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if err != nil {
 		return nil, err
 	}
+
 	return filterInvitableCollaborators(recentCommitters, authUserEmails), nil
 }
 
@@ -95,6 +102,21 @@ func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarU
 func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
 
 type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
+
+func pickReposToScanForCollaborators(possibleRepos []string, maxReposToScan int) []string {
+	var picked []string
+	swapRemove := func(i int) {
+		s := possibleRepos
+		s[i] = s[len(s)-1]
+		possibleRepos = s[:len(s)-1]
+	}
+	for len(picked) < maxReposToScan && len(possibleRepos) > 0 {
+		randomRepoIndex := rand.Intn(len(possibleRepos))
+		picked = append(picked, possibleRepos[randomRepoIndex])
+		swapRemove(randomRepoIndex)
+	}
+	return picked
+}
 
 func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitters RecentCommittersFunc) (allRecentCommitters []*invitableCollaboratorResolver, err error) {
 	var (
