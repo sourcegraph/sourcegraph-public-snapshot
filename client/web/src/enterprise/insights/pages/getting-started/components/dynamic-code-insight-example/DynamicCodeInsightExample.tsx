@@ -118,13 +118,13 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
             <section>
                 <h2 className={classNames(styles.cardTitle)}>
-                    Draw insights from your codebase about how different initiatives are tracking over time
+                    Draw insights from your codebase about how different initiatives track over time
                 </h2>
 
                 <p>
-                    Create customizable, visual dashboards with meaningful codebase signals your team can use to answer
-                    questions about how their code is changing and what’s in their code - questions that were difficult
-                    or impossible to answer before.
+                    Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
+                    questions about how your code is changing and what’s in your code {'\u2014'} questions that were
+                    difficult or impossible to answer before.
                 </p>
 
                 <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>
