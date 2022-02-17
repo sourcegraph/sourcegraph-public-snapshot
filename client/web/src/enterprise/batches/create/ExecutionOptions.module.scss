@@ -1,14 +1,10 @@
 .execution-options-menu-button {
-    border-left: 1px solid var(--primary-3);
-    &::after {
-        // Overwrite left margin -- otherwise it applies a margin to the `VisuallyHidden`
-        // and shifts too far left
-        margin-left: 0;
-    }
+    border-left: 1px solid var(--border-primary-color);
+    padding: 0 0.25rem;
 }
 
 .execution-option:last-child {
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
 .execution-option-form {
@@ -23,9 +19,6 @@
 
 .menu-list {
     width: 17rem;
-    // NOTE: The default provided by reach-ui is 'nowrap', which causes overflow scroll
-    // behavior rather than wrapping.
-    white-space: normal;
 }
 
 .expanded-info {

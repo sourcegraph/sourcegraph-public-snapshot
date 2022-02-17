@@ -140,6 +140,7 @@ $theme-colors: (
     --border-color: var(--gray-03);
     --border-color-2: var(--gray-04);
     --border-active-color: var(--primary);
+    --border-primary-color: #0f59aa; // = dark variant of primary-2
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
     --search-filter-separator-color: var(--oc-gray-6);
@@ -198,6 +199,7 @@ $theme-colors: (
     --border-color: var(--gray-09);
     --border-color-2: var(--gray-08);
     --border-active-color: #4393e7;
+    --border-primary-color: #0f59aa; // = dark variant of primary-2
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
     --search-filter-separator-color: var(--oc-gray-6);

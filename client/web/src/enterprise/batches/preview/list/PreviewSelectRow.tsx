@@ -53,8 +53,6 @@ const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'
 export interface PreviewSelectRowProps {
     queryArguments: BatchSpecApplyPreviewVariables
     /** For testing only. */
-    dropDownInitiallyOpen?: boolean
-    /** For testing only. */
     queryPublishableChangesetSpecIDs?: typeof _queryPublishableChangesetSpecIDs
 }
 
@@ -63,7 +61,6 @@ export interface PreviewSelectRowProps {
  * the X selected label. Provides select ALL functionality.
  */
 export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({
-    dropDownInitiallyOpen = false,
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
@@ -122,12 +119,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton
-                                actions={actions}
-                                dropdownMenuPosition="right"
-                                initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action on apply"
-                            />
+                            <DropdownButton actions={actions} placeholder="Select action on apply" />
                         </div>
                     </div>
                 </div>
