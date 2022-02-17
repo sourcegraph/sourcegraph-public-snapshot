@@ -7,7 +7,4 @@ type (
 	Group      = multierror.Group
 )
 
-var (
-	Append         = multierror.Append
-	ListFormatFunc = multierror.ListFormatFunc
-)
+var Append = multierror.Append

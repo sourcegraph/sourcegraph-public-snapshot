@@ -70,10 +70,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 		},
 	}
 	for _, test := range cases {
-		multiErr := &errors.MultiError{
-			Errors:      test.errors,
-			ErrorFormat: errors.ListFormatFunc,
-		}
+		multiErr := &errors.MultiError{Errors: test.errors}
 		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
