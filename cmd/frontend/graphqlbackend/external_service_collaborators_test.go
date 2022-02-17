@@ -7,8 +7,8 @@ import (
 
 	"context"
 	"sort"
-	"testing"
 	"sync"
+	"testing"
 )
 
 func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
@@ -16,7 +16,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 
 	var (
 		callsMu sync.Mutex
-		calls []*github.RecentCommittersParams
+		calls   []*github.RecentCommittersParams
 	)
 	recentCommittersFunc := func(ctx context.Context, params *github.RecentCommittersParams) (*github.RecentCommittersResults, error) {
 		callsMu.Lock()
