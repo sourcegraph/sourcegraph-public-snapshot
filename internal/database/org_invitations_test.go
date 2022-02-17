@@ -197,6 +197,27 @@ func TestOrgInvitations(t *testing.T) {
 		testPendingByID(t, 12345, nil, fmt.Sprintf(errorMessageFormat, 12345))
 	})
 
+	testPendingByOrgID := func(t *testing.T, orgID int32, want []*OrgInvitation) {
+		t.Helper()
+		ois, err := db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		if len(want) == 0 && len(ois) != 0 {
+			t.Errorf("want empty list, got %v", ois)
+		} else if len(want) != 0 && !reflect.DeepEqual(ois, want) {
+			t.Errorf("got %+v, want %+v", ois, want)
+		}
+	}
+	t.Run("GetPendingByOrgID", func(t *testing.T) {
+		testPendingByOrgID(t, oi1.OrgID, []*OrgInvitation{oi1})
+		testPendingByOrgID(t, oi2.OrgID, []*OrgInvitation{oi2, emailInvite})
+
+		// returns empty list if nothing is found
+		testPendingByOrgID(t, 42, []*OrgInvitation{})
+	})
+
 	testListCount := func(t *testing.T, opt OrgInvitationsListOptions, want []*OrgInvitation) {
 		t.Helper()
 		if ois, err := db.OrgInvitations().List(ctx, opt); err != nil {

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"math"
 	"strings"
 	"testing"
@@ -345,6 +346,100 @@ func TestInviteUserToOrganization(t *testing.T) {
 					}
 				}
 				`,
+			},
+		})
+	})
+}
+
+func TestPendingInvitations(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
+
+	//orgs := database.NewMockOrgStore()
+	//orgName := "acme"
+	//mockedOrg := types.Org{ID: 1, Name: orgName}
+	//orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	//orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	invitations := []*database.OrgInvitation{
+		{
+			ID: 1,
+		},
+		{
+			ID: 2,
+		},
+		{
+			ID: 3,
+		},
+	}
+	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations.GetPendingByOrgIDFunc.SetDefaultReturn(invitations, nil)
+
+	db := database.NewMockDB()
+	//db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("Returns invitations in the response", func(t *testing.T) {
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				query PendingInvitations($organization: ID!) {
+					pendingInvitations(organization: $organization) {
+						id
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"organization": string(MarshalOrgID(1)),
+				},
+				ExpectedResult: fmt.Sprintf(`{
+					"pendingInvitations": [
+						{ "id": "%s" },
+						{ "id": "%s" },
+						{ "id": "%s" }
+					]
+				}`,
+					string(MarshalOrgInvitationID(invitations[0].ID)),
+					string(MarshalOrgInvitationID(invitations[1].ID)),
+					string(MarshalOrgInvitationID(invitations[2].ID))),
+			},
+		})
+	})
+
+	t.Run("Returns invitations in the response", func(t *testing.T) {
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				query PendingInvitations($organization: ID!) {
+					pendingInvitations(organization: $organization) {
+						id
+					}
+				}
+				`,
+				Variables: map[string]interface{}{
+					"organization": string(MarshalOrgID(1)),
+				},
+				ExpectedResult: fmt.Sprintf(`{
+					"pendingInvitations": [
+						{ "id": "%s" },
+						{ "id": "%s" },
+						{ "id": "%s" }
+					]
+				}`,
+					string(MarshalOrgInvitationID(invitations[0].ID)),
+					string(MarshalOrgInvitationID(invitations[1].ID)),
+					string(MarshalOrgInvitationID(invitations[2].ID))),
 			},
 		})
 	})
