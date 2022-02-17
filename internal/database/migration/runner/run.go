@@ -110,7 +110,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		"appliedVersions", extractIDs(byState.applied),
 		"pendingVersions", extractIDs(byState.pending),
 		"failedVersions", extractIDs(byState.failed),
-		"expectedDefinitions", extractIDs(definitions),
+		"targetDefinitions", extractIDs(definitions),
 	)
 	logger.Info(
 		"Checking for active migrations",
