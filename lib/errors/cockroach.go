@@ -19,7 +19,4 @@ var (
 	BuildSentryReport = errors.BuildSentryReport
 	Safe              = errors.Safe
 	IsAny             = errors.IsAny
-
-	// TODO - unify with hashicorp/go-multierror
-	CombineErrors = errors.CombineErrors
 )

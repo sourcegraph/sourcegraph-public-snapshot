@@ -23,6 +23,7 @@ func TestIgnore(t *testing.T) {
 		input: testError1,
 		pred:  IsPred(testError2),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError1)
 		},
 	}, {
@@ -35,6 +36,7 @@ func TestIgnore(t *testing.T) {
 		input: Append(testError1, testError2),
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 		},
@@ -42,6 +44,7 @@ func TestIgnore(t *testing.T) {
 		input: Append(testError1, testError2, testError1),
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 		},
@@ -55,6 +58,7 @@ func TestIgnore(t *testing.T) {
 		input: Append(testError1, testError3),
 		pred:  HasTypePred(testError3),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError1)
 			require.False(t, HasType(err, testError3))
 		},
@@ -62,6 +66,7 @@ func TestIgnore(t *testing.T) {
 		input: Wrap(Append(testError1, testError2), "wrapped"),
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 			require.Contains(t, err.Error(), "wrapped")
@@ -76,6 +81,7 @@ func TestIgnore(t *testing.T) {
 		input: Wrapf(testError1, "wrapped %s", "interpolated"),
 		pred:  func(err error) bool { return false },
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError1)
 			require.Contains(t, err.Error(), "interpolated")
 		},
@@ -86,6 +92,7 @@ func TestIgnore(t *testing.T) {
 		),
 		pred: IsPred(testError1),
 		check: func(t *testing.T, err error) {
+			require.Error(t, err)
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
 		},
