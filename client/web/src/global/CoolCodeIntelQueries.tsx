@@ -93,7 +93,22 @@ export const FETCH_REFERENCES_QUERY = gql`
 
 const gitBlobLsifDataQueryFragment = gql`
     fragment RefPanelLsifDataFields on GitBlobLSIFData {
-        references(line: $line, character: $character, first: $first, after: $after, filter: $filter) {
+        references(
+            line: $line
+            character: $character
+            first: $firstReferences
+            after: $afterReferences
+            filter: $filter
+        ) {
+            ...LocationConnectionFields
+        }
+        implementations(
+            line: $line
+            character: $character
+            first: $firstImplementations
+            after: $afterImplementations
+            filter: $filter
+        ) {
             ...LocationConnectionFields
         }
         definitions(line: $line, character: $character, filter: $filter) {
@@ -112,12 +127,18 @@ export const USE_CODE_INTEL_QUERY = gql`
         $path: String!
         $line: Int!
         $character: Int!
-        $after: String
-        $first: Int
+        $afterReferences: String
+        $firstReferences: Int
+        $afterImplementations: String
+        $firstImplementations: Int
         $filter: String
     ) {
         repository(name: $repository) {
+            __typename
+            id
             commit(rev: $commit) {
+                __typename
+                id
                 blob(path: $path) {
                     lsif {
                         ...RefPanelLsifDataFields

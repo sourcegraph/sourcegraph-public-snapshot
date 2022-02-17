@@ -1,9 +1,9 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
-import { asGraphQLResult, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
-import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
+import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
+import { useInterval } from '@sourcegraph/wildcard'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection/ConnectionType'
 import { RefPanelLsifDataFields } from '../graphql-operations'
@@ -11,10 +11,14 @@ import { RefPanelLsifDataFields } from '../graphql-operations'
 export interface UsePreciseCodeIntelResult {
     lsifData?: RefPanelLsifDataFields
     error?: ApolloError
-    fetchMore: () => void
     refetchAll: () => void
     loading: boolean
+
     referencesHasNextPage: boolean
+    implementationsHasNextPage: boolean
+    fetchMoreReferences: () => void
+    fetchMoreImplementations: () => void
+
     startPolling: (pollInterval: number) => void
     stopPolling: () => void
 }
@@ -35,63 +39,14 @@ interface UsePreciseCodeIntelParameters<TResult, TVariables> {
     options?: UsePreciseCodeIntelConfig
 }
 
-const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
-const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
-
 export const usePreciseCodeIntel = <TResult, TVariables, TData>({
     query,
     variables,
     getConnection: getLsifDataFromGraphQLResult,
     options,
 }: UsePreciseCodeIntelParameters<TResult, TVariables>): UsePreciseCodeIntelResult => {
-    const searchParameters = useSearchParameters()
-
-    const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
-    const firstReference = useRef({
-        /**
-         * The number of results that we will typically want to load in the next request (unless `visible` is used).
-         * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
-         */
-        actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || first,
-        /**
-         * Primarily used to determine original request state for URL search parameter logic.
-         */
-        default: first,
-    })
-
-    const initialControls = useMemo(
-        () => ({
-            /**
-             * The `first` variable for our **initial** query.
-             * If this is our first query and we were supplied a value for `visible` load that many results.
-             * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
-             *
-             * 'visible' is the number of results that were visible from previous requests. The initial request of
-             * a result set will load `visible` items, then will request `first` items on each subsequent
-             * request. This has the effect of loading the correct number of visible results when a URL
-             * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
-             */
-            first: (options?.useURL && parseQueryInt(searchParameters, 'visible')) || firstReference.current.actual,
-            /**
-             * The `after` variable for our **initial** query.
-             * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
-             */
-            after: (options?.useURL && searchParameters.get('after')) || after,
-        }),
-        // We only need these controls for the inital request. We do not care about dependency updates.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
-
-    /**
-     * Initial query of the hook.
-     * Subsequent requests (such as further pagination) will be handled through `fetchMore`
-     */
     const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
-        variables: {
-            ...variables,
-            ...initialControls,
-        },
+        variables,
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
     })
@@ -107,14 +62,13 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
 
     const lsifData = data ? getLsifData({ data, error }) : undefined
 
-    const fetchMoreData = async (): Promise<void> => {
+    const fetchMoreReferences = async (): Promise<void> => {
         const cursor = lsifData?.references.pageInfo?.endCursor
 
         await fetchMore({
             variables: {
                 ...variables,
-                // Use cursor paging if possible, otherwise fallback to multiplying `first`
-                ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
+                ...{ afterReferences: cursor },
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
                 if (!fetchMoreResult) {
@@ -122,16 +76,41 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
                 }
 
                 if (cursor) {
-                    // Update resultant data in the cache by prepending the `previousResult`s to the
-                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
-                    // order to access and modify the actual `nodes` in the connection response because we
-                    // don't know the exact response structure
-                    const previousNodes = getLsifData({ data: previousResult }).references.nodes
-                    getLsifData({ data: fetchMoreResult }).references.nodes.unshift(...previousNodes)
-                } else {
-                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
-                    // we just need to update `first` to fetch more results next time
-                    firstReference.current.actual *= 2
+                    const previousData = getLsifData({ data: previousResult })
+                    const previousImplementationNodes = previousData.implementations.nodes
+                    const previousReferencesNodes = previousData.references.nodes
+
+                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                    fetchMoreData.implementations.nodes = previousImplementationNodes
+                    fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
+                }
+
+                return fetchMoreResult
+            },
+        })
+    }
+
+    const fetchMoreImplementations = async (): Promise<void> => {
+        const cursor = lsifData?.implementations.pageInfo?.endCursor
+
+        await fetchMore({
+            variables: {
+                ...variables,
+                ...{ afterImplementations: cursor },
+            },
+            updateQuery: (previousResult, { fetchMoreResult }) => {
+                if (!fetchMoreResult) {
+                    return previousResult
+                }
+
+                if (cursor) {
+                    const previousData = getLsifData({ data: previousResult })
+                    const previousImplementationNodes = previousData.implementations.nodes
+                    const previousReferencesNodes = previousData.references.nodes
+
+                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                    fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
+                    fetchMoreData.references.nodes = previousReferencesNodes
                 }
 
                 return fetchMoreResult
@@ -140,13 +119,15 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
     }
 
     const refetchAll = useCallback(async (): Promise<void> => {
-        const first = lsifData?.references.nodes.length || firstReference.current.actual
+        const referencesLength = lsifData?.references.nodes.length ?? 50
+        const implementationsLength = lsifData?.implementations.nodes.length ?? 50
+        const first = Math.max(referencesLength, implementationsLength)
 
         await refetch({
             ...variables,
             first,
         })
-    }, [lsifData?.references.nodes.length, refetch, variables])
+    }, [lsifData?.references.nodes.length, lsifData?.implementations.nodes.length, refetch, variables])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
@@ -157,9 +138,11 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
         lsifData,
         loading,
         error,
-        fetchMore: fetchMoreData,
+        fetchMoreReferences,
+        fetchMoreImplementations,
         refetchAll,
         referencesHasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
+        implementationsHasNextPage: lsifData ? lsifData.implementations.pageInfo.endCursor !== null : false,
         startPolling: startExecution,
         stopPolling: stopExecution,
     }

@@ -313,11 +313,15 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
 }
 
 export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponentProps> = props => {
-    const { lsifData, error, loading, referencesHasNextPage, fetchMore } = usePreciseCodeIntel<
-        GetPreciseCodeIntelResult,
-        GetPreciseCodeIntelVariables,
-        LocationFields
-    >({
+    const {
+        lsifData,
+        error,
+        loading,
+        referencesHasNextPage,
+        implementationsHasNextPage,
+        fetchMoreReferences,
+        fetchMoreImplementations,
+    } = usePreciseCodeIntel<GetPreciseCodeIntelResult, GetPreciseCodeIntelVariables, LocationFields>({
         query: USE_CODE_INTEL_QUERY,
         variables: {
             repository: props.clickedToken.repoName,
@@ -326,10 +330,12 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             // On the backend the line/character are 0-indexed, but what we
             // get from hoverifier is 1-indexed.
             line: props.clickedToken.line - 1,
-            first: 1,
             character: props.clickedToken.character - 1,
-            after: null,
             filter: props.filter || null,
+            firstReferences: 1,
+            afterReferences: null,
+            firstImplementations: 1,
+            afterImplementations: null,
         },
         options: {
             fetchPolicy: 'cache-first',
@@ -348,6 +354,12 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
                         },
                     },
                     references: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                        },
+                    },
+                    implementations: {
                         nodes: [],
                         pageInfo: {
                             endCursor: null,
@@ -391,6 +403,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
 
     const references = lsifData?.references.nodes
     const definitions = lsifData?.definitions.nodes
+    const implementations = lsifData?.implementations.nodes
     const hover = lsifData?.hover
 
     return (
@@ -426,7 +439,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
                 {references.length} references.{' '}
                 {referencesHasNextPage && !loading && (
                     <Button
-                        onClick={() => fetchMore()}
+                        onClick={() => fetchMoreReferences()}
                         size="sm"
                         display="inline"
                         variant="secondary"
@@ -436,6 +449,31 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
                     </Button>
                 )}
                 {referencesHasNextPage && loading && <LoadingSpinner inline={true} />}
+            </p>
+            <h3>Implementations</h3>
+            <ol>
+                {implementations.map(implementation => (
+                    <li key={implementation.url}>
+                        <Link to={implementation.url}>
+                            <code>{implementation.url}</code>
+                        </Link>
+                    </li>
+                ))}
+            </ol>
+            <p>
+                {implementations.length} implementations.{' '}
+                {implementationsHasNextPage && !loading && (
+                    <Button
+                        onClick={() => fetchMoreImplementations()}
+                        size="sm"
+                        display="inline"
+                        variant="secondary"
+                        className="mx-auto"
+                    >
+                        Load more
+                    </Button>
+                )}
+                {implementationsHasNextPage && loading && <LoadingSpinner inline={true} />}
             </p>
         </>
     )
