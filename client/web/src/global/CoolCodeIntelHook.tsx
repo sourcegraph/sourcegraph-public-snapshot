@@ -14,7 +14,7 @@ export interface UsePreciseCodeIntelResult {
     fetchMore: () => void
     refetchAll: () => void
     loading: boolean
-    hasNextPage: boolean
+    referencesHasNextPage: boolean
     startPolling: (pollInterval: number) => void
     stopPolling: () => void
 }
@@ -159,7 +159,7 @@ export const usePreciseCodeIntel = <TResult, TVariables, TData>({
         error,
         fetchMore: fetchMoreData,
         refetchAll,
-        hasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
+        referencesHasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
         startPolling: startExecution,
         stopPolling: stopExecution,
     }

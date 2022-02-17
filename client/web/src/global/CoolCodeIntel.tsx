@@ -313,7 +313,7 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
 }
 
 export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponentProps> = props => {
-    const { lsifData, error, loading, hasNextPage, fetchMore } = usePreciseCodeIntel<
+    const { lsifData, error, loading, referencesHasNextPage, fetchMore } = usePreciseCodeIntel<
         GetPreciseCodeIntelResult,
         GetPreciseCodeIntelVariables,
         LocationFields
@@ -326,7 +326,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             // On the backend the line/character are 0-indexed, but what we
             // get from hoverifier is 1-indexed.
             line: props.clickedToken.line - 1,
-            first: 50,
+            first: 1,
             character: props.clickedToken.character - 1,
             after: null,
             filter: props.filter || null,
@@ -424,7 +424,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             </ol>
             <p>
                 {references.length} references.{' '}
-                {hasNextPage && !loading && (
+                {referencesHasNextPage && !loading && (
                     <Button
                         onClick={() => fetchMore()}
                         size="sm"
@@ -435,7 +435,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
                         Load more
                     </Button>
                 )}
-                {hasNextPage && loading && <LoadingSpinner inline={true} />}
+                {referencesHasNextPage && loading && <LoadingSpinner inline={true} />}
             </p>
         </>
     )
