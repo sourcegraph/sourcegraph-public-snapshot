@@ -71,7 +71,7 @@ EOF
     --data-binary @-
   local curl_exit="$?"
   if [ "$curl_exit" -eq 0 ]; then
-    echo -e "\n:--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
   else
     echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
   fi
