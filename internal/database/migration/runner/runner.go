@@ -257,11 +257,15 @@ func (r *Runner) pollLock(ctx context.Context, schemaContext schemaContext) (unl
 				"schema", schemaContext.schema.Name,
 			)
 
+			var logOnce sync.Once
+
 			loggedUnlock := func(err error) error {
-				logger.Info(
-					"Released schema migration lock",
-					"schema", schemaContext.schema.Name,
-				)
+				logOnce.Do(func() {
+					logger.Info(
+						"Released schema migration lock",
+						"schema", schemaContext.schema.Name,
+					)
+				})
 
 				return unlock(err)
 			}
