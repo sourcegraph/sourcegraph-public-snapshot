@@ -35,5 +35,7 @@ func init() {
 		return
 	}
 	// HOSTNAME is the name of the pod on kubernetes.
-	libhoney.AddField("pod_name", hostname.Get())
+	if h := hostname.Get(); h != "" {
+		libhoney.AddField("pod_name", h)
+	}
 }
