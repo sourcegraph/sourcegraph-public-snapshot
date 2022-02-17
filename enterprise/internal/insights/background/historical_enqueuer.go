@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	trace2 "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/trace"
+
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -152,6 +154,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		allReposIterator: iterator.ForEach,
 
 		statistics: make(statistics),
+
+		debugLogger: trace2.NewBackgroundDebugEventLogger(trace2.NewDBEventStore(insightsStore.Handle().DB())),
 	}
 
 	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
@@ -258,6 +262,8 @@ type historicalEnqueuer struct {
 	limiter          *rate.Limiter
 
 	statistics statistics
+
+	debugLogger trace2.DebugEventLogger
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
@@ -269,8 +275,19 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		return errors.Wrap(err, "Discover")
 	}
 
+	logStartEvent := func(seriesId string) {
+		startEvent := trace2.DebugEvent{
+			trace2.Field{
+				Key:   "series_id",
+				Value: seriesId,
+			},
+		}
+		h.debugLogger.Log("HISTORICAL_ANALYSIS_STARTED", startEvent...)
+	}
+
 	for _, series := range foundInsights {
 		h.statistics[series.SeriesID] = &repoBackfillStatistics{}
+		logStartEvent(series.SeriesID)
 	}
 
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
@@ -300,8 +317,23 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		h.markInsightsComplete(ctx, foundInsights)
 	}
 
+	logStop := func(seriesId string, backfillStatistics *repoBackfillStatistics) {
+		endEvent := trace2.DebugEvent{
+			trace2.Field{
+				Key:   "series_id",
+				Value: seriesId,
+			},
+			trace2.Field{
+				Key:   "statistics",
+				Value: backfillStatistics,
+			},
+		}
+		h.debugLogger.Log("HISTORICAL_ANALYSIS_STOPPED", endEvent...)
+	}
+
 	for seriesId, backfillStatistics := range h.statistics {
 		log15.Info("backfill statistics", "seriesId", seriesId, "stats", *backfillStatistics)
+		logStop(seriesId, backfillStatistics)
 	}
 
 	return multi

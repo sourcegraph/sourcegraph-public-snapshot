@@ -27,7 +27,7 @@ type CaptureGroupExecutor struct {
 	repoStore database.RepoStore
 	filter    compression.DataFrameFilter
 	clock     func() time.Time
-	tracer    *trace.InsightsTracer
+	tracer    trace.DebugEventLogger
 }
 
 func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
@@ -36,19 +36,11 @@ func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.T
 		// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 		filter: &compression.NoopFilter{},
 		clock:  clock,
-		tracer: trace.NewInsightsTracer(&trace.NoopEventStore{}),
+		tracer: trace.NewBackgroundDebugEventLogger(trace.NewDBEventStore(insightsDb)),
 	}
 }
 
 func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
-	interesting := struct {
-		Total int
-		Diff  int
-	}{Total: 5, Diff: 7}
-	c.tracer.Log("JIT start", trace.Field{
-		Key:   "interesting-things",
-		Value: interesting,
-	})
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
 		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
@@ -60,10 +52,6 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
 	frames := BuildFrames(7, interval, c.clock())
-	c.tracer.Log("BuildFrames", trace.Field{
-		Key:   "frames",
-		Value: frames,
-	})
 
 	type timeCounts map[time.Time]int
 	pivoted := make(map[string]timeCounts)
