@@ -235,7 +235,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
             </div>
             <CodeInsightsQueryBlock
                 as={SyntaxHighlightedSearchQuery}
-                query="patterntype:regexp FROMs+alpine:([d.]+) file:Dockerfile"
+                query="patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile"
                 className="mt-2"
             />
         </View.Root>
