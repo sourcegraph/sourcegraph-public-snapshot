@@ -38,6 +38,7 @@ export interface OptionsPageProps {
     isActivated: boolean
     onToggleActivated: (value: boolean) => void
 
+    initialShowAdvancedSettings?: boolean
     isFullPage: boolean
     showPrivateRepositoryAlert?: boolean
     showSourcegraphCloudAlert?: boolean
@@ -60,6 +61,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     validateSourcegraphUrl,
     isActivated,
     onToggleActivated,
+    initialShowAdvancedSettings = false,
     isFullPage,
     showPrivateRepositoryAlert,
     showSourcegraphCloudAlert,
@@ -70,7 +72,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onChangeSourcegraphUrl,
     suggestedSourcegraphUrls,
 }) => {
-    const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
+    const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
 
     const toggleAdvancedSettings = useCallback(
         () => setShowAdvancedSettings(showAdvancedSettings => !showAdvancedSettings),
