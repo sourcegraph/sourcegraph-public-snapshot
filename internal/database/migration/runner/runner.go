@@ -196,11 +196,8 @@ func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err err
 			return unlock, nil
 		}
 
-		select {
-		case <-time.After(lockPollInterval):
-			continue
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		if err := wait(ctx, lockPollInterval); err != nil {
+			return nil, err
 		}
 	}
 }
@@ -247,7 +244,7 @@ func (r *Runner) withLockedSchemaState(
 	if retry, err := validateSchemaState(ctx, schemaContext, byState); err != nil {
 		return false, err
 	} else if retry {
-		// An index is currently being created. WE return true here to flag to the caller that
+		// An index is currently being created. We return true here to flag to the caller that
 		// we should wait a small time, then be re-invoked. We don't want to take any action
 		// here while the other proceses is working.
 		return true, nil

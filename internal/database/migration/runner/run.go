@@ -158,7 +158,7 @@ func (r *Runner) applyMigrations(
 	} else if retry {
 		// There are active index creation operations ongoing; wait a short time before requerying
 		// the state of the migrations so we don't flood the database with constant queries to the
-		// system catalog. We check here instead of in the caller because we dont' want a delay when
+		// system catalog. We check here instead of in the caller because we don't want a delay when
 		// we drop the lock to create an index concurrently (returning `droppedLock = true` below).
 		return true, wait(ctx, indexPollInterval)
 	}
@@ -281,13 +281,11 @@ pollIndexStatusLoop:
 		// Index is currently being created. Wait a small time and check the index status again. We don't
 		// want to take any action here while the other proceses is working.
 		if exists && status.Phase != nil {
-			select {
-			case <-time.After(indexPollInterval):
-				continue pollIndexStatusLoop
-
-			case <-ctx.Done():
-				return unlocked, ctx.Err()
+			if err := wait(ctx, indexPollInterval); err != nil {
+				return true, err
 			}
+
+			continue pollIndexStatusLoop
 		}
 
 		// Create the index. Ignore duplicate table/index already exists errors. This can happen if there
@@ -331,7 +329,7 @@ pollIndexStatusLoop:
 			continue
 		}
 
-		return unlocked, nil
+		return true, nil
 	}
 }
 
