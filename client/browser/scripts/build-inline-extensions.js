@@ -1,20 +1,22 @@
+const fs = require('fs')
 const path = require('path')
 
 const shelljs = require('shelljs')
 const signale = require('signale')
 
-const extensionNames = require('../bundled-code-intel-extensions.json').extensions || []
+const { extensions: extensionNames = [], revision } = require('../bundled-code-intel-extensions.json')
 
 const toDirectory = path.join(process.cwd(), 'build')
 const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
+const pathToRevisionFile = path.join(process.cwd(), 'code-intel-extensions', 'revision.txt')
 
 // Check if code-intel-extensions has already been fetched
-const codeIntelExtensionsDirectoryExists = shelljs.test('-d', temporarySourceDirectory)
-if (codeIntelExtensionsDirectoryExists) {
+if (fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString() === revision) {
   console.log('Found existing code-intel-extensions.')
 } else {
   console.log('Did not find an existing code-intel-extensions. Running fetch-code-intel-extensions')
   shelljs.exec('yarn run fetch-code-intel-extensions')
+  fs.writeFileSync(pathToRevisionFile, revision)
 }
 
 // Install dependencies
