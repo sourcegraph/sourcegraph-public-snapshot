@@ -12,6 +12,9 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+	"github.com/neelance/parallel"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/errgroup"
@@ -20,11 +23,14 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -33,27 +39,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
-type SearchResultsResolver struct {
-	db database.DB
-	*SearchResults
-
-	// limit is the maximum number of SearchResults to send back to the user.
-	limit int
-
-	// The time it took to compute all results.
-	elapsed time.Duration
-
-	// cache for user settings. Ideally this should be set just once in the code path
-	// by an upstream resolver
-	UserSettings *schema.Settings
-}
 
 func (c *SearchResultsResolver) LimitHit() bool {
 	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
@@ -129,10 +121,21 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return false
 }
 
-// DEPRECATED: the implementation of this was removed when the SearchResultsStats
-// was removed. The method still exists so GraphQL will typecheck, but can be removed
-// as soon as all frontend references to it are gone.
-func (c *SearchResultsResolver) Sparkline() []int32 { return nil }
+// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
+type SearchResultsResolver struct {
+	db database.DB
+	*SearchResults
+
+	// limit is the maximum number of SearchResults to send back to the user.
+	limit int
+
+	// The time it took to compute all results.
+	elapsed time.Duration
+
+	// cache for user settings. Ideally this should be set just once in the code path
+	// by an upstream resolver
+	UserSettings *schema.Settings
+}
 
 type SearchResults struct {
 	Matches result.Matches
@@ -250,6 +253,112 @@ func (sf *searchFilterResolver) LimitHit() bool {
 
 func (sf *searchFilterResolver) Kind() string {
 	return sf.filter.Kind
+}
+
+// blameFileMatch blames the specified file match to produce the time at which
+// the first line match inside of it was authored.
+func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	// Blame the first line match.
+	if len(fm.LineMatches) == 0 {
+		// No line match
+		return time.Time{}, nil
+	}
+	lm := fm.LineMatches[0]
+	hunks, err := git.BlameFile(ctx, fm.Repo.Name, fm.Path, &git.BlameOptions{
+		NewestCommit: fm.CommitID,
+		StartLine:    int(lm.LineNumber),
+		EndLine:      int(lm.LineNumber),
+	}, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return hunks[0].Author.Date, nil
+}
+
+func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
+	var (
+		days     = 30                 // number of days the sparkline represents
+		maxBlame = 100                // maximum number of file results to blame for date/time information.
+		run      = parallel.NewRun(8) // number of concurrent blame ops
+	)
+
+	var (
+		sparklineMu sync.Mutex
+		blameOps    = 0
+	)
+	sparkline = make([]int32, days)
+	addPoint := func(t time.Time) {
+		// Check if the author date of the search result is inside of our sparkline
+		// timerange.
+		now := time.Now()
+		if t.Before(now.Add(-time.Duration(len(sparkline)) * 24 * time.Hour)) {
+			// Outside the range of the sparkline.
+			return
+		}
+		sparklineMu.Lock()
+		defer sparklineMu.Unlock()
+		for n := range sparkline {
+			d1 := now.Add(-time.Duration(n) * 24 * time.Hour)
+			d2 := now.Add(-time.Duration(n-1) * 24 * time.Hour)
+			if t.After(d1) && t.Before(d2) {
+				sparkline[n]++ // on the nth day
+			}
+		}
+	}
+
+	// Consider all of our search results as a potential data point in our
+	// sparkline.
+loop:
+	for _, r := range sr.Matches {
+		r := r // shadow so it doesn't change in the goroutine
+		switch m := r.(type) {
+		case *result.RepoMatch:
+			// We don't care about repo results here.
+			continue
+		case *result.CommitMatch:
+			// Diff searches are cheap, because we implicitly have author date info.
+			addPoint(m.Commit.Author.Date)
+		case *result.FileMatch:
+			// File match searches are more expensive, because we must blame the
+			// (first) line in order to know its placement in our sparkline.
+			blameOps++
+			if blameOps > maxBlame {
+				// We have exceeded our budget of blame operations for
+				// calculating this sparkline, so don't do any more file match
+				// blaming.
+				continue loop
+			}
+
+			run.Acquire()
+			goroutine.Go(func() {
+				defer run.Release()
+
+				// Blame the file match in order to retrieve date informatino.
+				var err error
+				t, err := sr.blameFileMatch(ctx, m)
+				if err != nil {
+					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
+					return
+				}
+				addPoint(t)
+			})
+		default:
+			panic("SearchResults.Sparkline unexpected union type state")
+		}
+	}
+	span := opentracing.SpanFromContext(ctx)
+	span.SetTag("blame_ops", blameOps)
+	return sparkline, nil
 }
 
 var (
@@ -775,21 +884,131 @@ func longer(n int, dt time.Duration) time.Duration {
 	return dt2
 }
 
-// dummySearchResultStats implements the SearchResultsStats interface so
-// GraphQL type-checks, but it is not implemented by anything because the
-// Stats call is deprecated.
-type dummySearchResultsStats interface {
-	ApproximateResultCount() string
-	Sparkline() []int32
-	Languages() []interface {
-		Name() string
-		TotalBytes() float64
-		TotalLines() int32
-	}
+type searchResultsStats struct {
+	JApproximateResultCount string
+	JSparkline              []int32
+
+	sr *searchResolver
+
+	// These items are lazily populated by getResults
+	once    sync.Once
+	results result.Matches
+	err     error
 }
 
-func (r *searchResolver) Stats(ctx context.Context) (dummySearchResultsStats, error) {
-	return nil, errors.New("search stats is deprecated")
+func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
+func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSparkline }
+
+var (
+	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
+	searchResultsStatsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_graphql_search_results_stats_cache_hit",
+		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
+	}, []string{"type"})
+)
+
+func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
+	// Override user context to ensure that stats for this query are cached
+	// regardless of the user context's cancellation. For example, if
+	// stats/sparklines are slow to load on the homepage and all users navigate
+	// away from that page before they load, no user would ever see them and we
+	// would never cache them. This fixes that by ensuring the first request
+	// 'kicks off loading' and places the result into cache regardless of
+	// whether or not the original querier of this information still wants it.
+	originalCtx := ctx
+	ctx = context.Background()
+	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
+
+	cacheKey := r.SearchInputs.OriginalQuery
+	// Check if value is in the cache.
+	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
+	if ok {
+		searchResultsStatsCounter.WithLabelValues("hit").Inc()
+		if err := json.Unmarshal(jsonRes, &stats); err != nil {
+			return nil, err
+		}
+		stats.sr = r
+		return stats, nil
+	}
+
+	// Calculate value from scratch.
+	searchResultsStatsCounter.WithLabelValues("miss").Inc()
+	attempts := 0
+	var v *SearchResultsResolver
+
+	args := r.JobArgs()
+	for {
+		// Query search results.
+		var err error
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
+		if err != nil {
+			return nil, err
+		}
+		agg := streaming.NewAggregatingStream()
+		_, err = j.Run(ctx, r.db, agg)
+		if err != nil {
+			return nil, err // do not cache errors.
+		}
+		v = r.resultsToResolver(&SearchResults{
+			Matches: agg.Results,
+			Stats:   agg.Stats,
+		})
+		if v.MatchCount() > 0 {
+			break
+		}
+
+		status := v.Stats.Status
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
+			break // zero results, but no cloning or timed out repos. No point in retrying.
+		}
+
+		var cloning, timedout int
+		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
+			cloning++
+		})
+		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+			timedout++
+		})
+
+		if attempts > 5 {
+			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", cloning, "timedout", timedout)
+			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", cloning, timedout)
+		}
+
+		// We didn't find any search results. Some repos are cloning or timed
+		// out, so try again in a few seconds.
+		attempts++
+		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
+		time.Sleep(5 * time.Second)
+	}
+
+	sparkline, err := v.Sparkline(ctx)
+	if err != nil {
+		return nil, err // sparkline generation failed, so don't cache.
+	}
+	stats = &searchResultsStats{
+		JApproximateResultCount: v.ApproximateResultCount(),
+		JSparkline:              sparkline,
+		sr:                      r,
+	}
+
+	// Store in the cache if we got non-zero results. If we got zero results,
+	// it should be quick and caching is not desired because e.g. it could be
+	// a query for a repo that has not been added by the user yet.
+	if v.ResultCount() > 0 {
+		jsonRes, err = json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		searchResultsStatsCache.Set(cacheKey, jsonRes)
+	}
+	return stats, nil
+}
+
+// isContextError returns true if ctx.Err() is not nil or if err
+// is an error caused by context cancelation or timeout.
+func isContextError(ctx context.Context, err error) bool {
+	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
 }
 
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
