@@ -3,6 +3,7 @@ description: Create an issue that is automatically attached to the WCAG 2.1 AA T
 title: '[Accessibility]: '
 labels:
 - 'accessibility'
+- 'wcag/2.1'
 - 'wcag/2.1/fixing'
 - 'estimate/3d'
 body:
