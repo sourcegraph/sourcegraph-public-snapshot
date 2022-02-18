@@ -6,6 +6,8 @@ For all use cases, you can also explore your insight by [filtering repositories 
 
 *The sample queries below make the assumption you [do not want to search fork or archived](../references/common_reasons_code_insights_may_not_match_search_results.md#not-including-fork-no-and-archived-no-in-your-insight-query) repositories. You can exclude those flags if you do.*
 
+<!-- everything below this line should be generated according to https://github.com/sourcegraph/sourcegraph/pull/31469 -->
+
 ## Popular
 
 
