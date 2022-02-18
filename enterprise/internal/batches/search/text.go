@@ -21,7 +21,7 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 		return nil, errors.Wrap(err, "parsing search string")
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	terms := []TextSearchTerm{}
 	for _, expr := range tree {
 		if expr.Field != "" {
@@ -58,5 +58,5 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 		}
 	}
 
-	return terms, errs.ErrorOrNil()
+	return terms, errs
 }

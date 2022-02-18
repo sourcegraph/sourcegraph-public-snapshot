@@ -185,13 +185,13 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	opts = append(opts, f.common...)
 
 	var cli http.Client
-	var err *errors.MultiError
+	var err error
 
 	for _, opt := range opts {
 		err = errors.Append(err, opt(&cli))
 	}
 
-	return &cli, err.ErrorOrNil()
+	return &cli, err
 }
 
 // NewFactory returns a Factory that applies the given common

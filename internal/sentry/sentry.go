@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/redact"
-	"github.com/cockroachdb/sentry-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"

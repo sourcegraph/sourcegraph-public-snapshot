@@ -202,7 +202,7 @@ func validateSearchContextQuery(contextQuery string) error {
 	}
 
 	q := plan.ToParseTree()
-	errs := new(errors.MultiError)
+	var errs error
 
 	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
 		switch field {
@@ -250,7 +250,7 @@ func validateSearchContextQuery(contextQuery string) error {
 		}
 	})
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {

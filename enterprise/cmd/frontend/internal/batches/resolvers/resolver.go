@@ -443,7 +443,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 }
 
 func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs *errors.MultiError
+	var errs error
 
 	if in != nil && *in != nil {
 		for _, state := range *in {
@@ -459,7 +459,7 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {

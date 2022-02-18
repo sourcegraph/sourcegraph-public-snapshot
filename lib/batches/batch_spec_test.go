@@ -50,10 +50,7 @@ steps:
 			t.Fatal("no error returned")
 		}
 
-		wantErr := `1 error occurred:
-	* batch spec includes steps but no changesetTemplate
-
-`
+		wantErr := `batch spec includes steps but no changesetTemplate`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
@@ -85,10 +82,7 @@ changesetTemplate:
 
 		// We expect this error to be user-friendly, which is why we test for
 		// it specifically here.
-		wantErr := `1 error occurred:
-	* The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.
-
-`
+		wantErr := `The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
@@ -120,10 +114,7 @@ changesetTemplate:
 			t.Fatal("no error returned")
 		}
 
-		wantErr := `1 error occurred:
-	* step 1 in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version
-
-`
+		wantErr := `step 1 in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
@@ -202,9 +193,7 @@ changesetTemplate:
 		wantErr := `3 errors occurred:
 	* on.0: Must validate one and only one schema (oneOf)
 	* on.0: Must validate at least one schema (anyOf)
-	* on.0: Must validate one and only one schema (oneOf)
-
-`
+	* on.0: Must validate one and only one schema (oneOf)`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)

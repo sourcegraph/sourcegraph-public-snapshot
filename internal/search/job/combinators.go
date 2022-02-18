@@ -65,7 +65,7 @@ func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sende
 		return err
 	})
 
-	var errs *errors.MultiError
+	var errs error
 	if err := requiredGroup.Wait(); err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -82,7 +82,7 @@ func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sende
 	}
 	tr.LazyPrintf("optional group completed")
 
-	return maxAlerter.Alert, errs.ErrorOrNil()
+	return maxAlerter.Alert, errs
 }
 
 // NewParallelJob will create a job that runs all its child jobs in separate
@@ -129,7 +129,7 @@ func (p *ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sende
 			return err
 		})
 	}
-	return maxAlerter.Alert, g.Wait().ErrorOrNil()
+	return maxAlerter.Alert, g.Wait()
 }
 
 // NewTimeoutJob creates a new job that is canceled after the

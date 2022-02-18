@@ -30,10 +30,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *errors.MultiError
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})
@@ -51,10 +51,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *errors.MultiError
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})
@@ -76,10 +76,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *errors.MultiError
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})

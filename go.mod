@@ -28,8 +28,7 @@ require (
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/charmbracelet/glamour v0.5.0
-	github.com/cockroachdb/errors v1.8.6
-	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
+	github.com/cockroachdb/errors v1.8.9
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/crewjam/saml v0.4.6
@@ -50,6 +49,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getsentry/raven-go v0.2.0
+	github.com/getsentry/sentry-go v0.12.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.8.0
@@ -164,7 +164,7 @@ require (
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.9
 	google.golang.org/api v0.66.0

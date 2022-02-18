@@ -1185,7 +1185,7 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		return nonValidationErr
 	}
 
-	errs := &errors.MultiError{ErrorFormat: formatChangesetSpecHeadRefConflicts}
+	var errs changesetSpecHeadRefConflictErrs
 	for _, c := range conflicts {
 		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
 
@@ -1193,10 +1193,9 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		if repo, ok := accessibleReposByID[c.RepoID]; ok {
 			conflictErr.repo = repo
 		}
-		errs = errors.Append(errs, conflictErr)
+		errs = append(errs, conflictErr)
 	}
-
-	return errs.ErrorOrNil()
+	return errs
 }
 
 type changesetSpecHeadRefConflict struct {
@@ -1212,7 +1211,11 @@ func (c changesetSpecHeadRefConflict) Error() string {
 	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
 }
 
-func formatChangesetSpecHeadRefConflicts(es []error) string {
+// changesetSpecHeadRefConflictErrs represents a set of changesetSpecHeadRefConflict and
+// implements `Error` to render the errors nicely.
+type changesetSpecHeadRefConflictErrs []*changesetSpecHeadRefConflict
+
+func (es changesetSpecHeadRefConflictErrs) Error() string {
 	if len(es) == 1 {
 		return fmt.Sprintf("Validating changeset specs resulted in an error:\n* %s\n", es[0])
 	}
@@ -1319,7 +1322,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return errors.Wrap(err, "loading batch spec workspace execution jobs")
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
@@ -1329,7 +1332,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		jobIDs[i] = j.ID
 	}
 
-	if err := errs.ErrorOrNil(); err != nil {
+	if err := errs; err != nil {
 		return err
 	}
 

@@ -63,7 +63,7 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 	// Handle the specs. We'll drain ps.rand while we add entries to ps.id,
 	// which means we can ensure that all the given changeset spec IDs mapped to
 	// a changeset spec.
-	var errs *errors.MultiError
+	var errs error
 	ps.id = map[int64]*btypes.ChangesetUiPublicationState{}
 	for rid, pv := range ps.rand {
 		if spec, ok := specs[rid]; ok {
@@ -84,5 +84,5 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 		errs = errors.Append(errs, errors.Newf("changeset spec %q not found", rid))
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }

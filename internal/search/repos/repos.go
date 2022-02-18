@@ -77,7 +77,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Limit = 500
 	}
 
-	errs := new(errors.MultiError)
+	var errs error
 
 	for {
 		page, err := r.Resolve(ctx, opts)
@@ -101,7 +101,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Cursors = page.Next
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
@@ -335,7 +335,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 					if hasCommitAfter, err := git.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
-							errors.Append(&res.MultiError, err)
+							res.MultiError = errors.Append(res.MultiError, err)
 							res.Unlock()
 						}
 						continue
@@ -372,7 +372,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	err = res.ErrorOrNil()
+	err = res.MultiError
 	if len(res.MissingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}

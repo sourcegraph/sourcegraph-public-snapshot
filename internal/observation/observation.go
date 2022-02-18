@@ -202,21 +202,24 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.
 type ErrCollector struct {
-	multi       *errors.MultiError
+	errs        error
 	extraFields []log.Field
 }
 
-func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &errors.MultiError{}} }
+func NewErrorCollector() *ErrCollector { return &ErrCollector{errs: nil} }
 
 func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
 	if err != nil && *err != nil {
-		e.multi.Errors = append(e.multi.Errors, *err)
+		e.errs = errors.Append(e.errs, *err)
 		e.extraFields = append(e.extraFields, fields...)
 	}
 }
 
 func (e *ErrCollector) Error() string {
-	return e.multi.Error()
+	if e.errs == nil {
+		return ""
+	}
+	return e.errs.Error()
 }
 
 // Args configures the observation behavior of an invocation of an operation.
@@ -273,7 +276,7 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 	if root != nil {
 		endFunc = func(count float64, args Args) {
 			if *root != nil {
-				errTracer.multi.Errors = append(errTracer.multi.Errors, *root)
+				errTracer.errs = errors.Append(errTracer.errs, *root)
 			}
 			endObservation(count, args)
 		}
@@ -329,7 +332,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
-			if len(multi.multi.Errors) == 0 {
+			if multi.errs == nil {
 				err = nil
 			}
 			logFields = append(logFields, multi.extraFields...)

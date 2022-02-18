@@ -97,14 +97,14 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 	wg.Wait()
 	close(errorCh)
 
-	var errs *errors.MultiError
+	var errs error
 	for err := range errorCh {
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schema, error) {

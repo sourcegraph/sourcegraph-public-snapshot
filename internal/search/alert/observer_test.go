@@ -19,22 +19,22 @@ import (
 func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	cases := []struct {
 		name                 string
-		multiErr             *errors.MultiError
+		multiErr             error
 		wantAlertDescription string
 	}{
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.RepoLimitError{ResultType: "diff", Max: 50}),
+			multiErr:             errors.Append(nil, &commit.RepoLimitError{ResultType: "diff", Max: 50}),
 			wantAlertDescription: `Diff search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.RepoLimitError{ResultType: "commit", Max: 50}),
+			multiErr:             errors.Append(nil, &commit.RepoLimitError{ResultType: "commit", Max: 50}),
 			wantAlertDescription: `Commit search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             errors.Append(&errors.MultiError{}, &commit.TimeLimitError{ResultType: "commit", Max: 10000}),
+			multiErr:             errors.Append(nil, &commit.TimeLimitError{ResultType: "commit", Max: 10000}),
 			wantAlertDescription: `Commit search can currently only handle searching across 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`,
 		},
 	}
@@ -70,10 +70,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 		},
 	}
 	for _, test := range cases {
-		multiErr := &errors.MultiError{
-			Errors:      test.errors,
-			ErrorFormat: errors.ListFormatFunc,
-		}
+		multiErr := errors.Append(nil, test.errors...)
 		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {

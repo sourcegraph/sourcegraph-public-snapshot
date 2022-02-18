@@ -158,13 +158,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "1 error",
 			kind:    extsvc.KindGitHub,
 			config:  `{"repositoryQuery": ["none"], "token": "fake"}`,
-			wantErr: "1 error occurred:\n\t* url is required\n\n",
+			wantErr: "url is required",
 		},
 		{
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set\n\n",
+			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set",
 		},
 		{
 			name:   "no conflicting rate limit",
@@ -199,7 +199,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 					}, nil
 				}
 			},
-			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
+			wantErr: "existing external service, \"GITHUB 1\", already has a rate limit set",
 		},
 		{
 			name:            "prevent code hosts that are not allowed",

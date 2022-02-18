@@ -416,7 +416,7 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		return nil, errors.Wrap(err, "unable to validate config against schema")
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	for _, err := range res.Errors() {
 		e := err.String()
 		// Remove `(root): ` from error formatting since these errors are
@@ -470,7 +470,7 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		err = validateOtherExternalServiceConnection(&c)
 	}
 
-	return normalized, errors.Append(errs, err).ErrorOrNil()
+	return normalized, errors.Append(errs, err)
 }
 
 // Neither our JSON schema library nor the Monaco editor we use supports
@@ -503,7 +503,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 }
 
 func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
-	err := new(errors.MultiError)
+	var err error
 	for _, validate := range e.gitHubValidators {
 		err = errors.Append(err, validate(c))
 	}
@@ -517,22 +517,22 @@ func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id 
 
 	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
-	return err.ErrorOrNil()
+	return err
 }
 
 func (e *externalServiceStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	err := new(errors.MultiError)
+	var err error
 	for _, validate := range e.gitLabValidators {
 		err = errors.Append(err, validate(c, ps))
 	}
 
 	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
 
-	return err.ErrorOrNil()
+	return err
 }
 
 func (e *externalServiceStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
-	err := new(errors.MultiError)
+	var err error
 	for _, validate := range e.bitbucketServerValidators {
 		err = errors.Append(err, validate(c))
 	}
@@ -543,7 +543,7 @@ func (e *externalServiceStore) validateBitbucketServerConnection(ctx context.Con
 
 	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketServer, c))
 
-	return err.ErrorOrNil()
+	return err
 }
 
 func (e *externalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
@@ -551,7 +551,7 @@ func (e *externalServiceStore) validateBitbucketCloudConnection(ctx context.Cont
 }
 
 func (e *externalServiceStore) validatePerforceConnection(ctx context.Context, id int64, c *schema.PerforceConnection) error {
-	err := new(errors.MultiError)
+	var err error
 	for _, validate := range e.perforceValidators {
 		err = errors.Append(err, validate(c))
 	}
@@ -562,7 +562,7 @@ func (e *externalServiceStore) validatePerforceConnection(ctx context.Context, i
 
 	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
 
-	return err.ErrorOrNil()
+	return err
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit

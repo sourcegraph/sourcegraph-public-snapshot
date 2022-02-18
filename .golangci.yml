@@ -73,7 +73,6 @@ run:
     # whenever we reference a file here it's relative to its containing workspace.
     # These values are under the ./lib module.
     - errors/cockroach.go
-    - errors/multierror.go
 
     # These are all projects with distinct go.mod files that can't import lib
     # due to not knowing an absolute path to the user's sourcegraph directory

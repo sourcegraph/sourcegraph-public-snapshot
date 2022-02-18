@@ -59,7 +59,7 @@ func With(enabled bool, step step) step {
 // `contextValue`.
 func SubstituteSearchContexts(lookupQueryString func(contextValue string) (string, error)) step {
 	return func(nodes []Node) ([]Node, error) {
-		errs := new(errors.MultiError)
+		var errs error
 		substitutedContext := MapField(nodes, FieldContext, func(value string, negated bool, ann Annotation) Node {
 			queryString, err := lookupQueryString(value)
 			if err != nil {
@@ -84,7 +84,7 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 			return Operator{Kind: And, Operands: query}
 		})
 
-		return substitutedContext, errs.ErrorOrNil()
+		return substitutedContext, errs
 	}
 }
 

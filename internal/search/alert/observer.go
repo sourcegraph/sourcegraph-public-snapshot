@@ -159,8 +159,8 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 // multierrorToAlert converts an error.MultiError into the highest priority alert
 // for the errors contained in it, and a new error with all the errors that could
 // not be converted to alerts.
-func (o *Observer) multierrorToAlert(ctx context.Context, me *errors.MultiError) (resAlert *search.Alert, resErr error) {
-	for _, err := range me.Errors {
+func (o *Observer) multierrorToAlert(ctx context.Context, me errors.MultiError) (resAlert *search.Alert, resErr error) {
+	for _, err := range me.Errors() {
 		alert, err := o.errorToAlert(ctx, err)
 		resAlert = maxAlertByPriority(resAlert, alert)
 		resErr = errors.Append(resErr, err)
@@ -218,7 +218,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		return nil, nil
 	}
 
-	var e *errors.MultiError
+	var e errors.MultiError
 	if errors.As(err, &e) {
 		return o.multierrorToAlert(ctx, e)
 	}

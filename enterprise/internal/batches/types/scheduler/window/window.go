@@ -122,7 +122,7 @@ func parseWeekday(raw string) (time.Weekday, error) {
 
 func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 	w := Window{}
-	var errs *errors.MultiError
+	var errs error
 
 	if raw == nil {
 		return w, errors.New("raw window cannot be nil")
@@ -157,5 +157,5 @@ func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 		errs = errors.Append(errs, err)
 	}
 
-	return w, errs.ErrorOrNil()
+	return w, errs
 }

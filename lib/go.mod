@@ -5,9 +5,7 @@ go 1.16
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
-	github.com/cockroachdb/errors v1.8.6
-	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
-	github.com/cockroachdb/redact v1.1.3 // indirect
+	github.com/cockroachdb/errors v1.8.9
 	github.com/derision-test/go-mockgen v1.1.2
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
@@ -15,8 +13,6 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
 	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hexops/autogold v1.3.0
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/hexops/valast v1.4.1 // indirect
@@ -36,7 +32,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 	golang.org/x/tools v0.1.9 // indirect
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0

@@ -141,11 +141,11 @@ func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error)
 func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
-		var multiErr *errors.MultiError
+		var multiErr errors.MultiError
 		if errors.As(err, &multiErr) {
-			var newMultiError *errors.MultiError
+			var newMultiError error
 
-			for _, e := range multiErr.Errors {
+			for _, e := range multiErr.Errors() {
 				// In case of `name` we try to make the error message more user-friendly.
 				if strings.Contains(e.Error(), "name: Does not match pattern") {
 					newMultiError = errors.Append(newMultiError, NewValidationError(errors.Newf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.")))
@@ -154,13 +154,13 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 				}
 			}
 
-			return nil, newMultiError.ErrorOrNil()
+			return nil, newMultiError
 		}
 
 		return nil, err
 	}
 
-	var errs *errors.MultiError
+	var errs error
 
 	if !opts.AllowArrayEnvironments {
 		for i, step := range spec.Steps {
@@ -193,7 +193,7 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 		}
 	}
 
-	return &spec, errs.ErrorOrNil()
+	return &spec, errs
 }
 
 func (on *OnQueryOrRepository) String() string {

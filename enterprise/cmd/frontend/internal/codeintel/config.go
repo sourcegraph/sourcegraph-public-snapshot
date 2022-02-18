@@ -27,9 +27,9 @@ func (c *Config) Load() {
 }
 
 func (c *Config) Validate() error {
-	var errs *errors.MultiError
+	var errs error
 	errs = errors.Append(errs, c.BaseConfig.Validate())
 	errs = errors.Append(errs, c.LSIFUploadStoreConfig.Validate())
 	errs = errors.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
-	return errs.ErrorOrNil()
+	return errs
 }

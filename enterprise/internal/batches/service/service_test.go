@@ -607,7 +607,7 @@ func TestService(t *testing.T) {
 			}
 
 			haveErr := fmt.Sprintf("%v", err)
-			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed\n\n"
+			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed"
 			if diff := cmp.Diff(wantErr, haveErr); diff != "" {
 				t.Fatalf("unexpected error (-want +got):\n%s", diff)
 			}
