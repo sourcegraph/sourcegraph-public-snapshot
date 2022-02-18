@@ -35,6 +35,7 @@ export const PositionSettingsGallery: Story = () => {
                     <PopoverContent
                         position={position}
                         focusLocked={false}
+                        tail={boolean('tail', false)}
                         className={classNames(styles.floating, styles.floatingTooltipLike)}
                     >
                         Position {position}

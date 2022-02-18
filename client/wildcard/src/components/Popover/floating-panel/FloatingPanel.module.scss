@@ -44,4 +44,28 @@
 
         border-top-color: var(--border-color);
     }
+
+    &--top-start,
+    &--top,
+    &--top-end {
+        top: -1px;
+    }
+
+    &--left-start,
+    &--left,
+    &--left-end {
+        left: -2px;
+    }
+
+    &--right-start,
+    &--right,
+    &--right-end {
+        left: 1px;
+    }
+
+    &--bottom-start,
+    &--bottom,
+    &--bottom-end {
+        top: 1px;
+    }
 }
