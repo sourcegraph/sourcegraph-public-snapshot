@@ -8,21 +8,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type errZooType string
+type errBazType struct{}
 
-func newErrZoo() error {
-	err := errZooType("zoo")
-	return &err
-}
-func (e *errZooType) Error() string { return string(*e) }
+func (e *errBazType) Error() string { return "baz" }
+
+type errZooType struct{}
+
+func (e *errZooType) Error() string { return "zoo" }
 
 // Enforce some invariants with our error libraries.
 
 func TestMultiError(t *testing.T) {
 	errFoo := New("foo")
 	errBar := New("bar")
-	errBaz := New("baz")
-	errZoo := newErrZoo()
+	// Tests using errBaz also make a As test
+	errBaz := &errBazType{}
+	// Tests using errZoo also make a As test
+	errZoo := &errZooType{}
 	formattingDirectives := []string{"", "%s", "%v", "%+v"}
 	tests := []struct {
 		name string
@@ -41,9 +43,9 @@ func TestMultiError(t *testing.T) {
 		},
 		{
 			name:        "CombineErrors",
-			err:         CombineErrors(errFoo, errBar),
-			wantStrings: []string{"foo", "bar"},
-			wantIs:      []error{errFoo, errBar},
+			err:         CombineErrors(errFoo, errZoo),
+			wantStrings: []string{"foo", "zoo"},
+			wantIs:      []error{errFoo, errZoo},
 		},
 		{
 			name:        "Wrap(Append)",
@@ -53,15 +55,15 @@ func TestMultiError(t *testing.T) {
 		},
 		{
 			name:        "Wrap(Wrap(Append))",
-			err:         Wrap(Wrap(Append(errFoo, errBar), "hello world"), "deep!"),
-			wantStrings: []string{"deep", "hello world", "foo", "bar"},
-			wantIs:      []error{errFoo, errBar},
+			err:         Wrap(Wrap(Append(errFoo, errZoo), "hello world"), "deep!"),
+			wantStrings: []string{"deep", "hello world", "foo", "zoo"},
+			wantIs:      []error{errFoo, errZoo},
 		},
 		{
 			name:        "Append(Wrap(Append))",
-			err:         Append(Wrap(Append(errFoo, errBar), "hello world"), errBaz),
-			wantStrings: []string{"baz", "hello world", "foo", "bar"},
-			wantIs:      []error{errFoo, errBar, errBaz},
+			err:         Append(Wrap(Append(errFoo, errBar), "hello world"), errZoo),
+			wantStrings: []string{"hello world", "foo", "bar"},
+			wantIs:      []error{errFoo, errBar, errZoo},
 		},
 		{
 			name:        "Append(Append(Append(Append)))",
@@ -91,6 +93,10 @@ func TestMultiError(t *testing.T) {
 			}
 			for _, isErr := range tt.wantIs {
 				assert.ErrorIs(t, tt.err, isErr)
+				if isErr.Error() == "baz" {
+					var errBaz *errBazType
+					assert.ErrorAs(t, tt.err, &errBaz)
+				}
 				if isErr.Error() == "zoo" {
 					var errZoo *errZooType
 					assert.ErrorAs(t, tt.err, &errZoo)
