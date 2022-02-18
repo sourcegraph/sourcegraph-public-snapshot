@@ -86,7 +86,7 @@
       "name": "sourcegraph",
       "database": "sourcegraph",
       "username": "sourcegraph",
-      "password": "sourcegraph"
-    }
+      "password": "sourcegraph",
+    },
   ],
 }
