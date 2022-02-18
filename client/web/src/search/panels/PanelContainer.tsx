@@ -14,6 +14,7 @@ interface Props {
     populatedContent: JSX.Element
     actionButtons?: JSX.Element
     className?: string
+    hideTitle?: boolean
 }
 
 export const PanelContainer: React.FunctionComponent<Props> = ({
@@ -24,12 +25,15 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     populatedContent,
     actionButtons,
     className,
+    hideTitle,
 }) => (
     <div className={classNames(className, styles.panelContainer, 'd-flex', 'flex-column')}>
-        <div className={classNames('d-flex border-bottom', styles.header)}>
-            <h4 className={styles.headerText}>{title}</h4>
-            {actionButtons}
-        </div>
+        {hideTitle !== true ? (
+            <div className={classNames('d-flex border-bottom', styles.header)}>
+                <h4 className={styles.headerText}>{title}</h4>
+                {actionButtons}
+            </div>
+        ) : null}
 
         <div className={classNames('h-100', styles.content)}>
             {state === 'loading' && loadingContent}

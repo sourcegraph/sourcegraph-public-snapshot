@@ -13,9 +13,14 @@ import { PanelContainer } from './PanelContainer'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
+    hideTitle?: boolean
 }
 
-export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ className, telemetryService }) => {
+export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({
+    className,
+    telemetryService,
+    hideTitle,
+}) => {
     const logContextClicked = useCallback(
         () => telemetryService.log('CommunitySearchContextsPanelCommunitySearchContextClicked'),
         [telemetryService]
@@ -41,6 +46,7 @@ export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ c
 
     return (
         <PanelContainer
+            hideTitle={hideTitle}
             className={classNames(className, 'community-search-context-panel')}
             title="Community search contexts"
             state="populated"

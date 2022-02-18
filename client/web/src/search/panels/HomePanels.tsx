@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Tabs, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -26,13 +27,25 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
             <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
         </div>
         <div className="row">
-            <CollaboratorsPanel {...props} className={classNames('col-lg-12')} />
-        </div>
-        <div className="row">
             <RecentFilesPanel {...props} className={classNames('col-lg-7', styles.panel)} />
 
             {props.isSourcegraphDotCom ? (
-                <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
+                <div className={classNames('col-lg-5', styles.panel)}>
+                    <Tabs defaultIndex={1}>
+                        <TabList>
+                            <Tab>Community search contexts</Tab>
+                            <Tab>Invite colleagues</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel>
+                                <CommunitySearchContextsPanel {...props} hideTitle={true} />
+                            </TabPanel>
+                            <TabPanel>
+                                <CollaboratorsPanel {...props} />
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                </div>
             ) : (
                 <SavedSearchesPanel {...props} className={classNames('col-lg-5', styles.panel)} />
             )}
