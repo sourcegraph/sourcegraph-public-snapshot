@@ -890,7 +890,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 
 func (u *userStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
-	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECTsearchable passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
+	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
 		return false, err
 	}
 	if !passwd.Valid {
