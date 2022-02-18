@@ -92,7 +92,7 @@ just-in-time, whereas any series missing a repository scope will be assumed to b
 integrate with other "repository group" objects such as Search Contexts.
 
 Data series are [uniquely identified by a randomly generated unique ID](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+SeriesID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
-Data series are also identified by a [compound key](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28s+*InsightStore%29+FindMatchingSeries&patternType=literal) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.
+Data series are also identified by a [compound key](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/store/insight_store.go?L709) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.
 
 Data series are defined with a [recording interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L86-87) that will define the frequency of samples that are taken for the series.
 
@@ -109,7 +109,7 @@ We support this behavior by tabulating the results of a `compute` [search](https
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects the new insight
 
-The _insight enqueuer_ ([code](https://sourcegraph.com/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
 Its job is to periodically schedule a recording of 'current' values for Insights by enqueuing a recording using a global query. This only requires a single query per insight regardless of the number of repositories,
 and will return results for all the matched repositories. Each repository will still be recorded individually. These queries are placed on the same queue as historical queries (`insights_query_runner_jobs`) and can
 be identified by the lack of a revision and repo filter on the query string. 
@@ -250,6 +250,32 @@ exist within a unique timeseries. A simple deduplication is performed at query t
 
 Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/23690) of this format.
 
+## Running Locally
+
+Using [`sg`](../sg), run the `enterprise-codeinsights` to run everything needed for code insights.
+```
+sg start enterprise-codeinsights
+```
+
+Insights can then be [created either via the locally running webapp](../../../code_insights/how-tos/creating_a_custom_dashboard_of_code_insights), or [created via the GraphQL API](../../../api/graphql/managing-code-insights-with-api).
+
+If you've created an insight that needs to generate series data on the backend, be aware of [the time interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L122) at which these series will be picked up for backfilling. You may want to restart the service so that the new series will be picked up right away for processing.
+
+
+
+### Unit Tests
+
+The `codeinsights-db` must be running in order for unit tests against the `store` to work correctly, as these interact with the database. You can add the following commandset to your `sg.config.overwrite.yaml` file to easily start the `codeinsights-db`:
+```
+insights-db:
+  checks:
+    - docker
+    - redis
+    - postgres
+  commands:
+    - codeinsights-db
+```
+
 ## Debugging
 
 This being a pretty complex, high cardinality, and slow-moving system - debugging can be tricky.
@@ -293,7 +319,7 @@ docker logs worker | grep insights
 
 ### Inspecting the Timescale database
 
-Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001_initial_schema.up.sql) which contains all of the tables we create in TimescaleDB and describes them in detail. This will explain the general layout of the database schema, etc.
+Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001/up.sql) which contains all of the tables we create in TimescaleDB and describes them in detail. This will explain the general layout of the database schema, etc.
 
 The most important table in TimescaleDB is `series_points`, that's where the actual data is stored. It's a [hypertable](https://docs.timescale.com/latest/using-timescaledb/hypertables).
 
