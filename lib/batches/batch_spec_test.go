@@ -196,8 +196,6 @@ changesetTemplate:
 	* on.0: Must validate one and only one schema (oneOf)`
 		haveErr := err.Error()
 		if haveErr != wantErr {
-			println(wantErr)
-			println(haveErr)
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
 		}
 	})
