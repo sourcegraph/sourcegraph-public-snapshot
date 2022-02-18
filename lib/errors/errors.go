@@ -38,9 +38,6 @@ func combineNonNilErrors(err1 error, err2 error) MultiError {
 	} else {
 		errs = []error{err1, err2}
 	}
-	if len(errs) == 0 {
-		return nil
-	}
 	return &multiError{errs: errs}
 }
 
@@ -79,7 +76,7 @@ func Append(err error, errs ...error) MultiError {
 func (e *multiError) Error() string { return fmt.Sprintf("%v", e) }
 func (e *multiError) Errors() []error {
 	if e == nil || e.errs == nil {
-		return []error{}
+		return nil
 	}
 	return e.errs
 }
