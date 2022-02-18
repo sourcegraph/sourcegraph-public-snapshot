@@ -197,27 +197,6 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 				{email: "rando@randi.com"},
 			}),
 		},
-		{
-			recentCommitters: append(
-				collaborators("stephen@sourcegraph.com"),
-				&invitableCollaboratorResolver{
-					email:     "fake@sourcegraph.com",
-					name:      "Older GitHub account with camo avatar",
-					avatarURL: "https://camo.githubusercontent.com/foobar",
-				},
-			),
-			authUserEmails: emails(),
-			want: autogold.Want("old github account camo avatars last", []*invitableCollaboratorResolver{
-				{
-					email: "stephen@sourcegraph.com",
-				},
-				{
-					email:     "fake@sourcegraph.com",
-					name:      "Older GitHub account with camo avatar",
-					avatarURL: "https://camo.githubusercontent.com/foobar",
-				},
-			}),
-		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
