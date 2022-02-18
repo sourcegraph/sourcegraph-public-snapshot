@@ -7,6 +7,7 @@ import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CaptureGroupInsight } from '../../../../core/types'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { useCaptureInsightInitialValues } from './hooks/use-capture-insight-initial-values'
@@ -37,8 +38,8 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
         telemetryService.log(
             'InsightAddition',
-            { insightType: 'captureGroupInsights' },
-            { insightType: 'captureGroupInsights' }
+            { insightType: CodeInsightTrackType.CaptureGroupInsight },
+            { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
 
         onSuccessfulCreation(insight)
