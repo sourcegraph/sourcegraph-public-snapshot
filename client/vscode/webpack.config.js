@@ -135,7 +135,7 @@ const webviewConfig = {
   resolve: {
     alias: {
       path: require.resolve('path-browserify'),
-      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'),
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'), // Replace web app Link component from @sourcegraph/wildcard with the Link component built for VSCE
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
