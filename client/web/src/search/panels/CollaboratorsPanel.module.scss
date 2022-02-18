@@ -10,7 +10,17 @@
     position: relative;
 }
 
+.button {
+    text-align: left;
+}
+
+.button:disabled {
+    color: var(--body-color) !important;
+    cursor: pointer;
+}
+
 .invite-button-overlay {
+    width: calc(100% - 1px);
     position: absolute;
     top: 0;
     left: 0;
@@ -19,7 +29,7 @@
     transition: opacity 60ms ease-in-out;
 }
 
-.invite-button-overlay:focus-within {
+.button:focus-within .invite-button-overlay {
     opacity: 1;
 }
 

@@ -71,40 +71,42 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
             {filteredCollaborators?.map((person: InvitableCollaborator) => (
                 <div
-                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-4', styles.invitebox)}
+                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-3', 'mb-1', styles.invitebox)}
                     key={person.email}
                 >
-                    <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
-                    <div className={styles.content}>
-                        <strong>{person.displayName}</strong>
-                        <div className={styles.inviteButton}>
-                            {loadingInvites.has(person.email) ? (
-                                <span className=" ml-auto mr-3">
-                                    <LoadingSpinner inline={true} />
-                                    Inviting...
-                                </span>
-                            ) : successfulInvites.has(person.email) ? (
-                                <span className="text-success ml-auto mr-3">
-                                    <EmailCheckIcon className="icon-inline mr-1" />
-                                    Invited
-                                </span>
-                            ) : (
-                                <>
-                                    <div className="text-muted">{person.email}</div>
-                                    <div className={styles.inviteButtonOverlay}>
-                                        <Button
-                                            variant="link"
-                                            className={classNames('ml-auto', 'mr-3', styles.inviteButtonLink)}
-                                            onClick={() => invitePerson(person)}
-                                        >
+                    <Button
+                        variant="icon"
+                        key={person.email}
+                        disabled={loadingInvites.has(person.email) || successfulInvites.has(person.email)}
+                        className={classNames('w-100', styles.button)}
+                        onClick={() => invitePerson(person)}
+                    >
+                        <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
+                        <div className={styles.content}>
+                            <strong>{person.displayName}</strong>
+                            <div className={styles.inviteButton}>
+                                {loadingInvites.has(person.email) ? (
+                                    <span className=" ml-auto mr-3">
+                                        <LoadingSpinner inline={true} className="icon-inline mr-1" />
+                                        Inviting...
+                                    </span>
+                                ) : successfulInvites.has(person.email) ? (
+                                    <span className="text-success ml-auto mr-3">
+                                        <EmailCheckIcon className="icon-inline mr-1" />
+                                        Invited
+                                    </span>
+                                ) : (
+                                    <>
+                                        <div className="text-muted">{person.email}</div>
+                                        <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
                                             <EmailIcon className="icon-inline mr-1" />
                                             Invite to Sourcegraph
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </Button>
                 </div>
             ))}
         </div>
