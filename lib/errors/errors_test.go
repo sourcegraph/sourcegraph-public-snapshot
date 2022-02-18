@@ -13,6 +13,7 @@ import (
 func TestMultiError(t *testing.T) {
 	errFoo := New("foo")
 	errBar := New("bar")
+	errBaz := New("baz")
 	formattingDirectives := []string{"", "%s", "%v", "%+v"}
 	tests := []struct {
 		name string
@@ -47,6 +48,12 @@ func TestMultiError(t *testing.T) {
 			wantStrings: []string{"deep", "hello world", "foo", "bar"},
 			wantIs:      []error{errFoo, errBar},
 		},
+		{
+			name:        "Append(Wrap(Append))",
+			err:         Append(Wrap(Append(errFoo, errBar), "hello world"), errBaz),
+			wantStrings: []string{"baz", "hello world", "foo", "bar"},
+			wantIs:      []error{errFoo, errBar, errBaz},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -57,6 +64,12 @@ func TestMultiError(t *testing.T) {
 				} else {
 					str = fmt.Sprintf(directive, tt.err)
 				}
+
+				if directive == "" || directive == "%+v" {
+					// Run tests with -v to see what the error output looks like
+					t.Log(str)
+				}
+
 				for _, contains := range tt.wantStrings {
 					assert.Contains(t, str, contains)
 				}

@@ -24,9 +24,8 @@ var _ error = (*multiError)(nil)
 var _ MultiError = (*multiError)(nil)
 
 func combineNonNilErrors(err1 error, err2 error) MultiError {
-	var multi1, multi2 MultiError
-	ok1 := As(err1, &multi1)
-	ok2 := As(err2, &multi2)
+	multi1, ok1 := err1.(MultiError)
+	multi2, ok2 := err2.(MultiError)
 	// flatten
 	var errs []error
 	if ok1 && ok2 {
@@ -46,14 +45,13 @@ func CombineErrors(err1, err2 error) MultiError {
 	if err1 == nil && err2 == nil {
 		return nil
 	}
-	var multi MultiError
 	if err1 == nil {
-		if As(err2, &multi) {
+		if multi, ok := err2.(MultiError); ok {
 			return multi
 		}
 		return &multiError{errs: []error{err2}}
 	} else if err2 == nil {
-		if As(err1, &multi) {
+		if multi, ok := err1.(MultiError); ok {
 			return multi
 		}
 		return &multiError{errs: []error{err1}}
