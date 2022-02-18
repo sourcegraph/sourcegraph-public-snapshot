@@ -99,7 +99,7 @@ In order to retrieve the error message printed by the migrator on startup, you'l
 Error from server (BadRequest): container "frontend" in pod "sourcegraph-frontend-69f4b68d75-w98lx" is waiting to start: PodInitializing
 ```
 
-Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database).
+Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database.md).
 
 ## Troubleshooting
 
