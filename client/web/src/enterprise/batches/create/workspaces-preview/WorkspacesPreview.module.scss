@@ -10,6 +10,13 @@
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
+
+    .warning-icon {
+        // The warning icon is very bottom-heavy visually, so we give it the slightest
+        // nudge above technical vertical center alignment so that it "appears" more
+        // centered.
+        margin-top: -0.125rem;
+    }
 }
 
 .icon-container {
