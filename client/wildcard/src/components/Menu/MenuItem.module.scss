@@ -1,0 +1,11 @@
+.item[data-reach-menu-item] {
+    &[aria-disabled]:active,
+    &[aria-disabled]:hover {
+        background-color: unset;
+        color: unset;
+    }
+    &[data-selected]:not(:active) {
+        background-color: var(--dropdown-link-hover-bg);
+        color: unset;
+    }
+}
