@@ -241,6 +241,15 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 		invitablePerDomain[domain(person.email)] = current + 1
 	}
 	sort.Slice(invitable, func(i, j int) bool {
+		// Older GitHub accounts have a camo avatar if they do not have an avatar image set. This
+		// indicates the account is quite old, and maybe even inactive. See:
+		// https://github.com/sourcegraph/sourcegraph/issues/31446
+		iIsCamo := strings.Contains(invitable[i].avatarURL, "camo.githubusercontent.com")
+		jIsCamo := strings.Contains(invitable[j].avatarURL, "camo.githubusercontent.com")
+		if iIsCamo != jIsCamo {
+			return !iIsCamo
+		}
+
 		// Sort by domains with most invitable collaborators first.
 		iPeopleWithDomain := invitablePerDomain[domain(invitable[i].email)]
 		jPeopleWithDomain := invitablePerDomain[domain(invitable[j].email)]
