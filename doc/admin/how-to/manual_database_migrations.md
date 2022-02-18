@@ -71,7 +71,7 @@ yq eval -i \
 # Optional (defaults to `["up", "-db", "all"]`)
 # Update the "args" value of the migrator container in the manifest
 yq eval -i \
-  '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"] \
+  '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"]' \
   configure/migrator/migrator.Job.yaml
 ```
 
