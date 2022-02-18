@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -261,6 +263,11 @@ type historicalEnqueuer struct {
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
+	// 🚨 SECURITY: This background process uses the internal actor to interact with Sourcegraph services. This background process
+	// is responsible for calculating the work needed to backfill an insight series _without_ a user context. Repository permissions
+	// are filtered at view time of an insight.
+	ctx = actor.WithInternalActor(ctx)
+
 	h.statistics = make(statistics)
 	// Discover all insights on the instance.
 	log15.Debug("Fetching data series for historical")
