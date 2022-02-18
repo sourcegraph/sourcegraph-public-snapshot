@@ -6,7 +6,7 @@ import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnect
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { GetPreciseCodeIntelVariables, RefPanelLsifDataFields } from '../graphql-operations'
 
-import { LOAD_ADDITIONAL_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, LOAD_ADDITIONAL_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: RefPanelLsifDataFields
@@ -75,16 +75,14 @@ export const usePreciseCodeIntel = <TResult,>({
                     return previousResult
                 }
 
-                if (cursor) {
-                    const previousData = getLsifData({ data: previousResult })
-                    const previousReferencesNodes = previousData.references.nodes
+                const previousData = getLsifData({ data: previousResult })
+                const previousReferencesNodes = previousData.references.nodes
 
-                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                    fetchMoreData.implementations = previousData.implementations
-                    fetchMoreData.definitions = previousData.definitions
-                    fetchMoreData.hover = previousData.hover
-                    fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
-                }
+                const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                fetchMoreData.implementations = previousData.implementations
+                fetchMoreData.definitions = previousData.definitions
+                fetchMoreData.hover = previousData.hover
+                fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
 
                 return fetchMoreResult
             },
@@ -95,9 +93,8 @@ export const usePreciseCodeIntel = <TResult,>({
         const cursor = lsifData?.implementations.pageInfo?.endCursor
 
         await fetchMore({
+            query: getDocumentNode(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY),
             variables: {
-                // TODO: If I comment this in, then typechecker dies
-                // query: getDocumentNode(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY),
                 ...variables,
                 ...{ afterImplementations: cursor },
             },
@@ -106,16 +103,14 @@ export const usePreciseCodeIntel = <TResult,>({
                     return previousResult
                 }
 
-                if (cursor) {
-                    const previousData = getLsifData({ data: previousResult })
-                    const previousImplementationNodes = previousData.implementations.nodes
+                const previousData = getLsifData({ data: previousResult })
+                const previousImplementationsNodes = previousData.implementations.nodes
 
-                    const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                    fetchMoreData.references = previousData.references
-                    fetchMoreData.definitions = previousData.definitions
-                    fetchMoreData.hover = previousData.hover
-                    fetchMoreData.implementations.nodes.unshift(...previousImplementationNodes)
-                }
+                const fetchMoreData = getLsifData({ data: fetchMoreResult })
+                fetchMoreData.references = previousData.references
+                fetchMoreData.definitions = previousData.definitions
+                fetchMoreData.hover = previousData.hover
+                fetchMoreData.implementations.nodes.unshift(...previousImplementationsNodes)
 
                 return fetchMoreResult
             },

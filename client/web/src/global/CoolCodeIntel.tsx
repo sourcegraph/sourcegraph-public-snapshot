@@ -331,9 +331,9 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             line: props.clickedToken.line - 1,
             character: props.clickedToken.character - 1,
             filter: props.filter || null,
-            firstReferences: 1,
+            firstReferences: 100,
             afterReferences: null,
-            firstImplementations: 1,
+            firstImplementations: 100,
             afterImplementations: null,
         },
         options: {
