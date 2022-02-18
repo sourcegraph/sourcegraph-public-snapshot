@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,13 +13,24 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestServer_handleRepoInfo(t *testing.T) {
+	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+		return &types.GitserverRepo{}, nil
+	})
+
+	db := database.NewMockDB()
+	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+
 	s := &Server{
 		ReposDir:         "/testroot",
 		GetRemoteURLFunc: staticGetRemoteURL("u"),
+		DB:               db,
 	}
 	h := s.Handler()
 	_, ok := s.locker.TryAcquire("/testroot/a/.git", "test status")
