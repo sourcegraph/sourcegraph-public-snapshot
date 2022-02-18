@@ -43,6 +43,12 @@
 }
 
 .content {
+    width: calc(100% - 3.5rem);
+    white-space: nowrap;
+}
+
+.clip-text {
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
