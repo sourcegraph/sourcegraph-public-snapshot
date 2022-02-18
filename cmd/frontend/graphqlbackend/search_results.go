@@ -424,7 +424,7 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
+	alert, err := r.StreamResults(ctx, agg)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	r.logBatch(ctx, srr, err)
