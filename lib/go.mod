@@ -14,6 +14,7 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
 	github.com/hexops/autogold v1.3.0
+	github.com/hexops/gotextdiff v1.0.3
 	github.com/hexops/valast v1.4.1 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
 	github.com/json-iterator/go v1.1.12
@@ -24,6 +25,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
+	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/stretchr/testify v1.7.0

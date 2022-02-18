@@ -16,23 +16,7 @@
 }
 
 .menu-list {
-    [data-reach-menu-item] {
-        &[data-selected] {
-            --text-muted: var(--white);
-
-            &:hover {
-                :global(.theme-light) & {
-                    --text-muted: var(--gray-07);
-                }
-
-                :global(.theme-dark) & {
-                    --text-muted: var(--gray-06);
-                }
-
-                &:active {
-                    --text-muted: var(--white);
-                }
-            }
-        }
+    [data-reach-menu-item]:active {
+        --text-muted: var(--white);
     }
 }

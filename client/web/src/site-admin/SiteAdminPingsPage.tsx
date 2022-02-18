@@ -98,6 +98,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
                 <li>Total count of existing user accounts</li>
+                <li>Code Insights: total count of insights</li>
             </ul>
             <h3>Other telemetry</h3>
             <p>

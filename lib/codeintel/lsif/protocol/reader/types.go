@@ -16,9 +16,16 @@ type Edge struct {
 	Document int
 }
 
+type ToolInfo struct {
+	Name    string
+	Version string
+}
+
 type MetaData struct {
-	Version     string
-	ProjectRoot string
+	Version          string
+	ProjectRoot      string
+	PositionEncoding string
+	ToolInfo         ToolInfo
 }
 
 type Range struct {

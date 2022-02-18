@@ -1,57 +1,83 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { of } from 'rxjs'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    BatchChangesCredentialFields,
+    ExternalServiceKind,
+    UserBatchChangesCodeHostsResult,
+} from '../../../graphql-operations'
 
+import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
+const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChangesCodeHostsResult => ({
+    node: {
+        __typename: 'User',
+        batchChangesCodeHosts: {
+            totalCount: hosts.length,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: hosts,
+        },
+    },
+})
+
+const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields => ({
+    id: '123',
+    isSiteCredential,
+    sshPublicKey:
+        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+})
+
 add('Overview', () => (
     <WebStory>
         {props => (
-            <BatchChangesSettingsArea
-                {...props}
-                user={{ id: 'user-id-1' }}
-                queryUserBatchChangesCodeHosts={() =>
-                    of({
-                        totalCount: 3,
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: false,
+            <MockedTestProvider
+                mocks={[
+                    {
+                        request: {
+                            query: getDocumentNode(USER_CODE_HOSTS),
+                            variables: {
+                                user: 'user-id-1',
+                                after: null,
+                                first: 15,
+                            },
                         },
-                        nodes: [
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.GITHUB,
-                                externalServiceURL: 'https://github.com/',
-                                requiresSSH: false,
-                            },
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.GITLAB,
-                                externalServiceURL: 'https://gitlab.com/',
-                                requiresSSH: false,
-                            },
-                            {
-                                credential: {
-                                    id: '123',
-                                    isSiteCredential: true,
-                                    sshPublicKey:
-                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                        result: {
+                            data: codeHostsResult(
+                                {
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    requiresSSH: false,
                                 },
-                                externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                                externalServiceURL: 'https://bitbucket.sgdev.org/',
-                                requiresSSH: true,
-                            },
-                        ],
-                    })
-                }
-            />
+                                {
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITLAB,
+                                    externalServiceURL: 'https://gitlab.com/',
+                                    requiresSSH: false,
+                                },
+                                {
+                                    credential: sshCredential(true),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                    requiresSSH: true,
+                                }
+                            ),
+                        },
+                    },
+                ]}
+            >
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-1' }} />
+            </MockedTestProvider>
         )}
     </WebStory>
 ))
@@ -59,54 +85,44 @@ add('Overview', () => (
 add('Config added', () => (
     <WebStory>
         {props => (
-            <BatchChangesSettingsArea
-                {...props}
-                user={{ id: 'user-id-2' }}
-                queryUserBatchChangesCodeHosts={() =>
-                    of({
-                        totalCount: 3,
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: false,
+            <MockedTestProvider
+                mocks={[
+                    {
+                        request: {
+                            query: getDocumentNode(USER_CODE_HOSTS),
+                            variables: {
+                                user: 'user-id-2',
+                                after: null,
+                                first: 15,
+                            },
                         },
-                        nodes: [
-                            {
-                                credential: {
-                                    id: '123',
-                                    isSiteCredential: false,
-                                    sshPublicKey:
-                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                        result: {
+                            data: codeHostsResult(
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    requiresSSH: false,
                                 },
-                                externalServiceKind: ExternalServiceKind.GITHUB,
-                                externalServiceURL: 'https://github.com/',
-                                requiresSSH: false,
-                            },
-                            {
-                                credential: {
-                                    id: '123',
-                                    isSiteCredential: false,
-                                    sshPublicKey:
-                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITLAB,
+                                    externalServiceURL: 'https://gitlab.com/',
+                                    requiresSSH: false,
                                 },
-                                externalServiceKind: ExternalServiceKind.GITLAB,
-                                externalServiceURL: 'https://gitlab.com/',
-                                requiresSSH: false,
-                            },
-                            {
-                                credential: {
-                                    id: '123',
-                                    isSiteCredential: false,
-                                    sshPublicKey:
-                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                },
-                                externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                                externalServiceURL: 'https://bitbucket.sgdev.org/',
-                                requiresSSH: true,
-                            },
-                        ],
-                    })
-                }
-            />
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                    requiresSSH: true,
+                                }
+                            ),
+                        },
+                    },
+                ]}
+            >
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
+            </MockedTestProvider>
         )}
     </WebStory>
 ))
