@@ -12,6 +12,10 @@
 
 .button {
     text-align: left;
+    margin-left: 0.125rem;
+    margin-right: 0.125rem;
+    padding-top: 0.25rem;
+    padding-right: 0.25rem;
 }
 
 .button:disabled {
@@ -20,7 +24,7 @@
 }
 
 .invite-button-overlay {
-    width: calc(100% - 1px);
+    width: 100%;
     position: absolute;
     top: 0;
     left: 0;
