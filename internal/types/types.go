@@ -1132,6 +1132,10 @@ type CodeInsightsUsageStatistics struct {
 	InsightTotalCounts                      InsightTotalCounts
 }
 
+type CodeInsightsCriticalTelemetry struct {
+	TotalInsights int32
+}
+
 // Usage statistics for a type of code insight
 type InsightUsageStatistics struct {
 	InsightType      *string
