@@ -32,13 +32,13 @@ func TestRunWorkersN(t *testing.T) {
 		return nil
 	}))
 
-	var e *errors.MultiError
+	var e errors.MultiError
 	if err == nil || !errors.As(err, &e) {
 		t.Errorf("unexpected error wrapper: %v", err)
 	}
 
 	var errStrings []string
-	for _, err := range e.WrappedErrors() {
+	for _, err := range e.Errors() {
 		errStrings = append(errStrings, err.Error())
 	}
 	sort.Strings(errStrings)

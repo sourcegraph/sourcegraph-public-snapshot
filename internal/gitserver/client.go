@@ -906,7 +906,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}(op{req: req})
 	}
 
-	err := new(errors.MultiError)
+	var err error
 	res := protocol.RepoCloneProgressResponse{
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 	}
@@ -924,7 +924,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}
 	}
 
-	return &res, err.ErrorOrNil()
+	return &res, err
 }
 
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
@@ -976,7 +976,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		}(op{req: req})
 	}
 
-	err := new(errors.MultiError)
+	var err error
 	res := protocol.RepoInfoResponse{
 		Results: make(map[api.RepoName]*protocol.RepoInfo),
 	}
@@ -994,7 +994,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		}
 	}
 
-	return &res, err.ErrorOrNil()
+	return &res, err
 }
 
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {

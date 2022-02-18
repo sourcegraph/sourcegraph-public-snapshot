@@ -4,9 +4,11 @@ import "sync"
 
 // Group is a collection of goroutines which return errors that need to be
 // coalesced.
+//
+// Implementation and tests are based on https://sourcegraph.com/github.com/hashicorp/go-multierror/-/blob/group.go
 type Group struct {
 	mutex sync.Mutex
-	err   error
+	err   MultiError
 	wg    sync.WaitGroup
 }
 
@@ -30,7 +32,7 @@ func (g *Group) Go(f func() error) {
 
 // Wait blocks until all function calls from the Go method have returned, then
 // returns the multierror.
-func (g *Group) Wait() error {
+func (g *Group) Wait() MultiError {
 	g.wg.Wait()
 	g.mutex.Lock()
 	defer g.mutex.Unlock()

@@ -1307,9 +1307,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			if err == nil {
 				have = append(have, "<nil>")
 			} else {
-				var errs *errors.MultiError
+				var errs errors.MultiError
 				if errors.As(err, &errs) {
-					for _, err := range errs.Errors {
+					for _, err := range errs.Errors() {
 						have = append(have, err.Error())
 					}
 				} else {

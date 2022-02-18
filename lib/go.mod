@@ -13,8 +13,6 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.7
 	github.com/grafana/regexp v0.0.0-20220202152701-6a046c4caf32
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hexops/autogold v1.3.0
 	github.com/hexops/valast v1.4.1 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
@@ -42,7 +40,3 @@ require (
 
 // See: https://github.com/ghodss/yaml/pull/65
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-
-// We maintain our own fork of go-multierror since the upstream library does not appear
-// actively maintained. This allows us to make tweaks more easily.
-replace github.com/hashicorp/go-multierror => github.com/sourcegraph/go-multierror v1.1.2-0.20220217232541-c0a1781d782b

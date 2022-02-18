@@ -159,14 +159,11 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	var e *errors.MultiError
+	var e errors.MultiError
 	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
-		return (&errors.MultiError{
-			Errors:      e.Errors,
-			ErrorFormat: sourceErrorFormatFunc,
-		}).Error()
+		return sourceErrorFormatFunc(e.Errors())
 	}
 	return s.Err.Error()
 }
@@ -204,7 +201,7 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 
 	var (
 		repos []*types.Repo
-		errs  *errors.MultiError
+		errs  error
 	)
 
 	for res := range results {
@@ -217,5 +214,5 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 		repos = append(repos, res.Repo)
 	}
 
-	return repos, errs.ErrorOrNil()
+	return repos, errs
 }

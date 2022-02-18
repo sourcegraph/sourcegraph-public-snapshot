@@ -1,119 +1,100 @@
 package errors
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
-
-	"github.com/cockroachdb/errors"
 )
 
 // MultiError is a container for groups of errors.
+type MultiError interface {
+	error
+	// Errors returns all errors carried by this MultiError, or an empty slice otherwise.
+	Errors() []error
+}
+
+// multiError is our default underlying implementation for MultiError. It is compatible
+// with cockroachdb.Error's formatting, printing, etc. and supports introspecting via
+// As, Is, and friends.
 //
-// This is very inspired by https://github.com/knz/shakespeare/blob/master/pkg/cmd/errors.go
-type MultiError struct {
-	Errors []error
+// Implementation is based on https://github.com/knz/shakespeare/blob/master/pkg/cmd/errors.go
+type multiError struct {
+	errs []error
 }
 
-func (m *MultiError) initialize() {
-	if m.Errors == nil {
-		m.Errors = []error{}
-	}
-}
+var _ error = (*multiError)(nil)
+var _ MultiError = (*multiError)(nil)
 
-var _ error = (*MultiError)(nil)
-var _ fmt.Formatter = (*MultiError)(nil)
-
-func combineNonNilErrors(err1 error, err2 error) *MultiError {
-	multi1, ok1 := err1.(*MultiError)
-	multi2, ok2 := err2.(*MultiError)
-	// guard against typed nils
-	if ok1 && multi1 == nil {
-		multi1 = new(MultiError)
-	}
-	if ok2 && multi2 == nil {
-		multi2 = new(MultiError)
-	}
-	// ensure fields are non-nil
-	multi1.initialize()
-	multi2.initialize()
+func combineNonNilErrors(err1 error, err2 error) MultiError {
+	var multi1, multi2 MultiError
+	ok1 := As(err1, &multi1)
+	ok2 := As(err2, &multi2)
 	// flatten
+	var errs []error
 	if ok1 && ok2 {
-		return &MultiError{
-			Errors: append(multi1.Errors, multi2.Errors...),
-		}
+		errs = append(multi1.Errors(), multi2.Errors()...)
 	} else if ok1 {
-		return &MultiError{
-			Errors: append(multi1.Errors, err2),
-		}
+		errs = append(multi1.Errors(), err2)
 	} else if ok2 {
-		return &MultiError{
-			Errors: append([]error{err1}, multi2.Errors...),
-		}
+		errs = append([]error{err1}, multi2.Errors()...)
+	} else {
+		errs = []error{err1, err2}
 	}
-	return &MultiError{Errors: []error{err1, err2}}
+	if len(errs) == 0 {
+		return nil
+	}
+	return &multiError{errs: errs}
 }
 
-func CombineErrors(err1, err2 error) error {
-	if err1 == nil {
-		return err2
+// CombineErrors returns a MultiError from err1 and err2. If both are nil, nil is returned.
+func CombineErrors(err1, err2 error) MultiError {
+	if err1 == nil && err2 == nil {
+		return nil
 	}
-	if err2 == nil {
-		return err1
+	var multi MultiError
+	if err1 == nil {
+		if As(err2, &multi) {
+			return multi
+		}
+		return &multiError{errs: []error{err2}}
+	} else if err2 == nil {
+		if As(err1, &multi) {
+			return multi
+		}
+		return &multiError{errs: []error{err1}}
 	}
 	return combineNonNilErrors(err1, err2)
 }
 
-func (e *MultiError) Error() string { return fmt.Sprintf("%v", e) }
-
-func (e *MultiError) Cause() error  { return e.Errors[len(e.Errors)-1] }
-func (e *MultiError) Unwrap() error { return e.Errors[len(e.Errors)-1] }
-
-func (e *MultiError) Format(s fmt.State, verb rune) { errors.FormatError(e, s, verb) }
-
-func (e *MultiError) FormatError(p errors.Printer) error {
-	if len(e.Errors) > 1 {
-		p.Printf("%d errors occured:", len(e.Errors))
-	}
-
-	// Simple output
-	var buf bytes.Buffer
-	for _, err := range e.Errors {
-		if len(e.Errors) > 1 {
-			p.Print("\n\t* ")
-		}
-		buf.Reset()
-		fmt.Fprintf(&buf, "%v", err)
-		p.Print(strings.ReplaceAll(buf.String(), "\n", "\n    "))
-	}
-
-	// Print additional details
-	if p.Detail() {
-		p.Print("-- details follow")
-		for i, err := range e.Errors {
-			p.Printf("\n(%d) %+v", i+1, err)
+// Append returns a MultiError created from all given errors, skipping errs that are nil.
+// If no non-nil errors are provided, nil is returned.
+func Append(err error, errs ...error) MultiError {
+	multi := CombineErrors(err, nil)
+	for _, e := range errs {
+		if e != nil {
+			multi = CombineErrors(multi, e)
 		}
 	}
-
-	return nil
+	return multi
 }
 
-func (e *MultiError) Is(refError error) bool {
-	if errors.Is(e, refError) {
+func (e *multiError) Error() string { return fmt.Sprintf("%v", e) }
+func (e *multiError) Errors() []error {
+	if e == nil || e.errs == nil {
+		return []error{}
+	}
+	return e.errs
+}
+
+func (e *multiError) Cause() error  { return e.errs[len(e.errs)-1] }
+func (e *multiError) Unwrap() error { return e.errs[len(e.errs)-1] }
+
+func (e *multiError) Is(refError error) bool {
+	if e == refError {
 		return true
 	}
-	for _, err := range e.Errors {
-		if errors.Is(err, refError) {
+	for _, err := range e.errs {
+		if Is(err, refError) {
 			return true
 		}
 	}
 	return false
-}
-
-// ErrorOrNil is a no-op that just returns self - all multierror constructors should return
-// nil when len(e.Errors) == 0.
-//
-// It exists as a hangover from go-multierror days.
-func (e *MultiError) ErrorOrNil() error {
-	return e
 }
