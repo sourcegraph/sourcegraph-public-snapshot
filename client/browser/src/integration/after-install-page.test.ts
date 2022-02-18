@@ -37,10 +37,10 @@ describe('After install page', () => {
 
     afterEach(() => testContext?.dispose())
 
-    it('renders after install page content', async function () {
+    it('renders after install page content', async () => {
         await driver.openBrowserExtensionPage('after_install')
         await driver.page.waitForSelector("[data-testid='after-install-page-content']")
-        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
-        await percySnapshot(driver.page, this.currentTest?.fullTitle()!)
+        await percySnapshot(driver.page, 'Browser Extension: After install page')
+        // TODO: check dark theme too
     })
 })
