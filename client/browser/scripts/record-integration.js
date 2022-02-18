@@ -18,7 +18,6 @@ const recordSnapshot = grepValue =>
   // 1. Record by --grep args
   const args = process.argv.slice(2)
   for (let index = 0; index < args.length; ++index) {
-    console.log(args[index], args[index + 1])
     if (args[index] === '--grep' && !!args[index + 1]) {
       recordSnapshot(args[index + 1])
       return

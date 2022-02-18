@@ -37,6 +37,7 @@ describe('GitHub', () => {
             'https://github.com/*path/find-definition',
             'https://github.com/gorilla/mux/commits/checks-statuses-rollups',
             'https://github.com/commits/badges',
+            'https://github.githubassets.com/favicons/*path',
         ]
 
         // Requests to other origins that we need to ignore to prevent breaking tests.
@@ -136,7 +137,7 @@ describe('GitHub', () => {
         })
     })
 
-    it("shows hover tooltips when hovering a token and respects 'Enable single click to go to definition' setting", async () => {
+    it('shows hover tooltips when hovering a token and respects "Enable single click to go to definition" setting', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -730,5 +731,87 @@ describe('GitHub', () => {
                 await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')
             })
         })
+    })
+
+    describe('Search pages', () => {
+        describe('Simple and advanced search pages', () => {
+            const pages = ['https://github.com/search', 'https://github.com/search/advanced']
+
+            it('render "Search on Sourcegraph" button', async () => {
+                for (const page of pages) {
+                    await driver.newPage()
+                    await driver.page.goto(page)
+
+                    const linkToSourcegraph = await driver.page.waitForSelector(
+                        '[data-testid="search-on-sourcegraph"]',
+                        { timeout: 3000 }
+                    )
+
+                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+                }
+            })
+
+            it('if search input is empty "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and empty search query', async () => {
+                for (const page of pages) {
+                    await driver.newPage()
+                    await driver.page.goto(page)
+
+                    const linkToSourcegraph = await driver.page.waitForSelector(
+                        '[data-testid="search-on-sourcegraph"]',
+                        { timeout: 3000 }
+                    )
+                    let hasRedirectedToSourcegraphSearch = false
+                    testContext.server.get('https://sourcegraph.com/search').intercept(request => {
+                        if (request.query.q === 'type:repo') {
+                            hasRedirectedToSourcegraphSearch = true
+                        }
+                    })
+
+                    await linkToSourcegraph?.click()
+                    await driver.page.waitForTimeout(3000)
+
+                    assert(
+                        hasRedirectedToSourcegraphSearch,
+                        'Expected to be redirected to Sourcegraph search page with type "repo" and empty query'
+                    )
+
+                    // await driver.page.close()
+                }
+            })
+
+            it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
+                for (const page of pages) {
+                    await driver.newPage()
+                    await driver.page.goto(page)
+
+                    const query = 'Hello world!'
+                    const searchInput = await driver.page.waitForSelector('#search_form input[type="text"]')
+                    const linkToSourcegraph = await driver.page.waitForSelector(
+                        '[data-testid="search-on-sourcegraph"]',
+                        {
+                            timeout: 3000,
+                        }
+                    )
+                    let hasRedirectedToSourcegraphSearch = false
+                    testContext.server.get('https://sourcegraph.com/search').intercept(request => {
+                        if (['type:repo', query].every(value => request.query.q?.includes(value))) {
+                            hasRedirectedToSourcegraphSearch = true
+                        }
+                    })
+
+                    await searchInput?.type(query, { delay: 100 })
+                    await linkToSourcegraph?.click()
+                    await driver.page.waitForTimeout(1000)
+
+                    assert(
+                        hasRedirectedToSourcegraphSearch,
+                        'Expected to be redirected to Sourcegraph search page with type "repo" and search query'
+                    )
+                }
+            })
+        })
+
+        describe('Repositiory search page', () => {})
+        describe('Search results page', () => {})
     })
 })
