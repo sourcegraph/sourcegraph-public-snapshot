@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -34,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -590,7 +590,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 	for _, q := range oldPlan {
 		q := q
 		g.Go(func() error {
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (result.Matches, error) {
+			predicatePlan, err := predicate.Substitute(q, func(pred query.Predicate) (result.Matches, error) {
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
@@ -612,7 +612,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 				}
 				return agg.Results, nil
 			})
-			if errors.Is(err, ErrPredicateNoResults) {
+			if errors.Is(err, predicate.ErrNoResults) {
 				// The predicate has no results, so neither will this basic query
 				return nil
 			}
@@ -656,65 +656,6 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 	}
 
 	return r.evaluateJob(ctx, stream, planJob)
-}
-
-// searchResultsToRepoNodes converts a set of search results into repository nodes
-// such that they can be used to replace a repository predicate
-func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
-	nodes := make([]query.Node, 0, len(matches))
-	for _, match := range matches {
-		repoMatch, ok := match.(*result.RepoMatch)
-		if !ok {
-			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
-		}
-
-		repoFieldValue := "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$"
-		if repoMatch.Rev != "" {
-			repoFieldValue += "@" + repoMatch.Rev
-		}
-
-		nodes = append(nodes, query.Parameter{
-			Field: query.FieldRepo,
-			Value: repoFieldValue,
-		})
-	}
-
-	return nodes, nil
-}
-
-// searchResultsToFileNodes converts a set of search results into repo/file nodes so that they
-// can replace a file predicate
-func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
-	nodes := make([]query.Node, 0, len(matches))
-	for _, match := range matches {
-		fileMatch, ok := match.(*result.FileMatch)
-		if !ok {
-			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
-		}
-
-		repoFieldValue := "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$"
-		if fileMatch.InputRev != nil {
-			repoFieldValue += "@" + *fileMatch.InputRev
-		}
-
-		// We create AND nodes to match both the repo and the file at the same time so
-		// we don't get files of the same name from different repositories.
-		nodes = append(nodes, query.Operator{
-			Kind: query.And,
-			Operands: []query.Node{
-				query.Parameter{
-					Field: query.FieldRepo,
-					Value: repoFieldValue,
-				},
-				query.Parameter{
-					Field: query.FieldFile,
-					Value: "^" + regexp.QuoteMeta(fileMatch.Path) + "$",
-				},
-			},
-		})
-	}
-
-	return nodes, nil
 }
 
 // evaluateJob is a toplevel function that runs a search job to yield results.
@@ -761,89 +702,6 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 
 	return search.MaxPriorityAlert(jobAlert, observerAlert), err
 }
-
-// substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
-// are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (result.Matches, error)) (query.Plan, error) {
-	var topErr error
-	success := false
-	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
-		orig := query.Parameter{
-			Field:      field,
-			Value:      value,
-			Negated:    neg,
-			Annotation: ann,
-		}
-
-		if !ann.Labels.IsSet(query.IsPredicate) {
-			return orig
-		}
-
-		if topErr != nil {
-			return orig
-		}
-
-		name, params := query.ParseAsPredicate(value)
-		predicate := query.DefaultPredicateRegistry.Get(field, name)
-		predicate.ParseParams(params)
-		matches, err := evaluate(predicate)
-		if err != nil {
-			topErr = err
-			return nil
-		}
-
-		var nodes []query.Node
-		switch predicate.Field() {
-		case query.FieldRepo:
-			nodes, err = searchResultsToRepoNodes(matches)
-			if err != nil {
-				topErr = err
-				return nil
-			}
-		case query.FieldFile:
-			nodes, err = searchResultsToFileNodes(matches)
-			if err != nil {
-				topErr = err
-				return nil
-			}
-		default:
-			topErr = errors.Errorf("unsupported predicate result type %q", predicate.Field())
-			return nil
-		}
-
-		// If no results are returned, we need to return a sentinel error rather
-		// than an empty expansion because an empty expansion means "everything"
-		// rather than "nothing".
-		if len(nodes) == 0 {
-			topErr = ErrPredicateNoResults
-			return nil
-		}
-
-		// A predicate was successfully evaluated and has results.
-		success = true
-
-		// No need to return an operator for only one result
-		if len(nodes) == 1 {
-			return nodes[0]
-		}
-
-		return query.Operator{
-			Kind:     query.Or,
-			Operands: nodes,
-		}
-	})
-
-	if topErr != nil || !success {
-		return nil, topErr
-	}
-	plan, err := query.ToPlan(query.Dnf(newQ))
-	if err != nil {
-		return nil, err
-	}
-	return plan, nil
-}
-
-var ErrPredicateNoResults = errors.New("no results returned for predicate")
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
 func longer(n int, dt time.Duration) time.Duration {
