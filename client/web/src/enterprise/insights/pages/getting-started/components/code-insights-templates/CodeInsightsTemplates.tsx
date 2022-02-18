@@ -92,8 +92,11 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     const hasMoreLessButton = templates.length > 4
 
     const handleShowMoreButtonClick = (): void => {
+        if (!allVisible) {
+            telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
+        }
+
         setAllVisible(!allVisible)
-        telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
     }
 
     return (
