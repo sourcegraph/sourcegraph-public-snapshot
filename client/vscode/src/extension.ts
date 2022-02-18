@@ -68,15 +68,20 @@ export function activate(context: vscode.ExtensionContext): void {
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
     const initialAccessToken = accessTokenSetting()
+    // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
-    // Update `EventSource` Authorization header on access token change.
+    // Update `EventSource` Authorization header on access token / headers change.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(config => {
-            if (config.affectsConfiguration('sourcegraph.accessToken')) {
+            if (
+                config.affectsConfiguration('sourcegraph.accessToken') ||
+                config.affectsConfiguration('sourcegraph.requestHeaders')
+            ) {
                 const newAccessToken = accessTokenSetting()
+                const newCustomHeaders = endpointRequestHeadersSetting()
                 polyfillEventSource(
-                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...customHeaders } : {}
+                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...newCustomHeaders } : {}
                 )
             }
         })

@@ -26,8 +26,9 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
 
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
+    // load custom headers from user setting if any
     const customHeaders = endpointRequestHeadersSetting()
-    // return empty array if no custom header is provided
+    // return empty array if no custom header is provided in configuration
     const headers: HeadersInit = Object.entries(customHeaders)
     const sourcegraphURL = endpointSetting()
     const accessToken = accessTokenSetting()
