@@ -87,7 +87,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
                 <div className="d-flex justify-content-start mb-3">
                     <p>
                         Learn more about{' '}
-                        <Link to="/">how your data and privacy is protected on Sourcegraph Cloud.</Link>.
+                        <Link to="/">how your data and privacy is protected on Sourcegraph Cloud.</Link>
                     </p>
                 </div>
                 {error && <ErrorAlert className="mt-2" error={error} />}
