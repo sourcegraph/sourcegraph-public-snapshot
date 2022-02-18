@@ -1,6 +1,7 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
+import { useLocation } from 'react-router'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -24,14 +25,14 @@ export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAtt
 
 export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
     const { telemetryService, ...otherProps } = props
+    const { pathname, search } = useLocation()
+
     return (
         <section {...otherProps}>
             <h2>Example insights</h2>
             <p className="text-muted">
                 Here are a few example insights to show you what the tool can do.{' '}
-                <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
-                    Explore more use cases.
-                </Link>
+                <Link to={`${pathname}${search}#code-insights-templates`}>Explore more use cases.</Link>
             </p>
 
             <div className={styles.section}>
@@ -106,7 +107,7 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
             subtitle={
                 <CodeInsightsQueryBlock
                     as={SyntaxHighlightedSearchQuery}
-                    query="repo:github.com/awesomeOrg/examplerepo"
+                    query="repo:github.com/wildcard-org/wc-repo"
                     className="mt-1"
                 />
             }

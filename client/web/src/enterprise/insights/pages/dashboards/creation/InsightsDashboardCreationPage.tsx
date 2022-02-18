@@ -82,7 +82,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 alwaysShowLabel={true}
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
+                                label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
                                 type="submit"
                                 disabled={formAPI.submitting}
                                 className="ml-2 mb-2"
