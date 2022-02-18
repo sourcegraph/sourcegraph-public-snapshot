@@ -49,7 +49,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 
     return (
         <section {...otherProps}>
-            <h2 id='code-insights-templates'>Templates</h2>
+            <h2 id="code-insights-templates">Templates</h2>
             <p className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">

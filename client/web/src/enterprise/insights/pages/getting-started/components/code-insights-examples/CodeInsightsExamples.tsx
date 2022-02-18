@@ -1,7 +1,7 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
-import { useLocation } from 'react-router';
+import { useLocation } from 'react-router'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -32,9 +32,7 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesP
             <h2>Example insights</h2>
             <p className="text-muted">
                 Here are a few example insights to show you what the tool can do.{' '}
-                <Link to={`${pathname}${search}#code-insights-templates`}>
-                    Explore more use cases.
-                </Link>
+                <Link to={`${pathname}${search}#code-insights-templates`}>Explore more use cases.</Link>
             </p>
 
             <div className={styles.section}>
