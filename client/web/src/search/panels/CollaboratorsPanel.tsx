@@ -66,12 +66,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading colleagues" />
 
     const contentDisplay = (
-        <div className={classNames('row')}>
+        <div className={classNames('row', 'py-1')}>
             {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
             {filteredCollaborators?.map((person: InvitableCollaborator) => (
                 <div
-                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-3', 'mb-1', styles.invitebox)}
+                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-1', 'mb-1', styles.invitebox)}
                     key={person.email}
                 >
                     <Button
