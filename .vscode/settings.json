@@ -77,4 +77,16 @@
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
   "jest.jestCommandLine": "yarn -s test",
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "sourcegraph",
+      "database": "sourcegraph",
+      "username": "sourcegraph",
+      "password": "sourcegraph"
+    }
+  ],
 }
