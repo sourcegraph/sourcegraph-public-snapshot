@@ -389,13 +389,6 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func fromStrPtr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
 func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
 	if _, ok := internalResult.(*result.FileMatch); !ok {
