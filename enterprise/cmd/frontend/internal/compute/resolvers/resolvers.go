@@ -231,7 +231,7 @@ func NewComputeImplementer(ctx context.Context, db database.DB, args *gql.Comput
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := gql.NewSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, _, err := gql.NewSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}

@@ -56,7 +56,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ *searchResolver, _ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -68,18 +68,18 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		var err error
 		settings, err = decodedViewerFinalSettings(ctx, db)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	searchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	searchType = overrideSearchType(args.Query, searchType)
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
+		return nil, nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
 	// Beta: create a step to replace each context in the query with its repository query if any.
@@ -99,7 +99,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		query.With(searchContextsQueryEnabled, substituteContextsStep),
 	)
 	if err != nil {
-		return NewSearchAlertResolver(search.AlertForQuery(args.Query, err)).wrapSearchImplementer(db), nil
+		return nil, search.AlertForQuery(args.Query, err), nil
 	}
 	tr.LazyPrintf("parsing done")
 
@@ -107,7 +107,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	if args.CodeMonitorID != nil {
 		var i int64
 		if err := relay.UnmarshalSpec(*args.CodeMonitorID, &i); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		codeMonitorID = &i
 	}
@@ -136,11 +136,17 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
-	}, nil
+	}, nil, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, r.db, args)
+	sr, alert, err := NewSearchImplementer(ctx, r.db, args)
+	if err != nil {
+		return nil, err
+	} else if alert != nil {
+		return NewSearchAlertResolver(alert).WrapSearchImplementer(r.db), nil
+	}
+	return sr, nil
 }
 
 // detectSearchType returns the search type to perform ("regexp", or

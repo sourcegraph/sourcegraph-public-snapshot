@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -48,7 +49,7 @@ func StreamHandler(db database.DB) http.Handler {
 
 type streamHandler struct {
 	db                  database.DB
-	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, *search.Alert, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -85,7 +86,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, inputs, results := h.startSearch(ctx, args)
+	events, alert, inputs, results := h.startSearch(ctx, args)
 
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
@@ -226,10 +227,13 @@ LOOP:
 		return
 	}
 
-	alert := resultsResolver.Alert()
-	if alert != nil {
+	alertResolver := graphqlbackend.NewSearchAlertResolver(alert)
+	if alert == nil {
+		alertResolver = resultsResolver.Alert()
+	}
+	if alertResolver != nil {
 		var pqs []streamhttp.ProposedQuery
-		if proposed := alert.ProposedQueries(); proposed != nil {
+		if proposed := alertResolver.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
 				pqs = append(pqs, streamhttp.ProposedQuery{
 					Description: fromStrPtr(pq.Description()),
@@ -238,8 +242,8 @@ LOOP:
 			}
 		}
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:           alert.Title(),
-			Description:     fromStrPtr(alert.Description()),
+			Title:           alertResolver.Title(),
+			Description:     fromStrPtr(alertResolver.Description()),
 			ProposedQueries: pqs,
 		})
 	}
@@ -248,8 +252,8 @@ LOOP:
 
 	var status, alertType string
 	status = graphqlbackend.DetermineStatusForLogs(resultsResolver.SearchAlert, resultsResolver.Stats, err)
-	if alert != nil {
-		alertType = alert.PrometheusType()
+	if alertResolver != nil {
+		alertType = alertResolver.PrometheusType()
 	}
 
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
@@ -278,22 +282,22 @@ LOOP:
 // startSearch will start a search. It returns the events channel which
 // streams out search events. Once events is closed you can call results which
 // will return the results resolver and error.
-func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan streaming.SearchEvent, *search.Alert, run.SearchInputs, func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan streaming.SearchEvent)
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		eventsC <- event
 	})
 	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, stream)
 
-	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
+	search, alert, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:       a.Query,
 		Version:     a.Version,
 		PatternType: strPtr(a.PatternType),
 		Stream:      batchedStream,
 	})
-	if err != nil {
+	if err != nil || alert != nil {
 		close(eventsC)
-		return eventsC, run.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+		return eventsC, alert, run.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
 			return nil, err
 		}
 	}
@@ -312,7 +316,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		final <- finalResult{resultsResolver: r, err: err}
 	}()
 
-	return eventsC, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
+	return eventsC, nil, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
 		f := <-final
 		return f.resultsResolver, f.err
 	}
@@ -323,7 +327,7 @@ type searchResolver interface {
 	Inputs() run.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, *search.Alert, error) {
 	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 

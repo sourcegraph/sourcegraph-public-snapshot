@@ -387,7 +387,13 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 
 func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
 	args.Version = "V2"
-	return graphqlbackend.NewSearchImplementer(ctx, r.db, args)
+	sr, alert, err := graphqlbackend.NewSearchImplementer(ctx, r.db, args)
+	if err != nil {
+		return nil, err
+	} else if alert != nil {
+		return graphqlbackend.NewSearchAlertResolver(alert).WrapSearchImplementer(r.db), nil
+	}
+	return sr, nil
 }
 
 func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {

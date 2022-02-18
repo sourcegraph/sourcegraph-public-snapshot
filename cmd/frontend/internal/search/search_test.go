@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -34,8 +35,8 @@ func TestServeStream_empty(t *testing.T) {
 	ts := httptest.NewServer(&streamHandler{
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
-		newSearchResolver: func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error) {
-			return mock, nil
+		newSearchResolver: func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, *search.Alert, error) {
+			return mock, nil, nil
 		}})
 	defer ts.Close()
 
@@ -58,7 +59,7 @@ func TestServeStream_empty(t *testing.T) {
 
 // Ensures graphqlbackend matches the interface we expect
 func TestDefaultNewSearchResolver(t *testing.T) {
-	_, err := defaultNewSearchResolver(context.Background(), database.NewMockDB(), &graphqlbackend.SearchArgs{
+	_, _, err := defaultNewSearchResolver(context.Background(), database.NewMockDB(), &graphqlbackend.SearchArgs{
 		Version:  "V2",
 		Settings: &schema.Settings{},
 	})
@@ -141,7 +142,7 @@ func TestDisplayLimit(t *testing.T) {
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
-				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, *search.Alert, error) {
 					mock.c = args.Stream
 					q, err := query.Parse(c.queryString, query.Literal)
 					if err != nil {
@@ -150,7 +151,7 @@ func TestDisplayLimit(t *testing.T) {
 					mock.inputs = &run.SearchInputs{
 						Query: q,
 					}
-					return mock, nil
+					return mock, nil, nil
 				}})
 			defer ts.Close()
 

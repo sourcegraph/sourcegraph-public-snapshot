@@ -43,7 +43,7 @@ func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
 	return &proposedQueries
 }
 
-func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
+func (a searchAlertResolver) WrapSearchImplementer(db database.DB) *alertSearchImplementer {
 	return &alertSearchImplementer{
 		db:    db,
 		alert: a,
