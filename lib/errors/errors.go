@@ -93,3 +93,16 @@ func (e *multiError) Is(refError error) bool {
 	}
 	return false
 }
+
+func (e *multiError) As(target interface{}) bool {
+	if m, ok := target.(*multiError); ok {
+		*m = *e
+		return true
+	}
+	for _, err := range e.errs {
+		if As(err, target) {
+			return true
+		}
+	}
+	return false
+}
