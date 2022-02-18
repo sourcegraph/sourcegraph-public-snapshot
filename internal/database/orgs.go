@@ -39,6 +39,7 @@ type OrgStore interface {
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
+	HardDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
 	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
@@ -304,6 +305,42 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 	}
 	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
+	fmt.Println("---- Debug: DB call to hard delete an org")
+	tx, err := o.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
+		return err
+	}
+
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_members WHERE org_id=$1", id); err != nil {
+		return err
+	}
+
+	res, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		fmt.Println("--- didn't work...")
+		fmt.Println()
+		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 
 	return nil

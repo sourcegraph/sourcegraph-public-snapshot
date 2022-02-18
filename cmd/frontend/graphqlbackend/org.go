@@ -283,6 +283,27 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
+// HardDeleteOrganization removes the org and all resources associated with this org.
+func (r *schemaResolver) HardDeleteOrganization(ctx context.Context, args *struct {
+	Organization graphql.ID
+}) (*EmptyResponse, error) {
+	fmt.Println("------ Debugging: hard deleting org --")
+
+	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 	return nil, err
+	// }
+
+	orgID, err := UnmarshalOrgID(args.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
 	User         graphql.ID
 	Organization graphql.ID

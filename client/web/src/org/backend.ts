@@ -1,14 +1,19 @@
 import { concat, Observable } from 'rxjs'
-import { map, mergeMap } from 'rxjs/operators'
+import { maclient/web/src/org/backend.tsp, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql ,
+    dataOrThrowErrors,
+    createInvalidGraphQLMutationResponseError,
+} from '@sourcegraph/http-client'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
 import {
     CreateOrganizationResult,
     CreateOrganizationVariables,
+    HardDeleteOrganizationVariables,
+    HardDeleteOrganizationResult,
     RemoveUserFromOrganizationResult,
     RemoveUserFromOrganizationVariables,
     Scalars,
@@ -119,6 +124,33 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
         .toPromise()
 }
 
+/**
+ * WIP....
+ */
+export function hardDeleteOrganization(organization: Scalars['ID']): Promise<void> {
+    return requestGraphQL<HardDeleteOrganizationResult, HardDeleteOrganizationVariables>(
+        gql`
+           mutation HardDeleteOrganization($organization: ID!) {
+                hardDeleteOrganization(organization: $organization) {
+                    alwaysNil
+                }
+            }
+        `,
+        {
+            organization,
+        }
+    )
+    .pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteOrganization) { // WIP: find out what this does.
+                throw createInvalidGraphQLMutationResponseError('HardDeleteOrganization')
+            }
+        })
+    )
+    .toPromise()
+}
+
 export const GET_ORG_FEATURE_FLAG_VALUE = gql`
     query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
         organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
@@ -127,3 +159,4 @@ export const GET_ORG_FEATURE_FLAG_VALUE = gql`
 export const ORG_CODE_FEATURE_FLAG_NAME = 'org-code'
 export const ORG_CODE_FEATURE_FLAG_EMAIL_INVITE = 'org-email-invites'
 export const GITHUB_APP_FEATURE_FLAG_NAME = 'github-app-cloud'
+
