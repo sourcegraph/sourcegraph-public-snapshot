@@ -73,8 +73,8 @@ func (s *Server) RegisterMetrics(db dbutil.DB) {
 
 		var count int64
 		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM gitserver_repos g
-			LEFT JOIN repo AS r ON g.repo_id = r.id
+			SELECT COUNT(*) FROM gitserver_repos AS g
+			INNER JOIN repo AS r ON g.repo_id = r.id
 			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
 		`).Scan(&count)
 		if err != nil {
