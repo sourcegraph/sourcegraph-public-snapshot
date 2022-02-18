@@ -362,13 +362,13 @@ GROUP BY name;
 `
 
 const getStartedTabClickSql = `
-SELECT COUNT(*), argument FROM event_logs
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
 WHERE name = 'InsightsGetStartedTabClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
 GROUP BY argument;
 `
 
 const getStartedTabMoreClickSql = `
-SELECT COUNT(*), argument FROM event_logs
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
 WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
 GROUP BY argument;
 `
