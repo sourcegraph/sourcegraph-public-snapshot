@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -183,8 +184,10 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	fmt.Printf("\nNum Uploads: %d\nNum Links:   %d\n\n", numUploads, len(links))
 }
 
+const customer = "customer1"
+
 func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
-	contents, err := readBenchmarkFile("./testdata/commits.txt.gz")
+	contents, err := readBenchmarkFile(filepath.Join("testdata", customer, "commits.txt.gz"))
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +196,7 @@ func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
 }
 
 func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
-	contents, err := readBenchmarkFile("./testdata/uploads.txt.gz")
+	contents, err := readBenchmarkFile(filepath.Join("testdata", customer, "uploads.csv.gz"))
 	if err != nil {
 		return nil, err
 	}
