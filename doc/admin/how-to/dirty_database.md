@@ -103,7 +103,7 @@ If you're running into errors such as being unable to create a unique index due 
 
 - For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
 - For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`
-- For local development: run `sg add-log -db=<schema> -version=<version>` in a clone of [sourcegraph/sourcegrph](https://github.com/sourcegraph/sourcegraph)
+- For local development: run `sg add-log -db=<schema> -version=<version>` in a clone of [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph)
 
 Adding this migration log entry indicates to future migrator and application instances that a complete application of the migration at that version has been run.
 
