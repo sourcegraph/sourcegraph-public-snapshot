@@ -216,6 +216,9 @@ func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
 }
 
 func (e *ErrCollector) Error() string {
+	if e.errs == nil {
+		return ""
+	}
 	return e.errs.Error()
 }
 
