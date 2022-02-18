@@ -11,11 +11,7 @@ const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions
 const pathToRevisionFile = path.join(process.cwd(), 'code-intel-extensions', 'revision.txt')
 
 // Check if code-intel-extensions has already been fetched
-const codeIntelExtensionsDirectoryExists = shelljs.test('-d', temporarySourceDirectory)
-const codeIntelExtensionsRevisionFetched =
-  fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString() === revision
-
-if (codeIntelExtensionsDirectoryExists && codeIntelExtensionsRevisionFetched) {
+if (fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString() === revision) {
   console.log('Found existing code-intel-extensions.')
 } else {
   console.log('Did not find an existing code-intel-extensions. Running fetch-code-intel-extensions')
