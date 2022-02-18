@@ -109,14 +109,23 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		return nil, err
 	}
 
-	return filterInvitableCollaborators(recentCommitters, authUserEmails), nil
+	userExists := func(username, email string) bool {
+		if username != "" {
+			_, err := r.db.Users().GetByUsername(ctx, username)
+			return err == nil
+		}
+		_, err := r.db.Users().GetByVerifiedEmail(ctx, email)
+		return err == nil
+	}
+	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExists), nil
 }
 
 type invitableCollaboratorResolver struct {
-	email     string
-	name      string
-	avatarURL string
-	date      time.Time
+	likelySourcegraphUsername string
+	email                     string
+	name                      string
+	avatarURL                 string
+	date                      time.Time
 }
 
 func (i *invitableCollaboratorResolver) Name() string        { return i.name }
@@ -170,10 +179,11 @@ func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitt
 				for _, author := range commit.Authors.Nodes {
 					parsedTime, _ := time.Parse(time.RFC3339, author.Date)
 					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
-						email:     author.Email,
-						name:      author.Name,
-						avatarURL: author.AvatarURL,
-						date:      parsedTime,
+						likelySourcegraphUsername: author.Username,
+						email:                     author.Email,
+						name:                      author.Name,
+						avatarURL:                 author.AvatarURL,
+						date:                      parsedTime,
 					})
 				}
 			}
@@ -183,7 +193,7 @@ func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitt
 	return
 }
 
-func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResolver, authUserEmails []*database.UserEmail) []*invitableCollaboratorResolver {
+func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResolver, authUserEmails []*database.UserEmail, userExists func(username, email string) bool) []*invitableCollaboratorResolver {
 	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
 	// invite are people who recently committed to code, which means they're more active and more
 	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
@@ -220,6 +230,17 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 			continue
 		}
 		deduplicate[recentCommitter.email] = struct{}{}
+
+		// If a Sourcegraph user with a matching username exists, or a matching email exists, don't
+		// consider them someone who is invitable (would be annoying to receive invites after having
+		// an account.)
+		if userExists("", recentCommitter.email) {
+			continue
+		}
+		if userExists(recentCommitter.likelySourcegraphUsername, "") {
+			continue
+		}
+
 		invitable = append(invitable, recentCommitter)
 	}
 

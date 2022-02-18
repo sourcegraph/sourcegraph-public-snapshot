@@ -607,6 +607,7 @@ type RecentCommittersResults struct {
 				Date      string
 				Email     string
 				Name      string
+				Username  string
 				AvatarURL string
 			}
 		}

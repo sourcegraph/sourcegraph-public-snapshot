@@ -1,6 +1,8 @@
 package graphqlbackend
 
 import (
+	"strings"
+
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -31,6 +33,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					Username  string
 					AvatarURL string
 				}
 			}
@@ -40,6 +43,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					Username  string
 					AvatarURL string
 				}
 			}{
@@ -47,6 +51,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					Username  string
 					AvatarURL string
 				}{
 					{Name: params.Name + "-joe"},
@@ -169,6 +174,16 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 			}}),
 		},
 		{
+			recentCommitters: collaborators("steveexists@github.com", "rando@randi.com", "kimbo@github.com", "stephenexists@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("existing users excluded", []*invitableCollaboratorResolver{
+				{
+					email: "rando@randi.com",
+				},
+				{email: "kimbo@github.com"},
+			}),
+		},
+		{
 			recentCommitters: collaborators("steve@github.com", "rando@randi.com", "kimbo@github.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
 			authUserEmails:   emails(),
 			want: autogold.Want("same domain first", []*invitableCollaboratorResolver{
@@ -206,7 +221,10 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
-			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails)
+			userExists := func(username, email string) bool {
+				return strings.Contains(username, "exists") || strings.Contains(email, "exists")
+			}
+			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails, userExists)
 			tst.want.Equal(t, got)
 		})
 	}
