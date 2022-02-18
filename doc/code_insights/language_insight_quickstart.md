@@ -28,7 +28,7 @@ Enter repositories in the repository URL format, like `github.com/Sourcegraph/So
 
 The form field will validate that you've entered the repository correctly. 
 
-In the current Beta version, you can only set up a language insight for one repository at a time. (Want us to prioritize the ability to analyze multiple repositories in one pie chart? [Please do let us know](mailto:feedback@sourcegraph.com).)
+In the current version, you can only set up a language insight for one repository at a time. (Want us to prioritize the ability to analyze multiple repositories in one pie chart? [Please do let us know](mailto:feedback@sourcegraph.com).)
 
 ### 4. Title your insight 
 
