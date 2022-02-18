@@ -82,14 +82,6 @@ run:
     # of dependencies in the root module (which has access to the colocated lib)
     # like we did with sg. That seemed very successful!
 
-    # In ./dev/bkstats
-    - main.go
-    # In ./dev/depgraph
-    - internal/graph/graph.go
-    - internal/lints/lint.go
-    - summary.go
-    - trace_internal.go
-    - trace.go
     # In ./enterprise/dev/insight-data-gen
     - main.go
     # In ./internal/cmd/progress-bot

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var summaryFlagSet = flag.NewFlagSet("depgraph summary", flag.ExitOnError)

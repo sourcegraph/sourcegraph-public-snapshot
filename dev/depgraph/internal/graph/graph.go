@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DependencyGraph encodes the import relationships between packages within

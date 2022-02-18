@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var token string
