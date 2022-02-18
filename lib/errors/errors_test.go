@@ -8,12 +8,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type errZooType string
+
+func newErrZoo() error {
+	err := errZooType("zoo")
+	return &err
+}
+func (e *errZooType) Error() string { return string(*e) }
+
 // Enforce some invariants with our error libraries.
 
 func TestMultiError(t *testing.T) {
 	errFoo := New("foo")
 	errBar := New("bar")
 	errBaz := New("baz")
+	errZoo := newErrZoo()
 	formattingDirectives := []string{"", "%s", "%v", "%+v"}
 	tests := []struct {
 		name string
@@ -54,6 +63,12 @@ func TestMultiError(t *testing.T) {
 			wantStrings: []string{"baz", "hello world", "foo", "bar"},
 			wantIs:      []error{errFoo, errBar, errBaz},
 		},
+		{
+			name:        "Append(Append(Append(Append)))",
+			err:         Append(Append(Append(errFoo, errBar), errBaz), errZoo),
+			wantStrings: []string{"zoo", "baz", "foo", "bar"},
+			wantIs:      []error{errFoo, errBar, errBaz, errZoo},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -76,6 +91,10 @@ func TestMultiError(t *testing.T) {
 			}
 			for _, isErr := range tt.wantIs {
 				assert.ErrorIs(t, tt.err, isErr)
+				if isErr.Error() == "zoo" {
+					var errZoo *errZooType
+					assert.ErrorAs(t, tt.err, &errZoo)
+				}
 			}
 		})
 	}
