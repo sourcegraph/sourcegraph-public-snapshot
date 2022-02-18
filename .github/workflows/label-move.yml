@@ -201,7 +201,7 @@ jobs:
   wcag-accessibility-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: PN_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/222
+      PROJECT_ID: PN_kwDOADy5QM4AAyDB # https://github.com/orgs/sourcegraph/projects/238
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
     - name: Get issue if relevant
