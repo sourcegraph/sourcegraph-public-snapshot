@@ -2074,17 +2074,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.search_context_repos"
 ```
       Column       |  Type   | Collation | Nullable | Default 
