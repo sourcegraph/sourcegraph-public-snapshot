@@ -1128,6 +1128,8 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyInsightCreators                   *int32
 	WeeklyFirstTimeInsightCreators          *int32
 	WeeklyAggregatedUsage                   []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
 	InsightTimeIntervals                    []InsightTimeIntervalPing
 	InsightOrgVisible                       []OrgVisibleInsightPing
 	InsightTotalCounts                      InsightTotalCounts
@@ -1181,6 +1183,11 @@ type InsightViewSeriesCountPing struct {
 	GenerationType string
 	ViewType       string
 	TotalCount     int
+}
+
+type InsightGetStartedTabClickPing struct {
+	TabName    string
+	TotalCount int
 }
 
 type InsightTotalCounts struct {

@@ -93,6 +93,8 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		WeekStart:                               weekStart,
 		WeeklyInsightCreators:                   &twoInt,
 		WeeklyFirstTimeInsightCreators:          &oneInt,
+		WeeklyGetStartedTabClickByTab:           []types.InsightGetStartedTabClickPing{},
+		WeeklyGetStartedTabMoreClickByTab:       []types.InsightGetStartedTabClickPing{},
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{
