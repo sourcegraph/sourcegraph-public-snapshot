@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
+import EmailIcon from 'mdi-react/EmailIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
@@ -31,7 +32,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
     )
-    const filteredCollaborators = useMemo(() => collaborators?.slice(0, 4), [collaborators])
+    const filteredCollaborators = useMemo(() => collaborators?.slice(0, 6), [collaborators])
 
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
@@ -65,33 +66,42 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading colleagues" />
 
     const contentDisplay = (
-        <div className={classNames('d-flex', 'flex-row', 'py-4')}>
+        <div className={classNames('row')}>
             {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
             {filteredCollaborators?.map((person: InvitableCollaborator) => (
-                <div className={classNames('d-flex', 'ml-3', 'align-items-center', 'flex-grow-1')} key={person.email}>
-                    <UserAvatar size={64} className={classNames(styles.avatar, 'mr-3')} user={person} />
-                    <div>
+                <div
+                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-4', styles.invitebox)}
+                    key={person.email}
+                >
+                    <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
+                    <div className={styles.content}>
                         <strong>{person.displayName}</strong>
-                        <div className="text-muted">{person.email}</div>
                         <div className={styles.inviteButton}>
                             {loadingInvites.has(person.email) ? (
-                                <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
+                                <span className=" ml-auto mr-3">
+                                    <LoadingSpinner inline={true} />
+                                    Inviting...
+                                </span>
                             ) : successfulInvites.has(person.email) ? (
-                                <span className="text-muted ml-auto mr-3">
-                                    <CheckCircleIcon className="icon-inline mr-1" />
+                                <span className="text-success ml-auto mr-3">
+                                    <EmailCheckIcon className="icon-inline mr-1" />
                                     Invited
                                 </span>
                             ) : (
-                                <Button
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={classNames('ml-auto', 'mr-3')}
-                                    onClick={() => invitePerson(person)}
-                                >
-                                    Invite
-                                </Button>
+                                <>
+                                    <div className="text-muted">{person.email}</div>
+                                    <div className={styles.inviteButtonOverlay}>
+                                        <Button
+                                            variant="link"
+                                            className={classNames('ml-auto', 'mr-3', styles.inviteButtonLink)}
+                                            onClick={() => invitePerson(person)}
+                                        >
+                                            <EmailIcon className="icon-inline mr-1" />
+                                            Invite to Sourcegraph
+                                        </Button>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
@@ -102,8 +112,9 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     return (
         <PanelContainer
-            className={classNames(className, 'repositories-panel')}
+            className={className}
             title="Invite your colleagues"
+            hideTitle={true}
             state={collaborators === undefined ? 'loading' : 'populated'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
