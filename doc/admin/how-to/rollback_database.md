@@ -7,7 +7,7 @@ If a customer downgrades their instance to a previous version, they need to down
 1. Developer created **backwards-incompatible** migration: if a migration added in the successor version that was not backwards-compatible, the code of the previous version may struggle operating with the new schema. This may be an emergency situation in which the previous schema must be restored to bring the instance back to a stable state.
 1. The customer is **downgrading multiple versions**: if a customer has downgraded their instance once, they will need to downgrade their database schema before downgrading their instance a subsequent time. This is because an instance two (or more) versions ago has no guarantee to run properly against the current database schema. Multiple instance downgrades therefore need to be performed in an alternating fashion with database downgrades.
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: This process applies only to versions `3.37` and later.
 
 > NOTE: A customer rollback is considered an **emergency operation**. Please contact support at <mailto:support@sourcegraph.com> for guidance on this operation.
 

@@ -188,7 +188,7 @@ You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md)
 
 ### Database Migrations
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
 The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 

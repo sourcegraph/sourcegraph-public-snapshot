@@ -99,7 +99,13 @@ If you're running into errors such as being unable to create a unique index due 
 
 ### 3. Add a migration log entry
 
-**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes) or [Docker-compose](./manual_database_migrations.md#docker-compose) or [local development](./manual_database_migrations.md#local-development) instructions on manually run database operations. The specific migrator command to run is `add-log -db=<schema> -version=<version>`. This indicates to future migrator and application instances that a complete application of the migration at that version has been run.
+**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
+
+- For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
+- For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`
+- For local development: run `sg add-log -db=<schema> -version=<version>` in a clone of [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph)
+
+Adding this migration log entry indicates to future migrator and application instances that a complete application of the migration at that version has been run.
 
 **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.** Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before adding a migration log entry.
 
