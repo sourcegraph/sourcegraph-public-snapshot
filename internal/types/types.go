@@ -661,6 +661,7 @@ type User struct {
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	Searchable            bool
 }
 
 type Org struct {
