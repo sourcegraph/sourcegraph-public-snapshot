@@ -95,20 +95,21 @@ func TestMultiError(t *testing.T) {
 				assert.ErrorIs(t, tt.err, isErr)
 				if isErr.Error() == "baz" {
 					var errBaz *errBazType
-					assert.ErrorAs(t, tt.err, &errBaz)
+					assert.ErrorAs(t, tt.err, &errBaz, "Want "+isErr.Error())
 				}
 				if isErr.Error() == "zoo" {
 					var errZoo *errZooType
-					assert.ErrorAs(t, tt.err, &errZoo)
+					assert.ErrorAs(t, tt.err, &errZoo, "Want "+isErr.Error())
 				}
 			}
-		})
-	}
-	for fn, str := range map[string]string{} {
-		t.Run(fn, func(t *testing.T) {
-			t.Log(str)
-			assert.Contains(t, str, "foo", fn)
-			assert.Contains(t, str, "bar", fn)
+			// We always want to be able to extract a MultiError from this error, because
+			// all the test cases test appends. We don't assert against its contents, but
+			// to see how we unwrap errors you can add:
+			//
+			//   t.Log("Extracted multi-error:\n", multi.Error())
+			//
+			var multi MultiError
+			assert.ErrorAs(t, tt.err, &multi)
 		})
 	}
 }
