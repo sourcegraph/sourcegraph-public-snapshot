@@ -10,27 +10,63 @@ import (
 
 // Enforce some invariants with our error libraries.
 
-func TestMultipleErrorPrinting(t *testing.T) {
-	// Make sure all our ways of combining errors actually print them.
-
+func TestMultiError(t *testing.T) {
 	errFoo := New("foo")
 	errBar := New("bar")
-
-	for fn, str := range map[string]string{
-		"Append":            Append(errFoo, errBar).Error(),
-		"Append Sprintf %s": fmt.Sprintf("%s", Append(errFoo, errBar)),
-		"Append Sprintf %v": fmt.Sprintf("%v", Append(errFoo, errBar)),
-
-		"CombineErrors":            CombineErrors(errFoo, errBar).Error(),
-		"CombineErrors Sprintf %s": fmt.Sprintf("%s", CombineErrors(errFoo, errBar)),
-		"CombineErrors Sprintf %v": fmt.Sprintf("%v", CombineErrors(errFoo, errBar)),
-
-		"Wrap Append":            Wrap(Append(errFoo, errBar), "hello world").Error(),
-		"Wrap Append Sprintf %s": fmt.Sprintf("%s", Wrap(Append(errFoo, errBar), "hello world")),
-		"Wrap Append Sprintf %v": fmt.Sprintf("%v", Wrap(Append(errFoo, errBar), "hello world")),
-
-		"Fancy stack %+v": fmt.Sprintf("%+v", Wrap(Wrap(Append(errFoo, errBar), "hello world"), "deep!")),
-	} {
+	formattingDirectives := []string{"", "%s", "%v", "%+v"}
+	tests := []struct {
+		name string
+		err  error
+		// Make sure all our ways of combining errors actually print them.
+		wantStrings []string
+		// Make sure all our ways of combining errors retains our ability to assert
+		// against them.
+		wantIs []error
+	}{
+		{
+			name:        "Append",
+			err:         Append(errFoo, errBar),
+			wantStrings: []string{"foo", "bar"},
+			wantIs:      []error{errFoo, errBar},
+		},
+		{
+			name:        "CombineErrors",
+			err:         CombineErrors(errFoo, errBar),
+			wantStrings: []string{"foo", "bar"},
+			wantIs:      []error{errFoo, errBar},
+		},
+		{
+			name:        "Wrap(Append)",
+			err:         Wrap(Append(errFoo, errBar), "hello world"),
+			wantStrings: []string{"hello world", "foo", "bar"},
+			wantIs:      []error{errFoo, errBar},
+		},
+		{
+			name:        "Wrap(Wrap(Append))",
+			err:         Wrap(Wrap(Append(errFoo, errBar), "hello world"), "deep!"),
+			wantStrings: []string{"deep", "hello world", "foo", "bar"},
+			wantIs:      []error{errFoo, errBar},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, directive := range formattingDirectives {
+				var str string
+				if directive == "" {
+					str = tt.err.Error()
+				} else {
+					str = fmt.Sprintf(directive, tt.err)
+				}
+				for _, contains := range tt.wantStrings {
+					assert.Contains(t, str, contains)
+				}
+			}
+			for _, isErr := range tt.wantIs {
+				assert.ErrorIs(t, tt.err, isErr)
+			}
+		})
+	}
+	for fn, str := range map[string]string{} {
 		t.Run(fn, func(t *testing.T) {
 			t.Log(str)
 			assert.Contains(t, str, "foo", fn)
