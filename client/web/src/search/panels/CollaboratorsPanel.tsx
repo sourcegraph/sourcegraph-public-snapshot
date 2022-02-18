@@ -83,7 +83,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                     >
                         <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
                         <div className={styles.content}>
-                            <strong>{person.displayName}</strong>
+                            <strong className={styles.clipText}>{person.displayName}dasdfjlaskdfjlsakfd</strong>
                             <div className={styles.inviteButton}>
                                 {loadingInvites.has(person.email) ? (
                                     <span className=" ml-auto mr-3">
@@ -97,7 +97,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                                     </span>
                                 ) : (
                                     <>
-                                        <div className="text-muted">{person.email}</div>
+                                        <div className={classNames('text-muted', styles.clipText)}>{person.email}</div>
                                         <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
                                             <EmailIcon className="icon-inline mr-1" />
                                             Invite to Sourcegraph
