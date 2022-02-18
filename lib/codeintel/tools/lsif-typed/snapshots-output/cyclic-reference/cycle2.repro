@@ -1,0 +1,10 @@
+ # Test cyclic references between files.
+ definition hello2().
+#           ^^^^^^^^^ definition cycle2.repro/hello2().
+#           documentation signature of hello2().
+ reference hello().
+#          ^^^^^^^^ reference cycle1.repro/hello().
+ reference hello2().
+#          ^^^^^^^^^ reference cycle2.repro/hello2().
+ 
+ 
