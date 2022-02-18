@@ -156,7 +156,8 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		url, err := redactSensitiveInfoFromCloudAppURL(event.URL)
+
+		url, err := redactSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
 			return nil, err
 		}
@@ -229,16 +230,14 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 	return databaseEvents, nil
 }
 
-// redactSensitiveInfoFromCloudAppURL redacts portions of Sourcegraph Cloud URLs that
-// may contain sensitive info. We remove all paths, and only maintain query
-// parameters in a specified allowlist, which are essential for marketing analytics.
-func redactSensitiveInfoFromCloudAppURL(rawURL string) (string, error) {
+// redactSensitiveInfoFromCloudURL redacts portions of URLs that
+// may contain sensitive info on Sourcegraph Cloud. We replace all paths,
+// and only maintain query parameters in a specified allowlist,
+// which are known to be essential for marketing analytics on Sourcegraph Cloud.
+func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
-	}
-	if parsedURL.Host != "sourcegraph.com" {
-		return rawURL, nil
 	}
 
 	parsedURL.RawPath = "/redacted"
@@ -255,7 +254,7 @@ func redactSensitiveInfoFromCloudAppURL(rawURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	for key, _ := range urlQueryParams {
+	for key := range urlQueryParams {
 		if _, ok := marketingQueryParameters[key]; !ok {
 			urlQueryParams[key] = []string{"redacted"}
 		}
