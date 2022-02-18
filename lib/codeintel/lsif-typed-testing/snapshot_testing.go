@@ -58,7 +58,7 @@ func snapshotTestSources(t *testing.T, inputDirectory, outputDirectory string, o
 			obtained := document.Text
 			outputFile := filepath.Join(outputDirectory, document.RelativePath)
 			expected, err := os.ReadFile(outputFile)
-			if err == nil {
+			if err != nil {
 				expected = []byte{}
 			}
 			if *updateLsifSnapshots {
