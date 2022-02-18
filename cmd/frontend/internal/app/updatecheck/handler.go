@@ -179,26 +179,27 @@ type pingRequest struct {
 	Activity             json.RawMessage `json:"act"`
 	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage"`
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
-	AutomationUsage     json.RawMessage `json:"automationUsage"`
-	GrowthStatistics    json.RawMessage `json:"growthStatistics"`
-	SavedSearches       json.RawMessage `json:"savedSearches"`
-	HomepagePanels      json.RawMessage `json:"homepagePanels"`
-	SearchOnboarding    json.RawMessage `json:"searchOnboarding"`
-	Repositories        json.RawMessage `json:"repositories"`
-	RetentionStatistics json.RawMessage `json:"retentionStatistics"`
-	CodeIntelUsage      json.RawMessage `json:"codeIntelUsage"`
-	NewCodeIntelUsage   json.RawMessage `json:"newCodeIntelUsage"`
-	SearchUsage         json.RawMessage `json:"searchUsage"`
-	ExtensionsUsage     json.RawMessage `json:"extensionsUsage"`
-	CodeInsightsUsage   json.RawMessage `json:"codeInsightsUsage"`
-	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
-	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
-	InitialAdminEmail   string          `json:"initAdmin"`
-	TosAccepted         bool            `json:"tosAccepted"`
-	TotalUsers          int32           `json:"totalUsers"`
-	HasRepos            bool            `json:"repos"`
-	EverSearched        bool            `json:"searched"`
-	EverFindRefs        bool            `json:"refs"`
+	AutomationUsage               json.RawMessage `json:"automationUsage"`
+	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
+	SavedSearches                 json.RawMessage `json:"savedSearches"`
+	HomepagePanels                json.RawMessage `json:"homepagePanels"`
+	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
+	Repositories                  json.RawMessage `json:"repositories"`
+	RetentionStatistics           json.RawMessage `json:"retentionStatistics"`
+	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage"`
+	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage"`
+	SearchUsage                   json.RawMessage `json:"searchUsage"`
+	ExtensionsUsage               json.RawMessage `json:"extensionsUsage"`
+	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
+	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
+	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
+	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
+	InitialAdminEmail             string          `json:"initAdmin"`
+	TosAccepted                   bool            `json:"tosAccepted"`
+	TotalUsers                    int32           `json:"totalUsers"`
+	HasRepos                      bool            `json:"repos"`
+	EverSearched                  bool            `json:"searched"`
+	EverFindRefs                  bool            `json:"refs"`
 }
 
 type dependencyVersions struct {

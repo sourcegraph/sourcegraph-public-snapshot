@@ -17,6 +17,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
+- Code Insights: total count of insights 
 
 ## Other telemetry
 
