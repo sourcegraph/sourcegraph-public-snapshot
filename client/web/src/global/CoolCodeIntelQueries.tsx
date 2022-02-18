@@ -92,7 +92,7 @@ export const FETCH_REFERENCES_QUERY = gql`
 `
 
 const gitBlobLsifDataQueryFragment = gql`
-    fragment RefPanelLsifDataFields on GitBlobLSIFData {
+    fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
         references(
             line: $line
             character: $character
@@ -120,8 +120,8 @@ const gitBlobLsifDataQueryFragment = gql`
     }
 `
 
-export const USE_CODE_INTEL_QUERY = gql`
-    query GetPreciseCodeIntel(
+export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
+    query UsePreciseCodeIntelForPosition(
         $repository: String!
         $commit: String!
         $path: String!
@@ -141,7 +141,7 @@ export const USE_CODE_INTEL_QUERY = gql`
                 id
                 blob(path: $path) {
                     lsif {
-                        ...RefPanelLsifDataFields
+                        ...PreciseCodeIntelForLocationFields
                     }
                 }
             }

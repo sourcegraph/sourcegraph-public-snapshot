@@ -1,12 +1,21 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
-import { getDocumentNode, GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, getDocumentNode, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
-import { GetPreciseCodeIntelVariables, RefPanelLsifDataFields } from '../graphql-operations'
+import {
+    UsePreciseCodeIntelForPositionVariables,
+    RefPanelLsifDataFields,
+    UsePreciseCodeIntelForPositionResult,
+    PreciseCodeIntelForLocationFields,
+} from '../graphql-operations'
 
-import { LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, LOAD_ADDITIONAL_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import {
+    LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
+    LOAD_ADDITIONAL_REFERENCES_QUERY,
+    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
+} from './CoolCodeIntelQueries'
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: RefPanelLsifDataFields
@@ -14,50 +23,34 @@ export interface UsePreciseCodeIntelResult {
     loading: boolean
 
     referencesHasNextPage: boolean
-    implementationsHasNextPage: boolean
     fetchMoreReferences: () => void
+
+    implementationsHasNextPage: boolean
     fetchMoreImplementations: () => void
 }
 
 interface UsePreciseCodeIntelConfig {
-    /** Set if query variables should be updated in and derived from the URL */
-    useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
-    /** Set to enable polling of all the nodes currently loaded in the connection */
-    pollInterval?: number
 }
 
-interface UsePreciseCodeIntelParameters<TResult> {
-    query: string
-    variables: GetPreciseCodeIntelVariables & ConnectionQueryArguments
-    getConnection: (result: GraphQLResult<TResult>) => RefPanelLsifDataFields
+interface UsePreciseCodeIntelParameters {
+    variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     options?: UsePreciseCodeIntelConfig
 }
 
-export const usePreciseCodeIntel = <TResult,>({
-    query,
+export const usePreciseCodeIntel = ({
     variables,
-    getConnection: getLsifDataFromGraphQLResult,
     options,
-}: UsePreciseCodeIntelParameters<TResult>): UsePreciseCodeIntelResult => {
+}: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
     const { data, error, loading, fetchMore } = useQuery<
-        TResult,
-        GetPreciseCodeIntelVariables & ConnectionQueryArguments
-    >(query, {
+        UsePreciseCodeIntelForPositionResult,
+        UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+    >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
         variables,
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
     })
-
-    /**
-     * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
-     * This ensures good interoperability between `FilteredConnection` and `useConnection`.
-     */
-    const getLsifData = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): RefPanelLsifDataFields => {
-        const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
-        return getLsifDataFromGraphQLResult(result)
-    }
 
     const lsifData = data ? getLsifData({ data, error }) : undefined
 
@@ -126,4 +119,42 @@ export const usePreciseCodeIntel = <TResult,>({
         referencesHasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
         implementationsHasNextPage: lsifData ? lsifData.implementations.pageInfo.endCursor !== null : false,
     }
+}
+
+const getLsifData = ({
+    data,
+    error,
+}: Pick<QueryResult<UsePreciseCodeIntelForPositionResult>, 'data' | 'error'>): PreciseCodeIntelForLocationFields => {
+    const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
+
+    const extractedData = dataOrThrowErrors(result)
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!extractedData || !extractedData.repository?.commit?.blob?.lsif) {
+        return {
+            hover: null,
+            definitions: {
+                nodes: [],
+                pageInfo: {
+                    endCursor: null,
+                },
+            },
+            references: {
+                nodes: [],
+                pageInfo: {
+                    endCursor: null,
+                },
+            },
+            implementations: {
+                nodes: [],
+                pageInfo: {
+                    endCursor: null,
+                },
+            },
+        }
+    }
+
+    const lsif = extractedData.repository?.commit?.blob?.lsif
+
+    return lsif
 }

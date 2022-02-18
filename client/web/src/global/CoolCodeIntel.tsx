@@ -21,7 +21,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
-import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -55,7 +55,6 @@ import {
     CoolCodeIntelHighlightedBlobVariables,
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
-    GetPreciseCodeIntelResult,
     HoverFields,
     LocationConnectionFields,
     LocationFields,
@@ -66,8 +65,8 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { usePreciseCodeIntel } from './CoolCodeIntelHook'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY, USE_CODE_INTEL_QUERY } from './CoolCodeIntelQueries'
+import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
@@ -320,8 +319,7 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
         implementationsHasNextPage,
         fetchMoreReferences,
         fetchMoreImplementations,
-    } = usePreciseCodeIntel<GetPreciseCodeIntelResult>({
-        query: USE_CODE_INTEL_QUERY,
+    } = usePreciseCodeIntel({
         variables: {
             repository: props.clickedToken.repoName,
             commit: props.clickedToken.commitID,
@@ -338,38 +336,6 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
         },
         options: {
             fetchPolicy: 'cache-first',
-        },
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
-
-            // If there weren't any errors and we just didn't receive any data
-            if (!data || !data.repository?.commit?.blob?.lsif) {
-                return {
-                    hover: null,
-                    definitions: {
-                        nodes: [],
-                        pageInfo: {
-                            endCursor: null,
-                        },
-                    },
-                    references: {
-                        nodes: [],
-                        pageInfo: {
-                            endCursor: null,
-                        },
-                    },
-                    implementations: {
-                        nodes: [],
-                        pageInfo: {
-                            endCursor: null,
-                        },
-                    },
-                }
-            }
-
-            const lsif = data.repository?.commit?.blob?.lsif
-
-            return lsif
         },
     })
 
