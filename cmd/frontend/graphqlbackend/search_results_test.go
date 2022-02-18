@@ -331,7 +331,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -540,12 +540,10 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: database.NewMockDB(),
-				SearchResults: &SearchResults{
-					Stats:   tt.fields.searchResultsCommon,
-					Matches: tt.fields.results,
-					Alert:   tt.fields.alert,
-				},
+				db:          database.NewMockDB(),
+				Stats:       tt.fields.searchResultsCommon,
+				Matches:     tt.fields.results,
+				SearchAlert: tt.fields.alert,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -692,7 +690,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal("Results:", err)
 			}
 			if tt.wantAlert {
-				if results.SearchResults.Alert == nil {
+				if results.SearchAlert == nil {
 					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {

@@ -47,6 +47,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
+type SearchResultsResolver struct {
+	db          database.DB
+	Matches     result.Matches
+	Stats       streaming.Stats
+	SearchAlert *search.Alert
+
+	// limit is the maximum number of SearchResults to send back to the user.
+	limit int
+
+	// The time it took to compute all results.
+	elapsed time.Duration
+
+	// cache for user settings. Ideally this should be set just once in the code path
+	// by an upstream resolver
+	UserSettings *schema.Settings
+}
+
 func (c *SearchResultsResolver) LimitHit() bool {
 	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
 }
@@ -121,28 +139,6 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return false
 }
 
-// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
-type SearchResultsResolver struct {
-	db database.DB
-	*SearchResults
-
-	// limit is the maximum number of SearchResults to send back to the user.
-	limit int
-
-	// The time it took to compute all results.
-	elapsed time.Duration
-
-	// cache for user settings. Ideally this should be set just once in the code path
-	// by an upstream resolver
-	UserSettings *schema.Settings
-}
-
-type SearchResults struct {
-	Matches result.Matches
-	Stats   streaming.Stats
-	Alert   *search.Alert
-}
-
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
@@ -207,7 +203,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 }
 
 func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
-	return NewSearchAlertResolver(sr.SearchResults.Alert)
+	return NewSearchAlertResolver(sr.SearchAlert)
 }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
@@ -490,9 +486,9 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	defer wg.Wait()
 
 	var status, alertType string
-	status = DetermineStatusForLogs(srr.SearchResults.Alert, srr.SearchResults.Stats, err)
-	if srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType
+	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
+	if srr.SearchAlert != nil {
+		alertType = srr.SearchAlert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -527,11 +523,7 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
 	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
-	srr := r.resultsToResolver(&SearchResults{
-		Matches: agg.Results,
-		Stats:   agg.Stats,
-		Alert:   alert,
-	})
+	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	r.logBatch(ctx, srr, err)
 	return srr, err
@@ -539,19 +531,18 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
 	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
-	srr := r.resultsToResolver(&SearchResults{Alert: alert})
+	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
 	return srr, err
 }
 
-func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResultsResolver {
-	if results == nil {
-		results = &SearchResults{}
-	}
+func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
 	return &SearchResultsResolver{
-		SearchResults: results,
-		limit:         r.SearchInputs.MaxResults(),
-		db:            r.db,
-		UserSettings:  r.SearchInputs.UserSettings,
+		Matches:      matches,
+		SearchAlert:  alert,
+		Stats:        stats,
+		limit:        r.SearchInputs.MaxResults(),
+		db:           r.db,
+		UserSettings: r.SearchInputs.UserSettings,
 	}
 }
 
@@ -599,7 +590,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 	for _, q := range oldPlan {
 		q := q
 		g.Go(func() error {
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
+			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (result.Matches, error) {
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
@@ -615,16 +606,11 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 				}
 
 				agg := streaming.NewAggregatingStream()
-				alert, err := r.evaluateJob(ctx, agg, job.NewOrJob(children...))
+				_, err = r.evaluateJob(ctx, agg, job.NewOrJob(children...))
 				if err != nil {
 					return nil, err
 				}
-
-				return &SearchResults{
-					Matches: agg.Results,
-					Stats:   agg.Stats,
-					Alert:   alert,
-				}, nil
+				return agg.Results, nil
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				// The predicate has no results, so neither will this basic query
@@ -778,7 +764,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResults, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (result.Matches, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -800,7 +786,7 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		name, params := query.ParseAsPredicate(value)
 		predicate := query.DefaultPredicateRegistry.Get(field, name)
 		predicate.ParseParams(params)
-		srr, err := evaluate(predicate)
+		matches, err := evaluate(predicate)
 		if err != nil {
 			topErr = err
 			return nil
@@ -809,13 +795,13 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		var nodes []query.Node
 		switch predicate.Field() {
 		case query.FieldRepo:
-			nodes, err = searchResultsToRepoNodes(srr.Matches)
+			nodes, err = searchResultsToRepoNodes(matches)
 			if err != nil {
 				topErr = err
 				return nil
 			}
 		case query.FieldFile:
-			nodes, err = searchResultsToFileNodes(srr.Matches)
+			nodes, err = searchResultsToFileNodes(matches)
 			if err != nil {
 				topErr = err
 				return nil
@@ -945,14 +931,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
-		v = r.resultsToResolver(&SearchResults{
-			Matches: agg.Results,
-			Stats:   agg.Stats,
-		})
+		v = r.resultsToResolver(agg.Results, alert, agg.Stats)
 		if v.MatchCount() > 0 {
 			break
 		}
