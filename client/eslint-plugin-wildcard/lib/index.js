@@ -45,18 +45,6 @@ module.exports = {
             ],
           },
         ],
-        'no-restricted-imports': [
-          'error',
-          {
-            paths: [
-              {
-                name: 'react-router-dom',
-                importNames: ['Link'],
-                message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
-              },
-            ],
-          },
-        ],
       },
     },
   },

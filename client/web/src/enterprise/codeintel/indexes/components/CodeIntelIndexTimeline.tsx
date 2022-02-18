@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import { isArray } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
