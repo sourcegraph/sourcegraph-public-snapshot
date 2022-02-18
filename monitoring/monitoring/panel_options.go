@@ -193,8 +193,11 @@ func (panelOptionsLibrary) ColorOverride(seriesName string, color string) Observ
 //
 // Only supports `PanelTypeGraph`.
 func (panelOptionsLibrary) LegendOnRight() ObservablePanelOption {
-	return func(_ Observable, panel *sdk.Panel) {
-		panel.GraphPanel.Legend.RightSide = true
+	return func(o Observable, panel *sdk.Panel) {
+		switch o.Panel.panelType {
+		case PanelTypeGraph:
+			panel.GraphPanel.Legend.RightSide = true
+		}
 	}
 }
 
