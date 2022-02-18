@@ -1,8 +1,3 @@
-// Package opentracer initializes distributed tracing and log15 behavior. It also updates distributed
-// tracing behavior in response to changes in site configuration. When the Init function of this
-// package is invoked, opentracing.SetGlobalTracer is called (and subsequently called again after
-// every Sourcegraph site configuration change). Importing programs should not invoke
-// opentracing.SetGlobalTracer anywhere else.
 package tracer
 
 import (
@@ -39,9 +34,9 @@ func init() {
 	}
 }
 
-// Options control the behavior of a Tracer
-type Options struct {
-	Tracer
+// options control the behavior of a tracerType
+type options struct {
+	tracerType
 	externalURL string
 	debug       bool
 	// these values are not configurable at runtime
@@ -50,55 +45,64 @@ type Options struct {
 	env         string
 }
 
-type Tracer string
+type tracerType string
 
 const (
-	none    Tracer = ""
-	datadog Tracer = "datadog"
-	jaeg    Tracer = "opentracing"
+	None    tracerType = ""
+	Datadog tracerType = "datadog"
+	Jaeg    tracerType = "opentracing"
 )
 
-// Option follows this idiom https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
-type Option func(*Options)
-
-func WithTracer(t Tracer) Option {
-	if t != none && t != datadog && t != jaeg {
-		log15.Info("impossible tracer ")
-		panic("impossible tracer chosen")
+func (t tracerType) isValid() bool {
+	switch t {
+	case None, Datadog, Jaeg:
+		return true
 	}
-	return func(o *Options) {
-		o.Tracer = t
+	return false
+}
+
+// Option follows this idiom https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
+type Option func(*options)
+
+func WithTracer(tracer string) Option {
+	t := tracerType(tracer)
+	if !t.isValid() {
+		log15.Info("unsupported tracer: ", tracer)
+		t = None
+	}
+	return func(o *options) {
+		o.tracerType = t
 	}
 }
 
 func WithService(name string) Option {
-	return func(o *Options) {
+	return func(o *options) {
 		o.serviceName = name
 	}
 }
 
 func WithDebug(enabled bool) Option {
-	return func(o *Options) {
+	return func(o *options) {
 		o.debug = enabled
 	}
 }
 
 func WithExternalURL(url string) Option {
-	return func(o *Options) {
+	return func(o *options) {
 		o.externalURL = url
 	}
 }
 
 func WithServiceVersion(v string) Option {
-	return func(o *Options) {
+	return func(o *options) {
 		o.version = v
 	}
 }
 
 // Init should be called from the main function of service
-func Init(c conftypes.WatchableSiteConfig, options ...Option) {
-	opts := &Options{}
-	for _, setter := range options {
+func Init(c conftypes.WatchableSiteConfig, passedOpts ...Option) {
+	opts := &options{}
+	for _, setter := range passedOpts {
 		setter(opts)
 	}
 	if opts.serviceName == "" {
@@ -115,7 +119,7 @@ func Init(c conftypes.WatchableSiteConfig, options ...Option) {
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
-func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
+func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
 
@@ -124,8 +128,8 @@ func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
 	initial := true
 
 	// Initially everything is disabled since we haven't read conf yet.
-	oldOpts := Options{
-		Tracer:      none,
+	oldOpts := options{
+		tracerType:  None,
 		debug:       false,
 		serviceName: opts.serviceName,
 		version:     opts.version,
@@ -139,9 +143,9 @@ func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
 		// Set sampling strategy
 		samplingStrategy := ot.TraceNone
 		shouldLog := false
-		tracerType := none
+		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
-			tracerType = Tracer(tracingConfig.Type)
+			setTracer = tracerType(tracingConfig.Type)
 			switch tracingConfig.Sampling {
 			case "all":
 				samplingStrategy = ot.TraceAll
@@ -156,9 +160,9 @@ func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
 		initial = false
 		ot.SetTracePolicy(samplingStrategy)
 
-		opts := Options{
+		opts := options{
 			externalURL: siteConfig.ExternalURL,
-			Tracer:      tracerType,
+			tracerType:  setTracer,
 			debug:       shouldLog,
 			serviceName: opts.serviceName,
 			version:     opts.version,
@@ -174,7 +178,7 @@ func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
 
 		t, closer, err := newTracer(&opts)
 		if err != nil {
-			log15.Warn("Could not initialize tracer", "error", err.Error())
+			log15.Warn("Could not initialize tracer", "tracer", opts.tracerType, "error", err.Error())
 			return
 		}
 		globalTracer.set(t, closer, opts.debug)
@@ -182,14 +186,14 @@ func initTracer(opts *Options, c conftypes.WatchableSiteConfig) {
 }
 
 // TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newTracer(opts *Options) (opentracing.Tracer, io.Closer, error) {
-	if opts.Tracer == none {
+func newTracer(opts *options) (opentracing.Tracer, io.Closer, error) {
+	if opts.tracerType == None {
 		log15.Info("tracing disabled")
 		ddtracer.Stop()
 		return opentracing.NoopTracer{}, nil, nil
 	}
-	if opts.Tracer == datadog {
-		log15.Info("datadog: tracing enabled")
+	if opts.tracerType == Datadog {
+		log15.Info("Datadog: tracing enabled")
 		tracer := ddopentracing.New(ddtracer.WithService(opts.serviceName),
 			ddtracer.WithDebugMode(opts.debug),
 			ddtracer.WithServiceVersion(opts.version), ddtracer.WithEnv(opts.env))
@@ -197,7 +201,7 @@ func newTracer(opts *Options) (opentracing.Tracer, io.Closer, error) {
 	}
 	ddtracer.Stop()
 
-	log15.Info("opentracing: Jaeger enabled")
+	log15.Info("opentracing:  enabled")
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = opts.serviceName
 	if err != nil {
@@ -207,7 +211,7 @@ func newTracer(opts *Options) (opentracing.Tracer, io.Closer, error) {
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-		// enough to connect Sourcegraph to Jaeger without any env vars.
+		// enough to connect Sourcegraph to  without any env vars.
 		cfg.Sampler.Type = jaeger.SamplerTypeConst
 		cfg.Sampler.Param = 1
 	}
