@@ -71,7 +71,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
                     checked={disableSearchable}
                     onChange={onCheckboxChange}
                     label="Don’t share my profile in autocomplete search results on Sourcegraph Cloud"
-                    message="Other Sourcegraph users will only be able to add you to organizations if they know your username"
+                    message="Other Sourcegraph users will only be able to add you to organizations if they know your username or email"
                 />
                 <div className="d-flex justify-content-start mt-4 mb-3 border-bottom">
                     <Button
@@ -87,7 +87,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
                 <div className="d-flex justify-content-start mb-3">
                     <p>
                         Learn more about{' '}
-                        <Link to="/">how your data and privacy is protected on Sourcegraph Cloud.</Link>
+                        <Link to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#how-secure-is-sourcegraph-cloud-can-sourcegraph-see-my-code">how your data and privacy is protected on Sourcegraph Cloud.</Link>
                     </p>
                 </div>
                 {error && <ErrorAlert className="mt-2" error={error} />}
