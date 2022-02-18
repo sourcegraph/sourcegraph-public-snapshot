@@ -138,7 +138,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     )
 
     const onClick = useCallback(
-        (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+        (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
             eventLogger.log('GoToCodeHostClicked')
 
             if (isPopoverOpen) {
@@ -238,6 +238,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     }
 
     const commonProps: Partial<RepoHeaderActionAnchorProps> = {
+        to: hijackLink ? '' : url,
         target: '_blank',
         rel: 'noopener noreferrer',
         id: TARGET_ID,
