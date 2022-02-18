@@ -4,8 +4,7 @@ const path = require('path')
 const shelljs = require('shelljs')
 const signale = require('signale')
 
-const config = require('../bundled-code-intel-extensions.json')
-const extensionNames = config.extensions || []
+const { extensions: extensionNames = [], revision } = require('../bundled-code-intel-extensions.json')
 
 const toDirectory = path.join(process.cwd(), 'build')
 const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
@@ -13,15 +12,15 @@ const pathToRevisionFile = path.join(process.cwd(), 'code-intel-extensions', 're
 
 // Check if code-intel-extensions has already been fetched
 const codeIntelExtensionsDirectoryExists = shelljs.test('-d', temporarySourceDirectory)
-if (codeIntelExtensionsDirectoryExists && fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString() === config.revision) {
+const codeIntelExtensionsRevisionFetched =
+  fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString() === revision
+
+if (codeIntelExtensionsDirectoryExists && codeIntelExtensionsRevisionFetched) {
   console.log('Found existing code-intel-extensions.')
 } else {
   console.log('Did not find an existing code-intel-extensions. Running fetch-code-intel-extensions')
-  console.log(fs.existsSync(pathToRevisionFile) ? fs.readFileSync(pathToRevisionFile).toString() : 'not found', config.revision)
   shelljs.exec('yarn run fetch-code-intel-extensions')
-  // Save revision info
-  shelljs.exec(`touch ${pathToRevisionFile}`)
-  shelljs.exec(`echo ${config.revision} >> ${pathToRevisionFile}`)
+  fs.writeFileSync(pathToRevisionFile, revision)
 }
 
 // Install dependencies
