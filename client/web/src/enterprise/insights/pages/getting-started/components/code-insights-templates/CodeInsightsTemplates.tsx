@@ -129,7 +129,11 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
             : [{ query: template.templateValues.groupSearchQuery }]
 
     const handleUseTemplateLinkClick = (): void => {
-        telemetryService.log('InsightGetStartedTemplateClick')
+        telemetryService.log(
+            'InsightGetStartedTemplateClick',
+            { templateName: template.title },
+            { templateName: template.title }
+        )
     }
 
     return (
@@ -141,7 +145,12 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                 {series.map(
                     line =>
                         line.query && (
-                            <QueryPanel key={line.query} query={line.query} telemetryService={telemetryService} />
+                            <QueryPanel
+                                key={line.query}
+                                query={line.query}
+                                templateName={template.title}
+                                telemetryService={telemetryService}
+                            />
                         )
                 )}
             </div>
@@ -162,13 +171,14 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
 
 interface QueryPanelProps extends TelemetryProps {
     query: string
+    templateName: string
 }
 
 const copyTooltip = 'Copy query'
 const copyCompletedTooltip = 'Copied!'
 
 const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
-    const { query, telemetryService } = props
+    const { query, templateName, telemetryService } = props
 
     const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
 
@@ -182,7 +192,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
         })
 
         event.preventDefault()
-        telemetryService.log('InsightGetStartedTemplateCopyClick')
+        telemetryService.log('InsightGetStartedTemplateCopyClick', { templateName }, { templateName })
     }
 
     return (
