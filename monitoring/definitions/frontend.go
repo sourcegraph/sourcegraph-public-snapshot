@@ -634,18 +634,19 @@ func Frontend() *monitoring.Container {
 							Description: "mean position of clicked search result over 6h",
 							Query:       "sum by (type) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (type) (rate(src_search_ranking_result_clicked_count[6h]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.Current = true
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Targets = []sdk.Target{{
-									Expr:         o.Query,
-									LegendFormat: "{{type}}",
-								}, {
-									Expr:         "sum by (app) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (app) (rate(src_search_ranking_result_clicked_count[6h]))",
-									LegendFormat: "all",
-								}}
-								p.GraphPanel.Tooltip.Shared = true
-							}),
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{type}}",
+									}, {
+										Expr:         "sum by (app) (rate(src_search_ranking_result_clicked_sum[6h]))/sum by (app) (rate(src_search_ranking_result_clicked_count[6h]))",
+										LegendFormat: "all",
+									}}
+									p.GraphPanel.Tooltip.Shared = true
+								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The top-most result on the search results has position 0. Low values are considered better. This metric only tracks top-level items and not individual line matches.",
 						},
@@ -654,21 +655,22 @@ func Frontend() *monitoring.Container {
 							Description: "distribution of clicked search result type over 6h in %",
 							Query:       "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"commit\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.Current = true
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Targets = []sdk.Target{{
-									Expr:         o.Query,
-									LegendFormat: "commit",
-								}, {
-									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
-									LegendFormat: "fileMatch",
-								}, {
-									Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
-									LegendFormat: "repo",
-								}}
-								p.GraphPanel.Tooltip.Shared = true
-							}),
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "commit",
+									}, {
+										Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"fileMatch\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+										LegendFormat: "fileMatch",
+									}, {
+										Expr:         "round(sum(increase(src_search_ranking_result_clicked_sum{type=\"repo\"}[6h])) / sum (increase(src_search_ranking_result_clicked_sum[6h]))*100)",
+										LegendFormat: "repo",
+									}}
+									p.GraphPanel.Tooltip.Shared = true
+								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The distribution of clicked search results by result type. At every point in time, the values should sum to 100.",
 						},
