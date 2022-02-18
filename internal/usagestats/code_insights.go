@@ -148,7 +148,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetWeeklyTabClicks")
+		return nil, errors.Wrap(err, "GetWeeklyTabMoreClicks")
 	}
 	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
 
