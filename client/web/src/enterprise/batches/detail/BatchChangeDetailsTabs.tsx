@@ -38,7 +38,10 @@ import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
+    // Non-SSBC
     Spec = 'spec',
+    // SSBC-only
+    Executions = 'executions',
     Archived = 'archived',
     BulkOperations = 'bulkoperations',
 }
@@ -51,6 +54,8 @@ export interface BatchChangeDetailsProps
         TelemetryProps {
     history: H.History
     location: H.Location
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
 
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
@@ -73,6 +78,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     location,
     platformContext,
     settingsCascade,
+    initialTab = TabName.Changesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
@@ -86,7 +92,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
         false
 
     return (
-        <BatchChangeTabs history={history} location={location}>
+        <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
@@ -118,11 +124,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </BatchChangeTab>
                 )}
                 {executionEnabled && (
-                    <BatchChangeTab index={2} name={TabName.Spec}>
+                    <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
                             <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                            <span className="text-content" data-tab-content="Specs">
-                                Specs
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
                             </span>
                         </span>
                     </BatchChangeTab>

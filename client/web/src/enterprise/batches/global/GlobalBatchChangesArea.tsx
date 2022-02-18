@@ -134,6 +134,18 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 )}
             />
             <Route
+                path={`${match.url}/:batchChangeName/executions`}
+                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
+                    <BatchChangeDetailsPage
+                        {...outerProps}
+                        {...props}
+                        namespaceID={namespaceID}
+                        batchChangeName={match.params.batchChangeName}
+                        initialTab={TabName.Executions}
+                    />
+                )}
+            />
+            <Route
                 path={`${match.url}/:batchChangeName`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <BatchChangeDetailsPage
