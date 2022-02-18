@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Searching for the pattern `//` with regular expression search is now interpreted literally and will search for `//`. Previously, the `//` pattern was interpreted as our regular expression syntax `/<regexp>/` which would in turn be intrpreted as the empty string. Since searching for an empty string offers little practically utility, we now instead interpret `//` to search for its literal meaning in regular expression search. [#31520](https://github.com/sourcegraph/sourcegraph/pull/31520)
 
 ### Fixed
 
