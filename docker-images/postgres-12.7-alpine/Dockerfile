@@ -1,4 +1,4 @@
-FROM postgres:12.7-alpine@sha256:1ba4e7aa3db644e8f6faee085bb40c1e050baa9a28f79948daa98220b2dc0394
+FROM postgres:12.7-alpine@sha256:b815f145ef6311e24e4bc4d165dad61b2d8e4587c96cea2944297419c5c93054
 
 # We modify the postgres user/group to reconcile with our previous debian based images
 # and avoid issues with customers migrating.
@@ -22,4 +22,3 @@ ENV POSTGRES_PASSWORD='' \
 COPY rootfs /
 USER postgres
 ENTRYPOINT ["/postgres.sh"]
-
