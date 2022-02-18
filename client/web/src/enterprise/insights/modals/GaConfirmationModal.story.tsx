@@ -39,7 +39,7 @@ const Story: Meta = {
 
 export default Story
 
-export const BetaModalUI: React.FunctionComponent = () => {
+export const GaConfirmationModalExample: React.FunctionComponent = () => {
     const settingsStorage = new TemporarySettingsStorage(settingsClient, true)
 
     settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend({}))

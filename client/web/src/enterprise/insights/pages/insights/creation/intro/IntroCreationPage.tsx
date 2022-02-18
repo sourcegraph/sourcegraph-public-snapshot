@@ -8,7 +8,6 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { BetaFeedbackPanel } from '../../../../components/beta-feedback-panel/BetaFeedbackPanel'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 
@@ -59,7 +58,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     return (
         <Page className={classNames('container pb-5', styles.container)}>
             <PageHeader
-                annotation={<BetaFeedbackPanel />}
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={
                     <>
