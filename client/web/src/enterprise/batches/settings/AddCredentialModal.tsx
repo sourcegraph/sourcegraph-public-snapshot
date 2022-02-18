@@ -90,19 +90,25 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
-            const { data } = await createBatchChangesCredential({
-                variables: {
-                    user: userID,
-                    credential,
-                    externalServiceKind,
-                    externalServiceURL,
-                },
-            })
-            if (requiresSSH && data?.createBatchChangesCredential?.sshPublicKey) {
-                setSSHPublicKey(data?.createBatchChangesCredential?.sshPublicKey)
-                setStep('get-ssh-key')
-            } else {
-                afterCreate()
+
+            try {
+                const { data } = await createBatchChangesCredential({
+                    variables: {
+                        user: userID,
+                        credential,
+                        externalServiceKind,
+                        externalServiceURL,
+                    },
+                })
+
+                if (requiresSSH && data?.createBatchChangesCredential.sshPublicKey) {
+                    setSSHPublicKey(data?.createBatchChangesCredential.sshPublicKey)
+                    setStep('get-ssh-key')
+                } else {
+                    afterCreate()
+                }
+            } catch (error) {
+                console.error(error)
             }
         },
         [

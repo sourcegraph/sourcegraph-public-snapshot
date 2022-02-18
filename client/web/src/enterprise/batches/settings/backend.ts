@@ -123,9 +123,6 @@ export const useUserBatchChangesCodeHostConnection = (
             if (node.__typename !== 'User') {
                 throw new Error(`Node is a ${node.__typename}, not a User`)
             }
-            if (!node.batchChangesCodeHosts) {
-                throw new Error('No code hosts found')
-            }
 
             return node.batchChangesCodeHosts
         },
@@ -146,19 +143,15 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<B
         query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,
-            first: 20,
+            first: 15,
         },
         options: {
             useURL: true,
             fetchPolicy: 'no-cache',
         },
         getConnection: result => {
-            const data = dataOrThrowErrors(result)
+            const { batchChangesCodeHosts } = dataOrThrowErrors(result)
 
-            if (!data.batchChangesCodeHosts) {
-                throw new Error('No code hosts found')
-            }
-
-            return data.batchChangesCodeHosts
+            return batchChangesCodeHosts
         },
     })
