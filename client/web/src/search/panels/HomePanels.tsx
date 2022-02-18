@@ -31,16 +31,16 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
 
             {props.isSourcegraphDotCom ? (
                 <div className={classNames('col-lg-5', styles.panel)}>
-                    <Tabs defaultIndex={1}>
+                    <Tabs defaultIndex={1} className="h-100">
                         <TabList>
                             <Tab>Community search contexts</Tab>
                             <Tab>Invite colleagues</Tab>
                         </TabList>
-                        <TabPanels>
+                        <TabPanels className="h-100">
                             <TabPanel>
                                 <CommunitySearchContextsPanel {...props} hideTitle={true} />
                             </TabPanel>
-                            <TabPanel>
+                            <TabPanel className="h-100">
                                 <CollaboratorsPanel {...props} />
                             </TabPanel>
                         </TabPanels>
