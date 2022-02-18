@@ -29,6 +29,7 @@ import (
 func TestServeStream_empty(t *testing.T) {
 	mock := &mockSearchResolver{
 		done: make(chan struct{}),
+		send: make(chan streaming.SearchEvent),
 	}
 	mock.Close()
 
@@ -123,6 +124,7 @@ func TestDisplayLimit(t *testing.T) {
 		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
 			mock := &mockSearchResolver{
 				done: make(chan struct{}),
+				send: make(chan streaming.SearchEvent),
 			}
 
 			repos := database.NewStrictMockRepoStore()
@@ -187,9 +189,9 @@ func TestDisplayLimit(t *testing.T) {
 			})
 
 			// Send 2 repository matches.
-			mock.c.Send(streaming.SearchEvent{
+			mock.send <- streaming.SearchEvent{
 				Results: []result.Match{mkRepoMatch(1), mkRepoMatch(2)},
-			})
+			}
 			mock.Close()
 			if err := g.Wait(); err != nil {
 				t.Fatal(err)
@@ -221,17 +223,20 @@ func mkRepoMatch(id int) *result.RepoMatch {
 
 type mockSearchResolver struct {
 	done   chan struct{}
-	c      streaming.Sender
+	send   chan streaming.SearchEvent
 	inputs *run.SearchInputs
 }
 
 func (h *mockSearchResolver) StreamResults(ctx context.Context, stream streaming.Sender) (*search.Alert, error) {
-	h.c = stream
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-h.done:
-		return nil, nil
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case e := <-h.send:
+			stream.Send(e)
+		case <-h.done:
+			return nil, nil
+		}
 	}
 }
 
