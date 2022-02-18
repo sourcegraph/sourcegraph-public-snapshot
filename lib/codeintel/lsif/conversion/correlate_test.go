@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -302,14 +303,27 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 }
 
 func TestCorrelateConflictingDocumentProperties(t *testing.T) {
-	// dump4 is the same as dump1, but with one wrong "document" property
-	input, err := os.ReadFile("../testdata/dump4.lsif")
+	dump, err := os.ReadFile("../testdata/dump1.lsif")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	_, err = correlateFromReader(context.Background(), bytes.NewReader(input), "")
+	// Change the document value of one of the item edges.
+	oldLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}`
+	newLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "03"}`
+	badDump := []byte(strings.ReplaceAll(string(dump), oldLine, newLine))
+
+	wantErr := "validate: range 5 is contained in document 2, but linked to a different document 3"
+
+	// Make sure correlation fails.
+	_, err = correlateFromReader(context.Background(), bytes.NewReader(badDump), "")
 	if err == nil {
-		t.Fatalf("expected an error correlating input with conflicting documents for different item edges")
+		t.Fatalf("Expected an error")
+
+	} else if !strings.Contains(err.Error(), wantErr) {
+		t.Errorf("Expected a different error.")
+		t.Errorf("wanted: %s", wantErr)
+		t.Errorf("got   : %s", err)
+		t.Fail()
 	}
 }
