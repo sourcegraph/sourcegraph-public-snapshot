@@ -410,22 +410,6 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	}
 }
 
-func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
-	start := time.Now()
-	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
-	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
-	srr.elapsed = time.Since(start)
-	r.logBatch(ctx, srr, err)
-	return srr, err
-}
-
-func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
-	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
-	return srr, err
-}
-
 func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
 	return &SearchResultsResolver{
 		Matches:      matches,
@@ -438,10 +422,17 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
-	if r.stream == nil {
-		return r.resultsBatch(ctx)
-	}
-	return r.resultsStreaming(ctx)
+	start := time.Now()
+	agg := streaming.NewAggregatingStream()
+	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
+	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
+	srr.elapsed = time.Since(start)
+	r.logBatch(ctx, srr, err)
+	return srr, err
+}
+
+func (r *searchResolver) StreamResults(ctx context.Context, stream streaming.Sender) (*search.Alert, error) {
+	return r.results(ctx, stream, r.SearchInputs.Plan)
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging

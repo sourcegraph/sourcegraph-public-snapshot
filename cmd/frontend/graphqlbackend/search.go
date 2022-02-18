@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -34,15 +33,6 @@ type SearchArgs struct {
 	// a static representation of our job tree independently of any resolvers.
 	CodeMonitorID *graphql.ID
 
-	// Stream if non-nil will stream all SearchEvents.
-	//
-	// This is how our streaming and our batch interface co-exist. When this
-	// is set, it exposes a way to stream out results as we collect them. By
-	// default we stream all results, including results that are processed
-	// over batch-based evaluation (like and/or expressions), where results
-	// are first collected, merged, and then sent on the stream.
-	Stream streaming.Sender
-
 	// For tests
 	Settings *schema.Settings
 }
@@ -56,7 +46,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ *searchResolver, _ *search.Alert, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, protocol search.Protocol, args *SearchArgs) (_ *searchResolver, _ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -112,11 +102,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		codeMonitorID = &i
 	}
 
-	protocol := search.Batch
-	if args.Stream != nil {
-		protocol = search.Streaming
-	}
-
 	inputs := &run.SearchInputs{
 		Plan:          plan,
 		Query:         plan.ToParseTree(),
@@ -133,14 +118,13 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	return &searchResolver{
 		db:           db,
 		SearchInputs: inputs,
-		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	sr, alert, err := NewSearchImplementer(ctx, r.db, args)
+	sr, alert, err := NewSearchImplementer(ctx, r.db, search.Batch, args)
 	if err != nil {
 		return nil, err
 	} else if alert != nil {
@@ -212,9 +196,6 @@ func getBoolPtr(b *bool, def bool) bool {
 type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
-
-	// stream if non-nil will send all search events we receive down it.
-	stream streaming.Sender
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map

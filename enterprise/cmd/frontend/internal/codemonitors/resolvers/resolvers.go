@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -387,7 +388,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 
 func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
 	args.Version = "V2"
-	sr, alert, err := graphqlbackend.NewSearchImplementer(ctx, r.db, args)
+	sr, alert, err := graphqlbackend.NewSearchImplementer(ctx, r.db, search.Batch, args)
 	if err != nil {
 		return nil, err
 	} else if alert != nil {

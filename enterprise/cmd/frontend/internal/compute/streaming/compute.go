@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -47,9 +48,8 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	searchArgs := &graphqlbackend.SearchArgs{
 		Query:       searchQuery,
 		PatternType: &patternType,
-		Stream:      stream,
 	}
-	job, _, err := graphqlbackend.NewSearchImplementer(ctx, db, searchArgs)
+	job, _, err := graphqlbackend.NewSearchImplementer(ctx, db, search.Streaming, searchArgs)
 	if err != nil {
 		close(eventsC)
 		return eventsC, func() error { return err }
@@ -63,7 +63,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 
-		_, err := job.Results(ctx)
+		_, err := job.StreamResults(ctx, stream)
 		final <- finalResult{err: err}
 	}()
 

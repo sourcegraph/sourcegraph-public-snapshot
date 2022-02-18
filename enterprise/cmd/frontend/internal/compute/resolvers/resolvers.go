@@ -10,6 +10,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -231,7 +232,7 @@ func NewComputeImplementer(ctx context.Context, db database.DB, args *gql.Comput
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, _, err := gql.NewSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, _, err := gql.NewSearchImplementer(ctx, db, search.Batch, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
