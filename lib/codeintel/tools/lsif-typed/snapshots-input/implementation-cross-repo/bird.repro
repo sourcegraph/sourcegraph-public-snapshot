@@ -1,0 +1,2 @@
+# Test how to implement a symbol from an external workspace.
+definition bird# implements global implementation animal.repro/animal#
