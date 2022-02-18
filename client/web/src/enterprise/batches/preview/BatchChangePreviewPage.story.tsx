@@ -1,4 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
+import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
 import React from 'react'
@@ -108,34 +109,36 @@ const batchSpecByIDLink = (spec: BatchSpecFields): WildcardMockLink =>
         },
     ])
 
-const fetchBatchSpecCreate = batchSpecByIDLink(batchSpec())
+const fetchBatchSpecCreate = () => batchSpecByIDLink(batchSpec())
 
-const fetchBatchSpecMissingCredentials = batchSpecByIDLink({
-    ...batchSpec(),
-    viewerBatchChangesCodeHosts: {
-        __typename: 'BatchChangesCodeHostConnection',
-        totalCount: 2,
-        nodes: [
-            {
-                externalServiceKind: ExternalServiceKind.GITHUB,
-                externalServiceURL: 'https://github.com/',
-            },
-            {
-                externalServiceKind: ExternalServiceKind.GITLAB,
-                externalServiceURL: 'https://gitlab.com/',
-            },
-        ],
-    },
-})
+const fetchBatchSpecMissingCredentials = () =>
+    batchSpecByIDLink({
+        ...batchSpec(),
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 2,
+            nodes: [
+                {
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                },
+                {
+                    externalServiceKind: ExternalServiceKind.GITLAB,
+                    externalServiceURL: 'https://gitlab.com/',
+                },
+            ],
+        },
+    })
 
-const fetchBatchSpecUpdate = batchSpecByIDLink({
-    ...batchSpec(),
-    appliesToBatchChange: {
-        id: 'somebatch',
-        name: 'awesome-batch-change',
-        url: '/users/alice/batch-changes/awesome-batch-change',
-    },
-})
+const fetchBatchSpecUpdate = () =>
+    batchSpecByIDLink({
+        ...batchSpec(),
+        appliesToBatchChange: {
+            id: 'somebatch',
+            name: 'awesome-batch-change',
+            url: '/users/alice/batch-changes/awesome-batch-change',
+        },
+    })
 
 const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> =>
     of({
@@ -176,117 +179,132 @@ const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConn
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('Create', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={fetchBatchSpecCreate}>
-                <BatchChangePreviewPage
-                    {...props}
-                    expandChangesetDescriptions={true}
-                    batchSpecID="123123"
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryApplyPreviewStats={queryApplyPreviewStats}
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+add('Create', () => {
+    const link = useMemo(() => fetchBatchSpecCreate(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <BatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
 
-add('Update', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={fetchBatchSpecUpdate}>
-                <BatchChangePreviewPage
-                    {...props}
-                    expandChangesetDescriptions={true}
-                    batchSpecID="123123"
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryApplyPreviewStats={queryApplyPreviewStats}
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+add('Update', () => {
+    const link = useMemo(() => fetchBatchSpecUpdate(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <BatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
 
-add('Missing credentials', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={fetchBatchSpecMissingCredentials}>
-                <BatchChangePreviewPage
-                    {...props}
-                    expandChangesetDescriptions={true}
-                    batchSpecID="123123"
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryApplyPreviewStats={queryApplyPreviewStats}
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+add('Missing credentials', () => {
+    const link = useMemo(() => fetchBatchSpecMissingCredentials(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <BatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
 
-add('Spec file', () => (
-    <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
-        {props => (
-            <MockedTestProvider link={fetchBatchSpecCreate}>
-                <BatchChangePreviewPage
-                    {...props}
-                    expandChangesetDescriptions={true}
-                    batchSpecID="123123"
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryApplyPreviewStats={queryApplyPreviewStats}
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+add('Spec file', () => {
+    const link = useMemo(() => fetchBatchSpecCreate(), [])
+    return (
+        <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <BatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
 
-add('No changesets', () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={fetchBatchSpecCreate}>
-                <BatchChangePreviewPage
-                    {...props}
-                    expandChangesetDescriptions={true}
-                    batchSpecID="123123"
-                    queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryApplyPreviewStats={queryApplyPreviewStats}
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-))
+add('No changesets', () => {
+    const link = useMemo(() => fetchBatchSpecCreate(), [])
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={link}>
+                    <BatchChangePreviewPage
+                        {...props}
+                        expandChangesetDescriptions={true}
+                        batchSpecID="123123"
+                        queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
