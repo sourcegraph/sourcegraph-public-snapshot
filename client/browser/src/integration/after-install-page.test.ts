@@ -1,3 +1,5 @@
+import percySnapshot from '@percy/puppeteer'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
@@ -35,8 +37,10 @@ describe('After install page', () => {
 
     afterEach(() => testContext?.dispose())
 
-    it('renders after install page content', async () => {
+    it('renders after install page content', async function () {
         await driver.openBrowserExtensionPage('after_install')
-        await driver.page.$("[data-testid='after-install-page-content']")
+        await driver.page.waitForSelector("[data-testid='after-install-page-content']")
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain, @typescript-eslint/no-non-null-assertion
+        await percySnapshot(driver.page, this.currentTest?.fullTitle()!)
     })
 })
