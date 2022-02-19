@@ -172,6 +172,16 @@ func TestParseParameterList(t *testing.T) {
 		ResultLabels: "HeuristicDanglingParens,Regexp",
 		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
 	}).Equal(t, test(`Search(xxx)\\(`))
+
+	autogold.Want("Regexp non-empty /.../", value{
+		Result: `{"value":"book","negated":false}`, ResultLabels: "Regexp",
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equal(t, test(`/book/`))
+
+	autogold.Want("Regexp empty /.../", value{
+		Result: `{"value":"//","negated":false}`, ResultLabels: "Literal",
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":2}}`,
+	}).Equal(t, test(`//`))
 }
 
 func TestScanPredicate(t *testing.T) {
