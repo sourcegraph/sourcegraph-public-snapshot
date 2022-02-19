@@ -467,3 +467,29 @@ func TestToTextPatternInfo(t *testing.T) {
 
 	autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`patterntype:regexp // literal slash`))
 }
+
+func Test_toZoektPattern(t *testing.T) {
+	test := func(input string) string {
+		q, err := query.ParseLiteral(input)
+		if err != nil {
+			return err.Error()
+		}
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return err.Error()
+		}
+		zoektQuery, err := toZoektPattern(b.Pattern, false, true, true)
+		if err != nil {
+			return err.Error()
+		}
+		return zoektQuery.String()
+	}
+
+	autogold.Want("basic string",
+		`file_substr:"a"`).
+		Equal(t, test(`a`))
+
+	autogold.Want("basic and-expression",
+		`(or (and file_substr:"a" file_substr:"b" (not file_substr:"c")) file_substr:"d")`).
+		Equal(t, test(`a and b and not c or d`))
+}
