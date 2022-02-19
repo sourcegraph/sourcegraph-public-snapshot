@@ -17,6 +17,7 @@ import styles from './BatchChangeNode.module.scss'
 
 export interface BatchChangeNodeProps {
     node: ListBatchChange
+    executionEnabled: boolean
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
     displayNamespace: boolean
