@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -91,6 +92,20 @@ func startExec(ctx context.Context, args []string) error {
 	if !ok {
 		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
+	}
+
+	ctx, err := usershell.Context(ctx)
+	if err != nil {
+		return err
+	}
+
+	if ok = usershell.IsSupportedShell(ctx); !ok {
+		writeFailureLinef("This command is only supported on `bash` and `zsh`.")
+		shellPath := usershell.ShellPath(ctx)
+		if strings.Contains(shellPath, "fish") {
+			writeFingerPointingLinef("Are you a %s shell user? You may run `SHELL=(which zsh) sg start` or `SHELL=(which bash) sg start`.", output.EmojiFish)
+		}
+		return errors.Newf("unsupported shell %s", shellPath)
 	}
 
 	if len(args) > 2 {

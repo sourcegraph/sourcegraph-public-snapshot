@@ -52,6 +52,15 @@ func setupExec(ctx context.Context, args []string) error {
 		return err
 	}
 
+	if ok := usershell.IsSupportedShell(ctx); !ok {
+		writeFailureLinef("This command is only supported on `bash` and `zsh`.")
+		shellPath := usershell.ShellPath(ctx)
+		if strings.Contains(shellPath, "fish") {
+			writeFingerPointingLinef("Are you a %s shell user? You may run `SHELL=(which zsh) sg setup` or `SHELL=(which bash) sg setup`.", output.EmojiFish)
+		}
+		return errors.Newf("unsupported shell %s", shellPath)
+	}
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {

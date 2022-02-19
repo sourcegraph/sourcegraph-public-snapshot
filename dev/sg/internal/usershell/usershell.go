@@ -80,3 +80,8 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
 	return Cmd(ctx, cmd).CombinedOutput()
 }
+
+func IsSupportedShell(ctx context.Context) bool {
+	shell := ShellPath(ctx)
+	return strings.Contains(shell, "bash") || strings.Contains(shell, "zsh")
+}

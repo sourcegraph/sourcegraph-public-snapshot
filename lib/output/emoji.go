@@ -14,4 +14,5 @@ const (
 	EmojiShrug            = "🤷"
 	EmojiOk               = "👌"
 	EmojiQuestionMark     = "❔"
+	EmojiFish             = "🐟"
 )
