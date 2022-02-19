@@ -45,18 +45,10 @@ func Frontend() *monitoring.Container {
 			Name:  "sentinel_sampling_duration",
 			Label: "Sentinel query sampling duration",
 			Options: monitoring.ContainerVariableOptions{
-				Options:     sentinelSamplingIntervals,
-				NoAllOption: true,
-			},
-			RawTransform: func(tv *sdk.TemplateVar) {
-				tv.Type = "interval"
-				tv.Current = sdk.Current{
-					Text: &sdk.StringSliceString{
-						Value: []string{defaultSamplingInterval.String()},
-						Valid: true,
-					},
-					Value: defaultSamplingInterval.String(),
-				}
+				Type:          "interval",
+				Options:       sentinelSamplingIntervals,
+				DefaultOption: defaultSamplingInterval.String(),
+				NoAllOption:   true,
 			},
 		}},
 		Groups: []monitoring.Group{

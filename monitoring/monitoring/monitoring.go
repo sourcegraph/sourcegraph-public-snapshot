@@ -337,6 +337,10 @@ type ContainerVariableOptions struct {
 	Options []string
 	// NoAllOption disables the addition of an 'All' option to the options set.
 	NoAllOption bool
+	// Type of the options. You can usually leave this unset.
+	Type string
+	// DefaultOption is the option that should be selected by default.
+	DefaultOption string
 }
 
 // ContainerVariable describes a template variable that can be applied container dashboard
@@ -432,13 +436,29 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 
 	case len(c.Options.Options) > 0:
 		variable.Type = "custom"
+		if c.Options.Type != "" {
+			variable.Type = c.Options.Type
+		}
 		variable.Query = strings.Join(c.Options.Options, ",")
 		if !c.Options.NoAllOption {
-			// Add the AllValue as a default
-			variable.Options = append(variable.Options, sdk.Option{Text: "all", Value: "$__all", Selected: true})
+			// Add the AllValue as a default, only selected if a default is not configured
+			selected := c.Options.DefaultOption == ""
+			variable.Options = append(variable.Options, sdk.Option{Text: "all", Value: "$__all", Selected: selected})
 		}
 		for _, option := range c.Options.Options {
-			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option})
+			// Whether this option should be selected
+			selected := c.Options.DefaultOption != "" && option == c.Options.DefaultOption
+			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option, Selected: selected})
+			if selected {
+				// Also configure current
+				variable.Current = sdk.Current{
+					Text: &sdk.StringSliceString{
+						Value: []string{option},
+						Valid: true,
+					},
+					Value: option,
+				}
+			}
 		}
 	}
 
