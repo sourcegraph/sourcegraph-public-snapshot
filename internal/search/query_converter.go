@@ -230,34 +230,51 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func toZoektPattern(pattern string, isRegexp, isCaseSensitive, isNegated, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
+func toZoektPattern(pattern query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
 	var q zoekt.Q
 	var err error
-	if isRegexp {
-		fileNameOnly := patternMatchesPath && !patternMatchesContent
-		contentOnly := !patternMatchesPath && patternMatchesContent
-		q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoekt.Substring{
-			Pattern:       pattern,
-			CaseSensitive: isCaseSensitive,
 
-			FileName: true,
-			Content:  true,
+	query.VisitPattern([]query.Node{pattern}, func(value string, negated bool, annotation query.Annotation) {
+		if annotation.Labels.IsSet(query.Regexp) {
+			fileNameOnly := patternMatchesPath && !patternMatchesContent
+			contentOnly := !patternMatchesPath && patternMatchesContent
+			q, err = parseRe(value, fileNameOnly, contentOnly, isCaseSensitive)
+			if err != nil {
+				return
+			}
+		} else {
+			q = &zoekt.Substring{
+				Pattern:       value,
+				CaseSensitive: isCaseSensitive,
+
+				FileName: true,
+				Content:  true,
+			}
 		}
+
+		if negated {
+			q = &zoekt.Not{Child: q}
+		}
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	if isNegated {
-		q = &zoekt.Not{Child: q}
-	}
 	return q, nil
 }
 
 func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
-	q, err := toZoektPattern(p.Pattern, p.IsRegExp, p.IsCaseSensitive, p.IsNegated, p.PatternMatchesContent, p.PatternMatchesPath)
+	labels := query.Literal
+	if p.IsRegExp {
+		labels = query.Regexp
+	}
+	pattern := query.Pattern{
+		Value:      p.Pattern,
+		Negated:    p.IsNegated,
+		Annotation: query.Annotation{Labels: labels},
+	}
+	q, err := toZoektPattern(pattern, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath)
 	if err != nil {
 		return nil, err
 	}
