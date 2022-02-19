@@ -357,13 +357,8 @@ func (s *Server) startIndexingThread() (err error) {
 	}
 
 	go func() {
-		ThreadStatus := s.status.NewThreadStatus("indexing dispatcher")
-		defer ThreadStatus.End()
-
-		parse := s.createParser()
-
 		for indexRequest := range s.indexRequests {
-			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, parse)
+			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
 			close(indexRequest.done)
 			if err != nil {
 				log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
