@@ -163,6 +163,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Settings files (user, org, global) as a persistence mechanism for Code Insights are now deprecated.
+- Query-runner deployment has been removed. You can safely remove the `query-runner` service from your installation.
 
 ## 3.34.2
 
