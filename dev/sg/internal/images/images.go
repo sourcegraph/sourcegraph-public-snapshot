@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/opencontainers/go-digest"
@@ -376,7 +377,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 		latestTag = findLatestTag(tags)
 	}
 
-	if latestTag == ref.Tag || latestTag == "" {
+	if _, err := semver.NewVersion(latestTag); err == nil && (latestTag == ref.Tag || latestTag == "") {
 		return repo, ErrNoUpdateNeeded
 	}
 	repo.imageRef.Tag = latestTag
