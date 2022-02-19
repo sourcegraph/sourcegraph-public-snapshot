@@ -10,7 +10,7 @@ import { WebStory } from '../../../components/WebStory'
 import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
 
-const { add } = storiesOf('web/batches/BatchChangeListPage', module)
+const { add } = storiesOf('web/batches/list/BatchChangeListPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {

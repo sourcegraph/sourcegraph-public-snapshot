@@ -11,7 +11,7 @@ import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode } from './BatchChangeNode'
 import { nodes, now } from './testData'
 
-const { add } = storiesOf('web/batches/BatchChangeNode', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/list/BatchChangeNode', module).addDecorator(story => (
     <div className={classNames(styles.batchChangeListPageGrid, 'p-3 container')}>{story()}</div>
 ))
 
