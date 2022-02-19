@@ -1,0 +1,41 @@
+.pill-group {
+    display: flex;
+    // The .05 is to prevent a tiny gap from forming
+    border-radius: calc(var(--badge-border-radius) * 2.05);
+    border-width: 2px;
+    border-style: solid;
+
+    &.open {
+        border-color: var(--success);
+    }
+
+    &.draft {
+        border-color: var(--secondary);
+    }
+
+    &.closed {
+        border-color: var(--danger);
+    }
+
+    .state-pill {
+        padding: 0.25rem 0.5rem;
+        text-transform: uppercase;
+
+        &:not(:last-child) {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+    }
+
+    .execution-pill {
+        display: flex;
+        align-items: center;
+        padding: 0 0.25rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+
+        .execution-icon {
+            height: 1.125rem;
+        }
+    }
+}
