@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var OrgDeletionFeatureFlag = "org-deletion"
+
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
 	org, err := r.db.Orgs().GetByName(ctx, args.Name)
 	if err != nil {
@@ -283,19 +285,19 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
-// HardDeleteOrganization removes the org and all resources associated with this org.
+// HardDeleteOrganization removes the org and all resources associated with this org when flag is enabled.
 func (r *schemaResolver) HardDeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
-	fmt.Println("------ Debugging: hard deleting org --")
-
-	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-	// 	return nil, err
-	// }
 
 	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
+	}
+
+	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, OrgDeletionFeatureFlag)
+	if !enabled {
+		return nil, errors.New("deleting organization is not supported")
 	}
 
 	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
