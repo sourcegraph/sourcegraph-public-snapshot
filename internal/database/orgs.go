@@ -327,6 +327,14 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM notebooks WHERE namespace_org_id=$1", id); err != nil {
+		return err
+	}
+
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM settings WHERE org_id=$1", id); err != nil {
+		return err
+	}
+
 	res, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id)
 	if err != nil {
 		return err
@@ -337,8 +345,6 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 	if rows == 0 {
-		fmt.Println("--- didn't work...")
-		fmt.Println()
 		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 
