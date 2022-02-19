@@ -6,7 +6,6 @@ import React from 'react'
 import styles from '@sourcegraph/wildcard/src/components/Link/AnchorLink/AnchorLink.module.scss'
 import { useWildcardTheme } from '@sourcegraph/wildcard/src/hooks/useWildcardTheme'
 
-
 // This is based off the @sourcegraph/wildcard/Link component
 // to handle links in VSCE that works differently than in our web app
 // because in VSCE history does not work as it is in browser
