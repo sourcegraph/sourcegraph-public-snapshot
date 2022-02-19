@@ -1,5 +1,5 @@
 import { concat, Observable } from 'rxjs'
-import { maclient/web/src/org/backend.tsp, mergeMap } from 'rxjs/operators'
+import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql ,
