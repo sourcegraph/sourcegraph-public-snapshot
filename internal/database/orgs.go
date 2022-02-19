@@ -311,7 +311,6 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 }
 
 func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
-	fmt.Println("---- Debug: DB call to hard delete an org")
 	tx, err := o.Transact(ctx)
 	if err != nil {
 		return err
