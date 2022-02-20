@@ -380,7 +380,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             description={batchChange.description}
             actionButtons={actionButtons}
         >
-            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
+            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <h4 className={styles.header}>Batch spec</h4>
@@ -395,12 +395,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
                 </div>
-                <div
-                    className={classNames(
-                        styles.workspacesPreviewContainer,
-                        'd-flex flex-column align-items-center pl-4'
-                    )}
-                >
+                <div className={styles.workspacesPreviewContainer}>
                     <WorkspacesPreview
                         previewDisabled={previewDisabled}
                         preview={() => previewBatchSpec(debouncedCode)}

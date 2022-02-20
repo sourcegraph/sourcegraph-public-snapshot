@@ -9,6 +9,10 @@
     // Match this to the value in JS
     width: 1.25rem;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    height: 1rem;
+    overflow: visible;
 }
 
 .library-item {
@@ -23,10 +27,14 @@
     padding: 0;
 }
 
+// Should mostly match WorkspacesPreview header and Editor header
 .header {
-    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
 }

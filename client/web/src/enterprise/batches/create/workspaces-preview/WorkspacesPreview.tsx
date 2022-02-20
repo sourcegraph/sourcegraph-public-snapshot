@@ -209,7 +209,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 Workspaces preview{' '}
                 {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
                     <WarningIcon
-                        className="icon-inline text-muted"
+                        className={classNames('icon-inline text-muted ml-1', styles.warningIcon)}
                         data-tooltip="The workspaces previewed below may not be up-to-date."
                     />
                 )}
