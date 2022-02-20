@@ -372,17 +372,26 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 		Tag:      ref.Tag,
 	}
 
-	latestTag := pinTag
-	if pinTag == "" {
-		latestTag = findLatestTag(tags)
+	var targetTag string
+	isDevTag := pinTag == ""
+	if isDevTag {
+		targetTag = findLatestTag(tags)
+	} else {
+		targetTag = pinTag
 	}
 
-	if _, err := semver.NewVersion(latestTag); err == nil && (latestTag == ref.Tag || latestTag == "") {
+	_, semverErr := semver.NewVersion(targetTag)
+	isReleaseTag := semverErr == nil
+	isAlreadyLatest := targetTag == ref.Tag
+	// for release build, we use semver tags and they are immutable, so no update is needed if the current tag is the same as target tag
+	// for dev builds, if the current tag is the same as the latest tag, also no update is needed
+	// for mutable tags (neither release nor dev tag, e.g. `insiders`), we always need to fetch the latest digest.
+	if (isReleaseTag || isDevTag) && isAlreadyLatest {
 		return repo, ErrNoUpdateNeeded
 	}
-	repo.imageRef.Tag = latestTag
+	repo.imageRef.Tag = targetTag
 
-	dig, err := repo.fetchDigest(latestTag)
+	dig, err := repo.fetchDigest(targetTag)
 	if err != nil {
 		return nil, err
 	}
