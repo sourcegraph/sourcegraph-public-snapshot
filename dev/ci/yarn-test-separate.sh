@@ -4,12 +4,12 @@ set -e
 
 echo "--- yarn in root"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+yarn --mutex network --immutable --network-timeout 60000
 
 cd "$1"
 echo "--- yarn"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+yarn --mutex network --immutable --network-timeout 60000
 
 echo "--- test"
 

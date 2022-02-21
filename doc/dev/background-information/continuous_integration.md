@@ -220,7 +220,7 @@ For caching artefacts in steps to speed up steps, see [How to cache CI artefacts
 Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [Honeycomb.io](https://honeycomb.io).
 See the [Buildkite board on Honeycomb](https://ui.honeycomb.io/sourcegraph/board/sqPvYj5BXNy/Buildkite) for an overview.
 
-Individual commands are tracked from the perspective of a given [step](#step-options): 
+Individual commands are tracked from the perspective of a given [step](#step-options):
 
 
   ```go
@@ -233,7 +233,7 @@ Will result in a single trace span for the `./dev/check/docsite.sh` script. But 
   ```go
     pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			// ...
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
@@ -244,20 +244,20 @@ Therefore, it's beneficial for tracing purposes to split the step in multiple co
 
 ##### Test analytics
 
-Our test analytics is currently powered by a tool that Buildkite released in beta to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
-This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness. 
+Our test analytics is currently powered by a tool that Buildkite released in beta to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics).
+This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness.
 
-Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating 
-from its historical duration or flakiness. 
+Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating
+from its historical duration or flakiness.
 
-In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI. 
+In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI.
 
 ### Buildkite infrastructure
 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
 In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
 
-When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.
 
 This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
 
@@ -281,9 +281,9 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 
 #### Feature flags
 
-Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`. 
+Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`.
 
-- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type). 
+- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type).
 
 ## GitHub Actions
 

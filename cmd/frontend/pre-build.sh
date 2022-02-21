@@ -8,7 +8,7 @@ echo "--- yarn"
 if [[ -z "${CI}" ]]; then
   yarn --mutex network
 else
-  yarn --mutex network --frozen-lockfile --network-timeout 60000
+  yarn --mutex network --immutable --network-timeout 60000
 fi
 
 echo "--- yarn run build-web"

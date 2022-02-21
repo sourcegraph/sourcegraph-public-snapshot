@@ -218,7 +218,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
@@ -293,7 +293,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --mutex network --immutable --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -428,7 +428,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
@@ -444,20 +444,20 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
 		bk.Cmd("yarn --cwd client/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: NPM Release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
 		bk.Cmd("yarn --cwd client/browser release:npm"))
 }
