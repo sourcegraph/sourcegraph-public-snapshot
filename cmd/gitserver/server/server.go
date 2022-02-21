@@ -1729,9 +1729,13 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	return "", nil
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) error {
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
 	defer lock.Release()
-
+	defer func() {
+		if err != nil {
+			repoCloneFailedCounter.Inc()
+		}
+	}()
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
@@ -1991,6 +1995,10 @@ var (
 	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
 		Help: "number of successful git clones run",
+	})
+	repoCloneFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_cloned_failed",
+		Help: "number of failed git clones",
 	})
 )
 
