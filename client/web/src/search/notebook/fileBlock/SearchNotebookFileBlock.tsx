@@ -6,13 +6,20 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
-import { of } from 'rxjs'
+import { of, ReplaySubject } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
@@ -31,9 +38,11 @@ interface SearchNotebookFileBlockProps
     extends BlockProps,
         Omit<FileBlock, 'type'>,
         FileBlockValidationFunctions,
-        TelemetryProps {
+        TelemetryProps,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
+    hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 const LOADING = 'loading' as const
@@ -57,6 +66,8 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
     isOtherBlockSelected,
     isMacPlatform,
     isReadOnly,
+    hoverifier,
+    extensionsController,
     fetchHighlightedFileLineRanges,
     resolveRevision,
     fetchRepository,
@@ -245,6 +256,57 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
         return () => document.removeEventListener('paste', onFileURLPaste)
     }, [isSelected, onFileURLPaste])
 
+    // Inform the extension host about the file (if we have code to render). CodeExcerpt will call `hoverifier.hoverify`.
+    const viewerUpdates = useMemo(() => new ReplaySubject<{ viewerId: ViewerId } & HoverContext>(1), [])
+    useEffect(() => {
+        let previousViewerId: ViewerId | undefined
+        const commitID = input.revision || 'HEAD'
+        const uri = toURIWithPath({ repoName: input.repositoryName, filePath: input.filePath, commitID })
+        const languageId = getModeFromPath(input.filePath)
+        // HACK: code intel extensions don't depend on the `text` field.
+        // Fix to support other hover extensions on search results (likely too expensive).
+        const text = ''
+
+        extensionsController.extHostAPI
+            .then(extensionHostAPI =>
+                Promise.all([
+                    // This call should be made before adding viewer, but since
+                    // messages to web worker are handled in order, we can use Promise.all
+                    extensionHostAPI.addTextDocumentIfNotExists({
+                        uri,
+                        languageId,
+                        text,
+                    }),
+                    extensionHostAPI.addViewerIfNotExists({
+                        type: 'CodeEditor' as const,
+                        resource: uri,
+                        selections: [],
+                        isActive: true,
+                    }),
+                ])
+            )
+            .then(([, viewerId]) => {
+                previousViewerId = viewerId
+                viewerUpdates.next({
+                    viewerId,
+                    repoName: input.repositoryName,
+                    revision: commitID,
+                    commitID,
+                    filePath: input.filePath,
+                })
+            })
+            .catch(error => {
+                console.error('Extension host API error', error)
+            })
+
+        return () => {
+            // Remove from extension host
+            extensionsController.extHostAPI
+                .then(extensionHostAPI => previousViewerId && extensionHostAPI.removeViewer(previousViewerId))
+                .catch(error => console.error('Error removing viewer from extension host', error))
+        }
+    }, [input, viewerUpdates, extensionsController])
+
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* See the explanation for the disable in markdown and query blocks. */}
@@ -311,6 +373,8 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                             endLine={input.lineRange?.endLine ?? 1}
                             isFirst={false}
                             fetchHighlightedFileRangeLines={() => of([])}
+                            hoverifier={hoverifier}
+                            viewerUpdates={viewerUpdates}
                         />
                     </div>
                 )}
