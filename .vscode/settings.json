@@ -77,4 +77,10 @@
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
   "jest.jestCommandLine": "yarn -s test",
+  "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
+  "nix.enableLanguageServer": true,
+  "[nix]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+  },
 }
