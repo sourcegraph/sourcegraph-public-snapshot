@@ -50,7 +50,6 @@ export const usePreciseCodeIntel = ({
         variables,
         notifyOnNetworkStatusChange: true,
         fetchPolicy: options?.fetchPolicy,
-        nextFetchPolicy: options?.nextFetchPolicy,
     })
 
     const lsifData = data ? getLsifData({ data, error }) : undefined

@@ -272,7 +272,6 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         },
         options: {
             fetchPolicy: 'cache-first',
-            nextFetchPolicy: 'network-only',
         },
     })
 
@@ -387,6 +386,11 @@ const CollapsibleLocationList: React.FunctionComponent<{
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
+    const [disable, setDisable] = useState(false)
+    useEffect(() => {
+        setDisable(false)
+    }, [props.locations])
+
     return (
         <>
             <CardHeader className="p-0">
@@ -421,22 +425,30 @@ const CollapsibleLocationList: React.FunctionComponent<{
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
                         />
-                        {props.hasMore && props.fetchMore !== undefined && (
-                            <p className="text-center">
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        if (props.fetchMore) {
-                                            props.fetchMore()
-                                        }
-                                    }}
-                                >
-                                    Load more {props.name}
-                                </Button>
-                            </p>
-                        )}
+                        {props.hasMore &&
+                            props.fetchMore !== undefined &&
+                            (disable ? (
+                                <div className="text-center mb-1">
+                                    <em>Loading more {props.name}...</em>
+                                    <LoadingSpinner inline={true} />
+                                </div>
+                            ) : (
+                                <div className="text-center mb-1">
+                                    <Button
+                                        variant="secondary"
+                                        disabled={disable}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setDisable(true)
+                                            if (props.fetchMore) {
+                                                props.fetchMore()
+                                            }
+                                        }}
+                                    >
+                                        Load more {props.name}
+                                    </Button>
+                                </div>
+                            ))}
                     </>
                 ) : (
                     <p className="text-muted pl-2">
