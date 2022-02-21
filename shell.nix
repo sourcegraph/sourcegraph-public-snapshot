@@ -9,14 +9,30 @@
 # Status: everything works on linux. Go1.17 is currently broken on
 # darwin. https://github.com/NixOS/nixpkgs/commit/9675a865c9c3eeec36c06361f7215e109925654c
 
-# Pin a specific version of nixpkgs to ensure we get the same packages.
-{ pkgs ? import (fetchTarball {
-  url =
-    "https://github.com/NixOS/nixpkgs/archive/2b914ee8e20c7082b18a550bd93e1e7b384adc0f.tar.gz";
-  sha256 = "0qnhrm4ywci89kvl35vwd85ldid3g1z74gqsj1b4hw06186dvcnp";
-}) { }, ... }:
-
 let
+  # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
+  ctags-overlay = (self: super: {
+    universal-ctags = super.universal-ctags.overrideAttrs (old: {
+      version = "5.9.20220206.0";
+      src = super.fetchFromGitHub {
+        owner = "universal-ctags";
+        repo = "ctags";
+        rev = "40603a68c1f3b14dc1db4671111096733f6d2485";
+        sha256 = "sha256-oqrLO6/+TP5ccimkgZJ66agaUcNQMOalwVsY8GWS2rg=";
+      };
+      # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
+      doCheck = false;
+      checkFlags = [ ];
+    });
+  });
+  # Pin a specific version of nixpkgs to ensure we get the same packages.
+  pkgs = import
+    (fetchTarball {
+      url =
+        "https://github.com/NixOS/nixpkgs/archive/2b914ee8e20c7082b18a550bd93e1e7b384adc0f.tar.gz";
+      sha256 = "0qnhrm4ywci89kvl35vwd85ldid3g1z74gqsj1b4hw06186dvcnp";
+    })
+    { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
   # like zoekt expects.
   universal-ctags = pkgs.writeScriptBin "universal-ctags" ''
@@ -24,11 +40,14 @@ let
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
 
-in pkgs.mkShell {
+in
+pkgs.mkShell {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
+    rnix-lsp
+
     # Our core DB.
     postgresql_13
 
