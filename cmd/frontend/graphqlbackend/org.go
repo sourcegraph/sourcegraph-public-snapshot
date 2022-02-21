@@ -15,12 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var OrgDeletionFeatureFlag = "org-deletion"
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
 	org, err := r.db.Orgs().GetByName(ctx, args.Name)
@@ -285,24 +284,29 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
-// HardDeleteOrganization removes the org and all resources associated with this org when flag is enabled.
-func (r *schemaResolver) HardDeleteOrganization(ctx context.Context, args *struct {
+// RemoveOrganization removes an org and all resources associated to it. Depending on the flag value, it will hard delete or soft delete the org.
+func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
+	flags := featureflag.FromContext(ctx)
+	orgHardDeletionEnabled := flags.GetBoolOr("org-hard-deletion", false)
 
 	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
 	}
 
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, OrgDeletionFeatureFlag)
-	if !enabled {
-		return nil, errors.New("deleting organization is not supported")
+	switch orgHardDeletionEnabled {
+	case true:
+		if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
+			return nil, err
+		}
+	case false:
+		if err := database.Orgs(r.db).Delete(ctx, orgID); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
-		return nil, err
-	}
 	return &EmptyResponse{}, nil
 }
 

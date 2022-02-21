@@ -99,9 +99,9 @@ type Mutation {
     """
     deleteOrganization(organization: ID!): EmptyResponse
     """
-    Hard deletes an organization.
+    Removes an organization.
     """
-    hardDeleteOrganization(organization: ID!): EmptyResponse
+    removeOrganization(organization: ID!): EmptyResponse
     """
     Adds a external service. Only site admins may perform this mutation.
     """
