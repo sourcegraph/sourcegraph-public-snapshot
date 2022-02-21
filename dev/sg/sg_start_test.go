@@ -9,14 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/tty"
+	"github.com/sourcegraph/sourcegraph/lib/output/outputtest"
 )
 
 func TestStartCommandSet(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	buf := useTtyBuffer(t)
+	buf := useOutputBuffer(t)
 
 	commandSet := &Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 	command := run.Command{
@@ -54,7 +54,7 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	buf := useTtyBuffer(t)
+	buf := useOutputBuffer(t)
 
 	commandSet := &Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
 	command := run.Command{
@@ -88,10 +88,10 @@ func TestStartCommandSet_InstallError(t *testing.T) {
 	})
 }
 
-func useTtyBuffer(t *testing.T) *tty.Buffer {
+func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 	t.Helper()
 
-	buf := &tty.Buffer{}
+	buf := &outputtest.Buffer{}
 	out := output.NewOutput(buf, output.OutputOpts{
 		ForceTTY:    true,
 		ForceColor:  true,
@@ -107,7 +107,7 @@ func useTtyBuffer(t *testing.T) *tty.Buffer {
 	return buf
 }
 
-func expectOutput(t *testing.T, buf *tty.Buffer, want []string) {
+func expectOutput(t *testing.T, buf *outputtest.Buffer, want []string) {
 	t.Helper()
 
 	have := buf.Lines()

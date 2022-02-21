@@ -1,4 +1,4 @@
-package tty
+package outputtest
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 
 // Buffer is used to test code that uses the `output` library to produce
 // output. It implements io.Writer and can be passed to output.NewOutput
-// instead of stdout/stderr.
+// instead of stdout/stderr. See tests for Buffer for examples.
 //
 // Buffer parses *most* of the escape codes used by `output` and keeps the
 // produced output accessible through its `Lines()` method.

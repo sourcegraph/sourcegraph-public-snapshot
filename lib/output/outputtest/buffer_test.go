@@ -1,4 +1,4 @@
-package tty
+package outputtest
 
 import (
 	"testing"
