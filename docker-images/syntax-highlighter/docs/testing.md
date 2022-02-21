@@ -1,3 +1,7 @@
+# Running Tests
+
+Currently, we use `insta` to run snapshot tests (and cargo as the test runner).
+
 ## Using `insta`
 
 ```

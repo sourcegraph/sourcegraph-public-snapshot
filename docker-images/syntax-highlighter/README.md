@@ -33,6 +33,7 @@ By default on startup, `syntect_server` will list all features (themes + file ty
 2. Make sure you've added git submodules (`git submodule update --init --recursive`)
 3. Use `cargo test --workspace` to run all the tests
 4. Use `cargo run --bin syntect_server` to run the server locally.
+5. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
 ## Building docker image
 
