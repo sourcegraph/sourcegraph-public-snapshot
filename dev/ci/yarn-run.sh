@@ -4,7 +4,7 @@ set -e
 
 echo "--- yarn"
 # mutex is necessary since CI runs various yarn installs in parallel
-# yarn --mutex network --immutable --network-timeout 60000
+yarn install
 # yarn --mutex network --cwd dev/release --immutable --network-timeout 60000
 
 echo "--- generate"
