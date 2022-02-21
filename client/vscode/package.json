@@ -92,8 +92,7 @@
       }
     ],
     "menus": {
-      "editor/context": [
-      ]
+      "editor/context": []
     }
   },
   "scripts": {

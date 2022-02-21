@@ -5,7 +5,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: "true"
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
@@ -18,11 +18,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: 'on'
+  GO111MODULE: "on"
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ':3082'
+  SRC_HTTP_ADDR: ":3082"
 
   GITHUB_BASE_URL: http://127.0.0.1:3180
   # I don't think we even need to set these?
@@ -37,7 +37,7 @@ env:
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
 
-  SRC_PROF_HTTP: ''
+  SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
     [
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
@@ -79,7 +79,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: '--max_old_space_size=8192'
+  NODE_OPTIONS: "--max_old_space_size=8192"
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -143,9 +143,9 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      EXTSVC_CONFIG_FILE: "../dev-private/enterprise/dev/external-services-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -306,17 +306,17 @@ commands:
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
 
   enterprise-web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       ENTERPRISE: 1
 
   web-standalone-http:
     cmd: yarn workspace @sourcegraph/web serve:dev --color
-    install: yarn --no-progress
+    install: yarn
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -423,8 +423,8 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -934,9 +934,9 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: 'http://localhost:3080'
-      EMAIL: 'joe@sourcegraph.com'
-      PASSWORD: '12345'
+      BASE_URL: "http://localhost:3080"
+      EMAIL: "joe@sourcegraph.com"
+      PASSWORD: "12345"
 
   web-integration:
     cmd: yarn test-integration

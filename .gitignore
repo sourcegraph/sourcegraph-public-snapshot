@@ -166,9 +166,4 @@ jest-junit.xml
 mocha-junit.xml
 
 .yarn/*
-!.yarn/cache
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+**/.yarn/*
