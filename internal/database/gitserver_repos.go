@@ -21,7 +21,7 @@ type GitserverRepoStore interface {
 	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
-	GetByName(ctx context.Context, id api.RepoName) (*types.GitserverRepo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
