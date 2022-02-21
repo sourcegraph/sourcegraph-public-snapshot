@@ -146,6 +146,26 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			query:      `repo:^perforce/test-perms$ type:file echo`,
 			zeroResult: true,
 		},
+		{
+			name:          "diff search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:diff let`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "diff search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:diff echo`,
+			zeroResult: true,
+		},
+		{
+			name:          "symbol search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:symbol main`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "symbol search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:symbol asdf`,
+			zeroResult: true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -169,6 +189,19 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("commit search", func(t *testing.T) {
+		results, err := userClient.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Alice should have access to only 1 commit at the moment (other 2 commits modify hack.sh which is
+		// inaccessible for Alice)
+		commitsNumber := len(results.Results)
+		if commitsNumber != 1 {
+			t.Fatalf("Should have access to 1 commit but got %d", commitsNumber)
+		}
+	})
 }
 
 func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
