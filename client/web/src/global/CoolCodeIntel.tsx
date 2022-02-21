@@ -53,8 +53,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
-    CoolCodeIntelReferencesResult,
-    CoolCodeIntelReferencesVariables,
     HoverFields,
     LocationFields,
     Maybe,
@@ -64,7 +62,7 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { FETCH_HIGHLIGHTED_BLOB } from './CoolCodeIntelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
@@ -195,7 +193,7 @@ export const ReferencesList: React.FunctionComponent<
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
-                    <SideReferencesWithHook
+                    <SideReferences
                         {...props}
                         activeLocation={activeLocation}
                         setActiveLocation={onReferenceClick}
@@ -248,73 +246,6 @@ interface ReferencesComponentProps extends CoolCodeIntelProps {
 }
 
 export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
-    console.log('SideRefernces. props.clickedtoken', props.clickedToken, 'activeLocation', props.activeLocation)
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.clickedToken.repoName,
-                commit: props.clickedToken.commitID,
-                path: props.clickedToken.filePath,
-                // On the backend the line/character are 0-indexed, but what we
-                // get from hoverifier is 1-indexed.
-                line: props.clickedToken.line - 1,
-                character: props.clickedToken.character - 1,
-                after: null,
-                filter: props.filter || null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
-
-    // If we're loading and haven't received any data yet
-    if (loading && !data) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading references ...</i>
-                </p>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !data) {
-        return (
-            <div>
-                <p className="text-danger">Loading references failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif) {
-        return <>Nothing found</>
-    }
-
-    const lsif = data.repository?.commit?.blob?.lsif
-
-    return (
-        <SideReferencesLists
-            {...props}
-            references={lsif.references.nodes}
-            fetchMoreReferences={() => {}}
-            fetchMoreImplementations={() => {}}
-            referencesHasNextPage={false}
-            implementationsHasNextPage={false}
-            definitions={lsif.definitions.nodes}
-            implementations={lsif.implementations.nodes}
-            hover={lsif.hover}
-        />
-    )
-}
-
-export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponentProps> = props => {
     const {
         lsifData,
         error,
@@ -343,8 +274,6 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
             nextFetchPolicy: 'network-only',
         },
     })
-
-    console.log('SideReferencesWithHook. lsifData:', lsifData)
 
     // If we're loading and haven't received any data yet
     if (loading && !lsifData) {

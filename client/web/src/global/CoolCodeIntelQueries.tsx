@@ -51,45 +51,6 @@ const hoverFragments = gql`
         }
     }
 `
-export const FETCH_REFERENCES_QUERY = gql`
-    query CoolCodeIntelReferences(
-        $repository: String!
-        $commit: String!
-        $path: String!
-        $line: Int!
-        $character: Int!
-        $after: String
-        $filter: String
-    ) {
-        repository(name: $repository) {
-            __typename
-            id
-            commit(rev: $commit) {
-                __typename
-                id
-                blob(path: $path) {
-                    lsif {
-                        references(line: $line, character: $character, after: $after, filter: $filter) {
-                            ...LocationConnectionFields
-                        }
-                        implementations(line: $line, character: $character, after: $after, filter: $filter) {
-                            ...LocationConnectionFields
-                        }
-                        definitions(line: $line, character: $character, filter: $filter) {
-                            ...LocationConnectionFields
-                        }
-                        hover(line: $line, character: $character) {
-                            ...HoverFields
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ${codeIntelFragments}
-    ${hoverFragments}
-`
 
 const gitBlobLsifDataQueryFragment = gql`
     fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
