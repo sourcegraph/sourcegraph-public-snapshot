@@ -221,7 +221,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
-			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn percy exec --parallel yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"),
