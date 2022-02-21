@@ -8,7 +8,7 @@ tar -xf client.tar.gz -C .
 
 echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --immutable --network-timeout 60000
+yarn install
 
 echo "--- Run integration test suite"
 # Word splittinng is intentional here. $1 contains a string with test files separated by a space.

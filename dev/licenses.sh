@@ -28,7 +28,7 @@ trap cleanup EXIT
 # prepare dependencies
 go mod tidy
 go mod vendor # go mod download does not work with license_finder
-yarn --mutex network --immutable
+yarn install
 
 # report license_finder configuration
 license_finder permitted_licenses list

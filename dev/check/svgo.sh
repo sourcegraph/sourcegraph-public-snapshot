@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 echo "--- Check static SVGs for optimizations"
 
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --immutable --ignore-scripts
+yarn install
 
 echo "Checking for potential SVG optimizations"
 
@@ -14,7 +14,7 @@ allSvgsOptimized() {
   for file in ./ui/assets/img/*.svg; do
     # Instead of letting svgo update the actual files, we output to STDOUT and manually check each diff ourselves.
     # By ensuring no files are actually modified, we can ensure that this lint check does not affect other checks.
-    diff -w -q "$file" <(yarn run -s optimize-svg-assets -i "$file" -o -) || return 1
+    diff -w -q "$file" <(yarn --silent run optimize-svg-assets -i "$file" -o -) || return 1
   done
 }
 
