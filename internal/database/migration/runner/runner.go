@@ -140,7 +140,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 
 		store, err := storeFactory(ctx)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to establish database connection for schema %q", schemaName)
 		}
 
 		storeMap[schemaName] = store
@@ -167,7 +167,7 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
 	appliedVersions, pendingVersions, failedVersions, err := store.Versions(ctx)
 	if err != nil {
-		return schemaVersion{}, err
+		return schemaVersion{}, errors.Wrapf(err, "failed to fetch version for schema %q", schemaName)
 	}
 
 	return schemaVersion{
@@ -380,7 +380,7 @@ func partitionPendingMigrations(
 			indexName := definition.IndexMetadata.IndexName
 
 			if indexStatus, ok, err := schemaContext.store.IndexStatus(ctx, tableName, indexName); err != nil {
-				return nil, nil, err
+				return nil, nil, errors.Wrapf(err, "failed to check creation status of index %q.%q", tableName, indexName)
 			} else if ok && indexStatus.Phase != nil {
 				pendingDefinitions = append(pendingDefinitions, definitionWithStatus{definition, indexStatus})
 				continue
