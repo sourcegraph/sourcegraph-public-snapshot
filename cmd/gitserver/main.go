@@ -123,7 +123,7 @@ func main() {
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(list.New()),
 	}
-	gitserver.RegisterMetrics()
+	gitserver.RegisterMetrics(db)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
