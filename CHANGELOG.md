@@ -42,7 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Syntax highlighting for JSON now uses a distinct color for strings in object key positions. [#30105](https://github.com/sourcegraph/sourcegraph/pull/30105)
 - GraphQL API: The order of events returned by `MonitorTriggerEventConnection` has been reversed so newer events are returned first. The `after` parameter has been modified accordingly to return events older the one specified, to allow for pagination. [TODO](https://github.com/sourcegraph/sourcegraph/pull/)
 - [Query based search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts) are now enabled by default as a [beta feature](https://docs.sourcegraph.com/admin/beta_and_experimental_features). [#30888](https://github.com/sourcegraph/sourcegraph/pull/30888)
-- The symbols sidebar loads much faster on big repositories. [#31300](https://github.com/sourcegraph/sourcegraph/pull/31300)
+- The symbols sidebar loads much faster on old commits (after processing it) when scoped to a subdirectory in a big repository. [#31300](https://github.com/sourcegraph/sourcegraph/pull/31300)
 
 ### Fixed
 
