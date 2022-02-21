@@ -1,6 +1,7 @@
 package job
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -41,6 +42,10 @@ type Mapper struct {
 }
 
 func (m *Mapper) Map(job Job) Job {
+	if job == nil {
+		return nil
+	}
+
 	if m.MapJob != nil {
 		job = m.MapJob(job)
 	}
@@ -166,7 +171,7 @@ func (m *Mapper) Map(job Job) Job {
 	case *noopJob:
 		return j
 
+	default:
+		panic(fmt.Sprintf("unsupported job %T for job.Mapper", job))
 	}
-	// Unreachable
-	return job
 }
