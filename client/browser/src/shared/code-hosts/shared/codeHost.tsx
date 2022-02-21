@@ -34,7 +34,6 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { HoverAlert } from 'sourcegraph'
 
 import {
     ContextResolver,
@@ -87,6 +86,8 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '@sourcegraph/shared/src/util/url'
+
+import { HoverAlert } from 'sourcegraph'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
