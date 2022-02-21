@@ -1,10 +1,6 @@
 package gqltestutil
 
-import (
-	"fmt"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // Organization contains basic information of an organization.
 type Organization struct {
@@ -173,7 +169,6 @@ mutation UpdateOrganization($id: ID!, $displayName: String) {
 	}
 }
 `
-	fmt.Println("------------ UPDATING ORG ----------------")
 	variables := map[string]interface{}{
 		"id":          id,
 		"displayName": displayName,
@@ -206,29 +201,6 @@ mutation DeleteOrganization($organization: ID!) {
 	}
 	return nil
 }
-
-// // HardDeleteOrganization hard deletes the organization by given GraphQL node ID.
-// //
-// // This method requires the authenticated user to be a site admin.
-// func (c *Client) HardDeleteOrganization(id string) error {
-// 	const query = `
-// mutation HardDeleteOrganization($organization: ID!) {
-// 	hardDeleteOrganization(organization: $organization) {
-// 		alwaysNil
-// 	}
-// }
-// `
-// 	fmt.Println("------------ testing hard delete ORG ----------------")
-
-// 	variables := map[string]interface{}{
-// 		"organization": id,
-// 	}
-// 	err := c.GraphQL("", query, variables, nil)
-// 	if err != nil {
-// 		return errors.Wrap(err, "request GraphQL")
-// 	}
-// 	return nil
-// }
 
 // RemoveUserFromOrganization removes user from given organization.
 func (c *Client) RemoveUserFromOrganization(userID, orgID string) error {
