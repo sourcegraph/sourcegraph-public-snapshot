@@ -326,6 +326,16 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                     </ul>
                 </li>
+                <li>
+                    Code Host integration usage data (Browser extension / Native Integration)
+                    <ul>
+                        <li>Aggregate counts of current daily, weekly, and monthly unique users and total events</li>
+                        <li>
+                            Aggregate counts of current daily, weekly, and monthly unique users and total events who
+                            visited Sourcegraph instance from browser extension
+                        </li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>
