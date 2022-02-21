@@ -90,10 +90,16 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             case BatchSpecState.PROCESSING:
             case BatchSpecState.FAILED:
                 return `${node.url}/executions/${latestExecution.id}`
+            case BatchSpecState.COMPLETED:
+                // If the latest spec hasn't been applied, we take you to the preview
+                // page. Otherwise, we just take you tot he details page.
+                return node.currentSpec.id === latestExecution?.id
+                    ? node.url
+                    : `${node.url}/executions/${latestExecution.id}/preview`
             default:
                 return node.url
         }
-    }, [executionEnabled, node.url, node.state, latestExecution])
+    }, [executionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
         <>
