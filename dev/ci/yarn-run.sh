@@ -4,13 +4,13 @@ set -e
 
 echo "--- yarn"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --immutable --network-timeout 60000
-yarn --mutex network --cwd dev/release --immutable --network-timeout 60000
+# yarn --mutex network --immutable --network-timeout 60000
+# yarn --mutex network --cwd dev/release --immutable --network-timeout 60000
 
 echo "--- generate"
 yarn gulp generate
 
 for cmd in "$@"; do
   echo "--- $cmd"
-  yarn -s run "$cmd"
+  yarn --silent run "$cmd"
 done
