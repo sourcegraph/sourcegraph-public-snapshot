@@ -170,7 +170,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         noun="batch change"
                         pluralNoun="batch changes"
                         listComponent="div"
-                        listClassName={styles.batchChangeListPageGrid}
+                        listClassName={
+                            executionEnabled ? styles.batchChangeListPageGridWide : styles.batchChangeListPageGrid
+                        }
                         withCenteredSummary={true}
                         cursorPaging={true}
                         noSummaryIfAllNodesVisible={true}

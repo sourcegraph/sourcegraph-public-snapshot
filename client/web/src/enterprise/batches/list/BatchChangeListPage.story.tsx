@@ -48,6 +48,26 @@ add('List of batch changes', () => (
     </WebStory>
 ))
 
+add('List of batch changes, server-side execution enabled', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={true}
+                queryBatchChanges={queryBatchChanges}
+                areBatchChangesLicensed={batchChangesLicensed}
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                }}
+            />
+        )}
+    </WebStory>
+))
+
 add('Licensing not enforced', () => (
     <WebStory>
         {props => (

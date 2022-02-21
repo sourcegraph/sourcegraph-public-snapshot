@@ -16,4 +16,21 @@
             row-gap: 0.5rem;
         }
     }
+
+    // A variant of the above grid but with a wider first column for the state pill
+    &__grid-wide {
+        display: grid;
+        grid-template-columns: [state] 100px [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
+        row-gap: 1rem;
+        column-gap: 1.5rem;
+        align-items: center;
+        @media (--sm-breakpoint-down) {
+            // Reduce gap on sm and xs screens.
+            column-gap: 1rem;
+        }
+        @media (--xs-breakpoint-down) {
+            // Reduce gap on xs screens.
+            row-gap: 0.5rem;
+        }
+    }
 }
