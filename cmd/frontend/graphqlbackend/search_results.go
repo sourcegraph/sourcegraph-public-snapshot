@@ -581,12 +581,7 @@ func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Pla
 	for _, q := range oldPlan {
 		q := q
 		g.Go(func() error {
-			predicatePlan, err := predicate.Substitute(q, func(pred query.Predicate) (result.Matches, error) {
-				plan, err := pred.Plan(q)
-				if err != nil {
-					return nil, err
-				}
-
+			predicatePlan, err := predicate.Substitute(q, func(plan query.Plan) (result.Matches, error) {
 				children := make([]job.Job, 0, len(plan))
 				for _, basicQuery := range plan {
 					child, err := job.ToEvaluateJob(r.JobArgs(), basicQuery)

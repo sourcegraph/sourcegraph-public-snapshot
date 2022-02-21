@@ -5,6 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -94,4 +96,23 @@ func Test_searchResultsToFileNodes(t *testing.T) {
 			require.Equal(t, tc.res, query.Q(nodes).String())
 		})
 	}
+}
+
+func TestSubstitute(t *testing.T) {
+	test := func(input string) string {
+		q, _ := query.ParseLiteral(input)
+		b, _ := query.ToBasicQuery(q)
+		plan, _ := Substitute(b, func(p query.Plan) (result.Matches, error) {
+			return []result.Match{&result.RepoMatch{Name: "contains-foo"}}, nil
+		})
+		return query.StringHuman(plan.ToParseTree())
+	}
+
+	autogold.Want("predicate that generates a plan is replaced by values",
+		"repo:^contains-foo$").
+		Equal(t, test("repo:contains.file(foo)"))
+
+	autogold.Want("value that does not generate plan passes through",
+		"repo:^contains-foo$ repo:dependencies(bar)").
+		Equal(t, test("repo:contains.file(foo) repo:dependencies(bar)"))
 }

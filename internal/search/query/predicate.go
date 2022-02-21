@@ -21,8 +21,11 @@ type Predicate interface {
 	// into the predicate object.
 	ParseParams(string) error
 
-	// Plan generates a plan of (possibly multiple) queries to execute the
-	// behavior of a predicate in a query Q.
+	// Plan optionally generates a plan of queries to evaluate. Currently
+	// all such queries are evaluated and the results are substituted in the
+	// original query. If Plan returns nil, it means this predicate doesn't
+	// need evaluation and just exposes it's value in the query, which can
+	// be used for any purpose.
 	Plan(parent Basic) (Plan, error)
 }
 
