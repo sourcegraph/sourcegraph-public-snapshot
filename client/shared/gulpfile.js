@@ -11,6 +11,7 @@ const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
 const { format, resolveConfig } = require('prettier')
 
+const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
@@ -197,4 +198,6 @@ module.exports = {
   watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
+  cssModulesTypings,
+  watchCSSModulesTypings,
 }
