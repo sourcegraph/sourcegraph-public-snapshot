@@ -376,8 +376,10 @@ describe('Repository', () => {
                 }),
                 FileNames: () => ({
                     repository: {
+                        id: 'repo-123',
                         __typename: 'Repository',
                         commit: {
+                            id: 'c0ff33',
                             __typename: 'GitCommit',
                             fileNames: ['README.md'],
                         },
@@ -486,8 +488,10 @@ describe('Repository', () => {
                 }),
                 FileNames: () => ({
                     repository: {
+                        id: 'repo-123',
                         __typename: 'Repository',
                         commit: {
+                            id: 'c0ff33',
                             __typename: 'GitCommit',
                             fileNames: ['README.md'],
                         },
@@ -553,8 +557,10 @@ describe('Repository', () => {
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
                 FileNames: () => ({
                     repository: {
+                        id: 'repo-123',
                         __typename: 'Repository',
                         commit: {
+                            id: 'c0ff33',
                             __typename: 'GitCommit',
                             fileNames: ['README.md'],
                         },
@@ -599,8 +605,10 @@ describe('Repository', () => {
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
                 FileNames: () => ({
                     repository: {
+                        id: 'repo-123',
                         __typename: 'Repository',
                         commit: {
+                            id: 'c0ff33',
                             __typename: 'GitCommit',
                             fileNames: ['README.md'],
                         },
@@ -814,8 +822,10 @@ describe('Repository', () => {
                 }),
                 FileNames: () => ({
                     repository: {
+                        id: 'repo-123',
                         __typename: 'Repository',
                         commit: {
+                            id: 'c0ff33',
                             __typename: 'GitCommit',
                             fileNames: ['README.md'],
                         },

@@ -54,8 +54,10 @@ describe('Blob viewer', () => {
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
         FileNames: () => ({
             repository: {
+                id: 'repo-123',
                 __typename: 'Repository',
                 commit: {
+                    id: 'c0ff33',
                     __typename: 'GitCommit',
                     fileNames: ['README.md'],
                 },

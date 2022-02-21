@@ -131,7 +131,9 @@ export interface Failed {
 const FILE_NAMES = gql`
     query FileNames($repository: String!, $commit: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 fileNames
             }
         }
