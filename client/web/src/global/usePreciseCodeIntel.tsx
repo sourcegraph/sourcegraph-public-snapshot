@@ -6,7 +6,6 @@ import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnect
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import {
     UsePreciseCodeIntelForPositionVariables,
-    RefPanelLsifDataFields,
     UsePreciseCodeIntelForPositionResult,
     PreciseCodeIntelForLocationFields,
 } from '../graphql-operations'
@@ -18,7 +17,7 @@ import {
 } from './CoolCodeIntelQueries'
 
 export interface UsePreciseCodeIntelResult {
-    lsifData?: RefPanelLsifDataFields
+    lsifData?: PreciseCodeIntelForLocationFields
     error?: ApolloError
     loading: boolean
 

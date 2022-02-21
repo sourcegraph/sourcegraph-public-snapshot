@@ -362,14 +362,14 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!lsifData || lsifData.references.nodes.length === 0) {
+    if (!lsifData) {
         return <>Nothing found</>
     }
 
-    const references = lsifData?.references.nodes
-    const definitions = lsifData?.definitions.nodes
-    const implementations = lsifData?.implementations.nodes
-    const hover = lsifData?.hover
+    const references = lsifData.references.nodes
+    const definitions = lsifData.definitions.nodes
+    const implementations = lsifData.implementations.nodes
+    const hover = lsifData.hover
 
     return (
         <>
