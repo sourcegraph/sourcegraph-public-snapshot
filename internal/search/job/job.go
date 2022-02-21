@@ -631,7 +631,7 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 		job = NewSelectJob(sp, job)
 	}
 
-	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
+	return NewAlertJob(args.SearchInputs, NewTimeoutJob(timeout, NewLimitJob(maxResults, job))), err
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
