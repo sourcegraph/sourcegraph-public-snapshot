@@ -12,19 +12,4 @@ module.exports = {
       rules: { 'no-restricted-imports': 'off' },
     },
   ],
-  rules: {
-    'no-restricted-imports': [
-      'error',
-      {
-        paths: [
-          {
-            name: 'zustand',
-            importNames: ['default'],
-            message:
-              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
-          },
-        ],
-      },
-    ],
-  },
 }

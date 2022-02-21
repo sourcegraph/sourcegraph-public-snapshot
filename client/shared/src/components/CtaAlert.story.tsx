@@ -15,6 +15,7 @@ const config: Meta = {
         component: CtaAlert,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
     },
 }

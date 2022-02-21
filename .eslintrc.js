@@ -49,6 +49,23 @@ const config = {
             importNames: ['animationFrameScheduler'],
             message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
+          {
+            name: 'react-router-dom',
+            importNames: ['Link'],
+            message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            name: '@sourcegraph/wildcard',
+            importNames: ['Tooltip'],
+            message:
+              'Please ensure there is only a single `<Tooltip />` component present in the React tree. To display a specific tooltip, you can add the `data-tooltip` attribute to the relevant element.',
+          },
+          {
+            name: 'zustand',
+            importNames: ['default'],
+            message:
+              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
+          },
         ],
         patterns: [
           {

@@ -1,6 +1,7 @@
 package gitdomain
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -14,19 +15,20 @@ var (
 		"remote": {"-v"},
 		"diff":   append([]string{}, gitCommonAllowlist...),
 		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged"},
+		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name"},
-		"rev-list":     {"--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
+		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
-		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r"},
+		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
@@ -35,20 +37,24 @@ var (
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
 	gitCommonAllowlist = []string{
-		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges",
+		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges", "--fixed-strings",
 		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
-		"--regexp-ignore-case", "--glob", "--cherry", "-z",
+		"--regexp-ignore-case", "--glob", "--cherry", "-z", "--reverse", "--ignore-submodules",
 		"--until", "--since", "--author", "--committer",
 		"--all-match", "--invert-grep", "--extended-regexp",
 		"--no-color", "--decorate", "--no-patch", "--exclude",
 		"--no-merges",
+		"--no-renames",
 		"--full-index",
 		"--find-copies",
 		"--find-renames",
+		"--first-parent",
+		"--no-abbrev",
 		"--inter-hunk-context",
 		"--after",
 		"--date.order",
 		"-s",
+		"-100",
 	}
 )
 
@@ -57,7 +63,9 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
 	for _, allowedArg := range allowedArgs {
-		if splitArg == allowedArg {
+		// We use -- to specify the end of command options.
+		// See: https://unix.stackexchange.com/a/11382/214756.
+		if splitArg == allowedArg || splitArg == "--" {
 			return true
 		}
 	}
@@ -85,6 +93,16 @@ func IsAllowedGitCmd(args []string) bool {
 			// would be no way to safely express a query that began with a '-' character.
 			// (Same for `git show`, where the flag has the same meaning.)
 			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
+				continue // this arg is OK
+			}
+
+			// Special case handling of commands like `git blame -L15,60`.
+			if cmd == "blame" && strings.HasPrefix(arg, "-L") {
+				continue // this arg is OK
+			}
+
+			// Special case numeric arguments like `git log -20`.
+			if _, err := strconv.Atoi(arg[1:]); err == nil {
 				continue // this arg is OK
 			}
 

@@ -39,7 +39,7 @@ import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
 import styles from './SearchNotebookPage.module.scss'
 import { SearchNotebookPageHeaderActions } from './SearchNotebookPageHeaderActions'
-import { blockToGQLInput, GQLBlockToGQLInput } from './serialize'
+import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from './serialize'
 
 import { Block } from '.'
 
@@ -83,6 +83,11 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const notebookId = props.match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
+
+    const exportedFileName = useMemo(
+        () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
+        [notebookTitle]
+    )
 
     const notebookOrError = useObservable(
         useMemo(
@@ -150,7 +155,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     ])
 
     const onUpdateVisibility = useCallback(
-        (isPublic: boolean) => setUpdateQueue(queue => queue.concat([{ public: isPublic }])),
+        (isPublic: boolean, namespace: string) =>
+            setUpdateQueue(queue => queue.concat([{ public: isPublic, namespace }])),
         [setUpdateQueue]
     )
 
@@ -195,10 +201,12 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             ]}
                             actions={
                                 <SearchNotebookPageHeaderActions
+                                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                                     authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
+                                    namespace={notebookOrError.namespace}
                                     onUpdateVisibility={onUpdateVisibility}
                                     deleteNotebook={deleteNotebook}
                                     starsCount={notebookOrError.stars.totalCount}
@@ -231,7 +239,15 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                         <CheckCircleIcon
                                             className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                         />
-                                        <span>Last updated&nbsp;</span>
+                                        <span>
+                                            Last updated{' '}
+                                            {latestNotebook.updater && (
+                                                <span>
+                                                    by <strong>@{latestNotebook.updater.username}</strong>
+                                                </span>
+                                            )}
+                                            &nbsp;
+                                        </span>
                                         <Timestamp date={latestNotebook.updatedAt} />
                                     </>
                                 )}
@@ -245,7 +261,9 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             onUpdateBlocks={onUpdateBlocks}
                             fetchRepository={fetchRepository}
                             resolveRevision={resolveRevision}
+                            exportedFileName={exportedFileName}
                         />
+                        <div className={styles.spacer} />
                     </>
                 )}
             </Page>

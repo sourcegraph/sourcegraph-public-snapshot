@@ -1,4 +1,4 @@
-import { ApolloCache, ApolloClient, gql } from '@apollo/client'
+import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
@@ -7,11 +7,14 @@ import {
     CreateDashboardResult,
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
+    ExampleFirstRepositoryResult,
+    ExampleTodoRepositoryResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     HasAvailableCodeInsightResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
+    IsCodeInsightsLicensedResult,
     RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
@@ -47,6 +50,7 @@ import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
+import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
@@ -100,7 +104,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return createInsightView(insightData) || null
+                return createInsightView(insightData) ?? null
             })
         )
 
@@ -453,4 +457,39 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             )
         )
     }
+
+    public getFirstExampleRepository = (): Observable<string> => {
+        const firstRepository = (): Observable<string> =>
+            fromObservableQuery(
+                this.apolloClient.watchQuery<ExampleFirstRepositoryResult>({
+                    query: GET_EXAMPLE_FIRST_REPOSITORY_GQL,
+                })
+            ).pipe(map(getRepositoryName))
+
+        const todoRepository = (): Observable<string> =>
+            fromObservableQuery(
+                this.apolloClient.watchQuery<ExampleTodoRepositoryResult>({
+                    query: GET_EXAMPLE_TODO_REPOSITORY_GQL,
+                })
+            ).pipe(map(getRepositoryName))
+
+        return todoRepository().pipe(
+            switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
+        )
+    }
+
+    public isCodeInsightsLicensed = (): Observable<boolean> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<IsCodeInsightsLicensedResult>({
+                query: gql`
+                    query IsCodeInsightsLicensed {
+                        enterpriseLicenseHasFeature(feature: "code-insights")
+                    }
+                `,
+            })
+        ).pipe(map(({ data }) => data.enterpriseLicenseHasFeature))
 }
+
+const getRepositoryName = (
+    result: ApolloQueryResult<ExampleTodoRepositoryResult | ExampleFirstRepositoryResult>
+): string => result.data.search?.results.repositories[0].name || ''

@@ -10,6 +10,7 @@ import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sou
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
+import { useFlagsOverrides } from '../../../featureFlags/featureFlags'
 import {
     ExternalServiceKind,
     ListExternalServiceFields,
@@ -23,7 +24,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
-import { CodeHostItem } from './CodeHostItem'
+import { CodeHostItem, ParentWindow } from './CodeHostItem'
 import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
@@ -73,6 +74,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
 }) => {
+    if (window.opener) {
+        const parentWindow: ParentWindow = window.opener as ParentWindow
+        if (parentWindow.onSuccess) {
+            parentWindow.onSuccess()
+        }
+        window.close()
+    }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
     const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
@@ -142,6 +150,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             setStatusOrError(asError(error))
         })
     }, [fetchExternalServices])
+
+    const refetchServices = (): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }
 
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
@@ -271,7 +285,26 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return accumulator
     }, {})
 
-    const navigateToAuthProvider = useCallback(
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
+
+    const useGitHubApp = data?.organizationFeatureFlagValue || false
+
+    const flagsOverridesResult = useFlagsOverrides()
+    const isGitHubAppEnabled = flagsOverridesResult.data
+        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
+        .some(orgFlag => orgFlag.value)
+    const isGitHubAppLoading = flagsOverridesResult.loading
+
+    const defaultNavigateToAuthProvider = useCallback(
         (kind: ExternalServiceKind): void => {
             const authProvider = authProvidersByKind[kind]
 
@@ -287,18 +320,26 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
-    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        GET_ORG_FEATURE_FLAG_VALUE,
-        {
-            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            skip: !(owner.type === 'org'),
-        }
-    )
+    const navigateToAuthProvider = useCallback(
+        (kind: ExternalServiceKind): void => {
+            const authProvider = authProvidersByKind[kind]
 
-    const useGitHubApp = data?.organizationFeatureFlagValue || false
+            if (authProvider) {
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
+
+                if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
+                    defaultNavigateToAuthProvider(kind)
+                } else {
+                    window.location.assign(
+                        `/.auth/github/login?pc=${encodeURIComponent(
+                            `https://github.com/::${window.context.githubAppCloudClientID}`
+                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
+                    )
+                }
+            }
+        },
+        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled]
+    )
 
     return (
         <div className="user-code-hosts-page">
@@ -346,8 +387,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
-                                        loading={kind === ExternalServiceKind.GITHUB && loading}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null

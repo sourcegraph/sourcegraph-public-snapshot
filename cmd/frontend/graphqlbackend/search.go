@@ -82,8 +82,8 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	// Experimental: create a step to replace each context in the query with its repository query if any.
-	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false)
+	// Beta: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
 		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
 		if err != nil {
@@ -103,15 +103,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	defaultLimit := defaultMaxSearchResults
-	if args.Stream != nil {
-		defaultLimit = defaultMaxSearchResultsStreaming
-	}
-	if searchType == query.SearchTypeStructural {
-		// Set a lower max result count until structural search supports true streaming.
-		defaultLimit = defaultMaxSearchResults
-	}
-
 	var codeMonitorID *int64
 	if args.CodeMonitorID != nil {
 		var i int64
@@ -121,6 +112,11 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		codeMonitorID = &i
 	}
 
+	protocol := search.Batch
+	if args.Stream != nil {
+		protocol = search.Streaming
+	}
+
 	inputs := &run.SearchInputs{
 		Plan:          plan,
 		Query:         plan.ToParseTree(),
@@ -128,8 +124,8 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		UserSettings:  settings,
 		Features:      featureflag.FromContext(ctx),
 		PatternType:   searchType,
-		DefaultLimit:  defaultLimit,
 		CodeMonitorID: codeMonitorID,
+		Protocol:      protocol,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -208,8 +204,8 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	*run.SearchInputs
-	db database.DB
+	SearchInputs *run.SearchInputs
+	db           database.DB
 
 	// stream if non-nil will send all search events we receive down it.
 	stream streaming.Sender
@@ -221,25 +217,6 @@ type searchResolver struct {
 func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
-
-// rawQuery returns the original query string input.
-func (r *searchResolver) rawQuery() string {
-	return r.OriginalQuery
-}
-
-// protocol returns what type of search we are doing (batch, stream,
-// paginated).
-func (r *searchResolver) protocol() search.Protocol {
-	if r.stream != nil {
-		return search.Streaming
-	}
-	return search.Batch
-}
-
-const (
-	defaultMaxSearchResults          = 30
-	defaultMaxSearchResultsStreaming = 500
-)
 
 var mockDecodedViewerFinalSettings *schema.Settings
 

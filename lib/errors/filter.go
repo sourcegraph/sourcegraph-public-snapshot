@@ -11,10 +11,10 @@ import (
 func Ignore(err error, pred ErrorPredicate) error {
 	// If the error (or any wrapped error) is a multierror,
 	// filter its children.
-	var multi *MultiError
+	var multi *multiError
 	if As(err, &multi) {
-		filtered := multi.Errors[:0]
-		for _, childErr := range multi.Errors {
+		filtered := multi.errs[:0]
+		for _, childErr := range multi.errs {
 			if ignored := Ignore(childErr, pred); ignored != nil {
 				filtered = append(filtered, ignored)
 			}
@@ -22,7 +22,7 @@ func Ignore(err error, pred ErrorPredicate) error {
 		if len(filtered) == 0 {
 			return nil
 		}
-		multi.Errors = filtered
+		multi.errs = filtered
 		return err
 	}
 
@@ -32,8 +32,21 @@ func Ignore(err error, pred ErrorPredicate) error {
 	return err
 }
 
+// ErrorPredicate is a function type that returns whether an error matches a given condition
 type ErrorPredicate func(error) bool
 
-func IsContextCanceled(err error) bool {
-	return Is(err, context.Canceled)
+// HasTypePred returns an ErrorPredicate that returns true for errors that unwrap to an error with the same type as target
+func HasTypePred(target error) ErrorPredicate {
+	return func(err error) bool {
+		return HasType(err, target)
+	}
 }
+
+// IsPred returns an ErrorPredicate that returns true for errors that uwrap to the target error
+func IsPred(target error) ErrorPredicate {
+	return func(err error) bool {
+		return Is(err, target)
+	}
+}
+
+var IsContextCanceled = IsPred(context.Canceled)

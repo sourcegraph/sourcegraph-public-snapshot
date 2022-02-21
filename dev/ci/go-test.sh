@@ -60,14 +60,22 @@ function go_test() {
 EOF
   )
 
+  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
+  set +e
   echo "$data" | curl \
+    --fail \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
-
-  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  local curl_exit="$?"
+  if [ "$curl_exit" -eq 0 ]; then
+    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  else
+    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
+  fi
+  set -e
 
   return "$test_exit_code"
 }
@@ -107,6 +115,9 @@ echo "--- comby install"
 ./dev/codeinsights-db.sh &
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+
+# Disable GraphQL logs which are wildly noisy
+export NO_GRAPHQL_LOG=true
 
 # Install richgo for better output
 go install github.com/kyoh86/richgo@latest

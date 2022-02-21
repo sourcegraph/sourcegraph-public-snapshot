@@ -1,6 +1,6 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
 
-import { parseLineRange, serializeBlockInput, serializeBlocks, serializeLineRange } from './serialize'
+import { parseLineRange, serializeBlockInput, serializeBlocksToURL, serializeLineRange } from './serialize'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
@@ -73,7 +73,7 @@ describe('serialize', () => {
 
     it('should serialize multiple blocks', () => {
         expect(
-            serializeBlocks(
+            serializeBlocksToURL(
                 [
                     { type: 'md', input: '# Title' },
                     { type: 'query', input: 'repo:a b' },

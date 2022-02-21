@@ -1,9 +1,11 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
+import { useLocation } from 'react-router'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
@@ -12,32 +14,36 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../pings'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsExamples.module.scss'
 
-export interface CodeInsightsExamples extends React.HTMLAttributes<HTMLElement> {}
+export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples> = props => (
-    <section {...props}>
-        <h2>Example insights</h2>
-        <p className="text-muted">
-            We've created a few common simple insights to show you what the tool can do.{' '}
-            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
-                Explore more use cases.
-            </Link>
-        </p>
+export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
+    const { telemetryService, ...otherProps } = props
+    const { pathname, search } = useLocation()
 
-        <div className={styles.section}>
-            <CodeInsightSearchExample className={styles.card} />
-            <CodeInsightCaptureExample className={styles.card} />
-        </div>
-    </section>
-)
+    return (
+        <section {...otherProps}>
+            <h2>Example insights</h2>
+            <p className="text-muted">
+                Here are a few example insights to show you what the tool can do.{' '}
+                <Link to={`${pathname}${search}#code-insights-templates`}>Explore more use cases.</Link>
+            </p>
 
-interface ExampleCardProps {
+            <div className={styles.section}>
+                <CodeInsightSearchExample telemetryService={telemetryService} className={styles.card} />
+                <CodeInsightCaptureExample telemetryService={telemetryService} className={styles.card} />
+            </div>
+        </section>
+    )
+}
+
+interface ExampleCardProps extends TelemetryProps {
     className?: string
 }
 
@@ -50,26 +56,26 @@ type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { s
 
 const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     data: [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 88, b: 410 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 95, b: 410 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 110, b: 315 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 160, b: 180 },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: 310, b: 90 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 520, b: 45 },
-        { x: 1588965700286, a: 700, b: 10 },
+        { x: new Date('May 7, 2021'), a: 88, b: 410 },
+        { x: new Date('June 7, 2021'), a: 95, b: 410 },
+        { x: new Date('July 7, 2021'), a: 110, b: 315 },
+        { x: new Date('August 7, 2021'), a: 160, b: 180 },
+        { x: new Date('September 7, 2021'), a: 310, b: 90 },
+        { x: new Date('October 7, 2021'), a: 520, b: 45 },
+        { x: new Date('November 7, 2021'), a: 700, b: 10 },
     ],
     series: [
         {
             dataKey: 'a',
             name: 'CSS Modules',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'type:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
         },
         {
             dataKey: 'b',
             name: 'Global CSS',
             stroke: DATA_SERIES_COLORS.RED,
-            query: 'type:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
         },
     ],
     xAxis: {
@@ -81,12 +87,19 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
 
 const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
     title: 'Migration to CSS modules',
-    repositories: 'repo:github.com/awesomeOrg/examplerepo',
     series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
 })
 
 const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { className } = props
+    const { telemetryService, className } = props
+    const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
+    })
+
+    const handleTemplateLinkClick = (): void => {
+        telemetryService.log('InsightsGetStartedBigTemplateClick')
+    }
 
     return (
         <View.Root
@@ -94,7 +107,7 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
             subtitle={
                 <CodeInsightsQueryBlock
                     as={SyntaxHighlightedSearchQuery}
-                    query="repo:github.com/awesomeOrg/examplerepo"
+                    query="repo:github.com/wildcard-org/wc-repo"
                     className="mt-1"
                 />
             }
@@ -106,10 +119,13 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
                     size="sm"
                     className={styles.actionLink}
                     to={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    onClick={handleTemplateLinkClick}
                 >
                     Use as template
                 </Button>
             }
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             <div className={styles.chart}>
                 <ParentSize>
@@ -136,44 +152,49 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 60, f: 20 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
-        { x: 1588965700286, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: new Date('May 7, 2021'), a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
+        { x: new Date('June 7, 2021'), a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
+        { x: new Date('July 7, 2021'), a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
+        { x: new Date('August 7, 2021'), a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
+        { x: new Date('September 7, 2021'), a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
+        { x: new Date('October 7, 2021'), a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
+        { x: new Date('November 7, 2021'), a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: '17.3.1',
-            stroke: DATA_SERIES_COLORS.ORANGE,
+            name: '3.1',
+            stroke: DATA_SERIES_COLORS.INDIGO,
         },
         {
             dataKey: 'b',
-            name: '17.3.0',
-            stroke: DATA_SERIES_COLORS.BLUE,
-        },
-        {
-            dataKey: 'c',
-            name: '17.2.0',
+            name: '3.5',
             stroke: DATA_SERIES_COLORS.RED,
         },
         {
-            dataKey: 'd',
-            name: '17.1.1',
+            dataKey: 'c',
+            name: '3.15',
             stroke: DATA_SERIES_COLORS.GREEN,
         },
         {
-            dataKey: 'e',
-            name: '17.1.0',
-            stroke: DATA_SERIES_COLORS.CYAN,
+            dataKey: 'd',
+            name: '3.8',
+            stroke: DATA_SERIES_COLORS.GRAPE,
         },
         {
             dataKey: 'e',
-            name: '17.0.1',
-            stroke: DATA_SERIES_COLORS.GRAPE,
+            name: '3.9',
+            stroke: DATA_SERIES_COLORS.ORANGE,
+        },
+        {
+            dataKey: 'f',
+            name: '3.9.2',
+            stroke: DATA_SERIES_COLORS.TEAL,
+        },
+        {
+            dataKey: 'g',
+            name: '3.14',
+            stroke: DATA_SERIES_COLORS.PINK,
         },
     ],
     xAxis: {
@@ -184,17 +205,25 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
 }
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
-    title: 'Terraform versions (present or most popular)',
+    title: 'Alpine versions over all repos',
     allRepos: true,
-    groupSearchQuery: 'app.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
+    groupSearchQuery: 'patterntype:regexp FROM\\s+alpine:([\\d\\.]+) file:Dockerfile',
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { className } = props
+    const { telemetryService, className } = props
+    const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: CodeInsightTrackType.InProductLandingPageInsight,
+    })
+
+    const handleTemplateLinkClick = (): void => {
+        telemetryService.log('GetStartedBigTemplateClick')
+    }
 
     return (
         <View.Root
-            title="Terraform versions (present or most popular)"
+            title="Alpine versions over all repos"
             subtitle={
                 <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query="All repositories" className="mt-1" />
             }
@@ -205,11 +234,14 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
                     size="sm"
                     className={styles.actionLink}
                     to={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    onClick={handleTemplateLinkClick}
                 >
                     Use as template
                 </Button>
             }
-            className={classNames(className)}
+            className={className}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             <div className={styles.captureGroup}>
                 <div className={styles.chart}>
@@ -230,7 +262,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
             </div>
             <CodeInsightsQueryBlock
                 as={SyntaxHighlightedSearchQuery}
-                query="app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no"
+                query="patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile"
                 className="mt-2"
             />
         </View.Root>

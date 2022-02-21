@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -12,11 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -98,8 +103,45 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
+	schemas, err := getFilesystemSchemas()
+	if err != nil {
+		return nil, err
+	}
+	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory, schemas)
+	if err != nil {
+		return nil, err
+	}
 
-	return cliutil.NewShim(connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory)), nil
+	return cliutil.NewShim(r), nil
+}
+
+func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
+	for _, name := range []string{"frontend", "codeintel", "codeinsights"} {
+		schema, err := resolveSchema(name)
+		if err != nil {
+			errs = errors.Append(errs, errors.Newf("%s: %w", name, err))
+		} else {
+			schemas = append(schemas, schema)
+		}
+	}
+	return
+}
+
+func resolveSchema(name string) (*schemas.Schema, error) {
+	repositoryRoot, err := root.RepositoryRoot()
+	if err != nil {
+		if errors.Is(err, root.ErrNotInsideSourcegraph) {
+			return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
+		}
+		return nil, err
+	}
+
+	schema, err := schemas.ResolveSchema(os.DirFS(filepath.Join(repositoryRoot, "migrations", name)), name)
+	if err != nil {
+		return nil, errors.Newf("malformed migration definitions: %w", err)
+	}
+
+	return schema, nil
 }
 
 func addExec(ctx context.Context, args []string) error {

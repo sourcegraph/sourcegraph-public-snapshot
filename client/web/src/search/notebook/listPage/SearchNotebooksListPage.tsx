@@ -2,88 +2,109 @@ import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Redirect, useHistory, useLocation } from 'react-router'
+import { Observable } from 'rxjs'
+import { catchError, startWith, switchMap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { NotebooksOrderBy } from '../../../graphql-operations'
+import { CreateNotebookVariables, NotebooksOrderBy } from '../../../graphql-operations'
 import { PageRoutes } from '../../../routes.constants'
-import { fetchNotebooks as _fetchNotebooks } from '../backend'
+import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
+import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { SearchNotebooksList } from './SearchNotebooksList'
 import styles from './SearchNotebooksListPage.module.scss'
 
 export interface SearchNotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     fetchNotebooks?: typeof _fetchNotebooks
+    createNotebook?: typeof _createNotebook
 }
 
-type SelectedTab = 'my' | 'explore' | 'starred'
+type NotebooksTab =
+    | { type: 'my' }
+    | { type: 'explore' }
+    | { type: 'starred' }
+    | { type: 'org'; name: string; id: string }
 
-function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): SelectedTab {
+type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logName: string }[]
+
+function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     if (!authenticatedUser) {
-        return 'explore'
+        return { type: 'explore' }
     }
 
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
         case 'my':
-            return 'my'
+            return { type: 'my' }
         case 'explore':
-            return 'explore'
+            return { type: 'explore' }
         case 'starred':
-            return 'starred'
+            return { type: 'starred' }
     }
-    return 'my'
+
+    const orgName = urlParameters.get('org')
+    const org = orgName && authenticatedUser.organizations.nodes.find(org => org.name === orgName)
+    if (org) {
+        return { type: 'org', name: org.name, id: org.id }
+    }
+
+    return { type: 'my' }
 }
 
-function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: SelectedTab): void {
+function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: NotebooksTab): void {
     const urlParameters = new URLSearchParams(location.search)
-    urlParameters.set('tab', selectedTab)
     // Reset FilteredConnection URL params when switching between tabs
-    urlParameters.delete('visible')
-    urlParameters.delete('query')
+    for (const parameter of ['visible', 'query', 'order', 'org', 'tab']) {
+        urlParameters.delete(parameter)
+    }
+
+    if (selectedTab.type === 'org') {
+        urlParameters.set('org', selectedTab.name)
+    } else {
+        urlParameters.set('tab', selectedTab.type)
+    }
     if (location.search !== urlParameters.toString()) {
         history.replace({ ...location, search: urlParameters.toString() })
     }
 }
 
+const LOADING = 'loading' as const
+
 export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksListPageProps> = ({
     authenticatedUser,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
+    createNotebook = _createNotebook,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SearchNotebooksListPage')
     }, [telemetryService])
 
+    const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
 
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
+    const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
         getSelectedTabFromLocation(location.search, authenticatedUser)
     )
 
-    const setTab = useCallback(
-        (tab: SelectedTab) => {
+    const onSelectTab = useCallback(
+        (tab: NotebooksTab, logName: string) => {
             setSelectedTab(tab)
             setSelectedLocationTab(location, history, tab)
-        },
-        [location, history]
-    )
-
-    const onSelectTab = useCallback(
-        (tab: SelectedTab, logName: string) => {
-            setTab(tab)
             telemetryService.log(logName)
         },
-        [setTab, telemetryService]
+        [history, location, setSelectedTab, telemetryService]
     )
 
     const filters: FilteredConnectionFilter[] = [
@@ -145,6 +166,65 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
         },
     ]
 
+    const orgTabs: Tabs | undefined = useMemo(
+        () =>
+            authenticatedUser?.organizations.nodes.map(org => ({
+                tab: { type: 'org', name: org.name, id: org.id },
+                title: `${org.name} Notebooks`,
+                isActive: selectedTab.type === 'org' && selectedTab.id === org.id,
+                logName: 'OrgNotebooks',
+            })),
+        [authenticatedUser, selectedTab]
+    )
+
+    const tabs: Tabs = useMemo(
+        () => [
+            {
+                tab: { type: 'my' },
+                title: 'My Notebooks',
+                isActive: selectedTab.type === 'my',
+                logName: 'MyNotebooks',
+            },
+            {
+                tab: { type: 'starred' },
+                title: 'Starred Notebooks',
+                isActive: selectedTab.type === 'starred',
+                logName: 'StarredNotebooks',
+            },
+            ...(orgTabs ?? []),
+            {
+                tab: { type: 'explore' },
+                title: 'Explore Notebooks',
+                isActive: selectedTab.type === 'explore',
+                logName: 'ExploreNotebooks',
+            },
+        ],
+        [selectedTab, orgTabs]
+    )
+
+    const [importNotebook, importedNotebookOrError] = useEventObservable(
+        useCallback(
+            (notebook: Observable<CreateNotebookVariables['notebook']>) =>
+                notebook.pipe(
+                    switchMap(notebook =>
+                        createNotebook({ notebook }).pipe(
+                            startWith(LOADING),
+                            catchError(error => {
+                                setImportState(asError(error))
+                                return []
+                            })
+                        )
+                    )
+                ),
+            [createNotebook, setImportState]
+        )
+    )
+
+    if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
+        telemetryService.log('SearchNotebookImportedFromMarkdown')
+        return <Redirect to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} />
+    }
+
     return (
         <div className="w-100">
             <Page>
@@ -152,67 +232,50 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
-                            <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
-                                <PlusIcon className="icon-inline" />
-                                Create notebook
-                            </Button>
+                            <>
+                                <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="mr-2">
+                                    <PlusIcon className="icon-inline mr-1" />
+                                    Create notebook
+                                </Button>
+                                <ImportMarkdownNotebookButton
+                                    telemetryService={telemetryService}
+                                    authenticatedUser={authenticatedUser}
+                                    importNotebook={importNotebook}
+                                    importState={importState}
+                                    setImportState={setImportState}
+                                />
+                            </>
                         )
                     }
                     className="mb-3"
                 />
+                {isErrorLike(importState) && (
+                    <Alert variant="danger">
+                        Error while importing the notebook: <strong>{importState.message}</strong>
+                    </Alert>
+                )}
                 <div className="mb-4">
                     <div className="nav nav-tabs">
-                        <div className="nav-item">
-                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
-                                role="button"
-                                onClick={event => {
-                                    event.preventDefault()
-                                    onSelectTab('my', 'SearchNotebooksMyNotebooksTabClick')
-                                }}
-                                className={classNames('nav-link', selectedTab === 'my' && 'active')}
-                            >
-                                <span className="text-content" data-tab-content="My Notebooks">
-                                    My Notebooks
-                                </span>
-                            </Link>
-                        </div>
-                        <div className="nav-item">
-                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
-                                role="button"
-                                onClick={event => {
-                                    event.preventDefault()
-                                    onSelectTab('starred', 'SearchNotebooksStarredNotebooksTabClick')
-                                }}
-                                className={classNames('nav-link', selectedTab === 'starred' && 'active')}
-                            >
-                                <span className="text-content" data-tab-content="Starred Notebooks">
-                                    Starred Notebooks
-                                </span>
-                            </Link>
-                        </div>
-                        <div className="nav-item">
-                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
-                                role="button"
-                                onClick={event => {
-                                    event.preventDefault()
-                                    onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
-                                }}
-                                className={classNames('nav-link', selectedTab === 'explore' && 'active')}
-                            >
-                                <span className="text-content" data-tab-content="Explore Notebooks">
-                                    Explore Notebooks
-                                </span>
-                            </Link>
-                        </div>
+                        {tabs.map(({ tab, title, isActive, logName }) => (
+                            <div className="nav-item" key={`${tab.type}-${tab.type === 'org' && tab.id}`}>
+                                <Link
+                                    to=""
+                                    role="button"
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        onSelectTab(tab, `SearchNotebooks${logName}TabClick`)
+                                    }}
+                                    className={classNames('nav-link', isActive && 'active')}
+                                >
+                                    <span className="text-content" data-tab-content={title}>
+                                        {title}
+                                    </span>
+                                </Link>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                {selectedTab === 'my' && authenticatedUser && (
+                {selectedTab.type === 'my' && authenticatedUser && (
                     <SearchNotebooksList
                         logEventName="MyNotebooks"
                         fetchNotebooks={fetchNotebooks}
@@ -221,7 +284,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         telemetryService={telemetryService}
                     />
                 )}
-                {selectedTab === 'starred' && authenticatedUser && (
+                {selectedTab.type === 'starred' && authenticatedUser && (
                     <SearchNotebooksList
                         logEventName="StarredNotebooks"
                         fetchNotebooks={fetchNotebooks}
@@ -230,16 +293,29 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         telemetryService={telemetryService}
                     />
                 )}
-                {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
+                {selectedTab.type === 'org' && (
+                    <SearchNotebooksList
+                        logEventName="OrgNotebooks"
+                        fetchNotebooks={fetchNotebooks}
+                        namespace={selectedTab.id}
+                        filters={filters}
+                        telemetryService={telemetryService}
+                    />
+                )}
+                {(selectedTab.type === 'my' || selectedTab.type === 'starred') && !authenticatedUser && (
                     <UnauthenticatedNotebooksSection
-                        cta={selectedTab === 'my' ? 'Get started creating notebooks' : 'Get started starring notebooks'}
+                        cta={
+                            selectedTab.type === 'my'
+                                ? 'Get started creating notebooks'
+                                : 'Get started starring notebooks'
+                        }
                         telemetryService={telemetryService}
                         onSelectExploreNotebooks={() =>
-                            onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
+                            onSelectTab({ type: 'explore' }, 'SearchNotebooksExploreNotebooksTabClick')
                         }
                     />
                 )}
-                {selectedTab === 'explore' && (
+                {selectedTab.type === 'explore' && (
                     <SearchNotebooksList
                         logEventName="ExploreNotebooks"
                         fetchNotebooks={fetchNotebooks}

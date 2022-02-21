@@ -1,0 +1,72 @@
+package gqltestutil
+
+import "github.com/sourcegraph/sourcegraph/lib/errors"
+
+// GitBlob returns blob content of the file in given repository at given revision.
+func (c *Client) GitBlob(repoName, revision, filePath string) (string, error) {
+	const gqlQuery = `
+query Blob($repoName: String!, $revision: String!, $filePath: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+			file(path: $filePath) {
+				content
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"repoName": repoName,
+		"revision": revision,
+		"filePath": filePath,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					File struct {
+						Content string `json:"content"`
+					} `json:"file"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.File.Content, nil
+}
+
+// GitListFilenames lists all files for the repo
+func (c *Client) GitListFilenames(repoName, revision string) ([]string, error) {
+	const gqlQuery = `
+query Files($repoName: String!, $revision: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+            fileNames
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"repoName": repoName,
+		"revision": revision,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					FileNames []string `json:"fileNames"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.FileNames, nil
+}

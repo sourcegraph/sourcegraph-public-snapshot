@@ -1,8 +1,8 @@
 package casetransform
 
 import (
-	"regexp"
-	"regexp/syntax"
+	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 )
 
 // Regexp is a light wrapper over *regexp.Regexp that optimizes for case-insensitive search.

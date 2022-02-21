@@ -34,10 +34,22 @@ The red dot indicates that either the Sourcegraph URL entered is invalid, or you
 
 ### VS Code Extension
 
+#### Unsupported features by Sourcegraph version
+
+Here is a list of known limitations to the VS Code Extension that we are looking into for future releases:
+
+1. Only work with instances that support stream search
+2. Search does not work across instances on version 3.31.x
+3. Searches performed within the extension are not logged in Cloud for instance below version 3.34.0
+4. Search context are not fetched correctly for version below 3.36.0
+
 #### How to use the VS Code Extension with your private Sourcegraph instance
 The extension is connected to the [Sourcegraph public instance](https://sourcegraph.com/) by default. You can also add the following settings in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to connect the extension to your private instance: 
+
 1. `sourcegraph.url`: the instance url of your private instance 
+
 2. `sourcegraph.accessToken`: an access token created by your private Sourcegraph instance
+
 Note: If only an access token is configured, the extension will try to run searches on our public instance using the token instead of the corresponding instance. 
 
 #### How to update the Sourcegraph VS Code Extension to the latest version

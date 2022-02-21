@@ -15,19 +15,17 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { CodeInsightsContextProps } from '../../insights/types'
-import { useExperimentalFeatures } from '../../stores'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
 import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'
-import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
+import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
     CodeInsightsRootPageTab,
     CodeInsightsRootPageURLPaths,
 } from './pages/CodeInsightsRootPage'
 import { InsightsDashboardCreationPage } from './pages/dashboards/creation/InsightsDashboardCreationPage'
-import { DashboardsPage } from './pages/dashboards/dashboard-page/DashboardsPage'
 import { EditDashboardPage } from './pages/dashboards/edit-dashboard/EditDashobardPage'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 
@@ -73,11 +71,9 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
         [isCodeInsightsGqlApiEnabled, gqlApi, settingsCascade, platformContext]
     )
 
-    const { codeInsightsLandingPage } = useExperimentalFeatures()
-
     return (
         <CodeInsightsBackendContext.Provider value={api}>
-            <Route path="*" component={BetaConfirmationModal} />
+            <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
                 <Route path={`${match.url}/create`}>
@@ -109,40 +105,24 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                     render={() => <InsightsDashboardCreationPage telemetryService={telemetryService} />}
                 />
 
-                {codeInsightsLandingPage ? (
-                    <Route
-                        path={[
-                            `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`,
-                            `${match.url}${CodeInsightsRootPageURLPaths.GettingStarted}`,
-                        ]}
-                        render={props => (
-                            <CodeInsightsRootPage
-                                activeView={
-                                    props.match.path === `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`
-                                        ? CodeInsightsRootPageTab.CodeInsights
-                                        : CodeInsightsRootPageTab.GettingStarted
-                                }
-                                telemetryService={telemetryService}
-                            />
-                        )}
-                    />
-                ) : (
-                    <Route
-                        path={`${match.url}/dashboards/:dashboardId?`}
-                        render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
-                            <DashboardsPage
-                                telemetryService={telemetryService}
-                                dashboardID={routeProps.match.params.dashboardId}
-                            />
-                        )}
-                    />
-                )}
+                <Route
+                    path={[
+                        `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`,
+                        `${match.url}${CodeInsightsRootPageURLPaths.GettingStarted}`,
+                    ]}
+                    render={props => (
+                        <CodeInsightsRootPage
+                            activeView={
+                                props.match.path === `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`
+                                    ? CodeInsightsRootPageTab.CodeInsights
+                                    : CodeInsightsRootPageTab.GettingStarted
+                            }
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                />
 
-                {codeInsightsLandingPage ? (
-                    <Route path={match.url} exact={true} component={CodeInsightsRedirect} />
-                ) : (
-                    <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
-                )}
+                <Route path={match.url} exact={true} component={CodeInsightsRedirect} />
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>

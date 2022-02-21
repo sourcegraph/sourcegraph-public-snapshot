@@ -8,11 +8,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -94,7 +95,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 }
 
 func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
-	if !addToMacOSFirewall {
+	if !addToMacOSFirewall || runtime.GOOS != "darwin" {
 		return func() error { return nil }
 	}
 
@@ -630,40 +631,4 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
 
 	return c.Run()
-}
-
-func Checks(ctx context.Context, globalEnv map[string]string, checks ...Check) (bool, error) {
-	success := true
-
-	for _, check := range checks {
-		commandCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
-		c.Env = makeEnv(globalEnv)
-
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
-
-		if cmdOut, err := InRoot(c); err != nil {
-			success = false
-
-			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
-
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
-			if len(cmdOut) != 0 {
-				stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
-				separator := strings.Repeat("-", 80)
-				line := output.Linef(
-					"", output.StyleWarning,
-					"%s\n%s%s%s%s%s",
-					separator, output.StyleReset, cmdOut, output.StyleWarning, separator, output.StyleReset,
-				)
-				stdout.Out.WriteLine(line)
-			}
-		} else {
-			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
-		}
-	}
-
-	return success, nil
 }

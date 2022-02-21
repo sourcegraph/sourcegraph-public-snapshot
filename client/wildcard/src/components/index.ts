@@ -16,19 +16,21 @@ export { Tooltip, TooltipController } from './Tooltip'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
-export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink } from './Menu'
+export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from './Menu'
 export { Code, H1, H2, H3, H4, H5, H6, Label, Text } from './Typography'
 export * as Typography from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText } from './Feedback'
+export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason } from './Popover'
 
 /**
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
+export type { SelectProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'

@@ -3,13 +3,13 @@ package repos
 import (
 	"context"
 	"fmt"
-	"regexp"
-	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/grafana/regexp"
+	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
@@ -21,12 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -78,7 +77,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Limit = 500
 	}
 
-	errs := new(errors.MultiError)
+	var errs error
 
 	for {
 		page, err := r.Resolve(ctx, opts)
@@ -102,7 +101,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Cursors = page.Next
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
@@ -123,7 +122,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -336,7 +335,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 					if hasCommitAfter, err := git.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
-							errors.Append(&res.MultiError, err)
+							res.MultiError = errors.Append(res.MultiError, err)
 							res.Unlock()
 						}
 						continue
@@ -373,7 +372,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	err = res.ErrorOrNil()
+	err = res.MultiError
 	if len(res.MissingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}
@@ -405,7 +404,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -641,41 +640,6 @@ type MissingRepoRevsError struct {
 
 func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 
-// HandleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// returning common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
-	var status search.RepoStatus
-	if limitHit {
-		status |= search.RepoStatusLimitHit
-	}
-
-	if gitdomain.IsRepoNotExist(searchErr) {
-		if gitdomain.IsCloneInProgress(searchErr) {
-			status |= search.RepoStatusCloning
-		} else {
-			status |= search.RepoStatusMissing
-		}
-	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
-		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			fatalErr = searchErr
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= search.RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= search.RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
-	}
-	return streaming.Stats{
-		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		IsLimitHit: limitHit,
-	}, fatalErr
-}
-
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
@@ -700,7 +664,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,

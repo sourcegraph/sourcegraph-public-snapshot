@@ -33,8 +33,13 @@ const notebooksFragment = gql`
         creator {
             username
         }
+        updater {
+            username
+        }
         namespace {
+            __typename
             id
+            namespaceName
         }
         createdAt
         updatedAt
@@ -82,6 +87,7 @@ const fetchNotebooksQuery = gql`
         $descending: Boolean
         $creatorUserID: ID
         $starredByUserID: ID
+        $namespace: ID
         $query: String
     ) {
         notebooks(
@@ -91,6 +97,7 @@ const fetchNotebooksQuery = gql`
             descending: $descending
             creatorUserID: $creatorUserID
             starredByUserID: $starredByUserID
+            namespace: $namespace
             query: $query
         ) {
             nodes {
@@ -110,6 +117,7 @@ export function fetchNotebooks({
     first,
     creatorUserID,
     starredByUserID,
+    namespace,
     query,
     after,
     orderBy,
@@ -119,6 +127,7 @@ export function fetchNotebooks({
     query?: string
     creatorUserID?: Maybe<Scalars['ID']>
     starredByUserID?: Maybe<Scalars['ID']>
+    namespace?: Maybe<Scalars['ID']>
     after?: string
     orderBy?: GQL.NotebooksOrderBy
     descending?: boolean
@@ -129,6 +138,7 @@ export function fetchNotebooks({
         query: query ?? null,
         creatorUserID: creatorUserID ?? null,
         starredByUserID: starredByUserID ?? null,
+        namespace: namespace ?? null,
         orderBy: orderBy ?? GQL.NotebooksOrderBy.NOTEBOOK_UPDATED_AT,
         descending: descending ?? false,
     }).pipe(

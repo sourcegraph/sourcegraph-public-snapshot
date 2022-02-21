@@ -3,14 +3,14 @@ package symbol
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sort"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -86,10 +86,13 @@ func symbolSearchInRepos(
 			defer run.Release()
 
 			matches, err := searchInRepo(ctx, repoRevs, patternInfo, limit)
-			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
-				Stats:   stats,
+				Stats: streaming.Stats{
+					Status:     status,
+					IsLimitHit: limitHit,
+				},
 			})
 			if err != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
