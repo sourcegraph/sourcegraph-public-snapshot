@@ -21,7 +21,7 @@ type searchResults struct {
 	Results                    []map[string]interface{}
 	LimitHit                   bool
 	Cloning, Missing, Timedout []map[string]interface{}
-	ResultCount                int
+	MatchCount                 int
 	ElapsedMilliseconds        int
 	Alert                      searchResultsAlert
 }
