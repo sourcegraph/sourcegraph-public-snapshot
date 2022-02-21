@@ -134,7 +134,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         // Hoverify here?
         // The document should have added to extHost in parent though, so pass a viewerdata observable
 
-        let previousHoverifierSubscription: Subscription | null
+        let hoverifierSubscription: Subscription | null
         this.subscriptions.add(
             combineLatest([
                 props.viewerUpdates ?? NEVER,
@@ -144,12 +144,12 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     filter(isDefined)
                 ),
             ]).subscribe(([{ viewerId, ...hoverContext }, hoverifier]) => {
-                if (previousHoverifierSubscription) {
-                    previousHoverifierSubscription.unsubscribe()
-                    this.subscriptions.remove(previousHoverifierSubscription)
+                if (hoverifierSubscription) {
+                    hoverifierSubscription.unsubscribe()
+                    this.subscriptions.remove(hoverifierSubscription)
                 }
 
-                const hoverifierSubscription = hoverifier.hoverify({
+                hoverifierSubscription = hoverifier.hoverify({
                     positionEvents: this.tableContainerElements.pipe(
                         filter(isDefined),
                         findPositionsFromEvents({ domFunctions })

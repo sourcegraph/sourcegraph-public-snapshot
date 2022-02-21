@@ -204,17 +204,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
-    // Inform the extension host about the file (if we have code to render).
-    // Code excerpt will call `hoverifier.hoverify`.
-    const viewerUpdates = useMemo(
-        () =>
-            new ReplaySubject<
-                {
-                    viewerId: ViewerId
-                } & HoverContext
-            >(1),
-        []
-    )
+    // Inform the extension host about the file (if we have code to render). CodeExcerpt will call `hoverifier.hoverify`.
+    const viewerUpdates = useMemo(() => new ReplaySubject<{ viewerId: ViewerId } & HoverContext>(1), [])
     useEffect(() => {
         if (!props.extensionsController || result.type !== 'content' || !grouped) {
             return
@@ -222,16 +213,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
         let previousViewerId: ViewerId | undefined
         const commitID = result.commit || 'HEAD'
-        const uri = toURIWithPath({
-            repoName: result.repository,
-            filePath: result.path,
-            commitID,
-        })
+        const uri = toURIWithPath({ repoName: result.repository, filePath: result.path, commitID })
         const languageId = getModeFromPath(result.path)
-        const text = ''
         // HACK: code intel extensions don't depend on the `text` field.
-        // Fix to support other hover extensions on search results
-        // (likely too expensive).
+        // Fix to support other hover extensions on search results (likely too expensive).
+        const text = ''
 
         props.extensionsController.extHostAPI
             .then(extensionHostAPI =>
@@ -252,6 +238,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 ])
             )
             .then(([, viewerId]) => {
+                previousViewerId = viewerId
                 viewerUpdates.next({
                     viewerId,
                     repoName: result.repository,
@@ -271,6 +258,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 .catch(error => console.error('Error removing viewer from extension host', error))
         }
     }, [grouped, result, viewerUpdates, props.extensionsController])
+
     const history = useHistory()
     /**
      * This handler implements the logic to simulate the click/keyboard
