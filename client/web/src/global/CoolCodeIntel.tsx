@@ -47,6 +47,7 @@ import {
     Button,
     useObservable,
     Input,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -353,10 +354,22 @@ const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = p
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
-            <CollapsibleLocationList {...props} name="definitions" locations={definitions} />
-            <CollapsibleLocationList {...props} name="references" locations={references} />
+            <CollapsibleLocationList {...props} name="definitions" locations={definitions} hasMore={false} />
+            <CollapsibleLocationList
+                {...props}
+                name="references"
+                locations={references}
+                hasMore={props.referencesHasNextPage}
+                fetchMore={props.fetchMoreReferences}
+            />
             {implementations.length > 0 && (
-                <CollapsibleLocationList {...props} name="implementations" locations={implementations} />
+                <CollapsibleLocationList
+                    {...props}
+                    name="implementations"
+                    locations={implementations}
+                    hasMore={props.implementationsHasNextPage}
+                    fetchMore={props.fetchMoreImplementations}
+                />
             )}
         </>
     )
@@ -368,6 +381,8 @@ const CollapsibleLocationList: React.FunctionComponent<{
     setActiveLocation: (location: Location | undefined) => void
     activeLocation: Location | undefined
     filter: string | undefined
+    hasMore: boolean
+    fetchMore?: () => void
 }> = props => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
@@ -389,18 +404,40 @@ const CollapsibleLocationList: React.FunctionComponent<{
                             <ChevronRightIcon className="icon-inline" aria-label="Expand" />
                         )}{' '}
                         {capitalize(props.name)}
+                        <Badge pill={true} variant="secondary" className="ml-2">
+                            {props.locations.length}
+                            {props.hasMore && '+'}
+                        </Badge>
                     </h4>
                 </Button>
             </CardHeader>
 
             <Collapse id="references" isOpen={isOpen}>
                 {props.locations.length > 0 ? (
-                    <LocationsList
-                        locations={props.locations}
-                        activeLocation={props.activeLocation}
-                        setActiveLocation={props.setActiveLocation}
-                        filter={props.filter}
-                    />
+                    <>
+                        <LocationsList
+                            locations={props.locations}
+                            activeLocation={props.activeLocation}
+                            setActiveLocation={props.setActiveLocation}
+                            filter={props.filter}
+                        />
+                        {props.hasMore && props.fetchMore !== undefined && (
+                            <p className="text-center">
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        if (props.fetchMore) {
+                                            props.fetchMore()
+                                        }
+                                    }}
+                                >
+                                    Load more {props.name}
+                                </Button>
+                            </p>
+                        )}
+                    </>
                 ) : (
                     <p className="text-muted pl-2">
                         {props.filter ? (
