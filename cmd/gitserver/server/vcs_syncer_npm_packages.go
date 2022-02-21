@@ -23,13 +23,13 @@ import (
 )
 
 var (
-	placeholderNPMDependency = reposource.NPMDependency{
-		Package: func() reposource.NPMPackage {
+	placeholderNPMDependency = &reposource.NPMDependency{
+		NPMPackage: func() *reposource.NPMPackage {
 			pkg, err := reposource.NewNPMPackage("sourcegraph", "placeholder")
 			if err != nil {
 				panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 			}
-			return *pkg
+			return pkg
 		}(),
 		Version: "1.0.0",
 	}
@@ -161,32 +161,31 @@ func (s *NPMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 //
 // For example, if the URL path represents pkg@1, and our configuration has
 // [otherPkg@1, pkg@2, pkg@3], we will return [pkg@3, pkg@2].
-func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (matchingDependencies []reposource.NPMDependency, err error) {
+func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (matchingDependencies []*reposource.NPMDependency, err error) {
 	repoPackage, err := reposource.ParseNPMPackageFromRepoURL(repoUrlPath)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		timedout []reposource.NPMDependency
+		timedout []*reposource.NPMDependency
 	)
 	for _, configDependencyString := range s.npmDependencies() {
 		if repoPackage.MatchesDependencyString(configDependencyString) {
-			depPtr, err := reposource.ParseNPMDependency(configDependencyString)
+			dep, err := reposource.ParseNPMDependency(configDependencyString)
 			if err != nil {
 				return nil, err
 			}
-			configDependency := *depPtr
 
-			if err := npm.Exists(ctx, s.client, configDependency); err != nil {
+			if err := npm.Exists(ctx, s.client, dep); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					timedout = append(timedout, configDependency)
+					timedout = append(timedout, dep)
 					continue
 				} else {
 					return nil, err
 				}
 			}
-			matchingDependencies = append(matchingDependencies, configDependency)
+			matchingDependencies = append(matchingDependencies, dep)
 			// Silently ignore non-existent dependencies because
 			// they are already logged out in the `GetRepo` method
 			// in internal/repos/jvm_packages.go.
@@ -214,10 +213,10 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			log15.Error("failed to parse npm package", "package", dbDep.Package, "message", err)
 			continue
 		}
-		if *repoPackage == *parsedDbPackage {
-			matchingDependencies = append(matchingDependencies, reposource.NPMDependency{
-				Package: *parsedDbPackage,
-				Version: dbDep.Version,
+		if repoPackage.Equal(parsedDbPackage) {
+			matchingDependencies = append(matchingDependencies, &reposource.NPMDependency{
+				NPMPackage: parsedDbPackage,
+				Version:    dbDep.Version,
 			})
 		}
 	}
@@ -244,7 +243,7 @@ func (s *NPMPackagesSyncer) npmDependencies() []string {
 // tag points to a commit that adds all sources of given dependency. When
 // isLatestVersion is true, the HEAD of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.NPMDependency, isLatestVersion bool) error {
+func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency *reposource.NPMDependency, isLatestVersion bool) error {
 	tmpDirectory, err := os.MkdirTemp("", "npm-")
 	if err != nil {
 		return err
@@ -295,7 +294,7 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitTgz creates a git commit in the given working directory that adds all
 // the file contents of the given tgz file.
-func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource.NPMDependency,
+func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposource.NPMDependency,
 	workingDirectory string, tgzReadSeeker io.ReadSeeker) error {
 	namedReadSeeker := namedReadSeeker{dependency.PackageManagerSyntax(), tgzReadSeeker}
 	if err := decompressTgz(namedReadSeeker, workingDirectory); err != nil {

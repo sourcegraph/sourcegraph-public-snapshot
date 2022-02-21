@@ -38,13 +38,13 @@ const (
 // placeholderMavenDependency is used to set GIT_AUTHOR_NAME for git commands
 // that don't create commits or tags. The name of this dependency should never
 // be publicly visible so it can have any random value.
-var placeholderMavenDependency = reposource.MavenDependency{
-	MavenModule: reposource.MavenModule{
-		GroupID:    "com.sourcegraph",
-		ArtifactID: "sourcegraph",
-	},
-	Version: "1.0.0",
-}
+var placeholderMavenDependency = func() *reposource.MavenDependency {
+	d, err := reposource.ParseMavenDependency("com.sourcegraph:sourcegraph:1.0.0")
+	if err != nil {
+		panic(err)
+	}
+	return d
+}()
 
 type JVMPackagesSyncer struct {
 	Config  *schema.JVMPackagesConnection
@@ -77,7 +77,7 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 		if err != nil {
 			// Temporary: We shouldn't need both these checks but we're continuing to see the
 			// error in production logs which implies `Is` is not matching.
-			if errors.Is(err, coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+			if errors.HasType(err, &coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
 				// We can't do anything and it's leading to increases in our
 				// src_repoupdater_sched_error alert firing more often.
 				continue
@@ -173,7 +173,7 @@ func (s *JVMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []reposource.MavenDependency, err error) {
+func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (dependencies []*reposource.MavenDependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 
 	var (
 		totalConfigMatched int
-		timedout           []reposource.MavenDependency
+		timedout           []*reposource.MavenDependency
 	)
 	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
@@ -221,8 +221,8 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
 			continue
 		}
-		if module == parsedModule {
-			dependency := reposource.MavenDependency{
+		if module.Equal(parsedModule) {
+			dependency := &reposource.MavenDependency{
 				MavenModule: parsedModule,
 				Version:     dep.Version,
 			}
@@ -245,7 +245,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.MavenDependency, isLatestVersion bool) error {
+func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency *reposource.MavenDependency, isLatestVersion bool) error {
 	tmpDirectory, err := os.MkdirTemp("", "maven")
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
+func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency *reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
 		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.PackageManagerSyntax(), sourceCodeJarPath)
@@ -403,7 +403,7 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
 func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
-	dependency reposource.MavenDependency) (string, error) {
+	dependency *reposource.MavenDependency) (string, error) {
 	if dependency.IsJDK() {
 		return dependency.Version, nil
 	}

@@ -89,14 +89,14 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		for _, dbDep := range dbDeps {
 			parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Package)
 			if err != nil {
-				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Package)
+				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Package, "error", err)
 				continue
 			}
-			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
-			pkgKey := npmDependency.Package.PackageSyntax()
+			npmDependency := reposource.NPMDependency{NPMPackage: parsedDbPackage, Version: dbDep.Version}
+			pkgKey := npmDependency.PackageSyntax()
 			versions, found := pkgVersions[pkgKey]
 			if !found {
-				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.Package)
+				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.NPMPackage)
 				if err != nil {
 					pkgVersions[pkgKey] = map[string]struct{}{}
 					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
@@ -111,7 +111,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				}
 				continue
 			}
-			repo := s.makeRepo(npmDependency.Package)
+			repo := s.makeRepo(npmDependency.NPMPackage)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
 		}
@@ -119,7 +119,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	log15.Info("finish resolving npm artifacts", "totalDB", totalDBFetched, "totalDBResolved", totalDBResolved, "totalConfig", len(npmPackages))
 }
 
-func (s *NPMPackagesSource) makeRepo(npmPackage reposource.NPMPackage) *types.Repo {
+func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := npmPackage.CloneURL()
 	repoName := npmPackage.RepoName()
@@ -163,30 +163,29 @@ func (s *NPMPackagesSource) SetDB(db dbutil.DB) {
 
 // npmPackages gets the list of applicable packages by de-duplicating dependencies
 // present in the configuration.
-func npmPackages(connection schema.NPMPackagesConnection) ([]reposource.NPMPackage, error) {
+func npmPackages(connection schema.NPMPackagesConnection) ([]*reposource.NPMPackage, error) {
 	dependencies, err := npmDependencies(connection)
 	if err != nil {
 		return nil, err
 	}
-	npmPackages := []reposource.NPMPackage{}
-	isAdded := make(map[reposource.NPMPackage]bool)
+	npmPackages := []*reposource.NPMPackage{}
+	isAdded := make(map[string]bool)
 	for _, dep := range dependencies {
-		npmPackage := dep.Package
-		if !isAdded[npmPackage] {
-			npmPackages = append(npmPackages, npmPackage)
+		if key := dep.PackageSyntax(); !isAdded[key] {
+			npmPackages = append(npmPackages, dep.NPMPackage)
+			isAdded[key] = true
 		}
-		isAdded[npmPackage] = true
 	}
 	return npmPackages, nil
 }
 
-func npmDependencies(connection schema.NPMPackagesConnection) (dependencies []reposource.NPMDependency, err error) {
+func npmDependencies(connection schema.NPMPackagesConnection) (dependencies []*reposource.NPMDependency, err error) {
 	for _, dep := range connection.Dependencies {
 		dependency, err := reposource.ParseNPMDependency(dep)
 		if err != nil {
 			return nil, err
 		}
-		dependencies = append(dependencies, *dependency)
+		dependencies = append(dependencies, dependency)
 	}
 	return dependencies, nil
 }

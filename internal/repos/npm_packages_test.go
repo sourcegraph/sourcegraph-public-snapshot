@@ -44,7 +44,7 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(dep.Package)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				reposource.NPMDependency{*pkg, dep.Version}.PackageManagerSyntax(),
+				(&reposource.NPMDependency{pkg, dep.Version}).PackageManagerSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -65,7 +65,7 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(deps[0].Package)
 			require.Nil(t, err)
-			depStrs = append(depStrs, reposource.NPMDependency{*pkg, deps[0].Version}.PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NPMDependency{pkg, deps[0].Version}).PackageManagerSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -131,7 +131,7 @@ func TestListRepos(t *testing.T) {
 	for _, dep := range dependencies {
 		dep, err := reposource.ParseNPMDependency(dep)
 		require.Nil(t, err)
-		expectedRepoURLs = append(expectedRepoURLs, string(dep.Package.RepoName()))
+		expectedRepoURLs = append(expectedRepoURLs, string(dep.RepoName()))
 	}
 	sort.Strings(expectedRepoURLs)
 	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
@@ -146,7 +146,7 @@ func insertDependencies(t *testing.T, ctx context.Context, s *dbstore.Store, dep
 		rows, err :=
 			s.Store.Query(ctx, sqlf.Sprintf(
 				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dbstore.NPMPackagesScheme, dep.Package.PackageSyntax(), dep.Version))
+				dbstore.NPMPackagesScheme, dep.PackageSyntax(), dep.Version))
 		require.Nil(t, err)
 		for rows.Next() {
 		}

@@ -1,5 +1,7 @@
 package reposource
 
+import "github.com/sourcegraph/sourcegraph/internal/api"
+
 // [NOTE: Dependency-terminology]
 // In a dependency graph of packages, such as when doing package resolution,
 // you have the notion of dependencies as a pair of a package + a version range
@@ -18,12 +20,26 @@ package reposource
 // dependency. However, we still use the same type to represent the root for
 // practical purposes. For naming values, prefer "VersionedPackage" for
 // situations where there is no connotation of a dependency edge.
-
 type PackageDependency interface {
-	// Give the name of the dependency as used by the package manager,
+	// The scheme of the dependency (semanticdb, npm)
+	Scheme() string
+
+	// Returns the name of the dependency as used by the package manager,
+	// excluding version information.
+	PackageSyntax() string
+	// Returns the name of the dependency as used by the package manager,
 	// including version information.
 	PackageManagerSyntax() string
+	// The version of the package.
+	PackageVersion() string
+
+	// RepoName provides a name that is "globally unique" for a Sourcegraph instance.
+	// The returned value is used for repo:... in queries.
+	RepoName() api.RepoName
+	// Returns the git tag associated with the given dependency version, used
+	// rev: or repo:foo@rev
+	GitTagFromVersion() string
 }
 
-var _ PackageDependency = MavenDependency{}
-var _ PackageDependency = NPMDependency{}
+var _ PackageDependency = &MavenDependency{}
+var _ PackageDependency = &NPMDependency{}

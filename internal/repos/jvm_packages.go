@@ -129,7 +129,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 				log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
 				continue
 			}
-			mavenDependency := reposource.MavenDependency{MavenModule: parsedModule, Version: dep.Version}
+			mavenDependency := &reposource.MavenDependency{MavenModule: parsedModule, Version: dep.Version}
 
 			// We dont return anything that isnt resolvable here, to reduce logspam from gitserver. This codepath
 			// should be hit much less frequently than gitservers attempts to get packages, so there should be less
@@ -156,7 +156,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules), "timedout", timedOut)
 }
 
-func (s *JVMPackagesSource) makeRepo(module reposource.MavenModule) *types.Repo {
+func (s *JVMPackagesSource) makeRepo(module *reposource.MavenModule) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := module.CloneURL()
 	return &types.Repo{
@@ -185,7 +185,7 @@ func (s *JVMPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []reposource.MavenDependency, err error) {
+func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []*reposource.MavenDependency, err error) {
 	for _, dep := range connection.Maven.Dependencies {
 		dependency, err := reposource.ParseMavenDependency(dep)
 		if err != nil {
@@ -196,19 +196,18 @@ func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []
 	return dependencies, nil
 }
 
-func MavenModules(connection schema.JVMPackagesConnection) ([]reposource.MavenModule, error) {
-	isAdded := make(map[reposource.MavenModule]bool)
-	modules := []reposource.MavenModule{}
+func MavenModules(connection schema.JVMPackagesConnection) ([]*reposource.MavenModule, error) {
+	isAdded := make(map[string]bool)
+	modules := []*reposource.MavenModule{}
 	dependencies, err := MavenDependencies(connection)
 	if err != nil {
 		return nil, err
 	}
 	for _, dep := range dependencies {
-		module := dep.MavenModule
-		if _, added := isAdded[module]; !added {
-			modules = append(modules, module)
+		if key := dep.PackageSyntax(); !isAdded[key] {
+			modules = append(modules, dep.MavenModule)
+			isAdded[key] = true
 		}
-		isAdded[module] = true
 	}
 	return modules, nil
 }
