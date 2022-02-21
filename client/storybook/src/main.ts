@@ -44,7 +44,7 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
+    const directoriesWithStories = ['wildcard']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
@@ -99,6 +99,15 @@ const config = {
     webpackFinal: (config: Configuration, options: Options) => {
         config.stats = 'errors-warnings'
         config.mode = environment.shouldMinify ? 'production' : 'development'
+
+        if (!config.resolve) {
+            config.resolve = {}
+        }
+
+        config.resolve.fallback = {
+            ...config.resolve.fallback,
+            buffer: require.resolve('buffer/'),
+        }
 
         // Check the default config is in an expected shape.
         if (!config.module?.rules || !config.plugins) {
@@ -216,6 +225,8 @@ const config = {
 
             return speedMeasurePlugin.wrap(config)
         }
+
+        console.log('YO', config.resolve.fallback)
 
         return config
     },
