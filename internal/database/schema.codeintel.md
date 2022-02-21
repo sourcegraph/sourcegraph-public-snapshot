@@ -1,14 +1,3 @@
-# Table "public.codeintel_schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.lsif_data_apidocs_num_dumps"
 ```
  Column |  Type  | Collation | Nullable | Default 
