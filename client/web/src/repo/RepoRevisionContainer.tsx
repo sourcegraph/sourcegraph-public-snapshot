@@ -90,7 +90,7 @@ export interface RepoRevisionContainerContext
 export interface RepoRevisionContainerRoute extends RouteDescriptor<RepoRevisionContainerContext> {}
 
 interface RepoRevisionContainerProps
-    extends RouteComponentProps<{}>,
+    extends RouteComponentProps,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,

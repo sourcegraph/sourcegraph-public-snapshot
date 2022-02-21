@@ -24,7 +24,7 @@ import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/qu
 
 import styles from './CodeIntelUploadsPage.module.scss'
 
-export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface CodeIntelUploadsPageProps extends RouteComponentProps, TelemetryProps {
     repo?: { id: string }
     queryLsifUploadsByRepository?: typeof defaultQueryLsifUploadsByRepository
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
@@ -124,10 +124,12 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })
     useEffect(() => {
         if (history.location.state) {
+            const state = history.location.state as { message: string; modal: string }
+
             setDeleteStatus({
                 isDeleting: true,
-                message: history.location.state.message,
-                state: history.location.state.modal,
+                message: state.message,
+                state: state.modal,
             })
         }
     }, [history.location.state])

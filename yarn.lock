@@ -4719,6 +4719,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@reach/utils@npm:^0.13.0":
+  version: 0.13.2
+  resolution: "@reach/utils@npm:0.13.2"
+  dependencies:
+    "@types/warning": ^3.0.0
+    tslib: ^2.1.0
+    warning: ^4.0.3
+  peerDependencies:
+    react: ^16.8.0 || 17.x
+    react-dom: ^16.8.0 || 17.x
+  checksum: 63b4f505c53c1043c8566b6c4f648dc84d9e1c33876783c0a5a5c8e51a90dcabdda06df98d1532b657905b24d4590ca51db7f2fd39dc336842c7cf80dbbbc6e2
+  languageName: node
+  linkType: hard
+
 "@reach/visually-hidden@npm:^0.15.2":
   version: 0.15.2
   resolution: "@reach/visually-hidden@npm:0.15.2"
@@ -5165,7 +5179,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -5205,6 +5219,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -5283,7 +5298,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -5523,7 +5538,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -5563,6 +5578,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -5641,7 +5657,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -5728,6 +5744,7 @@ __metadata:
     sinon: ^9.0.2
     socket.io: ^2.3.0
     socket.io-client: ^2.3.0
+    sourcegraph: "workspace:^"
     speed-measure-webpack-plugin: ^1.5.0
     storybook-addon-designs: ^6.2.0
     storybook-dark-mode: ^1.0.8
@@ -5872,7 +5889,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -5912,6 +5929,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -6222,7 +6240,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -6262,6 +6280,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -6573,7 +6592,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -6613,6 +6632,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -6847,7 +6867,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sourcegraph/eslint-plugin-sourcegraph@workspace:client/eslint-plugin-sourcegraph"
   dependencies:
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
+    "@types/testing-library__react-hooks": ^3.4.1
     eslint: ^8.9.0
     react-test-renderer: ^16.14.0
     requireindex: ~1.1.0
@@ -6858,7 +6879,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sourcegraph/eslint-plugin-wildcard@workspace:client/eslint-plugin-wildcard"
   dependencies:
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
+    "@types/testing-library__react-hooks": ^3.4.1
     react-test-renderer: ^16.14.0
   peerDependencies:
     eslint-plugin-react: ^7.21.1
@@ -6978,7 +7000,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -7018,6 +7040,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -7331,7 +7354,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -7371,6 +7394,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -7582,7 +7606,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@sourcegraph/lsif-typed@workspace:lib/codeintel/lsif_typed"
   dependencies:
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
+    "@types/testing-library__react-hooks": ^3.4.1
     google-protobuf: 3.17.3
     react-test-renderer: ^16.14.0
   languageName: unknown
@@ -7702,7 +7727,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -7742,6 +7767,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -7820,7 +7846,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -8055,7 +8081,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -8095,6 +8121,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -8173,7 +8200,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -8414,7 +8441,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -8515,6 +8542,7 @@ __metadata:
     delay: ^4.4.1
     devtools-protocol: 0.0.901419
     downshift: ^3.4.8
+    enhanced-resolve: ^5.9.0
     esbuild: ^0.14.2
     eslint: ^7.17.0
     eslint-formatter-lsif: ^1.0.3
@@ -8539,7 +8567,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -8726,6 +8754,7 @@ __metadata:
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@sourcegraph/http-client": "workspace:^"
     "@sourcegraph/prettierrc": ^3.0.3
+    "@sourcegraph/shared": "workspace:^"
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/tsconfig": ^4.0.1
     "@sourcegraph/wildcard": "workspace:^"
@@ -8781,7 +8810,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -8821,6 +8850,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -9141,7 +9171,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -9181,6 +9211,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -9492,7 +9523,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -9532,6 +9563,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -9861,7 +9893,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -9901,6 +9933,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -9916,6 +9949,7 @@ __metadata:
     "@visx/group": ^1.7.0
     "@visx/mock-data": ^1.7.0
     "@visx/pattern": ^1.7.0
+    "@visx/point": 1.7.0
     "@visx/responsive": 1.7.0
     "@visx/scale": ^1.7.0
     "@visx/shape": 1.7.0
@@ -9989,7 +10023,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -10163,6 +10197,7 @@ __metadata:
     "@reach/listbox": ^0.10.1
     "@reach/menu-button": ^0.16.1
     "@reach/tabs": ^0.13.0
+    "@reach/utils": ^0.13.0
     "@reach/visually-hidden": ^0.15.2
     "@rushstack/eslint-patch": ^1.1.0
     "@sentry/browser": ^6.13.2
@@ -10230,7 +10265,7 @@ __metadata:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -10270,6 +10305,7 @@ __metadata:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -10348,7 +10384,7 @@ __metadata:
     gulplog: ^1.0.0
     highlight.js: ^10.5.0
     highlightjs-graphql: ^1.0.2
-    history: 4.5.1
+    history: 4.7.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
     http-proxy-middleware: ^1.1.2
@@ -12270,10 +12306,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/history@npm:4.5.1":
-  version: 4.5.1
-  resolution: "@types/history@npm:4.5.1"
-  checksum: 162c885ebe80d4ba587d51d6ff614094768f74fbda643bb1f22f7bdcf82b83ded021b962cb434282197cef8c6268ccd5458300574f305d8fe6c547914926c40d
+"@types/history@npm:4.7.11":
+  version: 4.7.11
+  resolution: "@types/history@npm:4.7.11"
+  checksum: c92e2ba407dcab0581a9afdf98f533aa41b61a71133420a6d92b1ca9839f741ab1f9395b17454ba5b88cb86020b70b22d74a1950ccfbdfd9beeaa5459fdc3464
   languageName: node
   linkType: hard
 
@@ -15680,13 +15716,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"big.js@npm:^3.1.3":
-  version: 3.2.0
-  resolution: "big.js@npm:3.2.0"
-  checksum: 299449e40555625a308f01d74378677036b2ec98b30aaa89794b3afbd4eaa104b7456a989affadfd7f630dc14b3f1df250de9bddc4a6fc664e60727887bb33e7
-  languageName: node
-  linkType: hard
-
 "big.js@npm:^5.2.2":
   version: 5.2.2
   resolution: "big.js@npm:5.2.2"
@@ -16558,7 +16587,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:3.5.1, chokidar@npm:>=2.0.0 <4.0.0, chokidar@npm:^3.2.3, chokidar@npm:^3.3.0, chokidar@npm:^3.3.1, chokidar@npm:^3.4.1, chokidar@npm:^3.4.2, chokidar@npm:^3.4.3, chokidar@npm:^3.5.1":
+"chokidar@npm:3.5.1":
   version: 3.5.1
   resolution: "chokidar@npm:3.5.1"
   dependencies:
@@ -16577,7 +16606,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:>=3.0.0 <4.0.0, chokidar@npm:^3.2.3, chokidar@npm:^3.3.1, chokidar@npm:^3.4.1, chokidar@npm:^3.4.2, chokidar@npm:^3.4.3, chokidar@npm:^3.5.1":
+"chokidar@npm:>=3.0.0 <4.0.0, chokidar@npm:^3.2.3, chokidar@npm:^3.3.0, chokidar@npm:^3.3.1, chokidar@npm:^3.4.1, chokidar@npm:^3.4.2, chokidar@npm:^3.4.3, chokidar@npm:^3.5.1":
   version: 3.5.3
   resolution: "chokidar@npm:3.5.3"
   dependencies:
@@ -17551,15 +17580,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"copy-anything@npm:^2.0.1":
-  version: 2.0.6
-  resolution: "copy-anything@npm:2.0.6"
-  dependencies:
-    is-what: ^3.14.1
-  checksum: 7318dc00ca14f846d14fc886845cff63bf20a3c5f4fcdd31f68c40a213648c78a1093426947ac0f8f8577845e9a7a11eeaaeefb05d9a6f1b78ca5ec60c2aaf6e
-  languageName: node
-  linkType: hard
-
 "copy-descriptor@npm:^0.1.0":
   version: 0.1.1
   resolution: "copy-descriptor@npm:0.1.1"
@@ -17971,15 +17991,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-parse@npm:~2.0.0":
-  version: 2.0.0
-  resolution: "css-parse@npm:2.0.0"
-  dependencies:
-    css: ^2.0.0
-  checksum: e6b23721364f6d7028538463f2388200430f32331fbbd8cd3b2c545e4b17a270594b74986aa1d6f2ad9dd206cbdad1c5e2331a16c06f4a7213f07494a32cca2b
-  languageName: node
-  linkType: hard
-
 "css-select-base-adapter@npm:^0.1.1":
   version: 0.1.1
   resolution: "css-select-base-adapter@npm:0.1.1"
@@ -18086,18 +18097,6 @@ __metadata:
   version: 1.5.1
   resolution: "css.escape@npm:1.5.1"
   checksum: f6d38088d870a961794a2580b2b2af1027731bb43261cfdce14f19238a88664b351cc8978abc20f06cc6bbde725699dec8deb6fe9816b139fc3f2af28719e774
-  languageName: node
-  linkType: hard
-
-"css@npm:^2.0.0":
-  version: 2.2.4
-  resolution: "css@npm:2.2.4"
-  dependencies:
-    inherits: ^2.0.3
-    source-map: ^0.6.1
-    source-map-resolve: ^0.5.2
-    urix: ^0.1.0
-  checksum: a35d483c5ccc04bcde3b1e7393d58ad3eee1dd6956df0f152de38e46a17c0ee193c30eec6b1e59831ad0e74599385732000e95987fcc9cb2b16c6d951bae49e1
   languageName: node
   linkType: hard
 
@@ -19137,7 +19136,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:^3.0.0, debug@npm:^3.0.1, debug@npm:^3.1.0, debug@npm:^3.1.1, debug@npm:^3.2.6, debug@npm:^3.2.7":
+"debug@npm:^3.0.0, debug@npm:^3.0.1, debug@npm:^3.1.0, debug@npm:^3.1.1, debug@npm:^3.2.7":
   version: 3.2.7
   resolution: "debug@npm:3.2.7"
   dependencies:
@@ -19939,13 +19938,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^10.0.0":
-  version: 10.0.0
-  resolution: "dotenv@npm:10.0.0"
-  checksum: f412c5fe8c24fbe313d302d2500e247ba8a1946492db405a4de4d30dd0eb186a88a43f13c958c5a7de303938949c4231c56994f97d05c4bc1f22478d631b4005
-  languageName: node
-  linkType: hard
-
 "dotenv@npm:^6.2.0":
   version: 6.2.0
   resolution: "dotenv@npm:6.2.0"
@@ -20118,13 +20110,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"emojis-list@npm:^2.0.0":
-  version: 2.1.0
-  resolution: "emojis-list@npm:2.1.0"
-  checksum: fb61fa6356dfcc9fbe6db8e334c29da365a34d3d82a915cb59621883d3023d804fd5edad5acd42b8eec016936e81d3b38e2faf921b32e073758374253afe1272
-  languageName: node
-  linkType: hard
-
 "emojis-list@npm:^3.0.0":
   version: 3.0.0
   resolution: "emojis-list@npm:3.0.0"
@@ -20294,7 +20279,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"errno@npm:^0.1.1, errno@npm:^0.1.3":
+"errno@npm:^0.1.3":
   version: 0.1.8
   resolution: "errno@npm:0.1.8"
   dependencies:
@@ -22690,15 +22675,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"generic-names@npm:^1.0.2":
-  version: 1.0.3
-  resolution: "generic-names@npm:1.0.3"
-  dependencies:
-    loader-utils: ^0.2.16
-  checksum: aecc22565f9ed74d0f4a63cb19282a8f243aad6bb3c91ed7af006977980bcb7757fbce83238d466835a820b5972730960a5c36010f07b9ea2d4819db344a900e
-  languageName: node
-  linkType: hard
-
 "generic-names@npm:^2.0.1":
   version: 2.0.1
   resolution: "generic-names@npm:2.0.1"
@@ -23777,6 +23753,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"has-flag@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "has-flag@npm:1.0.0"
+  checksum: ce3f8ae978e70f16e4bbe17d3f0f6d6c0a3dd3b62a23f97c91d0fda9ed8e305e13baf95cc5bee4463b9f25ac9f5255de113165c5fb285e01b8065b2ac079b301
+  languageName: node
+  linkType: hard
+
 "has-flag@npm:^3.0.0":
   version: 3.0.0
   resolution: "has-flag@npm:3.0.0"
@@ -24015,16 +23998,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"history@npm:4.5.1":
-  version: 4.5.1
-  resolution: "history@npm:4.5.1"
+"history@npm:4.7.2":
+  version: 4.7.2
+  resolution: "history@npm:4.7.2"
   dependencies:
     invariant: ^2.2.1
     loose-envify: ^1.2.0
-    resolve-pathname: ^2.0.0
-    value-equal: ^0.2.0
+    resolve-pathname: ^2.2.0
+    value-equal: ^0.4.0
     warning: ^3.0.0
-  checksum: adfd47f93c5fde87724124044b047d33dc4181909536811ff20649109e09dcb77f8c4a4bdf190c77d2354201f76da4399ed43be0554259dfcacd807a0eac2e46
+  checksum: 66ffc537ceb9ed8e092ea31e2090d1888abba67e830549aa669cecb4cf0f06a234ae7d616f92904bdcb5cbf428acefe6fc3451d8e5edcb05172b61f1567e0061
   languageName: node
   linkType: hard
 
@@ -24440,7 +24423,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iconv-lite@npm:0.4, iconv-lite@npm:0.4.24, iconv-lite@npm:^0.4.24, iconv-lite@npm:^0.4.4":
+"iconv-lite@npm:0.4, iconv-lite@npm:0.4.24, iconv-lite@npm:^0.4.24":
   version: 0.4.24
   resolution: "iconv-lite@npm:0.4.24"
   dependencies:
@@ -24462,15 +24445,6 @@ __metadata:
   version: 1.1.0
   resolution: "icss-replace-symbols@npm:1.1.0"
   checksum: 24575b2c2f7e762bfc6f4beee31be9ba98a01cad521b5aa9954090a5de2b5e1bf67814c17e22f9e51b7d798238db8215a173d6c2b4726ce634ce06b68ece8045
-  languageName: node
-  linkType: hard
-
-"icss-utils@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "icss-utils@npm:3.0.1"
-  dependencies:
-    postcss: ^6.0.2
-  checksum: 93f57cb3d73427b38214445c23f9c07e4fe2def04c30ea535661d8361de2f9ab7d4fdd65da281fd54c1f3f20efc0798b7ab1e65d9c3e72d8e8e7355715bca8cb
   languageName: node
   linkType: hard
 
@@ -24537,15 +24511,6 @@ __metadata:
   bin:
     image-size: bin/image-size.js
   checksum: 2d9d1edc43c0fa8effd27c44cd2d1b02ecc963219e78a76ac80b9d363f69c5aa19990cc23a323959ea510742ff07667e231f0852fd57eba5dc5b55432b58106d
-  languageName: node
-  linkType: hard
-
-"image-size@npm:~0.5.0":
-  version: 0.5.5
-  resolution: "image-size@npm:0.5.5"
-  bin:
-    image-size: bin/image-size.js
-  checksum: 6709d5cb73e96d5097ae5e9aa746dd36d6a9c8cf645e7eecac72ea07dbd6f312a65183752762fa92e2f3b698d4ed8d85dd55bf5207b6367245996bd16576d8fe
   languageName: node
   linkType: hard
 
@@ -25643,13 +25608,6 @@ __metadata:
   version: 1.0.0
   resolution: "is-valid-glob@npm:1.0.0"
   checksum: 0155951e89291d405cbb2ff4e25a38ee7a88bc70b05f246c25d31a1d09f13d4207377e5860f67443bbda8e3e353da37047b60e586bd9c97a39c9301c30b67acb
-  languageName: node
-  linkType: hard
-
-"is-what@npm:^3.14.1":
-  version: 3.14.1
-  resolution: "is-what@npm:3.14.1"
-  checksum: a9a6ce92d33799f1ae0916c7afb6f8128a23ce9d28bd69d9ec3ec88910e7a1f68432e6236c3c8a4d544cf0b864675e5d828437efde60ee0cf8102061d395c1df
   languageName: node
   linkType: hard
 
@@ -26806,15 +26764,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"json5@npm:^0.5.0":
-  version: 0.5.1
-  resolution: "json5@npm:0.5.1"
-  bin:
-    json5: lib/cli.js
-  checksum: 9b85bf06955b23eaa4b7328aa8892e3887e81ca731dd27af04a5f5f1458fbc5e1de57a24442e3272f8a888dd1abe1cb68eb693324035f6b3aeba4fcab7667d62
-  languageName: node
-  linkType: hard
-
 "json5@npm:^1.0.1":
   version: 1.0.1
   resolution: "json5@npm:1.0.1"
@@ -27165,41 +27114,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"less@npm:^4.1.1":
-  version: 4.1.2
-  resolution: "less@npm:4.1.2"
-  dependencies:
-    copy-anything: ^2.0.1
-    errno: ^0.1.1
-    graceful-fs: ^4.1.2
-    image-size: ~0.5.0
-    make-dir: ^2.1.0
-    mime: ^1.4.1
-    needle: ^2.5.2
-    parse-node-version: ^1.0.1
-    source-map: ~0.6.0
-    tslib: ^2.3.0
-  dependenciesMeta:
-    errno:
-      optional: true
-    graceful-fs:
-      optional: true
-    image-size:
-      optional: true
-    make-dir:
-      optional: true
-    mime:
-      optional: true
-    needle:
-      optional: true
-    source-map:
-      optional: true
-  bin:
-    lessc: bin/lessc
-  checksum: d3cbc3e18a8313e44f7feaf5fce1728b25911e116a8b9f7206e1f7bf5660902ddaf470b58e68a52288488c8a337433b7de686a3d2405ce49155c2280191983de
-  languageName: node
-  linkType: hard
-
 "leven@npm:^3.1.0":
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
@@ -27319,13 +27233,6 @@ __metadata:
     lighthouse: ./lighthouse-cli/index.js
     smokehouse: ./lighthouse-cli/test/smokehouse/frontends/smokehouse-bin.js
   checksum: 0c885545a50a4c22330fc4d605ff2959c23146564b82415c02007a862fa55dfdc4152beb5d5f903872b77cf589915799a11de9f09581e3ed052ab8713c512982
-  languageName: node
-  linkType: hard
-
-"lilconfig@npm:^2.0.4":
-  version: 2.0.4
-  resolution: "lilconfig@npm:2.0.4"
-  checksum: 02ae530aa49218d782eb79e92c600ea5220828987f85aa3403fa512cadc7efe38c0ac7d0cd2edf600ad3fae1f6c1752f5b4bb78c0d9950435b044d53d507c9e1
   languageName: node
   linkType: hard
 
@@ -27474,18 +27381,6 @@ __metadata:
     emojis-list: ^3.0.0
     json5: ^2.1.2
   checksum: 6856423131b50b6f5f259da36f498cfd7fc3c3f8bb17777cf87fdd9159e797d4ba4288d9a96415fd8da62c2906960e88f74711dee72d03a9003bddcd0d364a51
-  languageName: node
-  linkType: hard
-
-"loader-utils@npm:^0.2.16":
-  version: 0.2.17
-  resolution: "loader-utils@npm:0.2.17"
-  dependencies:
-    big.js: ^3.1.3
-    emojis-list: ^2.0.0
-    json5: ^0.5.0
-    object-assign: ^4.0.1
-  checksum: 3045c83ef8b19d66d4c25e3245120c579883f473fe0d0559552f55502be913725c4d558a7c866191a74b19ef2af20b094afe3b144ae1e717ea4c245d52f60a09
   languageName: node
   linkType: hard
 
@@ -28518,7 +28413,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime@npm:1.6.0, mime@npm:^1.4.1":
+"mime@npm:1.6.0":
   version: 1.6.0
   resolution: "mime@npm:1.6.0"
   bin:
@@ -28757,7 +28652,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mkdirp@npm:1.0.4, mkdirp@npm:^1.0.3, mkdirp@npm:^1.0.4, mkdirp@npm:~1.0.4":
+"mkdirp@npm:1.0.4, mkdirp@npm:^1.0.3, mkdirp@npm:^1.0.4":
   version: 1.0.4
   resolution: "mkdirp@npm:1.0.4"
   bin:
@@ -29040,11 +28935,11 @@ __metadata:
   linkType: hard
 
 "nan@npm:^2.10.0, nan@npm:^2.12.1":
-  version: 2.14.2
-  resolution: "nan@npm:2.14.2"
+  version: 2.15.0
+  resolution: "nan@npm:2.15.0"
   dependencies:
     node-gyp: latest
-  checksum: 7a269139b66a7d37470effb7fb36a8de8cc3b5ffba6e40bb8e0545307911fe5ebf94797ec62f655ecde79c237d169899f8bd28256c66a32cbc8284faaf94c3f4
+  checksum: 33e1bb4dfca447fe37d4bb5889be55de154828632c8d38646db67293a21afd61ed9909cdf1b886214a64707d935926c4e60e2b09de9edfc2ad58de31d6ce8f39
   languageName: node
   linkType: hard
 
@@ -29121,19 +29016,6 @@ __metadata:
   bin:
     ncp: ./bin/ncp
   checksum: ea9b19221da1d1c5529bdb9f8e85c9d191d156bcaae408cce5e415b7fbfd8744c288e792bd7faf1fe3b70fd44c74e22f0d43c39b209bc7ac1fb8016f70793a16
-  languageName: node
-  linkType: hard
-
-"needle@npm:^2.5.2":
-  version: 2.9.1
-  resolution: "needle@npm:2.9.1"
-  dependencies:
-    debug: ^3.2.6
-    iconv-lite: ^0.4.4
-    sax: ^1.2.4
-  bin:
-    needle: ./bin/needle
-  checksum: 746ae3a3782f0a057ff304a98843cc6f2009f978a0fad0c3e641a9d46d0b5702bb3e197ba08aecd48678067874a991c4f5fc320c7e51a4c041d9dd3441146cf0
   languageName: node
   linkType: hard
 
@@ -30364,7 +30246,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"parse-node-version@npm:^1.0.0, parse-node-version@npm:^1.0.1":
+"parse-node-version@npm:^1.0.0":
   version: 1.0.1
   resolution: "parse-node-version@npm:1.0.1"
   checksum: c192393b6a978092c1ef8df2c42c0a02e4534b96543e23d335f1b9b5b913ac75473d18fe6050b58d6995c57fb383ee71a5cb8397e363caaf38a6df8215cc52fd
@@ -30960,15 +30842,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-filter-plugins@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "postcss-filter-plugins@npm:3.0.1"
-  dependencies:
-    postcss: ^6.0.14
-  checksum: 882aac0e1b1955c58a34be6f59df3a9cbf8b7667ddd0abe4ad17c5379e708ccbabb9cb8e5beae92b857af111ccf06ed27c142260e40f0fcb881cee08aa9ba1b2
-  languageName: node
-  linkType: hard
-
 "postcss-flexbugs-fixes@npm:^4.2.1":
   version: 4.2.1
   resolution: "postcss-flexbugs-fixes@npm:4.2.1"
@@ -30987,51 +30860,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-icss-keyframes@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "postcss-icss-keyframes@npm:0.2.1"
-  dependencies:
-    icss-utils: ^3.0.1
-    postcss: ^6.0.2
-    postcss-value-parser: ^3.3.0
-  checksum: 07730e24feda534f19eaef6f385f27293d519d6c03cba354763d050e25d0ab5faf8e5532bc5be7d946257e04ece12b1c1f07bdcdf5c58edeabd41f997e821379
-  languageName: node
-  linkType: hard
-
-"postcss-icss-selectors@npm:^2.0.3":
-  version: 2.0.3
-  resolution: "postcss-icss-selectors@npm:2.0.3"
-  dependencies:
-    css-selector-tokenizer: ^0.7.0
-    generic-names: ^1.0.2
-    icss-utils: ^3.0.1
-    lodash: ^4.17.4
-    postcss: ^6.0.2
-  checksum: 4a4d952a632c65b4392761168563d71606d2c34a4442bcad7204c40ec5181a55b3214a2f3df465cd2931a0a0d0b805443f6f86c69916aefd762f3356c76b8644
-  languageName: node
-  linkType: hard
-
 "postcss-inset@npm:^1.0.0":
   version: 1.0.0
   resolution: "postcss-inset@npm:1.0.0"
   dependencies:
     postcss: ^6.0.1
   checksum: 294939991a8a695f4b4de963a33293795de0f5b2954c627eb1188056ae5fb502efaa756f5457bc47a145c61d2108a0e67f7bd0853fb9dd6582e896c59ced98ff
-  languageName: node
-  linkType: hard
-
-"postcss-load-config@npm:^3.0.1":
-  version: 3.1.3
-  resolution: "postcss-load-config@npm:3.1.3"
-  dependencies:
-    lilconfig: ^2.0.4
-    yaml: ^1.10.2
-  peerDependencies:
-    ts-node: ">=9.0.0"
-  peerDependenciesMeta:
-    ts-node:
-      optional: true
-  checksum: 7d187d339f259265bf1de9efff39223b94cb2cabe4610516896a16ec96f713b9b6505b4247d870f134842f8441b442a0fdc33a782b78ae3bec6db2aed4aeafec
   languageName: node
   linkType: hard
 
@@ -31490,7 +31324,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-value-parser@npm:^3.0.0, postcss-value-parser@npm:^3.3.0":
+"postcss-value-parser@npm:^3.0.0":
   version: 3.3.1
   resolution: "postcss-value-parser@npm:3.3.1"
   checksum: 62cd26e1cdbcf2dcc6bcedf3d9b409c9027bc57a367ae20d31dd99da4e206f730689471fd70a2abe866332af83f54dc1fa444c589e2381bf7f8054c46209ce16
@@ -31515,7 +31349,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:6.0.1, postcss@npm:^6.0.1":
+"postcss@npm:6.0.1":
   version: 6.0.1
   resolution: "postcss@npm:6.0.1"
   dependencies:
@@ -31538,11 +31372,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-<<<<<<< HEAD
-"postcss@npm:^6.0.1, postcss@npm:^6.0.14, postcss@npm:^6.0.2":
-=======
-"postcss@npm:^6.0.14, postcss@npm:^6.0.2":
->>>>>>> parent of 743c85cda4 (remove typed-css-modules)
+"postcss@npm:^6.0.1":
   version: 6.0.23
   resolution: "postcss@npm:6.0.23"
   dependencies:
@@ -31553,7 +31383,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.0.2, postcss@npm:^8.2.15, postcss@npm:^8.2.9, postcss@npm:^8.3.0, postcss@npm:^8.3.5, postcss@npm:^8.4.5":
+"postcss@npm:^8.0.2, postcss@npm:^8.2.15, postcss@npm:^8.2.9, postcss@npm:^8.3.5, postcss@npm:^8.4.5":
   version: 8.4.6
   resolution: "postcss@npm:8.4.6"
   dependencies:
@@ -33433,7 +33263,7 @@ pvutils@latest:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -33473,6 +33303,7 @@ pvutils@latest:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -33659,7 +33490,6 @@ pvutils@latest:
     ts-node: ^9.1.1
     tslib: ^2.1.0
     typescript: ^4.5.2
-    typescript-plugin-css-modules: ^3.4.0
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
     use-resize-observer: ^7.0.0
@@ -33996,7 +33826,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"resolve-pathname@npm:^2.0.0":
+"resolve-pathname@npm:^2.2.0":
   version: 2.2.0
   resolution: "resolve-pathname@npm:2.2.0"
   checksum: c12eb87f04d6a6101aa44080c4c2f25b8fab49db8c43823a142614e1f5fb359f7c511a02b0f1089919778da79af99b3a11b8991556b51b494f30be4b2ee3748b
@@ -34283,7 +34113,7 @@ pvutils@latest:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -34323,6 +34153,7 @@ pvutils@latest:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -34511,7 +34342,6 @@ pvutils@latest:
     tslib: ^2.1.0
     typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
-    typescript-plugin-css-modules: ^3.4.0
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
     use-resize-observer: ^7.0.0
@@ -34634,7 +34464,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"safer-buffer@npm:>= 2.1.2 < 3, safer-buffer@npm:>= 2.1.2 < 3.0.0, safer-buffer@npm:^2.0.2, safer-buffer@npm:^2.1.0, safer-buffer@npm:^2.1.2, safer-buffer@npm:~2.1.0":
+"safer-buffer@npm:>= 2.1.2 < 3, safer-buffer@npm:>= 2.1.2 < 3.0.0, safer-buffer@npm:^2.0.2, safer-buffer@npm:^2.1.0, safer-buffer@npm:~2.1.0":
   version: 2.1.2
   resolution: "safer-buffer@npm:2.1.2"
   checksum: cab8f25ae6f1434abee8d80023d7e72b598cf1327164ddab31003c51215526801e40b66c5e65d658a0af1e9d6478cadcb4c745f4bd6751f97d8644786c0978b0
@@ -34697,7 +34527,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"sass@npm:^1.32.13, sass@npm:^1.32.4":
+"sass@npm:^1.32.4":
   version: 1.49.8
   resolution: "sass@npm:1.49.8"
   dependencies:
@@ -34710,7 +34540,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"sax@npm:>=0.6.0, sax@npm:^1.2.4, sax@npm:~1.2.4":
+"sax@npm:>=0.6.0, sax@npm:~1.2.4":
   version: 1.2.4
   resolution: "sax@npm:1.2.4"
   checksum: d3df7d32b897a2c2f28e941f732c71ba90e27c24f62ee918bd4d9a8cfb3553f2f81e5493c7f0be94a11c1911b643a9108f231dd6f60df3fa9586b5d2e3e9e1fe
@@ -35493,7 +35323,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"source-map-resolve@npm:^0.5.0, source-map-resolve@npm:^0.5.2":
+"source-map-resolve@npm:^0.5.0":
   version: 0.5.3
   resolution: "source-map-resolve@npm:0.5.3"
   dependencies:
@@ -35670,7 +35500,7 @@ pvutils@latest:
     "@types/got": 9.6.11
     "@types/gulp": 4.0.7
     "@types/highlight.js": 9.12.4
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 26.0.20
     "@types/js-cookie": 2.2.6
@@ -35710,6 +35540,7 @@ pvutils@latest:
     "@types/svgo": 2.6.0
     "@types/terser-webpack-plugin": 5.0.4
     "@types/testing-library__jest-dom": 5.9.5
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
     "@types/vscode": ^1.63.1
@@ -35936,8 +35767,9 @@ pvutils@latest:
     "@slimsag/react-shortcuts": ^1.2.1
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@sqs/jsonc-parser": ^1.0.3
-    "@types/history": 4.5.1
+    "@types/history": 4.7.11
     "@types/svgo": 2.6.0
+    "@types/testing-library__react-hooks": ^3.4.1
     "@types/vscode": ^1.63.1
     "@visx/annotation": ^1.7.2
     "@visx/axis": ^1.7.0
@@ -36895,24 +36727,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"stylus@npm:^0.54.8":
-  version: 0.54.8
-  resolution: "stylus@npm:0.54.8"
-  dependencies:
-    css-parse: ~2.0.0
-    debug: ~3.1.0
-    glob: ^7.1.6
-    mkdirp: ~1.0.4
-    safer-buffer: ^2.1.2
-    sax: ~1.2.4
-    semver: ^6.3.0
-    source-map: ^0.7.3
-  bin:
-    stylus: bin/stylus
-  checksum: 5b8fe13af9da74f6ef6e9b9e977d93c1ad3113eba807c7cc91445c6a111bbbab4e43542f4356e1a32ae5ae774b549da66932a259fb533b73a421ff0085906111
-  languageName: node
-  linkType: hard
-
 "subscriptions-transport-ws@npm:^0.11.0":
   version: 0.11.0
   resolution: "subscriptions-transport-ws@npm:0.11.0"
@@ -36950,6 +36764,15 @@ pvutils@latest:
   version: 2.0.0
   resolution: "supports-color@npm:2.0.0"
   checksum: 602538c5812b9006404370b5a4b885d3e2a1f6567d314f8b4a41974ffe7d08e525bf92ae0f9c7030e3b4c78e4e34ace55d6a67a74f1571bc205959f5972f88f0
+  languageName: node
+  linkType: hard
+
+"supports-color@npm:^3.2.3":
+  version: 3.2.3
+  resolution: "supports-color@npm:3.2.3"
+  dependencies:
+    has-flag: ^1.0.0
+  checksum: 56afc05fa87d00100d90148c4d0a6e20a0af0d56dca5c54d4d40b2553ee737dab0ca4e8b53c4471afc035227b5b44dfa4824747a7f01ad733173536f7da6fbbb
   languageName: node
   linkType: hard
 
@@ -38122,29 +37945,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"typescript-plugin-css-modules@npm:^3.4.0":
-  version: 3.4.0
-  resolution: "typescript-plugin-css-modules@npm:3.4.0"
-  dependencies:
-    dotenv: ^10.0.0
-    icss-utils: ^5.1.0
-    less: ^4.1.1
-    lodash.camelcase: ^4.3.0
-    postcss: ^8.3.0
-    postcss-filter-plugins: ^3.0.1
-    postcss-icss-keyframes: ^0.2.1
-    postcss-icss-selectors: ^2.0.3
-    postcss-load-config: ^3.0.1
-    reserved-words: ^0.1.2
-    sass: ^1.32.13
-    stylus: ^0.54.8
-    tsconfig-paths: ^3.9.0
-  peerDependencies:
-    typescript: ">=3.0.0"
-  checksum: 3bd62c2f24c04fed8e96e6b30d4c30db9b68fd379113b629d8a9321838378bb2ce7f8c687bfc2a5353f57dc90ccbfc603ce7ac3ee5662f3d8d3704afb7539c8d
-  languageName: node
-  linkType: hard
-
 "typescript@npm:^4.5.2":
   version: 4.5.2
   resolution: "typescript@npm:4.5.2"
@@ -38986,10 +38786,10 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"value-equal@npm:^0.2.0":
-  version: 0.2.1
-  resolution: "value-equal@npm:0.2.1"
-  checksum: c70835f74fc5a1305ec5a395a2aafe2036afa19ac7edebfaed44bd8b53e707e22f36a5e2e730ebfd0a747f46199ab7af532799c4149320e46af6fa829950c0d4
+"value-equal@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "value-equal@npm:0.4.0"
+  checksum: 8a9b4b866705470d4d6a2e01bda24a75dd435fe0ea3a8bef003f67780a58116e65e795db4d018caf2e4b8bee336ee7787c338322325fc3a7dac8cbb8064ebca8
   languageName: node
   linkType: hard
 
@@ -40126,12 +39926,12 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"ws@npm:^6.1.0, ws@npm:~6.1.0":
-  version: 6.1.2
-  resolution: "ws@npm:6.1.2"
+"ws@npm:^6.1.0":
+  version: 6.2.2
+  resolution: "ws@npm:6.2.2"
   dependencies:
     async-limiter: ~1.0.0
-  checksum: 3934beb0d114e02a184a8a65979068081876d6f391a853d30030f333fe4f063db4ab4ab00e050c44e73571e53bb7841acd573d4459ce280fafda501a00a52664
+  checksum: aec3154ec51477c094ac2cb5946a156e17561a581fa27005cbf22c53ac57f8d4e5f791dd4bbba6a488602cb28778c8ab7df06251d590507c3c550fd8ebeee949
   languageName: node
   linkType: hard
 
@@ -40147,6 +39947,15 @@ pvutils@latest:
     utf-8-validate:
       optional: true
   checksum: 76f2f90e40344bf18fd544194e7067812fb1372b2a37865678d8f12afe4b478ff2ebc0c7c0aff82cd5e6b66fc43d889eec0f1865c2365d8f7a66d92da7744a77
+  languageName: node
+  linkType: hard
+
+"ws@npm:~6.1.0":
+  version: 6.1.2
+  resolution: "ws@npm:6.1.2"
+  dependencies:
+    async-limiter: ~1.0.0
+  checksum: 3934beb0d114e02a184a8a65979068081876d6f391a853d30030f333fe4f063db4ab4ab00e050c44e73571e53bb7841acd573d4459ce280fafda501a00a52664
   languageName: node
   linkType: hard
 
@@ -40279,7 +40088,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"yaml@npm:^1.10.0, yaml@npm:^1.10.2, yaml@npm:^1.7.2":
+"yaml@npm:^1.10.0, yaml@npm:^1.7.2":
   version: 1.10.2
   resolution: "yaml@npm:1.10.2"
   checksum: ce4ada136e8a78a0b08dc10b4b900936912d15de59905b2bf415b4d33c63df1d555d23acb2a41b23cf9fb5da41c256441afca3d6509de7247daa062fd2c5ea5f

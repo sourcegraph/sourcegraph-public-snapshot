@@ -18,15 +18,6 @@
     "composite": true,
     "outDir": "out",
     "rootDir": ".",
-    "plugins": [
-      {
-        "name": "typescript-plugin-css-modules",
-        "options": {
-          "classnameTransform": "camelCaseOnly",
-          "customMatcher": "\\.module\\.scss$",
-        },
-      },
-    ],
   },
 
   "watchOptions": {

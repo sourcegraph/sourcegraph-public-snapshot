@@ -9,7 +9,8 @@
     "google-protobuf": "3.17.3"
   },
   "devDependencies": {
-    "@types/history": "4.5.1",
+    "@types/history": "4.7.11",
+    "@types/testing-library__react-hooks": "^3.4.1",
     "react-test-renderer": "^16.14.0"
   }
 }

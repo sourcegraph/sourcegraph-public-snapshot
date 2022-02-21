@@ -23,7 +23,7 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-const history = createMemoryHistory()
+const history = createMemoryHistory<{ query: string }>()
 
 const defaultProps = (
     props: ThemeProps
