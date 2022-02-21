@@ -12,7 +12,7 @@ query='query($q: String!) {
   search(query: $q) {
     results {
       limitHit
-      resultCount
+      matchCount
       elapsedMilliseconds
       ...SearchResultsAlertFields
     }

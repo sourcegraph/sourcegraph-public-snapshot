@@ -52,7 +52,7 @@ Examples:
 
   Searching for "Router" and getting result count:
 
-    	$ echo 'query($query: String!) { search(query: $query) { results { resultCount } } }' | src api 'query=Router'
+    	$ echo 'query($query: String!) { search(query: $query) { results { matchCount } } }' | src api 'query=Router'
 
   Get the curl command for a query (just add '-get-curl' in the flags section):
 

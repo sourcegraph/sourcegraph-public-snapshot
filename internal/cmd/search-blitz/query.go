@@ -119,7 +119,7 @@ var graphQLQuery = `fragment FileMatchFields on FileMatch {
 				timedout {
 				  name
 				}
-				resultCount
+				matchCount
 				elapsedMilliseconds
 				...SearchResultsAlertFields
 			  }
