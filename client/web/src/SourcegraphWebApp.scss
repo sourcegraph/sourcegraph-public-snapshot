@@ -37,6 +37,13 @@ body,
     background-color: var(--mark-bg);
 }
 
+.match-highlight,
+.match-highlight-sticky {
+    background-color: var(--mark-bg);
+}
+
+// TODO: Different color when match-highlight + selection-highlight are applied together?
+
 .spacer {
     flex: 1;
 }
