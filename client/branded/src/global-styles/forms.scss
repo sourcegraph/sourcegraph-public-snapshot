@@ -2,7 +2,7 @@
 
 :root {
     --font-size-base: $font-size-base;
-    --input-font-size-sm: 0.786em; 
+    --input-font-size-sm: 0.786em;
     --input-line-height: 1.429;
     --input-height-border: 2px;
     --input-padding-y: 0.375rem;
@@ -298,6 +298,23 @@ textarea.form-control.is-valid {
 // Checkboxes and radios
 //
 // Indent the labels to position radios/checkboxes as hanging controls.
+
+// Valid Radio/checkbox labels
+.was-validated .form-check-input:valid,
+.form-check-input.is-valid {
+    ~ .form-check-label {
+        color: var(--success);
+    }
+}
+
+// Invalid Radio/checkbox labels
+.was-validated .form-check-input:invalid,
+.form-check-input.is-invalid {
+    ~ .form-check-label {
+        color: var(--danger);
+    }
+}
+
 .form-check {
     position: relative;
     display: block;
@@ -388,22 +405,6 @@ textarea.form-control.is-valid {
         @at-root #{selector-append('.theme-dark', &)} {
             box-shadow: 0 0 0 2px var(--danger-3);
         }
-    }
-}
-
-// Valid Radio/checkbox labels
-.was-validated .form-check-input:valid,
-.form-check-input.is-valid {
-    ~ .form-check-label {
-        color: var(--success);
-    }
-}
-
-// Invalid Radio/checkbox labels
-.was-validated .form-check-input:invalid,
-.form-check-input.is-invalid {
-    ~ .form-check-label {
-        color: var(--danger);
     }
 }
 

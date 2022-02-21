@@ -4,12 +4,16 @@ import React, { forwardRef } from 'react'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Button } from '@sourcegraph/wildcard'
 
-import type { MonacoFieldProps } from '../../../../../../components/form/monaco-field'
-import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
+import {
+    InsightQueryInput,
+    InsightQueryInputProps,
+} from '../../../../../../components/form/query-input/InsightQueryInput'
 
 import styles from './CaptureGroupQueryInput.module.scss'
 
-export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => (
+export interface CaptureGroupQueryInputProps extends Omit<InsightQueryInputProps, 'patternType'> {}
+
+export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, CaptureGroupQueryInputProps>((props, reference) => (
     <InsightQueryInput {...props} ref={reference} patternType={SearchPatternType.regexp}>
         <Button variant="icon" className={styles.regexButton} disabled={true}>
             <RegexIcon

@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react'
-import type { LineChartContent } from 'sourcegraph'
+import React, { ReactNode, useContext, useEffect, useState } from 'react'
+import type { LineChartContent, ChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard'
@@ -37,6 +37,7 @@ export interface SearchInsightLivePreviewProps {
 
     withLivePreviewControls?: boolean
     title?: string
+    children?: (data: ChartContent) => ReactNode
 }
 
 /**
@@ -54,6 +55,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         title,
         withLivePreviewControls = true,
         className,
+        children,
     } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
@@ -130,6 +132,8 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             className={className}
             chartContentClassName={title ? '' : 'pt-4'}
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
-        />
+        >
+            {children}
+        </LivePreviewContainer>
     )
 }

@@ -13,7 +13,7 @@ export const GaConfirmationModal: React.FunctionComponent = () => {
     const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
     const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
 
-    const showConfirmationModal = !isLicensed && !isGaAccepted
+    const showConfirmationModal = isLicensed === false && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null
@@ -59,9 +59,10 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
                 </p>
 
                 <p>
-                    Code Insights is now Generally Available. You can create unlimited insights and dashboards while on
-                    this version of Sourcegraph. In the next version upgrade, you will either need to purchase Code
-                    Insights to continue using its full functionality, or you can use{' '}
+                    Code Insights is now Generally Available.{' '}
+                    <b>You can create unlimited insights and dashboards while on this version of Sourcegraph.</b> In the
+                    next version upgrade, you will either need to purchase Code Insights to continue using its full
+                    functionality, or you can use{' '}
                     <Link to="/help/code_insights/references/license">a limited number of insights for free</Link>.
                 </p>
 

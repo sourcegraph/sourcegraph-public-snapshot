@@ -17,6 +17,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
+- Code Insights: total count of insights 
 
 ## Other telemetry
 
@@ -108,6 +109,11 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+- Code Host integration usage data (Browser extension / Native Integration)
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events
+  - who visited Sourcegraph instance from browser extension
+
 
 ## CIDR Range for Sourcegraph
 

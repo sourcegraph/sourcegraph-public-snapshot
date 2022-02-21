@@ -108,12 +108,12 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		},
 		{
 			name:       "structural, indexed search of restricted content",
-			query:      `echo "..." index:only patterntype:structural`,
+			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
 			zeroResult: true,
 		},
 		{
 			name:       "structural, unindexed search of restricted content",
-			query:      `echo "..." index:no patterntype:structural`,
+			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
 			zeroResult: true,
 		},
 		{
@@ -125,6 +125,26 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			name:          "structural, unindexed search, nonzero result",
 			query:         `println(...) index:no patterntype:structural`,
 			minMatchCount: 1,
+		},
+		{
+			name:          "filename search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:path app`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "filename search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:path hack`,
+			zeroResult: true,
+		},
+		{
+			name:          "content search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:file let`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "content search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:file echo`,
+			zeroResult: true,
 		},
 	}
 	for _, test := range tests {

@@ -331,7 +331,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -540,12 +540,10 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: database.NewMockDB(),
-				SearchResults: &SearchResults{
-					Stats:   tt.fields.searchResultsCommon,
-					Matches: tt.fields.results,
-					Alert:   tt.fields.alert,
-				},
+				db:          database.NewMockDB(),
+				Stats:       tt.fields.searchResultsCommon,
+				Matches:     tt.fields.results,
+				SearchAlert: tt.fields.alert,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -692,7 +690,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal("Results:", err)
 			}
 			if tt.wantAlert {
-				if results.SearchResults.Alert == nil {
+				if results.SearchAlert == nil {
 					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
@@ -893,92 +891,6 @@ func TestSubRepoFiltering(t *testing.T) {
 			if len(rr.Matches) != tt.wantCount {
 				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
 			}
-		})
-	}
-}
-
-func Test_searchResultsToRepoNodes(t *testing.T) {
-	cases := []struct {
-		matches []result.Match
-		res     string
-		err     string
-	}{{
-		matches: []result.Match{
-			&result.RepoMatch{Name: "repo_a"},
-		},
-		res: `"repo:^repo_a$"`,
-	}, {
-		matches: []result.Match{
-			&result.RepoMatch{Name: "repo_a", Rev: "main"},
-		},
-		res: `"repo:^repo_a$@main"`,
-	}, {
-		matches: []result.Match{
-			&result.FileMatch{},
-		},
-		err: "expected type",
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.res, func(t *testing.T) {
-			nodes, err := searchResultsToRepoNodes(tc.matches)
-			if err != nil {
-				require.Contains(t, err.Error(), tc.err)
-				return
-			}
-			require.Equal(t, tc.res, query.Q(nodes).String())
-		})
-	}
-}
-
-func Test_searchResultsToFileNodes(t *testing.T) {
-	cases := []struct {
-		matches []result.Match
-		res     string
-		err     string
-	}{{
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_a",
-					},
-					Path: "my/file/path.txt",
-				},
-			},
-		},
-		res: `(and "repo:^repo_a$" "file:^my/file/path\\.txt$")`,
-	}, {
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_a",
-					},
-					InputRev: func() *string { s := "main"; return &s }(),
-					Path:     "my/file/path1.txt",
-				},
-			},
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_b",
-					},
-					Path: "my/file/path2.txt",
-				},
-			},
-		},
-		res: `(and "repo:^repo_a$@main" "file:^my/file/path1\\.txt$") (and "repo:^repo_b$" "file:^my/file/path2\\.txt$")`,
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.res, func(t *testing.T) {
-			nodes, err := searchResultsToFileNodes(tc.matches)
-			if err != nil {
-				require.Contains(t, err.Error(), tc.err)
-				return
-			}
-			require.Equal(t, tc.res, query.Q(nodes).String())
 		})
 	}
 }

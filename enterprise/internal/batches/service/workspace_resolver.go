@@ -131,7 +131,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
 	agg := onlib.NewRepoRevisionAggregator()
 
-	var errs *errors.MultiError
+	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
 		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
@@ -155,7 +155,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	for _, rev := range agg.Revisions() {
 		repoRevs = append(repoRevs, rev.(*RepoRevision))
 	}
-	return repoRevs, errs.ErrorOrNil()
+	return repoRevs, errs
 }
 
 func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
@@ -195,7 +195,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 		close(results)
 	}(&wg)
 
-	var errs *errors.MultiError
+	var errs error
 	for result := range results {
 		if result.err != nil {
 			errs = errors.Append(errs, result.err)
@@ -207,7 +207,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 		}
 	}
 
-	return ignored, errs.ErrorOrNil()
+	return ignored, errs
 }
 
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
@@ -565,7 +565,7 @@ func findWorkspaces(
 ) ([]*RepoWorkspace, error) {
 	// Pre-compile all globs.
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
-	var errs *errors.MultiError
+	var errs error
 	for _, conf := range spec.Workspaces {
 		in := conf.In
 		// Empty `in` should fall back to matching all, instead of nothing.
@@ -578,8 +578,8 @@ func findWorkspaces(
 		}
 		workspaceMatchers[conf] = g
 	}
-	if err := errs.ErrorOrNil(); err != nil {
-		return nil, err
+	if errs != nil {
+		return nil, errs
 	}
 
 	root := []*RepoRevision{}

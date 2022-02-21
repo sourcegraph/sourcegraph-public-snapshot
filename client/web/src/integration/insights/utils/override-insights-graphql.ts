@@ -58,6 +58,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                     'user.lastDayActive': new Date().toDateString(),
                     'search.usedNonGlobalContext': true,
                     'insights.freeGaAccepted': true,
+                    'insights.wasMainPageOpen': true,
                 }),
             },
         }),
@@ -89,6 +90,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 },
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
+                searchable: true,
             },
         }),
         ViewerSettings: () => ({

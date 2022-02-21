@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -14,6 +13,7 @@ import { SearchExtensionBasedInsight } from '../../../../core/types/insight/sear
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
@@ -57,13 +57,16 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
+    const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: getTrackingTypeByInsightType(insight.viewType),
+    })
+
     return (
         <View.Root
             {...otherProps}
             innerRef={mergedInsightCardReference}
-            data-testid={`insight-card.${insight.id}`}
             title={insight.title}
-            className={classNames('extension-insight-card', otherProps.className)}
             actions={
                 isVisible && (
                     <InsightContextMenu
@@ -76,6 +79,9 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                     />
                 )
             }
+            data-testid={`insight-card.${insight.id}`}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
@@ -86,12 +92,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <View.Content
-                            telemetryService={telemetryService}
-                            content={data.view.content}
-                            viewTrackingType={insight.viewType}
-                            containerClassName="extension-insight-card"
-                        />
+                        <View.Content content={data.view.content} onDatumLinkClick={trackDatumClicks} />
                     </LineChartSettingsContext.Provider>
                 )
             )}
