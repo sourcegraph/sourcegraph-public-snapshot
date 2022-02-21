@@ -58,10 +58,10 @@ func TestSrcExpose(t *testing.T) {
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+					CloneURL: s.URL + "/foo",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo"},
 		}, {
 			URI:  "bar/baz",
 			Name: "bar/baz",
@@ -73,10 +73,10 @@ func TestSrcExpose(t *testing.T) {
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/bar/baz/.git",
+					CloneURL: s.URL + "/bar/baz",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/bar/baz/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/bar/baz"},
 		}},
 	}, {
 		name: "override",
@@ -93,10 +93,10 @@ func TestSrcExpose(t *testing.T) {
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/foo/.git",
+					CloneURL: s.URL + "/repos/foo",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo"},
 		}},
 	}, {
 		name: "immutable",
@@ -112,10 +112,10 @@ func TestSrcExpose(t *testing.T) {
 			Sources: map[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/foo/.git",
+					CloneURL: s.URL + "/foo",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo"},
 		}},
 	}}
 
