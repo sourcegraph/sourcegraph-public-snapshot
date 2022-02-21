@@ -89,7 +89,7 @@
   },
   "workspaces": {
     "packages": [
-      "lib/codeintel/lsif_typed",
+      "lib/codeintel/lsiftyped",
       "client/*",
       "client/sandboxes/*"
     ]
