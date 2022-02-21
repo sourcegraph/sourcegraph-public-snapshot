@@ -10,10 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
@@ -325,7 +324,7 @@ func mkdirAll(base, path string, perm os.FileMode) error {
 // ensureAll ensures that all directories under path have the expected
 // permissions.
 func ensureAll(base, path string, perm os.FileMode) error {
-	var errs *multierror.Error
+	var errs errors.MultiError
 
 	// In plain English: for each directory in the path parameter, we should
 	// chmod that path to the permissions that are expected.
@@ -333,9 +332,9 @@ func ensureAll(base, path string, perm os.FileMode) error {
 	for _, element := range strings.Split(path, string(os.PathSeparator)) {
 		acc = append(acc, element)
 		if err := os.Chmod(filepath.Join(acc...), perm); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }

@@ -13,9 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/mattn/go-isatty"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
@@ -282,7 +281,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	ui.ParsingBatchSpec()
 	batchSpec, rawSpec, err := parseBatchSpec(opts.file, svc)
 	if err != nil {
-		var multiErr *multierror.Error
+		var multiErr errors.MultiError
 		if errors.As(err, &multiErr) {
 			ui.ParsingBatchSpecFailure(multiErr)
 			return cmderrors.ExitCode(2, nil)
@@ -388,14 +387,12 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	freshSpecs, logFiles, execErr := coord.ExecuteAndBuildSpecs(ctx, batchSpec, uncachedTasks, taskExecUI)
 	// Add external changeset specs.
 	importedSpecs, importErr := svc.CreateImportChangesetSpecs(ctx, batchSpec)
-	var errs *multierror.Error
 	if execErr != nil {
-		errs = multierror.Append(errs, execErr)
+		err = errors.Append(err, execErr)
 	}
 	if importErr != nil {
-		errs = multierror.Append(errs, importErr)
+		err = errors.Append(err, importErr)
 	}
-	err = errs.ErrorOrNil()
 	if err != nil && !opts.flags.skipErrors {
 		return err
 	}

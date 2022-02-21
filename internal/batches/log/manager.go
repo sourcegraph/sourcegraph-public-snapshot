@@ -3,7 +3,7 @@ package log
 import (
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type LogManager interface {
@@ -36,13 +36,13 @@ func (lm *Manager) AddTask(slug string) (TaskLogger, error) {
 }
 
 func (lm *Manager) Close() error {
-	var errs *multierror.Error
+	var errs errors.MultiError
 
 	lm.tasks.Range(func(_, v interface{}) bool {
 		logger := v.(*FileTaskLogger)
 
 		if err := logger.Close(); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 
 		return true

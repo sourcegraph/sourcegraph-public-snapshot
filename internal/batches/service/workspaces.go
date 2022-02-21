@@ -4,10 +4,10 @@ import (
 	"context"
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/util"

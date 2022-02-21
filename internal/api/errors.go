@@ -3,8 +3,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GraphQlErrors contains one or more GraphQlError instances.
@@ -20,12 +19,12 @@ func (gg GraphQlErrors) Error() string {
 		return ""
 	}
 
-	var errs *multierror.Error
+	var errs errors.MultiError
 	for _, err := range gg {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 
-	return errors.Wrap(errs.ErrorOrNil(), "GraphQL errors").Error()
+	return errors.Wrap(errs, "GraphQL errors").Error()
 }
 
 // GraphQlError wraps a raw JSON error returned from a GraphQL endpoint.

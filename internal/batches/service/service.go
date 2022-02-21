@@ -13,12 +13,10 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
 	templatelib "github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -298,7 +296,7 @@ func (svc *Service) CreateImportChangesetSpecs(ctx context.Context, batchSpec *b
 			repo, err := svc.resolveRepositoryName(ctx, name)
 			if err != nil {
 				wrapped := errors.Wrapf(err, "resolving repository name %q", name)
-				errs = multierror.Append(errs, wrapped)
+				errs = errors.Append(errs, wrapped)
 				continue
 			}
 			repoNameIDs[name] = repo.ID

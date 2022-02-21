@@ -11,13 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/util"
@@ -417,11 +415,7 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 	// same time by trying to run /bin/bash -c mktemp,
 	// followed by /bin/sh -c mktemp.
 
-	// We'll also set up our error.
-	err = new(multierror.Error)
-
-	// Now we can iterate through our shell options and try to run mktemp with
-	// them.
+	// We can iterate through our shell options and try to run mktemp with them.
 	for _, shell = range []string{"/bin/bash", "/bin/sh"} {
 		stdout := new(bytes.Buffer)
 		stderr := new(bytes.Buffer)
@@ -433,7 +427,7 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 		cmd.Stderr = stderr
 
 		if runErr := cmd.Run(); runErr != nil {
-			err = multierror.Append(err, errors.Wrapf(runErr, "probing shell %q:\n%s", shell, stderr.String()))
+			err = errors.Append(err, errors.Wrapf(runErr, "probing shell %q:\n%s", shell, stderr.String()))
 		} else {
 			// Even if there were previous errors, we can now ignore them.
 			err = nil

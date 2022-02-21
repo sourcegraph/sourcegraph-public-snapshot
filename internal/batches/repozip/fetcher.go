@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 )

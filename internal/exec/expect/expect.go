@@ -23,10 +23,9 @@ import (
 	goexec "os/exec"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/exec"
 )
@@ -194,22 +193,22 @@ func NewGlobValidator(wantName string, wantArg ...string) CommandValidator {
 	}
 
 	return func(haveName string, haveArg ...string) error {
-		var errs *multierror.Error
+		var errs errors.MultiError
 
 		if !wantNameGlob.Match(haveName) {
-			errs = multierror.Append(errs, errors.Errorf("name does not match: have=%q want=%q", haveName, wantName))
+			errs = errors.Append(errs, errors.Errorf("name does not match: have=%q want=%q", haveName, wantName))
 		}
 
 		if len(haveArg) != len(wantArgGlobs) {
-			errs = multierror.Append(errs, errors.Errorf("unexpected number of arguments:\nhave=%v\nwant=%v", haveArg, wantArg))
+			errs = errors.Append(errs, errors.Errorf("unexpected number of arguments:\nhave=%v\nwant=%v", haveArg, wantArg))
 		} else {
 			for i, g := range wantArgGlobs {
 				if !g.Match(haveArg[i]) {
-					errs = multierror.Append(errs, errors.Errorf("unexpected argument at position %d:\nhave=%q\nwant=%q\ndiff=%q", i, haveArg[i], wantArg[i], cmp.Diff(haveArg[i], wantArg[i])))
+					errs = errors.Append(errs, errors.Errorf("unexpected argument at position %d:\nhave=%q\nwant=%q\ndiff=%q", i, haveArg[i], wantArg[i], cmp.Diff(haveArg[i], wantArg[i])))
 				}
 			}
 		}
 
-		return errs.ErrorOrNil()
+		return errs
 	}
 }

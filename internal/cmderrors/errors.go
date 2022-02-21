@@ -3,7 +3,7 @@ package cmderrors
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UsageError is an error type that subcommands can return in order to signal

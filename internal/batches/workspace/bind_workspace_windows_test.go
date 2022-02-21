@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func mustHavePerm(t *testing.T, path string, want os.FileMode) error {

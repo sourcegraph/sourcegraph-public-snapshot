@@ -4,7 +4,7 @@ import (
 	"compress/gzip"
 	"io"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // gzipReader decorates a source reader by gzip compressing its contents.
@@ -22,7 +22,7 @@ func gzipPipe(r io.Reader, w io.Writer) (err error) {
 	gzipWriter := gzip.NewWriter(w)
 	defer func() {
 		if closeErr := gzipWriter.Close(); closeErr != nil {
-			err = multierror.Append(err, err)
+			err = errors.Append(err, err)
 		}
 	}()
 

@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattn/go-isatty"

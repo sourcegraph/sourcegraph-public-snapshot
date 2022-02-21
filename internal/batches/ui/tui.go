@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -46,9 +45,9 @@ func (ui *TUI) ParsingBatchSpecFailure(err error) {
 	block := ui.Out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
 	defer block.Close()
 
-	var multiErr *multierror.Error
+	var multiErr errors.MultiError
 	if errors.As(err, &multiErr) {
-		for i, err := range multiErr.Errors {
+		for i, err := range multiErr.Errors() {
 			block.Writef("%d. %s", i+1, err)
 		}
 	} else {
@@ -338,7 +337,7 @@ func printExecutionError(out *output.Output, err error) {
 	}
 
 	switch err := err.(type) {
-	case parallel.Errors, *multierror.Error, api.GraphQlErrors:
+	case parallel.Errors, errors.MultiError, api.GraphQlErrors:
 		writeErrs(flattenErrs(err))
 
 	default:
@@ -359,8 +358,8 @@ func flattenErrs(err error) (result []error) {
 			result = append(result, flattenErrs(e)...)
 		}
 
-	case *multierror.Error:
-		for _, e := range errs.Errors {
+	case errors.MultiError:
+		for _, e := range errs.Errors() {
 			result = append(result, flattenErrs(e)...)
 		}
 

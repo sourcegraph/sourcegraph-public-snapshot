@@ -4,7 +4,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var searchResultsAlertTemplate *template.Template
