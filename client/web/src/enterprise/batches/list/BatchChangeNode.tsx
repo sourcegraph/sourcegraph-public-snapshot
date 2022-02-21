@@ -105,5 +105,25 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 />
             </>
         )}
+        {node.state === BatchChangeState.DRAFT && node.batchSpecs.nodes?.[0].workspaceResolution && (
+            <>
+                <ChangesetStatusOpen
+                    className="d-block d-sm-flex"
+                    label={
+                        <span className="text-muted">
+                            {node.batchSpecs.nodes[0].workspaceResolution.allWorkspaces.totalCount} workspaces
+                        </span>
+                    }
+                />
+                <ChangesetStatusClosed
+                    className="d-block d-sm-flex text-center"
+                    label={
+                        <span className="text-muted">
+                            {node.batchSpecs.nodes[0].workspaceResolution.runningWorkspaces.totalCount} running
+                        </span>
+                    }
+                />
+            </>
+        )}
     </>
 )

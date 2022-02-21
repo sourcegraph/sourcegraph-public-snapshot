@@ -13,7 +13,7 @@ import {
     AreBatchChangesLicensedVariables,
 } from '../../../graphql-operations'
 
-const listBatchChangeFragment = gql`
+const LIST_BATCH_CHANGE_FRAGMENT = gql`
     fragment ListBatchChange on BatchChange {
         id
         url
@@ -30,6 +30,18 @@ const listBatchChangeFragment = gql`
             open
             closed
             merged
+        }
+        batchSpecs(first: 1) {
+            nodes {
+                workspaceResolution {
+                    allWorkspaces: workspaces {
+                        totalCount
+                    }
+                    runningWorkspaces: workspaces(state: PROCESSING) {
+                        totalCount
+                    }
+                }
+            }
         }
     }
 `
@@ -63,7 +75,7 @@ export const queryBatchChanges = ({
                 }
             }
 
-            ${listBatchChangeFragment}
+            ${LIST_BATCH_CHANGE_FRAGMENT}
         `,
         {
             first: first ?? null,
@@ -137,7 +149,7 @@ export const queryBatchChangesByNamespace = ({
                 totalCount
             }
 
-            ${listBatchChangeFragment}
+            ${LIST_BATCH_CHANGE_FRAGMENT}
         `,
         { first, after, state, viewerCanAdminister, namespaceID }
     ).pipe(
