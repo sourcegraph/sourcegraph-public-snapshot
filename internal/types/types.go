@@ -661,6 +661,7 @@ type User struct {
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	Searchable            bool
 }
 
 type Org struct {
@@ -1116,18 +1117,26 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
-	WeeklyInsightsPageViews        *int32
-	WeeklyInsightsUniquePageViews  *int32
-	WeeklyInsightConfigureClick    *int32
-	WeeklyInsightAddMoreClick      *int32
-	WeekStart                      time.Time
-	WeeklyInsightCreators          *int32
-	WeeklyFirstTimeInsightCreators *int32
-	WeeklyAggregatedUsage          []AggregatedPingStats
-	InsightTimeIntervals           []InsightTimeIntervalPing
-	InsightOrgVisible              []OrgVisibleInsightPing
-	InsightTotalCounts             InsightTotalCounts
+	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
+	WeeklyInsightsPageViews                 *int32
+	WeeklyInsightsGetStartedPageViews       *int32
+	WeeklyInsightsUniquePageViews           *int32
+	WeeklyInsightsGetStartedUniquePageViews *int32
+	WeeklyInsightConfigureClick             *int32
+	WeeklyInsightAddMoreClick               *int32
+	WeekStart                               time.Time
+	WeeklyInsightCreators                   *int32
+	WeeklyFirstTimeInsightCreators          *int32
+	WeeklyAggregatedUsage                   []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
+	InsightTimeIntervals                    []InsightTimeIntervalPing
+	InsightOrgVisible                       []OrgVisibleInsightPing
+	InsightTotalCounts                      InsightTotalCounts
+}
+
+type CodeInsightsCriticalTelemetry struct {
+	TotalInsights int32
 }
 
 // Usage statistics for a type of code insight
@@ -1174,6 +1183,11 @@ type InsightViewSeriesCountPing struct {
 	GenerationType string
 	ViewType       string
 	TotalCount     int
+}
+
+type InsightGetStartedTabClickPing struct {
+	TabName    string
+	TotalCount int
 }
 
 type InsightTotalCounts struct {

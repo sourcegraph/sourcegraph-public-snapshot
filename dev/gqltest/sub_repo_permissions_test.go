@@ -49,6 +49,24 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("file list excludes excluded files", func(t *testing.T) {
+		files, err := userClient.GitListFilenames(repoName, "master")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Notice that Security/hack.sh is excluded
+		wantFiles := []string{
+			"Backend/main.go",
+			"Frontend/app.ts",
+			"README.md",
+		}
+
+		if diff := cmp.Diff(wantFiles, files); diff != "" {
+			t.Fatalf("fileNames mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
@@ -90,12 +108,12 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		},
 		{
 			name:       "structural, indexed search of restricted content",
-			query:      `echo "..." index:only patterntype:structural`,
+			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
 			zeroResult: true,
 		},
 		{
 			name:       "structural, unindexed search of restricted content",
-			query:      `echo "..." index:no patterntype:structural`,
+			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
 			zeroResult: true,
 		},
 		{
@@ -107,6 +125,26 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			name:          "structural, unindexed search, nonzero result",
 			query:         `println(...) index:no patterntype:structural`,
 			minMatchCount: 1,
+		},
+		{
+			name:          "filename search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:path app`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "filename search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:path hack`,
+			zeroResult: true,
+		},
+		{
+			name:          "content search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:file let`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "content search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:file echo`,
+			zeroResult: true,
 		},
 	}
 	for _, test := range tests {

@@ -120,13 +120,12 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 		return nil, errors.New("no current user")
 	}
 
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+	orgID, err := UnmarshalOrgID(args.Organization)
+	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
-	// invited to.
+	// 🚨 SECURITY: Check that the current user is a member of the org that we get the invitations for
 	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}

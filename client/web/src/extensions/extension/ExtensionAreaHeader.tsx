@@ -209,9 +209,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >
-                                                    {Icon && <Icon className="icon-inline" />}{' '}
-                                                    <span className="text-content" data-tab-content={label}>
-                                                        {label}
+                                                    <span>
+                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        <span className="text-content" data-tab-content={label}>
+                                                            {label}
+                                                        </span>
                                                     </span>
                                                 </NavLink>
                                             </li>

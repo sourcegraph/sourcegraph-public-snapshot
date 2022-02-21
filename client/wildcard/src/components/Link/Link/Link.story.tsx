@@ -22,7 +22,6 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
-        // removed incorrect figma design
     },
 }
 

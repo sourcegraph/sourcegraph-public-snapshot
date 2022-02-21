@@ -1,0 +1,3 @@
+# Test how to implement a symbol within the same workspace.
+definition animal#
+definition dog# implements animal#
