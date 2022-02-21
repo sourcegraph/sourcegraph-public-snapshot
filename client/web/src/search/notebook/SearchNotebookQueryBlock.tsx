@@ -53,7 +53,7 @@ interface SearchNotebookQueryBlockProps
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
-    hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({

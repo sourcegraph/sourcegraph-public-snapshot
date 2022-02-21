@@ -42,7 +42,7 @@ interface SearchNotebookFileBlockProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
-    hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 const LOADING = 'loading' as const
