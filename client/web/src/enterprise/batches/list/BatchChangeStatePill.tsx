@@ -5,7 +5,7 @@ import React, { useMemo } from 'react'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'
+import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
 import styles from './BatchChangeStatePill.module.scss'
 
@@ -13,13 +13,19 @@ export interface BatchChangeStatePillProps {
     className?: string
     state: BatchChangeState
     latestExecutionState?: BatchSpecState
+    currentSpecID: Scalars['ID']
+    latestSpecID?: Scalars['ID']
 }
 
 export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillProps> = ({
     className,
     state,
     latestExecutionState,
+    currentSpecID,
+    latestSpecID,
 }) => {
+    const isCurrentLatest = useMemo(() => currentSpecID === latestSpecID, [currentSpecID, latestSpecID])
+
     const hasExecutionVisible = useMemo(() => {
         // If the batch change is closed, we don't show any execution state.
         if (state === BatchChangeState.CLOSED) {
@@ -27,11 +33,12 @@ export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillP
         }
         // If the batch change is a draft or open, we show execution state that the user
         // would want to take action on.
-        return includes(
-            [BatchSpecState.COMPLETED, BatchSpecState.FAILED, BatchSpecState.PROCESSING, BatchSpecState.QUEUED],
-            latestExecutionState
-        )
-    }, [latestExecutionState, state])
+        if (includes([BatchSpecState.FAILED, BatchSpecState.PROCESSING, BatchSpecState.QUEUED], latestExecutionState)) {
+            return true
+        }
+        // If the latest execution is complete, we show execution state if it has not yet been applied.
+        return !isCurrentLatest && latestExecutionState === BatchSpecState.COMPLETED
+    }, [latestExecutionState, state, isCurrentLatest])
 
     return (
         <div
@@ -83,7 +90,9 @@ const ExecutionStatePill: React.FunctionComponent<Pick<BatchChangeStatePillProps
                     variant="warning"
                     className={styles.executionPill}
                     data-tooltip={`This batch change has a new spec ${
-                        latestExecutionState === BatchSpecState.QUEUED ? 'queued for execution' : 'preparing to execute'
+                        latestExecutionState === BatchSpecState.QUEUED
+                            ? 'queued for execution'
+                            : 'in the process of executing'
                     }.`}
                 >
                     <HistoryIcon className={styles.executionIcon} />

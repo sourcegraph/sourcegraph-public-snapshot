@@ -31,6 +31,16 @@ const listBatchChangeFragment = gql`
             closed
             merged
         }
+        currentSpec {
+            id
+        }
+        batchSpecs(first: 1) {
+            nodes {
+                id
+                state
+                applyURL
+            }
+        }
     }
 `
 
