@@ -287,6 +287,7 @@ pollIndexStatusLoop:
 				return false, tx.Done(err)
 			}
 
+			// Close transaction immediately after use instead of deferring from in the loop
 			if err := tx.Done(nil); err != nil {
 				return false, err
 			}
