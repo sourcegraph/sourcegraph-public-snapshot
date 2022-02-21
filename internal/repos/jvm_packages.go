@@ -197,18 +197,17 @@ func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []
 }
 
 func MavenModules(connection schema.JVMPackagesConnection) ([]*reposource.MavenModule, error) {
-	isAdded := make(map[reposource.MavenModule]bool)
+	isAdded := make(map[string]bool)
 	modules := []*reposource.MavenModule{}
 	dependencies, err := MavenDependencies(connection)
 	if err != nil {
 		return nil, err
 	}
 	for _, dep := range dependencies {
-		module := dep.MavenModule
-		if _, added := isAdded[*module]; !added {
-			modules = append(modules, module)
+		if key := dep.PackageSyntax(); !isAdded[key] {
+			modules = append(modules, dep.MavenModule)
+			isAdded[key] = true
 		}
-		isAdded[*module] = true
 	}
 	return modules, nil
 }
