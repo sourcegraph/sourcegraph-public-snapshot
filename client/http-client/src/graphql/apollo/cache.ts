@@ -23,6 +23,9 @@ const typePolicies: TypedTypePolicies = {
     Location: {
         keyFields: ['url'],
     },
+    GitBlob: {
+        keyFields: ['url'],
+    },
     Query: {
         fields: {
             node: {
