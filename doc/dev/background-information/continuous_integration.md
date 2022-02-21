@@ -1,6 +1,8 @@
-# Continuous integration <span class="badge badge-note">SOC2/GN-105</span> <span class="badge badge-note">SOC2/GN-106</span>
+# Continuous integration
 
-Sourcegraph uses a continuous integration and delivery tool, [Buildkite](#buildkite-pipelines), to help ensure a consistent build, test and deploy process. Software changes are systematically required to complete all steps within the continuous integration tool workflow prior to production deployment, in addition to being [peer reviewed](pull_request_reviews.md).
+<span class="badge badge-note">SOC2/GN-105</span> <span class="badge badge-note">SOC2/GN-106</span>
+
+Sourcegraph uses a continuous integration and delivery tool, [Buildkite](#buildkite-pipelines), to help ensure a [consistent](#pipeline-health) build, test and deploy process. Software changes are systematically required to complete all steps within the continuous integration tool workflow prior to production deployment, in addition to being [peer reviewed](pull_request_reviews.md).
 
 Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-actions) for continuous integration and repository maintainence purposes.
 
@@ -8,7 +10,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 
 ## Buildkite pipelines
 
-[Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph).
+[Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes to GitHub.
 Pipeline steps are generated using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
 
 To see what checks will get run against your current branch, use [`sg`](../setup/quickstart.md):
@@ -17,7 +19,16 @@ To see what checks will get run against your current branch, use [`sg`](../setup
 sg ci preview
 ```
 
-### Soft failures
+A complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](ci/reference.md).
+You can also see these docs locally with `sg ci docs`.
+
+You can also request builds for your changes for you builds using `sg ci build`.
+
+To learn about making changes to our Buildkite pipelines, see [Pipeline development](#pipeline-development).
+
+### Pipeline steps
+
+#### Soft failures
 
 <span class="badge badge-note">SOC2/GN-106</span>
 
@@ -42,15 +53,10 @@ You can find all usages of soft failures [with the following queries](https://so
 
 All other failures are hard failures.
 
-### Image vulnerability scanning
+#### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
-
-Trivy will perform scans upon commits to the following branches:
-
-1. `main`
-2. branches prefixed by `main-dry-run/`
-3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
+Refer to our [Pipeline reference](ci/reference.md) to see what pipelines Trivy checks run in.
 
 If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
 
@@ -65,26 +71,43 @@ We also run [separate vulnerability scans for our infrastructure](https://handbo
 
 Maintaining [Buildkite pipeline](#buildkite-pipelines) health is a critical part of ensuring we ship a stable product - changes that make it to the `main` branch may be deployed to various Sourcegraph instances, and having a reliable and predictable pipeline is crucial to ensuring bugs do not make it to production environments.
 
-To enable this, we want to [address flakes as they arise](#flakes) and have tooling to mitigate the impacts of pipeline instability, such as [`buildchecker`](#buildchecker).
+To enable this, we [address flakes as they arise](#flakes) and mitigate the impacts of pipeline instability with [branch locks](#branch-locks).
 
 > NOTE: Sourcegraph teammates should refer to the [CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios) for help managing issues with pipeline health.
 
+#### Branch locks
+
+> WARNING: **A red `main` build is not okay and must be fixed.** Learn more about our `main` branch policy in [Testing principles: Failures on the `main` branch](testing_principles.md#failures-on-the-main-branch).
+
+[`buildchecker`](#buildchecker) is a tool responding to periods of consecutive build failures on the `main` branch Sourcegraph Buildkite pipeline. If it detects a series of failures on the `main` branch, merges to `main` will be restricted to members of the Sourcegraph team who authored the failing commits until the issue is resolved - this is referred to as a "branch lock". When a build passes on `main` again, `buildchecker` will automatically unlock the branch.
+
+**Authors of the most recent failed builds are responsible for investigating failures.** Please refer to the [Continuous integration playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#build-has-failed-on-the-main-branch) for step-by-step guides on what to do in various scenarios.
+
 #### Flakes
 
-A flake is generally characterized as one-off or rare issues that can be resolved by retrying the failed job or task. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
+A *flake* is defined as a test or script that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
 
-Tests are not the only thing that are flaky - flakes can also encompass sporadic infrastructure issues and other unreliable steps.
+Tests are not the only thing that are flaky - flakes can also encompass [sporadic infrastructure issues](#flaky-infrastructure) and [unreliable steps](#flaky-steps).
 
 ##### Flaky tests
 
-Learn more about our flaky test policy in [Testing principles: Flaky tests](testing_principles.md#flaky-tests).
+> WARNING: **We do not tolerate flaky tests of any kind.** Learn more about our flaky test policy in [Testing principles: Flaky tests](testing_principles.md#flaky-tests).
 
-Use language specific functionality to skip a test. Create an issue and ping an owner about the skipping (normally on the PR skipping it).
+Typical reasons why a test may be flaky:
+
+- Race conditions or timing issues
+- Caching or inconsistent state between tests
+- Unreliable test infrastructure (such as CI)
+- Reliance on third-party services that are inconsistent
+
+If a flaky test is discovered, immediately use language-specific functionality to skip a test and open a PR to disable the test:
 
 - Go: [`testing.T.Skip`](https://pkg.go.dev/testing#hdr-Skipping)
 - Typescript: [`.skip()`](https://mochajs.org/#inclusive-tests)
 
 If the language or framework allows for a skip reason, include a link to the issue track re-enabling the test, or leave a docstring with a link.
+
+Then open an issue to investigate the flaky test (use the [flaky test issue template](https://github.com/sourcegraph/sourcegraph/issues/new/choose)), and assign it to the most likely owner.
 
 ##### Flaky steps
 
@@ -107,70 +130,140 @@ An example use of `Skip`:
  }
 ```
 
-#### `buildchecker`
+##### Flaky infrastructure
 
-[`buildchecker`](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml) is a tool responding to periods of consecutive build failures on the `main` branch Sourcegraph Buildkite pipeline. If it detects a series of failures on the `main` branch, merges to `main` will be restricted to certain members of the Sourcegraph team until the issue is resolved.
+If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).
 
-To learn more, refer to the [`buildchecker` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/buildchecker).
+Also see [Buildkite infrastructure](#buildkite-infrastructure).
 
 ### Pipeline development
 
 The source code of the pipeline generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
+Internally, the pipeline generator determines what gets run over contributions based on:
 
-To test the rendering of the entire pipeline, you can run `env BUILDKITE_BRANCH=TESTBRANCH go run ./enterprise/dev/ci/gen-pipeline.go` and inspect the YAML output. To change the behaviour set the relevant `BUILDKITE_` environment variables.
+1. [Run types](#run-types), determined by branch naming conventions, tags, and environment variables
+2. [Diff types](#diff-types), determined by what files have been changed in a given branch
+
+The above factors are then used to determine the appropriate [operations](#operations), composed of [step options](#step-options), that translate into steps in the resulting pipeline.
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
-#### Pipeline operations
+#### Run types
 
-Pipeline steps are defined as [`Operation`s](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/operations/operations.go) that apply changes to the given pipeline, such as adding steps and components.
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTU5"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-```sgquery
-(:[_] *bk.Pipeline) patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/operations\.go
-```
+#### Diff types
 
-Within an `Operation` you will typically create one or more steps on a pipeline with `AddStep`, which can be configured with options of type `SteptOpt`.
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTYw"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-```sqquery
-(:[_]) StepOpt patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/buildkite/buildkite\.go
-```
+#### Operations
 
-Operations are then added to a pipeline from [`GeneratePipeline`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/pipeline%5C.go+GeneratePipeline&patternType=literal).
+<div class="embed">
+  <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTYx"
+    style="width:100%;height:720px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups">
+  </iframe>
+</div>
 
-For most basic PR checks, see [Creating PR checks](#creating-pr-checks) for how to create your own steps!
+##### Developing PR checks
 
-For more advanced usage for specific run types, see [Run types](#run-types).
-
-#### Creating PR checks
-
-To create a new check that can run on pull requests on relevant files, check the [`changed.Files`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/changed.go) type to see if a relevant `affectsXyz` check already exists.
-
-```sgquery
-Affects type:symbol select:symbol.function repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/changed
-```
-
-If not, you can define a new one on the `changed.Files` type.
+To create a new check that can run on pull requests on relevant files, refer to how [diff types](#diff-types) work to get started.
 
 Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
 Make sure to follow the best practices outlined in docstring.
 
 For more advanced pipelines, see [Run types](#run-types).
 
-#### Run types
+#### Step options
 
-There are a variety of run types available based on branch prefixes. These generate special-purpose pipelines. For example, the `main-dry-run/` prefix is used to generate a pipeline similar to the default `main` branch. See [`RunType`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/runtype.go) for the various run types available, and examples for how to add more.
+> NOTE: Coming soon!
 
-[`GeneratePipeline`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/pipeline%5C.go+GeneratePipeline&patternType=literal) can leverage `RunType` when generating pipelines, for example:
+##### Creating annotations
 
-```sgquery
-RunType.Is(:[_]) OR case :[_]: patternType:structural repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/pipeline\.go
-```
+Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
+The pipeline generator provides an API for this that, at a high level, works like this:
 
-For simple PR checks, see [Creating PR checks](#creating-pr-checks).
+1. In your script, leave a file in `./annotations`:
 
-#### Buildkite infrastructure
+  ```sh
+  if [ $EXIT_CODE -ne 0 ]; then
+    echo -e "$OUT" >./annotations/docsite
+  fi
+  ```
 
-##### Pipeline setup
+1. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
+
+  ```go
+    pipeline.AddStep(":memo: Check and build docsite",
+      bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+  ```
+
+1. That's it!
+
+For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
+
+##### Caching build artefacts
+
+For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
+
+#### Observability
+
+##### Pipeline command tracing
+
+Every successful build of the `sourcegraph/sourcegraph` repository comes with an annotation pointing at the full trace of the build on [Honeycomb.io](https://honeycomb.io).
+See the [Buildkite board on Honeycomb](https://ui.honeycomb.io/sourcegraph/board/sqPvYj5BXNy/Buildkite) for an overview.
+
+Individual commands are tracked from the perspective of a given [step](#step-options): 
+
+
+  ```go
+    pipeline.AddStep(":memo: Check and build docsite",
+      bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+  ```
+
+Will result in a single trace span for the `./dev/check/docsite.sh` script. But the following will have individual trace spans for each `yarn` commands:
+
+  ```go
+    pipeline.AddStep(fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			// ...
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/browser -s run build"),
+			bk.Cmd("yarn run cover-browser-integration"),
+			bk.Cmd("yarn nyc report -r json"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
+  ```
+
+Therefore, it's beneficial for tracing purposes to split the step in multiple commands, if possible.
+
+##### Test analytics
+
+Our test analytics is currently powered by a tool that Buildkite released in beta to analyse individual tests across builds called [Buildkite Analytics](https://buildkite.com/test-analytics). 
+This tool enables to observe the evolution of each individual tests on the following metrics: duration and flakiness. 
+
+Browse the [dashboard](https://buildkite.com/organizations/sourcegraph/analytics) to explore the metrics and optionally set monitors that will alert if a given test or a test suite is deviating 
+from its historical duration or flakiness. 
+
+In order to track a new test suite, the tests output must be converted to JUnit XML and then uploaded to Buildkite. You can find the instructions for the upload by creating a new Test Suite in the Buildkite Analytics UI. 
+
+### Buildkite infrastructure
+
+Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
+In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
+
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+
+This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
+
+Also see [Flaky infrastructure](#flaky-infrastructure), [Continous integration infrastructure](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/ci), and the [Continuous integration changelog](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/ci/changelog).
+
+#### Pipeline setup
 
 To set up Buildkite to use the rendered pipeline, add the following step in the [pipeline settings](https://buildkite.com/sourcegraph/sourcegraph/settings):
 
@@ -178,7 +271,7 @@ To set up Buildkite to use the rendered pipeline, add the following step in the 
 go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 ```
 
-##### Managing secrets
+#### Managing secrets
 
 The term _secret_ refers to authentication credentials like passwords, API keys, tokens, etc. which are used to access a particular service. Our CI pipeline must never leak secrets:
 
@@ -186,7 +279,19 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
+#### Feature flags
+
+Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`. 
+
+- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type). 
+
 ## GitHub Actions
+
+### `buildchecker`
+
+[`buildchecker`](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml), our [branch lock management tool](#branch-locks), runs in GitHub actions - see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/buildchecker.yml).
+
+To learn more about `buildchecker`, refer to the [`buildchecker` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/buildchecker).
 
 ### Third-party licenses
 
@@ -213,4 +318,3 @@ LICENSE_CHECK=true ./dev/licenses.sh
 The `./dev/licenses.sh` script will also output some `license_finder` configuration for debugging purposes - this configuration is based on the `doc/dependency_decisions.yml` file, which tracks decisions made about licenses and dependencies.
 
 For more details, refer to the [`license_finder` documentation](https://github.com/pivotal/LicenseFinder#usage).
-

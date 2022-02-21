@@ -42,8 +42,10 @@ const CodeMonitorFragment = gql`
         actions {
             nodes {
                 ... on MonitorEmail {
+                    __typename
                     id
                     enabled
+                    includeResults
                     recipients {
                         nodes {
                             id
@@ -51,13 +53,17 @@ const CodeMonitorFragment = gql`
                     }
                 }
                 ... on MonitorWebhook {
+                    __typename
                     id
                     enabled
+                    includeResults
                     url
                 }
                 ... on MonitorSlackWebhook {
+                    __typename
                     id
                     enabled
+                    includeResults
                     url
                 }
             }
@@ -192,15 +198,18 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                                     }
                                 }
                                 enabled
+                                includeResults
                             }
                             ... on MonitorWebhook {
                                 id
                                 enabled
+                                includeResults
                                 url
                             }
                             ... on MonitorSlackWebhook {
                                 id
                                 enabled
+                                includeResults
                                 url
                             }
                         }

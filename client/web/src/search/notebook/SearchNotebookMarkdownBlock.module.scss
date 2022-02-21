@@ -9,11 +9,16 @@
 
 .output {
     padding: 0.5rem 1rem;
-    max-width: 640px;
 }
 
 .markdown {
     :last-child {
         margin-bottom: 0 !important;
+    }
+
+    pre,
+    code {
+        background-color: var(--subtle-bg);
+        border-radius: var(--border-radius);
     }
 }

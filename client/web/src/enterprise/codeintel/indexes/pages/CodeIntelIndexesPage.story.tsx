@@ -148,3 +148,7 @@ RepositoryPage.args = {
     queryLsifIndexListByRepository: () => of(makeResponse(testIndexes)),
     queryLsifIndexList: () => of(makeResponse(testIndexes)),
 }
+RepositoryPage.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
+}

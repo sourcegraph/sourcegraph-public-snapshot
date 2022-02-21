@@ -3,7 +3,7 @@
 exports[`ActionItem "open" command renders as link 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://example.com/bar"
     tabindex="0"
   >
@@ -15,7 +15,7 @@ exports[`ActionItem "open" command renders as link 1`] = `
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"
@@ -29,7 +29,7 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
 <DocumentFragment>
   <a
-    class="test-action-item"
+    class="anchorLink btn btnLink test-action-item actionItemLink"
     href="https://other.com/foo"
     rel="noopener noreferrer"
     tabindex="0"
@@ -84,6 +84,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
   <a
     aria-pressed="false"
     class="test-action-item"
+    data-action-item-pressed="false"
     href=""
     role="button"
     tabindex="0"
@@ -112,6 +113,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
   <a
     aria-pressed="true"
     class="test-action-item"
+    data-action-item-pressed="true"
     href=""
     role="button"
     tabindex="0"
@@ -199,28 +201,38 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
-  <a
-    aria-label="d"
-    class="test-action-item actionItemLoading disabled"
-    data-tooltip="d"
-    href=""
-    role="button"
-    tabindex="-1"
+  <div
+    class="container"
   >
-    <img
-      alt="d"
-      src="u"
-    />
-     g: t 
     <div
-      class="loader"
-      data-testid="action-item-spinner"
+      class="disabledTooltip"
+      data-tooltip="d"
+      tabindex="0"
+    />
+    <a
+      aria-label="d"
+      class="test-action-item actionItemLoading disabled"
+      data-tooltip="d"
+      disabled=""
+      href=""
+      role="button"
+      tabindex="-1"
     >
-      <div
-        class="loadingSpinner"
+      <img
+        alt="d"
+        src="u"
       />
-    </div>
-  </a>
+       g: t 
+      <div
+        class="loader"
+        data-testid="action-item-spinner"
+      >
+        <div
+          class="loadingSpinner"
+        />
+      </div>
+    </a>
+  </div>
 </DocumentFragment>
 `;
 

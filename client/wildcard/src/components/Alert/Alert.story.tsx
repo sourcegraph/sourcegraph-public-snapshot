@@ -28,6 +28,10 @@ const config: Meta = {
     ],
     parameters: {
         component: Alert,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
         design: [
             {
                 type: 'figma',

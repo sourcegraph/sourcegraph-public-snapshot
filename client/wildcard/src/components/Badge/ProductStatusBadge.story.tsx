@@ -18,6 +18,10 @@ const config: Meta = {
 
     parameters: {
         component: ProductStatusBadge,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
         design: {
             type: 'figma',
             name: 'Figma',

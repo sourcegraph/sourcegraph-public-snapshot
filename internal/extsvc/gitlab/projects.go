@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterhellberg/link"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Visibility string
@@ -205,6 +206,9 @@ func (c *Client) getProjectFromAPI(ctx context.Context, id int, pathWithNamespac
 		return nil, err
 	}
 	_, _, err = c.do(ctx, req, &proj)
+	if IsNotFound(err) {
+		err = &ProjectNotFoundError{Name: pathWithNamespace}
+	}
 	return proj, err
 }
 
@@ -257,8 +261,7 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 	fork, err := c.getForkedProject(ctx, project, resolved)
 	if err != nil {
 		// An error that _isn't_ a not found error needs to be reported.
-		httpErr := HTTPError{}
-		if !(errors.As(err, &httpErr) && httpErr.Code() == http.StatusNotFound) {
+		if !IsNotFound(err) {
 			return nil, errors.Wrap(err, "checking for previously forked project")
 		}
 	} else if err == nil {

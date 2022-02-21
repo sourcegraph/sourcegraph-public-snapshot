@@ -98,6 +98,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
                 <li>Total count of existing user accounts</li>
+                <li>Code Insights: total count of insights</li>
             </ul>
             <h3>Other telemetry</h3>
             <p>
@@ -291,6 +292,38 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                         <li>Total number of views of the manage code monitor page</li>
                         <li>Total number of clicks on the code monitor email search link</li>
+                    </ul>
+                </li>
+                <li>
+                    CTA usage data
+                    <ul>
+                        <li>
+                            Browser extension
+                            <ul>
+                                <li>
+                                    Total number of users who viewed the "install browser extension" CTA on the file
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who clicked the "install browser extension" CTA on the file
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who viewed the "install browser extension" CTA on the search
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who clicked the "install browser extension" CTA on the search
+                                    page
+                                </li>
+                                <li>Total number of views of the "install browser extension" CTA on the file page</li>
+                                <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
+                                <li>Total number of views of the "install browser extension" CTA on the search page</li>
+                                <li>
+                                    Total number of clicks on the "install browser extension" CTA on the search page
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
                 </li>
             </ul>

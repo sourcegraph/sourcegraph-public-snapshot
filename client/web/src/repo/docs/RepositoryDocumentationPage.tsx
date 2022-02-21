@@ -12,13 +12,24 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Container, ProductStatusBadge, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import {
+    Container,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    Alert,
+    FeedbackPrompt,
+    ButtonLink,
+    Button,
+    PopoverTrigger,
+} from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -31,7 +42,9 @@ import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error: {upperFirst(error.message)}
+    </Alert>
 )
 
 const PageNotFound: React.FunctionComponent = () => (
@@ -62,6 +75,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
+    const routeMatch = useRoutesMatch(routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
+
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -194,20 +212,28 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                 <div className={styles.container}>
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <Button
-                                // eslint-disable-next-line react/jsx-no-target-blank
+                            <ButtonLink
                                 target="_blank"
                                 rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 text-decoration-none btn-link"
+                                to="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 text-decoration-none"
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
-                                as="a"
                             >
                                 Learn more
-                            </Button>
-                            <FeedbackPrompt routes={routes} />
+                            </ButtonLink>
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    aria-label="Feedback"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                >
+                                    <span>Feedback</span>
+                                </PopoverTrigger>
+                            </FeedbackPrompt>
                         </div>
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />
@@ -230,14 +256,13 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 repository.
                             </p>
                             <h3>
-                                <a
-                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                <Link
                                     target="_blank"
                                     rel="noopener"
-                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                    to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                 >
                                     Learn more
-                                </a>
+                                </Link>
                             </h3>
                             <p className="text-muted mt-3 mb-0">
                                 <strong>Note:</strong> only the Go programming language is currently supported.

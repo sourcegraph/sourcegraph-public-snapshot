@@ -3,8 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -23,6 +25,14 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
+
+	// CodeMonitorID, if set, is the graphql-encoded ID of the code monitor
+	// that is running the search. This will likely be removed in the future
+	// once the worker can mutate and execute the search directly, but for now,
+	// there are too many dependencies in frontend to do that. For anyone looking
+	// to rip this out in the future, this should be possible once we can build
+	// a static representation of our job tree independently of any resolvers.
+	CodeMonitorID *graphql.ID
 
 	// Stream if non-nil will stream all SearchEvents.
 	//
@@ -72,8 +82,8 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	// Experimental: create a step to replace each context in the query with its repository query if any.
-	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false)
+	// Beta: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
 		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
 		if err != nil {
@@ -89,17 +99,22 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		query.With(searchContextsQueryEnabled, substituteContextsStep),
 	)
 	if err != nil {
-		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		return NewSearchAlertResolver(search.AlertForQuery(args.Query, err)).wrapSearchImplementer(db), nil
 	}
 	tr.LazyPrintf("parsing done")
 
-	defaultLimit := defaultMaxSearchResults
-	if args.Stream != nil {
-		defaultLimit = defaultMaxSearchResultsStreaming
+	var codeMonitorID *int64
+	if args.CodeMonitorID != nil {
+		var i int64
+		if err := relay.UnmarshalSpec(*args.CodeMonitorID, &i); err != nil {
+			return nil, err
+		}
+		codeMonitorID = &i
 	}
-	if searchType == query.SearchTypeStructural {
-		// Set a lower max result count until structural search supports true streaming.
-		defaultLimit = defaultMaxSearchResults
+
+	protocol := search.Batch
+	if args.Stream != nil {
+		protocol = search.Streaming
 	}
 
 	inputs := &run.SearchInputs{
@@ -109,7 +124,8 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		UserSettings:  settings,
 		Features:      featureflag.FromContext(ctx),
 		PatternType:   searchType,
-		DefaultLimit:  defaultLimit,
+		CodeMonitorID: codeMonitorID,
+		Protocol:      protocol,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -188,8 +204,8 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	*run.SearchInputs
-	db database.DB
+	SearchInputs *run.SearchInputs
+	db           database.DB
 
 	// stream if non-nil will send all search events we receive down it.
 	stream streaming.Sender
@@ -201,25 +217,6 @@ type searchResolver struct {
 func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
-
-// rawQuery returns the original query string input.
-func (r *searchResolver) rawQuery() string {
-	return r.OriginalQuery
-}
-
-// protocol returns what type of search we are doing (batch, stream,
-// paginated).
-func (r *searchResolver) protocol() search.Protocol {
-	if r.stream != nil {
-		return search.Streaming
-	}
-	return search.Batch
-}
-
-const (
-	defaultMaxSearchResults          = 30
-	defaultMaxSearchResultsStreaming = 500
-)
 
 var mockDecodedViewerFinalSettings *schema.Settings
 

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Matcher struct {
@@ -127,6 +127,7 @@ type matcherContext struct {
 
 type branchRequestMeta struct {
 	isDefaultBranch     bool
+	commitID            string // commit hash of the tip of the branch
 	policyDurationByIDs map[int]*time.Duration
 }
 
@@ -178,6 +179,7 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 
 			meta.policyDurationByIDs[policy.ID] = policyDuration
 			meta.isDefaultBranch = meta.isDefaultBranch || refDescription.IsDefaultBranch
+			meta.commitID = commit
 			context.branchRequests[refDescription.Name] = meta
 		}
 	}
@@ -198,7 +200,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 			maxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(ctx, context.repositoryID, branchName, branchRequestMeta.isDefaultBranch, maxCommitAge)
+		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(ctx, context.repositoryID, branchRequestMeta.commitID, branchRequestMeta.isDefaultBranch, maxCommitAge)
 		if err != nil {
 			return errors.Wrap(err, "gitserver.CommitsUniqueToBranch")
 		}

@@ -3,13 +3,14 @@ package backend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
@@ -45,5 +46,5 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{})
+	return git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

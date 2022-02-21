@@ -7,8 +7,7 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import { debounce } from 'lodash'
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -27,8 +26,8 @@ interface SearchNotebookFileBlockInputProps {
     suggestionsIcon?: JSX.Element
     isValid?: boolean
     isMacPlatform: boolean
+    focusInput?: boolean
     dataTestId?: string
-    testTriggerSuggestions?: boolean
 }
 
 export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
@@ -44,25 +43,28 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     suggestionsIcon,
     isValid,
     isMacPlatform,
+    focusInput,
     dataTestId,
-    testTriggerSuggestions,
 }) => {
     const [inputValue, setInputValue] = useState(value)
-    const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
     const onSelect = useCallback(
         (value: string) => {
             setInputValue(value)
-            debouncedOnChange(value)
+            onChange(value)
         },
-        [debouncedOnChange, setInputValue]
+        [onChange, setInputValue]
     )
 
     const inputReference = useRef<HTMLInputElement>(null)
     useEffect(() => {
-        if (testTriggerSuggestions) {
+        if (focusInput) {
             inputReference.current?.focus()
         }
-    }, [inputReference, testTriggerSuggestions])
+        // Only focus input on the initial render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inputReference])
+
+    useEffect(() => setInputValue(value), [setInputValue, value])
 
     const popoverReference = useRef<HTMLDivElement>(null)
     const onKeyDown = (event: React.KeyboardEvent): void => {
@@ -93,6 +95,15 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         if (event.key === 'Escape') {
             const target = event.target as HTMLElement
             target.blur()
+        } else if (event.key === 'Tab' && !event.shiftKey) {
+            // Reach does not support 'Tab' as a select trigger, so we have to manually select the currently highlighted suggestion.
+            const element = popoverReference.current?.querySelector<HTMLElement>(
+                '[aria-selected=true] [data-suggestion-value]'
+            )
+            if (element?.dataset.suggestionValue) {
+                event.preventDefault()
+                onSelect(element.dataset.suggestionValue)
+            }
         } else if (
             // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
             !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
@@ -117,16 +128,20 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onChange={event => onSelect(event.target.value)}
                 onFocus={onFocus}
                 onBlur={onBlur}
+                onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
-            {/* Only show suggestions popover for the latest input value */}
-            {suggestions && value === inputValue && (
+            {/* Only show suggestions popover for the latest input value and if it does not contain an exact match.
+                This is to prevent opening the suggestions popover when a file URL is pasted into the file block. */}
+            {suggestions && value === inputValue && !suggestions.includes(inputValue) && (
                 <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
                             <ComboboxOption className={styles.suggestionsOption} key={suggestion} value={suggestion}>
-                                {suggestionsIcon}
-                                <ComboboxOptionText />
+                                <span data-suggestion-value={suggestion}>
+                                    {suggestionsIcon}
+                                    <ComboboxOptionText />
+                                </span>
                             </ComboboxOption>
                         ))}
                     </ComboboxList>

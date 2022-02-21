@@ -30,7 +30,7 @@ function go_test() {
     -covermode=atomic \
     -race \
     -v \
-    $test_packages | tee "$tmpfile"
+    $test_packages | tee "$tmpfile" | richgo testfilter
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
@@ -60,14 +60,22 @@ function go_test() {
 EOF
   )
 
+  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
+  set +e
   echo "$data" | curl \
+    --fail \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
-
-  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  local curl_exit="$?"
+  if [ "$curl_exit" -eq 0 ]; then
+    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  else
+    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
+  fi
+  set -e
 
   return "$test_exit_code"
 }
@@ -108,6 +116,13 @@ echo "--- comby install"
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
 export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
 
+# Disable GraphQL logs which are wildly noisy
+export NO_GRAPHQL_LOG=true
+
+# Install richgo for better output
+go install github.com/kyoh86/richgo@latest
+asdf reshim golang
+
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   pushd "$d" >/dev/null
@@ -121,24 +136,24 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
     exclude)
       TEST_PACKAGES=$(go list ./... | { grep -v "$patterns" || true; }) # -v to reject
       if [ -n "$TEST_PACKAGES" ]; then
-        echo "--- $d go test"
+        echo "+++ $d go test"
         go_test "$TEST_PACKAGES"
       else
-        echo "--- $d go test (skipping)"
+        echo "~~~ $d go test (skipping)"
       fi
       ;;
     only)
       TEST_PACKAGES=$(go list ./... | { grep "$patterns" || true; }) # select only what we need
       if [ -n "$TEST_PACKAGES" ]; then
-        echo "--- $d go test"
+        echo "+++ $d go test"
         go_test "$TEST_PACKAGES"
       else
-        echo "--- $d go test (skipping)"
+        echo "~~~ $d go test (skipping)"
       fi
       ;;
     *)
       TEST_PACKAGES="./..."
-      echo "--- $d go test"
+      echo "+++ $d go test"
       go_test "$TEST_PACKAGES"
       ;;
   esac

@@ -32,7 +32,7 @@ The dashboard visibility levels have no impact on the data in the insight itself
 
 This means that two organization users with different repo read permission sets might see different values for the same insights on the same dashboards, if it contains results from a repository only one user can view.
 
-(This also means that if you change a private-visible dashboard with both organization-visible and private-visible insights so that the dashboard is now visible to an organization, then the organization can only see the organization-visible insights on that dashboard. This is non-optimal and a bit awkward to convey, and we are actively improving this UX. If you have strong thoughts, please do [leave them on the issue](https://github.com/sourcegraph/sourcegraph/issues/23003).)
+If you change a private-visible dashboard so that the dashboard is now visible to an organization (or globally), then the organization (or entire instance) can now see all insights on the dashboard, though the result counts will still be filtered to count from only repos that the individual organization member can view. 
 
 ### Insights can be on multiple dashboards
 

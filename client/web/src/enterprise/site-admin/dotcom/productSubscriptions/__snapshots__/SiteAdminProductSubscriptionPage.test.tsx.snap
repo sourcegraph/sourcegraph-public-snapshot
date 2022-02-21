@@ -9,7 +9,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-2"
     >
       <a
-        class="btn btn-link btn-sm"
+        class="anchorLink btn btnLink btnSm"
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
@@ -25,7 +25,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-3"
     >
       <button
-        class="btn btn-danger"
+        class="btn btnDanger"
         type="button"
       >
         Archive
@@ -35,7 +35,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="card mt-3"
     >
       <div
-        class="card-header"
+        class="cardHeader"
       >
         Details
       </div>
@@ -87,7 +87,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               </em>
                — 
               <a
-                class=""
+                class="anchorLink"
                 href="/s"
               >
                 View as user
@@ -120,7 +120,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="d-flex align-items-center"
                 >
                   <button
-                    class="btn btn-secondary btn-sm"
+                    class="btn btnSecondary btnSm"
                     type="button"
                   >
                     Link billing subscription
@@ -153,11 +153,11 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="card mt-1"
     >
       <div
-        class="card-header d-flex align-items-center justify-content-between"
+        class="cardHeader d-flex align-items-center justify-content-between"
       >
         Licenses
         <button
-          class="btn btn-primary btn-sm"
+          class="btn btnPrimary btnSm"
           type="button"
         >
           <addicon
@@ -217,7 +217,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <div>
               Tags: 
               <div
-                class="mr-1"
+                class="badge secondary mr-1"
               >
                 a
               </div>
@@ -238,7 +238,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="input-group-append"
                 >
                   <button
-                    class="btn btn-secondary"
+                    class="btn btnSecondary"
                     type="button"
                   >
                     <svg
@@ -268,12 +268,12 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="card mt-3"
     >
       <div
-        class="card-header"
+        class="cardHeader"
       >
         History
       </div>
       <div
-        class="card-body"
+        class="cardBody"
       >
         <span
           class="text-muted"

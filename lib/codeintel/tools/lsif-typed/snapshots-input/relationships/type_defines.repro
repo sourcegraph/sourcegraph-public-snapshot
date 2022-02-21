@@ -1,0 +1,2 @@
+definition local1
+definition local2 type_defines local1

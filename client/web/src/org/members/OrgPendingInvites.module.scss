@@ -1,0 +1,78 @@
+.invite-member-link {
+    vertical-align: unset;
+    display: inline;
+    padding: 0;
+    font-weight: 800;
+}
+
+.invitations-list {
+    padding: 0;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+
+    ul {
+        padding: 0;
+        margin: 0;
+        li {
+            &:first-child {
+                padding: 0.5rem 1.5rem;
+                border-bottom: 1px solid var(--border-color);
+                border-top: unset;
+                font-weight: 400;
+            }
+            list-style: none;
+            padding: 0.8rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+    }
+}
+
+.no-invites-list {
+    border: none;
+}
+
+.invite-details {
+    gap: 1rem;
+}
+
+.recipient-email {
+    color: var(--link-color);
+}
+
+.email-icon {
+    color: var(--secondary-3);
+}
+
+.avatar-container {
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.revoke-invite {
+    color: var(--danger);
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+}
+
+.invite-menu {
+    padding: 0.1rem 0.5rem;
+}
+
+.invite-date {
+    flex: 0.5;
+}
+
+.invite-expiration {
+    flex: 0.5;
+}
+
+.invite-actions {
+    flex: 0.2;
+}

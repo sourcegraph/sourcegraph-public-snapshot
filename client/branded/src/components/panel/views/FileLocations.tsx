@@ -7,7 +7,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
@@ -15,14 +15,15 @@ import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="alert alert-danger m-2">Error getting locations: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error getting locations: {upperFirst(error.message)}
+    </Alert>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (

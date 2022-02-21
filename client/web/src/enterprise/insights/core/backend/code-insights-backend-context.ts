@@ -15,6 +15,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
+    public hasInsights = errorMockMethod('hasInsight')
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
@@ -49,6 +50,10 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
         errorMockMethod('getRepositorySuggestions')().toPromise()
     public getResolvedSearchRepositories = (): Promise<string[]> =>
         errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
+
+    // License check
+    public isCodeInsightsLicensed = errorMockMethod('isCodeInsightsLicensed')
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

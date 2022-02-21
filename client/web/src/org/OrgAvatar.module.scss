@@ -7,15 +7,26 @@
     align-items: center;
     justify-content: center;
 
+    &--light {
+        background: var(--white);
+    }
+
+    &--sm {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        font-size: 0.5rem;
+        height: 1.15rem;
+        width: 1.15rem;
+    }
+
     &--md {
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         font-size: 0.625rem;
         height: 1.5rem;
         width: 1.5rem;
     }
 
     &--lg {
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         font-size: 1.25rem;
         height: 3rem;
         width: 3rem;

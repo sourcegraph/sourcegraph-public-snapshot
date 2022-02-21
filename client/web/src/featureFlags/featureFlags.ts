@@ -1,10 +1,14 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
-import { FetchFeatureFlagsResult } from '../graphql-operations'
+import {
+    FetchFeatureFlagsResult,
+    OrgFeatureFlagOverridesResult,
+    OrgFeatureFlagOverridesVariables,
+} from '../graphql-operations'
 
 import { getOverrideKey } from './lib/getOverrideKey'
 
@@ -20,7 +24,7 @@ class ProxyMap<K extends string, V extends boolean> extends Map<K, V> {
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName = 'search-notebook-onboarding' | 'test-flag' | 'getting-started-tour'
+export type FeatureFlagName = 'search-notebook-onboarding' | 'getting-started-tour'
 
 export type FlagSet = ProxyMap<FeatureFlagName, boolean>
 
@@ -59,6 +63,52 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
             return result
         })
     )
+}
+
+export interface OrgFlagOverride {
+    orgID: string
+    flagName: string
+    value: boolean
+}
+
+/**
+ * Fetches all feature flag overrides for organizations that the current user is a member of
+ */
+export function useFlagsOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
+    const { data, loading } = useQuery<OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables>(
+        gql`
+            query OrgFeatureFlagOverrides {
+                organizationFeatureFlagOverrides {
+                    namespace {
+                        id
+                    }
+                    targetFlag {
+                        ... on FeatureFlagBoolean {
+                            name
+                        }
+                        ... on FeatureFlagRollout {
+                            name
+                        }
+                    }
+                    value
+                }
+            }
+        `,
+        { fetchPolicy: 'cache-and-network' }
+    )
+
+    if (!data) {
+        return { data: [], loading }
+    }
+
+    return {
+        data: data?.organizationFeatureFlagOverrides.map(value => ({
+            orgID: value.namespace.id,
+            flagName: value.targetFlag.name,
+            value: value.value,
+        })),
+        loading,
+    }
 }
 
 export interface FeatureFlagProps {

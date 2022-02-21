@@ -47,7 +47,7 @@ func enterpriseInit(
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
 
-	codemonitorsBackground.StartBackgroundJobs(ctx, db)
+	codemonitorsBackground.StartBackgroundJobs(ctx, edb.NewEnterpriseDB(db))
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
@@ -73,7 +73,7 @@ func enterpriseInit(
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
-		t := time.NewTicker(5 * time.Second)
+		t := time.NewTicker(frontendAuthz.RefreshInterval())
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
 				frontendAuthz.ProvidersFromConfig(

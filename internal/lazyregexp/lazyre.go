@@ -8,9 +8,10 @@ package lazyregexp
 
 import (
 	"os"
-	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/grafana/regexp"
 )
 
 // Regexp is a wrapper around regexp.Regexp, where the underlying regexp will be

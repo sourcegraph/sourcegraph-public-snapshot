@@ -3,11 +3,10 @@ package search
 import (
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search/syntax"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestChangesetSearch(t *testing.T) {
@@ -31,10 +30,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *multierror.Error
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})
@@ -52,10 +51,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *multierror.Error
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})
@@ -77,10 +76,10 @@ func TestChangesetSearch(t *testing.T) {
 			},
 		}
 
-		var errs *multierror.Error
+		var errs errors.MultiError
 		if !errors.As(err, &errs) {
 			t.Errorf("unexpected error of type %T: %+v", err, err)
-		} else if diff := cmp.Diff(expected, errs.Errors); diff != "" {
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
 			t.Errorf("unexpected error (-want +have):\n%s", diff)
 		}
 	})

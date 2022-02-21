@@ -1,12 +1,14 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import { render, fireEvent, waitFor, screen } from '@testing-library/react'
+import { fireEvent, waitFor, screen } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithBrandedContext } from '../testing'
 
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 
 describe('KeyboardShortcutsHelp', () => {
     test('is triggered correctly', async () => {
-        render(
+        renderWithBrandedContext(
             <ShortcutProvider>
                 <KeyboardShortcutsHelp
                     keyboardShortcuts={[

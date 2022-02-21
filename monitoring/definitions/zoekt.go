@@ -24,10 +24,10 @@ func Zoekt() *monitoring.Container {
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label: "Instance",
-				Name:  "instance",
-				Query: "label_values(index_num_assigned, instance)",
-				Multi: true,
+				Label:        "Instance",
+				Name:         "instance",
+				OptionsQuery: "label_values(index_num_assigned, instance)",
+				Multi:        true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -40,21 +40,22 @@ func Zoekt() *monitoring.Container {
 							Description: "total number of repos (aggregate)",
 							Query:       `sum(index_num_assigned)`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.Current = true
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Targets = []sdk.Target{{
-									Expr:         o.Query,
-									LegendFormat: "assigned",
-								}, {
-									Expr:         "sum(index_num_indexed)",
-									LegendFormat: "indexed",
-								}, {
-									Expr:         "sum(index_queue_cap)",
-									LegendFormat: "tracked",
-								}}
-								p.GraphPanel.Tooltip.Shared = true
-							}),
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "assigned",
+									}, {
+										Expr:         "sum(index_num_indexed)",
+										LegendFormat: "indexed",
+									}, {
+										Expr:         "sum(index_queue_cap)",
+										LegendFormat: "tracked",
+									}}
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
@@ -72,21 +73,22 @@ func Zoekt() *monitoring.Container {
 							Description: "total number of repos (per instance)",
 							Query:       "sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.Current = true
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Targets = []sdk.Target{{
-									Expr:         o.Query,
-									LegendFormat: "{{instance}} assigned",
-								}, {
-									Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
-									LegendFormat: "{{instance}} indexed",
-								}, {
-									Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
-									LegendFormat: "{{instance}} tracked",
-								}}
-								p.GraphPanel.Tooltip.Shared = true
-							}),
+							Panel: monitoring.Panel().With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Legend.Current = true
+									p.GraphPanel.Targets = []sdk.Target{{
+										Expr:         o.Query,
+										LegendFormat: "{{instance}} assigned",
+									}, {
+										Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
+										LegendFormat: "{{instance}} indexed",
+									}, {
+										Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
+										LegendFormat: "{{instance}} tracked",
+									}}
+									p.GraphPanel.Tooltip.Shared = true
+								}).MinAuto(),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
@@ -126,6 +128,30 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
+							Name:        "repos_stopped_tracking_total_aggregate",
+							Description: "the number of repositories we stopped tracking over 5m (aggregate)",
+							Query:       `sum(increase(index_num_stopped_tracking_total[5m]))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("dropped").
+								Unit(monitoring.Number).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+						{
+							Name:        "repos_stopped_tracking_total_per_instance",
+							Description: "the number of repositories we stopped tracking over 5m (per instance)",
+							Query:       "sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Number).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+					},
+					{
+						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
@@ -140,9 +166,13 @@ func Zoekt() *monitoring.Container {
 							Description: "the number of repositories we failed to get indexing options over 5m",
 							Query:       `sum(increase(get_index_options_error_total[5m]))`,
 							// This value can spike, so only if we have a
-							// sustained error rate do we alert.
-							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(20 * time.Minute),
+							// sustained error rate do we alert. On
+							// Sourcegraph.com gitserver rollouts take a while
+							// and this alert will fire during that time. So
+							// we tuned Critical to atleast be as long as a
+							// gitserver rollout. 2022-02-09 ~25m rollout.
+							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: `
@@ -189,11 +219,13 @@ func Zoekt() *monitoring.Container {
 							Query:       "sum by (state) (increase(index_repo_seconds_count[5m]))",
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearchCore,
-							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{state}}").With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
+									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+								},
+							),
 							Interpretation: `
 							This dashboard shows the outcomes of recently completed indexing jobs across all index-server instances.
 
@@ -213,11 +245,12 @@ func Zoekt() *monitoring.Container {
 							Query:       "sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearchCore,
-							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(
+								monitoring.PanelOptions.LegendOnRight(),
+								func(o monitoring.Observable, p *sdk.Panel) {
+									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
+									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+								}),
 							Interpretation: `
 							This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
 
@@ -241,8 +274,8 @@ func Zoekt() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "indexed_queue_size_aggregate",
-							Description:    "# of outstanding index jobs (aggregate)",
+							Name:           "indexed_num_scheduled_jobs_aggregate",
+							Description:    "# scheduled index jobs (aggregate)",
 							Query:          "sum(index_queue_len)", // total queue size amongst all index-server replicas
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("jobs"),
@@ -250,8 +283,8 @@ func Zoekt() *monitoring.Container {
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
 						},
 						{
-							Name:           "indexed_queue_size_per_instance",
-							Description:    "# of outstanding index jobs (per instance)",
+							Name:           "indexed_num_scheduled_jobs_per_instance",
+							Description:    "# scheduled index jobs (per instance)",
 							Query:          "index_queue_len{instance=~`${instance:regex}`}",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
@@ -382,9 +415,9 @@ func Zoekt() *monitoring.Container {
 							Description: "transmission rate over 5m (aggregate)",
 							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The rate of bytes sent over the network across all Zoekt pods",
 						},
@@ -393,9 +426,9 @@ func Zoekt() *monitoring.Container {
 							Description: "transmission rate over 5m (per instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The amount of bytes sent over the network by individual Zoekt pods",
 						},
@@ -406,9 +439,9 @@ func Zoekt() *monitoring.Container {
 							Description: "receive rate over 5m (aggregate)",
 							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The amount of bytes received from the network across Zoekt pods",
 						},
@@ -417,9 +450,9 @@ func Zoekt() *monitoring.Container {
 							Description: "receive rate over 5m (per instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "The amount of bytes received from the network by individual Zoekt pods",
 						},
@@ -430,9 +463,9 @@ func Zoekt() *monitoring.Container {
 							Description: "transmit packet drop rate over 5m (by instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+								Unit(monitoring.PacketsPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
 						},
@@ -441,9 +474,8 @@ func Zoekt() *monitoring.Container {
 							Description: "errors encountered while transmitting over 5m (per instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "An increase in transmission errors could indicate a networking issue",
 						},
@@ -452,9 +484,9 @@ func Zoekt() *monitoring.Container {
 							Description: "receive packet drop rate over 5m (by instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+								Unit(monitoring.PacketsPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
 						},
@@ -463,9 +495,8 @@ func Zoekt() *monitoring.Container {
 							Description: "errors encountered while receiving over 5m (per instance)",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Legend.RightSide = true
-							}),
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").
+								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "An increase in errors while receiving could indicate a networking issue.",
 						},

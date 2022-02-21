@@ -1,12 +1,11 @@
-import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
-import { getTooltipMessage, useDashboardPermissions } from '../../../../hooks/use-dashboard-permissions'
+import { getTooltipMessage, getDashboardPermissions } from '../../../../utils/get-dashboard-permissions'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
@@ -34,10 +33,10 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  */
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classNames(styles.itemCard, 'card')}>
+        <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
-        </Link>
+        </Card>
         <span className="d-flex justify-content-center mt-3">
             <span>
                 or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
@@ -52,7 +51,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
     const { onAddInsight, dashboard, subjects } = props
-    const permissions = useDashboardPermissions(dashboard, subjects)
+    const permissions = getDashboardPermissions(dashboard, subjects)
 
     return (
         <section className={styles.emptySection}>
@@ -63,14 +62,14 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <div
+                <Card
                     data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
                     data-placement="right"
-                    className={classNames(styles.itemCard, 'card')}
+                    className={styles.itemCard}
                 >
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
-                </div>
+                </Card>
             </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>

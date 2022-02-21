@@ -7,7 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -65,10 +65,10 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
         <Form className="external-service-form" onSubmit={onSubmit}>
             {error && <ErrorAlert error={error} />}
             {warning && (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     <h4>Warning</h4>
                     <ErrorMessage error={warning} />
-                </div>
+                </Alert>
             )}
             {hideDisplayNameField || (
                 <div className="form-group">

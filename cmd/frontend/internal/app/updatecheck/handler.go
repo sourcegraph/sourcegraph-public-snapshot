@@ -10,12 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -34,17 +33,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.36.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.36.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.36.1")
+	latestReleaseKubernetesBuild = newBuild("3.36.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.36.1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.36.3")
 )
 
 func getLatestRelease(deployType string) build {
@@ -180,26 +179,27 @@ type pingRequest struct {
 	Activity             json.RawMessage `json:"act"`
 	BatchChangesUsage    json.RawMessage `json:"batchChangesUsage"`
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
-	AutomationUsage     json.RawMessage `json:"automationUsage"`
-	GrowthStatistics    json.RawMessage `json:"growthStatistics"`
-	SavedSearches       json.RawMessage `json:"savedSearches"`
-	HomepagePanels      json.RawMessage `json:"homepagePanels"`
-	SearchOnboarding    json.RawMessage `json:"searchOnboarding"`
-	Repositories        json.RawMessage `json:"repositories"`
-	RetentionStatistics json.RawMessage `json:"retentionStatistics"`
-	CodeIntelUsage      json.RawMessage `json:"codeIntelUsage"`
-	NewCodeIntelUsage   json.RawMessage `json:"newCodeIntelUsage"`
-	SearchUsage         json.RawMessage `json:"searchUsage"`
-	ExtensionsUsage     json.RawMessage `json:"extensionsUsage"`
-	CodeInsightsUsage   json.RawMessage `json:"codeInsightsUsage"`
-	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
-	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
-	InitialAdminEmail   string          `json:"initAdmin"`
-	TosAccepted         bool            `json:"tosAccepted"`
-	TotalUsers          int32           `json:"totalUsers"`
-	HasRepos            bool            `json:"repos"`
-	EverSearched        bool            `json:"searched"`
-	EverFindRefs        bool            `json:"refs"`
+	AutomationUsage               json.RawMessage `json:"automationUsage"`
+	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
+	SavedSearches                 json.RawMessage `json:"savedSearches"`
+	HomepagePanels                json.RawMessage `json:"homepagePanels"`
+	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
+	Repositories                  json.RawMessage `json:"repositories"`
+	RetentionStatistics           json.RawMessage `json:"retentionStatistics"`
+	CodeIntelUsage                json.RawMessage `json:"codeIntelUsage"`
+	NewCodeIntelUsage             json.RawMessage `json:"newCodeIntelUsage"`
+	SearchUsage                   json.RawMessage `json:"searchUsage"`
+	ExtensionsUsage               json.RawMessage `json:"extensionsUsage"`
+	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
+	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
+	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
+	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
+	InitialAdminEmail             string          `json:"initAdmin"`
+	TosAccepted                   bool            `json:"tosAccepted"`
+	TotalUsers                    int32           `json:"totalUsers"`
+	HasRepos                      bool            `json:"repos"`
+	EverSearched                  bool            `json:"searched"`
+	EverFindRefs                  bool            `json:"refs"`
 }
 
 type dependencyVersions struct {

@@ -1,15 +1,15 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { isNot } from '@sourcegraph/shared/src/util/types'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
-import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
+import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../util/context'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension
@@ -61,11 +61,13 @@ export class SearchCommand {
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(
-                      query,
-                      patternType,
-                      caseSensitive
-                  )}&utm_source=omnibox`,
+                : createURLWithUTM(
+                      new URL(`${sourcegraphURL}/search?${buildSearchURLQuery(query, patternType, caseSensitive)}`),
+                      {
+                          utm_source: getPlatformName(),
+                          utm_campaign: 'omnibox',
+                      }
+                  ).toString(),
         }
 
         switch (disposition) {

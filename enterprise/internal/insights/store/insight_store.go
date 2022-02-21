@@ -6,18 +6,14 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
-
+	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/cockroachdb/errors"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type InsightStore struct {
@@ -746,6 +742,14 @@ func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFron
 	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
 }
 
+func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCount, id)))
+	if err != nil {
+		return 0, nil
+	}
+	return count, nil
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -890,4 +894,10 @@ const updateFrontendSeriesSql = `
 UPDATE insight_series
 SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
 WHERE series_id = %s
+`
+
+const getReferenceCount = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
+SELECT COUNT(*) from dashboard_insight_view
+WHERE insight_view_id = %s
 `

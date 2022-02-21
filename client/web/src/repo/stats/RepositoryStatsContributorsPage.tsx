@@ -6,14 +6,12 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, numberWithCommas, pluralize, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -222,9 +220,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         return (
             <div>
                 <PageTitle title="Contributors" />
-                <div className={classNames(styles.card, 'card')}>
-                    <div className="card-header">Contributions filter</div>
-                    <div className="card-body">
+                <Card className={styles.card}>
+                    <CardHeader>Contributions filter</CardHeader>
+                    <CardBody>
                         <Form onSubmit={this.onSubmit}>
                             <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mb-2 mr-sm-2">
@@ -247,7 +245,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <div className="btn-group">
+                                        <ButtonGroup>
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -279,7 +277,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             >
                                                 All time
                                             </Button>
-                                        </div>
+                                        </ButtonGroup>
                                     </div>
                                 </div>
                             </div>
@@ -349,8 +347,8 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                 )}
                             </div>
                         </Form>
-                    </div>
-                </div>
+                    </CardBody>
+                </Card>
                 <FilteredContributorsConnection
                     listClassName="list-group list-group-flush"
                     noun="contributor"

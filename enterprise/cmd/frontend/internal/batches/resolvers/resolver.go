@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -388,7 +387,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex}, nil
+	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex, batchSpec: spec.Spec}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -444,7 +443,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 }
 
 func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs *multierror.Error
+	var errs error
 
 	if in != nil && *in != nil {
 		for _, state := range *in {
@@ -454,13 +453,13 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 			}
 
 			if err := opts.Add(id, state.PublicationState); err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 			}
 		}
 
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -1677,6 +1676,45 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 	svc := service.New(r.store)
 	batchSpec, err := svc.ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
 		BatchSpecRandID:  batchSpecRandID,
+		RawSpec:          args.BatchSpec,
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+		NoCache:          args.NoCache,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+}
+
+func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbackend.UpsertBatchSpecInputArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpsertBatchSpecInput", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: UpsertBatchSpecInput checks whether current user is
+	// authorised and has access to the namespace.
+	//
+	// Right now we also only allow creating batch specs in a user namespace, so
+	// the check makes sure the current user is the creator of the batch spec or
+	// an admin.
+	batchSpec, err := svc.UpsertBatchSpecInput(ctx, service.UpsertBatchSpecInputOpts{
+		NamespaceUserID:  uid,
+		NamespaceOrgID:   oid,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,

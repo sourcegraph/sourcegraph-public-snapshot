@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
@@ -24,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
+	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 	// Whether debug logging is turned on

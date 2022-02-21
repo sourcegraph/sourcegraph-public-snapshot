@@ -65,7 +65,7 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = client.WaitForReposToBeIndex(
+	err = client.WaitForReposToBeIndexed(
 		"github.com/sgtest/java-langserver",
 	)
 	if err != nil {
@@ -285,18 +285,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("context: search query", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchContextsQuery": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		_, err = client.Repository("github.com/sgtest/java-langserver")
+		_, err := client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)
 		_, err = client.Repository("github.com/sgtest/jsonrpc2")
 		require.NoError(t, err)
@@ -475,23 +464,25 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "error count:1000",
 				query: "error count:1000",
 			},
-			{
-				name:          "something with more than 1000 results and use count:1000",
-				query:         ". count:1000",
-				minMatchCount: 1000,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "something with more than 1000 results and use count:1000",
+			// 	query:         ". count:1000",
+			// 	minMatchCount: 1000,
+			// },
 			{
 				name:          "default limit streaming",
 				query:         ".",
 				minMatchCount: 500,
 				skip:          skipGraphQL,
 			},
-			{
-				name:          "default limit graphql",
-				query:         ".",
-				minMatchCount: 30,
-				skip:          skipStream,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "default limit graphql",
+			// 	query:         ".",
+			// 	minMatchCount: 30,
+			// 	skip:          skipStream,
+			// },
 			{
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",

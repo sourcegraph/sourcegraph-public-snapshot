@@ -4,12 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ArchiveFormat represents an archive format (zip, tar, etc).
@@ -27,16 +26,21 @@ const (
 func ArchiveReader(
 	ctx context.Context,
 	checker authz.SubRepoPermissionChecker,
-	repo api.RepoName,
+	repo *types.Repo,
 	format ArchiveFormat,
 	commit api.CommitID,
 	relativePath string,
 ) (io.ReadCloser, error) {
-	a := actor.FromContext(ctx)
-	if authz.SubRepoEnabled(checker) && a.IsAuthenticated() {
-		return nil, errors.New("ArchiveReader invoked by user on a repo with sub-repo permissions")
+	if authz.SubRepoEnabled(checker) {
+		enabled, err := authz.SubRepoEnabledForRepoID(ctx, checker, repo.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "sub-repo permissions check:")
+		}
+		if enabled {
+			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
+		}
 	}
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(format), string(commit), relativePath)
-	cmd.Repo = repo
+	cmd.Repo = repo.Name
 	return gitserver.StdoutReader(ctx, cmd)
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -81,7 +81,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }

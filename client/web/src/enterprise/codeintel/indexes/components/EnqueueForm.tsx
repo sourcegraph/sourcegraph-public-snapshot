@@ -2,7 +2,7 @@ import React, { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
@@ -75,7 +75,9 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
             </div>
 
             {state === State.Queued && queueResult !== undefined && (
-                <div className="alert alert-success mt-3 mb-0">{queueResult} index jobs enqueued.</div>
+                <Alert className="mt-3 mb-0" variant="success">
+                    {queueResult} index jobs enqueued.
+                </Alert>
             )}
         </>
     )

@@ -10,10 +10,10 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "Kevin Wojkovich",
-    "captainGitHubUsername": "kevinwojo",
+    "captainSlackUsername": "coury",
+    "captainGitHubUsername": "coury-clark",
     // Release versions
-    "previousRelease": "3.36.1",
+    "previousRelease": "3.36.3",
     "upcomingRelease": "3.37.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "18 February 2022 10:00 PST",

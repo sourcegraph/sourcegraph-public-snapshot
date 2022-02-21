@@ -36,6 +36,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+// const UserSettingsPrivacyPage = lazyComponent(
+//     () => import('./privacy/UserSettingsPrivacyPage'),
+//     'UserSettingsPrivacyPage'
+// )
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -43,7 +48,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => {
             if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
                 return (
-                    <SiteAdminAlert className="sidebar__alert alert-danger">
+                    <SiteAdminAlert className="sidebar__alert" variant="danger">
                         Only the user may access their individual settings.
                     </SiteAdminAlert>
                 )
@@ -94,6 +99,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         render: props => <UserSettingsSecurityPage {...props} context={window.context} />,
         condition: showAccountSecurityPage,
+    },
+    {
+        path: '/privacy',
+        exact: true,
+        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
     },
     {
         path: '/repositories',

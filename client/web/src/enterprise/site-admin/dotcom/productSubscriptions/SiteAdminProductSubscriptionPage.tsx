@@ -10,7 +10,16 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, useObservable, useEventObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    useEventObservable,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -149,8 +158,8 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         </Button>
                         {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
-                    <div className="card mt-3">
-                        <div className="card-header">Details</div>
+                    <Card className="mt-3">
+                        <CardHeader>Details</CardHeader>
                         <table className="table mb-0">
                             <tbody>
                                 <tr>
@@ -195,10 +204,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
-                    <div className="card mt-1">
-                        <div className="card-header d-flex align-items-center justify-content-between">
+                    <Card className="mt-1">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
                             Licenses
                             {showGenerate ? (
                                 <Button onClick={toggleShowGenerate} variant="secondary">
@@ -209,14 +218,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                     <AddIcon className="icon-inline" /> Generate new license manually
                                 </Button>
                             )}
-                        </div>
+                        </CardHeader>
                         {showGenerate && (
-                            <div className="card-body">
+                            <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
                                     onGenerate={onLicenseUpdate}
                                 />
-                            </div>
+                            </CardBody>
                         )}
                         <FilteredSiteAdminProductLicenseConnection
                             className="list-group list-group-flush"
@@ -232,11 +241,11 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                             history={history}
                             location={location}
                         />
-                    </div>
-                    <div className="card mt-3">
-                        <div className="card-header">History</div>
+                    </Card>
+                    <Card className="mt-3">
+                        <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </div>
+                    </Card>
                 </>
             )}
         </div>

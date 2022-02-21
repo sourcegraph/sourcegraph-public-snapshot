@@ -14,3 +14,9 @@
         }
     }
 }
+
+.menu-list {
+    [data-reach-menu-item]:active {
+        --text-muted: var(--white);
+    }
+}

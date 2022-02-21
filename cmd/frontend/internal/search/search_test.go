@@ -143,7 +143,7 @@ func TestDisplayLimit(t *testing.T) {
 				pingTickerInterval:  1 * time.Millisecond,
 				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
 					mock.c = args.Stream
-					q, err := query.Parse(c.queryString, query.Literal)
+					q, err := query.Parse(c.queryString, query.SearchTypeLiteral)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -231,8 +231,7 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 		return nil, ctx.Err()
 	case <-h.done:
 		return &graphqlbackend.SearchResultsResolver{
-			UserSettings:  &schema.Settings{},
-			SearchResults: &graphqlbackend.SearchResults{},
+			UserSettings: &schema.Settings{},
 		}, nil
 	}
 }

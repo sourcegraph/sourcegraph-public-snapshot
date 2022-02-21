@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestArchiveReader(t *testing.T) {
-	repo := MakeGitRepository(t,
+func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
+	repoName := MakeGitRepository(t,
 		"echo abcd > file1",
 		"git add file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -20,21 +21,20 @@ func TestArchiveReader(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		return authz.None, nil
+	checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		// sub-repo permissions are enabled only for repo with repoID = 1
+		return id == 1, nil
 	})
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
+	repo := &types.Repo{Name: repoName, ID: 1}
 
-	if _, err := ArchiveReader(ctx, checker, repo, ArchiveFormatZip, commitID, "."); err == nil {
-		t.Error("Error should be thrown because ArchiveReader invoked by user on a repo with sub-repo permissions")
+	if _, err := ArchiveReader(context.Background(), checker, repo, ArchiveFormatZip, commitID, "."); err == nil {
+		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
 }
 
-func TestArchiveReaderNotUserRequest(t *testing.T) {
-	repo := MakeGitRepository(t,
+func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
+	repoName := MakeGitRepository(t,
 		"echo abcd > file1",
 		"git add file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -45,13 +45,16 @@ func TestArchiveReaderNotUserRequest(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		return authz.None, nil
+	checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		// sub-repo permissions are not present for repo with repoID = 1
+		return id != 1, nil
 	})
+
+	repo := &types.Repo{Name: repoName, ID: 1}
 
 	readCloser, err := ArchiveReader(context.Background(), checker, repo, ArchiveFormatZip, commitID, ".")
 	if err != nil {
-		t.Error("Error should be thrown because ArchiveReader invoked by user on a repo with sub-repo permissions")
+		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
 	}
 	err = readCloser.Close()
 	if err != nil {

@@ -14,7 +14,14 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { FeedbackBadge, LoadingSpinner, PageHeader, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import {
+    FeedbackBadge,
+    LoadingSpinner,
+    PageHeader,
+    useEventObservable,
+    useObservable,
+    Alert,
+} from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -33,7 +40,7 @@ import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
 import styles from './SearchNotebookPage.module.scss'
 import { SearchNotebookPageHeaderActions } from './SearchNotebookPageHeaderActions'
-import { blockToGQLInput, GQLBlockToGQLInput } from './serialize'
+import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from './serialize'
 
 import { Block } from '.'
 
@@ -79,6 +86,11 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
 
+    const exportedFileName = useMemo(
+        () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
+        [notebookTitle]
+    )
+
     const notebookOrError = useObservable(
         useMemo(
             () =>
@@ -118,7 +130,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     useEffect(() => {
         // Update the notebook if there are some updates in the queue and the notebook has fully loaded (i.e. there is no update
         // currently in progress).
-        if (updateQueue.length > 0 && isNotebookLoaded(latestNotebook)) {
+        if (updateQueue.length > 0 && isNotebookLoaded(latestNotebook) && latestNotebook.namespace) {
             // Aggregate partial updates from the queue into a single update.
             const updateInput = updateQueue.reduce((input, value) => ({ ...input, ...value }))
             // Clear the queue for new updates and save the changes to the backend.
@@ -128,6 +140,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                 title: latestNotebook.title,
                 blocks: latestNotebook.blocks.map(GQLBlockToGQLInput),
                 public: latestNotebook.public,
+                namespace: latestNotebook.namespace.id,
                 // Apply updates.
                 ...updateInput,
             })
@@ -144,7 +157,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     ])
 
     const onUpdateVisibility = useCallback(
-        (isPublic: boolean) => setUpdateQueue(queue => queue.concat([{ public: isPublic }])),
+        (isPublic: boolean, namespace: string) =>
+            setUpdateQueue(queue => queue.concat([{ public: isPublic, namespace }])),
         [setUpdateQueue]
     )
 
@@ -153,14 +167,14 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
             <PageTitle title={notebookTitle || 'Notebook'} />
             <Page>
                 {isErrorLike(notebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {isErrorLike(updatedNotebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {notebookOrError === LOADING && (
                     <div className="d-flex justify-content-center">
@@ -182,22 +196,26 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                             title={notebookOrError.title}
                                             viewerCanManage={notebookOrError.viewerCanManage}
                                             onUpdateTitle={onUpdateTitle}
+                                            telemetryService={props.telemetryService}
                                         />
                                     ),
                                 },
                             ]}
                             actions={
                                 <SearchNotebookPageHeaderActions
+                                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                                     authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
+                                    namespace={notebookOrError.namespace}
                                     onUpdateVisibility={onUpdateVisibility}
                                     deleteNotebook={deleteNotebook}
                                     starsCount={notebookOrError.stars.totalCount}
                                     viewerHasStarred={notebookOrError.viewerHasStarred}
                                     createNotebookStar={createNotebookStar}
                                     deleteNotebookStar={deleteNotebookStar}
+                                    telemetryService={props.telemetryService}
                                 />
                             }
                         />
@@ -223,7 +241,15 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                         <CheckCircleIcon
                                             className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                         />
-                                        <span>Last updated&nbsp;</span>
+                                        <span>
+                                            Last updated{' '}
+                                            {latestNotebook.updater && (
+                                                <span>
+                                                    by <strong>@{latestNotebook.updater.username}</strong>
+                                                </span>
+                                            )}
+                                            &nbsp;
+                                        </span>
                                         <Timestamp date={latestNotebook.updatedAt} />
                                     </>
                                 )}
@@ -237,7 +263,9 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             onUpdateBlocks={onUpdateBlocks}
                             fetchRepository={fetchRepository}
                             resolveRevision={resolveRevision}
+                            exportedFileName={exportedFileName}
                         />
+                        <div className={styles.spacer} />
                     </>
                 )}
             </Page>

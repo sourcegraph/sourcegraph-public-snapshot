@@ -8,8 +8,9 @@ import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
+import { GlobalCoolCodeIntelProps } from './global/CoolCodeIntel'
 import type { LayoutProps } from './Layout'
-import type { ExtensionAlertProps } from './repo/RepoContainer'
+import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
 import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
@@ -37,7 +38,8 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        GlobalCoolCodeIntelProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -99,10 +101,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.NotebookCreate,
         render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <CreateNotebookPage {...props} />
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
             ) : (
-                <Redirect to={PageRoutes.Search} />
+                <Redirect to={PageRoutes.Notebooks} />
             ),
         exact: true,
     },

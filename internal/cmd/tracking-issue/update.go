@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // updateIssues will update the body of each of the given issues. Each issue update is performed
@@ -45,7 +45,7 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 		if err == nil {
 			err = e
 		} else {
-			err = multierror.Append(err, e)
+			err = errors.Append(err, e)
 		}
 	}
 

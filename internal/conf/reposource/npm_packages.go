@@ -6,16 +6,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
 	// Exported for [NOTE: npm-tarball-filename-workaround].
-	NPMScopeRegexString       = `(?P<scope>[0-9a-z_\\-]+)`
-	npmPackageNameRegexString = `(?P<name>[0-9a-z_\\-]+)`
+	NPMScopeRegexString = `(?P<scope>[0-9a-z_\\-]+)`
+	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
+	npmPackageNameRegexString = `(?P<name>[0-9a-z_\\-]+(\.[0-9a-z_\\-]+)*)`
 )
 
 var (

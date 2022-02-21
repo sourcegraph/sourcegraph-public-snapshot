@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/github"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PageInfo contains the paging information based on the Redux conventions.
@@ -1480,6 +1480,7 @@ var (
 		return url
 	}()
 
+	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 )
 
@@ -1570,7 +1571,7 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
-// RepoNotFoundError is when the requested GitHub organization is not found.
+// OrgNotFoundError is when the requested GitHub organization is not found.
 type OrgNotFoundError struct{}
 
 func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }

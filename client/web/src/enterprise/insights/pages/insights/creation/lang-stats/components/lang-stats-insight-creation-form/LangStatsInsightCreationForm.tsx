@@ -5,7 +5,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { VisibilityPicker } from '../../../../../../components/creation-ui-kit'
+import { CodeInsightDashboardsVisibility, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
@@ -25,6 +25,7 @@ export interface LangStatsInsightCreationFormProps {
     submitting: boolean
     className?: string
     isFormClearActive?: boolean
+    dashboardReferenceCount?: number
 
     title: useFieldAPI<LangStatsCreationFormFields['title']>
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
@@ -49,9 +50,10 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         threshold,
         visibility,
         subjects,
+        isFormClearActive,
+        dashboardReferenceCount,
         onCancel,
         onFormReset,
-        isFormClearActive,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -119,6 +121,10 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 />
             )}
 
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
+
             <hr className={styles.formSeparator} />
 
             <div className="d-flex flex-wrap align-items-center">
@@ -131,7 +137,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

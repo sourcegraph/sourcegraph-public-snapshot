@@ -3,11 +3,10 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

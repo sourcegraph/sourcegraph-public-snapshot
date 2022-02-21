@@ -16,6 +16,10 @@ const config: Meta = {
     ],
     parameters: {
         component: FeedbackText,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
     },
 }
 

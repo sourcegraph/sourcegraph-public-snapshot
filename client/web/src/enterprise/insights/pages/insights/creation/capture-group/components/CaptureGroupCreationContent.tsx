@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import React, { useCallback } from 'react'
 
-import styles from '../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
+import { styles } from '../../../../../components/creation-ui-kit'
 import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
@@ -12,8 +12,8 @@ import {
     repositoriesFieldValidator,
     requiredStepValueField,
 } from '../../search-insight/components/search-insight-creation-content/validators'
-import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
+import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
 import { CaptureGroupCreationLivePreview } from './CaptureGroupCreationLivePreview'
@@ -25,6 +25,7 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     step: 'months',
     stepValue: '2',
     allRepos: false,
+    dashboardReferenceCount: 0,
 }
 
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
@@ -48,6 +49,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         if (!value) {
             return queryRequiredValidator(value)
         }
+
         const validatedChecks = searchQueryValidator(value, value !== undefined)
         const allChecksPassed = Object.values(validatedChecks).every(Boolean)
 
@@ -157,6 +159,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 onFormReset={handleFormReset}
                 className={styles.contentForm}
                 allReposMode={allReposMode}
+                dashboardReferenceCount={initialValues.dashboardReferenceCount}
             />
 
             <CaptureGroupCreationLivePreview

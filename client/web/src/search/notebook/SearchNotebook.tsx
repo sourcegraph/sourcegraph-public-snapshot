@@ -1,4 +1,5 @@
 import { noop } from 'lodash'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -13,20 +14,21 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
+import { Notebook } from './notebook'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInit, BlockInput, Notebook } from '.'
+import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -42,14 +44,41 @@ export interface SearchNotebookProps
     authenticatedUser: AuthenticatedUser | null
     extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
     platformContext: Pick<PlatformContext, 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>
+    exportedFileName: string
+    isEmbedded?: boolean
 }
 
 const LOADING = 'LOADING' as const
+
+type BlockCounts = { [blockType in BlockType]: number }
+
+function countBlockTypes(blocks: Block[]): BlockCounts {
+    return blocks.reduce((aggregate, block) => ({ ...aggregate, [block.type]: aggregate[block.type] + 1 }), {
+        md: 0,
+        file: 0,
+        query: 0,
+    })
+}
+
+function downloadTextAsFile(text: string, fileName: string): void {
+    const blob = new Blob([text], { type: 'text/plain' })
+    const blobURL = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.style.display = 'none'
+    link.href = blobURL
+    link.download = fileName
+    document.body.append(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(blobURL)
+}
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
     extensionsController,
+    exportedFileName,
+    isEmbedded,
     ...props
 }) => {
     const notebook = useMemo(
@@ -71,8 +100,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             if (serialize) {
                 onSerializeBlocks(blocks)
             }
+            const blockCountsPerType = countBlockTypes(blocks)
+            props.telemetryService.log(
+                'SearchNotebookBlocksUpdated',
+                { blocksCount: blocks.length, blockCountsPerType },
+                { blocksCount: blocks.length, blockCountsPerType }
+            )
         },
-        [notebook, setBlocks, onSerializeBlocks]
+        [notebook, setBlocks, onSerializeBlocks, props.telemetryService]
     )
 
     // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
@@ -81,7 +116,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     const onRunBlock = useCallback(
         (id: string) => {
             notebook.runBlockById(id)
-            updateBlocks()
+            updateBlocks(false)
 
             props.telemetryService.log(
                 'SearchNotebookRunBlock',
@@ -98,7 +133,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                 click.pipe(
                     switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
                     tap(() => {
-                        updateBlocks()
+                        updateBlocks(false)
                         props.telemetryService.log('SearchNotebookRunAllBlocks')
                     })
                 ),
@@ -106,10 +141,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         )
     )
 
+    const exportNotebook = useCallback(() => {
+        const exportedMarkdown = notebook.exportToMarkdown(window.location.origin)
+        downloadTextAsFile(exportedMarkdown, exportedFileName)
+        props.telemetryService.log('SearchNotebookExportNotebook')
+    }, [notebook, exportedFileName, props.telemetryService])
+
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
             notebook.setBlockInputById(id, blockInput)
-            updateBlocks(false)
+            updateBlocks()
         },
         [notebook, updateBlocks]
     )
@@ -302,15 +343,28 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     return (
         <div className={styles.searchNotebook}>
             <div className="pb-1">
-                <button
-                    className="btn btn-primary mr-2 btn-sm"
-                    type="button"
+                <Button
+                    className="mr-2"
+                    variant="primary"
+                    size="sm"
                     onClick={runAllBlocks}
                     disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                 >
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                </button>
+                </Button>
+                {!isEmbedded && (
+                    <Button
+                        className="mr-2"
+                        variant="secondary"
+                        size="sm"
+                        onClick={exportNotebook}
+                        data-testid="export-notebook-markdown-button"
+                    >
+                        <DownloadIcon className="icon-inline mr-1" />
+                        <span>Export as Markdown</span>
+                    </Button>
+                )}
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>

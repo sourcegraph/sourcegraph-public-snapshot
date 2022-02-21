@@ -17,9 +17,9 @@ import { SearchNotebook } from './SearchNotebook'
 
 import { BlockInit } from '.'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebook', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/search/notebook/SearchNotebook', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({ chromatic: { disableSnapshots: false } })
 
 const blocks: BlockInit[] = [
     { id: '1', type: 'md', input: '# Markdown' },
@@ -61,6 +61,7 @@ add('default', () => (
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                exportedFileName="notebook.snb.md"
             />
         )}
     </WebStory>
@@ -88,6 +89,7 @@ add('default read-only', () => (
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                exportedFileName="notebook.snb.md"
             />
         )}
     </WebStory>

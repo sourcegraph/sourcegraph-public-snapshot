@@ -6,7 +6,7 @@ Code monitors are made up of two main elements: **Triggers** and **Actions**.
 
 ## Triggers
 
-A _trigger_ is an event which causes execution of an action. Currently, code monitoring support one kind of trigger: "When new search results are detected" for a particular search query. When creating a code monitor, users will be asked to specify a query as part of the trigger.
+A _trigger_ is an event which causes execution of an action. Currently, code monitoring supports one kind of trigger: "When new search results are detected" for a particular search query. When creating a code monitor, users will be asked to specify a query as part of the trigger.
 
 Sourcegraph will run the search query periodically, and when new results for the query are detected, a trigger event is executed. In response to the trigger event, any _actions_ attached to the code monitor will be executed.
 

@@ -18,14 +18,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -58,7 +60,8 @@ interface Props
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        GlobalCoolCodeIntelProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -95,7 +98,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 // Need to subtract 1 because IHighlightLineRange is 0-based but
                 // line information in the URL is 1-based.
                 lineRange: lineOrRange.line
-                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line + 1) - 1 }
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line) - 1 }
                     : null,
             }),
             [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
@@ -327,6 +330,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     resolveRevision={resolveRevision}
                     fetchRepository={fetchRepository}
                     showSearchContext={showSearchContext}
+                    exportedFileName={basename(blobInfoOrError.filePath)}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
@@ -334,12 +338,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
-                    <div className="alert alert-info">
+                    <Alert variant="info">
                         Syntax-highlighting this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
-                    </div>
+                    </Alert>
                 </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
@@ -356,6 +360,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     isLightTheme={isLightTheme}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    disableStatusBar={false}
+                    onTokenClick={props.onTokenClick}
+                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
                 />
             )}
         </>

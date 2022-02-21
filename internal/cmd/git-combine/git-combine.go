@@ -26,10 +26,14 @@ import (
 
 // Options are configurables for Combine.
 type Options struct {
-	// Limit is the maximum number of commits we import from each remote. The
-	// memory usage of Combine is based on the number of unseen commits per
-	// remote. Limit is useful to specify when importing a large new upstream.
+	// Limit is the maximum number of commits we import in total. Limit is
+	// useful to specify when creating a new combined repo.
 	Limit int
+
+	// LimitRemote is the maximum number of commits we import from each remote. The
+	// memory usage of Combine is based on the number of unseen commits per
+	// remote. LimitRemote is useful to specify when importing a large new upstream.
+	LimitRemote int
 
 	Logger *log.Logger
 }
@@ -39,10 +43,18 @@ func (o *Options) SetDefaults() {
 		o.Limit = math.MaxInt
 	}
 
+	if o.LimitRemote == 0 {
+		o.LimitRemote = o.Limit
+	}
+
 	if o.Logger == nil {
 		o.Logger = log.Default()
 	}
 }
+
+// how many entries to keep track of per repo when deciding if we have seen a
+// commit before.
+const recentRootTreesMaxEntries = 1000
 
 // Combine opens the git repository at path and transforms commits from all
 // non-origin remotes into commits onto HEAD.
@@ -56,7 +68,9 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	parentHash, initialRootTree, err := getHeadTree(r)
+	parentHash := getHeadHash(r)
+
+	recentRootTrees, err := getRecentRootTrees(r, recentRootTreesMaxEntries)
 	if err != nil {
 		return err
 	}
@@ -107,12 +121,9 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		until, ok := initialRootTree[remote]
-		if ok {
-			rootTree[remote] = until
-		}
+		seen := recentRootTrees[remote]
 
-		for i := 0; i < opt.Limit; i++ {
+		for i := 0; i < opt.LimitRemote; i++ {
 			commit, err := iter.Next()
 			if err == io.EOF {
 				break
@@ -120,7 +131,8 @@ func Combine(path string, opt Options) error {
 				return err
 			}
 
-			if commit.TreeHash == until {
+			if seen.Contains(commit.TreeHash) {
+				rootTree[remote] = commit.TreeHash
 				break
 			}
 
@@ -134,6 +146,17 @@ func Combine(path string, opt Options) error {
 	sort.Slice(commits, func(i, j int) bool {
 		return commits[i].Committer.When.Before(commits[j].Committer.When)
 	})
+
+	if len(commits) > opt.Limit {
+		// We only take the last Limit commits. But we want to ensure we are
+		// using the latest treehash for each dir, so we need to walk over the
+		// commits we are cutting out first.
+		cut := len(commits) - opt.Limit
+		for _, commit := range commits[:cut] {
+			rootTree[commit.dir] = commit.TreeHash
+		}
+		commits = commits[cut:]
+	}
 
 	for i, commit := range commits {
 		// This is the important line, "/dir" will now be the code (tree) for
@@ -200,29 +223,72 @@ func Combine(path string, opt Options) error {
 	return nil
 }
 
-func getHeadTree(r *git.Repository) (plumbing.Hash, map[string]plumbing.Hash, error) {
+// getHeadHash returns the hash for HEAD. If that fails plumbing.ZeroHash is
+// returned.
+func getHeadHash(r *git.Repository) plumbing.Hash {
 	head, err := r.Head()
 	if err != nil {
-		return plumbing.ZeroHash, map[string]plumbing.Hash{}, nil
+		return plumbing.ZeroHash
 	}
+	return head.Hash()
+}
 
-	commit, err := r.CommitObject(head.Hash())
+type hashSet map[plumbing.Hash]struct{}
+
+func (h hashSet) Add(k plumbing.Hash) {
+	h[k] = struct{}{}
+}
+
+func (h hashSet) Contains(k plumbing.Hash) bool {
+	if h == nil {
+		return false
+	}
+	_, ok := h[k]
+	return ok
+}
+
+func getRecentRootTrees(r *git.Repository, maxEntries int) (map[string]hashSet, error) {
+	dirs := map[string]hashSet{}
+
+	// Ensure HEAD exists so we fallback to empty behaviour on empty branch
+	// instead of error.
+	_, err := r.Head()
 	if err != nil {
-		return plumbing.ZeroHash, nil, err
+		return dirs, nil
 	}
 
-	tree, err := commit.Tree()
+	iter, err := r.Log(&git.LogOptions{})
 	if err != nil {
-		return plumbing.ZeroHash, nil, err
+		return nil, err
 	}
 
-	dirs := map[string]plumbing.Hash{}
-	for _, entry := range tree.Entries {
-		if entry.Mode == filemode.Dir {
-			dirs[entry.Name] = entry.Hash
+	for i := 0; i < maxEntries; i++ {
+		commit, err := iter.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tree, err := commit.Tree()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, entry := range tree.Entries {
+			if entry.Mode == filemode.Dir {
+				seen, ok := dirs[entry.Name]
+				if !ok {
+					seen = make(hashSet)
+					dirs[entry.Name] = seen
+				}
+				seen.Add(entry.Hash)
+			}
 		}
 	}
-	return commit.Hash, dirs, nil
+
+	return dirs, nil
 }
 
 func readmeObject(storer storer.EncodedObjectStorer) (plumbing.Hash, error) {
@@ -307,7 +373,21 @@ func sanitizeSignature(sig object.Signature) object.Signature {
 func sanitizeMessage(dir string, commit *object.Commit) string {
 	// There are lots of things that could link to other artificats in the
 	// commit message. So we play it safe and just remove the message.
-	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, commitTitle(commit), commit.Hash)
+	title := commitTitle(commit)
+
+	// vscode seems to often include URLs to issues and ping users in commit
+	// titles. I am guessing this is due to its tiny box for creating commit
+	// messages. This leads to github crosslinking to megarepo. Lets naively
+	// sanitize.
+	for _, bad := range []string{"@", "http://", "https://"} {
+		if i := strings.Index(title, bad); i >= 0 {
+			title = title[:i]
+		}
+	}
+
+	title = strings.TrimSpace(title)
+
+	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, title, commit.Hash)
 }
 
 func commitTitle(commit *object.Commit) string {
@@ -316,6 +396,21 @@ func commitTitle(commit *object.Commit) string {
 		title = title[:idx]
 	}
 	return strings.TrimSpace(title)
+}
+
+func hasRemote(path, remote string) (bool, error) {
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return false, err
+	}
+
+	conf, err := r.Config()
+	if err != nil {
+		return false, err
+	}
+
+	_, ok := conf.Remotes[remote]
+	return ok, nil
 }
 
 func getGitDir() (string, error) {
@@ -380,7 +475,11 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 			return nil
 		}
 
-		if err := runGit(dir, "push", "origin"); err != nil {
+		if hasOrigin, err := hasRemote(dir, "origin"); err != nil {
+			return err
+		} else if !hasOrigin {
+			opt.Logger.Printf("skipping push since remote origin is missing")
+		} else if err := runGit(dir, "push", "origin"); err != nil {
 			return err
 		}
 
@@ -394,12 +493,14 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
-	limit := flag.Int("limit", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	limit := flag.Int("limit", 0, "limits the number of commits imported in total. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
 
 	flag.Parse()
 
 	opt := Options{
-		Limit: *limit,
+		Limit:       *limit,
+		LimitRemote: *limitRemote,
 	}
 
 	gitDir, err := getGitDir()

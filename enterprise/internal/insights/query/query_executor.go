@@ -3,12 +3,11 @@ package query
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CaptureGroupExecutor struct {
@@ -53,7 +53,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository))
+		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, errors.Wrapf(err, "FirstEverCommit")
 		}

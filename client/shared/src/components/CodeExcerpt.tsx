@@ -7,15 +7,14 @@ import { of, combineLatest, Observable, Subject, Subscription, BehaviorSubject, 
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isDefined, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
+import { Repo } from '@sourcegraph/shared/src/util/url'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { ViewerId } from '../api/viewerTypes'
 import { HoverContext } from '../hover/HoverOverlay.types'
 import * as GQL from '../schema'
-import { highlightNode } from '../util/dom'
-import { Repo } from '../util/url'
 
 import styles from './CodeExcerpt.module.scss'
 

@@ -14,9 +14,9 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
-const { add } = storiesOf('search-ui/search/input/SearchContextMenu', module)
+const { add } = storiesOf('search-ui/input/SearchContextMenu', module)
     .addParameters({
-        chromatic: { viewports: [500] },
+        chromatic: { viewports: [500], disableSnapshot: false },
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/4Fy9rURbfF2bsl4BvYunUO/RFC-261-Search-Contexts?node-id=581%3A4754',

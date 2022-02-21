@@ -9,16 +9,14 @@ import classNames from 'classnames'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
-import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
-import { TextArea, Button } from '@sourcegraph/wildcard'
+import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
+import { TextArea, Button, ButtonGroup, Link, Select } from '@sourcegraph/wildcard'
+import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
-import { AlertsStory } from './AlertsStory'
-import { CardsStory } from './CardsStory'
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
@@ -32,6 +30,11 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'branded/Global styles',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config
@@ -52,6 +55,8 @@ Text.parameters = {
             'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
     },
 }
+
+type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const Code: Story = () => (
     <>
@@ -146,26 +151,30 @@ export const Layout: Story = () => (
         <h2>Spacing</h2>
         <p>
             Use margin <code>m-*</code> and padding <code>p-*</code> utilities to align with the{' '}
-            <a
-                href="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
+            <Link
+                to="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
                 target="_blank"
                 rel="noopener noreferrer"
             >
                 8pt grid
-            </a>
+            </Link>
             . When hand-writing CSS, use <code>rem</code> units in multiples of <code>0.25</code>.
         </p>
 
         <h2>One-dimensional layout</h2>
         <p>
             Use{' '}
-            <a href="https://css-tricks.com/snippets/css/a-guide-to-flexbox/" target="_blank" rel="noopener noreferrer">
+            <Link
+                to="https://css-tricks.com/snippets/css/a-guide-to-flexbox/"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
                 Flexbox
-            </a>{' '}
+            </Link>{' '}
             for one-dimensional layouts (single rows or columns, with optional wrapping). You can use{' '}
-            <a href="https://getbootstrap.com/docs/4.5/utilities/flex/" target="_blank" rel="noopener noreferrer">
+            <Link to="https://getbootstrap.com/docs/4.5/utilities/flex/" target="_blank" rel="noopener noreferrer">
                 utility classes
-            </a>{' '}
+            </Link>{' '}
             for simple flexbox layouts.
         </p>
 
@@ -204,7 +213,7 @@ export const Layout: Story = () => (
 
         <h2>Two-dimensional layout</h2>
         <p>
-            Use <a href="https://learncssgrid.com/">CSS Grid</a> for complex two-dimensional layouts.
+            Use <Link to="https://learncssgrid.com/">CSS Grid</Link> for complex two-dimensional layouts.
         </p>
         <div
             className="p-2 border overflow-hidden"
@@ -230,33 +239,15 @@ export const Layout: Story = () => (
     </>
 )
 
-export const Alerts = AlertsStory
-
-Alerts.parameters = {
-    design: [
-        {
-            type: 'figma',
-            name: 'Figma Light',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
-        },
-        {
-            type: 'figma',
-            name: 'Figma Dark',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
-        },
-    ],
-}
-
 export const ButtonGroups: Story = () => {
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
+    const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
     return (
         <>
             <h1>Button groups</h1>
             <p>
                 Group a series of buttons together on a single line with the button group.{' '}
-                <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
+                <Link to="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</Link>
             </p>
 
             <h2>Example</h2>
@@ -266,15 +257,15 @@ export const ButtonGroups: Story = () => {
                     used to group any other semantic or outline button variant.
                 </p>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button variant="secondary">Left</Button>
                         <Button variant="secondary">Middle</Button>
                         <Button variant="secondary">Right</Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-secondary</code>
                 </div>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button outline={true} variant="secondary">
                             Left
                         </Button>
@@ -284,11 +275,11 @@ export const ButtonGroups: Story = () => {
                         <Button outline={true} variant="secondary">
                             Right
                         </Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-outline-secondary</code>
                 </div>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button outline={true} variant="primary">
                             Left
                         </Button>
@@ -298,7 +289,7 @@ export const ButtonGroups: Story = () => {
                         <Button outline={true} variant="primary">
                             Right
                         </Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-outline-primary</code>
                 </div>
             </div>
@@ -308,19 +299,19 @@ export const ButtonGroups: Story = () => {
                 Just like buttons, button groups have <code>sm</code> and <code>lg</code> size variants.
             </p>
             <div className="mb-2">
-                {['btn-group-lg', '', 'btn-group-sm'].map(size => (
+                {buttonSizes.map(size => (
                     <div key={size} className="mb-2">
-                        <div className={classNames('btn-group', size)} role="group" aria-label="Sizing example">
-                            <Button outline={true} variant="primary">
+                        <ButtonGroup aria-label="Sizing example">
+                            <Button size={size} outline={true} variant="primary">
                                 Left
                             </Button>
-                            <Button outline={true} variant="primary">
+                            <Button size={size} outline={true} variant="primary">
                                 Middle
                             </Button>
-                            <Button outline={true} variant="primary">
+                            <Button size={size} outline={true} variant="primary">
                                 Right
                             </Button>
-                        </div>
+                        </ButtonGroup>
                     </div>
                 ))}
             </div>
@@ -330,7 +321,7 @@ export const ButtonGroups: Story = () => {
                 The <code>active</code> class can be used to craft toggles out of button groups.
             </p>
             <div className="mb-2">
-                <div className="btn-group" role="group" aria-label="Basic example">
+                <ButtonGroup aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
@@ -343,11 +334,11 @@ export const ButtonGroups: Story = () => {
                             {option}
                         </Button>
                     ))}
-                </div>{' '}
+                </ButtonGroup>{' '}
                 Example with <code>btn-outline-secondary</code>
             </div>
             <div className="mb-2">
-                <div className="btn-group" role="group" aria-label="Basic example">
+                <ButtonGroup aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
@@ -360,7 +351,7 @@ export const ButtonGroups: Story = () => {
                             {option}
                         </Button>
                     ))}
-                </div>{' '}
+                </ButtonGroup>{' '}
                 Example with <code>btn-outline-primary</code>
             </div>
         </>
@@ -385,7 +376,7 @@ export const InputGroups: Story = () => (
         <p>
             Easily extend form controls by adding text, buttons, or button groups on either side of textual inputs,
             custom selects, and custom file inputs.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/input-group/">Bootstrap documentation</a>
+            <Link to="https://getbootstrap.com/docs/4.5/components/input-group/">Bootstrap documentation</Link>
         </p>
 
         <h2>Example</h2>
@@ -409,9 +400,9 @@ export const Forms: Story = () => (
         <h1>Forms</h1>
         <p>
             Forms are validated using native HTML validation. Submit the below form with invalid input to try it out.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
+            <Link to="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
                 Bootstrap documentation
-            </a>
+            </Link>
         </p>
         <Form onSubmit={preventDefault}>
             <div className="form-group">
@@ -431,14 +422,13 @@ export const Forms: Story = () => (
                 <label htmlFor="example-input-password">Password</label>
                 <input type="password" className="form-control" id="example-input-password" />
             </div>
-            <div className="form-group">
-                <label htmlFor="example-example-select">Example select</label>
-                <select id="example-select" className="custom-select">
-                    <option>Option A</option>
-                    <option>Option B</option>
-                    <option>Option C</option>
-                </select>
-            </div>
+
+            <Select isCustomStyle={true} aria-label="Example select" label="Example select">
+                <option>Option A</option>
+                <option>Option B</option>
+                <option>Option C</option>
+            </Select>
+
             <div className="form-group">
                 <TextArea label="Example textarea" id="example-textarea" rows={3} />
             </div>
@@ -460,12 +450,16 @@ export const Forms: Story = () => (
                     <label htmlFor="disabledTextInput">Disabled input</label>
                     <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="disabledSelect">Disabled select menu</label>
-                    <select id="disabledSelect" className="custom-select">
-                        <option>Disabled select</option>
-                    </select>
-                </div>
+
+                <Select
+                    isCustomStyle={true}
+                    disabled={true}
+                    label="Disabled select menu"
+                    aria-label="Disabled select menu"
+                >
+                    <option>Disabled select</option>
+                </Select>
+
                 <div className="form-group">
                     <div className="form-check">
                         <input
@@ -495,9 +489,16 @@ export const Forms: Story = () => (
                 <div className="form-group">
                     <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
                     <TextArea size="small" className="mb-1" placeholder="Small textarea" />
-                    <select className="custom-select custom-select-sm mb-1">
+                    <Select
+                        isCustomStyle={true}
+                        selectSize="sm"
+                        className="mb-0"
+                        selectClassName="mb-1"
+                        aria-label=""
+                        id=""
+                    >
                         <option>Small select</option>
-                    </select>
+                    </Select>
                 </div>
             </fieldset>
         </div>
@@ -510,17 +511,6 @@ Forms.parameters = {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=30%3A24',
-    },
-}
-
-export const Cards = CardsStory
-
-Cards.parameters = {
-    design: {
-        name: 'Figma',
-        type: 'figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
     },
 }
 
@@ -597,13 +587,13 @@ export const Meter: Story = () => {
             <h1>Meter</h1>
             <p>
                 The HTML{' '}
-                <a
-                    href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                <Link
+                    to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     <code>{'<meter>'}</code>
-                </a>{' '}
+                </Link>{' '}
                 element represents either a scalar value within a known range or a fractional value.
             </p>
             <h2>Examples</h2>

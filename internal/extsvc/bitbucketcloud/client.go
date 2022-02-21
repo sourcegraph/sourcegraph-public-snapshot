@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
@@ -20,9 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
+// The metric generated here will be named as "src_bitbucket_cloud_requests_total".
+var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
 
 // These fields define the self-imposed Bitbucket rate limit (since Bitbucket Cloud does
 // not have a concept of rate limiting in HTTP response headers).

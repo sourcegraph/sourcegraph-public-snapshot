@@ -4,10 +4,11 @@ import differenceInDays from 'date-fns/differenceInDays'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
@@ -98,7 +99,8 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         <DismissibleAlert
                             key={motd}
                             partialStorageKey={`motd.${motd}`}
-                            className={classNames('alert-info', styles.alert)}
+                            variant="info"
+                            className={styles.alert}
                         >
                             <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
                         </DismissibleAlert>
@@ -107,13 +109,14 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     <DismissibleAlert
                         key="dev-web-server-alert"
                         partialStorageKey="dev-web-server-alert"
-                        className={classNames('alert-danger', styles.alert)}
+                        variant="danger"
+                        className={styles.alert}
                     >
                         <div>
                             <strong>Warning!</strong> This build uses data from the proxied API:{' '}
-                            <a target="__blank" href={process.env.SOURCEGRAPH_API_URL}>
+                            <Link target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
                                 {process.env.SOURCEGRAPH_API_URL}
-                            </a>
+                            </Link>
                         </div>
                         .
                     </DismissibleAlert>

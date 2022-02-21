@@ -1,14 +1,15 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 
-interface DeleteNotebookProps {
+interface DeleteNotebookModalProps extends TelemetryProps {
     notebookId: string
     isOpen: boolean
     toggleDeleteModal: () => void
@@ -17,12 +18,18 @@ interface DeleteNotebookProps {
 
 const LOADING = 'loading' as const
 
-export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> = ({
+export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookModalProps> = ({
     notebookId,
     deleteNotebook,
     isOpen,
     toggleDeleteModal,
+    telemetryService,
 }) => {
+    useEffect(() => {
+        if (isOpen) {
+            telemetryService.log('SearchNotebookDeleteModalOpened')
+        }
+    }, [isOpen, telemetryService])
     const deleteLabelId = 'deleteNotebookId'
     const history = useHistory()
 
@@ -30,6 +37,7 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
+                    tap(() => telemetryService.log('SearchNotebookDeleteButtonClicked')),
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
@@ -40,7 +48,7 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
                         )
                     )
                 ),
-            [deleteNotebook, history, notebookId]
+            [deleteNotebook, history, notebookId, telemetryService]
         )
     )
 
@@ -55,16 +63,16 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
+                    <Button className="mr-2" onClick={toggleDeleteModal} variant="secondary" outline={true}>
                         Cancel
-                    </button>
-                    <button type="button" className="btn btn-danger" onClick={onDelete}>
+                    </Button>
+                    <Button onClick={onDelete} variant="danger">
                         Yes, delete the notebook
-                    </button>
+                    </Button>
                     {isErrorLike(deleteCompletedOrError) && (
-                        <div className="alert alert-danger mt-2">
+                        <Alert className="mt-2" variant="danger">
                             Error deleting notebook: {deleteCompletedOrError.message}
-                        </div>
+                        </Alert>
                     )}
                 </div>
             )}

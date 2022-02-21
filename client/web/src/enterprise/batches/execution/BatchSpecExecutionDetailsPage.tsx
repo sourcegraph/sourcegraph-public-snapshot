@@ -12,7 +12,16 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, PageHeader, FeedbackBadge, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    PageHeader,
+    FeedbackBadge,
+    ButtonGroup,
+    Link,
+    CardBody,
+    Card,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -248,7 +257,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                 </>
             )}
             <span>
-                <div className="btn-group-vertical ml-2">
+                <ButtonGroup direction="vertical" className="ml-2">
                     {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
                         <Button
                             onClick={cancelExecution}
@@ -303,7 +312,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                                 Preview
                             </Button>
                         )}
-                </div>
+                </ButtonGroup>
                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
                 {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
             </span>
@@ -404,19 +413,19 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
 }) => {
     if (workspace === null) {
         return (
-            <div className="card w-100">
-                <div className="card-body">
+            <Card className="w-100">
+                <CardBody>
                     <h3 className="text-center my-3">Select a workspace to view details.</h3>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         )
     }
     return (
-        <div className="card w-100">
-            <div className="card-body">
+        <Card className="w-100">
+            <CardBody>
                 <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     )
 }
 

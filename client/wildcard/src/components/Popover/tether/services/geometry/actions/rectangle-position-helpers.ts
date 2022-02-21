@@ -18,10 +18,10 @@ export function getPositions(position: Position, flipping: Flipping): Position[]
 
 export function getRoundedElement(element: Rectangle): Rectangle {
     return createRectangle(
-        Math.floor(element.left),
-        Math.floor(element.top),
-        Math.floor(element.width),
-        Math.floor(element.height)
+        Math.ceil(element.left),
+        Math.ceil(element.top),
+        Math.ceil(element.width),
+        Math.ceil(element.height)
     )
 }
 
@@ -32,13 +32,9 @@ export function getRoundedElement(element: Rectangle): Rectangle {
  * @param element - constrained tooltip element
  * @param originalElement - original sized tooltip element
  */
-export function getElementBounds(
-    element: Rectangle,
-    originalElement: Rectangle,
-    elementConstraint: Rectangle
-): Rectangle | null {
+export function getElementBounds(element: Rectangle, originalElement: Rectangle): Rectangle | null {
     if (element.width < originalElement.width || element.height < originalElement.height) {
-        return elementConstraint
+        return element
     }
 
     return null

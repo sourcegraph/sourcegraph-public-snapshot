@@ -1,5 +1,7 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useHistory, useLocation } from 'react-router'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
@@ -13,19 +15,29 @@ import { fetchNotebooks as _fetchNotebooks } from '../backend'
 import { NotebookNode, NotebookNodeProps } from './NotebookNode'
 import styles from './SearchNotebooksList.module.scss'
 
-interface SearchNotebooksListProps {
+interface SearchNotebooksListProps extends TelemetryProps {
+    logEventName: string
     filters: FilteredConnectionFilter[]
     creatorUserID?: string
     starredByUserID?: string
+    namespace?: string
     fetchNotebooks: typeof _fetchNotebooks
 }
 
 export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListProps> = ({
+    logEventName,
     filters,
     creatorUserID,
     starredByUserID,
+    namespace,
     fetchNotebooks,
+    telemetryService,
 }) => {
+    useEffect(() => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`), [
+        logEventName,
+        telemetryService,
+    ])
+
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
             const { orderBy, descending } = args as {
@@ -39,11 +51,12 @@ export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListPro
                 after: args.after ?? undefined,
                 creatorUserID,
                 starredByUserID,
+                namespace,
                 orderBy,
                 descending,
             })
         },
-        [creatorUserID, starredByUserID, fetchNotebooks]
+        [creatorUserID, starredByUserID, namespace, fetchNotebooks]
     )
 
     const history = useHistory()

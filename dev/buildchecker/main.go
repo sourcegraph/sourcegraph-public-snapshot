@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/internal/team"
+	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Flags denotes shared Buildchecker flags.
@@ -34,7 +34,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
-	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 40, "duration of a run required to be considered a failure (minutes)")
+	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
 }
 
@@ -167,14 +167,9 @@ type cmdHistoryFlags struct {
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
-	// Buildkite client
-	config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
-	if err != nil {
-		log.Fatal("buildkite.NewTokenConfig: ", err)
-	}
-	bkc := buildkite.NewClient(config.Client())
 
 	// Time range
+	var err error
 	createdFrom := time.Now().Add(-24 * time.Hour)
 	if historyFlags.createdFromDate != "" {
 		createdFrom, err = time.Parse("2006-01-02", historyFlags.createdFromDate)
@@ -195,6 +190,15 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	var builds []buildkite.Build
 	if historyFlags.loadFrom == "" {
 		log.Println("fetching builds from Buildkite")
+
+		// Buildkite client
+		config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
+		if err != nil {
+			log.Fatal("buildkite.NewTokenConfig: ", err)
+		}
+		bkc := buildkite.NewClient(config.Client())
+
+		// Paginate results
 		var nextPage = 1
 		var pages int
 		for nextPage > 0 {

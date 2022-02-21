@@ -2,11 +2,10 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { asError } from '@sourcegraph/common'
-import { Badge } from '@sourcegraph/wildcard'
+import { asError, renderMarkdown } from '@sourcegraph/common'
+import { Alert, AlertProps, Badge } from '@sourcegraph/wildcard'
 
 import { HoverMerged } from '../../../api/client/types/hover'
-import { renderMarkdown } from '../../../util/markdown'
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
 import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
 
@@ -22,6 +21,7 @@ interface HoverOverlayContentProps {
      */
     badgeClassName?: string
     errorAlertClassName?: string
+    errorAlertVariant?: AlertProps['variant']
     contentClassName?: string
 }
 
@@ -34,7 +34,7 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, errorAlertVariant, badgeClassName } = props
 
     if (content.kind !== 'markdown') {
         return (
@@ -51,9 +51,12 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
 
     if (markdownOrError instanceof Error) {
         return (
-            <div className={classNames(hoverOverlayStyle.hoverError, errorAlertClassName)}>
+            <Alert
+                className={classNames(hoverOverlayStyle.hoverError, errorAlertClassName)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(markdownOrError.message)}
-            </div>
+            </Alert>
         )
     }
 

@@ -1,8 +1,11 @@
 import { Meta, Story } from '@storybook/react'
+import { noop } from 'lodash'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { Link } from '../Link'
 
 import { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from '.'
 
@@ -17,6 +20,10 @@ const config: Meta = {
 
     parameters: {
         component: Menu,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
     },
 }
 
@@ -32,9 +39,15 @@ export const MenuExample: Story = () => (
             <MenuHeader>This is a menu</MenuHeader>
             <MenuItem onSelect={() => alert('Clicked!')}>Click me</MenuItem>
             <MenuItem onSelect={() => alert('Clicked!')}>Alternative action</MenuItem>
+            <MenuItem onSelect={noop} disabled={true}>
+                I'm disabled
+            </MenuItem>
             <MenuDivider />
-            <MenuLink as="a" href="https://www.example.com">
+            <MenuLink as={Link} to="https://www.example.com">
                 Go somewhere
+            </MenuLink>
+            <MenuLink disabled={true} as={Link} to="https://www.example.com">
+                Disabled link
             </MenuLink>
         </MenuList>
     </Menu>

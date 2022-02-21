@@ -295,5 +295,10 @@ Policies.args = {
             canSignOut: true,
         },
         tosAccepted: true,
+        searchable: true,
     },
+}
+
+Policies.parameters = {
+    chromatic: { disableSnapshots: false },
 }

@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Sourcer converts the given ExternalService to a Source whose yielded Repos
@@ -67,7 +65,7 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
-		return nil, fmt.Errorf("cannot create source for kind %q", svc.Kind)
+		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
 }
 
@@ -161,14 +159,11 @@ type SourceError struct {
 }
 
 func (s *SourceError) Error() string {
-	var e *multierror.Error
+	var e errors.MultiError
 	if errors.As(s.Err, &e) {
 		// Create new Error with custom formatter. Do not mutate otherwise can
 		// race with other callers of Error.
-		return (&multierror.Error{
-			Errors:      e.Errors,
-			ErrorFormat: sourceErrorFormatFunc,
-		}).Error()
+		return sourceErrorFormatFunc(e.Errors())
 	}
 	return s.Err.Error()
 }
@@ -206,18 +201,18 @@ func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 
 	var (
 		repos []*types.Repo
-		errs  *multierror.Error
+		errs  error
 	)
 
 	for res := range results {
 		if res.Err != nil {
 			for _, extSvc := range res.Source.ExternalServices() {
-				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
 		}
 		repos = append(repos, res.Repo)
 	}
 
-	return repos, errs.ErrorOrNil()
+	return repos, errs
 }

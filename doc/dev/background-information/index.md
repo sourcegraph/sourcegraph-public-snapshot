@@ -47,10 +47,6 @@
 - [Bash](languages/bash.md)
 - [Terraform](languages/terraform.md)
 
-### [Extended guides](languages/extended_guide/index.md)
-
-- [Terraform Extended Guide](languages/extended_guide/terraform.md)
-
 ## [SQL](sql/index.md)
 
 - [Migrations](sql/migrations.md)

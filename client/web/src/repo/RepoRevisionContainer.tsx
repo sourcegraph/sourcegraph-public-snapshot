@@ -31,6 +31,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -38,6 +39,7 @@ import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
@@ -68,7 +70,9 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        ExtensionAlertProps,
+        FeatureFlagProps,
+        GlobalCoolCodeIntelProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -104,7 +108,9 @@ interface RepoRevisionContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        ExtensionAlertProps,
+        GlobalCoolCodeIntelProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]

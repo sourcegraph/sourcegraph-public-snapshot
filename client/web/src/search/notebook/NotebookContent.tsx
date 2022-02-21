@@ -15,7 +15,7 @@ import { SearchNotebook } from './SearchNotebook'
 
 import { Block, BlockInit } from '.'
 
-interface NotebookContentProps
+export interface NotebookContentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
@@ -26,6 +26,8 @@ interface NotebookContentProps
     isMacPlatform: boolean
     viewerCanManage: boolean
     blocks: NotebookBlock[]
+    exportedFileName: string
+    isEmbedded?: boolean
     onUpdateBlocks: (blocks: Block[]) => void
     fetchRepository: typeof fetchRepository
     resolveRevision: typeof resolveRevision

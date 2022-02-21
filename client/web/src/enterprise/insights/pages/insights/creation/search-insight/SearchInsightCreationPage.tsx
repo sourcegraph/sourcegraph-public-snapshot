@@ -3,13 +3,14 @@ import React, { useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     SearchInsightCreationContent,
@@ -77,8 +78,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(
                     'InsightAddition',
-                    { insightType: 'searchInsights' },
-                    { insightType: 'searchInsights' }
+                    { insightType: CodeInsightTrackType.SearchBasedInsight },
+                    { insightType: CodeInsightTrackType.SearchBasedInsight }
                 )
 
                 // Clear initial values if user successfully created search insight
@@ -126,9 +127,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                             <p className="text-muted">
                                 Search-based code insights analyze your code based on any search query.{' '}
-                                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                                <Link to="/help/code_insights" target="_blank" rel="noopener">
                                     Learn more.
-                                </a>
+                                </Link>
                             </p>
                         </header>
 

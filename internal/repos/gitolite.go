@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/semaphore"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,7 +28,7 @@ type GitoliteSource struct {
 	conn *schema.GitoliteConnection
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
-	cli     *gitserver.Client
+	cli     *gitserver.ClientImplementor
 	exclude excludeFunc
 }
 

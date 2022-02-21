@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
+	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
@@ -27,8 +28,12 @@ var (
 		},
 		Subcommands: []*ffcli.Command{opsUpdateImagesCommand},
 	}
-	opsUpdateImagesFlagSet = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
-	opsUpdateImagesCommand = &ffcli.Command{
+	opsUpdateImagesFlagSet                       = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
+	opsUpdateImagesDeploymentKindFlag            = opsUpdateImagesFlagSet.String("kind", string(images.DeploymentTypeK8S), "The kind of deployment (one of 'k8s', 'helm')")
+	opsUpdateImagesContainerRegistryUsernameFlag = opsUpdateImagesFlagSet.String("cr-username", "", "Username for the container registry")
+	opsUpdateImagesContainerRegistryPasswordFlag = opsUpdateImagesFlagSet.String("cr-password", "", "Password or access token for the container registry")
+	opsUpdateImagesPinTagFlag                    = opsUpdateImagesFlagSet.String("pin-tag", "", "Pin all images to a specific sourcegraph tag (e.g. 3.36.2, insiders)")
+	opsUpdateImagesCommand                       = &ffcli.Command{
 		Name:        "update-images",
 		ShortUsage:  "sg ops update-images [flags] <dir>",
 		ShortHelp:   "Updates images in given directory to latest published image",
@@ -63,5 +68,26 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
-	return images.Parse(args[0])
+	var dockerCredentials *credentials.Credentials
+	var err error
+	if *opsUpdateImagesContainerRegistryUsernameFlag == "" || *opsUpdateImagesContainerRegistryPasswordFlag == "" {
+		dockerCredentials, err = docker.GetCredentialsFromStore("https://index.docker.io/v1/")
+		if err != nil {
+			// We do not want any error handling here, just fallback to anonymous requests
+			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
+			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
+			dockerCredentials = &credentials.Credentials{ServerURL: "https://index.docker.io/v1/", Username: "", Secret: ""}
+		} else {
+			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			opsUpdateImagesContainerRegistryUsernameFlag = &dockerCredentials.Username
+			opsUpdateImagesContainerRegistryPasswordFlag = &dockerCredentials.Secret
+		}
+	}
+
+	if *opsUpdateImagesPinTagFlag == "" {
+		writeWarningLinef("No pin tag is provided.")
+		writeWarningLinef("Falling back to the latest deveopment build available.")
+	}
+
+	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(*opsUpdateImagesDeploymentKindFlag), *opsUpdateImagesPinTagFlag)
 }

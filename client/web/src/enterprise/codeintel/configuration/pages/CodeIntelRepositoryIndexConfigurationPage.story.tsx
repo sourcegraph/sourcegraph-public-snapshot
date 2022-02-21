@@ -32,3 +32,7 @@ RepositoryPage.args = {
     ...defaults,
     repo: { id: '42' },
 }
+RepositoryPage.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
+}

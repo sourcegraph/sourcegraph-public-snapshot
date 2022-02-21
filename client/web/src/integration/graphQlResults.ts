@@ -30,6 +30,7 @@ export const commonWebGraphQlResults: Partial<
             organizations: { nodes: [] },
             session: { canSignOut: true },
             viewerCanAdminister: true,
+            searchable: true,
         },
     }),
     ViewerSettings: () => ({
@@ -228,6 +229,9 @@ export const commonWebGraphQlResults: Partial<
     }),
     OrgFeatureFlagValue: () => ({
         organizationFeatureFlagValue: false,
+    }),
+    OrgFeatureFlagOverrides: () => ({
+        organizationFeatureFlagOverrides: [],
     }),
     GetTemporarySettings: () => ({
         temporarySettings: {

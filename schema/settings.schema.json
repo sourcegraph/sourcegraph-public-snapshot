@@ -38,6 +38,15 @@
             "pointer": true
           }
         },
+        "codeInsightsLandingPage": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
@@ -55,7 +64,7 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -63,7 +72,7 @@
           }
         },
         "searchContextsQuery": {
-          "description": "Enables query based search contexts",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -216,6 +225,22 @@
         },
         "codeMonitoringWebHooks": {
           "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "coolCodeIntel": {
+          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showCodeMonitoringLogs": {
+          "description": "Shows code monitoring logs tab.",
           "type": "boolean",
           "default": false,
           "!go": {

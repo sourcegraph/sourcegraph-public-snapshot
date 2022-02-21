@@ -9,7 +9,7 @@ import { Observable, of, ReplaySubject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, property } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
@@ -26,7 +26,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
@@ -209,6 +208,17 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     // Dispose hoverifier or change/unmount.
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
+    // Focus the query input when a new query block is added (the input is empty).
+    useEffect(() => {
+        if (editor && input.length === 0) {
+            editor.focus()
+        }
+        // Only run this hook for the initial input.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor])
+
+    const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
+
     return (
         <div
             className={classNames('block-wrapper', blockStyles.blockWrapper)}
@@ -280,6 +290,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             platformContext={props.platformContext}
                             extensionsController={props.extensionsController}
                             hoverifier={hoverifier}
+                            openMatchesInNewTab={true}
                         />
                     </div>
                 )}
@@ -294,6 +305,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     location={location}
                     telemetryService={telemetryService}
                     isLightTheme={isLightTheme}
+                    coolCodeIntelEnabled={!!coolCodeIntelEnabled}
                 />
             )}
             {(isSelected || !isOtherBlockSelected) && (

@@ -27,7 +27,18 @@ import {
     findPositionsFromEvents,
     createHoverifier,
 } from '@sourcegraph/codeintellify'
-import { asError, isErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    isErrorLike,
+    isDefined,
+    property,
+    observeResize,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -44,13 +55,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { observeResize } from '@sourcegraph/shared/src/util/dom'
-import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
-    LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
     ModeSpec,
     UIPositionSpec,
     RepoSpec,
@@ -58,15 +65,13 @@ import {
     RevisionSpec,
     toURIWithPath,
     parseQueryAndHash,
-    toPositionOrRangeQueryParameter,
-    addLineRangeQueryParameter,
-    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'
@@ -77,19 +82,23 @@ import { LineDecorator } from './LineDecorator'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-interface BlobProps
+export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        GlobalCoolCodeIntelProps {
     location: H.Location
     history: H.History
     className: string
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
+
+    // Experimental reference panel
+    disableStatusBar: boolean
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -630,15 +639,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         })
                         .toArray()}
             </div>
-            <StatusBar
-                getStatusBarItems={getStatusBarItems}
-                extensionsController={extensionsController}
-                uri={toURIWithPath(blobInfo)}
-                location={location}
-                className={styles.blobStatusBarBody}
-                statusBarRef={nextStatusBarElement}
-                hideWhileInitializing={true}
-            />
+            {!props.disableStatusBar && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    extensionsController={extensionsController}
+                    uri={toURIWithPath(blobInfo)}
+                    location={location}
+                    className={styles.blobStatusBarBody}
+                    statusBarRef={nextStatusBarElement}
+                    hideWhileInitializing={true}
+                />
+            )}
         </>
     )
 }

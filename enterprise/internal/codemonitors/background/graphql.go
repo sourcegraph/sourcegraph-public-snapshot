@@ -8,24 +8,50 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type graphQLQuery struct {
+	Query     string        `json:"query"`
+	Variables gqlSearchVars `json:"variables"`
+}
+
+type gqlSearchVars struct {
 	Query     string      `json:"query"`
-	Variables interface{} `json:"variables"`
+	MonitorID *graphql.ID `json:"monitorID"`
+}
+
+type gqlSearchResponse struct {
+	Data struct {
+		CodeMonitorSearch struct {
+			Results searchResults `json:"results"`
+		} `json:"codeMonitorSearch"`
+	} `json:"data"`
+	Errors []gqlerrors.FormattedError
+}
+
+type searchResults struct {
+	ApproximateResultCount string                      `json:"approximateResultCount"`
+	Cloning                []api.Repo                  `json:"cloning,omitempty"`
+	Timedout               []api.Repo                  `json:"timedout,omitempty"`
+	Results                cmtypes.CommitSearchResults `json:"results"`
 }
 
 const gqlSearchQuery = `query CodeMonitorSearch(
 	$query: String!,
+	$monitorID: ID,
 ) {
-	search(query: $query) {
+	codeMonitorSearch(query: $query, codeMonitorID: $monitorID) {
 		results {
 			approximateResultCount
 			limitHit
@@ -71,6 +97,12 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 							}
 							date
 						}
+						committer {
+							person {
+								displayName
+							}
+							date
+						}
 						message
 					}
 				}
@@ -87,97 +119,23 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 	}
 }`
 
-type gqlSearchVars struct {
-	Query string `json:"query"`
-}
+func search(ctx context.Context, query string, monitorID *int64) (_ *searchResults, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
+	defer func() {
+		span.LogFields(log.Error(err))
+		span.Finish()
+	}()
 
-type gqlSearchResponse struct {
-	Data struct {
-		Search struct {
-			Results struct {
-				ApproximateResultCount string
-				Cloning                []api.Repo
-				Timedout               []api.Repo
-				Results                commitSearchResults
-			} `json:"results"`
-		} `json:"search"`
-	} `json:"data"`
-	Errors []gqlerrors.FormattedError
-}
-
-type commitSearchResults []commitSearchResult
-
-func (c *commitSearchResults) UnmarshalJSON(b []byte) error {
-	var rawMessages []json.RawMessage
-	if err := json.Unmarshal(b, &rawMessages); err != nil {
-		return err
+	vars := gqlSearchVars{Query: query}
+	if monitorID != nil {
+		id := relay.MarshalID("CodeMonitorID", *monitorID)
+		vars.MonitorID = &id
 	}
 
-	var results []commitSearchResult
-	for _, rawMessage := range rawMessages {
-		var t struct {
-			Typename string `json:"__typename"`
-		}
-		if err := json.Unmarshal(rawMessage, &t); err != nil {
-			return err
-		}
-		if t.Typename != "CommitSearchResult" {
-			return errors.Errorf("expected result type %q, got %q", "CommitSearchResult", t.Typename)
-		}
-
-		var csr commitSearchResult
-		if err := json.Unmarshal(rawMessage, &csr); err != nil {
-			return err
-		}
-
-		results = append(results, csr)
-	}
-	*c = results
-	return nil
-}
-
-type commitSearchResult struct {
-	Refs           []ref              `json:"refs"`
-	SourceRefs     []ref              `json:"sourceRefs"`
-	MessagePreview *highlightedString `json:"messagePreview"`
-	DiffPreview    *highlightedString `json:"diffPreview"`
-	Commit         commit             `json:"commit"`
-}
-
-type ref struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
-	Prefix      string `json:"prefix"`
-}
-
-type highlightedString struct {
-	Value      string `json:"value"`
-	Highlights []struct {
-		Line      int `json:"line"`
-		Character int `json:"character"`
-		Length    int `json:"length"`
-	} `json:"highlights"`
-}
-
-type commit struct {
-	Repository struct {
-		Name string `json:"name"`
-	} `json:"repository"`
-	Oid     string `json:"oid"`
-	Message string `json:"message"`
-	Author  struct {
-		Person struct {
-			DisplayName string `json:"displayName"`
-		} `json:"person"`
-		Date string `json:"date"`
-	} `json:"author"`
-}
-
-func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse, error) {
 	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+	err = json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
-		Variables: gqlSearchVars{Query: query},
+		Variables: vars,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "Encode")
@@ -194,24 +152,32 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if span != nil {
+		carrier := opentracing.HTTPHeadersCarrier(req.Header)
+		span.Tracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier,
+		)
+	}
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
 	defer resp.Body.Close()
 
-	var res *gqlSearchResponse
+	var res gqlSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "Decode")
 	}
 	if len(res.Errors) > 0 {
 		var combined error
 		for _, err := range res.Errors {
-			combined = multierror.Append(combined, err)
+			combined = errors.Append(combined, err)
 		}
 		return nil, combined
 	}
-	return res, nil
+	return &res.Data.CodeMonitorSearch.Results, nil
 }
 
 func gqlURL(queryName string) (string, error) {
@@ -225,8 +191,8 @@ func gqlURL(queryName string) (string, error) {
 }
 
 // extractTime extracts the time from the given search result.
-func extractTime(result commitSearchResult) (time.Time, error) {
+func extractTime(result cmtypes.CommitSearchResult) (time.Time, error) {
 	// This relies on the date format that our API returns. It was previously broken
 	// and should be checked first in case date extraction stops working.
-	return time.Parse(time.RFC3339, result.Commit.Author.Date)
+	return time.Parse(time.RFC3339, result.Commit.Committer.Date)
 }

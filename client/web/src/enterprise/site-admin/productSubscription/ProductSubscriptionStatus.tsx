@@ -4,11 +4,10 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount } from '../../../productSubscription/helpers'
@@ -110,7 +109,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     ) : null
                 }
                 footer={
-                    <div className="card-footer d-flex align-items-center justify-content-between">
+                    <CardFooter className="d-flex align-items-center justify-content-between">
                         {license ? (
                             <>
                                 <div>
@@ -118,16 +117,15 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                     / {numberWithCommas(license.userCount - currentUserCount)} remaining (
                                     {numberWithCommas(actualUserCount)} maximum ever used)
                                 </div>
-                                <Button
-                                    href="https://about.sourcegraph.com/pricing"
+                                <ButtonLink
+                                    to="https://about.sourcegraph.com/pricing"
                                     target="_blank"
                                     rel="noopener"
                                     variant="primary"
                                     size="sm"
-                                    as="a"
                                 >
                                     Upgrade
-                                </Button>
+                                </ButtonLink>
                             </>
                         ) : (
                             <>
@@ -138,21 +136,20 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                         : ''}
                                 </div>
                                 <div className="text-nowrap flex-wrap-reverse">
-                                    <Button
-                                        href="http://about.sourcegraph.com/contact/sales"
+                                    <ButtonLink
+                                        to="http://about.sourcegraph.com/contact/sales"
                                         target="_blank"
                                         rel="noopener"
                                         data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
                                         variant="primary"
                                         size="sm"
-                                        as="a"
                                     >
                                         Get license
-                                    </Button>
+                                    </ButtonLink>
                                 </div>
                             </>
                         )}
-                    </div>
+                    </CardFooter>
                 }
                 className={className}
             />
@@ -165,15 +162,14 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     />
                 ) : (
                     license.userCount - actualUserCount < 0 && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                            <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license
-                            </a>{' '}
+                            </Link>{' '}
                             to true up and prevent a retroactive charge.
-                        </div>
+                        </Alert>
                     )
                 ))}
         </div>

@@ -9,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -99,16 +99,12 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                         </Form>
                     </div>
                 </div>
-                {isErrorLike(createdSubscription) && (
-                    <div className="alert alert-danger">{createdSubscription.message}</div>
-                )}
+                {isErrorLike(createdSubscription) && <Alert variant="danger">{createdSubscription.message}</Alert>}
                 {createdSubscription &&
                     createdSubscription !== 'saving' &&
                     !isErrorLike(createdSubscription) &&
                     !createdSubscription.urlForSiteAdmin && (
-                        <div className="alert alert-danger">
-                            No subscription URL available (only accessible to site admins)
-                        </div>
+                        <Alert variant="danger">No subscription URL available (only accessible to site admins)</Alert>
                     )}
             </li>
         </>

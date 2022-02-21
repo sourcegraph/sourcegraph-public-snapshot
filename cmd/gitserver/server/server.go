@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -925,6 +925,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		otlog.Bool("include_diff", args.IncludeDiff),
 		otlog.String("query", args.Query.String()),
 		otlog.Int("limit", args.Limit),
+		otlog.Bool("include_modified_files", args.IncludeModifiedFiles),
 	)
 
 	searchStart := time.Now()
@@ -965,6 +966,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
+		ev.AddField("include_modified_files", args.IncludeModifiedFiles)
 		ev.AddField("actor", act.UIDString())
 		ev.AddField("query", args.Query.String())
 		ev.AddField("limit", args.Limit)
@@ -1054,10 +1056,11 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 
 		searcher := &search.CommitSearcher{
-			RepoDir:     dir.Path(),
-			Revisions:   args.Revisions,
-			Query:       mt,
-			IncludeDiff: args.IncludeDiff,
+			RepoDir:              dir.Path(),
+			Revisions:            args.Revisions,
+			Query:                mt,
+			IncludeDiff:          args.IncludeDiff,
+			IncludeModifiedFiles: args.IncludeModifiedFiles,
 		}
 
 		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
@@ -1122,6 +1125,13 @@ func matchCount(cm *protocol.CommitMatch) int {
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
+	// 🚨 SECURITY: Only allow POST requests.
+	// See https://github.com/sourcegraph/security-issues/issues/213.
+	if strings.ToUpper(r.Method) != "POST" {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1129,6 +1139,11 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 	s.exec(w, r, &req)
 }
+
+var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_exec_blocked_command_received",
+	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
+})
 
 func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	// Flush writes more aggressively than standard net/http so that clients
@@ -1138,8 +1153,28 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		defer fw.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
-	defer cancel()
+	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
+	// See https://github.com/sourcegraph/security-issues/issues/213.
+	if !gitdomain.IsAllowedGitCmd(req.Args) {
+		blockedCommandExecutedCounter.Inc()
+
+		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
+
+		// Temporary feature flag to disable this feature in case their are any regressions.
+		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("invalid command"))
+			return
+		}
+	}
+
+	ctx := r.Context()
+
+	if !req.NoTimeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
+		defer cancel()
+	}
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit

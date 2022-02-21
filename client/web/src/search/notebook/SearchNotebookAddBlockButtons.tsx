@@ -38,7 +38,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
             </Button>
             <Button
                 className={classNames('ml-2', styles.addBlockButton)}
-                onClick={() => onAddBlock(index, { type: 'md', input: '*Enter markdown*' })}
+                onClick={() => onAddBlock(index, { type: 'md', input: '' })}
                 data-testid="add-md-button"
                 outline={true}
                 variant="secondary"

@@ -3,6 +3,7 @@ import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-r
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
+import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -18,12 +19,10 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
-import { TosConsentModal } from './auth/TosConsentModal'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -37,6 +36,12 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
+import {
+    CoolCodeIntel,
+    CoolClickedToken,
+    isCoolCodeIntelEnabled,
+    locationWithoutViewState,
+} from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -180,32 +185,45 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     useScrollToLocationHash(props.location)
 
-    const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
-    useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
-        props.authenticatedUser,
-    ])
-    const afterTosAccepted = useCallback(() => {
-        setTosAccepted(true)
-    }, [])
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
+    // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
+    // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
+    //     props.authenticatedUser,
+    // ])
+    // const afterTosAccepted = useCallback(() => {
+    //     setTosAccepted(true)
+    // }, [])
+
+    // Experimental reference panel
+    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
+    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
+        props.history.push(locationWithoutViewState(props.location))
+        onTokenClick(token)
+    }
+    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
     // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
     // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
-    if (!props.isSourcegraphDotCom && !tosAccepted) {
-        return <TosConsentModal afterTosAccepted={afterTosAccepted} />
-    }
+    // if (!props.isSourcegraphDotCom && !tosAccepted) {
+    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
+    // }
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
         ...themeProps,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
-        isMacPlatform,
+        isMacPlatform: isMacPlatform(),
+        // Experimental reference panel
+        coolCodeIntelEnabled,
+        onTokenClick: coolCodeIntelEnabled ? onTokenClickRemoveViewState : undefined,
     }
 
     return (
@@ -269,7 +287,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+            {!coolCodeIntelEnabled &&
+                parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
@@ -285,6 +304,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
+            {coolCodeIntelEnabled && (
+                <CoolCodeIntel
+                    {...props}
+                    {...themeProps}
+                    onClose={() => {
+                        onTokenClick(undefined)
+                    }}
+                    onTokenClick={onTokenClick}
+                    clickedToken={clickedToken}
+                />
+            )}
         </div>
     )
 }

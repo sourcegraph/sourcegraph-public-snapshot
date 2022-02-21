@@ -29,6 +29,11 @@ export interface FormSeriesProps {
     series?: EditableDataSeries[]
 
     /**
+     * Code Insight repositories field string value - repo1, repo2, ...
+     */
+    repositories: string
+
+    /**
      * Live change series handler while user typing in active series form.
      * Used by consumers to get latest values from series inputs and pass
      * them tp live preview chart.
@@ -68,6 +73,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         series = [],
         isBackendInsightEdit,
         showValidationErrorsOnMount,
+        repositories,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
@@ -87,9 +93,10 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         index={index + 1}
                         cancel={series.length > 1}
                         autofocus={series.length > 1}
+                        repositories={repositories}
                         onSubmit={onEditSeriesCommit}
                         onCancel={() => onEditSeriesCancel(line.id)}
-                        className={classNames('card card-body p-3', styles.formSeriesItem)}
+                        className={classNames('p-3', styles.formSeriesItem)}
                         onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
                     />
                 ) : (

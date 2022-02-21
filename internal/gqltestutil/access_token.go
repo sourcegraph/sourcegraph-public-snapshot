@@ -1,8 +1,6 @@
 package gqltestutil
 
-import (
-	"github.com/cockroachdb/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // CreateAccessToken creates a new access token with given note and scopes for the
 // authenticated user. It returns the new access token created.

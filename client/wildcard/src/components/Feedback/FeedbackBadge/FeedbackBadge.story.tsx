@@ -17,6 +17,10 @@ const config: Meta = {
     ],
     parameters: {
         component: FeedbackBadge,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
     },
 }
 

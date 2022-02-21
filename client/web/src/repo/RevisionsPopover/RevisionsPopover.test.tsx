@@ -1,22 +1,22 @@
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
 
 describe('RevisionsPopover', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
 
     const fetchMoreNodes = async (currentTab: HTMLElement) => {
         fireEvent.click(within(currentTab).getByText('Show more'))
         await waitForNextApolloResponse()
     }
 
-    const renderPopover = (props?: Partial<RevisionsPopoverProps>): RenderWithRouterResult =>
-        renderWithRouter(
+    const renderPopover = (props?: Partial<RevisionsPopoverProps>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(
             <MockedTestProvider mocks={MOCK_REQUESTS}>
                 <RevisionsPopover {...MOCK_PROPS} {...props} />
             </MockedTestProvider>,

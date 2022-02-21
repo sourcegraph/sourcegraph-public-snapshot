@@ -13,7 +13,18 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         url
         name
         namespace {
+            __typename
             id
+            ... on User {
+                username
+                displayName
+                viewerCanAdminister
+            }
+            ... on Org {
+                name
+                displayName
+                viewerCanAdminister
+            }
         }
         description
 
@@ -94,13 +105,13 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
 `
 
 export const WORKSPACES = gql`
-    query BatchSpecWorkspacesPreview($batchSpec: ID!, $first: Int, $after: String) {
+    query BatchSpecWorkspacesPreview($batchSpec: ID!, $first: Int, $after: String, $search: String) {
         node(id: $batchSpec) {
             __typename
             ... on BatchSpec {
                 workspaceResolution {
                     __typename
-                    workspaces(first: $first, after: $after) {
+                    workspaces(first: $first, after: $after, search: $search) {
                         __typename
                         totalCount
                         pageInfo {

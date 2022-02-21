@@ -177,6 +177,48 @@ func TestFilterActorPaths(t *testing.T) {
 	}
 }
 
+func TestCanReadAllPaths(t *testing.T) {
+	testPaths := []string{"file1", "file2", "file3"}
+	checker := NewMockSubRepoPermissionChecker()
+	ctx := context.Background()
+	a := &actor.Actor{
+		UID: 1,
+	}
+	ctx = actor.WithActor(ctx, a)
+	repo := api.RepoName("foo")
+
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
+		switch content.Path {
+		case "file1", "file2", "file3":
+			return Read, nil
+		default:
+			return None, nil
+		}
+	})
+
+	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("Should be allowed to read all paths")
+	}
+
+	// Add path we can't read
+	testPaths = append(testPaths, "file4")
+
+	ok, err = CanReadAllPaths(ctx, checker, repo, testPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("Should fail, not allowed to read file4")
+	}
+}
+
 func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{

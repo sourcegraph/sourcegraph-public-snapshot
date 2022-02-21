@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/singleflight"
@@ -22,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -507,7 +506,7 @@ func (s *Syncer) SyncExternalService(
 
 	modified := false
 	seen := make(map[api.RepoID]struct{})
-	errs := new(multierror.Error)
+	var errs error
 	fatal := func(err error) bool {
 		return errcode.IsUnauthorized(err) ||
 			errcode.IsForbidden(err) ||
@@ -521,7 +520,7 @@ func (s *Syncer) SyncExternalService(
 			s.log().Error("syncer: error from codehost",
 				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
 
-			multierror.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
+			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 
 			if fatal(err) {
 				// Delete all external service repos of this external service
@@ -540,7 +539,7 @@ func (s *Syncer) SyncExternalService(
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
-			multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 
 			// Stop syncing this external service as soon as we know repository limits for user or
 			// site level has been exceeded. We want to avoid generating spurious errors here
@@ -568,7 +567,7 @@ func (s *Syncer) SyncExternalService(
 	// Site-level external services can own lots of repos and are managed by site admins.
 	// It's preferable to have them fix any invalidated token manually rather than deleting the repos automatically.
 	deleted := 0
-	if err = errs.ErrorOrNil(); err == nil || (!svc.IsSiteOwned() && fatal(err)) {
+	if errs == nil || (!svc.IsSiteOwned() && fatal(errs)) {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
@@ -582,7 +581,7 @@ func (s *Syncer) SyncExternalService(
 			s.log().Warn("syncer: failed to delete some repos",
 				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", deletedErr, "deleted", deleted)
 
-			multierror.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
+			errs = errors.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
 		}
 
 		if deleted > 0 {
@@ -593,7 +592,7 @@ func (s *Syncer) SyncExternalService(
 
 	now := s.Now()
 	modified = modified || deleted > 0
-	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs.ErrorOrNil())
+	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
 
 	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	svc.NextSyncAt = now.Add(interval)
@@ -601,10 +600,10 @@ func (s *Syncer) SyncExternalService(
 
 	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
 	if err != nil {
-		multierror.Append(errs, errors.Wrap(err, "upserting external service"))
+		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (s *Syncer) userReposMaxPerSite() uint64 {

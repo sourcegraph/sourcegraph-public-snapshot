@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { useDebounce, Alert } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
@@ -16,6 +16,7 @@ import { SearchBasedBackendFilters } from '../../../../core/types/insight/search
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -131,10 +132,14 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         return
     }
 
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: getTrackingTypeByInsightType(insight.viewType),
+    })
+
     return (
         <View.Root
             {...otherProps}
-            data-testid={`insight-card.${insight.id}`}
             title={insight.title}
             innerRef={mergedInsightCardReference}
             actions={
@@ -161,9 +166,10 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                     </>
                 )
             }
-            className={classNames('be-insight-card', otherProps.className, {
-                [styles.cardWithFilters]: isFiltersOpen,
-            })}
+            data-testid={`insight-card.${insight.id}`}
+            className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
@@ -172,23 +178,23 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>
                     {error instanceof InsightInProcessError ? (
-                        <div className="alert alert-info m-0">{error.message}</div>
+                        <Alert className="m-0" variant="info">
+                            {error.message}
+                        </Alert>
                     ) : null}
                 </View.ErrorContent>
             ) : (
                 data && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
                         <View.Content
-                            telemetryService={telemetryService}
                             content={data.view.content}
-                            viewTrackingType={insight.viewType}
-                            containerClassName="be-insight-card"
                             alert={
                                 <BackendAlertOverlay
                                     hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
                                     isFetchingHistoricalData={data.view.isFetchingHistoricalData}
                                 />
                             }
+                            onDatumLinkClick={trackDatumClicks}
                         />
                     </LineChartSettingsContext.Provider>
                 )

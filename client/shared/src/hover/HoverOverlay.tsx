@@ -1,17 +1,17 @@
 import classNames from 'classnames'
 import React, { CSSProperties } from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
+import { Card } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
-import { sanitizeClass } from '../util/strings'
 
 import hoverOverlayStyle from './HoverOverlay.module.scss'
-import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
+import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import style from './HoverOverlayContents.module.scss'
@@ -34,7 +34,15 @@ export interface HoverOverlayClassProps {
 
     contentClassName?: string
 
+    /**
+     * Allows providing any custom className to style the notifications as desired.
+     */
     getAlertClassName?: GetAlertClassName
+
+    /**
+     * Allows providing a specific variant style for use in branded Sourcegraph applications.
+     */
+    getAlertVariant?: GetAlertVariant
 }
 
 export interface HoverOverlayProps
@@ -83,7 +91,10 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         actionItemPressedClassName,
         contentClassName,
 
+        actionItemStyleProps,
+
         getAlertClassName,
+        getAlertVariant,
         onAlertDismissed,
 
         useBrandedLogo,
@@ -96,12 +107,12 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
     }
 
     return (
-        <div
+        <Card
             // needed for dynamic styling
             data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
-            className={classNames(hoverOverlayStyle.hoverOverlay, className)}
+            className={classNames(hoverOverlayStyle.card, hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
         >
             <div
@@ -116,6 +127,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                     iconClassName={iconClassName}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
+                    errorAlertVariant={getAlertVariant?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
             </div>
@@ -128,6 +140,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         hoverAlerts={hoverOrError.alerts}
                         iconClassName={iconClassName}
                         getAlertClassName={getAlertClassName}
+                        getAlertVariant={getAlertVariant}
                         onAlertDismissed={onAlertDismissed}
                     />
                 )}
@@ -157,6 +170,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                                     telemetryService={telemetryService}
                                     extensionsController={extensionsController}
                                     location={location}
+                                    actionItemStyleProps={actionItemStyleProps}
                                 />
                             ))}
                         </div>
@@ -164,6 +178,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
-        </div>
+        </Card>
     )
 }

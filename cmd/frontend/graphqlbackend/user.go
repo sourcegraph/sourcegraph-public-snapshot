@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) User(
@@ -202,6 +202,10 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 
 func (r *UserResolver) TosAccepted(ctx context.Context) bool {
 	return r.user.TosAccepted
+}
+
+func (r *UserResolver) Searchable(ctx context.Context) bool {
+	return r.user.Searchable
 }
 
 type updateUserArgs struct {
@@ -411,6 +415,27 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 	}
 
 	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+
+	searchable := args.Searchable
+	update := database.UserUpdate{
+		Searchable: &searchable,
+	}
+
+	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 

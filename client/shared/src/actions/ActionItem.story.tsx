@@ -4,10 +4,10 @@ import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { subtypeOf } from '@sourcegraph/common'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { subtypeOf } from '../util/types'
 
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
 
@@ -39,12 +39,8 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-const decorator: DecoratorFn = story => (
-    <>
-        <div className="p-4">{story()}</div>
-        <style>{webStyles}</style>
-    </>
-)
+const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-4">{story()}</div>}</WebStory>
+
 const config: Meta = {
     title: 'shared/ActionItem',
     decorators: [decorator],
@@ -74,6 +70,12 @@ export const CommandAction: Story = () => (
 )
 
 CommandAction.storyName = 'Command action'
+CommandAction.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
 
 export const LinkAction: Story = () => (
     <ActionItem
