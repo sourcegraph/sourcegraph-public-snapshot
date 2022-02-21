@@ -44,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -56,10 +55,6 @@ type SearchResultsResolver struct {
 
 	// The time it took to compute all results.
 	elapsed time.Duration
-
-	// cache for user settings. Ideally this should be set just once in the code path
-	// by an upstream resolver
-	UserSettings *schema.Settings
 }
 
 func (c *SearchResultsResolver) LimitHit() bool {
@@ -529,11 +524,10 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 
 func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
 	return &SearchResultsResolver{
-		Matches:      matches,
-		SearchAlert:  alert,
-		Stats:        stats,
-		db:           r.db,
-		UserSettings: r.SearchInputs.UserSettings,
+		Matches:     matches,
+		SearchAlert: alert,
+		Stats:       stats,
+		db:          r.db,
 	}
 }
 
