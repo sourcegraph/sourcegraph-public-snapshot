@@ -56,7 +56,6 @@ import {
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
     HoverFields,
-    LocationConnectionFields,
     LocationFields,
     Maybe,
 } from '../graphql-operations'
@@ -249,6 +248,7 @@ interface ReferencesComponentProps extends CoolCodeIntelProps {
 }
 
 export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
+    console.log('SideRefernces. props.clickedtoken', props.clickedToken, 'activeLocation', props.activeLocation)
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
@@ -302,9 +302,13 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
     return (
         <SideReferencesLists
             {...props}
-            references={lsif.references}
-            definitions={lsif.definitions}
-            implementations={lsif.implementations}
+            references={lsif.references.nodes}
+            fetchMoreReferences={() => {}}
+            fetchMoreImplementations={() => {}}
+            referencesHasNextPage={false}
+            implementationsHasNextPage={false}
+            definitions={lsif.definitions.nodes}
+            implementations={lsif.implementations.nodes}
             hover={lsif.hover}
         />
     )
@@ -336,8 +340,11 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
         },
         options: {
             fetchPolicy: 'cache-first',
+            nextFetchPolicy: 'network-only',
         },
     })
+
+    console.log('SideReferencesWithHook. lsifData:', lsifData)
 
     // If we're loading and haven't received any data yet
     if (loading && !lsifData) {
@@ -372,93 +379,42 @@ export const SideReferencesWithHook: React.FunctionComponent<ReferencesComponent
     const hover = lsifData.hover
 
     return (
-        <>
-            <h3>Hover</h3>
-            {hover && (
-                <Markdown
-                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
-                />
-            )}
-            <h3>Definitions</h3>
-            <ol>
-                {definitions.map(definition => (
-                    <li key={definition.url}>
-                        <Link to={definition.url}>
-                            <code>{definition.url}</code>
-                        </Link>
-                    </li>
-                ))}
-            </ol>
-            <h3>References</h3>
-            <ol>
-                {references.map(reference => (
-                    <li key={reference.url}>
-                        <Link to={reference.url}>
-                            <code>{reference.url}</code>
-                        </Link>
-                    </li>
-                ))}
-            </ol>
-            <p>
-                {references.length} references.{' '}
-                {referencesHasNextPage && !loading && (
-                    <Button
-                        onClick={() => fetchMoreReferences()}
-                        size="sm"
-                        display="inline"
-                        variant="secondary"
-                        className="mx-auto"
-                    >
-                        Load more
-                    </Button>
-                )}
-                {referencesHasNextPage && loading && <LoadingSpinner inline={true} />}
-            </p>
-            <h3>Implementations</h3>
-            <ol>
-                {implementations.map(implementation => (
-                    <li key={implementation.url}>
-                        <Link to={implementation.url}>
-                            <code>{implementation.url}</code>
-                        </Link>
-                    </li>
-                ))}
-            </ol>
-            <p>
-                {implementations.length} implementations.{' '}
-                {implementationsHasNextPage && !loading && (
-                    <Button
-                        onClick={() => fetchMoreImplementations()}
-                        size="sm"
-                        display="inline"
-                        variant="secondary"
-                        className="mx-auto"
-                    >
-                        Load more
-                    </Button>
-                )}
-                {implementationsHasNextPage && loading && <LoadingSpinner inline={true} />}
-            </p>
-        </>
+        <SideReferencesLists
+            {...props}
+            definitions={definitions}
+            references={references}
+            hover={hover}
+            referencesHasNextPage={referencesHasNextPage}
+            implementationsHasNextPage={implementationsHasNextPage}
+            implementations={implementations}
+            fetchMoreImplementations={fetchMoreImplementations}
+            fetchMoreReferences={fetchMoreReferences}
+        />
     )
 }
 
-const SideReferencesLists: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-        references: LocationConnectionFields
-        definitions: Omit<LocationConnectionFields, 'pageInfo'>
-        implementations: LocationConnectionFields
-        hover: Maybe<HoverFields>
-    }
-> = props => {
-    const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
+interface SideReferencesListsProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+
+    definitions: LocationFields[]
+    hover: Maybe<HoverFields>
+
+    references: LocationFields[]
+    referencesHasNextPage: boolean
+    fetchMoreReferences: () => void
+
+    implementations: LocationFields[]
+    implementationsHasNextPage: boolean
+    fetchMoreImplementations: () => void
+}
+
+const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
+    const references = useMemo(() => props.references.map(buildLocation), [props.references])
+    const definitions = useMemo(() => props.definitions.map(buildLocation), [props.definitions])
+    const implementations = useMemo(() => props.implementations.map(buildLocation), [props.implementations])
 
     return (
         <>
