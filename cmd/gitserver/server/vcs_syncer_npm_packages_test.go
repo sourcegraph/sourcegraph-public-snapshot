@@ -61,7 +61,7 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	tgzFile, err := os.Open(tgzPath)
 	require.Nil(t, err)
 	defer func() { require.Nil(t, tgzFile.Close()) }()
-	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzFile)
+	err = s.commitTgz(ctx, &reposource.NPMDependency{}, extractPath, tgzFile)
 	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)

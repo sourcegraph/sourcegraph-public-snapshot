@@ -37,7 +37,7 @@ func TestParseNPMDependency(t *testing.T) {
 }
 
 func TestSortNPMDependencies(t *testing.T) {
-	dependencies := []NPMDependency{
+	dependencies := []*NPMDependency{
 		parseNPMDependencyOrPanic(t, "ac@1.2.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.2.0.Final"),
 		parseNPMDependencyOrPanic(t, "aa@1.2.0"),
@@ -49,7 +49,7 @@ func TestSortNPMDependencies(t *testing.T) {
 		parseNPMDependencyOrPanic(t, "ab@1.2.0-RC1"),
 		parseNPMDependencyOrPanic(t, "ab@1.1.0"),
 	}
-	expected := []NPMDependency{
+	expected := []*NPMDependency{
 		parseNPMDependencyOrPanic(t, "ac@1.2.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.11.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.2.0"),
@@ -65,10 +65,10 @@ func TestSortNPMDependencies(t *testing.T) {
 	assert.Equal(t, expected, dependencies)
 }
 
-func parseNPMDependencyOrPanic(t *testing.T, value string) NPMDependency {
+func parseNPMDependencyOrPanic(t *testing.T, value string) *NPMDependency {
 	dependency, err := ParseNPMDependency(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}
-	return *dependency
+	return dependency
 }
