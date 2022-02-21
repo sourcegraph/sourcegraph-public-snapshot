@@ -43,18 +43,26 @@ func TestSortDependencies(t *testing.T) {
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-RC1"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.1.0"),
 	}
-	expected := []*MavenDependency{
-		ParseMavenDependencyOrPanic(t, "a:c:1.2.0"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.11.0"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0.Final"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-RC11"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-RC1"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-M11"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-M1"),
-		ParseMavenDependencyOrPanic(t, "a:b:1.1.0"),
-		ParseMavenDependencyOrPanic(t, "a:a:1.2.0"),
-	}
+
 	SortDependencies(dependencies)
-	assert.Equal(t, expected, dependencies)
+
+	have := make([]string, 0, len(dependencies))
+	for _, dep := range dependencies {
+		have = append(have, dep.PackageManagerSyntax())
+	}
+
+	want := []string{
+		"a:c:1.2.0",
+		"a:b:1.11.0",
+		"a:b:1.2.0",
+		"a:b:1.2.0.Final",
+		"a:b:1.2.0-RC11",
+		"a:b:1.2.0-RC1",
+		"a:b:1.2.0-M11",
+		"a:b:1.2.0-M1",
+		"a:b:1.1.0",
+		"a:a:1.2.0",
+	}
+
+	assert.Equal(t, want, have)
 }
