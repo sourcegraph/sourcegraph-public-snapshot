@@ -31848,26 +31848,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"puppeteer@npm:^11.0.0":
-  version: 11.0.0
-  resolution: "puppeteer@npm:11.0.0"
-  dependencies:
-    debug: 4.3.2
-    devtools-protocol: 0.0.901419
-    extract-zip: 2.0.1
-    https-proxy-agent: 5.0.0
-    node-fetch: 2.6.5
-    pkg-dir: 4.2.0
-    progress: 2.0.3
-    proxy-from-env: 1.1.0
-    rimraf: 3.0.2
-    tar-fs: 2.1.1
-    unbzip2-stream: 1.4.3
-    ws: 8.2.3
-  checksum: 36ff07f3f9c4fed1dc36bc2849c5d2e269ed31edcec15423184fb29c62414e8b902777a27741e4b143c35c4a37a03da11ec903a20e288c39de6dc75d1266891d
-  languageName: node
-  linkType: hard
-
 "pvtsutils@npm:^1.1.2, pvtsutils@npm:^1.1.6, pvtsutils@npm:^1.1.7":
   version: 1.1.7
   resolution: "pvtsutils@npm:1.1.7"
