@@ -264,17 +264,7 @@ func getDB() (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB(dsn, "gitserver", false, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
-	}
-	return sqlDB, err
+	return connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
 }
 
 func getRemoteURLFunc(
