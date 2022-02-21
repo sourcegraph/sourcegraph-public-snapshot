@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// NewAlertJob creates a job that translates errors from child jobs
+// into alerts when necessary.
 func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
 	if _, ok := child.(*noopJob); ok {
 		return child
