@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/google/zoekt/query"
 )
@@ -230,34 +231,76 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func toZoektPattern(pattern string, isRegexp, isCaseSensitive, isNegated, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
-	var q zoekt.Q
-	var err error
-	if isRegexp {
-		fileNameOnly := patternMatchesPath && !patternMatchesContent
-		contentOnly := !patternMatchesPath && patternMatchesContent
-		q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoekt.Substring{
-			Pattern:       pattern,
-			CaseSensitive: isCaseSensitive,
+func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
+	var fold func(node query.Node) (zoekt.Q, error)
+	fold = func(node query.Node) (zoekt.Q, error) {
+		switch n := node.(type) {
+		case query.Operator:
+			children := make([]zoekt.Q, 0, len(n.Operands))
+			for _, op := range n.Operands {
+				child, err := fold(op)
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, child)
+			}
+			switch n.Kind {
+			case query.Or:
+				return &zoekt.Or{Children: children}, nil
+			case query.And:
+				return &zoekt.And{Children: children}, nil
+			default:
+				// unreachable
+				return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+			}
+		case query.Pattern:
+			var q zoekt.Q
+			var err error
+			if n.Annotation.Labels.IsSet(query.Regexp) {
+				fileNameOnly := patternMatchesPath && !patternMatchesContent
+				contentOnly := !patternMatchesPath && patternMatchesContent
+				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				q = &zoekt.Substring{
+					Pattern:       n.Value,
+					CaseSensitive: isCaseSensitive,
 
-			FileName: true,
-			Content:  true,
+					FileName: true,
+					Content:  true,
+				}
+			}
+
+			if n.Negated {
+				q = &zoekt.Not{Child: q}
+			}
+			return q, nil
 		}
+		// unreachable
+		return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
 	}
 
-	if isNegated {
-		q = &zoekt.Not{Child: q}
+	q, err := fold(expression)
+	if err != nil {
+		return nil, err
 	}
+
 	return q, nil
 }
 
 func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
-	q, err := toZoektPattern(p.Pattern, p.IsRegExp, p.IsCaseSensitive, p.IsNegated, p.PatternMatchesContent, p.PatternMatchesPath)
+	labels := query.Literal
+	if p.IsRegExp {
+		labels = query.Regexp
+	}
+	pattern := query.Pattern{
+		Value:      p.Pattern,
+		Negated:    p.IsNegated,
+		Annotation: query.Annotation{Labels: labels},
+	}
+	q, err := toZoektPattern(pattern, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath)
 	if err != nil {
 		return nil, err
 	}

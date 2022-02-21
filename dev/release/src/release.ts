@@ -3,9 +3,12 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
+import * as execa from 'execa'
+import * as semver from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
+import * as chart from './chart'
 import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
@@ -371,7 +374,7 @@ cc @${config.captainGitHubUsername}
 
             // Render changes
             const createdChanges = await createChangesets({
-                requiredCommands: ['comby', sed, 'find', 'go', 'src'],
+                requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
                 changes: [
                     {
                         owner: 'sourcegraph',
@@ -494,6 +497,38 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
+                        ],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-helm',
+                        base: 'main',
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [
+                            `sg ops update-images -kind helm -pin-tag ${release.version} charts/sourcegraph/.`,
+                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/sourcegraph/Chart.yaml`,
+                            (directory: string) => {
+                                const chartYamlPath = path.join(directory, 'charts/sourcegraph/Chart.yaml')
+                                const metadata = chart.parseChartMetadata(chartYamlPath)
+                                const parsedPreviousVersion = semver.parse(metadata.version)
+                                if (!parsedPreviousVersion) {
+                                    throw new Error('`version` field in Chart.yaml is not valid semver')
+                                }
+                                const nextVersion = notPatchRelease
+                                    ? parsedPreviousVersion.inc('minor')
+                                    : parsedPreviousVersion.inc('patch')
+                                execa.sync(
+                                    'bash',
+                                    [
+                                        '-c',
+                                        `${sed} -i 's/version:.*/version: ${nextVersion.version}/g' charts/sourcegraph/Chart.yaml`,
+                                    ],
+                                    { stdio: 'inherit', cwd: directory }
+                                )
+                            },
                         ],
                         ...prBodyAndDraftState([]),
                     },

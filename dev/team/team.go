@@ -169,7 +169,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 
 		// Populate Slack details
 		if r.slack != nil {
-			slackUsers, err := r.slack.GetUsers()
+			slackUsers, err := r.slack.GetUsersContext(ctx)
 			if err != nil {
 				onceErr = errors.Newf("slack.GetUsers: %w", err)
 				return

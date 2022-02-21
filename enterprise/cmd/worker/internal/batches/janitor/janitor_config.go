@@ -20,8 +20,8 @@ func (c *janitorConfig) Load() {
 }
 
 func (c *janitorConfig) Validate() error {
-	var errs *errors.MultiError
+	var errs error
 	errs = errors.Append(errs, c.BaseConfig.Validate())
 	errs = errors.Append(errs, c.MetricsConfig.Validate())
-	return errs.ErrorOrNil()
+	return errs
 }

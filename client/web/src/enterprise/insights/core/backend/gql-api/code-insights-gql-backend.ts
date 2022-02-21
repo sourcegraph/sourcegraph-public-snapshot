@@ -14,6 +14,7 @@ import {
     HasAvailableCodeInsightResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
+    IsCodeInsightsLicensedResult,
     RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
@@ -476,6 +477,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
         )
     }
+
+    public isCodeInsightsLicensed = (): Observable<boolean> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<IsCodeInsightsLicensedResult>({
+                query: gql`
+                    query IsCodeInsightsLicensed {
+                        enterpriseLicenseHasFeature(feature: "code-insights")
+                    }
+                `,
+            })
+        ).pipe(map(({ data }) => data.enterpriseLicenseHasFeature))
 }
 
 const getRepositoryName = (

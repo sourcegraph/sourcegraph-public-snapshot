@@ -140,7 +140,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     data-placement="bottom"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
-                    Add insights
+                    Add or remove insights
                 </Button>
             </DashboardHeader>
 

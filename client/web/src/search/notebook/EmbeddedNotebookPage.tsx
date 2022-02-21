@@ -14,6 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchNotebook } from './backend'
 import { NotebookContent, NotebookContentProps } from './NotebookContent'
+import { convertNotebookTitleToFileName } from './serialize'
 
 interface EmbeddedNotebookPageProps
     extends Pick<
@@ -77,6 +78,8 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     telemetryService={eventLogger}
                     platformContext={platformContext}
                     extensionsController={extensionsController}
+                    exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
+                    isEmbedded={true}
                 />
             )}
         </div>
