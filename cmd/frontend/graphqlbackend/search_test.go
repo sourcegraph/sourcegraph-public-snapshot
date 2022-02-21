@@ -58,8 +58,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -81,8 +81,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
