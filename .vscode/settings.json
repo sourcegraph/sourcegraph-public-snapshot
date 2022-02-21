@@ -81,6 +81,6 @@
   "nix.enableLanguageServer": true,
   "[nix]": {
     "editor.insertSpaces": true,
-    "editor.tabSize": 2
-  }
+    "editor.tabSize": 2,
+  },
 }
