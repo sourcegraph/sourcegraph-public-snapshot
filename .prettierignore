@@ -1,6 +1,6 @@
 .bin/
 *.bundle.*
-lib/codeintel/lsif_typed
+lib/codeintel/lsiftyped
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
@@ -29,4 +29,4 @@ docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 storybook-static/
 browser/code-intel-extensions/
 .buildkite-cache/
-lib/codeintel/repro_lang/
+lib/codeintel/reprolang/

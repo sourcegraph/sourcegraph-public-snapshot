@@ -148,15 +148,19 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
+	return startCommandSet(ctx, set, globalConf, *addToMacOSFirewall)
+}
+
+func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMacOSFirewall bool) error {
 	if err := runChecksWithName(ctx, set.Checks); err != nil {
 		return err
 	}
 
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
-		cmd, ok := globalConf.Commands[name]
+		cmd, ok := conf.Commands[name]
 		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, args[0])
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
 		cmds = append(cmds, cmd)
@@ -177,7 +181,7 @@ func startExec(ctx context.Context, args []string) error {
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, *addToMacOSFirewall, *verboseFlag, cmds...)
+	return run.Commands(ctx, env, addToMacOSFirewall, *verboseFlag, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
