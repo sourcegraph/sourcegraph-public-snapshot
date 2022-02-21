@@ -81,14 +81,26 @@ the following:
 
 ## Database Migrations
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
-By default, database migrations will be performed during application startup by the `frontend` application. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
+By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
 In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
 To execute the database migrations independently, follow the [Kubernetes instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#kubernetes). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
-### Troubleshooting
+### Failing migrations
+
+Migrations may fail due to transient or application errors. When this happens, the database will be marked by the migrator as _dirty_. A dirty database requires manual intervention to ensure the schema is in the expected state before continuing with migrations or application startup.
+
+In order to retrieve the error message printed by the migrator on startup, you'll need to use the `kubectl logs <frontend pod> -c migrator` to specify the init container, not the main application container. Using a bare `kubectl logs` command will result in the following error:
+
+```
+Error from server (BadRequest): container "frontend" in pod "sourcegraph-frontend-69f4b68d75-w98lx" is waiting to start: PodInitializing
+```
+
+Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database.md).
+
+## Troubleshooting
 
 See the [troubleshooting page](troubleshoot.md).

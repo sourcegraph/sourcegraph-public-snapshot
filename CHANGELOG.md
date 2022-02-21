@@ -15,8 +15,27 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+- Searching for the pattern `//` with regular expression search is now interpreted literally and will search for `//`. Previously, the `//` pattern was interpreted as our regular expression syntax `/<regexp>/` which would in turn be intrpreted as the empty string. Since searching for an empty string offers little practically utility, we now instead interpret `//` to search for its literal meaning in regular expression search. [#31520](https://github.com/sourcegraph/sourcegraph/pull/31520)
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.37.0
+
+### Added
+
 - Code in search results is now selectable (e.g. for copying). Just clicking on the code continues to open the corresponding file as it did before. [#30033](https://github.com/sourcegraph/sourcegraph/pull/30033)
 - Search Notebooks now support importing and exporting Markdown-formatted files. [#28586](https://github.com/sourcegraph/sourcegraph/issues/28586)
+- Pings now include code host integration usage metrics [https://github.com/sourcegraph/sourcegraph/pull/31379]
 
 ### Changed
 
@@ -145,6 +164,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Settings files (user, org, global) as a persistence mechanism for Code Insights are now deprecated.
+- Query-runner deployment has been removed. You can safely remove the `query-runner` service from your installation.
 
 ## 3.34.2
 

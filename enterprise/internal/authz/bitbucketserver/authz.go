@@ -43,12 +43,12 @@ func newAuthzProvider(
 		return nil, nil
 	}
 
-	errs := new(errors.MultiError)
+	var errs error
 
 	cli, err := bitbucketserver.NewClient(c.BitbucketServerConnection, nil)
 	if err != nil {
 		errs = errors.Append(errs, err)
-		return nil, errs.ErrorOrNil()
+		return nil, errs
 	}
 
 	var p authz.Provider
@@ -59,7 +59,7 @@ func newAuthzProvider(
 		errs = errors.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
 
-	return p, errs.ErrorOrNil()
+	return p, errs
 }
 
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external

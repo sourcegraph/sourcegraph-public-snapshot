@@ -49,7 +49,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 
     return (
         <section {...otherProps}>
-            <h2>Templates</h2>
+            <h2 id="code-insights-templates">Templates</h2>
             <p className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
@@ -92,8 +92,11 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     const hasMoreLessButton = templates.length > 4
 
     const handleShowMoreButtonClick = (): void => {
+        if (!allVisible) {
+            telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
+        }
+
         setAllVisible(!allVisible)
-        telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
     }
 
     return (
@@ -109,7 +112,7 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
                     className={styles.cardsFooterButton}
                     onClick={handleShowMoreButtonClick}
                 >
-                    {allVisible ? 'Show less' : 'Show all'}
+                    {allVisible ? 'Show less' : 'Show more'}
                 </Button>
             )}
         </TabPanel>
@@ -135,7 +138,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
     return (
         <Card as={CardBody} className={styles.card}>
             <CardTitle>{template.title}</CardTitle>
-            <CardText>{template.description}</CardText>
+            <CardText>{template.description}.</CardText>
 
             <div className={styles.queries}>
                 {series.map(
