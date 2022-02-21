@@ -18,6 +18,7 @@ export interface RetentionMatchNodeProps {
 }
 
 export const retentionByUploadTitle = 'Retention by reference'
+export const retentionByBranchTipTitle = 'Retention by tip of default branch'
 
 export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }) => {
     if (node.matchType === 'RetentionPolicy') {
@@ -36,11 +37,15 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                    <h3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</h3>
-                </Link>
+                {match.configurationPolicy ? (
+                    <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
+                        <h3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</h3>
+                    </Link>
+                ) : (
+                    <h3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</h3>
+                )}
                 <div className="mr-2 d-block d-mdinline-block">
-                    Matched: {match.matches ? 'yes' : 'no'}
+                    Retained: {match.matches ? 'yes' : 'no'}
                     {match.protectingCommits.length !== 0 && (
                         <>
                             , by visible {pluralize('commit', match.protectingCommits.length)}{' '}
@@ -50,6 +55,12 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
                             />
                         </>
+                    )}
+                    {!match.configurationPolicy && (
+                        <InformationOutlineIcon
+                            className="ml-1 icon-inline"
+                            data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
+                        />
                     )}
                 </div>
             </div>

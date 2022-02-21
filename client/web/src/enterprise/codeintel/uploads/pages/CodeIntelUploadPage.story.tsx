@@ -188,48 +188,55 @@ Completed.args = {
         }),
     queryRetentionMatches: () =>
         of({
-            nodes: [{
-                matchType: 'UploadReference',
-                uploadSlice: [{
-                    id: '10',
-                    inputCommit: 'deadbeef',
-                    inputRoot: '/lib/erals',
-                    projectRoot: {
-                        repository: { id: '500', name: 'github.com/sourcegraph/lib'},
-                    }
-                }],
-                total: 1
-            }, {
-                matchType: 'RetentionPolicy',
-                matches: true,
-                protectingCommits: [],
-                configurationPolicy: {
-                    id: 'banana',
-                    name: 'Default Test Retention Policy',
-                    type: GitObjectType.GIT_TREE,
-                    retentionDurationHours: 100,
-                }
-            }, {
-                matchType: 'RetentionPolicy',
-                matches: true,
-                protectingCommits: ['deadbeef'],
-                configurationPolicy: {
-                    id: 'banana1',
-                    name: 'Default Tag Retention Policy',
-                    type: GitObjectType.GIT_TAG,
-                    retentionDurationHours: 100,
-                }
-            }, {
-                matchType: 'RetentionPolicy',
-                matches: false,
-                protectingCommits: [],
-                configurationPolicy: {
-                    id: 'banana',
-                    name: 'Other Test Retention Policy',
-                    type: GitObjectType.GIT_TREE,
-                    retentionDurationHours: 100,
-                }
-            }]
+            nodes: [
+                {
+                    matchType: 'UploadReference',
+                    uploadSlice: [
+                        {
+                            id: '10',
+                            inputCommit: 'deadbeef',
+                            inputRoot: '/lib/erals',
+                            projectRoot: {
+                                repository: { id: '500', name: 'github.com/sourcegraph/lib' },
+                            },
+                        },
+                    ],
+                    total: 1,
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: true,
+                    protectingCommits: [],
+                    configurationPolicy: {
+                        id: 'banana',
+                        name: 'Default Test Retention Policy',
+                        type: GitObjectType.GIT_TREE,
+                        retentionDurationHours: 100,
+                    },
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: true,
+                    protectingCommits: ['deadbeef'],
+                    configurationPolicy: {
+                        id: 'banana1',
+                        name: 'Default Tag Retention Policy',
+                        type: GitObjectType.GIT_TAG,
+                        retentionDurationHours: 100,
+                    },
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: false,
+                    protectingCommits: [],
+                    configurationPolicy: {
+                        id: 'banana',
+                        name: 'Other Test Retention Policy',
+                        type: GitObjectType.GIT_TREE,
+                        retentionDurationHours: 100,
+                    },
+                },
+            ],
         }),
 }
 Completed.parameters = {

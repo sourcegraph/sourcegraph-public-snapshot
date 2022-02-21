@@ -11,7 +11,7 @@ import {
     LsifUploadRetentionMatchesResult,
     LsifUploadRetentionMatchesVariables,
 } from '../../../../graphql-operations'
-import { retentionByUploadTitle } from '../components/UploadRetentionStatusNode'
+import { retentionByBranchTipTitle, retentionByUploadTitle } from '../components/UploadRetentionStatusNode'
 
 export type NormalizedUploadRetentionMatch = RetentionPolicyMatch | UploadReferenceMatch
 
@@ -24,7 +24,7 @@ export interface RetentionPolicyMatch {
         name: string
         type: GitObjectType
         retentionDurationHours: number | null
-    }
+    } | null
 }
 
 export interface UploadReferenceMatch {
@@ -128,13 +128,24 @@ export const queryUploadRetentionMatches = (
             }
 
             conn.nodes.push(
-                ...node.retentionPolicyOverview.nodes.map(
-                    (node): NormalizedUploadRetentionMatch => ({
-                        matchType: 'RetentionPolicy',
-                        ...node,
-                        protectingCommits: node.protectingCommits ?? [],
+                ...node.retentionPolicyOverview.nodes
+                    .map(
+                        (node): NormalizedUploadRetentionMatch => ({
+                            matchType: 'RetentionPolicy',
+                            ...node,
+                            protectingCommits: node.protectingCommits ?? [],
+                        })
+                    )
+                    .filter(node => {
+                        if (
+                            node.matchType === 'RetentionPolicy' &&
+                            !node.configurationPolicy &&
+                            !retentionByBranchTipTitle.toLowerCase().includes(query ?? '')
+                        ) {
+                            return false
+                        }
+                        return true
                     })
-                )
             )
 
             conn.pageInfo = node.retentionPolicyOverview.pageInfo
