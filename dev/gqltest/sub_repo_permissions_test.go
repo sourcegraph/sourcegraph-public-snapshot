@@ -85,7 +85,6 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		query         string
 		zeroResult    bool
 		minMatchCount int64
-		specificCheck func(results *gqltestutil.SearchFileResults)
 	}{
 		{
 			name:          "indexed search, nonzero result",
@@ -175,11 +174,6 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if test.specificCheck != nil {
-				test.specificCheck(results)
-				return
-			}
-
 			if test.zeroResult {
 				if len(results.Results) > 0 {
 					t.Fatalf("Want zero result but got %d", len(results.Results))
@@ -197,12 +191,15 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Run("commit search", func(t *testing.T) {
-		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		results, err := userClient.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, res := range results.Results {
-			t.Log(res)
+		// Alice should have access to only 1 commit at the moment (other 2 commits modify hack.sh which is
+		// inaccessible for Alice)
+		commitsNumber := len(results.Results)
+		if commitsNumber != 1 {
+			t.Fatalf("Should have access to 1 commit but got %d", commitsNumber)
 		}
 	})
 }
