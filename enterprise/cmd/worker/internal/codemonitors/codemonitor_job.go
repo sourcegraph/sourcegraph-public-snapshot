@@ -28,5 +28,5 @@ func (j *codeMonitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(ctx, edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
+	return background.NewBackgroundJobs(edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
 }
