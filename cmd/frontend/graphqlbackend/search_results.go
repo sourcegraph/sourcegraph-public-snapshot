@@ -54,9 +54,6 @@ type SearchResultsResolver struct {
 	Stats       streaming.Stats
 	SearchAlert *search.Alert
 
-	// limit is the maximum number of SearchResults to send back to the user.
-	limit int
-
 	// The time it took to compute all results.
 	elapsed time.Duration
 
@@ -66,7 +63,7 @@ type SearchResultsResolver struct {
 }
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
+	return c.Stats.IsLimitHit
 }
 
 func (c *SearchResultsResolver) matchesRepoIDs() map[api.RepoID]struct{} {
@@ -142,12 +139,7 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	limited := sr.Matches
-	if sr.limit > 0 && sr.limit < len(sr.Matches) {
-		limited = sr.Matches[:sr.limit]
-	}
-
-	return matchesToResolvers(sr.db, limited)
+	return matchesToResolvers(sr.db, sr.Matches)
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
@@ -540,7 +532,6 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		Matches:      matches,
 		SearchAlert:  alert,
 		Stats:        stats,
-		limit:        r.SearchInputs.MaxResults(),
 		db:           r.db,
 		UserSettings: r.SearchInputs.UserSettings,
 	}
