@@ -21,7 +21,7 @@ type Buffer struct {
 }
 
 func (t *Buffer) Write(b []byte) (int, error) {
-	var cur int
+	cur := 0
 
 	for cur < len(b) {
 		switch b[cur] {
