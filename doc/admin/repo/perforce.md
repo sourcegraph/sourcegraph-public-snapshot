@@ -210,7 +210,7 @@ The instructions below will help you get Perforce depots on Sourcegraph quickly 
 We intend to improve Sourcegraph's Perforce support in the future. Please [file an issue](https://github.com/sourcegraph/sourcegraph/issues) to help us prioritize any specific improvements you'd like to see.
 
 - Sourcegraph was initially built for Git repositories only, so it exposes Git concepts that are meaningless for converted Perforce depots, such as the commit SHA, branches, and tags.
-- The commit messages for a Perforce depot converted to a Git repository have an extra line at the end with Perforce information, such as `[git-p4: depot-paths = "//guest/acme_org/myproject/": change = 12345]`.
+- The commit messages for a Perforce depot converted to a Git repository have an extra line at the end with Perforce information, such as `[git-p4: depot-paths = "//guest/example_org/myproject/": change = 12345]`.
 - [Permissions](#repository-permissions)
   - [File-level permissions](#file-level-permissions) are not supported when syncing permissions via the [code host integration](#add-a-perforce-code-host).
   - The [host field](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html#Form_Fields_..361) in protections are not supported.

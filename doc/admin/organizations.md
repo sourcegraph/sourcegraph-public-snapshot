@@ -12,9 +12,9 @@ To automatically join all users on your instance to a specific organization, cre
 {
   // ...
   "auth.userOrgMap": {
-    // All users ("*") will be automatically joined to the "acme-corp" org.
+    // All users ("*") will be automatically joined to the "example-corp" org.
     // Currently "*" (all users) is the only supported key.
-    "*": ["acme-corp"] // The array values refer to org names you've already created.
+    "*": ["example-corp"] // The array values refer to org names you've already created.
   }
   // ...
 }

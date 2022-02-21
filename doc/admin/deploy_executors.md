@@ -207,7 +207,7 @@ tfenv use 0.13.7
 2. Install [`gcloud`](https://cloud.google.com/sdk/docs/install)
 3. Run `gcloud auth application-default login`
 4. Open your Sourcegraph instance in your browser, click your profile in the top right, click **Site admin**, expand **Configuration**, click **Site configuration**, and set:
-  - `"externalURL": "<URL>"` to a URL that is accessible from the GCP VM that will be created later (e.g. a public URL such as `https://sourcegraph.acme.com`)
+  - `"externalURL": "<URL>"` to a URL that is accessible from the GCP VM that will be created later (e.g. a public URL such as `https://sourcegraph.example.com`)
   - `"executors.accessToken": "<new long secret>"` to a new long secret (e.g. `cat /dev/random | base64 | head -c 20`)
   - `"codeIntelAutoIndexing.enabled": true`
 5. Download the [example files](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor) and change these:
