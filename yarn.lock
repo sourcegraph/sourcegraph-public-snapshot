@@ -5200,7 +5200,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -5547,7 +5546,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -5892,7 +5890,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -6239,7 +6236,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -6586,7 +6582,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -6983,7 +6978,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -7333,7 +7327,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -7693,7 +7686,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -8040,7 +8032,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -8389,7 +8380,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -8741,7 +8731,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -9098,7 +9087,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -9447,7 +9435,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -9803,7 +9790,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -10156,7 +10142,6 @@ __metadata:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -16299,7 +16284,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:3.5.1, chokidar@npm:>=2.0.0 <4.0.0, chokidar@npm:^3.2.3, chokidar@npm:^3.3.0, chokidar@npm:^3.3.1, chokidar@npm:^3.4.1, chokidar@npm:^3.4.2, chokidar@npm:^3.4.3, chokidar@npm:^3.5.1":
+"chokidar@npm:3.5.1, chokidar@npm:>=2.0.0 <4.0.0, chokidar@npm:^3.2.3, chokidar@npm:^3.3.1, chokidar@npm:^3.4.1, chokidar@npm:^3.4.2, chokidar@npm:^3.4.3, chokidar@npm:^3.5.1":
   version: 3.5.1
   resolution: "chokidar@npm:3.5.1"
   dependencies:
@@ -17674,20 +17659,6 @@ __metadata:
     csso:
       optional: true
   checksum: f4cacd46d4157d5005c9d3b5aa6bf60cd036ab10faae20cc1bdffb7153d2802473ef9f464d30098aad98f2205aee92b956c1f92c5da5a04f772ca9f17fd72dab
-  languageName: node
-  linkType: hard
-
-"css-modules-loader-core@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "css-modules-loader-core@npm:1.1.0"
-  dependencies:
-    icss-replace-symbols: 1.1.0
-    postcss: 6.0.1
-    postcss-modules-extract-imports: 1.1.0
-    postcss-modules-local-by-default: 1.2.0
-    postcss-modules-scope: 1.1.0
-    postcss-modules-values: 1.3.0
-  checksum: e2d513cee6a407b46806e50b3eec9d9034355b6ee14f2f7303353ab0853b8dba9600cffc83ec46cebd3efd68fe2b2aa31808a1c906d043f1c405568fd484eaf5
   languageName: node
   linkType: hard
 
@@ -23992,7 +23963,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"icss-replace-symbols@npm:1.1.0, icss-replace-symbols@npm:^1.1.0":
+"icss-replace-symbols@npm:^1.1.0":
   version: 1.1.0
   resolution: "icss-replace-symbols@npm:1.1.0"
   checksum: 24575b2c2f7e762bfc6f4beee31be9ba98a01cad521b5aa9954090a5de2b5e1bf67814c17e22f9e51b7d798238db8215a173d6c2b4726ce634ce06b68ece8045
@@ -24238,13 +24209,6 @@ __metadata:
   version: 2.0.4
   resolution: "inherits@npm:2.0.4"
   checksum: 4a48a733847879d6cf6691860a6b1e3f0f4754176e4d71494c41f3475553768b10f84b5ce1d40fbd0e34e6bfbb864ee35858ad4dd2cf31e02fc4a154b724d7f1
-  languageName: node
-  linkType: hard
-
-"inherits@npm:2.0.1":
-  version: 2.0.1
-  resolution: "inherits@npm:2.0.1"
-  checksum: 6536b9377296d4ce8ee89c5c543cb75030934e61af42dba98a428e7d026938c5985ea4d1e3b87743a5b834f40ed1187f89c2d7479e9d59e41d2d1051aefba07b
   languageName: node
   linkType: hard
 
@@ -29798,7 +29762,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"param-case@npm:^3.0.2, param-case@npm:^3.0.3, param-case@npm:^3.0.4":
+"param-case@npm:^3.0.3, param-case@npm:^3.0.4":
   version: 3.0.4
   resolution: "param-case@npm:3.0.4"
   dependencies:
@@ -30148,16 +30112,6 @@ __metadata:
   version: 4.0.0
   resolution: "path-type@npm:4.0.0"
   checksum: 5b1e2daa247062061325b8fdbfd1fb56dde0a448fb1455453276ea18c60685bdad23a445dc148cf87bc216be1573357509b7d4060494a6fd768c7efad833ee45
-  languageName: node
-  linkType: hard
-
-"path@npm:^0.12.7":
-  version: 0.12.7
-  resolution: "path@npm:0.12.7"
-  dependencies:
-    process: ^0.11.1
-    util: ^0.10.3
-  checksum: 5dedb71e78fc008fcba797defc0b4e1cf06c1f18e0a631e03ba5bb505136f587ff017afc14f9a3d481cbe77aeedff7dc0c1d2ce4d820c1ebf3c4281ca49423a1
   languageName: node
   linkType: hard
 
@@ -30676,15 +30630,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-modules-extract-imports@npm:1.1.0":
-  version: 1.1.0
-  resolution: "postcss-modules-extract-imports@npm:1.1.0"
-  dependencies:
-    postcss: ^6.0.1
-  checksum: 3dc9ed98509f654c1220bb8ec7489b30fa4441f2797eb5c894badfd6f4ab1b086f8002f59d47845d827a3f23a40400ba4c18959c7a3702285d4e5bfcfcd180d4
-  languageName: node
-  linkType: hard
-
 "postcss-modules-extract-imports@npm:^2.0.0":
   version: 2.0.0
   resolution: "postcss-modules-extract-imports@npm:2.0.0"
@@ -30700,16 +30645,6 @@ __metadata:
   peerDependencies:
     postcss: ^8.1.0
   checksum: 4b65f2f1382d89c4bc3c0a1bdc5942f52f3cb19c110c57bd591ffab3a5fee03fcf831604168205b0c1b631a3dce2255c70b61aaae3ef39d69cd7eb450c2552d2
-  languageName: node
-  linkType: hard
-
-"postcss-modules-local-by-default@npm:1.2.0":
-  version: 1.2.0
-  resolution: "postcss-modules-local-by-default@npm:1.2.0"
-  dependencies:
-    css-selector-tokenizer: ^0.7.0
-    postcss: ^6.0.1
-  checksum: c8bbe0a9584e0a02339f4143125bf5febbcbfdbabedc33a5f2debdc5b0089f5c238b236101dbf923ea66c11637c0dee8bcf91d1692ed0443762203286b864ea2
   languageName: node
   linkType: hard
 
@@ -30738,16 +30673,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-modules-scope@npm:1.1.0":
-  version: 1.1.0
-  resolution: "postcss-modules-scope@npm:1.1.0"
-  dependencies:
-    css-selector-tokenizer: ^0.7.0
-    postcss: ^6.0.1
-  checksum: e1b7dd8b1aabb0dc719015352835c6865a5b80ef469cf956749540847b751ccac860d7f0f5659aa2c4b8a484c4a9291098895e5c91c9707e02c7f79a7288297e
-  languageName: node
-  linkType: hard
-
 "postcss-modules-scope@npm:^2.2.0":
   version: 2.2.0
   resolution: "postcss-modules-scope@npm:2.2.0"
@@ -30766,16 +30691,6 @@ __metadata:
   peerDependencies:
     postcss: ^8.1.0
   checksum: 330b9398dbd44c992c92b0dc612c0626135e2cc840fee41841eb61247a6cfed95af2bd6f67ead9dd9d0bb41f5b0367129d93c6e434fa3e9c58ade391d9a5a138
-  languageName: node
-  linkType: hard
-
-"postcss-modules-values@npm:1.3.0":
-  version: 1.3.0
-  resolution: "postcss-modules-values@npm:1.3.0"
-  dependencies:
-    icss-replace-symbols: ^1.1.0
-    postcss: ^6.0.1
-  checksum: c1d542f71df43ec8b998808ea8de5e74e215a2428e92a8c157da436724aacf246b77440da1cd3d5daae610c875b46e7f8a845b52e1a49afdc37668093de8e3e7
   languageName: node
   linkType: hard
 
@@ -31045,17 +30960,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:6.0.1, postcss@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "postcss@npm:6.0.1"
-  dependencies:
-    chalk: ^1.1.3
-    source-map: ^0.5.6
-    supports-color: ^3.2.3
-  checksum: 2533d218b6c23dad42fffb98979f3fd2b98bbe11c923e3245ed8f83da9591c176a5de2403ad3ebaedea819f50d5f6c88c40d322265c59b6b10ed8a02c12fd4bc
-  languageName: node
-  linkType: hard
-
 "postcss@npm:8.1.10":
   version: 8.1.10
   resolution: "postcss@npm:8.1.10"
@@ -31065,6 +30969,17 @@ __metadata:
     source-map: ^0.6.1
     vfile-location: ^3.2.0
   checksum: 9706aaea170d60efbdee846147c2326d65c56073510aa481b26201ebcdedace4e7d5057f26328c6ae20391b748a458706ac581b342c978a8886b3fd82b5f21df
+  languageName: node
+  linkType: hard
+
+"postcss@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "postcss@npm:6.0.1"
+  dependencies:
+    chalk: ^1.1.3
+    source-map: ^0.5.6
+    supports-color: ^3.2.3
+  checksum: 2533d218b6c23dad42fffb98979f3fd2b98bbe11c923e3245ed8f83da9591c176a5de2403ad3ebaedea819f50d5f6c88c40d322265c59b6b10ed8a02c12fd4bc
   languageName: node
   linkType: hard
 
@@ -31287,7 +31202,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"process@npm:^0.11.1, process@npm:^0.11.10":
+"process@npm:^0.11.10":
   version: 0.11.10
   resolution: "process@npm:0.11.10"
   checksum: bfcce49814f7d172a6e6a14d5fa3ac92cc3d0c3b9feb1279774708a719e19acd673995226351a082a9ae99978254e320ccda4240ddc474ba31a76c79491ca7c3
@@ -33709,7 +33624,6 @@ pvutils@latest:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     typescript-plugin-css-modules: ^3.4.0
     use-callback-ref: ^1.2.5
@@ -35088,7 +35002,6 @@ pvutils@latest:
     ts-morph: ^8.1.0
     ts-node: ^9.1.1
     tslib: ^2.1.0
-    typed-scss-modules: ^4.1.1
     typescript: ^4.5.2
     use-callback-ref: ^1.2.5
     use-deep-compare-effect: ^1.6.1
@@ -37216,34 +37129,6 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"typed-scss-modules@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "typed-scss-modules@npm:4.1.1"
-  dependencies:
-    camelcase: ^5.0.0
-    chalk: ^3.0.0
-    chokidar: ^3.3.0
-    css-modules-loader-core: ^1.1.0
-    glob: ^7.1.6
-    param-case: ^3.0.2
-    path: ^0.12.7
-    reserved-words: ^0.1.2
-    slash: ^3.0.0
-    yargs: ^15.0.2
-  peerDependencies:
-    node-sass: ^4.11.0
-    sass: ^1.25.0
-  peerDependenciesMeta:
-    node-sass:
-      optional: true
-    sass:
-      optional: true
-  bin:
-    tsm: dist/lib/cli.js
-  checksum: ff5c6c3a690b493c9932c0de769e7fa261c03ffe4c600548bbb7620c88d800dc25986a3a98aef8e30e6d7311ed9eea249107ca69d44a9440227219dc8d2ff11c
-  languageName: node
-  linkType: hard
-
 "typed-styles@npm:^0.0.7":
   version: 0.0.7
   resolution: "typed-styles@npm:0.0.7"
@@ -38042,15 +37927,6 @@ pvutils@latest:
     define-properties: ^1.1.2
     object.getownpropertydescriptors: ^2.0.3
   checksum: 482e857d676adee506c5c3a10212fd6a06a51d827a9b6d5396a8e593db53b4bb7064f77c5071357d8cd76072542de5cc1c08bc6d7c10cf43fa22dc3bc67556f1
-  languageName: node
-  linkType: hard
-
-"util@npm:^0.10.3":
-  version: 0.10.3
-  resolution: "util@npm:0.10.3"
-  dependencies:
-    inherits: 2.0.1
-  checksum: bd800f5d237a82caddb61723a6cbe45297d25dd258651a31335a4d5d981fd033cb4771f82db3d5d59b582b187cb69cfe727dc6f4d8d7826f686ee6c07ce611e0
   languageName: node
   linkType: hard
 
