@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -121,7 +121,7 @@ var ErrBinary = errors.New("cannot render binary file")
 // to timeout. In this scenario, a plain text table is returned.
 //
 // In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (h template.HTML, l *lsif_typed.Document, aborted bool, err error) {
+func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
@@ -261,7 +261,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsif_typed.Documen
 	}
 
 	if useTreeSitter {
-		document := new(lsif_typed.Document)
+		document := new(lsiftyped.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 		if err != nil {
 			return "", nil, false, err

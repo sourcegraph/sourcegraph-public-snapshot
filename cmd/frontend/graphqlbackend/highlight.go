@@ -42,7 +42,7 @@ type highlightedFileResolver struct {
 	aborted bool
 	html    template.HTML
 
-	// JSON encoded form of lsif_typed.Document
+	// JSON encoded form of lsiftyped.Document
 	lsif string
 }
 
