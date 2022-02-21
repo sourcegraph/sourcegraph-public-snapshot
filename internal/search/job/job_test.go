@@ -168,24 +168,26 @@ func TestToEvaluateJob(t *testing.T) {
 	}
 
 	autogold.Want("root limit for streaming search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    500
-    (PARALLEL
-      RepoUniverseText
-      Repo
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        RepoUniverseText
+        Repo
+        ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    30
-    (PARALLEL
-      RepoUniverseText
-      Repo
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      30
+      (PARALLEL
+        RepoUniverseText
+        Repo
+        ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Batch))
 }

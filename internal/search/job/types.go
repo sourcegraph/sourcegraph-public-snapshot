@@ -44,4 +44,5 @@ var allJobs = []Job{
 	&LimitJob{},
 	&subRepoPermsFilterJob{},
 	&selectJob{},
+	&alertJob{},
 }
