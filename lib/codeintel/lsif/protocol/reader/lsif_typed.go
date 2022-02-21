@@ -8,17 +8,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConvertTypedIndexToGraphIndex takes an LSIF Typed index and returns the equivalent LSIF Graph index.
 // There doesn't exist a reliable bijection between LSIF Typed and LSIF Typed.
 // This conversion is lossy because LSIF Typed includes metadata that has no equivalent encoding in
-// LSIF Graph, such as lsif_typed.SymbolRole beyond the definition role.
+// LSIF Graph, such as lsiftyped.SymbolRole beyond the definition role.
 // Also, LSIF Graph allows encoding certain behaviors that LSIF Typed current doesn't support,
 // such as asymmetric references/definitions.
-func ConvertTypedIndexToGraphIndex(index *lsif_typed.Index) ([]Element, error) {
+func ConvertTypedIndexToGraphIndex(index *lsiftyped.Index) ([]Element, error) {
 	g := newGraph()
 
 	if index.Metadata == nil {
@@ -30,9 +30,9 @@ func ConvertTypedIndexToGraphIndex(index *lsif_typed.Index) ([]Element, error) {
 
 	positionEncoding := ""
 	switch index.Metadata.TextDocumentEncoding {
-	case lsif_typed.TextEncoding_UTF8:
+	case lsiftyped.TextEncoding_UTF8:
 		positionEncoding = "utf-8"
-	case lsif_typed.TextEncoding_UTF16:
+	case lsiftyped.TextEncoding_UTF16:
 		positionEncoding = "utf-16"
 	default:
 		return nil, errors.New(".Metadata.TextDocumentEncoding does not have value utf-8 or utf-16")
@@ -58,7 +58,7 @@ func ConvertTypedIndexToGraphIndex(index *lsif_typed.Index) ([]Element, error) {
 	for _, document := range index.Documents {
 		for _, exportedSymbol := range document.Symbols {
 			g.registerInverseRelationships(exportedSymbol)
-			if lsif_typed.IsGlobalSymbol(exportedSymbol.Symbol) {
+			if lsiftyped.IsGlobalSymbol(exportedSymbol.Symbol) {
 				// Local symbols are skipped here because we handle them in the
 				// second pass when processing individual documents.
 				g.symbolToResultSet[exportedSymbol.Symbol] = g.emitResultSet(exportedSymbol, "export")
@@ -79,11 +79,11 @@ type graph struct {
 	ID                   int
 	Elements             []Element
 	symbolToResultSet    map[string]symbolInformationIDs
-	inverseRelationships map[string][]*lsif_typed.Relationship
+	inverseRelationships map[string][]*lsiftyped.Relationship
 	packageToGraphID     map[string]int
 }
 
-// symbolInformationIDs is a container for LSIF Graph IDs corresponding to an lsif_typed.SymbolInformation.
+// symbolInformationIDs is a container for LSIF Graph IDs corresponding to an lsiftyped.SymbolInformation.
 type symbolInformationIDs struct {
 	ResultSet            int
 	DefinitionResult     int
@@ -98,11 +98,11 @@ func newGraph() graph {
 		Elements:             []Element{},
 		symbolToResultSet:    map[string]symbolInformationIDs{},
 		packageToGraphID:     map[string]int{},
-		inverseRelationships: map[string][]*lsif_typed.Relationship{},
+		inverseRelationships: map[string][]*lsiftyped.Relationship{},
 	}
 }
 
-func (g *graph) emitPackage(pkg *lsif_typed.Package) int {
+func (g *graph) emitPackage(pkg *lsiftyped.Package) int {
 	id := pkg.ID()
 	graphID, ok := g.packageToGraphID[id]
 	if ok {
@@ -118,8 +118,8 @@ func (g *graph) emitPackage(pkg *lsif_typed.Package) int {
 }
 
 // emitResultSet emits the associated resultSet, definitionResult, referenceResult, implementationResult and hoverResult
-// for the provided lsif_typed.SymbolInformation.
-func (g *graph) emitResultSet(info *lsif_typed.SymbolInformation, monikerKind string) symbolInformationIDs {
+// for the provided lsiftyped.SymbolInformation.
+func (g *graph) emitResultSet(info *lsiftyped.SymbolInformation, monikerKind string) symbolInformationIDs {
 	// NOTE: merge separate documentation sections with a horizontal Markdown rule. Indexers that emit LSIF graph
 	// directly need to emit this separator directly while with LSIF Typed we render the horizontal rule here.
 	hover := strings.Join(info.Documentation, "\n\n---\n\n")
@@ -146,19 +146,19 @@ func (g *graph) emitResultSet(info *lsif_typed.SymbolInformation, monikerKind st
 	return ids
 }
 
-// emitDocument emits all range vertices for the `lsif_typed.Occurrence` in the provided document, along with
+// emitDocument emits all range vertices for the `lsiftyped.Occurrence` in the provided document, along with
 // associated `item` edges to link ranges with result sets.
-func (g *graph) emitDocument(index *lsif_typed.Index, doc *lsif_typed.Document) {
+func (g *graph) emitDocument(index *lsiftyped.Index, doc *lsiftyped.Document) {
 	uri := filepath.Join(index.Metadata.ProjectRoot, doc.RelativePath)
 	documentID := g.emitVertex("document", uri)
 
-	documentSymbolTable := map[string]*lsif_typed.SymbolInformation{}
+	documentSymbolTable := map[string]*lsiftyped.SymbolInformation{}
 	localSymbolInformationTable := map[string]symbolInformationIDs{}
 	for _, info := range doc.Symbols {
 		documentSymbolTable[info.Symbol] = info
 
 		// Build symbol information table for Document-local symbols only.
-		if lsif_typed.IsLocalSymbol(info.Symbol) {
+		if lsiftyped.IsLocalSymbol(info.Symbol) {
 			localSymbolInformationTable[info.Symbol] = g.emitResultSet(info, "local")
 		}
 
@@ -187,7 +187,7 @@ func (g *graph) emitDocument(index *lsif_typed.Index, doc *lsif_typed.Document) 
 		rangeIDs = append(rangeIDs, rangeID)
 		resultIDs := g.getOrInsertSymbolInformationIDs(occ.Symbol, localSymbolInformationTable)
 		g.emitEdge("next", Edge{OutV: rangeID, InV: resultIDs.ResultSet})
-		isDefinition := occ.SymbolRoles&int32(lsif_typed.SymbolRole_Definition) != 0
+		isDefinition := occ.SymbolRoles&int32(lsiftyped.SymbolRole_Definition) != 0
 		if isDefinition && resultIDs.DefinitionResult > 0 {
 			g.emitEdge("item", Edge{OutV: resultIDs.DefinitionResult, InVs: []int{rangeID}, Document: documentID})
 			symbolInfo, ok := documentSymbolTable[occ.Symbol]
@@ -201,8 +201,8 @@ func (g *graph) emitDocument(index *lsif_typed.Index, doc *lsif_typed.Document) 
 	g.emitEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
 }
 
-// emitRelationships emits "referenceResults" and "implementationResult" based on the value of lsif_typed.SymbolInformation.Relationships
-func (g *graph) emitRelationships(rangeID, documentID int, resultIDs symbolInformationIDs, localResultIDs map[string]symbolInformationIDs, info *lsif_typed.SymbolInformation) {
+// emitRelationships emits "referenceResults" and "implementationResult" based on the value of lsiftyped.SymbolInformation.Relationships
+func (g *graph) emitRelationships(rangeID, documentID int, resultIDs symbolInformationIDs, localResultIDs map[string]symbolInformationIDs, info *lsiftyped.SymbolInformation) {
 	var allReferenceResultIds []int
 	relationships := g.inverseRelationships[info.Symbol]
 	for _, relationship := range relationships {
@@ -222,7 +222,7 @@ func (g *graph) emitRelationships(rangeID, documentID int, resultIDs symbolInfor
 	}
 }
 
-func (g *graph) emitRelationship(relationship *lsif_typed.Relationship, rangeID, documentID int, localResultIDs map[string]symbolInformationIDs) []int {
+func (g *graph) emitRelationship(relationship *lsiftyped.Relationship, rangeID, documentID int, localResultIDs map[string]symbolInformationIDs) []int {
 	relationshipIDs := g.getOrInsertSymbolInformationIDs(relationship.Symbol, localResultIDs)
 
 	if relationship.IsImplementation {
@@ -249,10 +249,10 @@ func (g *graph) emitRelationship(relationship *lsif_typed.Relationship, rangeID,
 
 // emitMonikerVertex emits the "moniker" vertex and optionally the accompanying "packageInformation" vertex.
 func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int) {
-	symbol, err := lsif_typed.ParsePartialSymbol(symbolID, false)
+	symbol, err := lsiftyped.ParsePartialSymbol(symbolID, false)
 	if err != nil || symbol == nil || symbol.Scheme == "" {
 		// Silently ignore symbols that are missing the scheme. The entire symbol does not have to be formatted
-		// according to the BNF grammar in lsif_typed.Symbol, we only reject symbols that are missing the scheme.
+		// according to the BNF grammar in lsiftyped.Symbol, we only reject symbols that are missing the scheme.
 		// TODO: add option to print a warning or fail fast here https://github.com/sourcegraph/sourcegraph/issues/31415
 		return
 	}
@@ -319,10 +319,10 @@ func (g *graph) emit(ty, label string, payload interface{}) int {
 // For example, a struct (child) that implements an interface A (parent) encodes that child->parent
 // relationship with LSIF Typed via the field `SymbolInformation.Relationships`.
 // registerInverseRelationships method records the relationship in the opposite direction: parent->child.
-func (g *graph) registerInverseRelationships(info *lsif_typed.SymbolInformation) {
+func (g *graph) registerInverseRelationships(info *lsiftyped.SymbolInformation) {
 	for _, relationship := range info.Relationships {
 		inverseRelationships := g.inverseRelationships[relationship.Symbol]
-		g.inverseRelationships[relationship.Symbol] = append(inverseRelationships, &lsif_typed.Relationship{
+		g.inverseRelationships[relationship.Symbol] = append(inverseRelationships, &lsiftyped.Relationship{
 			Symbol:           info.Symbol,
 			IsReference:      relationship.IsReference,
 			IsImplementation: relationship.IsImplementation,
@@ -344,12 +344,12 @@ func interpretLsifRange(lsifRange []int32) (startLine, startCharacter, endLine, 
 
 func (g *graph) getOrInsertSymbolInformationIDs(symbol string, localResultSetTable map[string]symbolInformationIDs) symbolInformationIDs {
 	resultSetTable := g.symbolToResultSet
-	if lsif_typed.IsLocalSymbol(symbol) {
+	if lsiftyped.IsLocalSymbol(symbol) {
 		resultSetTable = localResultSetTable
 	}
 	ids, ok := resultSetTable[symbol]
 	if !ok {
-		ids = g.emitResultSet(&lsif_typed.SymbolInformation{Symbol: symbol}, "import")
+		ids = g.emitResultSet(&lsiftyped.SymbolInformation{Symbol: symbol}, "import")
 		resultSetTable[symbol] = ids
 	}
 	return ids
