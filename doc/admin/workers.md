@@ -40,6 +40,12 @@ This job periodically removes stale log entries for incoming webhooks.
 
 This job periodically removes old heartbeat records for inactive executor instances.
 
+#### `codemonitors-job`
+This job contains all the background processes for Code Monitors:
+1. Periodically execute searches
+2. Execute actions triggered by searches
+3. Cleanup of old execution logs
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
