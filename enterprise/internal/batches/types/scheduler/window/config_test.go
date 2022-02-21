@@ -366,9 +366,9 @@ func TestParseConfiguration(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				_, err := parseConfiguration(tc.in)
 
-				var e *errors.MultiError
-				if !errors.As(err, &e) || len(e.Errors) != tc.want {
-					t.Errorf("unexpected number of errors: have=%d want=%d", len(e.Errors), tc.want)
+				var e errors.MultiError
+				if !errors.As(err, &e) || len(e.Errors()) != tc.want {
+					t.Errorf("unexpected number of errors: have=%d want=%d", len(e.Errors()), tc.want)
 				}
 			})
 		}

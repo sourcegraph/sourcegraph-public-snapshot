@@ -1,0 +1,10 @@
+ # Test how to implement a symbol within the same workspace.
+ definition animal#
+#           ^^^^^^^ definition animal.repro/animal#
+#           documentation signature of animal#
+ definition dog# implements animal#
+#           ^^^^ definition animal.repro/dog#
+#           documentation signature of dog#
+#           relationship animal.repro/animal# implementation
+#                           ^^^^^^^ reference animal.repro/animal#
+ 

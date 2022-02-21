@@ -36,6 +36,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+// const UserSettingsPrivacyPage = lazyComponent(
+//     () => import('./privacy/UserSettingsPrivacyPage'),
+//     'UserSettingsPrivacyPage'
+// )
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -96,6 +101,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: showAccountSecurityPage,
     },
     {
+        path: '/privacy',
+        exact: true,
+        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
+    },
+    {
         path: '/repositories',
         render: props => (
             <SettingsRepositoriesPage
@@ -128,7 +138,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                 telemetryService={props.telemetryService}
-                authenticatedUser={props.authenticatedUser}
             />
         ),
         exact: true,

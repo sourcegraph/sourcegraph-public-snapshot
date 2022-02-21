@@ -295,6 +295,7 @@ Policies.args = {
             canSignOut: true,
         },
         tosAccepted: true,
+        searchable: true,
     },
 }
 

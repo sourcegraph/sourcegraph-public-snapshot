@@ -10,6 +10,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     SearchInsightCreationContent,
@@ -77,8 +78,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(
                     'InsightAddition',
-                    { insightType: 'searchInsights' },
-                    { insightType: 'searchInsights' }
+                    { insightType: CodeInsightTrackType.SearchBasedInsight },
+                    { insightType: CodeInsightTrackType.SearchBasedInsight }
                 )
 
                 // Clear initial values if user successfully created search insight

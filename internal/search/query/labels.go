@@ -7,7 +7,7 @@ type labels uint16
 
 const (
 	None    labels = 0
-	Literal        = 1 << iota
+	Literal labels = 1 << iota
 	Regexp
 	Quoted
 	HeuristicParensAsPatterns

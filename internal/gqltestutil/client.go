@@ -210,6 +210,29 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 	return resp.Data.CurrentUser.ID, nil
 }
 
+func (c *Client) IsCurrentUserSiteAdmin(token string) (bool, error) {
+	const query = `
+	query{
+      currentUser{
+        siteAdmin
+    }
+  }
+`
+	var resp struct {
+		Data struct {
+			CurrentUser struct {
+				SiteAdmin bool `json:"siteAdmin"`
+			} `json:"currentUser"`
+		} `json:"data"`
+	}
+	err := c.GraphQL(token, query, nil, &resp)
+	if err != nil {
+		return false, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.CurrentUser.SiteAdmin, nil
+}
+
 // AuthenticatedUserID returns the GraphQL node ID of current authenticated user.
 func (c *Client) AuthenticatedUserID() string {
 	return c.userID
@@ -276,7 +299,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "unmarshal response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs *errors.MultiError
+			var errs error
 			for _, err := range errResp.Errors {
 				errs = errors.Append(errs, errors.New(err.Message))
 			}
