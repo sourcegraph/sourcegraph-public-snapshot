@@ -85,6 +85,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		query         string
 		zeroResult    bool
 		minMatchCount int64
+		specificCheck func(results *gqltestutil.SearchFileResults)
 	}{
 		{
 			name:          "indexed search, nonzero result",
@@ -146,12 +147,37 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			query:      `repo:^perforce/test-perms$ type:file echo`,
 			zeroResult: true,
 		},
+		{
+			name:          "diff search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:diff let`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "diff search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:diff echo`,
+			zeroResult: true,
+		},
+		{
+			name:          "symbol search, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:symbol main`,
+			minMatchCount: 1,
+		},
+		{
+			name:       "symbol search of restricted content",
+			query:      `repo:^perforce/test-perms$ type:symbol asdf`,
+			zeroResult: true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			results, err := userClient.SearchFiles(test.query)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			if test.specificCheck != nil {
+				test.specificCheck(results)
+				return
 			}
 
 			if test.zeroResult {
@@ -169,6 +195,16 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("commit search", func(t *testing.T) {
+		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, res := range results.Results {
+			t.Log(res)
+		}
+	})
 }
 
 func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
