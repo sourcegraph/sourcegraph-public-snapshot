@@ -9,8 +9,8 @@
 # Status: everything works on linux. Go1.17 is currently broken on
 # darwin. https://github.com/NixOS/nixpkgs/commit/9675a865c9c3eeec36c06361f7215e109925654c
 
-# Pin a specific version of nixpkgs to ensure we get the same packages.
 let
+  # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
   ctags-overlay = (self: super: {
     universal-ctags = super.universal-ctags.overrideAttrs (old: {
       version = "5.9.20220206.0";
@@ -25,6 +25,7 @@ let
       checkFlags = [ ];
     });
   });
+  # Pin a specific version of nixpkgs to ensure we get the same packages.
   pkgs = import
     (fetchTarball {
       url =
