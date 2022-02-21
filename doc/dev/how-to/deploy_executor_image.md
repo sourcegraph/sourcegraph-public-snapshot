@@ -40,7 +40,7 @@ this step can be skipped. Otherwise, we need to update the variable defaults for
 as well. This, for example, should be done before every release cut to ensure the terraform
 module version for the to-be-cut Sourcegraph version exists.
 
-1. Clone both [github.com/sourcegraph/terraform-google-executors](github.com/sourcegraph/terraform-google-executors) and [github.com/sourcegraph/terraform-aws-executors](github.com/sourcegraph/terraform-aws-executors).
+1. Clone both [github.com/sourcegraph/terraform-google-executors](https://github.com/sourcegraph/terraform-google-executors) and [github.com/sourcegraph/terraform-aws-executors](https://github.com/sourcegraph/terraform-aws-executors).
 1. In each module, replace the variable default for the machine image both in the root module `variables.tf` and in the `./modules/executors` module's `variables.tf`.
 1. Open a PR with this change.
 1. Get approval and merge this PR.
