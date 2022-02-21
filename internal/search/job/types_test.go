@@ -9,9 +9,11 @@ func TestMembership(t *testing.T) {
 		}
 	}()
 
+	mapper := Mapper{}
 	for _, j := range allJobs {
 		Sexp(j)
 		PrettyMermaid(j)
 		PrettyJSON(j)
+		mapper.Map(j)
 	}
 }
