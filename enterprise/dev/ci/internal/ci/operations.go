@@ -219,6 +219,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 			bk.Cmd("yarn install"),
+			bk.Cmd("yarn generate"),
 			bk.Cmd("yarn --silent --cwd client/browser run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
