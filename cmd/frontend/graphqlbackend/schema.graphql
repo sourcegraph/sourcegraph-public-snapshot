@@ -2725,14 +2725,6 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
-    """
-    The id of the shard which owns this repo.
-    """
-    shardID: String
-    """
-    The most recent error fetching or cloning this repo, if any.
-    """
-    lastError: String
 }
 
 """

@@ -60,15 +60,6 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 			resp.LastChanged = &lastChanged
 		}
 	}
-	gsr, err := s.DB.GitserverRepos().GetByName(ctx, repo)
-	if err != nil {
-		log15.Warn("Getting GitServerRepo by name", "error", err)
-		resp.LastError = "Unknown"
-		resp.ShardID = "Unknown"
-	} else {
-		resp.LastError = gsr.LastError
-		resp.ShardID = gsr.ShardID
-	}
 	return &resp, nil
 }
 
