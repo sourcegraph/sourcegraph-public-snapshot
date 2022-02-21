@@ -7,6 +7,12 @@ This document describes the exact changes needed to update a single-node Sourceg
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, refer to the [standard upgrade procedure](../install/docker/operations.md#upgrade) to upgrade your instance.
 
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.36 -> 3.37
+
+Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
+
 ## 3.35 -> 3.36
 
 Follow the [standard upgrade procedure](../install/docker/operations.md#upgrade).
