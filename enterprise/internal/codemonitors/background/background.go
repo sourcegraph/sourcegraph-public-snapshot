@@ -7,11 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func StartBackgroundJobs(ctx context.Context, db edb.EnterpriseDB) {
-	routines := NewBackgroundJobs(ctx, db)
-	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
-}
-
 func NewBackgroundJobs(ctx context.Context, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
 	codeMonitorsStore := db.CodeMonitors()
 
