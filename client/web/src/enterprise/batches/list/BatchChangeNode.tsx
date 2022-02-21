@@ -24,6 +24,9 @@ export interface BatchChangeNodeProps {
     displayNamespace: boolean
 }
 
+// This is the original, pre-SSBC version of the state badge. It has been superseded by
+// `BatchChangeStatePill` and should be removed once SSBC is not longer behind a feature
+// flag.
 const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
@@ -70,13 +73,6 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
 
         const latestExecutionState = latestExecution?.state
 
-        // If the batch change is a draft (has not yet had a spec applied) and the latest
-        // spec has not been executed, we take you to the editor page to continue working
-        // on it.
-        if (node.state === BatchChangeState.DRAFT && latestExecutionState === BatchSpecState.PENDING) {
-            return `${node.url}/edit`
-        }
-
         switch (latestExecutionState) {
             // If the latest spec hasn't been executed yet...
             case BatchSpecState.PENDING:
@@ -90,9 +86,10 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             case BatchSpecState.PROCESSING:
             case BatchSpecState.FAILED:
                 return `${node.url}/executions/${latestExecution.id}`
+            // If the latest spec finished execution successfully...
             case BatchSpecState.COMPLETED:
-                // If the latest spec hasn't been applied, we take you to the preview
-                // page. Otherwise, we just take you tot he details page.
+                // If it hasn't been applied, we take you to the preview page. Otherwise,
+                // we just take you to the details page.
                 return node.currentSpec.id === latestExecution?.id
                     ? node.url
                     : `${node.url}/executions/${latestExecution.id}/preview`

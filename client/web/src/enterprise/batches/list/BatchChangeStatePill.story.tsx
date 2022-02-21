@@ -23,7 +23,7 @@ const buildTestProps = (
     latestSpecID: isApplied ? `${firstID}` : `${firstID + 1}`,
 })
 
-// Some of these state combinations shouldn't be possible (e.g. Failed and Applied), but
+// Some of these state combinations shouldn't be possible (e.g. failed and applied), but
 // it's easier to include them just in case.
 const STATE_COMBINATIONS: BatchChangeStatePillProps[] = Object.values(BatchChangeState).flatMap((state, index) =>
     // Latest execution state will be undefined if the batch change was executed locally
