@@ -1,8 +1,9 @@
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { BehaviorSubject, Observer } from 'rxjs'
-import { DocumentHighlight } from 'sourcegraph'
 
 import { Range } from '@sourcegraph/extension-api-classes'
+
+import { DocumentHighlight } from 'sourcegraph'
 
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientAPI } from '../../client/api/api'

@@ -1,6 +1,7 @@
 import * as comlink from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
+
 import { Unsubscribable } from 'sourcegraph'
 
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'

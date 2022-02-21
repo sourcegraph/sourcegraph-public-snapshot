@@ -4,9 +4,10 @@ import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
-import { LineChartContent } from 'sourcegraph'
 
 import { Button } from '@sourcegraph/wildcard'
+
+import { LineChartContent } from 'sourcegraph'
 
 import { WebStory } from '../../../components/WebStory'
 

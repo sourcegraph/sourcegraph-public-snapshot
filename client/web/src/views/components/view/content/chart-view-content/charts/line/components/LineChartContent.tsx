@@ -18,6 +18,7 @@ import { EventHandlerParams } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
 import { noop } from 'rxjs'
+
 import { LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { DEFAULT_LINE_STROKE } from '../constants'

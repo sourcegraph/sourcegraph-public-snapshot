@@ -1,10 +1,11 @@
 import { Remote } from 'comlink'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { CommandEntry } from '../api/client/mainthread-api'

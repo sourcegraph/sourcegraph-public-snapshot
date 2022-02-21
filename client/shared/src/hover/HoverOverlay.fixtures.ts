@@ -1,9 +1,10 @@
 import { action } from '@storybook/addon-actions'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
-import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
+import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { PlatformContext } from '../platform/context'

@@ -1,9 +1,10 @@
 import { Remote, proxy } from 'comlink'
 import { Subscription, from, Observable, Subject } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { registerBuiltinClientCommands } from '../../commands/commands'
 import { PlatformContext } from '../../platform/context'

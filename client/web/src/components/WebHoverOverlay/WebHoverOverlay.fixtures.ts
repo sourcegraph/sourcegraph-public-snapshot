@@ -1,7 +1,7 @@
-import { MarkupContent, Badged, AggregableBadge, HoverAlert } from 'sourcegraph'
-
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { FIXTURE_SEMANTIC_BADGE } from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
+
+import { MarkupContent, Badged, AggregableBadge, HoverAlert } from 'sourcegraph'
 
 export const FIXTURE_CONTENT_LONG_CODE: Badged<MarkupContent> = {
     kind: MarkupKind.Markdown,

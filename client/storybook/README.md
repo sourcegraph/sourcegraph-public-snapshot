@@ -17,7 +17,7 @@ yarn build-storybook
 
 ```sh
 # Load only a subset of stories to boost build performance.
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn start
+STORIES_GLOB='client/web/src/**/*.story.tsx' yarn start
 
 # Enable `webpack-bundle-analyzer` plugin.
 WEBPACK_BUNDLE_ANALYZER=true yarn start

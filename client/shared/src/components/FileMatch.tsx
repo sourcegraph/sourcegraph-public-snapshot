@@ -1,10 +1,11 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { AggregableBadge } from 'sourcegraph'
 
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
+
+import { AggregableBadge } from 'sourcegraph'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'

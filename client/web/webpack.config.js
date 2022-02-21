@@ -5,6 +5,7 @@ const path = require('path')
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
+const resolve = require('enhanced-resolve')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
@@ -24,6 +25,12 @@ const {
   getMonacoTTFRule,
   getBasicCSSLoader,
 } = require('@sourcegraph/build-config')
+
+const reactVisibilitySensorPath = resolve.sync(__dirname, 'react-visibility-sensor')
+
+if (!reactVisibilitySensorPath) {
+  throw new Error('react-visibility-sensor package is not resolved locally! yarn install is required')
+}
 
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
@@ -185,7 +192,12 @@ const config = {
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
-      'react-visibility-sensor': path.resolve(ROOT_PATH, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
+      'react-visibility-sensor': path.resolve(reactVisibilitySensorPath, '../visibility-sensor.js'),
+    },
+    fallback: {
+      buffer: require.resolve('buffer/'),
+      path: require.resolve('path-browserify'),
+      punycode: require.resolve('punycode/'),
     },
   },
   module: {

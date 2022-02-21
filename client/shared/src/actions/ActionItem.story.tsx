@@ -20,7 +20,7 @@ const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
     settings: NEVER,
 }
 
-const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
+const LOCATION: H.Location = { key: 'location', hash: '', pathname: '/', search: '', state: undefined }
 
 const ICON_URL =
     'data:image/svg+xml,' +

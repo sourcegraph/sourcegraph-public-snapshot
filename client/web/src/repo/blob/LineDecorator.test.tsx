@@ -1,9 +1,10 @@
 import { render, within } from '@testing-library/react'
 import React from 'react'
 import { ReplaySubject } from 'rxjs'
-import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
+
+import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 
 import { LineDecorator, LineDecoratorProps } from './LineDecorator'
 

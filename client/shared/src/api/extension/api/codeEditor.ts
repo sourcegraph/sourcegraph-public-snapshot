@@ -1,10 +1,11 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
 import { isEqual, uniqueId } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
 
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
 

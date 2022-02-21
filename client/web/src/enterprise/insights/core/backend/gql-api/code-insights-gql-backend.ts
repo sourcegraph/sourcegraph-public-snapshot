@@ -1,7 +1,6 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
 import {
     AddInsightViewToDashboardResult,
     CreateDashboardResult,
@@ -22,6 +21,8 @@ import {
 
 import { fromObservableQuery } from '@sourcegraph/http-client'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'

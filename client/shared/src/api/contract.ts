@@ -1,10 +1,11 @@
 import { Remote, ProxyMarked } from 'comlink'
-import * as sourcegraph from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { DeepReplace, ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'

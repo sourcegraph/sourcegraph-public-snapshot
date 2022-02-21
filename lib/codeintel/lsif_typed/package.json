@@ -4,5 +4,12 @@
   "version": "0.0.1",
   "description": "Schema for LSIF typed",
   "sideEffects": false,
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "google-protobuf": "3.17.3"
+  },
+  "devDependencies": {
+    "@types/history": "4.5.1",
+    "react-test-renderer": "^16.14.0"
+  }
 }

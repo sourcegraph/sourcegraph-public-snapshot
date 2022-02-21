@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Form } from 'reactstrap'
-import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import {
@@ -28,6 +27,7 @@ import {
     setSearchCaseSensitivity,
     setSearchPatternType,
 } from '../../stores'
+import { NavbarQueryState } from '../../stores/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'

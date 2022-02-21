@@ -1,9 +1,10 @@
 import { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { DocumentHighlight, Hover } from 'sourcegraph'
 
 import { LOADING } from '@sourcegraph/codeintellify'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
+
+import { DocumentHighlight, Hover } from 'sourcegraph'
 
 import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'

@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'

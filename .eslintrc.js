@@ -15,6 +15,7 @@ const config = {
       jsx: true,
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
+    warnOnUnsupportedTypeScriptVersion: false,
     project: __dirname + '/tsconfig.json',
   },
   settings: {

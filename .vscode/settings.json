@@ -13,34 +13,30 @@
     "doc/_resources/assets": true,
     "**/.eslintcache": true,
     "**/.yarn": true,
-    "**/.pnp.*": true
+    "**/.pnp.*": true,
   },
   "files.exclude": {
-    "**/*.scss.d.ts": true
+    "**/*.scss.d.ts": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
     "**/dev/site-config.json": "jsonc",
-    "**/.mocharc.json": "jsonc"
+    "**/.mocharc.json": "jsonc",
   },
   "json.schemas": [
     {
-      "fileMatch": [
-        "dev/critical-config.json"
-      ],
-      "url": "/schema/critical/critical.schema.json"
+      "fileMatch": ["dev/critical-config.json"],
+      "url": "/schema/critical/critical.schema.json",
     },
     {
-      "fileMatch": [
-        "dev/site-config.json"
-      ],
-      "url": "/schema/site.schema.json"
-    }
+      "fileMatch": ["dev/site-config.json"],
+      "url": "/schema/site.schema.json",
+    },
   ],
   "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
-    "local": "github.com/sourcegraph/sourcegraph"
+    "local": "github.com/sourcegraph/sourcegraph",
   },
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
@@ -55,18 +51,13 @@
   "typescript.tsdk": ".yarn/sdks/typescript/lib",
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": true,
   },
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": {
-    "cache": true
+    "cache": true,
   },
   "eslint.workingDirectories": [
     "./dev/release",
@@ -84,7 +75,7 @@
     "./client/extension-api-types",
     "./client/extension-api",
     "./client/template-parser",
-    "./client/codeintellify"
+    "./client/codeintellify",
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
@@ -92,5 +83,5 @@
   "jest.jestCommandLine": "yarn -s test",
   "eslint.nodePath": ".yarn/sdks",
   "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  "typescript.enablePromptUseWorkspaceTsdk": true,
 }

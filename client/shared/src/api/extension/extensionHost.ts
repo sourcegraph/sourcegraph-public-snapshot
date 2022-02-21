@@ -1,6 +1,7 @@
 import * as comlink from 'comlink'
 import { isMatch } from 'lodash'
 import { Subscription, Unsubscribable } from 'rxjs'
+
 import * as sourcegraph from 'sourcegraph'
 
 import { EndpointPair } from '../../platform/context'

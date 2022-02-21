@@ -1,7 +1,6 @@
 import { camelCase } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -11,6 +10,8 @@ import {
     InsightDashboard as InsightDashboardConfiguration,
 } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../../pages/dashboards/dashboard-page/components/add-insight-modal/utils/get-reachable-insights'

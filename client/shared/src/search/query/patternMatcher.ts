@@ -1,3 +1,5 @@
+/* eslint-disable jsdoc/check-indentation */
+
 /**
  * This module provides functions and TS types for pattern matching.
  * Given an input value and a pattern, `matchesValue` returns true if the value

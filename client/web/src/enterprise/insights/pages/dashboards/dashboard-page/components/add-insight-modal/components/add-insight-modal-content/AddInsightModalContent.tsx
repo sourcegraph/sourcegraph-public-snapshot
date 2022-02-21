@@ -51,6 +51,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     )
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}

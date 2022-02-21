@@ -1,7 +1,8 @@
 import minimatch from 'minimatch'
-import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
 
 import { Position } from '@sourcegraph/extension-api-types'
+
+import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
 
 /**
  * The URI scheme for the resources that hold the body of comments (such as comments on a GitHub

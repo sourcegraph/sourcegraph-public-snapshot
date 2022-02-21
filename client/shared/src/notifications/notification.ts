@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs'
+
 import { NotificationType, Progress } from 'sourcegraph'
 
 /**

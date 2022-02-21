@@ -9,7 +9,6 @@ import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSe
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 import {
-    NODE_MODULES_PATH,
     ROOT_PATH,
     getCSSLoaders,
     getCSSModulesLoader,
@@ -25,13 +24,7 @@ import {
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
-import {
-    monacoEditorPath,
-    dllPluginConfig,
-    dllBundleManifestPath,
-    readJsonFile,
-    storybookWorkspacePath,
-} from './webpack.config.common'
+import { dllPluginConfig, dllBundleManifestPath, readJsonFile, storybookWorkspacePath } from './webpack.config.common'
 
 const getStoriesGlob = (): string[] => {
     if (process.env.STORIES_GLOB) {
@@ -44,7 +37,7 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['wildcard']
+    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
@@ -147,21 +140,21 @@ const config = {
             ...getBabelLoader(),
         })
 
-        const storybookPath = path.resolve(NODE_MODULES_PATH, '@storybook')
+        const storybookRegex = /@storybook/
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.
         config.module.rules.unshift({
             test: /\.(sass|scss)$/,
             // Make sure Storybook styles get handled by the Storybook config
-            exclude: [/\.module\.(sass|scss)$/, storybookPath],
+            exclude: [/\.module\.(sass|scss)$/, storybookRegex],
             use: getCSSLoaders('@terminus-term/to-string-loader', getBasicCSSLoader()),
         })
 
         config.module?.rules.unshift({
             test: /\.(sass|scss)$/,
             include: /\.module\.(sass|scss)$/,
-            exclude: storybookPath,
+            exclude: storybookRegex,
             use: getCSSLoaders(
                 'style-loader',
                 getCSSModulesLoader({ sourceMap: !environment.shouldMinify, url: false })
@@ -175,13 +168,13 @@ const config = {
         if (!cssRule) {
             throw new Error('Cannot find original CSS rule')
         }
-        cssRule.include = storybookPath
+        cssRule.include = storybookRegex
 
         config.module.rules.push({
             // CSS rule for external plain CSS (skip SASS and PostCSS for build perf)
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
-            exclude: [storybookPath, monacoEditorPath],
+            exclude: /(@storybook|monaco-editor)/,
             use: ['@terminus-term/to-string-loader', getBasicCSSLoader()],
         })
 
@@ -225,8 +218,6 @@ const config = {
 
             return speedMeasurePlugin.wrap(config)
         }
-
-        console.log('YO', config.resolve.fallback)
 
         return config
     },

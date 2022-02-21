@@ -90,6 +90,7 @@
     "@types/got": "9.6.11",
     "@types/gulp": "4.0.7",
     "@types/highlight.js": "9.12.4",
+    "@types/history": "4.5.1",
     "@types/is-absolute-url": "3.0.0",
     "@types/jest": "26.0.20",
     "@types/js-cookie": "2.2.6",
@@ -209,6 +210,7 @@
     "puppeteer": "12.0.1",
     "puppeteer-firefox": "^0.5.1",
     "react-refresh": "^0.10.0",
+    "react-test-renderer": "^16.14.0",
     "sass": "^1.32.4",
     "sass-loader": "^12.1.0",
     "shelljs": "^0.8.4",
@@ -290,7 +292,7 @@
     "focus-visible": "^5.2.0",
     "fzy.js": "^0.4.1",
     "got": "^11.5.2",
-    "graphiql": "^1.3.2",
+    "graphiql": "^1.5.20",
     "highlight.js": "^10.5.0",
     "highlightjs-graphql": "^1.0.2",
     "http-status-codes": "^2.1.4",
@@ -347,11 +349,6 @@
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
-  },
-  "resolutions": {
-    "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "webpack": "5"
   },
   "peerDependencies": {
     "stylelint": "^13.0.0"

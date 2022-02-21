@@ -1,11 +1,12 @@
 import { Remote } from 'comlink'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { wrapRemoteObservable } from '../client/api/common'
 import { FlatExtensionHostAPI } from '../contract'

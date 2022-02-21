@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
-import { HoverAlert } from 'sourcegraph'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Link, Alert } from '@sourcegraph/wildcard'
+
+import { HoverAlert } from 'sourcegraph'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
 import hoverOverlayStyle from '../HoverOverlay.module.scss'

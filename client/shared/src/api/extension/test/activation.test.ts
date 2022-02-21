@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
+
 import sourcegraph from 'sourcegraph'
 
 import { SettingsCascade } from '../../../settings/settings'

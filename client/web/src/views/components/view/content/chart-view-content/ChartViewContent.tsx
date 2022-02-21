@@ -2,6 +2,7 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import React, { FunctionComponent, useCallback } from 'react'
+
 import { ChartContent } from 'sourcegraph'
 
 import { BarChart } from './charts/bar/BarChart'

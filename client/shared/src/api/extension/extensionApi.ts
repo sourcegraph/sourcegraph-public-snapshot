@@ -2,10 +2,11 @@ import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
 import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'

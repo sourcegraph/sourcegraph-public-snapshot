@@ -1,5 +1,6 @@
 import React from 'react'
 import { throwError } from 'rxjs'
+
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'

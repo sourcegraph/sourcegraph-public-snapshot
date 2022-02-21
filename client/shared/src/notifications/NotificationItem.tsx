@@ -2,10 +2,11 @@ import classNames from 'classnames'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { Notification } from './notification'
 import styles from './NotificationItem.module.scss'

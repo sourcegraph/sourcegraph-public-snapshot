@@ -14,10 +14,7 @@
     "foxundermoon.shell-format",
     "timonwong.shellcheck",
     "felixfbecker.css-stacking-contexts",
-    "arcanis.vscode-zipfs"
+    "arcanis.vscode-zipfs",
   ],
-  "unwantedRecommendations": [
-    "ms-vscode.vscode-typescript-tslint-plugin",
-    "eg2.tslint"
-  ]
+  "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
 }

@@ -1,7 +1,6 @@
 import { Remote } from 'comlink'
 import { Observable, from, concat } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { DocumentHighlight } from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { memoizeObservable } from '@sourcegraph/common'
@@ -18,6 +17,8 @@ import {
     toURIWithPath,
     toRootURI,
 } from '@sourcegraph/shared/src/util/url'
+
+import { DocumentHighlight } from 'sourcegraph'
 
 /**
  * Fetches hover information for the given location.

@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import * as React from 'react'
-import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { RouterLink } from '@sourcegraph/wildcard'
+
+import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 

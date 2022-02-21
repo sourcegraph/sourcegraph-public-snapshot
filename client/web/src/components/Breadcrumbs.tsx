@@ -3,10 +3,11 @@ import * as H from 'history'
 import { sortBy } from 'lodash'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
+
+import { Unsubscribable } from 'sourcegraph'
 
 import styles from './Breadcrumbs.module.scss'
 

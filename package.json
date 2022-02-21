@@ -12,9 +12,9 @@
   },
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "prettier-check": "yarn -s run prettier --write=false --check --list-different=false --loglevel=warn",
-    "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
-    "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/shared run stylelint && yarn --cwd client/branded run stylelint && yarn --cwd client/browser run stylelint && yarn --cwd client/wildcard run stylelint",
+    "prettier-check": "yarn --silent run prettier --write=false --check --list-different=false --loglevel=warn",
+    "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn --silent eslint --quiet",
+    "all:stylelint": "yarn workspaces foreach --include '@sourcegraph/{web,shared,branded,browser,wildcard}' run stylelint",
     "build-ts": "tsc -b tsconfig.all.json",
     "graphql-lint": "graphql-schema-linter",
     "build-web": "yarn workspace @sourcegraph/web run build",
@@ -41,7 +41,7 @@
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
     "build-storybook": "yarn workspace @sourcegraph/storybook run build",
     "cover-storybook": "nyc --hook-require=false yarn jest client/storybook/src/coverage",
-    "deduplicate": "yarn-deduplicate -s fewer",
+    "deduplicate": "yarn dedupe --check",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "yarn --cwd client/browser run build",
@@ -90,8 +90,8 @@
   "workspaces": {
     "packages": [
       "lib/codeintel/lsif_typed",
-      "client/*",
-      "client/sandboxes/*"
+      "dev/release",
+      "client/*"
     ]
   },
   "devDependencies": {
@@ -129,6 +129,7 @@
     "@sourcegraph/eslint-plugin-wildcard": "1.0.0",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.4.0",
+    "@sourcegraph/stylelint-plugin-sourcegraph": "workspace:^",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-a11y": "^6.3.12",
     "@storybook/addon-actions": "^6.3.12",
@@ -179,6 +180,7 @@
     "@types/got": "9.6.11",
     "@types/gulp": "4.0.7",
     "@types/highlight.js": "9.12.4",
+    "@types/history": "4.5.1",
     "@types/is-absolute-url": "3.0.0",
     "@types/jest": "26.0.20",
     "@types/js-cookie": "2.2.6",
@@ -222,6 +224,7 @@
     "@types/webpack-bundle-analyzer": "4.4.1",
     "@types/webpack-dev-server": "4.0.3",
     "@types/webpack-manifest-plugin": "3.0.5",
+    "@typescript-eslint/parser": "^4.28.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.2.1",
     "babel-jest": "^25.5.1",
@@ -299,6 +302,8 @@
     "puppeteer": "12.0.1",
     "puppeteer-firefox": "^0.5.1",
     "react-refresh": "^0.10.0",
+    "react-test-renderer": "^16.14.0",
+    "regenerator-runtime": "npm:^0.13.7",
     "sass": "^1.32.4",
     "sass-loader": "^12.1.0",
     "shelljs": "^0.8.4",
@@ -381,7 +386,7 @@
     "focus-visible": "^5.2.0",
     "fzy.js": "^0.4.1",
     "got": "^11.5.2",
-    "graphiql": "^1.3.2",
+    "graphiql": "^1.5.20",
     "highlight.js": "^10.5.0",
     "highlightjs-graphql": "^1.0.2",
     "http-status-codes": "^2.1.4",
@@ -440,6 +445,7 @@
     "zustand": "^3.6.9"
   },
   "resolutions": {
+    "@types/history": "4.5.1",
     "history": "4.5.1",
     "cssnano": "4.1.10",
     "webpack": "5"

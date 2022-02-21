@@ -8,6 +8,7 @@ import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
 import classNames from 'classnames'
 import { range } from 'lodash'
 import React, { ReactElement, useCallback, useMemo } from 'react'
+
 import { BarChartContent } from 'sourcegraph'
 
 import { MaybeLink } from '../MaybeLink'

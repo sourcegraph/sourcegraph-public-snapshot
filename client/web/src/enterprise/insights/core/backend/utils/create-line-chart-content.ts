@@ -1,7 +1,8 @@
 import { formatISO } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
+import { LineChartContent } from 'sourcegraph'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
