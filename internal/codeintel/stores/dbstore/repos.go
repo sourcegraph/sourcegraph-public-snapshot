@@ -9,6 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -173,3 +176,36 @@ const getLSIFDependencyReposQuery = `
 SELECT id, name, version FROM lsif_dependency_repos
 WHERE %s ORDER BY id %s
 `
+
+type DependencyInserter struct{ in *batch.Inserter }
+
+func NewDependencyInserter(db dbutil.DB) *DependencyInserter {
+	return &DependencyInserter{in: batch.NewInserterWithReturn(
+		context.Background(),
+		db,
+		"lsif_dependency_repos",
+		batch.MaxNumPostgresParameters,
+		[]string{"scheme", "name", "version"},
+		"ON CONFLICT DO NOTHING",
+		[]string{"id"},
+		func(rows *sql.Rows) error {
+			var id int // ignored
+			return rows.Scan(&id)
+		},
+	)}
+}
+
+func (i *DependencyInserter) InsertLockfileDependency(ctx context.Context, dep *lockfiles.Dependency) error {
+	var scheme string
+	switch dep.Kind {
+	case lockfiles.KindNPM:
+		scheme = NPMPackagesScheme
+	default:
+		return errors.Errorf("unsupported lockfile depedency repo: %v", dep)
+	}
+	return i.in.Insert(ctx, scheme, dep.Name, dep.Version)
+}
+
+func (i *DependencyInserter) Flush(ctx context.Context) error {
+	return i.in.Flush(ctx)
+}

@@ -15,11 +15,11 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -528,12 +528,16 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 		tr.Finish()
 	}()
 
+	repoStore := r.DB.Repos()
+	depsStore := codeinteldbstore.NewDependencyInserter(r.DB)
+	defer depsStore.Flush(ctx)
+
 	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
-	store := r.DB.Repos()
-	repos := backend.NewRepos(store)
-	sem := semaphore.NewWeighted(16)
-	mu := sync.Mutex{}
+
+	var mu sync.Mutex
 	depRevs = make(map[string][]search.RevisionSpecifier)
+
+	sem := semaphore.NewWeighted(16)
 	g, ctx := errgroup.WithContext(ctx)
 
 	for _, depFilter := range op.Dependencies {
@@ -544,7 +548,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 				revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
 			}
 
-			rs, err := store.ListMinimalRepos(ctx, database.ReposListOptions{
+			rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
 				IncludePatterns:       []string{repoPattern},
 				CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 			})
@@ -570,18 +574,14 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 						defer sem.Release(1)
 
 						return svc.StreamDependencies(ctx, repo.Name, rev.RevSpec, func(dep *lockfiles.Dependency) error {
+							if err := depsStore.InsertLockfileDependency(ctx, dep); err != nil {
+								log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
+							}
+
 							mu.Lock()
 							depNames = append(depNames, dep.Name)
 							depRevs[dep.Name] = append(depRevs[dep.Name], search.RevisionSpecifier{RevSpec: dep.Version})
 							mu.Unlock()
-
-							if !envvar.SourcegraphDotComMode() {
-								return nil
-							}
-
-							if _, err := repos.GetByName(ctx, api.RepoName(dep.Name)); err != nil {
-								log15.Warn("failed lazy-syncing dependency", "name", dep.Name, "error", err)
-							}
 
 							return nil
 						})
