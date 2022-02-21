@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -108,7 +109,7 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *gql.
 		term = *args.Query
 	}
 
-	matches, totalCount, err := r.resolver.RetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term)
+	matches, totalCount, err := r.resolver.RetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
 	if err != nil {
 		return nil, err
 	}

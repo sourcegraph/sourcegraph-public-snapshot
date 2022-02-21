@@ -18,7 +18,10 @@ func NewRetentionPolicyMatcherResolver(db database.DB, policy resolvers.Retentio
 }
 
 func (r *RetentionPolicyMatcherResolver) ConfigurationPolicy() gql.CodeIntelligenceConfigurationPolicyResolver {
-	return NewConfigurationPolicyResolver(r.db, r.policy.ConfigurationPolicy, r.errCollector)
+	if r.policy.ConfigurationPolicy == nil {
+		return nil
+	}
+	return NewConfigurationPolicyResolver(r.db, *r.policy.ConfigurationPolicy, r.errCollector)
 }
 
 func (r *RetentionPolicyMatcherResolver) Matches() bool {

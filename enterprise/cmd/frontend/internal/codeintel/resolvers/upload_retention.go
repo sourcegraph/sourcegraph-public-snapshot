@@ -11,13 +11,13 @@ import (
 )
 
 type RetentionPolicyMatchCandidate struct {
-	dbstore.ConfigurationPolicy
+	*dbstore.ConfigurationPolicy
 	Matched           bool
 	ProtectingCommits []string
 }
 
-func (r *resolver) RetentionPolicyOverview(ctx context.Context, upload dbstore.Upload, matchesOnly bool, first int, after int64, query string) ([]RetentionPolicyMatchCandidate, int, error) {
-	policyMatcher := policies.NewMatcher(r.gitserverClient, policies.RetentionExtractor, false, false)
+func (r *resolver) RetentionPolicyOverview(ctx context.Context, upload dbstore.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) ([]RetentionPolicyMatchCandidate, int, error) {
+	policyMatcher := policies.NewMatcher(r.gitserverClient, policies.RetentionExtractor, true, false)
 
 	policies, _, err := r.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
@@ -41,21 +41,19 @@ func (r *resolver) RetentionPolicyOverview(ctx context.Context, upload dbstore.U
 	}
 
 	var (
-		now                    = time.Now()
 		potentialMatchIndexSet map[int]int // map of polciy ID to array index
 		potentialMatches       []RetentionPolicyMatchCandidate
 	)
 
-	if matchesOnly {
-		potentialMatches, _ = r.populateMatchingCommits(visibileCommits, upload, matchingPolicies, policies, now)
-	} else {
-		potentialMatches, potentialMatchIndexSet = r.populateMatchingCommits(visibileCommits, upload, matchingPolicies, policies, now)
+	potentialMatches, potentialMatchIndexSet = r.populateMatchingCommits(visibileCommits, upload, matchingPolicies, policies, now)
 
+	if !matchesOnly {
 		// populate with remaining unmatched policies
 		for _, policy := range policies {
+			policy := policy
 			if _, ok := potentialMatchIndexSet[policy.ID]; !ok {
 				potentialMatches = append(potentialMatches, RetentionPolicyMatchCandidate{
-					ConfigurationPolicy: policy,
+					ConfigurationPolicy: &policy,
 					Matched:             false,
 				})
 			}
@@ -63,6 +61,11 @@ func (r *resolver) RetentionPolicyOverview(ctx context.Context, upload dbstore.U
 	}
 
 	sort.Slice(potentialMatches, func(i, j int) bool {
+		if potentialMatches[i].ConfigurationPolicy == nil {
+			return true
+		} else if potentialMatches[j].ConfigurationPolicy == nil {
+			return false
+		}
 		return potentialMatches[i].ID < potentialMatches[j].ID
 	})
 
@@ -105,11 +108,17 @@ func (r *resolver) populateMatchingCommits(
 	// that the upload's commit is not first in the list.
 	if policyMatches, ok := matchingPolicies[upload.Commit]; ok {
 		for _, policyMatch := range policyMatches {
-			potentialMatches = append(potentialMatches, RetentionPolicyMatchCandidate{
-				ConfigurationPolicy: *policyByID(policies, *policyMatch.PolicyID),
-				Matched:             true,
-			})
-			potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches) - 1
+			if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+				potentialMatches = append(potentialMatches, RetentionPolicyMatchCandidate{
+					ConfigurationPolicy: policyByID(policies, policyMatch.PolicyID),
+					Matched:             true,
+				})
+				if policyMatch.PolicyID != nil {
+					potentialMatchIndexSet[*policyMatch.PolicyID] = len(potentialMatches) - 1
+				} else {
+					potentialMatchIndexSet[-1] = len(potentialMatches) - 1
+				}
+			}
 		}
 	}
 
@@ -120,6 +129,7 @@ func (r *resolver) populateMatchingCommits(
 		if policyMatches, ok := matchingPolicies[commit]; ok {
 			for _, policyMatch := range policyMatches {
 				if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+					// policyMatch.PolicyID should be non nil here, as any visible uploads cannot be at a tip-of-branch commit
 					if index, ok := potentialMatchIndexSet[*policyMatch.PolicyID]; ok && potentialMatches[index].ProtectingCommits != nil {
 						//  If an entry for the policy already exists and it has > 1 "protecting commits", add this commit too.
 						potentialMatches[index].ProtectingCommits = append(potentialMatches[index].ProtectingCommits, commit)
@@ -127,7 +137,7 @@ func (r *resolver) populateMatchingCommits(
 						// Else if theres no entry for the policy, create an entry with this commit as the first "protecting commit".
 						// This should never override an entry for a policy matched directly, see the first comment on how this is avoided.
 						potentialMatches = append(potentialMatches, RetentionPolicyMatchCandidate{
-							ConfigurationPolicy: *policyByID(policies, *policyMatch.PolicyID),
+							ConfigurationPolicy: policyByID(policies, policyMatch.PolicyID),
 							Matched:             true,
 							ProtectingCommits:   []string{commit},
 						})
@@ -141,9 +151,12 @@ func (r *resolver) populateMatchingCommits(
 	return potentialMatches, potentialMatchIndexSet
 }
 
-func policyByID(policies []dbstore.ConfigurationPolicy, id int) *dbstore.ConfigurationPolicy {
+func policyByID(policies []dbstore.ConfigurationPolicy, id *int) *dbstore.ConfigurationPolicy {
+	if id == nil {
+		return nil
+	}
 	for _, policy := range policies {
-		if policy.ID == id {
+		if policy.ID == *id {
 			return &policy
 		}
 	}

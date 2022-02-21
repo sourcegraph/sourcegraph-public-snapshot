@@ -377,7 +377,7 @@ type CodeIntelligenceRetentionPolicyMatch {
     """
     The actual retention policy.
     """
-    configurationPolicy: CodeIntelligenceConfigurationPolicy!
+    configurationPolicy: CodeIntelligenceConfigurationPolicy
 
     """
     Whether the retention policy matches the upload or not. False values may be returned

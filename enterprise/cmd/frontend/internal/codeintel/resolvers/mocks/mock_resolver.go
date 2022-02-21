@@ -5,6 +5,7 @@ package mocks
 import (
 	"context"
 	"sync"
+	"time"
 
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -209,7 +210,7 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
-			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -341,7 +342,7 @@ func NewStrictMockResolver() *MockResolver {
 			},
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
-			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 				panic("unexpected invocation of MockResolver.RetentionPolicyOverview")
 			},
 		},
@@ -2677,24 +2678,24 @@ func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Results() []interface{} {
 // RetentionPolicyOverview method of the parent MockResolver instance is
 // invoked.
 type ResolverRetentionPolicyOverviewFunc struct {
-	defaultHook func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
-	hooks       []func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
+	defaultHook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
+	hooks       []func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
 	history     []ResolverRetentionPolicyOverviewFuncCall
 	mutex       sync.Mutex
 }
 
 // RetentionPolicyOverview delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockResolver) RetentionPolicyOverview(v0 context.Context, v1 dbstore.Upload, v2 bool, v3 int, v4 int64, v5 string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
-	r0, r1, r2 := m.RetentionPolicyOverviewFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.RetentionPolicyOverviewFunc.appendCall(ResolverRetentionPolicyOverviewFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+func (m *MockResolver) RetentionPolicyOverview(v0 context.Context, v1 dbstore.Upload, v2 bool, v3 int, v4 int64, v5 string, v6 time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+	r0, r1, r2 := m.RetentionPolicyOverviewFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.RetentionPolicyOverviewFunc.appendCall(ResolverRetentionPolicyOverviewFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // RetentionPolicyOverview method of the parent MockResolver instance is
 // invoked and the hook queue is empty.
-func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
+func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -2703,7 +2704,7 @@ func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ResolverRetentionPolicyOverviewFunc) PushHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
+func (f *ResolverRetentionPolicyOverviewFunc) PushHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2712,19 +2713,19 @@ func (f *ResolverRetentionPolicyOverviewFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultReturn(r0 []resolvers.RetentionPolicyMatchCandidate, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ResolverRetentionPolicyOverviewFunc) PushReturn(r0 []resolvers.RetentionPolicyMatchCandidate, r1 int, r2 error) {
-	f.PushHook(func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+	f.PushHook(func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ResolverRetentionPolicyOverviewFunc) nextHook() func(context.Context, dbstore.Upload, bool, int, int64, string) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+func (f *ResolverRetentionPolicyOverviewFunc) nextHook() func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2776,6 +2777,9 @@ type ResolverRetentionPolicyOverviewFuncCall struct {
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
 	Arg5 string
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []resolvers.RetentionPolicyMatchCandidate
@@ -2790,7 +2794,7 @@ type ResolverRetentionPolicyOverviewFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ResolverRetentionPolicyOverviewFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
 }
 
 // Results returns an interface slice containing the results of this
