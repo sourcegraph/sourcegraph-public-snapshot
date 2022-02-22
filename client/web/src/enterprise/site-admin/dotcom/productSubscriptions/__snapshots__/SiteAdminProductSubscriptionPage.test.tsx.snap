@@ -140,7 +140,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             >
               <span
                 class="timestamp"
-                data-tooltip="2020-01-01"
+                data-tooltip="2020-01-01 12:00 AM"
               >
                 in almost 14 years
               </span>
@@ -207,7 +207,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   Created 
                   <span
                     class="timestamp"
-                    data-tooltip="2020-01-01"
+                    data-tooltip="2020-01-01 12:00 AM"
                   >
                     in almost 14 years
                   </span>

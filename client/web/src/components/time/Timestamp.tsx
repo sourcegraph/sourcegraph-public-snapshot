@@ -1,7 +1,7 @@
-import { parseISO } from 'date-fns'
+import { parseISO, format } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 interface Props {
     /** The date (if string, in ISO 8601 format). */
@@ -40,8 +40,10 @@ export const Timestamp: React.FunctionComponent<Props> = ({
         }
     }, [date, noAbout, now, strict])
 
+    const tooltip = useMemo(() => format(typeof date === 'string' ? parseISO(date) : date, 'yyyy-MM-dd p'), [date])
+
     return (
-        <span className="timestamp" data-tooltip={date}>
+        <span className="timestamp" data-tooltip={tooltip}>
             {label}
         </span>
     )

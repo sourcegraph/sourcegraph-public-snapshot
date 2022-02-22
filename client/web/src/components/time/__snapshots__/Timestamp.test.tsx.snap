@@ -4,7 +4,7 @@ exports[`Timestamp mocked current time 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-tooltip="2006-01-02"
+    data-tooltip="2006-01-02 12:00 AM"
   >
     about 22 hours ago
   </span>
@@ -15,7 +15,7 @@ exports[`Timestamp noAbout 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-tooltip="2006-01-02"
+    data-tooltip="2006-01-02 12:00 AM"
   >
     22 hours ago
   </span>
