@@ -67,6 +67,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isGettingStartedTourEnabled,
         [hasSearchQuery, isGettingStartedTourEnabled, isExperimentalOnboardingTourEnabled]
     )
+    const showCollaborators = true
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -93,10 +94,16 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     where="homepage"
                 />
             </div>
-            <div className={styles.panelsContainer}>
+            <div
+                className={classNames(styles.panelsContainer, {
+                    [styles.panelsContainerWithCollaborators]: showCollaborators,
+                })}
+            >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
-                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+                {showEnterpriseHomePanels && props.authenticatedUser && (
+                    <HomePanels showCollaborators={showCollaborators} {...props} />
+                )}
             </div>
 
             <SearchPageFooter {...props} />
