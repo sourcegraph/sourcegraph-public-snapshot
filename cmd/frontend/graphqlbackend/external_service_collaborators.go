@@ -231,6 +231,11 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 		}
 		deduplicate[recentCommitter.email] = struct{}{}
 
+		if len(invitable) > 200 {
+			// 200 users is more than enough, don't do any more work (such as checking if users
+			// exist.)
+			break
+		}
 		// If a Sourcegraph user with a matching username exists, or a matching email exists, don't
 		// consider them someone who is invitable (would be annoying to receive invites after having
 		// an account.)
