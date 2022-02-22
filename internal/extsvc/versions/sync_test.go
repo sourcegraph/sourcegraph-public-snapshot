@@ -2,9 +2,13 @@ package versions
 
 import (
 	"context"
+	"flag"
+	"os"
 	"testing"
 
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -13,11 +17,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestGetAndStoreVersions(t *testing.T) {
-	oldHandler := log15.Root().GetHandler()
-	log15.Root().SetHandler(log15.DiscardHandler())
-	t.Cleanup(func() { log15.Root().SetHandler(oldHandler) })
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
+}
 
+func TestGetAndStoreVersions(t *testing.T) {
 	es := []*types.ExternalService{
 		{Kind: extsvc.KindGitHub, DisplayName: "github.com 1", Config: `{"url": "https://github.com"}`},
 		{Kind: extsvc.KindGitHub, DisplayName: "github.com 2", Config: `{"url": "https://github.com"}`},
@@ -27,53 +35,35 @@ func TestGetAndStoreVersions(t *testing.T) {
 		{Kind: extsvc.KindGitHub, DisplayName: "bitbucket server", Config: `{"url": "https://bitbucket.sgdev.org"}`},
 		{Kind: extsvc.KindGitHub, DisplayName: "another bitbucket server", Config: `{"url": "https://bitbucket2.sgdev.org"}`},
 	}
-
-	mockExternalServices := func(t *testing.T, es []*types.ExternalService) {
-		database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			return es, nil
-		}
-		t.Cleanup(func() { database.Mocks.ExternalServices.List = nil })
-	}
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(es, nil)
 
 	t.Run("success", func(t *testing.T) {
-		mockExternalServices(t, es)
-
 		src := &fakeVersionSource{version: "1.2.3.4", err: nil, es: es}
 
-		have, err := loadVersions(context.Background(), nil, newFakeSourcer(src))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(have) != 6 {
-			t.Errorf("wrong number of versions returned. want=%d, have=%d", 2, len(have))
-		}
+		got, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		require.NoError(t, err)
+		assert.Len(t, got, 6)
 	})
 
 	t.Run("error fetching version", func(t *testing.T) {
-		mockExternalServices(t, es)
-
 		testErr := errors.Errorf("what is up")
 		src := &fakeVersionSource{version: "1.2.3.4", err: testErr, es: es}
 
-		_, err := loadVersions(context.Background(), nil, newFakeSourcer(src))
-		if err != nil {
-			t.Fatal("error returned even though it should be logged and skipped")
-		}
+		_, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		require.NoError(t, err)
 	})
 
 	t.Run("error parsing external service config", func(t *testing.T) {
 		invalidEs := []*types.ExternalService{
 			{Kind: extsvc.KindGitHub, DisplayName: "github.com 1", Config: `invalid bogus`},
 		}
-		mockExternalServices(t, invalidEs)
+		externalServices.ListFunc.SetDefaultReturn(invalidEs, nil)
 
 		src := &fakeVersionSource{version: "1.2.3.4", err: nil, es: invalidEs}
 
-		_, err := loadVersions(context.Background(), nil, newFakeSourcer(src))
-		if err == nil {
-			t.Fatal("no error, but was expected")
-		}
+		_, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		require.Error(t, err)
 	})
 }
 

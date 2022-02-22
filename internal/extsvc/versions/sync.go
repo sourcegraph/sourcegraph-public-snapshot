@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -45,8 +44,9 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 	cf := httpcli.ExternalClientFactory
 	sourcer := repos.NewSourcer(cf)
 
+	store := database.NewDB(db).ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
-		versions, err := loadVersions(ctx, db, sourcer)
+		versions, err := loadVersions(ctx, store, sourcer)
 		if err != nil {
 			return err
 		}
@@ -59,10 +59,10 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 	}, nil
 }
 
-func loadVersions(ctx context.Context, db dbutil.DB, sourcer repos.Sourcer) ([]*Version, error) {
+func loadVersions(ctx context.Context, store database.ExternalServiceStore, sourcer repos.Sourcer) ([]*Version, error) {
 	var versions []*Version
 
-	es, err := database.ExternalServices(db).List(ctx, database.ExternalServicesListOptions{})
+	es, err := store.List(ctx, database.ExternalServicesListOptions{})
 	if err != nil {
 		return versions, err
 	}

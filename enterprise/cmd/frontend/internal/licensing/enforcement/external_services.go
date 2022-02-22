@@ -17,12 +17,12 @@ type ExternalServicesStore interface {
 
 // NewBeforeCreateExternalServiceHook enforces any per-tier validations prior to
 // creating a new external service.
-func NewBeforeCreateExternalServiceHook() func(ctx context.Context, db database.DB) error {
+func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store database.ExternalServiceStore) error {
 	if !licensing.EnforceTiers {
 		return nil
 	}
 
-	return func(ctx context.Context, db database.DB) error {
+	return func(ctx context.Context, store database.ExternalServiceStore) error {
 		// Licenses are associated with features and resource limits according to
 		// the current plan. We first need to determine the instance license, and then
 		// extract the maximum external service count from it.
@@ -38,7 +38,7 @@ func NewBeforeCreateExternalServiceHook() func(ctx context.Context, db database.
 		}
 
 		// Next we'll grab the current count of external services.
-		extSvcCount, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{})
+		extSvcCount, err := store.Count(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return err
 		}
