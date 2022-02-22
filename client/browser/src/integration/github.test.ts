@@ -15,6 +15,15 @@ import { closeInstallPageTab } from './shared'
 describe('GitHub', () => {
     let driver: Driver
     let testContext: BrowserIntegrationTestContext
+
+    const mockUrls = (urls: string[]) => {
+        for (const url of urls) {
+            testContext.server.any(url).intercept((request, response) => {
+                response.sendStatus(200)
+            })
+        }
+    }
+
     beforeEach(async function () {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
@@ -28,25 +37,7 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
-        const URLS_TO_MOCK = [
-            'https://collector.github.com/*path',
-            'https://api.github.com/_private/browser/*',
-            'https://github.com/*path/find-definition',
-            'https://github.com/commits/badges',
-            'https://github.githubassets.com/favicons/*path',
-            'https://github.com/manifest.json',
-            'https://github.com/_graphql/GetSuggestedNavigationDestinations',
-            'https://c.clarity.ms/c.gif',
-            'https://github.com/favicon.ico',
-            'https://github.com/**/commits/checks-statuses-rollups',
-        ]
-
-        // Requests to other origins that we need to ignore to prevent breaking tests.
-        for (const urlToMock of URLS_TO_MOCK) {
-            testContext.server.any(urlToMock).intercept((request, response) => {
-                response.sendStatus(200)
-            })
-        }
+        mockUrls(['https://api.github.com/_private/browser/*', 'https://collector.github.com/*path'])
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
@@ -142,6 +133,8 @@ describe('GitHub', () => {
     })
 
     it('shows hover tooltips when hovering a token and respects "Enable single click to go to definition" setting', async () => {
+        mockUrls(['https://github.com/*path/find-definition'])
+
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -304,6 +297,8 @@ describe('GitHub', () => {
             // For each pull request test, set up a mock extension that verifies that the correct
             // file and revision info reach extensions.
             beforeEach(() => {
+                mockUrls(['https://github.com/*path/find-definition'])
+
                 const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
                     pollyServer: testContext.server,
                     sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -623,6 +618,12 @@ describe('GitHub', () => {
 
         describe('Commit view', () => {
             beforeEach(() => {
+                mockUrls([
+                    'https://github.com/*path/find-definition',
+                    'https://github.com/**/commits/checks-statuses-rollups',
+                    'https://github.com/commits/badges',
+                ])
+
                 const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
                     pollyServer: testContext.server,
                     sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
@@ -741,6 +742,10 @@ describe('GitHub', () => {
         const sourcegraphSearchPage = 'https://sourcegraph.com/search'
 
         describe('Simple and advanced search pages', () => {
+            beforeEach(() => {
+                mockUrls(['https://github.githubassets.com/favicons/*path'])
+            })
+
             const pages = ['https://github.com/search', 'https://github.com/search/advanced']
 
             it('render "Search on Sourcegraph" button', async () => {
@@ -815,6 +820,15 @@ describe('GitHub', () => {
 
         // global and repository search pages
         describe('Search results page', () => {
+            beforeEach(() => {
+                mockUrls([
+                    'https://github.githubassets.com/favicons/*path',
+                    'https://github.com/_graphql/GetSuggestedNavigationDestinations',
+                    'https://github.com/**/commits/checks-statuses-rollups',
+                    'https://github.com/commits/badges',
+                ])
+            })
+
             const buildGitHubSearchResultsURL = (page: string, searchTerm: string): string => {
                 const url = new URL(page)
                 url.searchParams.set('q', searchTerm)
