@@ -72,7 +72,7 @@ func (s *Store) GetJVMDependencyRepos(ctx context.Context, filter GetJVMDependen
 	conds = append(conds, sqlf.Sprintf("scheme = %s", JVMPackagesScheme))
 
 	if filter.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id > %d", filter.After))
+		conds = append(conds, sqlf.Sprintf("id < %d", filter.After))
 	}
 
 	if filter.ArtifactName != "" {
@@ -123,7 +123,7 @@ func (s *Store) GetNPMDependencyRepos(ctx context.Context, filter GetNPMDependen
 	conds = append(conds, sqlf.Sprintf("scheme = %s", NPMPackagesScheme))
 
 	if filter.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id > %d", filter.After))
+		conds = append(conds, sqlf.Sprintf("id < %d", filter.After))
 	}
 
 	if filter.ArtifactName != "" {
@@ -177,7 +177,7 @@ type NPMDependencyRepo struct {
 const getLSIFDependencyReposQuery = `
 -- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
 SELECT id, name, version FROM lsif_dependency_repos
-WHERE %s ORDER BY id %s
+WHERE %s ORDER BY id DESC %s
 `
 
 type DependencyInserter struct {
