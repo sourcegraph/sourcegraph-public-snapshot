@@ -345,13 +345,15 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 }
 
 func (q Q) Dependencies() (dependencies []string) {
-	VisitField(q, FieldDependencies, func(value string, negated bool, _ Annotation) {
-		if !negated {
-			dependencies = append(dependencies, value)
-			return
-		}
-	})
-	return dependencies
+	// FIXME:
+	//  VisitPredicate(q, func(field, name, value string) {
+	// 	if field == FieldRepo && (name == "dependencies" || name == "deps") {
+	// 		dependencies = append(dependencies, value)
+	// 		return
+	// 	}
+	// })
+	// return dependencies
+	return nil
 }
 
 func (q Q) MaxResults(defaultLimit int) int {
@@ -406,10 +408,6 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 
 	case
 		FieldRepo, "r":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldDependencies, "deps":
 		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
