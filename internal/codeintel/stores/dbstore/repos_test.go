@@ -98,10 +98,10 @@ func TestDependencyInserter(t *testing.T) {
 	}
 
 	want := []dbstore.NPMDependencyRepo{
-		{Package: "bar", Version: "2.0.0"},
-		{Package: "bar", Version: "3.0.0"},
-		{Package: "foo", Version: "1.0.0"},
 		{Package: "foo", Version: "2.0.0"},
+		{Package: "foo", Version: "1.0.0"},
+		{Package: "bar", Version: "3.0.0"},
+		{Package: "bar", Version: "2.0.0"},
 	}
 
 	opt := cmpopts.IgnoreFields(dbstore.NPMDependencyRepo{}, "ID")

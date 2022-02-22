@@ -25,7 +25,7 @@ func ParseNPM(b []byte) (deps []reposource.PackageDependency, err error) {
 	for name, d := range lockfile.Dependencies {
 		dep, err := reposource.ParseNPMDependency(name + "@" + d.Version)
 		if err != nil {
-			err = errors.Append(errs, err)
+			errs = errors.Append(errs, err)
 		} else {
 			deps = append(deps, dep)
 		}
