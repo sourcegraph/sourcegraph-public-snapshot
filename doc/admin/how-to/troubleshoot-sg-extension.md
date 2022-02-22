@@ -41,7 +41,8 @@ Here is a list of known limitations to the VS Code Extension that we are looking
 1. Only work with instances that support stream search
 2. Search does not work across instances on version 3.31.x
 3. Searches performed within the extension are not logged in Cloud for instance below version 3.34.0
-4. Search context are not fetched correctly for version below 3.36.0
+4. Search context are not fetched correctly for version below 3.36.0 (fixed in v2.0.9)
+5. Web extension supports instances using 3.36.0+ officially.
 
 #### How to use the VS Code Extension with your private Sourcegraph instance
 The extension is connected to the [Sourcegraph public instance](https://sourcegraph.com/) by default. You can also add the following settings in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to connect the extension to your private instance: 
@@ -54,7 +55,9 @@ Note: If only an access token is configured, the extension will try to run searc
 
 #### How to update the Sourcegraph VS Code Extension to the latest version
 ![image](https://user-images.githubusercontent.com/68532117/153280003-df575725-22c2-4a5a-b94b-2137790da039.png)
-Search for `Sourcegraph` in your VS Code Extensions Marketplace. From there you can check if an update is available for the extension.
+1. Search for `Sourcegraph` in your VS Code Extensions Marketplace. 
+2. From there you can check if an update is available for the extension.
+3. The version number next to the extension name indicates the version that you are currently running.
 
 #### Sign-up Banner remains visible when a valid access token has been provided in V2
 
@@ -74,7 +77,30 @@ This error message comes from VS Code. Restarting the editor should resolve the 
 #### Error: The connection was closed before your search was completed. This may be due to a problem with a firewall, VPN or proxy, or a failure with the Sourcegraph server.
 
 1. It is possible that the provided Access Token is not valid for the instance that your VS Code is connected to. Please try updating both the url and access token in your [VS Code User Setting](https://code.visualstudio.com/docs/getstarted/settings#_settings-file-locations) to see if the issue persists.
-2. If the issue persists, try connecting using a CORS proxy or turning off your VPN. A CORS proxy might be required for instances running in version below [3.26.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-36-0). 
+2. If the issue persists, try connecting using a CORS proxy or turning off your VPN settings. 
+3. Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
+4. A CORS proxy is required to run the extension on VS Code Web for instances running in version below [3.26.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-36-0). 
+
+#### The search results are not displayed using my VS Code color
+
+The extension currently supports the following VS Code Color Theme:
+
+- Dark (Visual Studio)
+- Light+ (default light)
+- Light (Visual Studio)
+- High Contrast
+- Monokai
+- Monokai Pro
+- One Dark Pro
+- Dracula
+- Dracula Soft
+- Atom One Dark
+- Cobalt2
+- Panda Syntax
+- Night Owl
+- Hack The Box
+- Solarized Light
+- Solarized Dark
 
 ### Sourcegraph Extensions
 
