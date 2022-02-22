@@ -11,6 +11,7 @@ interface CodeInsightsLearnMoreProps extends TelemetryProps, React.HTMLAttribute
 
 export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMoreProps> = props => {
     const { telemetryService, ...otherProps } = props
+
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch: '/insights/about',
         textPrefix: 'Code Insights: ',
