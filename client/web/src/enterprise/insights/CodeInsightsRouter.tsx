@@ -36,10 +36,15 @@ export interface CodeInsightsRouterProps
 }
 
 /**
+ * Turn on/off the cloud landing page layout. Make sure it's off until GA release will happen.
+ */
+const CLOUD_LANDING_PAGE = false
+
+/**
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const CodeInsightsRouter = withAuthenticatedUser<CodeInsightsRouterProps>(props => {
-    if (props.isSourcegraphDotCom) {
+    if (props.isSourcegraphDotCom && CLOUD_LANDING_PAGE) {
         return <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
     }
 
