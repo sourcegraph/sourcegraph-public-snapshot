@@ -1,10 +1,14 @@
 # Changelog
 
-## Next Release
+## Next Release - 2.0.9
 
 ### Changes
 
 - Add Changelog for version tracking purpose [issue/28300](https://github.com/sourcegraph/sourcegraph/issues/28300)
+
+### Fixes
+
+- Manage context display issue for instances under v3.36.0 [issues/31022](https://github.com/sourcegraph/sourcegraph/issues/31022)
 
 ## 2.0.8
 
