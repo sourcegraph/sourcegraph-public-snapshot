@@ -1,5 +1,3 @@
-BEGIN;
-
 DROP TABLE lsif_data_apidocs_num_pages;
 DROP TABLE lsif_data_apidocs_num_dumps;
 DROP TABLE lsif_data_apidocs_num_dumps_indexed;
@@ -21,5 +19,3 @@ DROP TRIGGER lsif_data_docs_search_private_delete ON lsif_data_docs_search_priva
 DROP TRIGGER lsif_data_docs_search_private_insert ON lsif_data_docs_search_private;
 DROP FUNCTION lsif_data_docs_search_private_delete;
 DROP FUNCTION lsif_data_docs_search_private_insert;
-
-COMMIT;

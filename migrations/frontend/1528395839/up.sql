@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TYPE
     batch_changes_changeset_ui_publication_state
 AS ENUM (
@@ -34,5 +32,3 @@ CREATE VIEW reconciler_changesets AS
                 namespace_org.deleted_at IS NULL
         )
 ;
-
-COMMIT;

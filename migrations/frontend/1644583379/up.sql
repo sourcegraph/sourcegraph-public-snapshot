@@ -1,5 +1,3 @@
-BEGIN;
-
 -- If we have invitations that are not deleted, not revoked, not responded to and with no expiry time
 -- set the default expiry time to 7 days from now
 UPDATE

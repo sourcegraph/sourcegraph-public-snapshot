@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Begin cm_webhooks
 CREATE TABLE IF NOT EXISTS cm_webhooks (
 	id BIGSERIAL PRIMARY KEY,
@@ -60,5 +58,3 @@ COMMENT ON COLUMN cm_action_jobs.webhook IS 'The ID of the cm_webhooks action to
 COMMENT ON COLUMN cm_action_jobs.slack_webhook IS 'The ID of the cm_slack_webhook action to execute if this is a slack webhook job. Mutually exclusive with email and webhook';
 COMMENT ON CONSTRAINT cm_action_jobs_only_one_action_type ON cm_action_jobs IS 'Constrains that each queued code monitor action has exactly one action type';
 -- End add non-email actions to cm_triggers
-
-COMMIT;

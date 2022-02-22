@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
 --  * All migrations must be backward-compatible. Old versions of Sourcegraph
@@ -21,5 +19,3 @@ COMMENT ON TABLE insights_query_runner_jobs_dependencies IS 'Stores data points 
 
 COMMENT ON COLUMN insights_query_runner_jobs_dependencies.job_id IS 'Foreign key to the job that owns this record.';
 COMMENT ON COLUMN insights_query_runner_jobs_dependencies.recording_time IS 'The time for which this dependency should be recorded at using the parents value.';
-
-COMMIT;

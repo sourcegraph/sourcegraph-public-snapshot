@@ -1,5 +1,3 @@
-BEGIN;
-
 --
 -- Public
 
@@ -56,5 +54,3 @@ ALTER TABLE lsif_data_docs_search_current_private DROP CONSTRAINT IF EXISTS lsif
 
 -- Create new serial primary key
 ALTER TABLE lsif_data_docs_search_current_private ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY;
-
-COMMIT;

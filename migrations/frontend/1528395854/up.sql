@@ -10,5 +10,3 @@ COMMENT ON COLUMN insights_query_runner_jobs.cost IS 'Integer representing a cos
 
 CREATE INDEX insights_query_runner_jobs_priority_idx on insights_query_runner_jobs(priority);
 CREATE INDEX insights_query_runner_jobs_cost_idx on insights_query_runner_jobs(cost);
-
-COMMIT;

@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 ALTER TABLE lsif_data_documentation_pages ADD COLUMN search_indexed boolean DEFAULT 'false';
@@ -80,5 +78,3 @@ COMMENT ON COLUMN lsif_data_documentation_search_private.search_key IS 'The sear
 COMMENT ON COLUMN lsif_data_documentation_search_private.label IS 'The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation';
 COMMENT ON COLUMN lsif_data_documentation_search_private.detail IS 'The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation';
 COMMENT ON COLUMN lsif_data_documentation_search_private.tags IS 'A space separated list of tags from the documentation node. See protocol/documentation.go:Documentation';
-
-COMMIT;

@@ -1,5 +1,3 @@
-BEGIN;
-
 UPDATE saved_searches
 SET (notify_owner, notify_slack) = (false, false);
 
@@ -11,5 +9,3 @@ ALTER TABLE saved_searches
 
 ALTER TABLE IF EXISTS saved_searches
 	ALTER COLUMN user_id DROP NOT NULL;
-
-COMMIT;

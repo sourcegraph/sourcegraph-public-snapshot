@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS batch_spec_executions (
   id              BIGSERIAL PRIMARY KEY,
   rand_id         TEXT NOT NULL,
@@ -29,5 +27,3 @@ CREATE TABLE IF NOT EXISTS batch_spec_executions (
 
 ALTER TABLE IF EXISTS batch_spec_executions ADD CONSTRAINT batch_spec_executions_has_1_namespace CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL));
 CREATE INDEX IF NOT EXISTS batch_spec_executions_rand_id ON batch_spec_executions USING btree (rand_id);
-
-COMMIT;

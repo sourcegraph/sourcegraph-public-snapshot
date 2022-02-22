@@ -10,5 +10,3 @@ BEGIN;
 -- 	ALTER COLUMN user_id SET NOT NULL;
 
 -- COMMENT ON COLUMN saved_searches.org_id IS 'DEPRECATED: saved searches must be owned by a user';
-
-COMMIT;

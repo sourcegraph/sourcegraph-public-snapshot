@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE batch_spec_workspaces
   ADD COLUMN IF NOT EXISTS cached_result_found BOOLEAN NOT NULL DEFAULT FALSE;
 
@@ -20,5 +18,3 @@ WHERE
 
 ALTER TABLE batch_spec_execution_cache_entries
   ADD CONSTRAINT batch_spec_execution_cache_entries_key_unique UNIQUE (key);
-
-COMMIT;

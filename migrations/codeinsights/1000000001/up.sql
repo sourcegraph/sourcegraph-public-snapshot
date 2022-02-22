@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS citext;
 
@@ -100,5 +98,3 @@ CREATE TABLE series_points (
 CREATE INDEX series_points_repo_id_btree ON series_points USING btree (repo_id);
 CREATE INDEX series_points_repo_name_id_btree ON series_points USING btree (repo_name_id);
 CREATE INDEX series_points_original_repo_name_id_btree ON series_points USING btree (original_repo_name_id);
-
-COMMIT;
