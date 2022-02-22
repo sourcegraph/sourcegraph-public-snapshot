@@ -5,9 +5,8 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import {
     SearchPatternType,
-    fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
-    fetchSearchContexts,
+    fetchAutoDefinedSearchContexts,
     QueryState,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
@@ -20,6 +19,7 @@ import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbi
 import { SearchHomeState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
+import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { BrandHeader } from './components/BrandHeader'
 import { HomeFooter } from './components/HomeFooter'
 import styles from './index.module.scss'
@@ -177,7 +177,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                         authenticatedUser={authenticatedUser}
                         searchContextsEnabled={true}
                         showSearchContext={true}
-                        showSearchContextManagement={true}
+                        showSearchContextManagement={false}
                         defaultSearchContextSpec="global"
                         setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                         selectedSearchContextSpec={context.selectedSearchContextSpec}
