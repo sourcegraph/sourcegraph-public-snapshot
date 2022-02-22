@@ -101,6 +101,6 @@ func FileContains(fileName, content string) func(context.Context) error {
 func HasUbuntuLibrary(name string) func(context.Context) error {
 	return func(ctx context.Context) error {
 		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", name))
-		return err
+		return errors.Newf("dpkg: %w", err)
 	}
 }
