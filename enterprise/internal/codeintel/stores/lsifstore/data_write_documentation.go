@@ -731,11 +731,11 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 	totalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(countDocumentationSearchRowsQuery, "$SUFFIX", tableSuffix),
 	)))
-	if !exists {
-		return errors.Newf("failed to count table size")
-	}
 	if err != nil {
 		return errors.Wrap(err, "counting table size")
+	}
+	if !exists {
+		return errors.Newf("failed to count table size")
 	}
 
 	searchIndexLimitFactor := s.config.SiteConfig().ApidocsSearchIndexSizeLimitFactor
