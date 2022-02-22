@@ -40,7 +40,7 @@ declare var SOURCEGRAPH_PHABRICATOR_EXTENSION: boolean | undefined
 declare var SOURCEGRAPH_BUNDLE_URL: string | undefined
 
 /**
- * Set by shared/dev/jest-environment.js
+ * Set by jest-environment-jsdom
  */
 declare var jsdom: import('jsdom').JSDOM
 

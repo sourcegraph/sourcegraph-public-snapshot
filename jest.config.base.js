@@ -17,7 +17,7 @@ process.env.LANG = 'en_US.UTF-8'
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
   // for example to change the URL in window.location
-  testEnvironment: __dirname + '/client/shared/dev/jest-environment.js',
+  testEnvironment: 'jest-environment-jsdom',
 
   collectCoverage: !!process.env.CI,
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
