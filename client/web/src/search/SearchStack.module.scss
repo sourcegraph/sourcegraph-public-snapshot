@@ -42,7 +42,8 @@
         overflow-wrap: anywhere;
         background-color: var(--color-bg-);
 
-        &:hover {
+        &:hover,
+        &.selected {
             background-color: var(--color-bg-2);
         }
     }
