@@ -6,7 +6,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
 
-const { add } = storiesOf('web/search/notebook/fileBlock/SearchNotebookFileBlockInput', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/fileBlock/SearchNotebookFileBlockInput', module).addDecorator(story => (
     <div className="container" style={{ padding: '1rem 1rem 8rem 1rem' }}>
         {story()}
     </div>

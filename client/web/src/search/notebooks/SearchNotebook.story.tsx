@@ -17,7 +17,7 @@ import { SearchNotebook } from './SearchNotebook'
 
 import { BlockInit } from '.'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebook', module)
+const { add } = storiesOf('web/search/notebooks/SearchNotebook', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshots: false } })
 

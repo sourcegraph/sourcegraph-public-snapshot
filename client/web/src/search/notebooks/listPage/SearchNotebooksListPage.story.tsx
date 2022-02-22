@@ -10,7 +10,7 @@ import { ListNotebooksResult } from '../../../graphql-operations'
 
 import { SearchNotebooksListPage } from './SearchNotebooksListPage'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebooksListPage', module)
+const { add } = storiesOf('web/search/notebooks/SearchNotebooksListPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshots: false } })
 

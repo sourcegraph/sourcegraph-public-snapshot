@@ -17,7 +17,7 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebookQueryBlock', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/SearchNotebookQueryBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 

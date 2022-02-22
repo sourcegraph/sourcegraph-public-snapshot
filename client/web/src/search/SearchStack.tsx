@@ -33,8 +33,8 @@ import {
     setEntryAnnotation,
 } from '../stores/searchStack'
 
-import { BlockInput } from './notebook'
-import { serializeBlocksToURL } from './notebook/serialize'
+import { BlockInput } from './notebooks'
+import { serializeBlocksToURL } from './notebooks/serialize'
 import styles from './SearchStack.module.scss'
 
 const SEARCH_STACK_ID = 'search:search-stack'

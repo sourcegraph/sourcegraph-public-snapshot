@@ -11,7 +11,7 @@ import { RepositoryFields } from '../../../graphql-operations'
 
 import { SearchNotebookFileBlock } from './SearchNotebookFileBlock'
 
-const { add } = storiesOf('web/search/notebook/fileBlock/SearchNotebookFileBlock', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/fileBlock/SearchNotebookFileBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 

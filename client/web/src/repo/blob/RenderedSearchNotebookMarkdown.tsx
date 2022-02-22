@@ -2,8 +2,8 @@ import { noop } from 'lodash'
 import React, { useMemo } from 'react'
 import * as uuid from 'uuid'
 
-import { convertMarkdownToBlocks } from '../../search/notebook/convertMarkdownToBlocks'
-import { SearchNotebook, SearchNotebookProps } from '../../search/notebook/SearchNotebook'
+import { convertMarkdownToBlocks } from '../../search/notebooks/convertMarkdownToBlocks'
+import { SearchNotebook, SearchNotebookProps } from '../../search/notebooks/SearchNotebook'
 
 import styles from './RenderedSearchNotebookMarkdown.module.scss'
 
