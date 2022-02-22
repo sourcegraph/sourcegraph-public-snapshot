@@ -31,12 +31,6 @@ type Container struct {
 	// container, such as instances or shards.
 	Variables []ContainerVariable
 
-	// RawVariables is an alternative to Variables that exposes the underlying Grafana API
-	// to define variables that can be applied to the dashboard for this container.
-	//
-	// It is recommended to use or expand the standardized Variables field instead.
-	RawVariables []sdk.TemplateVar
-
 	// Groups of observable information about the container.
 	Groups []Group
 
@@ -85,15 +79,16 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.Editable = false
 	board.AddTags("builtin")
 	alertLevelVariable := ContainerVariable{
-		Label:   "Alert level",
-		Name:    "alert_level",
-		Options: []string{"critical", "warning"},
+		Label: "Alert level",
+		Name:  "alert_level",
+		Options: ContainerVariableOptions{
+			Options: []string{"critical", "warning"},
+		},
 	}
 	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
 	for _, variable := range c.Variables {
 		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
 	}
-	board.Templating.List = append(board.Templating.List, c.RawVariables...)
 	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
@@ -338,6 +333,20 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	}, nil
 }
 
+type ContainerVariableOptionType string
+
+const (
+	OptionTypeInterval = "interval"
+)
+
+type ContainerVariableOptions struct {
+	Options []string
+	// DefaultOption is the option that should be selected by default.
+	DefaultOption string
+	// Type of the options. You can usually leave this unset.
+	Type ContainerVariableOptionType
+}
+
 // ContainerVariable describes a template variable that can be applied container dashboard
 // for filtering purposes.
 type ContainerVariable struct {
@@ -352,7 +361,7 @@ type ContainerVariable struct {
 	OptionsQuery string
 	// Options are the pre-defined possible values for this variable. Cannot be used in
 	// conjunction with Query
-	Options []string
+	Options ContainerVariableOptions
 
 	// WildcardAllValue indicates to Grafana that is should NOT use Query or Options to
 	// generate a concatonated 'All' value for the variable, and use a '.*' wildcard
@@ -368,6 +377,13 @@ type ContainerVariable struct {
 
 	// Multi indicates whether or not to allow multi-selection for this variable filter
 	Multi bool
+
+	// RawTransform is can be used to extend ContainerVariable to modify underlying
+	// Grafana variables specification.
+	//
+	// It is recommended to use or extend the standardized ContainerVariable options
+	// instead.
+	RawTransform func(*sdk.TemplateVar)
 }
 
 func (c *ContainerVariable) validate() error {
@@ -377,10 +393,10 @@ func (c *ContainerVariable) validate() error {
 	if c.Label == "" {
 		return errors.New("ContainerVariable.Label is required")
 	}
-	if c.OptionsQuery == "" && len(c.Options) == 0 {
+	if c.OptionsQuery == "" && len(c.Options.Options) == 0 {
 		return errors.New("one of ContainerVariable.Query and ContainerVariable.Options must be set")
 	}
-	if c.OptionsQuery != "" && len(c.Options) > 0 {
+	if c.OptionsQuery != "" && len(c.Options.Options) > 0 {
 		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
 	}
 	return nil
@@ -422,14 +438,52 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 		}
 		variable.Sort = 3
 
-	case len(c.Options) > 0:
+	case len(c.Options.Options) > 0:
+		// Set the type
 		variable.Type = "custom"
-		variable.Query = strings.Join(c.Options, ",")
-		// Add the AllValue as a default
-		variable.Options = []sdk.Option{{Text: "all", Value: "$__all", Selected: true}}
-		for _, option := range c.Options {
-			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option})
+		if c.Options.Type != "" {
+			variable.Type = string(c.Options.Type)
 		}
+		// Generate our options
+		variable.Query = strings.Join(c.Options.Options, ",")
+
+		// On interval options, don't allow the selection of 'all' intervals, since
+		// this is a one-of-many selection
+		var hasAllOption bool
+		if c.Options.Type != OptionTypeInterval {
+			// Add the AllValue as a default, only selected if a default is not configured
+			hasAllOption = true
+			selected := c.Options.DefaultOption == ""
+			variable.Options = append(variable.Options, sdk.Option{Text: "all", Value: "$__all", Selected: selected})
+		}
+		// Generate options
+		for i, option := range c.Options.Options {
+			// Whether this option should be selected
+			var selected bool
+			if c.Options.DefaultOption != "" {
+				// If an default option is provided, select that
+				selected = option == c.Options.DefaultOption
+			} else if !hasAllOption {
+				// Otherwise if there is no 'all' option generated, select the first
+				selected = i == 0
+			}
+
+			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option, Selected: selected})
+			if selected {
+				// Also configure current
+				variable.Current = sdk.Current{
+					Text: &sdk.StringSliceString{
+						Value: []string{option},
+						Valid: true,
+					},
+					Value: option,
+				}
+			}
+		}
+	}
+
+	if c.RawTransform != nil {
+		c.RawTransform(&variable)
 	}
 
 	return variable

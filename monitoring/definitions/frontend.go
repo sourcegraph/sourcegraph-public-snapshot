@@ -1,7 +1,6 @@
 package definitions
 
 import (
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -42,23 +41,15 @@ func Frontend() *monitoring.Container {
 		Name:        "frontend",
 		Title:       "Frontend",
 		Description: "Serves all end-user browser and API requests.",
-		RawVariables: []sdk.TemplateVar{
-			{
-				Type:  "interval",
-				Name:  "sentinel_sampling_duration",
-				Label: "Sentinel query sampling duration",
-				Query: strings.Join(sentinelSamplingIntervals, ","),
-				Current: sdk.Current{
-					Text: &sdk.StringSliceString{
-						Value: []string{defaultSamplingInterval.String()}, Valid: true},
-					Value: defaultSamplingInterval.String(),
-				},
-				Refresh: sdk.BoolInt{
-					Flag:  true,
-					Value: monitoring.Int64Ptr(2),
-				},
+		Variables: []monitoring.ContainerVariable{{
+			Name:  "sentinel_sampling_duration",
+			Label: "Sentinel query sampling duration",
+			Options: monitoring.ContainerVariableOptions{
+				Type:          monitoring.OptionTypeInterval,
+				Options:       sentinelSamplingIntervals,
+				DefaultOption: defaultSamplingInterval.String(),
 			},
-		},
+		}},
 		Groups: []monitoring.Group{
 			{
 				Title: "Search at a glance",
