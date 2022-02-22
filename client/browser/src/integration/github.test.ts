@@ -14,17 +14,14 @@ import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
-    before(async () => {
+    let testContext: BrowserIntegrationTestContext
+    beforeEach(async function () {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
-    })
-    after(() => driver?.close())
 
-    let testContext: BrowserIntegrationTestContext
-    beforeEach(async function () {
         testContext = await createBrowserIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -106,7 +103,10 @@ describe('GitHub', () => {
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(() => testContext?.dispose())
+    afterEach(async () => {
+        await testContext?.dispose()
+        await driver?.close()
+    })
 
     it('adds "View on Sourcegraph" buttons to files', async () => {
         const repoName = 'github.com/sourcegraph/jsonrpc2'
@@ -792,9 +792,7 @@ describe('GitHub', () => {
                     const searchInput = await driver.page.waitForSelector('#search_form input[type="text"]')
                     const linkToSourcegraph = await driver.page.waitForSelector(
                         '[data-testid="search-on-sourcegraph"]',
-                        {
-                            timeout: 3000,
-                        }
+                        { timeout: 3000 }
                     )
                     let hasRedirectedToSourcegraphSearch = false
                     testContext.server.get(sourcegraphSearchPage).intercept(request => {
