@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE IF EXISTS repo ADD COLUMN blocked jsonb;
 
 CREATE OR REPLACE FUNCTION repo_block(reason text, at timestamptz) RETURNS jsonb AS
@@ -12,5 +10,3 @@ $$ LANGUAGE SQL STRICT IMMUTABLE;
 
 CREATE INDEX repo_blocked_idx ON repo USING BTREE ((blocked IS NOT NULL));
 CREATE INDEX repo_is_not_blocked_idx ON repo USING BTREE ((blocked IS NULL));
-
-COMMIT;

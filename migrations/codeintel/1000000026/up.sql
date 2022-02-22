@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_public (
     repo_id INTEGER NOT NULL,
     dump_root TEXT NOT NULL,
@@ -33,5 +31,3 @@ COMMENT ON COLUMN lsif_data_docs_search_current_private.dump_root IS 'The root o
 COMMENT ON COLUMN lsif_data_docs_search_current_private.lang_name_id IS 'The interned index name of the associated dump.';
 COMMENT ON COLUMN lsif_data_docs_search_current_private.dump_id IS 'The most recent dump identifier for this key. See associated content in the lsif_data_docs_search_private table.';
 COMMENT ON COLUMN lsif_data_docs_search_current_private.last_cleanup_scan_at IS 'The last time outdated records in the lsif_data_docs_search_private table have been cleaned.';
-
-COMMIT;

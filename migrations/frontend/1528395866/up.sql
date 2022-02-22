@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
 --  * All migrations must be backward-compatible. Old versions of Sourcegraph
@@ -15,4 +13,3 @@ BEGIN;
 -- Note: This data is by design ephemeral, so there is no risk of permanent data loss here.
 
 TRUNCATE insights_query_runner_jobs CASCADE;
-COMMIT;

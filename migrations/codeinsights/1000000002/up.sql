@@ -1,5 +1,3 @@
-BEGIN;
-
 COMMENT ON TABLE repo_names IS 'Records repository names, both historical and present, using a unique repository _name_ ID (unrelated to the repository ID.)';
 COMMENT ON COLUMN repo_names.id IS 'The repository _name_ ID.';
 COMMENT ON COLUMN repo_names.name IS 'The repository name string, with unique constraint for table entry deduplication and trigram index for e.g. regex filtering.';
@@ -16,5 +14,3 @@ COMMENT ON COLUMN series_points.metadata_id IS 'Associated metadata for this eve
 COMMENT ON COLUMN series_points.repo_id IS 'The repository ID (from the main application DB) at the time the event was created. Note that the repository may no longer exist / be valid at query time, however.';
 COMMENT ON COLUMN series_points.repo_name_id IS 'The most recently known name for the repository, updated periodically to account for e.g. repository renames. If the repository was deleted, this is still the most recently known name.  null if the event was not for a single repository (i.e. a global gauge).';
 COMMENT ON COLUMN series_points.original_repo_name_id IS 'The repository name as it was known at the time the event was created. It may have been renamed since.';
-
-COMMIT;

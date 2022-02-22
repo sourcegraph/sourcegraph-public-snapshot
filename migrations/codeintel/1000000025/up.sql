@@ -1,5 +1,3 @@
-BEGIN;
-
 --------------------------------------------------------
 -- Stats for the lsif_data_documentation_pages table. --
 --------------------------------------------------------
@@ -124,5 +122,3 @@ AFTER INSERT
 ON lsif_data_docs_search_private
 REFERENCING NEW TABLE AS newtbl
 FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_docs_search_private_insert();
-
-COMMIT;

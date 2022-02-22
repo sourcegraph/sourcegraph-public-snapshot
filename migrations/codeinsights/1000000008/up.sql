@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE insight_series
 (
     id                      SERIAL    NOT NULL PRIMARY KEY,
@@ -66,5 +64,3 @@ ALTER TABLE insight_view_series
 
 ALTER TABLE insight_view_series
     ADD FOREIGN KEY (insight_series_id) REFERENCES insight_series (id);
-
-COMMIT;

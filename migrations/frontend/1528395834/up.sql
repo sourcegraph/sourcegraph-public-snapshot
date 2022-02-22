@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS citext;
 
 COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
@@ -2586,5 +2584,3 @@ INSERT INTO out_of_band_migrations VALUES (9, 'batch-changes', 'frontend-db.user
 INSERT INTO out_of_band_migrations VALUES (10, 'batch-changes', 'frontend-db.site-credentials', 'Encrypt batch changes site credentials', 0, '2021-10-08 16:09:37.157552+00', NULL, false, false, true, 3, 28, NULL, NULL);
 
 SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
-
-COMMIT;

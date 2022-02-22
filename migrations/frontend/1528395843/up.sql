@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS batch_spec_executions (
   id              BIGSERIAL PRIMARY KEY,
   state           TEXT DEFAULT 'queued',
@@ -18,5 +16,3 @@ CREATE TABLE IF NOT EXISTS batch_spec_executions (
   batch_spec TEXT NOT NULL,
   batch_spec_id integer REFERENCES batch_specs(id)
 );
-
-COMMIT;

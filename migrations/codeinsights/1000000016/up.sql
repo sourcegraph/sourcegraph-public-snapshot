@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Remove any already existing duplicates.
 DELETE FROM
     dashboard_insight_view a
@@ -12,5 +10,3 @@ WHERE
 ALTER TABLE dashboard_insight_view
 ADD CONSTRAINT unique_dashboard_id_insight_view_id
 UNIQUE (dashboard_id, insight_view_id);
-
-COMMIT;

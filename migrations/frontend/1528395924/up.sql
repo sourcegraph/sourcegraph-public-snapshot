@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Create lookup table for repository pattern matching
 CREATE TABLE IF NOT EXISTS lsif_configuration_policies_repository_pattern_lookup (
     policy_id INTEGER NOT NULL,
@@ -17,5 +15,3 @@ COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name p
 
 -- Add column to determine the last update of the associated records in lsif_configuration_policies_repository_pattern_lookup
 ALTER TABLE lsif_configuration_policies ADD COLUMN last_resolved_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
-
-COMMIT;

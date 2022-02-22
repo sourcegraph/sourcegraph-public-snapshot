@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE cm_action_jobs
 	DROP CONSTRAINT IF EXISTS cm_action_jobs_only_one_action_type,
 	DROP COLUMN IF EXISTS slack_webhook,
@@ -8,5 +6,3 @@ ALTER TABLE cm_action_jobs
 
 DROP TABLE IF EXISTS cm_slack_webhooks;
 DROP TABLE IF EXISTS cm_webhooks;
-
-COMMIT;
