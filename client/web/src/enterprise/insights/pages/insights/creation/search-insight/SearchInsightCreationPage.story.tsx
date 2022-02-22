@@ -7,14 +7,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import {
-    createGlobalSubject,
-    createOrgSubject,
-    createUserSubject,
-    SETTINGS_CASCADE_MOCK,
-} from '../../../../mocks/settings-cascade'
+import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../mocks/settings-cascade'
 
 import {
     DEFAULT_MOCK_CHART_CONTENT,
@@ -22,7 +17,7 @@ import {
 } from './components/live-preview-chart/live-preview-mock-data'
 import { SearchInsightCreationPage as SearchInsightCreationPageComponent } from './SearchInsightCreationPage'
 
-export default {
+const defaultStory: Meta = {
     title: 'web/insights/creation-ui/SearchInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -31,7 +26,9 @@ export default {
             disableSnapshot: false,
         },
     },
-} as Meta
+}
+
+export default defaultStory
 
 function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
@@ -43,7 +40,7 @@ const fakeAPIRequest = async () => {
     throw new Error('Network error')
 }
 
-class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
+class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
     public getSearchInsightContent = async () => {
         await sleep(2000)
 
@@ -62,7 +59,7 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
     ]
 }
 
-const codeInsightsBackend = new CodeInsightsStoryBackend(SETTINGS_CASCADE_MOCK, {} as any)
+const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 const SUBJECTS = [
     createUserSubject('Emir Kusturica'),
