@@ -3,6 +3,7 @@ const shelljs = require('shelljs')
 
 const recordSnapshot = grepValue =>
   shelljs.exec(
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${grepValue}'`,
     (error, stdout, stderr) => {
       if (error) {
