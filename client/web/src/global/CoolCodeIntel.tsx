@@ -47,16 +47,14 @@ import {
     Button,
     useObservable,
     Input,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
-    CoolCodeIntelReferencesResult,
-    CoolCodeIntelReferencesVariables,
     HoverFields,
-    LocationConnectionFields,
     LocationFields,
     Maybe,
 } from '../graphql-operations'
@@ -65,7 +63,8 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { FETCH_HIGHLIGHTED_BLOB } from './CoolCodeIntelQueries'
+import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
@@ -240,90 +239,111 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-export const SideReferences: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-    }
-> = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.clickedToken.repoName,
-                commit: props.clickedToken.commitID,
-                path: props.clickedToken.filePath,
-                // On the backend the line/character are 0-indexed, but what we
-                // get from hoverifier is 1-indexed.
-                line: props.clickedToken.line - 1,
-                character: props.clickedToken.character - 1,
-                after: null,
-                filter: props.filter || null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
+interface ReferencesComponentProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+}
+
+export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
+    const {
+        lsifData,
+        error,
+        loading,
+        referencesHasNextPage,
+        implementationsHasNextPage,
+        fetchMoreReferences,
+        fetchMoreImplementations,
+    } = usePreciseCodeIntel({
+        variables: {
+            repository: props.clickedToken.repoName,
+            commit: props.clickedToken.commitID,
+            path: props.clickedToken.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.clickedToken.line - 1,
+            character: props.clickedToken.character - 1,
+            filter: props.filter || null,
+            firstReferences: 100,
+            afterReferences: null,
+            firstImplementations: 100,
+            afterImplementations: null,
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
+    })
 
     // If we're loading and haven't received any data yet
-    if (loading && !data) {
+    if (loading && !lsifData) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
-                    <i>Loading references ...</i>
+                    <i>Loading precise code intel ...</i>
                 </p>
             </>
         )
     }
 
     // If we received an error before we had received any data
-    if (error && !data) {
+    if (error && !lsifData) {
         return (
             <div>
-                <p className="text-danger">Loading references failed:</p>
+                <p className="text-danger">Loading precise code intel failed:</p>
                 <pre>{error.message}</pre>
             </div>
         )
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif) {
+    if (!lsifData) {
         return <>Nothing found</>
     }
 
-    const lsif = data.repository?.commit?.blob?.lsif
+    const references = lsifData.references.nodes
+    const definitions = lsifData.definitions.nodes
+    const implementations = lsifData.implementations.nodes
+    const hover = lsifData.hover
 
     return (
         <SideReferencesLists
             {...props}
-            references={lsif.references}
-            definitions={lsif.definitions}
-            implementations={lsif.implementations}
-            hover={lsif.hover}
+            definitions={definitions}
+            references={references}
+            hover={hover}
+            referencesHasNextPage={referencesHasNextPage}
+            implementationsHasNextPage={implementationsHasNextPage}
+            implementations={implementations}
+            fetchMoreImplementations={fetchMoreImplementations}
+            fetchMoreReferences={fetchMoreReferences}
         />
     )
 }
 
-const SideReferencesLists: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-        references: LocationConnectionFields
-        definitions: Omit<LocationConnectionFields, 'pageInfo'>
-        implementations: LocationConnectionFields
-        hover: Maybe<HoverFields>
-    }
-> = props => {
-    const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
+interface SideReferencesListsProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+
+    definitions: LocationFields[]
+    hover: Maybe<HoverFields>
+
+    references: LocationFields[]
+    referencesHasNextPage: boolean
+    fetchMoreReferences: () => void
+
+    implementations: LocationFields[]
+    implementationsHasNextPage: boolean
+    fetchMoreImplementations: () => void
+}
+
+const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
+    const references = useMemo(() => props.references.map(buildLocation), [props.references])
+    const definitions = useMemo(() => props.definitions.map(buildLocation), [props.definitions])
+    const implementations = useMemo(() => props.implementations.map(buildLocation), [props.implementations])
 
     return (
         <>
@@ -333,10 +353,22 @@ const SideReferencesLists: React.FunctionComponent<
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
-            <CollapsibleLocationList {...props} name="definitions" locations={definitions} />
-            <CollapsibleLocationList {...props} name="references" locations={references} />
+            <CollapsibleLocationList {...props} name="definitions" locations={definitions} hasMore={false} />
+            <CollapsibleLocationList
+                {...props}
+                name="references"
+                locations={references}
+                hasMore={props.referencesHasNextPage}
+                fetchMore={props.fetchMoreReferences}
+            />
             {implementations.length > 0 && (
-                <CollapsibleLocationList {...props} name="implementations" locations={implementations} />
+                <CollapsibleLocationList
+                    {...props}
+                    name="implementations"
+                    locations={implementations}
+                    hasMore={props.implementationsHasNextPage}
+                    fetchMore={props.fetchMoreImplementations}
+                />
             )}
         </>
     )
@@ -348,9 +380,23 @@ const CollapsibleLocationList: React.FunctionComponent<{
     setActiveLocation: (location: Location | undefined) => void
     activeLocation: Location | undefined
     filter: string | undefined
+    hasMore: boolean
+    fetchMore?: () => void
 }> = props => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+
+    const [disable, setDisable] = useState(false)
+    useEffect(() => {
+        setDisable(false)
+    }, [props.locations])
+
+    const fetchMore = (): void => {
+        if (props.fetchMore) {
+            setDisable(true)
+            props.fetchMore()
+        }
+    }
 
     return (
         <>
@@ -369,18 +415,38 @@ const CollapsibleLocationList: React.FunctionComponent<{
                             <ChevronRightIcon className="icon-inline" aria-label="Expand" />
                         )}{' '}
                         {capitalize(props.name)}
+                        <Badge pill={true} variant="secondary" className="ml-2">
+                            {props.locations.length}
+                            {props.hasMore && '+'}
+                        </Badge>
                     </h4>
                 </Button>
             </CardHeader>
 
             <Collapse id="references" isOpen={isOpen}>
                 {props.locations.length > 0 ? (
-                    <LocationsList
-                        locations={props.locations}
-                        activeLocation={props.activeLocation}
-                        setActiveLocation={props.setActiveLocation}
-                        filter={props.filter}
-                    />
+                    <>
+                        <LocationsList
+                            locations={props.locations}
+                            activeLocation={props.activeLocation}
+                            setActiveLocation={props.setActiveLocation}
+                            filter={props.filter}
+                        />
+                        {props.hasMore &&
+                            props.fetchMore !== undefined &&
+                            (disable ? (
+                                <div className="text-center mb-1">
+                                    <em>Loading more {props.name}...</em>
+                                    <LoadingSpinner inline={true} />
+                                </div>
+                            ) : (
+                                <div className="text-center mb-1">
+                                    <Button variant="secondary" disabled={disable} onClick={fetchMore}>
+                                        Load more {props.name}
+                                    </Button>
+                                </div>
+                            ))}
+                    </>
                 ) : (
                     <p className="text-muted pl-2">
                         {props.filter ? (

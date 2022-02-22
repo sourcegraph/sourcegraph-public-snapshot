@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const FETCH_REFERENCES_QUERY = gql`
+const codeIntelFragments = gql`
     fragment LocationFields on Location {
         resource {
             ...GitBlobFields
@@ -8,6 +8,7 @@ export const FETCH_REFERENCES_QUERY = gql`
         range {
             ...RangeFields
         }
+        url
     }
 
     fragment LocationConnectionFields on LocationConnection {
@@ -20,6 +21,7 @@ export const FETCH_REFERENCES_QUERY = gql`
     }
 
     fragment GitBlobFields on GitBlob {
+        url
         path
         content
         repository {
@@ -40,48 +42,153 @@ export const FETCH_REFERENCES_QUERY = gql`
             character
         }
     }
+`
 
+const hoverFragments = gql`
     fragment HoverFields on Hover {
         markdown {
             html
             text
         }
     }
+`
 
-    query CoolCodeIntelReferences(
+const gitBlobLsifDataQueryFragment = gql`
+    fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
+        references(
+            line: $line
+            character: $character
+            first: $firstReferences
+            after: $afterReferences
+            filter: $filter
+        ) {
+            ...LocationConnectionFields
+        }
+        implementations(
+            line: $line
+            character: $character
+            first: $firstImplementations
+            after: $afterImplementations
+            filter: $filter
+        ) {
+            ...LocationConnectionFields
+        }
+        definitions(line: $line, character: $character, filter: $filter) {
+            ...LocationConnectionFields
+        }
+        hover(line: $line, character: $character) {
+            ...HoverFields
+        }
+    }
+`
+
+export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
+    query UsePreciseCodeIntelForPosition(
         $repository: String!
         $commit: String!
         $path: String!
         $line: Int!
         $character: Int!
-        $after: String
+        $afterReferences: String
+        $firstReferences: Int
+        $afterImplementations: String
+        $firstImplementations: Int
         $filter: String
     ) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    url
                     lsif {
-                        references(line: $line, character: $character, after: $after, filter: $filter) {
+                        ...PreciseCodeIntelForLocationFields
+                    }
+                }
+            }
+        }
+    }
+
+    ${codeIntelFragments}
+    ${hoverFragments}
+    ${gitBlobLsifDataQueryFragment}
+`
+
+export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
+    query LoadAdditionalReferences(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $afterReferences: String
+        $firstReferences: Int
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            id
+            commit(rev: $commit) {
+                id
+                blob(path: $path) {
+                    url
+                    lsif {
+                        references(
+                            line: $line
+                            character: $character
+                            first: $firstReferences
+                            after: $afterReferences
+                            filter: $filter
+                        ) {
                             ...LocationConnectionFields
-                        }
-                        implementations(line: $line, character: $character, after: $after, filter: $filter) {
-                            ...LocationConnectionFields
-                        }
-                        definitions(line: $line, character: $character, filter: $filter) {
-                            ...LocationConnectionFields
-                        }
-                        hover(line: $line, character: $character) {
-                            ...HoverFields
                         }
                     }
                 }
             }
         }
     }
+
+    ${codeIntelFragments}
+`
+
+export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
+    query LoadAdditionalImplementations(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $afterImplementations: String
+        $firstImplementations: Int
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            id
+            commit(rev: $commit) {
+                id
+                blob(path: $path) {
+                    url
+                    lsif {
+                        implementations(
+                            line: $line
+                            character: $character
+                            first: $firstImplementations
+                            after: $afterImplementations
+                            filter: $filter
+                        ) {
+                            ...LocationConnectionFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${codeIntelFragments}
 `
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
+        url
         highlight(disableTimeout: false) {
             aborted
             html
@@ -90,7 +197,9 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
 
     query CoolCodeIntelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
                 }
