@@ -223,7 +223,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 			writeSuccessLinef("%d. %s", idx, dep.name)
 		} else {
 			var printer func(fmtStr string, args ...interface{})
-			if dep.onlyEmployees {
+			if dep.onlyTeammates {
 				printer = writeWarningLinef
 			} else {
 				printer = writeFailureLinef
@@ -406,7 +406,7 @@ type dependency struct {
 
 	check check.CheckFunc
 
-	onlyEmployees bool
+	onlyTeammates bool
 
 	err error
 
@@ -450,7 +450,7 @@ func (cat *dependencyCategory) CombinedState() bool {
 
 func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
 	for _, dep := range cat.dependencies {
-		if !dep.IsMet() && !dep.onlyEmployees {
+		if !dep.IsMet() && !dep.onlyTeammates {
 			return false
 		}
 	}

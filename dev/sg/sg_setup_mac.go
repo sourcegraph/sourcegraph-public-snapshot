@@ -85,7 +85,7 @@ so they sit alongside each other, like this:
 
 NOTE: You can ignore this if you're not a Sourcegraph employee.
 `,
-				onlyEmployees: true,
+				onlyTeammates: true,
 			},
 		},
 		autoFixing: true,
