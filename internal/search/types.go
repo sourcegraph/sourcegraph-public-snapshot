@@ -17,13 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type TypeParameters interface {
-	typeParametersValue()
-}
-
-func (SymbolsParameters) typeParametersValue() {}
-func (TextParameters) typeParametersValue()    {}
-
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
 	Repo api.RepoName `json:"repo"`
