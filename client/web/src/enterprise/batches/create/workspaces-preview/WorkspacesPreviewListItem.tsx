@@ -47,7 +47,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
             </div>
             <div className="flex-1">
-                <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}>
+                <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.stale)}>
                     {item.repository.name}
                 </h4>
                 {item.path !== '' && item.path !== '/' ? (
