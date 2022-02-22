@@ -132,7 +132,7 @@ const LINTER_OVERRIDE_RULES: Template = {
         series: [
             {
                 name: 'Rule overrides',
-                query: 'file:^\\.eslintignore .\\n patternType:regexp archived:no fork:no',
+                query: 'file:^\\.eslintignore ^[^#].*.\\n patternType:regexp archived:no fork:no',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
