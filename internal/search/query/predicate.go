@@ -2,7 +2,6 @@ package query
 
 import (
 	"regexp/syntax"
-	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -269,51 +268,23 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	return ToPlan(Dnf(nodes))
 }
 
-// RepoDependenciesPredicate represents the `repo:dependencies(of: regex@rev)` predicate,
+// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
 // which filters to repos that are dependencies of the repos matching the given of regex.
-type RepoDependenciesPredicate struct {
-	Of string
-}
+type RepoDependenciesPredicate struct{}
 
 func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	for _, param := range strings.Fields(params) {
-		kv := strings.SplitN(param, ":", 2)
-		if len(kv) != 2 {
-			return errors.Errorf("missing value on repo:dependencies predicate parameter %q", param)
-		}
+	re := params
+	if n := strings.LastIndex(params, "@"); n > 0 {
+		re = re[:n]
+	}
 
-		v := kv[1]
-		if strings.HasPrefix(v, `"`) {
-			v, err = strconv.Unquote(v)
-			if err != nil {
-				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
-			}
-		}
+	if re == "" {
+		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
+	}
 
-		if v == "" {
-			return errors.Errorf("empty repo:dependencies predicate parameter %q: %v", param, err)
-		}
-
-		switch k := strings.ToLower(kv[0]); k {
-		case "of":
-			if f.Of != "" {
-				return errors.Errorf(`repo:dependencies predicate parameter "of" already set to %q`, f.Of)
-			}
-
-			re := v
-			if n := strings.LastIndex(re, "@"); n > 0 {
-				re = re[:n]
-			}
-
-			_, err := syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-			if err != nil {
-				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", v, err)
-			}
-
-			f.Of = v
-		default:
-			return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
-		}
+	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
 	}
 
 	return nil

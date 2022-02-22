@@ -90,11 +90,8 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`of`, `of:test`, &RepoDependenciesPredicate{Of: "test"}},
-			{`of with revs`, `of:^npm/@bar:baz`, &RepoDependenciesPredicate{Of: "^npm/@bar:baz"}},
-			{`of with quotes`, `of:"^npm/"`, &RepoDependenciesPredicate{Of: "^npm/"}},
-			{`case insensitive`, `Of:"^npm/"`, &RepoDependenciesPredicate{Of: "^npm/"}},
-			{`of with spaces`, `Of:npm/ `, &RepoDependenciesPredicate{Of: "npm/"}},
+			{`literal`, `test`, &RepoDependenciesPredicate{}},
+			{`regex with revs`, `^npm/@bar:baz`, &RepoDependenciesPredicate{}},
 		}
 
 		for _, tc := range valid {
@@ -113,22 +110,12 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
-			{`negated of`, `-of:test`, nil},
-			{`unsupported syntax`, `abc:test`, nil},
-			{`unnamed param`, `test`, nil},
-			{`unbalanced quotes`, `of:"test`, nil},
-			{`catch invalid regexp`, `of:([)`, nil},
-			{`duplicate of`, `of:foo of:bar`, nil},
-			{`empty of`, `of:`, nil},
-			{`empty of with quotes`, `of:""`, nil},
-			// TODO: Reuse existing parser facilities which would allow
-			// spaces inside a quote delimited value.
-			{`of with spaces inside quotes`, `Of:"npm/ "`, nil},
+			{`catch invalid regexp`, `([)`, nil},
 		}
 
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &RepoContainsPredicate{}
+				p := &RepoDependenciesPredicate{}
 				err := p.ParseParams(tc.params)
 				if err == nil {
 					t.Fatal("expected error but got none")

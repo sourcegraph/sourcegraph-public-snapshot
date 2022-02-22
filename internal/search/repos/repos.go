@@ -518,7 +518,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 // dependencies resolves `repo:dependencies` predicates to a specific list of
 // dependency repositories for the given repos and revision(s). It does so by:
 //
-// 1. Expanding each `dependencies:regex@revA:revB:...` filter regex to a list of repositories that exist in the DB.
+// 1. Expanding each `repo:dependencies(regex@revA:revB:...)` filter regex to a list of repositories that exist in the DB.
 // 2. For each of those (repo, rev) tuple, computing all their dependencies (transitive included).
 // 3. Return those dependencies to the caller to be included in repository resolution.
 // 4. Triggering a sync of all the dependency repos.
@@ -526,6 +526,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[string][]search.RevisionSpecifier, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
 	defer func() {
+		tr.LazyPrintf("deps: %v", op.Dependencies)
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -546,9 +547,9 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}()
 
 	g, ctx := errgroup.WithContext(ctx)
-	withRepoRevs := func(depFilter string, cb func([]types.MinimalRepo, []search.RevisionSpecifier) error) {
+	withRepoRevs := func(depParams string, cb func([]types.MinimalRepo, []search.RevisionSpecifier) error) {
 		g.Go(func() error {
-			repoPattern, revs := search.ParseRepositoryRevisions(depFilter)
+			repoPattern, revs := search.ParseRepositoryRevisions(depParams)
 			if len(revs) == 0 {
 				revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
 			}
@@ -599,8 +600,8 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		depNames []string
 	)
 
-	for _, depFilter := range op.Dependencies {
-		withRepoRevs(depFilter, func(rs []types.MinimalRepo, revs []search.RevisionSpecifier) error {
+	for _, depParams := range op.Dependencies {
+		withRepoRevs(depParams, func(rs []types.MinimalRepo, revs []search.RevisionSpecifier) error {
 			return withDependencies(rs, revs, func(dep reposource.PackageDependency) error {
 				if err := depsStore.Insert(ctx, dep); err != nil {
 					log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
