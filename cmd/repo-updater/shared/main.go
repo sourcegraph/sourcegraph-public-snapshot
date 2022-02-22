@@ -351,7 +351,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("fetching status: %q", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
 			return
 		}
 
