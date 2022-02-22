@@ -523,7 +523,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 // 3. Return those dependencies to the caller to be included in repository resolution.
 // 4. Triggering a sync of all the dependency repos.
 //
-func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (depNames []string, depRevs map[string][]search.RevisionSpecifier, err error) {
+func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[string][]search.RevisionSpecifier, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
 	defer func() {
 		tr.SetError(err)
@@ -545,16 +545,8 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 		}
 	}()
 
-	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
-
-	var mu sync.Mutex
-	depRevs = make(map[string][]search.RevisionSpecifier)
-
-	sem := semaphore.NewWeighted(16)
 	g, ctx := errgroup.WithContext(ctx)
-
-	for _, depFilter := range op.Dependencies {
-		depFilter := depFilter
+	withRepoRevs := func(depFilter string, cb func([]types.MinimalRepo, []search.RevisionSpecifier) error) {
 		g.Go(func() error {
 			repoPattern, revs := search.ParseRepositoryRevisions(depFilter)
 			if len(revs) == 0 {
@@ -570,53 +562,71 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 				return err
 			}
 
-			rg, ctx := errgroup.WithContext(ctx)
-			for _, repo := range rs {
-				for _, rev := range revs {
-					repo, rev := repo, rev
-					rg.Go(func() error {
-						if rev == (search.RevisionSpecifier{}) {
-							rev.RevSpec = "HEAD"
-						} else if rev.RevSpec == "" {
-							return errors.Errorf("unsupported glob rev in dependencies filter: %q", depFilter)
-						}
+			return cb(rs, revs)
+		})
+	}
 
-						if err := sem.Acquire(ctx, 1); err != nil {
-							return err
-						}
-						defer sem.Release(1)
+	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
+	sem := semaphore.NewWeighted(16)
 
-						return svc.StreamDependencies(ctx, repo.Name, rev.RevSpec, func(dep reposource.PackageDependency) error {
-							if err := depsStore.Insert(ctx, dep); err != nil {
-								log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
-							}
+	withDependencies := func(rs []types.MinimalRepo, revs []search.RevisionSpecifier, cb func(reposource.PackageDependency) error) error {
+		rg, ctx := errgroup.WithContext(ctx)
+		for _, repo := range rs {
+			for _, rev := range revs {
+				repo, rev := repo, rev
+				rg.Go(func() error {
+					if rev == (search.RevisionSpecifier{}) {
+						rev.RevSpec = "HEAD"
+					} else if rev.RevSpec == "" {
+						return errors.New("unsupported glob rev in dependencies filter")
+					}
 
-							depName := string(dep.RepoName())
-							depRev := search.RevisionSpecifier{RevSpec: dep.GitTagFromVersion()}
+					if err := sem.Acquire(ctx, 1); err != nil {
+						return err
+					}
+					defer sem.Release(1)
 
-							mu.Lock()
-							defer mu.Unlock()
-
-							if _, ok := depRevs[depName]; !ok {
-								depNames = append(depNames, depName)
-								depRevs[depName] = append(depRevs[depName], depRev)
-								return nil
-							}
-
-							for _, other := range depRevs[depName] {
-								if rev == other {
-									return nil
-								}
-							}
-
-							depRevs[depName] = append(depRevs[depName], rev)
-							return nil
-						})
-					})
-				}
+					return svc.StreamDependencies(ctx, repo.Name, rev.RevSpec, cb)
+				})
 			}
+		}
+		return rg.Wait()
+	}
 
-			return rg.Wait()
+	var (
+		mu       sync.Mutex
+		depRevs  = make(map[string][]search.RevisionSpecifier)
+		depNames []string
+	)
+
+	for _, depFilter := range op.Dependencies {
+		withRepoRevs(depFilter, func(rs []types.MinimalRepo, revs []search.RevisionSpecifier) error {
+			return withDependencies(rs, revs, func(dep reposource.PackageDependency) error {
+				if err := depsStore.Insert(ctx, dep); err != nil {
+					log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
+				}
+
+				depName := string(dep.RepoName())
+				depRev := search.RevisionSpecifier{RevSpec: dep.GitTagFromVersion()}
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				if _, ok := depRevs[depName]; !ok {
+					depNames = append(depNames, depName)
+					depRevs[depName] = append(depRevs[depName], depRev)
+					return nil
+				}
+
+				for _, other := range depRevs[depName] {
+					if depRev == other {
+						return nil
+					}
+				}
+
+				depRevs[depName] = append(depRevs[depName], depRev)
+				return nil
+			})
 		})
 	}
 
