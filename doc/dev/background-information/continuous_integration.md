@@ -289,11 +289,23 @@ Enabling a feature flag on the CI pipeline is achieved by setting environment va
 
 ### `buildchecker`
 
+[![buildchecker](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml)
+
 [`buildchecker`](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml), our [branch lock management tool](#branch-locks), runs in GitHub actions - see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/buildchecker.yml).
 
 To learn more about `buildchecker`, refer to the [`buildchecker` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/buildchecker).
 
+### `pr-auditor`
+
+[![pr-auditor](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml)
+
+[`pr-auditor`](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml), our [PR audit tool](testing_principles.md#policy), runs in GitHub actions - see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/pr-auditor.yml).
+
+To learn more about `pr-auditor`, refer to the [`pr-auditor` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/pr-auditor).
+
 ### Third-party licenses
+
+[![Licenses Update](https://github.com/sourcegraph/sourcegraph/actions/workflows/licenses-update.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/licenses-update.yml) [![Licenses Check](https://github.com/sourcegraph/sourcegraph/actions/workflows/licenses-check.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/licenses-check.yml)
 
 We use the [`license_finder`](https://github.com/pivotal/LicenseFinder) tool to check third-party dependencies for their licenses. It runs as a [GitHub Action on pull requests](https://github.com/sourcegraph/sourcegraph/actions?query=workflow%3A%22Licenses+Check%22), which will fail if one of the following occur:
 
