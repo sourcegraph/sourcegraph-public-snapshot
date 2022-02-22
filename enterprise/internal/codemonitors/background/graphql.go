@@ -28,7 +28,7 @@ type graphQLQuery struct {
 
 type gqlSearchVars struct {
 	Query     string      `json:"query"`
-	MonitorID *graphql.ID `json:"monitorID"`
+	MonitorID *graphql.ID `json:"monitorID,omitEmpty"`
 }
 
 type gqlSearchResponse struct {
@@ -49,9 +49,8 @@ type searchResults struct {
 
 const gqlSearchQuery = `query CodeMonitorSearch(
 	$query: String!,
-	$monitorID: ID,
 ) {
-	codeMonitorSearch(query: $query, codeMonitorID: $monitorID) {
+	search(query: $query) {
 		results {
 			approximateResultCount
 			limitHit
