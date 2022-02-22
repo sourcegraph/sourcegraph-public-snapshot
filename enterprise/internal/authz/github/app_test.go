@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,23 +18,29 @@ import (
 func TestNewAppProvider(t *testing.T) {
 	t.Run("test new app provider client", func(t *testing.T) {
 		srvHit := false
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenString := "1234"
-			tokenExpiry := time.Now()
-			token := github.InstallationToken{
-				Token:        &tokenString,
-				ExpiresAt:    &tokenExpiry,
-				Permissions:  &github.InstallationPermissions{},
-				Repositories: []*github.Repository{},
+			if r.URL.Path == "/api/v3/app/installations/1234/access_tokens" {
+				tokenString := "1234"
+				tokenExpiry := time.Now()
+				token := github.InstallationToken{
+					Token:        &tokenString,
+					ExpiresAt:    &tokenExpiry,
+					Permissions:  &github.InstallationPermissions{},
+					Repositories: []*github.Repository{},
+				}
+
+				respJson, _ := json.Marshal(token)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(respJson)
+			} else {
+				srvHit = true
+				gotHeader := r.Header.Get("Authorization")
+				wantHeader := "Bearer 1234"
+				if gotHeader != wantHeader {
+					t.Fatalf("wanted authorization header %s, got %s", wantHeader, gotHeader)
+				}
 			}
-
-			respJson, _ := json.Marshal(token)
-
-			srvHit = true
-
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(respJson)
 		}))
 
 		ghConnection := &types.GitHubConnection{
@@ -53,10 +60,13 @@ func TestNewAppProvider(t *testing.T) {
 
 		provider, _ := newAppProvider(ghConnection.URN, baseURL, "1234", bogusKey, 1234)
 
-		provider.client()
+		cli, _ := provider.client()
+
+		// call any endpoint so that test server can check Authorization header
+		cli.ListTeamMembers(context.Background(), "anyOwner", "anyTeam", 0)
 
 		if !srvHit {
-			t.Fatal("request to server was never made to get client token")
+			t.Fatal("did not hit server endpoint")
 		}
 	})
 }
