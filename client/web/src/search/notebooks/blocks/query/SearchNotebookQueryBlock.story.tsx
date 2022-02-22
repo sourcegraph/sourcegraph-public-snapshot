@@ -13,7 +13,7 @@ import {
     NOOP_PLATFORM_CONTEXT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { WebStory } from '../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 

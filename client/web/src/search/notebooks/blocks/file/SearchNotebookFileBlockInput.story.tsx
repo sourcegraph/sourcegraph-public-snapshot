@@ -2,15 +2,17 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
 
-const { add } = storiesOf('web/search/notebooks/fileBlock/SearchNotebookFileBlockInput', module).addDecorator(story => (
-    <div className="container" style={{ padding: '1rem 1rem 8rem 1rem' }}>
-        {story()}
-    </div>
-))
+const { add } = storiesOf('web/search/notebooks/blocks/file/SearchNotebookFileBlockInput', module).addDecorator(
+    story => (
+        <div className="container" style={{ padding: '1rem 1rem 8rem 1rem' }}>
+            {story()}
+        </div>
+    )
+)
 
 add('default', () => (
     <WebStory>

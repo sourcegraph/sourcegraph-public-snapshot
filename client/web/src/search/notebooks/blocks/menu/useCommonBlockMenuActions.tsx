@@ -4,9 +4,9 @@ import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useMemo } from 'react'
 
-import { BlockMenuAction } from './SearchNotebookBlockMenu'
+import { BlockProps } from '../..'
 
-import { BlockProps } from '.'
+import { BlockMenuAction } from './SearchNotebookBlockMenu'
 
 interface UseCommonBlockMenuActionsOptions
     extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {

@@ -11,8 +11,8 @@ import { PathMatch, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { BlockProps, FileBlockInput } from '..'
-import { parseLineRange } from '../serialize'
+import { BlockProps, FileBlockInput } from '../..'
+import { parseLineRange } from '../../serialize'
 
 import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
 import styles from './SearchNotebookFileBlockInputs.module.scss'

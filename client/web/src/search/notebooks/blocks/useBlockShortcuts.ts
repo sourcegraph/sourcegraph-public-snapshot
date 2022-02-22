@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import { BlockProps } from '.'
+import { BlockProps } from '..'
 
 interface UseBlockShortcutsOptions
     extends Pick<

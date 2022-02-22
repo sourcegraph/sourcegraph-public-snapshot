@@ -9,15 +9,15 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import blockStyles from './SearchNotebookBlock.module.scss'
-import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
-import styles from './SearchNotebookMarkdownBlock.module.scss'
-import { useBlockSelection } from './useBlockSelection'
-import { useBlockShortcuts } from './useBlockShortcuts'
-import { useCommonBlockMenuActions } from './useCommonBlockMenuActions'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
+import { BlockProps, MarkdownBlock } from '../..'
+import { BlockMenuAction, SearchNotebookBlockMenu } from '../menu/SearchNotebookBlockMenu'
+import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
+import blockStyles from '../SearchNotebookBlock.module.scss'
+import { useBlockSelection } from '../useBlockSelection'
+import { useBlockShortcuts } from '../useBlockShortcuts'
+import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
-import { BlockProps, MarkdownBlock } from '.'
+import styles from './SearchNotebookMarkdownBlock.module.scss'
 
 interface SearchNotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
     isMacPlatform: boolean

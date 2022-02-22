@@ -25,19 +25,18 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures } from '../../stores'
-import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { BlockProps, QueryBlock } from '../..'
+import { AuthenticatedUser } from '../../../../auth'
+import { useExperimentalFeatures } from '../../../../stores'
+import { SearchUserNeedsCodeHost } from '../../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { BlockMenuAction, SearchNotebookBlockMenu } from '../menu/SearchNotebookBlockMenu'
+import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
+import blockStyles from '../SearchNotebookBlock.module.scss'
+import { useBlockSelection } from '../useBlockSelection'
+import { useBlockShortcuts } from '../useBlockShortcuts'
+import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
-import blockStyles from './SearchNotebookBlock.module.scss'
-import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
 import styles from './SearchNotebookQueryBlock.module.scss'
-import { useBlockSelection } from './useBlockSelection'
-import { useBlockShortcuts } from './useBlockShortcuts'
-import { useCommonBlockMenuActions } from './useCommonBlockMenuActions'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBlockInput'
-
-import { BlockProps, QueryBlock } from '.'
 
 interface SearchNotebookQueryBlockProps
     extends BlockProps,

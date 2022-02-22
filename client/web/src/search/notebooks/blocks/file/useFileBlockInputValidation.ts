@@ -5,9 +5,9 @@ import { catchError, map } from 'rxjs/operators'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { FileBlockInput } from '..'
-import { fetchRepository as _fetchRepository, resolveRevision as _resolveRevision } from '../../../repo/backend'
-import { parseLineRange } from '../serialize'
+import { FileBlockInput } from '../..'
+import { fetchRepository as _fetchRepository, resolveRevision as _resolveRevision } from '../../../../repo/backend'
+import { parseLineRange } from '../../serialize'
 
 function validateInput<T>(
     input: string,

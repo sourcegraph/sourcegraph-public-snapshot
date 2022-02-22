@@ -2,12 +2,12 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { SearchNotebookFileBlockInputs } from './SearchNotebookFileBlockInputs'
 
 const { add } = storiesOf(
-    'web/search/notebooks/fileBlock/SearchNotebookFileBlockInputs',
+    'web/search/notebooks/blocks/file/SearchNotebookFileBlockInputs',
     module
 ).addDecorator(story => <div className="container p-3">{story()}</div>)
 

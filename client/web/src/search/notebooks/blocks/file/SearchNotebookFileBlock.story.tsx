@@ -5,13 +5,13 @@ import { of } from 'rxjs'
 
 import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { FileBlockInput } from '..'
-import { WebStory } from '../../../components/WebStory'
-import { RepositoryFields } from '../../../graphql-operations'
+import { FileBlockInput } from '../..'
+import { WebStory } from '../../../../components/WebStory'
+import { RepositoryFields } from '../../../../graphql-operations'
 
 import { SearchNotebookFileBlock } from './SearchNotebookFileBlock'
 
-const { add } = storiesOf('web/search/notebooks/fileBlock/SearchNotebookFileBlock', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/blocks/file/SearchNotebookFileBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 

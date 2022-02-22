@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { useState, useEffect } from 'react'
 
-import { BlockProps } from '.'
+import { BlockProps } from '..'
 
 export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
