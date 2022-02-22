@@ -180,11 +180,6 @@ SELECT id, name, version FROM lsif_dependency_repos
 WHERE %s ORDER BY id %s
 `
 
-type ExternalServiceStore interface {
-	database.ExternalServiceStore
-	EnqueueSingleSyncJob(context.Context, int64) error
-}
-
 type DependencyInserter struct {
 	list     func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	sync     func(context.Context, int64) error

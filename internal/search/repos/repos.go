@@ -515,14 +515,13 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 	return excluded.ExcludedRepos, g.Wait()
 }
 
-// dependencies resolves `dependency:` filters to a specific list of dependencies for the given
-// repos and revision(s). It does so by:
+// dependencies resolves `repo:dependencies` predicates to a specific list of
+// dependency repositories for the given repos and revision(s). It does so by:
 //
 // 1. Expanding each `dependencies:regex@revA:revB:...` filter regex to a list of repositories that exist in the DB.
-// 2. For each of those (repo, rev) tuple, computing all their dependencies.
-// 3. On sourcegraph.com, making sure each of those dependencies are synced (i.e. lazy-syncing)
-//    On-prem, we will sync them in the background in the worker service.
-// 4. Return those dependencies to the caller to be included in repository resolution.
+// 2. For each of those (repo, rev) tuple, computing all their dependencies (transitive included).
+// 3. Return those dependencies to the caller to be included in repository resolution.
+// 4. Triggering a sync of all the dependency repos.
 //
 func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (depNames []string, depRevs map[string][]search.RevisionSpecifier, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
@@ -532,7 +531,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (de
 	}()
 
 	// We pass in these methods as functions to avoid a circular dependency between
-	// the codeinteldbstore package and the repos package.
+	// the codeinteldbstore package and the repos package and to make testing easier.
 	depsStore := codeinteldbstore.NewDependencyInserter(
 		r.DB,
 		r.DB.ExternalServices().List,
