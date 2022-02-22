@@ -15,6 +15,10 @@
 - Update to use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
 - Add new configuration setting `sourcegraph.requestHeaders` for adding custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
 
+### Fixes
+
+- Manage context display issue for instances under v3.36.0 [issues/31022](https://github.com/sourcegraph/sourcegraph/issues/31022)
+
 ## 2.0.8
 
 ### Fixes
