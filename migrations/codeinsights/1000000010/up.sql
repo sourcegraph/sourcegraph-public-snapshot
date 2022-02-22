@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
 --  * All migrations must be backward-compatible. Old versions of Sourcegraph
@@ -24,6 +22,5 @@ TRUNCATE commit_index_metadata;
 
 -- Update all of the underlying insights that may have been synced to reset metadata and rebuild their data.
 update insight_series set created_at = current_timestamp, backfill_queued_at = null, next_recording_after = date_trunc('month', current_date) + interval '1 month';
-COMMIT;
 
 -- This file used to contain TimescaleDB specific migrations that have seen been deprecated.

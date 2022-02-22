@@ -583,8 +583,8 @@ github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8l
 github.com/derision-test/glock v1.0.0 h1:b6sViZG+Cm6QtdpqbfWEjaBVbzNPntIS4GzsxpS+CmM=
 github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/derision-test/go-mockgen v1.1.2/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
-github.com/derision-test/go-mockgen v1.1.3 h1:tu/OUL1kDQM/Xx0mKRMWBLdcnRbuCvzbsX4wHMwZCig=
-github.com/derision-test/go-mockgen v1.1.3/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
+github.com/derision-test/go-mockgen v1.1.4 h1:VrXg0E0vg+paz7vo/TEJfDg9wzRiSGFUvqXRN2jTV98=
+github.com/derision-test/go-mockgen v1.1.4/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.1.0 h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=

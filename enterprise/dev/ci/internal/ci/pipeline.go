@@ -41,6 +41,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"DATE":                               c.Time.Format(time.RFC3339),
 		"VERSION":                            c.Version,
 
+		// Use athens proxy for go modules downloads
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		"GOPROXY": "http://athens-athens-proxy",
+
 		// Additional flags
 		"GO111MODULE": "on",
 		"FORCE_COLOR": "3",
@@ -104,7 +108,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.36.0"
+	const minimumUpgradeableVersion = "3.37.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()

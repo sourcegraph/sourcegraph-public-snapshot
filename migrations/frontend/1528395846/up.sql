@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE lsif_uploads_visible_at_tip ADD COLUMN branch_or_tag_name text NOT NULL DEFAULT '';
 ALTER TABLE lsif_uploads_visible_at_tip ADD COLUMN is_default_branch boolean NOT NULL DEFAULT false;
 
@@ -14,5 +12,3 @@ UPDATE lsif_uploads_visible_at_tip SET is_default_branch = true;
 -- Mark every graph as dirty so we recalculate retention correctly once the instance
 -- boots up.
 UPDATE lsif_dirty_repositories SET dirty_token = dirty_token + 1;
-
-COMMIT;

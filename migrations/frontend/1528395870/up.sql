@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS lsif_dependency_repos (
     id bigserial NOT NULL PRIMARY KEY,
     name text NOT NULL,
@@ -8,5 +6,3 @@ CREATE TABLE IF NOT EXISTS lsif_dependency_repos (
     CONSTRAINT lsif_dependency_repos_unique_triplet
         UNIQUE (scheme, name, version)
 );
-
-COMMIT;

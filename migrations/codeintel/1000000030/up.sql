@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE lsif_data_implementations (
     dump_id        INTEGER NOT NULL,
     scheme         TEXT    NOT NULL,
@@ -69,5 +67,3 @@ END $$ LANGUAGE plpgsql;
 CREATE TRIGGER lsif_data_implementations_schema_versions_insert
     AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab
     FOR EACH STATEMENT EXECUTE PROCEDURE update_lsif_data_implementations_schema_versions_insert();
-
-COMMIT;

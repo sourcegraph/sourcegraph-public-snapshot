@@ -10,9 +10,8 @@ import (
 
 var ErrNoResults = errors.New("no results returned for predicate")
 
-// Substitute replaces all the predicates in a query with their expanded form. The predicates
-// are expanded using the doExpand function.
-func Substitute(q query.Basic, evaluate func(query.Predicate) (result.Matches, error)) (query.Plan, error) {
+// Substitute replaces predicates that generate plans and substitutes them to create a new Plan.
+func Substitute(q query.Basic, evaluate func(query.Plan) (result.Matches, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -34,7 +33,15 @@ func Substitute(q query.Basic, evaluate func(query.Predicate) (result.Matches, e
 		name, params := query.ParseAsPredicate(value)
 		predicate := query.DefaultPredicateRegistry.Get(field, name)
 		predicate.ParseParams(params)
-		matches, err := evaluate(predicate)
+		plan, err := predicate.Plan(q)
+		if err != nil {
+			topErr = err
+			return nil
+		}
+		if plan == nil {
+			return orig
+		}
+		matches, err := evaluate(plan)
 		if err != nil {
 			topErr = err
 			return nil

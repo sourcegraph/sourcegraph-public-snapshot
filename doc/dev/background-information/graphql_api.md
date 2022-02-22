@@ -59,3 +59,7 @@ Try to avoid making breaking changes, but if you have to, be sure to give client
 
 - Add a new field with a different name, deprecate the old field, and communicate the deprecation in the changelog
 - Give clients time to migrate (2 release cycles is a common guideline), remove the old deprecated field, and communicate the removal in the changelog
+
+## Guides
+
+- [How to add a GraphQL query](../how-to/add_graphql_query.md)

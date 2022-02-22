@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE IF EXISTS notebooks
     DROP COLUMN IF EXISTS namespace_user_id,
     DROP COLUMN IF EXISTS namespace_org_id,
@@ -9,5 +7,3 @@ ALTER TABLE IF EXISTS notebooks
 DROP INDEX IF EXISTS notebooks_namespace_user_id_idx;
 
 DROP INDEX IF EXISTS notebooks_namespace_org_id_idx;
-
-COMMIT;
