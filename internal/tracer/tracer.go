@@ -201,7 +201,7 @@ func newTracer(opts *options) (opentracing.Tracer, io.Closer, error) {
 	}
 	ddtracer.Stop()
 
-	log15.Info("opentracing:  enabled")
+	log15.Info("opentracing: enabled")
 	cfg, err := jaegercfg.FromEnv()
 	cfg.ServiceName = opts.serviceName
 	if err != nil {
