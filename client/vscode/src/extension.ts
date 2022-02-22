@@ -19,7 +19,7 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointSetting } from './settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
@@ -68,13 +68,21 @@ export function activate(context: vscode.ExtensionContext): void {
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
     const initialAccessToken = accessTokenSetting()
-    polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}` } : {})
-    // Update `EventSource` Authorization header on access token change.
+    // Add custom headers to `EventSource` Authorization header when provided
+    const customHeaders = endpointRequestHeadersSetting()
+    polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
+    // Update `EventSource` Authorization header on access token / headers change.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(config => {
-            if (config.affectsConfiguration('sourcegraph.accessToken')) {
+            if (
+                config.affectsConfiguration('sourcegraph.accessToken') ||
+                config.affectsConfiguration('sourcegraph.requestHeaders')
+            ) {
                 const newAccessToken = accessTokenSetting()
-                polyfillEventSource(newAccessToken ? { Authorization: `token ${newAccessToken}` } : {})
+                const newCustomHeaders = endpointRequestHeadersSetting()
+                polyfillEventSource(
+                    newAccessToken ? { Authorization: `token ${newAccessToken}`, ...newCustomHeaders } : {}
+                )
             }
         })
     )
@@ -87,8 +95,8 @@ export function activate(context: vscode.ExtensionContext): void {
     const sidebarQueryStates = new ReplaySubject<VSCEQueryState>(1)
 
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
-
-    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: initialInstanceURL })
+    // Use api endpoint for stream search
+    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: `${initialInstanceURL}/.api` })
 
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),

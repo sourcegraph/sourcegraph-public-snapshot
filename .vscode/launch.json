@@ -15,6 +15,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview",
+        "--disable-extension=sourcegraph.sourcegraph",
       ],
       "stopOnEntry": false,
       "sourceMaps": true,
@@ -28,6 +29,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview",
+        "--disable-extension=sourcegraph.sourcegraph",
         "--extensionDevelopmentKind=web",
         "--disable-web-security",
       ],
