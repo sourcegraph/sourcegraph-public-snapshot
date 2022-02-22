@@ -16,6 +16,8 @@
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
   - [How to enable continuous profiling in production](profiling_continuous.md)
+- [GraphQL](../background-information/graphql_api.md)
+  - [How to add a GraphQL query](../how-to/add_graphql_query.md)
 
 ## Local Environment
 
