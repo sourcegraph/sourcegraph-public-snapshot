@@ -162,10 +162,16 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	// Set a default agent queue to assign this job to
 	if len(step.Agents) == 0 {
 		if FeatureFlags.StatelessBuild {
-			step.Agents["queue"] = "job"
+			step.Agents["queue"] = AgentQueueJob
 		} else {
-			step.Agents["queue"] = "standard"
+			step.Agents["queue"] = AgentQueueStandard
 		}
+	}
+
+	if step.Agents["queue"] != AgentQueueBaremetal {
+		// Use athens proxy for go modules downloads on non-baremetal agents
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		step.Env["GOPROXY"] = "http://athens-athens-proxy"
 	}
 
 	p.Steps = append(p.Steps, step)
