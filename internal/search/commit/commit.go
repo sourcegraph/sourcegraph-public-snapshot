@@ -32,7 +32,6 @@ type CommitSearch struct {
 	Diff                 bool
 	HasTimeFilter        bool
 	Limit                int
-	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
 }
 
@@ -127,12 +126,6 @@ func (j *CommitSearch) Tags() []log.Field {
 		log.Bool("diff", j.Diff),
 		log.Bool("hasTimeFilter", j.HasTimeFilter),
 		log.Int("limit", j.Limit),
-		log.Int64("codeMonitorID", func() int64 {
-			if j.CodeMonitorID != nil {
-				return *j.CodeMonitorID
-			}
-			return 0
-		}()),
 		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 	}
 }
