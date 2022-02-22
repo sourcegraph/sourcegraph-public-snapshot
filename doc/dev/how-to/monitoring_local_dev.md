@@ -37,10 +37,13 @@ commands:
   prometheus:
     # install can just be set up gcloud credentials for a cluster
     # e.g. https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances
-    install: |
-      gcloud container clusters get-credentials ...
-    cmd: |
-      kubectl port-forward svc/prometheus 9090:30090
+    install: gcloud container clusters get-credentials ...
+    # make remote prometheus accessible to local grafana
+    cmd: kubectl port-forward svc/prometheus 9090:30090
+  monitoring-generator:
+    env:
+      # don't reload your production Prometheus!
+      PROMETHEUS_DIR: ''
 ```
 
 Then, you can start up the local dev monitoring stack by using:
