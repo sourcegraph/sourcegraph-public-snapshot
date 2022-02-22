@@ -1,4 +1,4 @@
-#!/usr/bin/env bashov
+#!/usr/bin/env bash
 
 # This script builds the symbols go binary.
 # Requires a single argument which is the path to the target bindir.
