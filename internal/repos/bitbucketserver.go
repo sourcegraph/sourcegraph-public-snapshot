@@ -191,10 +191,9 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	// "archived" label is a convention used at some customers for indicating
-	// a repository is archived (like github's archived state). This is not
-	// returned in the normal repository listing endpoints, so we need to
-	// fetch it separately.
+	// "archived" label is a convention used at some customers for indicating a
+	// repository is archived (like github's archived state). This is not returned in
+	// the normal repository listing endpoints, so we need to fetch it separately.
 	archived, err := s.listAllLabeledRepos(ctx, "archived")
 	if err != nil {
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
@@ -214,8 +213,8 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	go func() {
 		defer wg.Done()
 
-		// Admins normally add to end of lists, so end of list most likely has
-		// new repos => stream them first.
+		// Admins normally add to end of lists, so end of list most likely has new repos
+		// => stream them first.
 		for i := len(s.config.Repos) - 1; i >= 0; i-- {
 			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)

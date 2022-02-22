@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/protobuf/proto"
 
@@ -35,7 +35,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			index := lsif_typed.Index{}
+			index := lsiftyped.Index{}
 			err = proto.Unmarshal(data, &index)
 			if err != nil {
 				panic(errors.Wrapf(err, "failed to parse protobuf file '%s'", file))
