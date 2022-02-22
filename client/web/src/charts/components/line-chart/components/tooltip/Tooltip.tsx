@@ -122,8 +122,10 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
                 {lines.window.map(line => {
+                    // In stacked mode each line and datum has its original selfValue
+                    // and stacked value which is sum of all data items of lines below
                     const selfValue = formatYTick(line.selfValue)
-                    const value = formatYTick(line.value)
+                    const stackedValue = formatYTick(line.value)
                     const datumKey = activePoint.seriesKey
                     const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
 
@@ -135,16 +137,14 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
                             <span className={styles.legendText}>{line?.name ?? 'unknown series'}</span>
 
                             <span className={styles.legendValue}>
-                                {selfValue !== value ? (
+                                {selfValue !== stackedValue ? (
                                     selfValue === null || Number.isNaN(selfValue) ? (
                                         '–'
                                     ) : (
                                         <span className="font-weight-bold">{selfValue}</span>
                                     )
-                                ) : (
-                                    false
-                                )}{' '}
-                                {value === null || Number.isNaN(value) ? '–' : value}
+                                ) : null}{' '}
+                                {stackedValue === null || Number.isNaN(stackedValue) ? '–' : stackedValue}
                             </span>
                         </li>
                     )

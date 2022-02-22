@@ -63,6 +63,9 @@ export function getSeriesWithData<Datum>(input: SeriesWithDataInput<Datum>): Lin
 
     for (const stackedSeries of stackedSeriesData) {
         for (const point of stackedSeries) {
+            // D3-stack api feature. The stacked data has array shape where 0 indexed element
+            // is a lower border for the stacked datum and 1 indexed element is a upper boundary
+            // for the stacked line.
             const newStackedValue = point['1']
             const date = (point.data[xAxisKey] as unknown) as string
 
