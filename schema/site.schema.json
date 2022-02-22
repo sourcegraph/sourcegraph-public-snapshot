@@ -940,7 +940,7 @@
         "type": {
           "description": "Determines what Tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
           "type": "string",
-          "enum": ["datadog","opentracing"],
+          "enum": ["datadog", "opentracing"],
           "default": "opentracing"
         },
         "sampling": {
