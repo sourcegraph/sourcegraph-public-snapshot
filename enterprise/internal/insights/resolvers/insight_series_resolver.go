@@ -4,6 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -14,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
@@ -60,20 +68,34 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		opts.To = &args.To.Time
 	}
 
+	includeRepo := func(regex ...string) {
+		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+	}
+	excludeRepo := func(regex ...string) {
+		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+	}
+
 	// to preserve backwards compatibility, we are going to keep the arguments on this resolver for now. Ideally
 	// we would deprecate these in favor of passing arguments from a higher level resolver (insight view) to match
 	// the model of how we want default filters to work at the insight view level. That said, we will only inherit
 	// higher resolver filters if provided filter arguments are nil.
 	if args.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *args.IncludeRepoRegex
+		includeRepo(*args.IncludeRepoRegex)
 	} else if r.filters.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *r.filters.IncludeRepoRegex
+		includeRepo(*r.filters.IncludeRepoRegex)
 	}
 	if args.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *args.ExcludeRepoRegex
+		excludeRepo(*args.ExcludeRepoRegex)
 	} else if r.filters.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *r.filters.ExcludeRepoRegex
+		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
+
+	inc, exc, err := r.unwrapSearchContexts(ctx, r.filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includeRepo(inc...)
+	excludeRepo(exc...)
 
 	points, err := r.insightsStore.SeriesPoints(ctx, opts)
 	if err != nil {
@@ -84,6 +106,40 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		resolvers = append(resolvers, insightsDataPointResolver{point})
 	}
 	return resolvers, nil
+}
+
+func (r *insightSeriesResolver) unwrapSearchContexts(ctx context.Context, rawContexts []string) ([]string, []string, error) {
+	ndb := database.NewDB(r.workerBaseStore.Handle().DB())
+	var include []string
+	var exclude []string
+
+	for _, rawContext := range rawContexts {
+		searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, ndb, rawContext)
+		if err != nil {
+			return nil, nil, err
+		}
+		if searchContext.Query != "" {
+			var plan searchquery.Plan
+			// q := "repo:sourcegraph/.* -repo:asdf/.*"
+			plan, err := searchquery.Pipeline(
+				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
+			)
+			if err != nil {
+				return nil, nil, err
+			}
+			inc, exc := plan.ToParseTree().Repositories()
+			include = append(include, inc...)
+			exclude = append(exclude, exc...)
+		}
+	}
+
+	// scStore := database.SearchContexts(r.workerBaseStore.Handle().DB())
+	// scStore.GetSearchContext(ctx, database.GetSearchContextOptions{
+	// 	Name:            "",
+	// 	NamespaceUserID: 0,
+	// 	NamespaceOrgID:  0,
+	// })
+	return include, exclude, nil
 }
 
 func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {

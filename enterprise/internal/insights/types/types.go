@@ -49,6 +49,7 @@ type Insight struct {
 type InsightViewFilters struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
+	SearchContexts   []string
 }
 
 // InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.

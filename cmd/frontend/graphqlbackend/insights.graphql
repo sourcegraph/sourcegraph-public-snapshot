@@ -617,6 +617,8 @@ input InsightViewFiltersInput {
     A regex string for which to exclude repositories in a filter.
     """
     excludeRepoRegex: String
+
+    searchContexts: [String!]
 }
 
 """

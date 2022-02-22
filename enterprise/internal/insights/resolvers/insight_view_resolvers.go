@@ -169,11 +169,18 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	}
 	opts.From = &oldest
 
+	includeRepo := func(regex ...string) {
+		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+	}
+	excludeRepo := func(regex ...string) {
+		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+	}
+
 	if filters.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *filters.IncludeRepoRegex
+		includeRepo(*filters.IncludeRepoRegex)
 	}
 	if filters.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *filters.ExcludeRepoRegex
+		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 	groupedByCapture := make(map[string][]store.SeriesPoint)
 	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
@@ -743,6 +750,7 @@ type InsightViewQueryConnectionResolver struct {
 
 func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0)
+	var scs []string
 
 	views, _, err := d.computeViews(ctx)
 	if err != nil {
@@ -751,9 +759,13 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 	for i := range views {
 		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
 		if d.args.Filters != nil {
+			if d.args.Filters.SearchContexts != nil {
+				scs = *d.args.Filters.SearchContexts
+			}
 			resolver.overrideFilters = &types.InsightViewFilters{
 				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
 				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+				SearchContexts:   scs,
 			}
 		}
 		resolvers = append(resolvers, resolver)
