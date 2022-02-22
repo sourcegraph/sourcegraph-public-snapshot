@@ -53,7 +53,7 @@ func init() {
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (sourceCodeJarPath string, err error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
@@ -98,7 +98,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		return "", err
 	}
 	if len(paths) == 0 || (len(paths) == 1 && paths[0] == "") {
-		return "", ErrNoSources{Dependency: dependency}
+		return "", &ErrNoSources{Dependency: dependency}
 	}
 	if len(paths) > 1 {
 		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
@@ -108,14 +108,14 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 
 // ErrNoSources indicates that a dependency has no sources
 type ErrNoSources struct {
-	Dependency reposource.MavenDependency
+	Dependency *reposource.MavenDependency
 }
 
 func (e ErrNoSources) Error() string {
-	return fmt.Sprintf("no sources for dependency %s", e.Dependency)
+	return fmt.Sprintf("no sources for dependency %v", e.Dependency)
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (byteCodeJarPath string, err error) {
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
 	ctx, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -142,7 +142,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (exists bool, err error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})

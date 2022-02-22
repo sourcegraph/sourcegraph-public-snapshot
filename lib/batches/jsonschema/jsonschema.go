@@ -23,7 +23,7 @@ func Validate(schema string, input []byte) error {
 		return errors.Wrap(err, "failed to validate input against schema")
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	for _, err := range res.Errors() {
 		e := err.String()
 		// Remove `(root): ` from error formatting since these errors are
@@ -32,5 +32,5 @@ func Validate(schema string, input []byte) error {
 		errs = errors.Append(errs, errors.New(e))
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }

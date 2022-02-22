@@ -28,12 +28,6 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: a.UID,
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	// SECURITY: This API should only be exposed for user-added external services, not for example by
 	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
@@ -73,12 +67,41 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
+	recentCommitters, err := parallelRecentCommitters(ctx, fewRepos, client.RecentCommitters)
+	if err != nil {
+		return nil, err
+	}
+
+	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: a.UID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return filterInvitableCollaborators(recentCommitters, authUserEmails), nil
+}
+
+type invitableCollaboratorResolver struct {
+	email     string
+	name      string
+	avatarURL string
+	date      time.Time
+}
+
+func (i *invitableCollaboratorResolver) Name() string        { return i.name }
+func (i *invitableCollaboratorResolver) Email() string       { return i.email }
+func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
+func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarURL }
+func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
+
+type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
+
+func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitters RecentCommittersFunc) (allRecentCommitters []*invitableCollaboratorResolver, err error) {
 	var (
-		wg                  sync.WaitGroup
-		mu                  sync.Mutex
-		allRecentCommitters []*invitableCollaboratorResolver
+		wg sync.WaitGroup
+		mu sync.Mutex
 	)
-	for _, repoName := range fewRepos {
+	for _, repoName := range repos {
 		owner, name, err := github.SplitRepositoryNameWithOwner(repoName)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to split repository name")
@@ -86,7 +109,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			recentCommits, err := client.RecentCommitters(ctx, &github.RecentCommittersParams{
+			recentCommits, err := recentCommitters(ctx, &github.RecentCommittersParams{
 				Name:  name,
 				Owner: owner,
 				First: 100,
@@ -111,14 +134,17 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		})
 	}
 	wg.Wait()
+	return
+}
 
+func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResolver, authUserEmails []*database.UserEmail) []*invitableCollaboratorResolver {
 	// Sort committers by most-recent-first. This ensures that the top of the list of people you can
 	// invite are people who recently committed to code, which means they're more active and more
 	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
 	// committer is say no longer working at that organization.)
-	sort.Slice(allRecentCommitters, func(i, j int) bool {
-		a := allRecentCommitters[i].date
-		b := allRecentCommitters[j].date
+	sort.Slice(recentCommitters, func(i, j int) bool {
+		a := recentCommitters[i].date
+		b := recentCommitters[j].date
 		return a.After(b)
 	})
 
@@ -129,7 +155,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		invitable   []*invitableCollaboratorResolver
 		deduplicate = map[string]struct{}{}
 	)
-	for _, recentCommitter := range allRecentCommitters {
+	for _, recentCommitter := range recentCommitters {
 		if recentCommitter.email == "" || strings.Contains(recentCommitter.email, "noreply") {
 			continue
 		}
@@ -149,18 +175,5 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		deduplicate[recentCommitter.email] = struct{}{}
 		invitable = append(invitable, recentCommitter)
 	}
-	return invitable, nil
+	return invitable
 }
-
-type invitableCollaboratorResolver struct {
-	email     string
-	name      string
-	avatarURL string
-	date      time.Time
-}
-
-func (i *invitableCollaboratorResolver) Name() string        { return i.name }
-func (i *invitableCollaboratorResolver) Email() string       { return i.email }
-func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
-func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarURL }
-func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }

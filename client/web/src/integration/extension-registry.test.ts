@@ -186,6 +186,7 @@ describe('Extension Registry', () => {
                     organizations: { nodes: [] },
                     session: { canSignOut: true },
                     viewerCanAdminister: true,
+                    searchable: true,
                 },
             }),
             RegistryExtensions: () => ({

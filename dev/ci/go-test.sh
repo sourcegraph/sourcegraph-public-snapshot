@@ -60,14 +60,22 @@ function go_test() {
 EOF
   )
 
+  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
+  set +e
   echo "$data" | curl \
+    --fail \
     --request POST \
     --url https://analytics-api.buildkite.com/v1/uploads \
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
-
-  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  local curl_exit="$?"
+  if [ "$curl_exit" -eq 0 ]; then
+    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+  else
+    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
+  fi
+  set -e
 
   return "$test_exit_code"
 }

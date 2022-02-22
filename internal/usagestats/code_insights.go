@@ -19,20 +19,24 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	const platformQuery = `
 	SELECT
-		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS weekly_insights_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS weekly_insights_unique_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       		AS weekly_insights_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         		AS weekly_insights_get_started_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        		AS weekly_insights_unique_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  AS weekly_insights_get_started_unique_page_views,
 		COUNT(distinct user_id)
-			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS weekly_insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS weekly_insight_add_more_click
+			FILTER (WHERE name = 'InsightAddition')									AS weekly_insight_creators,
+		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 						AS weekly_insight_configure_click,
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 						AS weekly_insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+	WHERE name in ('ViewInsights', 'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
 	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.WeeklyInsightsPageViews,
+		&stats.WeeklyInsightsGetStartedPageViews,
 		&stats.WeeklyInsightsUniquePageViews,
+		&stats.WeeklyInsightsGetStartedUniquePageViews,
 		&stats.WeeklyInsightCreators,
 		&stats.WeeklyInsightConfigureClick,
 		&stats.WeeklyInsightAddMoreClick,
@@ -41,13 +45,13 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 
 	const metricsByInsightQuery = `
-	SELECT argument ->> 'insightType'::text 					AS insight_type,
-        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		AS additions,
-        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			AS edits,
-        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		AS removals,
-		COUNT(*) FILTER (WHERE name = 'InsightHover') 			AS hovers,
-		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') AS ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 	AS data_point_clicks
+	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
+        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
+        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
+        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
+		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
+		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
+		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks
 	FROM event_logs
 	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp)
@@ -136,7 +140,41 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.InsightTotalCounts = totalCounts
 
+	weeklyGetStartedTabClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabClicks")
+	}
+	stats.WeeklyGetStartedTabClickByTab = weeklyGetStartedTabClickByTab
+
+	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabMoreClicks")
+	}
+	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
+
 	return &stats, nil
+}
+
+func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
+	weeklyGetStartedTabClickByTab := []types.InsightGetStartedTabClickPing{}
+	rows, err := db.QueryContext(ctx, sql, timeNow())
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		weeklyGetStartedTabClick := types.InsightGetStartedTabClickPing{}
+		if err := rows.Scan(
+			&weeklyGetStartedTabClick.TotalCount,
+			&weeklyGetStartedTabClick.TabName,
+		); err != nil {
+			return nil, err
+		}
+		weeklyGetStartedTabClickByTab = append(weeklyGetStartedTabClickByTab, weeklyGetStartedTabClick)
+	}
+	return weeklyGetStartedTabClickByTab, nil
 }
 
 func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
@@ -278,6 +316,14 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 
 		"CodeInsightsCodeStatsCreationPageSubmitClick",
 		"CodeInsightsCodeStatsCreationPageCancelClick",
+
+		"InsightsGetStartedPageQueryModification",
+		"InsightsGetStartedPageRepositoriesModification",
+		"InsightsGetStartedPrimaryCTAClick",
+		"InsightsGetStartedBigTemplateClick",
+		"InsightGetStartedTemplateCopyClick",
+		"InsightGetStartedTemplateClick",
+		"InsightsGetStartedDocsClicks",
 	}
 
 	builder := NewPingBuilder(Week, timeSupplier)
@@ -313,6 +359,18 @@ FROM event_logs
 WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
+`
+
+const getStartedTabClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
+`
+
+const getStartedTabMoreClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`

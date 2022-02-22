@@ -8,6 +8,8 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
+This how-to explains how to turn on [auto-indexing](../explanations/auto_indexing.md) on your Sourcegraph instance to enable [precise code intelligence](../explanations/precise_code_intelligence.md).
+
 ## Deploy executors
 
 First, [deploy the executor service](../../../../admin/deploy_executors.md) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a precise code intelligence index, then upload that index to your Sourcegraph instance for processing.

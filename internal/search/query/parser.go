@@ -769,8 +769,17 @@ func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 	if value, delimiter, ok := p.TryParseDelimiter(); ok {
 		var labels labels
 		if delimiter == '/' {
-			// This is a regex-delimited pattern
-			labels = Regexp
+			if value != "" {
+				// This is a non-empty regex-delimited pattern
+				labels = Regexp
+			} else {
+				// This is an empty `//` delimited pattern:
+				// treat this heuristically as a literal //
+				// pattern instead, since the an empty regex
+				// pattern offers lower utitility.
+				value = "//"
+				labels = Literal
+			}
 		} else {
 			labels = Literal | Quoted
 		}

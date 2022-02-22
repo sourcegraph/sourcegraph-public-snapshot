@@ -47,7 +47,6 @@ var (
 		},
 		Subcommands: []*ffcli.Command{
 			runCommand,
-			runSetCommand,
 			startCommand,
 			testCommand,
 			doctorCommand,

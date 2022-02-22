@@ -412,7 +412,7 @@ type publicationStateMap map[string]batches.PublishedValue
 func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateInput) (publicationStateMap, error) {
 	out := publicationStateMap{}
 	if in != nil {
-		var errs *errors.MultiError
+		var errs error
 		for _, ps := range *in {
 			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
 			if err != nil {
@@ -426,8 +426,8 @@ func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateIn
 			}
 			out[id] = ps.PublicationState
 		}
-		if err := errs.ErrorOrNil(); err != nil {
-			return nil, err
+		if errs != nil {
+			return nil, errs
 		}
 	}
 

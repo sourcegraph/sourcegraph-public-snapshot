@@ -51,7 +51,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	prs, ev := h.convertEvent(e)
 
-	m := new(errors.MultiError)
+	var m error
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
@@ -63,7 +63,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			m = errors.Append(m, err)
 		}
 	}
-	if m.ErrorOrNil() != nil {
+	if m != nil {
 		respond(w, http.StatusInternalServerError, m)
 	}
 }
