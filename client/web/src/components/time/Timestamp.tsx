@@ -40,7 +40,11 @@ export const Timestamp: React.FunctionComponent<Props> = ({
         }
     }, [date, noAbout, now, strict])
 
-    const tooltip = useMemo(() => format(typeof date === 'string' ? parseISO(date) : date, 'yyyy-MM-dd p'), [date])
+    const tooltip = useMemo(() => {
+        const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
+        const dateHasTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0
+        return format(typeof date === 'string' ? parseISO(date) : date, `yyyy-MM-dd${dateHasTime ? ' p' : ''}`)
+    }, [date])
 
     return (
         <span className="timestamp" data-tooltip={tooltip}>
