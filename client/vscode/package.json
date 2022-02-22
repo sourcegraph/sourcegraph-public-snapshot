@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph",
   "displayName": "Sourcegraph",
-  "version": "2.1.0",
+  "version": "2.0.9",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -141,7 +141,7 @@
             "object"
           ],
           "default": {},
-          "examples": [{"Cache-Control": "no-cache", "Access-Control-Allow-Origin": "*"}],
+          "examples": [{"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"}],
           "description": "Each value pair will be added to the request headers made to your instance."
         }
       }

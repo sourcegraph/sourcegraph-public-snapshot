@@ -86,14 +86,17 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 This extension contributes the following settings:
 
-- `sourcegraph.url`: Specify your on-premises Sourcegraph instance here, if applicable. For example: `"sourcegraph.url": "https://sourcegraph.com"`
-- `sourcegraph.accessToken`: The access token to query the Sourcegraph API. Required to use this extension with private instances.
-- `sourcegraph.remoteUrlReplacements`: Object, where each `key` is replaced by `value` in the remote url.
-- `sourcegraph.defaultBranch`: String to set the name of the default branch. Always open files in the default branch.
+| Setting                             | Description                                                                                                                    | Example                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `sourcegraph.url`                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default. | "https://your-sourcegraph.com"                               |
+| `sourcegraph.accessToken`           | The access token to query the Sourcegraph API. Required to use this extension with private instances.                          | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
+| `sourcegraph.remoteUrlReplacements` | Object, where each `key` is replaced by `value` in the remote url.                                                             | {"github": "gitlab", "master": "main"}                       |
+| `sourcegraph.defaultBranch`         | String to set the name of the default branch. Always open files in the default branch.                                         | "master"                                                     |
+| `sourcegraph.requestHeaders`        | Takes object, where each value pair will be added to the request headers made to your instance.                                | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
 
 ## Questions & Feedback
 
-Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for known issues and common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
 ## Uninstallation
 
@@ -105,9 +108,9 @@ Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/ad
 To develop the extension:
 
 - `git clone` the sourcegraph repository
-- Run `yarn generate`
+- Run `yarn generate` at the root directory
 - Open the repo in VS Code with `code .`
-- Make your changes to the files within the `vscode` directory
-- Click on `Run and Debug` from the activity bar on the left to open the sidebar
+- Make your changes to the files within the `client/vscode` directory
+- Run `yarn build` to build
 - Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
-- Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes with VS Code Web
+- Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes for VS Code Web

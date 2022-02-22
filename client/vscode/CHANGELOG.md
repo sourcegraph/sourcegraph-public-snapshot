@@ -1,18 +1,19 @@
 # Changelog
 
-## Pre-release - 2.1.0
+## Next Release - 2.1.0
 
 ### Changes
 
-- Add web support for VS Code Web [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
-- Use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
-- Add configuration settings for custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
+- TBA
 
-## Next Release - 2.0.9
+## 2.0.9
 
 ### Changes
 
 - Add Changelog for version tracking purpose [issue/28300](https://github.com/sourcegraph/sourcegraph/issues/28300)
+- Add web support for VS Code Web [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
+- Use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
+- Add configuration settings for custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
 
 ## 2.0.8
 
@@ -28,8 +29,18 @@
 
 - Remove Sign Up CTA in Sidebar for self-host instances
 
+### Fixes
+
+- Add backward compatibility for configuration settings from v1: `sourcegraph.defaultBranch` and `sourcegraph.remoteUrlReplacements`
+
 ## 2.0.6
 
 ### Changes
 
 - Remove Sign Up CTAs in Search Result for self-host instances
+
+## 2.0.1
+
+### Changes
+
+- Add Code Monitor
