@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"sync"
 	"time"
 
@@ -179,21 +178,11 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		}
 		return nil, err
 	}
-	x, err := r.CommitFromID(ctx, args, commitID)
-	checker := authz.DefaultSubRepoPermsChecker
-	c, err := git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{}, checker)
-	if err != nil {
-		return nil, nil
-	} else if c == nil {
-		//the user did not have access to at least one file in this commit
-		return nil, nil
-	}
 
-	return x, err
+	return r.CommitFromID(ctx, args, commitID)
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-
 	resolver := NewGitCommitResolver(r.db, r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
