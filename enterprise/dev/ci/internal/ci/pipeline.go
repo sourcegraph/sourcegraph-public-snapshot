@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -40,10 +39,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"COMMIT_SHA":                         c.Commit,
 		"DATE":                               c.Time.Format(time.RFC3339),
 		"VERSION":                            c.Version,
-
-		// Use athens proxy for go modules downloads
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		"GOPROXY": "http://athens-athens-proxy",
 
 		// Additional flags
 		"GO111MODULE": "on",
@@ -76,35 +71,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Commit:  c.Commit,
 		Branch:  c.Branch,
 		Env:     env,
-	}
-
-	// Make all command steps timeout after 60 minutes in case a buildkite agent
-	// got stuck / died.
-	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
-		// bk.Step is a union containing fields across all the different step types.
-		// However, "timeout_in_minutes" only applies to the "command" step type.
-		//
-		// Testing the length of the "Command" field seems to be the most reliable way
-		// of differentiating "command" steps from other step types without refactoring
-		// everything.
-		if len(s.Command) > 0 {
-			if s.TimeoutInMinutes == "" {
-				// Set the default value iff someone else hasn't set a custom one.
-				s.TimeoutInMinutes = "60"
-			}
-		}
-	})
-
-	// Toggle profiling of each step
-	if c.MessageFlags.ProfilingEnabled {
-		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
-			// wrap "time -v" around each command for CPU/RAM utilization information
-			var prefixed []string
-			for _, cmd := range s.Command {
-				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
-			}
-			s.Command = prefixed
-		})
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
@@ -275,11 +241,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	)
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{Env: env}
+	pipeline := &bk.Pipeline{
+		Env: env,
+
+		AfterEveryStepOpts: []bk.StepOpt{
+			withDefaultTimeout,
+			withAgentQueueDefaults,
+		},
+	}
+	// Toggle profiling of each step
+	if c.MessageFlags.ProfilingEnabled {
+		pipeline.AfterEveryStepOpts = append(pipeline.AfterEveryStepOpts, withProfiling)
+	}
+
+	// Apply operations on pipeline
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := ensureUniqueKeys(pipeline); err != nil {
+	if err := pipeline.EnsureUniqueKeys(); err != nil {
 		return nil, err
 	}
 
@@ -308,20 +287,46 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	return pipeline, nil
 }
 
-func ensureUniqueKeys(pipeline *bk.Pipeline) error {
-	occurences := map[string]int{}
-	for _, step := range pipeline.Steps {
-		if s, ok := step.(*buildkite.Step); ok {
-			if s.Key == "" {
-				return errors.Newf("empty key on step with label %q", s.Label)
-			}
-			occurences[s.Key] += 1
+// withDefaultTimeout makes all command steps timeout after 60 minutes in case a buildkite
+// agent got stuck / died.
+func withDefaultTimeout(s *bk.Step) {
+	// bk.Step is a union containing fields across all the different step types.
+	// However, "timeout_in_minutes" only applies to the "command" step type.
+	//
+	// Testing the length of the "Command" field seems to be the most reliable way
+	// of differentiating "command" steps from other step types without refactoring
+	// everything.
+	if len(s.Command) > 0 {
+		if s.TimeoutInMinutes == "" {
+			// Set the default value iff someone else hasn't set a custom one.
+			s.TimeoutInMinutes = "60"
 		}
 	}
-	for k, count := range occurences {
-		if count > 1 {
-			return errors.Newf("non unique key on step with key %q", k)
+}
+
+// withAgentQueueDefaults ensures all agents target a specific queue, and ensures they
+// steps are configured appropriately to run on the queue
+func withAgentQueueDefaults(s *bk.Step) {
+	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
+		if bk.FeatureFlags.StatelessBuild {
+			s.Agents["queue"] = bk.AgentQueueJob
+		} else {
+			s.Agents["queue"] = bk.AgentQueueStandard
 		}
 	}
-	return nil
+
+	if s.Agents["queue"] != bk.AgentQueueBaremetal {
+		// Use athens proxy for go modules downloads on non-baremetal agents
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		s.Env["GOPROXY"] = "http://athens-athens-proxy"
+	}
+}
+
+// withProfiling wraps "time -v" around each command for CPU/RAM utilization information
+func withProfiling(s *bk.Step) {
+	var prefixed []string
+	for _, cmd := range s.Command {
+		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
+	}
+	s.Command = prefixed
 }
