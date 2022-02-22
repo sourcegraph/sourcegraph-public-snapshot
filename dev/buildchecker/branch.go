@@ -80,6 +80,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 			RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 				RequiredApprovingReviewCount: 1,
 			},
+			EnforceAdmins: true, // do not allow admins to bypass checks
 		}); err != nil {
 			return errors.Newf("unlock: %w", err)
 		}
