@@ -952,3 +952,9 @@ ALTER TABLE ONLY lsif_data_docs_search_public
 
 ALTER TABLE ONLY lsif_data_docs_search_public
     ADD CONSTRAINT lsif_data_docs_search_public_tags_id_fk FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id);
+
+INSERT INTO lsif_data_apidocs_num_dumps VALUES (0);
+INSERT INTO lsif_data_apidocs_num_dumps_indexed VALUES (0);
+INSERT INTO lsif_data_apidocs_num_pages VALUES (0);
+INSERT INTO lsif_data_apidocs_num_search_results_private VALUES (0);
+INSERT INTO lsif_data_apidocs_num_search_results_public VALUES (0);
