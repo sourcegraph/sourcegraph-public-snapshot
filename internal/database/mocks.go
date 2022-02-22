@@ -15957,16 +15957,15 @@ func (f *GitserverRepoStoreGetByIDFunc) PushHook(hook func(context.Context, api.
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreGetByIDFunc) SetDefaultReturn(r0 *types.GitserverRepo, r1 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoID) (*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreGetByIDFunc) PushReturn(r0 *types.GitserverRepo, r1 error) {
 	f.PushHook(func(context.Context, api.RepoID) (*types.GitserverRepo, error) {
 		return r0, r1
@@ -16066,16 +16065,15 @@ func (f *GitserverRepoStoreGetByNameFunc) PushHook(hook func(context.Context, ap
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreGetByNameFunc) SetDefaultReturn(r0 *types.GitserverRepo, r1 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoName) (*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreGetByNameFunc) PushReturn(r0 *types.GitserverRepo, r1 error) {
 	f.PushHook(func(context.Context, api.RepoName) (*types.GitserverRepo, error) {
 		return r0, r1
@@ -16175,16 +16173,15 @@ func (f *GitserverRepoStoreHandleFunc) PushHook(hook func() *basestore.Transacta
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
 	f.SetDefaultHook(func() *basestore.TransactableHandle {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
 	f.PushHook(func() *basestore.TransactableHandle {
 		return r0
@@ -16277,16 +16274,15 @@ func (f *GitserverRepoStoreIterateRepoGitserverStatusFunc) PushHook(hook func(co
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreIterateRepoGitserverStatusFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, IterateRepoGitserverStatusOptions, func(repo types.RepoGitserverStatus) error) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreIterateRepoGitserverStatusFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, IterateRepoGitserverStatusOptions, func(repo types.RepoGitserverStatus) error) error {
 		return r0
@@ -16390,16 +16386,15 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
 		return r0
@@ -16500,16 +16495,15 @@ func (f *GitserverRepoStoreSetCloneStatusFunc) PushHook(hook func(context.Contex
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreSetCloneStatusFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoName, types.CloneStatus, string) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetCloneStatusFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, api.RepoName, types.CloneStatus, string) error {
 		return r0
@@ -16614,16 +16608,15 @@ func (f *GitserverRepoStoreSetLastErrorFunc) PushHook(hook func(context.Context,
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreSetLastErrorFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetLastErrorFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, api.RepoName, string, string) error {
 		return r0
@@ -16729,16 +16722,15 @@ func (f *GitserverRepoStoreSetLastFetchedFunc) PushHook(hook func(context.Contex
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreSetLastFetchedFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoName, GitserverFetchData) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetLastFetchedFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, api.RepoName, GitserverFetchData) error {
 		return r0
@@ -16841,16 +16833,15 @@ func (f *GitserverRepoStoreTotalErroredCloudDefaultReposFunc) PushHook(hook func
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreTotalErroredCloudDefaultReposFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context) (int, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreTotalErroredCloudDefaultReposFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context) (int, error) {
 		return r0, r1
@@ -16949,16 +16940,15 @@ func (f *GitserverRepoStoreUpsertFunc) PushHook(hook func(context.Context, ...*t
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreUpsertFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, ...*types.GitserverRepo) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreUpsertFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, ...*types.GitserverRepo) error {
 		return r0
@@ -17062,16 +17052,15 @@ func (f *GitserverRepoStoreWithFunc) PushHook(hook func(basestore.ShareableStore
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverRepoStoreWithFunc) SetDefaultReturn(r0 GitserverRepoStore) {
 	f.SetDefaultHook(func(basestore.ShareableStore) GitserverRepoStore {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreWithFunc) PushReturn(r0 GitserverRepoStore) {
 	f.PushHook(func(basestore.ShareableStore) GitserverRepoStore {
 		return r0
