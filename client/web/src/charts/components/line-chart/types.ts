@@ -19,13 +19,14 @@ export interface LineChartSeries<D> {
     color?: string
 }
 
-export interface Point {
+export interface Point<D> {
     id: string
     seriesKey: string
-    index: number
     value: number
     color: string
     x: number
     y: number
+    datum: D
+    originalDatum: D
     linkUrl?: string
 }
