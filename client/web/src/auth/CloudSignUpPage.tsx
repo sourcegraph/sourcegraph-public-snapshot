@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -73,6 +73,12 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
         skip: !invitedBy,
     })
     const invitedByUser = data?.user
+
+    useEffect(() => {
+        if (invitedBy !== null) {
+            telemetryService.log('SignUpInvitedByUser')
+        }
+    }, [telemetryService, invitedBy])
 
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
