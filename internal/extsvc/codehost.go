@@ -24,8 +24,8 @@ var (
 	MavenURL    = &url.URL{Host: "maven"}
 	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
 
-	NpmURL      = &url.URL{Host: "npm"}
-	NPMPackages = NewCodeHost(NpmURL, TypeNPMPackages)
+	NPMURL      = &url.URL{Host: "npm"}
+	NPMPackages = NewCodeHost(NPMURL, TypeNPMPackages)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
