@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"crypto/x509"
 	"encoding/pem"
@@ -66,9 +65,7 @@ func setupExec(ctx context.Context, args []string) error {
 	if currentOS == "darwin" {
 		categories = macOSDependencies
 	} else {
-		// DEPRECATED: The new 'sg setup' doesn't work on Linux yet, so we fall back to the old one.
-		writeWarningLinef("'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted.")
-		return deprecatedSetupForLinux(ctx)
+		categories = ubuntuOSDependencies
 	}
 
 	// Check whether we're in the sourcegraph/sourcegraph repository so we can
@@ -79,7 +76,7 @@ func setupExec(ctx context.Context, args []string) error {
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
-	employeeFailed := []int{}
+	teammateFailed := []int{}
 	for i := range categories {
 		failed = append(failed, i)
 		all = append(all, i)
@@ -111,18 +108,18 @@ func setupExec(ctx context.Context, args []string) error {
 				writeSuccessLinef("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
-				nonEmployeeState := category.CombinedStateNonEmployees()
-				if nonEmployeeState {
+				nonTeammateState := category.CombinedStateNonTeammates()
+				if nonTeammateState {
 					writeWarningLinef("%d. %s", idx, category.name)
-					employeeFailed = append(skipped, idx)
+					teammateFailed = append(skipped, idx)
 				} else {
 					writeFailureLinef("%d. %s", idx, category.name)
 				}
 			}
 		}
 
-		if len(failed) == 0 && len(employeeFailed) == 0 {
-			if len(skipped) == 0 && len(employeeFailed) == 0 {
+		if len(failed) == 0 && len(teammateFailed) == 0 {
+			if len(skipped) == 0 && len(teammateFailed) == 0 {
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 			}
@@ -138,8 +135,8 @@ func setupExec(ctx context.Context, args []string) error {
 
 		stdout.Out.Write("")
 
-		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
-			writeWarningLinef("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
+		if len(teammateFailed) != 0 && len(failed) == len(teammateFailed) {
+			writeWarningLinef("Some checks that are only relevant for Sourcegraph teammates failed.\nIf you're not a Sourcegraph teammate you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph teammate: which one do you want to fix?")
 		} else {
 			writeWarningLinef("Some checks failed. Which one do you want to fix?")
 		}
@@ -165,500 +162,6 @@ func setupExec(ctx context.Context, args []string) error {
 	}
 
 	return nil
-}
-
-var macOSDependencies = []dependencyCategory{
-	{
-		name: "Install homebrew",
-		dependencies: []*dependency{
-			{
-				name:  "brew",
-				check: check.InPath("brew"),
-				instructionsComment: `We depend on having the Homebrew package manager available on macOS.
-
-Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
-			},
-		},
-		autoFixing: false,
-	},
-	{
-		name: "Install base utilities (git, docker, ...)",
-		dependencies: []*dependency{
-			{name: "git", check: getCheck("git"), instructionsCommands: `brew install git`},
-			{name: "gnu-sed", check: check.InPath("gsed"), instructionsCommands: "brew install gnu-sed"},
-			{name: "comby", check: check.InPath("comby"), instructionsCommands: "brew install comby"},
-			{name: "pcre", check: check.InPath("pcregrep"), instructionsCommands: `brew install pcre`},
-			{name: "sqlite", check: check.InPath("sqlite3"), instructionsCommands: `brew install sqlite`},
-			{name: "jq", check: check.InPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: check.CommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
-			{
-				name: "rosetta",
-				check: check.Any(
-					check.CommandOutputContains("uname -m", "x86_64"), // will return true on non-m1 macs
-					check.CommandExitCode("pgrep oahd", 0)),           // oahd is the process running rosetta
-				instructionsCommands: `softwareupdate --install-rosetta --agree-to-license`,
-			},
-			{
-				name:                 "docker",
-				check:                getCheck("docker-installed"),
-				instructionsCommands: `brew install --cask docker`,
-			},
-		},
-		autoFixing: true,
-	},
-	{
-		name: "Clone repositories",
-		dependencies: []*dependency{
-			{
-				name:  "SSH authentication with GitHub.com",
-				check: check.CommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
-				instructionsComment: `` +
-					`Make sure that you can clone git repositories from GitHub via SSH.
-See here on how to set that up:
-
-https://docs.github.com/en/authentication/connecting-to-github-with-ssh
-`,
-			},
-			{
-				name:                 "github.com/sourcegraph/sourcegraph",
-				check:                checkInMainRepoOrRepoInDirectory,
-				instructionsCommands: `git clone git@github.com:sourcegraph/sourcegraph.git`,
-				instructionsComment: `` +
-					`The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
-			},
-			{
-				name:                 "github.com/sourcegraph/dev-private",
-				check:                checkDevPrivateInParentOrInCurrentDirectory,
-				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
-				instructionsComment: `` +
-					`In order to run the local development environment as a Sourcegraph employee,
-you'll need to clone another repository: github.com/sourcegraph/dev-private.
-
-It contains convenient preconfigured settings and code host connections.
-
-It needs to be cloned into the same folder as sourcegraph/sourcegraph,
-so they sit alongside each other, like this:
-
-   /dir
-   |-- dev-private
-   +-- sourcegraph
-
-NOTE: You can ignore this if you're not a Sourcegraph employee.
-`,
-				onlyEmployees: true,
-			},
-		},
-		autoFixing: true,
-	},
-	{
-		name:               "Programming languages & tooling",
-		requiresRepository: true,
-		autoFixing:         true,
-		// autoFixingDependencies are only accounted for it the user asks to fix the category. Otherwise, they'll never be
-		// checked nor print an error, because the only thing that matters to run Sourcegraph are the final dependencies
-		// defined in the dependencies field itself.
-		autoFixingDependencies: []*dependency{
-			{
-				name:  "asdf",
-				check: getCheck("asdf"),
-				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
-					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
-				}),
-			},
-		},
-		dependencies: []*dependency{
-			{
-				name:  "go",
-				check: getCheck("go"),
-				instructionsComment: `` +
-					`Souregraph requires Go to be installed.
-
-Check the .tool-versions file for which version.
-
-We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools. Find out how to install asdf here:
-
-	https://asdf-vm.com/guide/getting-started.html
-
-Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
-asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
-asdf install golang
-`,
-			},
-			{
-				name:  "yarn",
-				check: getCheck("yarn"),
-				instructionsComment: `` +
-					`Souregraph requires Yarn to be installed.
-
-Check the .tool-versions file for which version.
-
-We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools. Find out how to install asdf here:
-
-	https://asdf-vm.com/guide/getting-started.html
-
-Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
-brew install gpg
-asdf plugin-add yarn
-asdf install yarn
-`,
-			},
-			{
-				name:  "node",
-				check: getCheck("node"),
-				instructionsComment: `` +
-					`Souregraph requires Node.JS to be installed.
-
-Check the .tool-versions file for which version.
-
-We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools. Find out how to install asdf here:
-
-	https://asdf-vm.com/guide/getting-started.html
-
-Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
-grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
-asdf install nodejs
-`,
-			},
-		},
-	},
-	{
-		name:               "Setup PostgreSQL database",
-		requiresRepository: true,
-		autoFixing:         true,
-		dependencies: []*dependency{
-			{
-				name: "Install Postgresql",
-				// In the eventuality of the user using a non standard configuration and having
-				// set it up appropriately in its configuration, we can bypass the standard postgres
-				// check and directly check for the sourcegraph database.
-				//
-				// Because only the latest error is returned, it's better to finish with the real check
-				// for error message clarity.
-				check: getCheck("postgres"),
-				instructionsComment: `` +
-					`Sourcegraph requires the PostgreSQL database to be running.
-
-We recommend installing it with Homebrew and starting it as a system service.
-If you know what you're doing, you can also install PostgreSQL another way.
-For example: you can use https://postgresapp.com/
-
-If you're not sure: use the recommended commands to install PostgreSQL.`,
-				instructionsCommands: `brew reinstall postgresql && brew services start postgresql
-sleep 5
-createdb || true
-`,
-			},
-			{
-				name:  "Connection to 'sourcegraph' database",
-				check: getCheck("sourcegraph-database"),
-				instructionsComment: `` +
-					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
-specific user.`,
-				instructionsCommands: `createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
-createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-`,
-			},
-			{
-				name:  "psql",
-				check: getCheck("psql"),
-				instructionsComment: `` +
-					`psql, the PostgreSQL CLI client, needs to be available in your $PATH.
-
-If you've installed PostgreSQL with Homebrew that should be the case.
-
-If you used another method, make sure psql is available.`,
-			},
-		},
-	},
-	{
-		name:               "Setup Redis database",
-		autoFixing:         true,
-		requiresRepository: true,
-		dependencies: []*dependency{
-			{
-				name:  "Connection to Redis",
-				check: getCheck("redis"),
-				instructionsComment: `` +
-					`Sourcegraph requires the Redis database to be running.
-					We recommend installing it with Homebrew and starting it as a system service.`,
-				instructionsCommands: "brew reinstall redis && brew services start redis",
-			},
-		},
-	},
-	{
-		name:               "Setup proxy for local development",
-		autoFixing:         true,
-		requiresRepository: true,
-		dependencies: []*dependency{
-			{
-				name:  "/etc/hosts contains sourcegraph.test",
-				check: getCheck("sourcegraph-test-host"),
-				instructionsComment: `` +
-					`Sourcegraph should be reachable under https://sourcegraph.test:3443.
-					To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
-				instructionsCommands: `./dev/add_https_domain_to_hosts.sh`,
-			},
-			{
-				name:  "Caddy root certificate is trusted by system",
-				check: getCheck("caddy-trusted"),
-				instructionsComment: `` +
-					`In order to use TLS to access your local Sourcegraph instance, you need to
-trust the certificate created by Caddy, the proxy we use locally.
-
-YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
-				instructionsCommands:   `./dev/caddy.sh trust`,
-				requiresSgSetupRestart: true,
-			},
-		},
-	},
-}
-
-func deprecatedSetupForLinux(ctx context.Context) error {
-	var instructions []instruction
-	instructions = append(instructions, linuxInstructionsBeforeClone...)
-	// clone instructions come after dependency instructions because we need
-	// `git` installed to `git` clone.
-	instructions = append(instructions, cloneInstructions...)
-	instructions = append(instructions, linuxInstructionsAfterClone...)
-	instructions = append(instructions, httpReverseProxyInstructions...)
-
-	conditions := map[string]bool{}
-
-	i := 0
-	for _, instruction := range instructions {
-		if instruction.ifBool != "" {
-			val, ok := conditions[instruction.ifBool]
-			if !ok {
-				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
-				os.Exit(1)
-			}
-			if !val {
-				continue
-			}
-		}
-		if instruction.ifNotBool != "" {
-			val, ok := conditions[instruction.ifNotBool]
-			if !ok {
-				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
-				os.Exit(1)
-			}
-			if val {
-				continue
-			}
-		}
-
-		i++
-		stdout.Out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
-		stdout.Out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
-		stdout.Out.Write("")
-
-		if instruction.comment != "" {
-			stdout.Out.Write(instruction.comment)
-			stdout.Out.Write("")
-		}
-
-		if instruction.command != "" {
-			stdout.Out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
-			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
-
-			stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
-			input := bufio.NewScanner(os.Stdin)
-			input.Scan()
-		}
-
-		if instruction.readsBool != "" {
-			// out.WriteLine(output.Linef("", output.StylePending, instruction.prompt))
-			val := getBool()
-			conditions[instruction.readsBool] = val
-		}
-	}
-	return nil
-}
-
-type instruction struct {
-	prompt, comment, command string
-
-	readsBool string
-	ifBool    string
-	ifNotBool string
-}
-
-var linuxInstructionsBeforeClone = []instruction{
-	{
-		prompt:  `Update repositories`,
-		command: `sudo apt-get update`,
-	},
-	{
-		prompt:  `Install dependencies`,
-		command: `sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config jq libnss3-tools`,
-	},
-}
-
-var linuxInstructionsAfterClone = []instruction{
-	{
-		prompt:  `Add package repositories`,
-		comment: "In order to install dependencies, we need to add some repositories to apt.",
-		command: `
-# Go
-sudo add-apt-repository ppa:longsleep/golang-backports
-
-# Docker
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-# Yarn
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list`,
-	},
-	{
-		prompt:  `Update repositories`,
-		command: `sudo apt-get update`,
-	},
-	{
-		prompt: `Install dependencies`,
-		command: `sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
-
-# Install comby
-curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
-
-# The extracted binary must be in your $PATH available as 'comby'.
-# Here's how you'd move it to /usr/local/bin (which is most likely in your $PATH):
-chmod +x comby-*-linux
-mv comby-*-linux /usr/local/bin/comby
-
-# Install nvm (to manage Node.js)
-NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
-curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
-sh install-nvm.sh
-
-# In sourcegraph repository directory: install current recommendend version of Node JS
-nvm install`,
-	},
-	{
-		prompt:    `Do you want to use Docker to run PostgreSQL and Redis?`,
-		readsBool: `docker`,
-	},
-	{
-		ifBool: "docker",
-		prompt: "Nothing to do yet!",
-		comment: `We provide a docker compose file at dev/redis-postgres.yml to make it easy to run Redis and PostgreSQL as docker containers.
-
-NOTE: Although Ubuntu provides a docker-compose package, we recommend to install the latest version via pip so that it is compatible with our compose file.
-
-See the official docker compose documentation at https://docs.docker.com/compose/install/ for more details on different installation options.
-`,
-	},
-	// step 3, inserted here for convenience
-	{
-		ifBool:  "docker",
-		prompt:  `The docker daemon might already be running, but if necessary you can use the following commands to start it:`,
-		comment: `If you have issues running Docker, try adding your user to the docker group, and/or updating the socket file permissions, or try running these commands under sudo.`,
-		command: `# as a system service
-sudo systemctl enable --now docker
-
-# manually
-dockerd`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Install PostgreSQL and Redis with the following commands`,
-		command: `sudo apt install -y redis-server
-sudo apt install -y postgresql postgresql-contrib`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `(optional) Start the services (and configure them to start automatically)`,
-		command: `sudo systemctl enable --now postgresql
-sudo systemctl enable --now redis-server.service`,
-	},
-	{
-		ifBool: "docker",
-		prompt: `Even though you're going to run the database in docker you will probably want to install the CLI tooling for Redis and Postgres
-
-redis-tools will provide redis-cli and postgresql will provide createdb and createuser`,
-		command: `sudo apt install -y redis-tools postgresql postgresql-contrib`,
-	},
-	// step 4
-	{
-		ifBool: "docker",
-		prompt: `To initialize your database, you may have to set the appropriate environment variables before running the createdb command:`,
-		comment: `The Sourcegraph server reads PostgreSQL connection configuration from the PG* environment variables.
-
-The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.`,
-		command: `createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Create a database for the current Unix user`,
-		comment:   `You need a fresh Postgres database and a database user that has full ownership of that database.`,
-		command: `sudo su - postgres
-createdb`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Create the Sourcegraph user and password`,
-		command: `createuser --superuser sourcegraph
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Create the Sourcegraph database`,
-		command:   `createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
-	},
-}
-
-var cloneInstructions = []instruction{
-	{
-		prompt:  `Cloning the code`,
-		comment: `We're now going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
-		command: `git clone git@github.com:sourcegraph/sourcegraph.git`,
-	},
-	{
-		prompt:    "Are you a Sourcegraph employee?",
-		readsBool: "employee",
-	},
-	{
-		prompt: `Getting access to private resources`,
-		comment: `In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: sourcegraph/dev-private. It contains convenient preconfigured settings and code host connections.
-It needs to be cloned into the same folder as sourcegraph/sourcegraph, so they sit alongside each other.
-To illustrate:
- /dir
- |-- dev-private
- +-- sourcegraph
-NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
-		command: `git clone git@github.com:sourcegraph/dev-private.git`,
-		ifBool:  "employee",
-	},
-}
-
-var httpReverseProxyInstructions = []instruction{
-	{
-		prompt: `Making sourcegraph.test accessible`,
-		comment: `In order to make Sourcegraph's development environment accessible under https://sourcegraph.test:3443 we need to add an entry to /etc/hosts.
-
-The following command will add this entry. It may prompt you for your password.
-
-Execute it in the 'sourcegraph' repository you cloned.`,
-		command: `./dev/add_https_domain_to_hosts.sh`,
-	},
-	{
-		prompt: `Initialize Caddy 2`,
-		comment: `Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them.
-
-The following command adds Caddy's keys to the system certificate store.
-
-Execute it in the 'sourcegraph' repository you cloned.`,
-		command: `./dev/caddy.sh trust`,
-	},
 }
 
 func getBool() bool {
@@ -720,7 +223,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 			writeSuccessLinef("%d. %s", idx, dep.name)
 		} else {
 			var printer func(fmtStr string, args ...interface{})
-			if dep.onlyEmployees {
+			if dep.onlyTeammates {
 				printer = writeWarningLinef
 			} else {
 				printer = writeFailureLinef
@@ -762,7 +265,11 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLinef("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := usershell.Cmd(ctx, dep.InstructionsCommands(ctx))
+	cmdStr := dep.InstructionsCommands(ctx)
+	if cmdStr == "" {
+		return nil
+	}
+	cmd := usershell.Cmd(ctx, cmdStr)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -824,8 +331,14 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		stdout.Out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
 
 		if dep.instructionsComment != "" {
-			stdout.Out.Write("")
-			stdout.Out.Write(dep.instructionsComment)
+			if dep.requiresSgSetupRestart {
+				// Make sure to highlight the manual fix, if any.
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s", dep.instructionsComment))
+			} else {
+				stdout.Out.Write("")
+				stdout.Out.Write(dep.instructionsComment)
+			}
 		}
 
 		// If we don't have anything do run, we simply print instructions to
@@ -893,7 +406,7 @@ type dependency struct {
 
 	check check.CheckFunc
 
-	onlyEmployees bool
+	onlyTeammates bool
 
 	err error
 
@@ -935,9 +448,9 @@ func (cat *dependencyCategory) CombinedState() bool {
 	return true
 }
 
-func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
+func (cat *dependencyCategory) CombinedStateNonTeammates() bool {
 	for _, dep := range cat.dependencies {
-		if !dep.IsMet() && !dep.onlyEmployees {
+		if !dep.IsMet() && !dep.onlyTeammates {
 			return false
 		}
 	}
