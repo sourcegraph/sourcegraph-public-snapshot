@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect, useMemo, MouseEvent, KeyboardEvent, useCallback } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Observable, ReplaySubject } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -16,16 +16,14 @@ import { Link } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
-import { ViewerId } from '../api/viewerTypes'
 import { Controller as ExtensionsController } from '../extensions/controller'
 import { HoverContext } from '../hover/HoverOverlay.types'
-import { getModeFromPath } from '../languages'
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { toURIWithPath } from '../util/url'
+import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
@@ -157,7 +155,15 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
+    const {
+        result,
+        grouped,
+        fetchHighlightedFileLineRanges,
+        telemetryService,
+        onFirstResultLoad,
+        extensionsController,
+    } = props
+
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine) => {
             const startTime = Date.now()
@@ -204,60 +210,19 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
-    // Inform the extension host about the file (if we have code to render). CodeExcerpt will call `hoverifier.hoverify`.
-    const viewerUpdates = useMemo(() => new ReplaySubject<{ viewerId: ViewerId } & HoverContext>(1), [])
-    useEffect(() => {
-        if (!props.extensionsController || result.type !== 'content' || !grouped) {
-            return
-        }
-
-        let previousViewerId: ViewerId | undefined
-        const commitID = result.commit || 'HEAD'
-        const uri = toURIWithPath({ repoName: result.repository, filePath: result.path, commitID })
-        const languageId = getModeFromPath(result.path)
-        // HACK: code intel extensions don't depend on the `text` field.
-        // Fix to support other hover extensions on search results (likely too expensive).
-        const text = ''
-
-        props.extensionsController.extHostAPI
-            .then(extensionHostAPI =>
-                Promise.all([
-                    // This call should be made before adding viewer, but since
-                    // messages to web worker are handled in order, we can use Promise.all
-                    extensionHostAPI.addTextDocumentIfNotExists({
-                        uri,
-                        languageId,
-                        text,
-                    }),
-                    extensionHostAPI.addViewerIfNotExists({
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        selections: [],
-                        isActive: true,
-                    }),
-                ])
-            )
-            .then(([, viewerId]) => {
-                previousViewerId = viewerId
-                viewerUpdates.next({
-                    viewerId,
-                    repoName: result.repository,
-                    revision: commitID,
-                    commitID,
-                    filePath: result.path,
-                })
-            })
-            .catch(error => {
-                console.error('Extension host API error', error)
-            })
-
-        return () => {
-            // Remove from extension host
-            props.extensionsController?.extHostAPI
-                .then(extensionHostAPI => previousViewerId && extensionHostAPI.removeViewer(previousViewerId))
-                .catch(error => console.error('Error removing viewer from extension host', error))
-        }
-    }, [grouped, result, viewerUpdates, props.extensionsController])
+    const codeIntelViewerUpdatesProps = useMemo(
+        () =>
+            grouped && result.type === 'content' && extensionsController
+                ? {
+                      extensionsController,
+                      repositoryName: result.repository,
+                      filePath: result.path,
+                      revision: result.commit,
+                  }
+                : undefined,
+        [extensionsController, result, grouped]
+    )
+    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     const history = useHistory()
     /**

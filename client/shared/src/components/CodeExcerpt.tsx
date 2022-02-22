@@ -65,11 +65,6 @@ interface State {
     blobLinesOrError?: string[] | ErrorLike
 }
 
-// TODO(tj): It would be quite cool to get code intel on search results :).
-// Keep it for search notebooks for now for performance reasons. Try to implement
-// the browser extension system of intersection observers to limit the number
-// of active text documents.
-
 const domFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
         const row = target.closest('tr')
@@ -130,9 +125,6 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     this.setState({ blobLinesOrError })
                 })
         )
-
-        // Hoverify here?
-        // The document should have added to extHost in parent though, so pass a viewerdata observable
 
         let hoverifierSubscription: Subscription | null
         this.subscriptions.add(
