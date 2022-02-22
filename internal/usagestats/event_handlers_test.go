@@ -28,12 +28,8 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			have, err := redactSensitiveInfoFromCloudURL(c.url)
-			if err != nil {
-				t.Fatal("Error in redactSensitiveInfoFromCloudURL")
-			}
-			if c.want != have {
-				t.Fatalf("Failed to redact info from Cloud URL, got %s, want %s", have, c.want)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, c.want, have)
 		})
 	}
 }
