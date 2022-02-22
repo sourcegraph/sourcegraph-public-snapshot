@@ -118,7 +118,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                 telemetryService={telemetryService}
             />
 
-            <section className={styles.videoSection}>Demo vide placeholder</section>
+            <section className={styles.videoSection}>Demo video placeholder</section>
 
             <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
         </main>
