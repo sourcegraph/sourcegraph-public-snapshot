@@ -25,3 +25,7 @@ Are you using a language we don't support? [File a GitHub issue](https://github.
 Search-based code intelligence uses search-based heuristics, rather than parsing the code into an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) (AST). Incorrect results occur more often for tokens with common names (such as `Get`) than for tokens with more unique names simply because those tokens appear more often in the search index.
 
 If you require 100% confidence in accuracy for a definition or reference results for a symbol you hovered over we recommend utilizing precise code intelligence. Scenarios where you may still get search-based code intelligence results even with precision on are described in more detail in the [precise code intelligence docs](./precise_code_intelligence.md).
+
+## Why does it sometimes time out?
+
+The [symbol search performance](./features.md#symbol-search-behavior-and-performance) section describes query paths and performance.
