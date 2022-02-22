@@ -39,11 +39,11 @@ import {
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'
+import styles from './NotebookPage.module.scss'
+import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
-import styles from './SearchNotebookPage.module.scss'
-import { SearchNotebookPageHeaderActions } from './SearchNotebookPageHeaderActions'
 
-interface SearchNotebookPageProps
+interface NotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
         SearchStreamingProps,
         ThemeProps,
@@ -69,7 +69,7 @@ function isNotebookLoaded(notebook: NotebookFields | Error | typeof LOADING | un
     return notebook !== undefined && !isErrorLike(notebook) && notebook !== LOADING
 }
 
-export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps> = ({
+export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     fetchRepository = _fetchRepository,
     resolveRevision = _resolveRevision,
     fetchNotebook = _fetchNotebook,
@@ -201,7 +201,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                 },
                             ]}
                             actions={
-                                <SearchNotebookPageHeaderActions
+                                <NotebookPageHeaderActions
                                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                                     authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}

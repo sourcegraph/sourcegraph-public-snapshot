@@ -22,10 +22,7 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
-const SearchNotebookPage = lazyComponent(
-    () => import('./search/notebooks/notebookPage/SearchNotebookPage'),
-    'SearchNotebookPage'
-)
+const NotebookPage = lazyComponent(() => import('./search/notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
@@ -117,7 +114,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
 
             return showSearchNotebook ? (
-                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
+                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             )

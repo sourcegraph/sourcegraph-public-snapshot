@@ -32,11 +32,11 @@ import {
 } from '../backend'
 
 import { DeleteNotebookModal } from './DeleteNotebookModal'
+import styles from './NotebookPageHeaderActions.module.scss'
 import { ShareOption } from './NotebookShareOptionsDropdown'
-import styles from './SearchNotebookPageHeaderActions.module.scss'
 import { ShareNotebookModal } from './ShareNotebookModal'
 
-export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
+export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     namespace: NotebookFields['namespace']
@@ -51,7 +51,7 @@ export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNotebookPageHeaderActionsProps> = ({
+export const NotebookPageHeaderActions: React.FunctionComponent<NotebookPageHeaderActionsProps> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
