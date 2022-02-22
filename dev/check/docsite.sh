@@ -15,7 +15,7 @@ set -e
 
 echo -e "$OUT"
 
-if [ $EXIT_CODE -ne 0 ]; then
+if [ $EXIT_CODE -ne 0 ] && [[ "$CI" == "true" ]]; then
   echo -e "$OUT" >./annotations/docsite
   echo "^^^ +++"
 fi
