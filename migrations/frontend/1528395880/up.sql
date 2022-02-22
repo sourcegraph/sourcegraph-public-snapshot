@@ -11,4 +11,3 @@ ALTER TABLE insights_query_runner_jobs
     ADD persist_mode PersistMode DEFAULT 'record' NOT NULL;
 
 COMMENT ON COLUMN insights_query_runner_jobs.persist_mode IS 'The persistence level for this query. This value will determine the lifecycle of the resulting value.';
-COMMIT;

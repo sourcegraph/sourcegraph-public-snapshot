@@ -13,4 +13,3 @@
 -- Note: This data is by design ephemeral, so there is no risk of permanent data loss here.
 
 TRUNCATE insights_query_runner_jobs CASCADE;
-COMMIT;

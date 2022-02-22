@@ -14,4 +14,3 @@ ALTER TABLE insight_series
 ALTER TABLE insight_view
     DROP COLUMN IF EXISTS default_filter_include_repo_regex,
     DROP COLUMN IF EXISTS default_filter_exclude_repo_regex;
-COMMIT;

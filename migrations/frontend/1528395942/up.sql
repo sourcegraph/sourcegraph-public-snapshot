@@ -1,8 +1,7 @@
-BEGIN;
 -- NOTE: this migration deleted saved searches belonging to orgs when what we should have done
 -- was remove notifications from saved searches. Saved searches are still used (and useful) as
 -- a bookmarking feature, and are not deprecated. Saved search notifications, however, are
--- deprecated, and will be removed in v3.34.0 by removing the query runner service. 
+-- deprecated, and will be removed in v3.34.0 by removing the query runner service.
 
 -- DELETE FROM saved_searches WHERE user_id IS NULL;
 

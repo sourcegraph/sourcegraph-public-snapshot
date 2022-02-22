@@ -9,5 +9,3 @@ WHERE
     AND revoked_at IS NULL
     AND responded_at IS NULL
     AND expires_at IS NULL;
-    
-COMMIT;
