@@ -247,16 +247,6 @@ textarea.form-control.is-valid {
     box-shadow: none;
 }
 
-// Add an additional feedback class to add context to form controls without requiring a valid state
-.field-message {
-    @extend .valid-feedback;
-    display: block !important;
-    color: var(--text-muted);
-    width: 100%;
-    margin-top: 0.25rem;
-    font-size: 0.75rem;
-}
-
 .was-validated :valid.form-control,
 .was-validated :invalid.form-control,
 .is-valid.form-control,
@@ -282,6 +272,16 @@ textarea.form-control.is-valid {
 .invalid-feedback {
     display: none;
     color: var(--danger);
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+// Add an additional feedback class to add context to form controls without requiring a valid state
+.field-message {
+    @extend .valid-feedback;
+    display: block;
+    color: var(--text-muted);
     width: 100%;
     margin-top: 0.25rem;
     font-size: 0.75rem;

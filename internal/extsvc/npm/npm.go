@@ -36,12 +36,12 @@ type Client interface {
 	// in a loop, if different dependencies may share the same underlying package.
 	//
 	// If err is nil, versions should be non-empty.
-	AvailablePackageVersions(ctx context.Context, pkg reposource.NPMPackage) (versions map[string]struct{}, err error)
+	AvailablePackageVersions(ctx context.Context, pkg *reposource.NPMPackage) (versions map[string]struct{}, err error)
 
 	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
 	//
 	// exists should be checked even if err is nil.
-	DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error)
+	DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error)
 
 	// FetchTarball fetches the sources in .tar.gz format for a dependency.
 	//
@@ -49,7 +49,7 @@ type Client interface {
 	//
 	// The return value is an io.ReadSeekCloser instead of an io.ReadCloser
 	// to allow callers to iterate over the reader multiple times if needed.
-	FetchTarball(ctx context.Context, dep reposource.NPMDependency) (io.ReadSeekCloser, error)
+	FetchTarball(ctx context.Context, dep *reposource.NPMDependency) (io.ReadSeekCloser, error)
 }
 
 var (
@@ -69,7 +69,7 @@ func init() {
 	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, client Client, dependency reposource.NPMDependency) (tarball io.ReadSeekCloser, err error) {
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NPMDependency) (tarball io.ReadSeekCloser, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
@@ -77,7 +77,7 @@ func FetchSources(ctx context.Context, client Client, dependency reposource.NPMD
 	return client.FetchTarball(ctx, dependency)
 }
 
-func Exists(ctx context.Context, client Client, dependency reposource.NPMDependency) (err error) {
+func Exists(ctx context.Context, client Client, dependency *reposource.NPMDependency) (err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
@@ -121,7 +121,7 @@ type packageInfo struct {
 	Versions map[string]interface{} `json:"versions"`
 }
 
-func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg reposource.NPMPackage) (versions map[string]struct{}, err error) {
+func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg *reposource.NPMPackage) (versions map[string]struct{}, err error) {
 	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
 	jsonBytes, err := client.makeGetRequest(ctx, url)
 	if err != nil {
@@ -213,9 +213,9 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (respo
 	return bodyBuffer.Bytes(), nil
 }
 
-func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep reposource.NPMDependency) (info npmDependencyInfo, err error) {
+func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (info npmDependencyInfo, err error) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
-	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.Package.PackageSyntax(), dep.Version)
+	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	respBytes, err := client.makeGetRequest(ctx, url)
 	if err != nil {
 		return info, err
@@ -226,7 +226,7 @@ func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep reposource.
 	return info, nil
 }
 
-func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error) {
+func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error) {
 	_, err = client.getDependencyInfo(ctx, dep)
 	var npmErr npmError
 	if err != nil && errors.As(err, &npmErr) && npmErr.statusCode == http.StatusNotFound {
@@ -241,7 +241,7 @@ func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep reposourc
 	return err == nil, err
 }
 
-func (client *HTTPClient) FetchTarball(ctx context.Context, dep reposource.NPMDependency) (io.ReadSeekCloser, error) {
+func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NPMDependency) (io.ReadSeekCloser, error) {
 	info, err := client.getDependencyInfo(ctx, dep)
 	if err != nil {
 		return nil, err
