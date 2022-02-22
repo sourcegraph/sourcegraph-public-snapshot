@@ -794,7 +794,7 @@ type ObservableAlertDefinition struct {
 	// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
 	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
 	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
-	aggregator string
+	aggregator Aggregator
 	// Comparator sets how a metric should be compared against a threshold
 	comparator string
 	// Threshold sets the value to be compared against
@@ -802,52 +802,36 @@ type ObservableAlertDefinition struct {
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
 	a.greaterThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "max"
-	}
+	a.aggregator = AggregatorMax
 	a.comparator = ">="
 	a.threshold = f
 	return a
 }
 
 // LessOrEqual indicates the alert should fire when less than or equal to the given value.
-func (a *ObservableAlertDefinition) LessOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
 	a.lessThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "min"
-	}
+	a.aggregator = AggregatorMin
 	a.comparator = "<="
 	a.threshold = f
 	return a
 }
 
 // Greater indicates the alert should fire when strictly greater to this value.
-func (a *ObservableAlertDefinition) Greater(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
 	a.greaterThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "max"
-	}
+	a.aggregator = AggregatorMax
 	a.comparator = ">"
 	a.threshold = f
 	return a
 }
 
 // Less indicates the alert should fire when strictly less than this value.
-func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
 	a.lessThan = true
-	if aggregator != nil {
-		a.aggregator = *aggregator
-	} else {
-		a.aggregator = "min"
-	}
+	a.aggregator = AggregatorMin
 	a.comparator = "<"
 	a.threshold = f
 	return a
@@ -857,6 +841,24 @@ func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *Observa
 // considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
+	return a
+}
+
+type Aggregator string
+
+const (
+	AggregatorSum = "sum"
+	AggregatorMax = "max"
+	AggregatorMin = "min"
+)
+
+// AggregateBy configures the aggregator to use for this alert. Make sure to only call
+// this after setting one of GreaterOrEqual, LessOrEqual, etc.
+//
+// By default, Less* thresholds are configured with AggregatorMin, and
+// Greater* thresholds are configured with AggregatorMax.
+func (a *ObservableAlertDefinition) AggregateBy(aggregator Aggregator) *ObservableAlertDefinition {
+	a.aggregator = aggregator
 	return a
 }
 
