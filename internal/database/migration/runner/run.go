@@ -220,12 +220,18 @@ func (r *Runner) applyMigration(
 		"up", up,
 	)
 
-	direction := schemaContext.store.Up
-	if !up {
-		direction = schemaContext.store.Down
-	}
+	applyMigration := func() (err error) {
+		tx, err := schemaContext.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
 
-	applyMigration := func() error {
+		direction := tx.Up
+		if !up {
+			direction = tx.Down
+		}
+
 		return direction(ctx, definition)
 	}
 	if err := schemaContext.store.WithMigrationLog(ctx, definition, up, applyMigration); err != nil {
