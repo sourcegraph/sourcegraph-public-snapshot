@@ -8,9 +8,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../components/WebStory'
 import { ListNotebooksResult } from '../../../graphql-operations'
 
-import { SearchNotebooksListPage } from './SearchNotebooksListPage'
+import { NotebooksListPage } from './NotebooksListPage'
 
-const { add } = storiesOf('web/search/notebooks/listPage/SearchNotebooksListPage', module)
+const { add } = storiesOf('web/search/notebooks/listPage/NotebooksListPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshots: false } })
 
@@ -60,7 +60,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
 add('default', () => (
     <WebStory>
         {props => (
-            <SearchNotebooksListPage
+            <NotebooksListPage
                 {...props}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={null}

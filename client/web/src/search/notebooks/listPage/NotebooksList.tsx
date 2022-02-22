@@ -13,9 +13,9 @@ import {
 import { fetchNotebooks as _fetchNotebooks } from '../backend'
 
 import { NotebookNode, NotebookNodeProps } from './NotebookNode'
-import styles from './SearchNotebooksList.module.scss'
+import styles from './NotebooksList.module.scss'
 
-interface SearchNotebooksListProps extends TelemetryProps {
+interface NotebooksListProps extends TelemetryProps {
     logEventName: string
     filters: FilteredConnectionFilter[]
     creatorUserID?: string
@@ -24,7 +24,7 @@ interface SearchNotebooksListProps extends TelemetryProps {
     fetchNotebooks: typeof _fetchNotebooks
 }
 
-export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListProps> = ({
+export const NotebooksList: React.FunctionComponent<NotebooksListProps> = ({
     logEventName,
     filters,
     creatorUserID,

@@ -13,7 +13,7 @@ import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { CreateNotebookPage } from './search/notebooks/createPage/CreateNotebookPage'
-import { SearchNotebooksListPage } from './search/notebooks/listPage/SearchNotebooksListPage'
+import { NotebooksListPage } from './search/notebooks/listPage/NotebooksListPage'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
@@ -125,7 +125,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Notebooks,
         render: props =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebooksListPage {...props} />
+                <NotebooksListPage {...props} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             ),

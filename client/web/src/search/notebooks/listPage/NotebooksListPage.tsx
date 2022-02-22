@@ -20,10 +20,10 @@ import { PageRoutes } from '../../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
-import { SearchNotebooksList } from './SearchNotebooksList'
-import styles from './SearchNotebooksListPage.module.scss'
+import { NotebooksList } from './NotebooksList'
+import styles from './NotebooksListPage.module.scss'
 
-export interface SearchNotebooksListPageProps extends TelemetryProps {
+export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
@@ -80,7 +80,7 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
 
 const LOADING = 'loading' as const
 
-export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksListPageProps> = ({
+export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> = ({
     authenticatedUser,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
@@ -276,7 +276,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     </div>
                 </div>
                 {selectedTab.type === 'my' && authenticatedUser && (
-                    <SearchNotebooksList
+                    <NotebooksList
                         logEventName="MyNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
@@ -285,7 +285,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     />
                 )}
                 {selectedTab.type === 'starred' && authenticatedUser && (
-                    <SearchNotebooksList
+                    <NotebooksList
                         logEventName="StarredNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         starredByUserID={authenticatedUser.id}
@@ -294,7 +294,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     />
                 )}
                 {selectedTab.type === 'org' && (
-                    <SearchNotebooksList
+                    <NotebooksList
                         logEventName="OrgNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         namespace={selectedTab.id}
@@ -316,7 +316,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     />
                 )}
                 {selectedTab.type === 'explore' && (
-                    <SearchNotebooksList
+                    <NotebooksList
                         logEventName="ExploreNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
