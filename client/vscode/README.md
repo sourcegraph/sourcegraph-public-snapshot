@@ -73,6 +73,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 2.  Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
 3.  Navigate to `Code preferences`, then click `Settings`.
 4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
+5.  Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
 
 ## Keyboard Shortcuts:
 
@@ -86,14 +87,19 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 This extension contributes the following settings:
 
-- `sourcegraph.url`: Specify your on-premises Sourcegraph instance here, if applicable. For example: `"sourcegraph.url": "https://sourcegraph.com"`
-- `sourcegraph.accessToken`: The access token to query the Sourcegraph API. Required to use this extension with private instances.
-- `sourcegraph.remoteUrlReplacements`: Object, where each `key` is replaced by `value` in the remote url.
-- `sourcegraph.defaultBranch`: String to set the name of the default branch. Always open files in the default branch.
+| Setting                             | Description                                                                                                                    | Example                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `sourcegraph.url`                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default. | "https://your-sourcegraph.com"                               |
+| `sourcegraph.accessToken`           | The access token to query the Sourcegraph API. Required to use this extension with private instances.                          | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
+| `sourcegraph.remoteUrlReplacements` | Object, where each `key` is replaced by `value` in the remote url.                                                             | {"github": "gitlab", "master": "main"}                       |
+| `sourcegraph.defaultBranch`         | String to set the name of the default branch. Always open files in the default branch.                                         | "master"                                                     |
+| `sourcegraph.requestHeaders`        | Takes object, where each value pair will be added to the request headers made to your instance.                                | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
 
 ## Questions & Feedback
 
-Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension. 
+
+New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
 ## Uninstallation
 
@@ -104,10 +110,10 @@ Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/ad
 
 To develop the extension:
 
-- `git clone` the sourcegraph repository
-- Run `yarn generate`
-- Open the repo in VS Code with `code .`
-- Make your changes to the files within the `vscode` directory
-- Click on `Run and Debug` from the activity bar on the left to open the sidebar
-- Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
-- Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes with VS Code Web
+1. `git clone` the sourcegraph repository
+1. Run `yarn generate` at the root directory
+1. `cd` to the `client/vscode` directory and run `yarn` to install dependencies
+1. Make your changes to the files within the `client/vscode` directory with VS Code
+1. Run `yarn build` to build
+1. Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
+1. Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes for VS Code Web

@@ -25,3 +25,7 @@ export function endpointAccessTokenSetting(): boolean {
     }
     return false
 }
+
+export function endpointRequestHeadersSetting(): object {
+    return readConfiguration().get<object>('requestHeaders') || {}
+}
