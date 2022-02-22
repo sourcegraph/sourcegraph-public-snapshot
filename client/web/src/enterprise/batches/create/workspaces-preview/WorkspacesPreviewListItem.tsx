@@ -5,7 +5,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
@@ -47,12 +47,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
             </div>
             <div className="flex-1">
-                <Link
-                    className={classNames(styles.link, styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}
-                    to={item.branch.url}
-                >
+                <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.stale)}>
                     {item.repository.name}
-                </Link>
+                </h4>
                 {item.path !== '' && item.path !== '/' ? (
                     <span className={classNames(styles.overflow, 'd-block text-muted')}>{item.path}</span>
                 ) : null}
