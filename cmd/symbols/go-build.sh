@@ -16,15 +16,27 @@ export GOOS=linux
 # go-sqlite3 depends on cgo. Without cgo, it will build but it'll throw an error at query time.
 export CGO_ENABLED=1
 
-# Ensure musl-gcc is available since we're building to run on Alpine, which uses musl.
-if ! command -v musl-gcc >/dev/null; then
-  echo "musl-gcc not found, which is needed for cgo for go-sqlite3. Run 'apt-get install -y musl-tools'."
+# Default CC to musl-gcc.
+export CC="${CC:-musl-gcc}"
+
+if ! command -v "$CC" >/dev/null; then
+  echo "$CC not found. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
   exit 1
 fi
 
+# Make sure this is a musl compiler.
+case "$CC" in
+  *musl*)
+    ;;
+  *)
+    echo "$CC doesn't look like a musl compiler. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
+    exit 1
+    ;;
+esac
+
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/symbols"
-env CC=musl-gcc go build \
+env go build \
   -trimpath \
   -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
   -buildmode exe \
