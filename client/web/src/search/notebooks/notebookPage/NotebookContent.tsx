@@ -8,12 +8,10 @@ import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchStreamingProps } from '..'
-import { fetchRepository, resolveRevision } from '../../repo/backend'
-
-import { SearchNotebook } from './SearchNotebook'
-
-import { Block, BlockInit } from '.'
+import { Block, BlockInit } from '..'
+import { SearchStreamingProps } from '../..'
+import { fetchRepository, resolveRevision } from '../../../repo/backend'
+import { SearchNotebook } from '../notebook/SearchNotebook'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,

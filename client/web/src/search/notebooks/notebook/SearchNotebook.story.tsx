@@ -10,14 +10,13 @@ import {
     NOOP_PLATFORM_CONTEXT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { WebStory } from '../../components/WebStory'
-import { RepositoryFields } from '../../graphql-operations'
+import { BlockInit } from '..'
+import { WebStory } from '../../../components/WebStory'
+import { RepositoryFields } from '../../../graphql-operations'
 
 import { SearchNotebook } from './SearchNotebook'
 
-import { BlockInit } from '.'
-
-const { add } = storiesOf('web/search/notebooks/SearchNotebook', module)
+const { add } = storiesOf('web/search/notebooks/notebook/SearchNotebook', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshots: false } })
 

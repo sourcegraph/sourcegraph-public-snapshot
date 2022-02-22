@@ -6,12 +6,10 @@ import { renderMarkdown, asError } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { aggregateStreamingSearch, emptyAggregateResults } from '@sourcegraph/shared/src/search/stream'
 
-import { SearchPatternType } from '../../graphql-operations'
-import { LATEST_VERSION } from '../results/StreamingSearchResults'
-
-import { serializeBlockToMarkdown } from './serialize'
-
-import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection } from '.'
+import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection } from '..'
+import { SearchPatternType } from '../../../graphql-operations'
+import { LATEST_VERSION } from '../../results/StreamingSearchResults'
+import { serializeBlockToMarkdown } from '../serialize'
 
 const DONE = 'DONE' as const
 

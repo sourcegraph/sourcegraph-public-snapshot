@@ -24,23 +24,22 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { getHover, getDocumentHighlights } from '../../backend/features'
-import { WebHoverOverlay } from '../../components/WebHoverOverlay'
-import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
-import { useExperimentalFeatures } from '../../stores'
+import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
+import { SearchStreamingProps } from '../..'
+import { AuthenticatedUser } from '../../../auth'
+import { getHover, getDocumentHighlights } from '../../../backend/features'
+import { WebHoverOverlay } from '../../../components/WebHoverOverlay'
+import { getLSPTextDocumentPositionParameters } from '../../../repo/blob/Blob'
+import { useExperimentalFeatures } from '../../../stores'
+import { SearchNotebookFileBlock } from '../blocks/file/SearchNotebookFileBlock'
+import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
+import { SearchNotebookMarkdownBlock } from '../blocks/markdown/SearchNotebookMarkdownBlock'
+import { SearchNotebookQueryBlock } from '../blocks/query/SearchNotebookQueryBlock'
+import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
-import { SearchNotebookFileBlock } from './blocks/file/SearchNotebookFileBlock'
-import { FileBlockValidationFunctions } from './blocks/file/useFileBlockInputValidation'
-import { SearchNotebookMarkdownBlock } from './blocks/markdown/SearchNotebookMarkdownBlock'
-import { SearchNotebookQueryBlock } from './blocks/query/SearchNotebookQueryBlock'
-import { isMonacoEditorDescendant } from './blocks/useBlockSelection'
 import { Notebook } from './notebook'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
-
-import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,

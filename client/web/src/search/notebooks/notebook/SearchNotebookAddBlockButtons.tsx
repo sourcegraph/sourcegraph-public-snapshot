@@ -3,9 +3,9 @@ import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import styles from './SearchNotebookAddBlockButtons.module.scss'
+import { BlockInput } from '..'
 
-import { BlockInput } from '.'
+import styles from './SearchNotebookAddBlockButtons.module.scss'
 
 interface SearchNotebookAddBlockButtonsProps {
     onAddBlock: (blockIndex: number, blockInput: BlockInput) => void

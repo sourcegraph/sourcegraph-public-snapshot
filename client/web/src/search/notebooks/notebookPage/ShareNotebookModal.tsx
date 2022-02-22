@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Modal, Button } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import { AuthenticatedUser } from '../../../auth'
 
 import { NotebookShareOptionsDropdown, ShareOption } from './NotebookShareOptionsDropdown'
 import styles from './ShareNotebookModal.module.scss'

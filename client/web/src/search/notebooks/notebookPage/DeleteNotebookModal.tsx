@@ -7,7 +7,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
 
-import { deleteNotebook as _deleteNotebook } from './backend'
+import { deleteNotebook as _deleteNotebook } from '../backend'
 
 interface DeleteNotebookModalProps extends TelemetryProps {
     notebookId: string

@@ -7,13 +7,12 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { Page } from '../../components/Page'
-import { CreateNotebookBlockInput } from '../../graphql-operations'
-import { PageRoutes } from '../../routes.constants'
-
-import { createNotebook } from './backend'
-import { blockToGQLInput, deserializeBlockInput } from './serialize'
+import { AuthenticatedUser } from '../../../auth'
+import { Page } from '../../../components/Page'
+import { CreateNotebookBlockInput } from '../../../graphql-operations'
+import { PageRoutes } from '../../../routes.constants'
+import { createNotebook } from '../backend'
+import { blockToGQLInput, deserializeBlockInput } from '../serialize'
 
 const LOADING = 'loading' as const
 

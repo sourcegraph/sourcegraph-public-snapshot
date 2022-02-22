@@ -22,15 +22,15 @@ import {
     Position,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { NotebookFields } from '../../graphql-operations'
-import { OrgAvatar } from '../../org/OrgAvatar'
-
+import { AuthenticatedUser } from '../../../auth'
+import { NotebookFields } from '../../../graphql-operations'
+import { OrgAvatar } from '../../../org/OrgAvatar'
 import {
     deleteNotebook as _deleteNotebook,
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
-} from './backend'
+} from '../backend'
+
 import { DeleteNotebookModal } from './DeleteNotebookModal'
 import { ShareOption } from './NotebookShareOptionsDropdown'
 import styles from './SearchNotebookPageHeaderActions.module.scss'

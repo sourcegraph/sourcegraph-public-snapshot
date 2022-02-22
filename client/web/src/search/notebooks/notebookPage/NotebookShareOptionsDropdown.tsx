@@ -8,8 +8,8 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { AuthenticatedUser } from '../../auth'
-import { OrgAvatar } from '../../org/OrgAvatar'
+import { AuthenticatedUser } from '../../../auth'
+import { OrgAvatar } from '../../../org/OrgAvatar'
 
 import styles from './NotebookShareOptionsDropdown.module.scss'
 

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import * as uuid from 'uuid'
 
 import { convertMarkdownToBlocks } from '../../search/notebooks/convertMarkdownToBlocks'
-import { SearchNotebook, SearchNotebookProps } from '../../search/notebooks/SearchNotebook'
+import { SearchNotebook, SearchNotebookProps } from '../../search/notebooks/notebook/SearchNotebook'
 
 import styles from './RenderedSearchNotebookMarkdown.module.scss'
 

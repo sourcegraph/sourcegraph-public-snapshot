@@ -23,26 +23,25 @@ import {
     Alert,
 } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { Timestamp } from '../../components/time/Timestamp'
-import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
-import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
-
+import { Block } from '..'
+import { SearchStreamingProps } from '../..'
+import { AuthenticatedUser } from '../../../auth'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { NotebookFields, NotebookInput, Scalars } from '../../../graphql-operations'
+import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../../repo/backend'
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
     deleteNotebook as _deleteNotebook,
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
-} from './backend'
+} from '../backend'
+import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
+
 import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
 import styles from './SearchNotebookPage.module.scss'
 import { SearchNotebookPageHeaderActions } from './SearchNotebookPageHeaderActions'
-import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from './serialize'
-
-import { Block } from '.'
 
 interface SearchNotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
