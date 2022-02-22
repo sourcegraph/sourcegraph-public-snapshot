@@ -281,6 +281,10 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		pgDumpOutput += dataOutput
 	}
 
+	for _, table := range database.CountTables {
+		pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+	}
+
 	return sanitizePgDumpOutput(pgDumpOutput), nil
 }
 
