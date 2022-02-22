@@ -53,7 +53,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		return nil, err
 	}
 
-	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol, query.Identity)
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
 
 	forceResultTypes := result.TypeEmpty
 	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
