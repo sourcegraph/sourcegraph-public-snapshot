@@ -131,8 +131,8 @@ func startExec(ctx context.Context, args []string) error {
 		if !exists {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph employee you probably want to run: sg start oss"))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph employee, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
 
 			stdout.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
