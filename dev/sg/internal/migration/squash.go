@@ -144,6 +144,10 @@ func generateSquashedMigrations(database db.Database, targetVersions []int) (up,
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
 func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
+	// Disable runner logs to prevent clashing progress output below
+	runner.DisableLogging()
+	defer runner.EnableLogging()
+
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
