@@ -73,6 +73,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 2.  Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
 3.  Navigate to `Code preferences`, then click `Settings`.
 4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
+5.  Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
 
 ## Keyboard Shortcuts:
 
@@ -96,7 +97,9 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for known issues and common issues in the VS Code extension. New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension. 
+
+New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
 ## Uninstallation
 
@@ -107,10 +110,10 @@ Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/ad
 
 To develop the extension:
 
-- `git clone` the sourcegraph repository
-- Run `yarn generate` at the root directory
-- Open the repo in VS Code with `code .`
-- Make your changes to the files within the `client/vscode` directory
-- Run `yarn build` to build
-- Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
-- Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes for VS Code Web
+1. `git clone` the sourcegraph repository
+1. Run `yarn generate` at the root directory
+1. `cd` to the `client/vscode` directory and run `yarn` to install dependencies
+1. Make your changes to the files within the `client/vscode` directory with VS Code
+1. Run `yarn build` to build
+1. Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
+1. Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes for VS Code Web
