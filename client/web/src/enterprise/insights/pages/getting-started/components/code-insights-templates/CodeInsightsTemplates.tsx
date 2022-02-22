@@ -36,10 +36,17 @@ function getTemplateURL(template: Template): string {
     }
 }
 
-interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
+interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+    /**
+     * The template section is used in two different landing pages, in-product where templates are
+     * interactive and lead to the creation UI with prefilled values and for the cloud landing
+     * page where templates are just cards with queries text.
+     */
+    interactive?: boolean
+}
 
 export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, interactive = true, ...otherProps } = props
 
     const handleTabChange = (index: number): void => {
         const template = TEMPLATE_SECTIONS[index]
@@ -59,7 +66,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
             </p>
 
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
-                <TabList>
+                <TabList wrapperClassName={styles.tabList}>
                     {TEMPLATE_SECTIONS.map(section => (
                         <Tab key={section.title}>{section.title}</Tab>
                     ))}
@@ -70,6 +77,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
                             key={section.title}
                             sectionTitle={section.title}
                             templates={section.templates}
+                            interactive={interactive}
                             telemetryService={telemetryService}
                         />
                     ))}
@@ -82,10 +90,11 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 interface TemplatesPanelProps extends TelemetryProps {
     sectionTitle: string
     templates: Template[]
+    interactive: boolean
 }
 
 const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
-    const { templates, sectionTitle, telemetryService } = props
+    const { templates, sectionTitle, interactive, telemetryService } = props
     const [allVisible, setAllVisible] = useState(false)
 
     const maxNumberOfCards = allVisible ? templates.length : 4
@@ -102,7 +111,12 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     return (
         <TabPanel className={styles.cards}>
             {templates.slice(0, maxNumberOfCards).map(template => (
-                <TemplateCard key={template.title} template={template} telemetryService={telemetryService} />
+                <TemplateCard
+                    key={template.title}
+                    template={template}
+                    interactive={interactive}
+                    telemetryService={telemetryService}
+                />
             ))}
 
             {hasMoreLessButton && (
@@ -121,10 +135,11 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
 
 interface TemplateCardProps extends TelemetryProps {
     template: Template
+    interactive: boolean
 }
 
 const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
-    const { template, telemetryService } = props
+    const { template, interactive, telemetryService } = props
 
     const series =
         template.type === InsightType.SearchBased
@@ -149,16 +164,18 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                 )}
             </div>
 
-            <Button
-                as={Link}
-                to={getTemplateURL(template)}
-                variant="secondary"
-                outline={true}
-                className="mr-auto"
-                onClick={handleUseTemplateLinkClick}
-            >
-                Use this template
-            </Button>
+            {interactive && (
+                <Button
+                    as={Link}
+                    to={getTemplateURL(template)}
+                    variant="secondary"
+                    outline={true}
+                    className="mr-auto"
+                    onClick={handleUseTemplateLinkClick}
+                >
+                    Use this template
+                </Button>
+            )}
         </Card>
     )
 }

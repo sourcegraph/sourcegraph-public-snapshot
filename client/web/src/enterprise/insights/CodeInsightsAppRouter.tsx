@@ -39,9 +39,9 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 /**
  * This interface has to receive union type props derived from all child components
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
- * sub-components withing app tree.
+ * subcomponents withing app tree.
  */
-export interface InsightsRouterProps
+export interface CodeInsightsAppRouter
     extends CodeInsightsContextProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
@@ -56,7 +56,7 @@ export interface InsightsRouterProps
 /**
  * Main Insight routing component. Main entry point to code insights UI.
  */
-export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
+export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
     const { isCodeInsightsGqlApiEnabled, platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()

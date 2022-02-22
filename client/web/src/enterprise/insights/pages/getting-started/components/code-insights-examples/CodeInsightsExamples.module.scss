@@ -35,14 +35,10 @@
     flex-direction: column;
     gap: 0.5rem;
     margin-top: 1rem;
-
-    &--horizontal {
-        flex-direction: column;
-    }
 }
 
-.legend-migration-item {
-    min-width: 6rem;
+.legend-item {
+    width: 6rem;
 }
 
 .capture-group {
