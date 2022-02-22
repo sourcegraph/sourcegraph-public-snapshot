@@ -20,6 +20,12 @@ const typePolicies: TypedTypePolicies = {
             return incoming
         },
     },
+    Location: {
+        keyFields: ['url'],
+    },
+    GitBlob: {
+        keyFields: ['url'],
+    },
     Query: {
         fields: {
             node: {
