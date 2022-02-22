@@ -243,12 +243,12 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 	parsedURL.RawPath = "/redacted"
 	parsedURL.Path = "/redacted"
 
-	marketingQueryParameters := map[string]string{
-		"utm_source":   "",
-		"utm_campaign": "",
-		"utm_medium":   "",
-		"utm_term":     "",
-		"utm_content":  "",
+	marketingQueryParameters := map[string]struct{}{
+		"utm_source":   {},
+		"utm_campaign": {},
+		"utm_medium":   {},
+		"utm_term":     {},
+		"utm_content":  {},
 	}
 	urlQueryParams, err := url.ParseQuery(parsedURL.RawQuery)
 	if err != nil {
