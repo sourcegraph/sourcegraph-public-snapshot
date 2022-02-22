@@ -10,10 +10,14 @@
   "icon": "images/logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph.git"
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/sourcegraph-vscode/issues"
   },
   "engines": {
-    "vscode": "^1.61.0"
+    "vscode": "^1.63.2"
   },
   "categories": [
     "Other"
@@ -31,6 +35,7 @@
     "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
+  "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
       {
@@ -121,6 +126,7 @@
             "object"
           ],
           "default": {},
+          "examples": [{"github": "gitlab", "master": "main"}],
           "description": "For each item in this object, replace key with value in the remote url."
         },
         "sourcegraph.defaultBranch": {
@@ -128,7 +134,15 @@
             "string"
           ],
           "default": "",
-          "description": "Always open local files on Sourcegraph web at this default branch."
+          "description": "Always open local files on Sourcegraph Web at this default branch."
+        },
+        "sourcegraph.requestHeaders": {
+          "type": [
+            "object"
+          ],
+          "default": {},
+          "examples": [{"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"}],
+          "description": "Each value pair will be added to the request headers made to your instance."
         }
       }
     },
@@ -195,5 +209,9 @@
     "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
+  },
+  "dependencies": {
+    "https-browserify": "^1.0.0",
+    "stream-http": "^3.2.0"
   }
 }
