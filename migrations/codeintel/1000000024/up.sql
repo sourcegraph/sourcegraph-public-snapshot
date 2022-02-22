@@ -1,5 +1,3 @@
-BEGIN;
-
 -- We're completely changing the API docs search table schema, so we'll reindex everything
 -- from scratch. Reset our OOB migration's progress entirely.
 --
@@ -250,5 +248,3 @@ COMMENT ON COLUMN lsif_data_docs_search_private.search_key_reverse_tsv IS 'Index
 COMMENT ON COLUMN lsif_data_docs_search_private.label IS 'The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation';
 COMMENT ON COLUMN lsif_data_docs_search_private.label_tsv IS 'Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';
 COMMENT ON COLUMN lsif_data_docs_search_private.label_reverse_tsv IS 'Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';
-
-COMMIT;

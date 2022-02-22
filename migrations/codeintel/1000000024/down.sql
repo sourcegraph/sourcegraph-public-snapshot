@@ -1,5 +1,3 @@
-BEGIN;
-
 -- We've alterd tables beyond rollback in our up migration. The best we can do for a down migration
 -- is bring back the old schema so the previous version of Sourcegraph runs properly.
 DROP TABLE IF EXISTS lsif_data_docs_search_public;
@@ -98,5 +96,3 @@ COMMENT ON COLUMN lsif_data_documentation_search_private.tags IS 'A space separa
 ALTER TABLE lsif_data_documentation_search_private ADD COLUMN dump_root TEXT NOT NULL DEFAULT '';
 COMMENT ON COLUMN lsif_data_documentation_search_private.dump_root IS 'Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.';
 CREATE INDEX lsif_data_documentation_search_private_dump_root_idx ON lsif_data_documentation_search_private USING BTREE(dump_root);
-
-COMMIT;

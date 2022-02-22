@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Note that we have to regenerate the reconciler_changesets view, as the SELECT
 -- c.* in the view definition isn't refreshed when the fields change within the
 -- changesets table.
@@ -32,5 +30,3 @@ ALTER TABLE insights_query_runner_jobs ADD COLUMN IF NOT EXISTS worker_hostname 
 ALTER TABLE lsif_dependency_indexing_jobs ADD COLUMN IF NOT EXISTS worker_hostname text NOT NULL DEFAULT '';
 ALTER TABLE lsif_indexes ADD COLUMN IF NOT EXISTS worker_hostname text NOT NULL DEFAULT '';
 ALTER TABLE lsif_uploads ADD COLUMN IF NOT EXISTS worker_hostname text NOT NULL DEFAULT '';
-
-COMMIT;

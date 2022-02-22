@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS webhook_logs (
     id BIGSERIAL PRIMARY KEY,
     received_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -24,5 +22,3 @@ CREATE INDEX IF NOT EXISTS
     webhook_logs_status_code_idx
 ON
     webhook_logs (status_code);
-
-COMMIT;

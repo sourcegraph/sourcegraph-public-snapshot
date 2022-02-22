@@ -1,5 +1,3 @@
-BEGIN;
-
 DROP INDEX IF EXISTS lsif_data_docs_search_public_search_key_tsv_idx;
 DROP INDEX IF EXISTS lsif_data_docs_search_public_search_key_reverse_tsv_idx;
 DROP INDEX IF EXISTS lsif_data_docs_search_public_label_tsv_idx;
@@ -9,5 +7,3 @@ DROP INDEX IF EXISTS lsif_data_docs_search_private_search_key_tsv_idx;
 DROP INDEX IF EXISTS lsif_data_docs_search_private_search_key_reverse_tsv_idx;
 DROP INDEX IF EXISTS lsif_data_docs_search_private_label_tsv_idx;
 DROP INDEX IF EXISTS lsif_data_docs_search_private_label_reverse_tsv_idx;
-
-COMMIT;

@@ -1,5 +1,3 @@
-BEGIN;
-
 UPDATE
     user_credentials
 SET
@@ -13,5 +11,3 @@ SET
     encryption_key_id = ''
 WHERE
     encryption_key_id = 'unmigrated';
-
-COMMIT;

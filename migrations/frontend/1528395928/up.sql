@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS batch_spec_execution_cache_entries (
   id           BIGSERIAL PRIMARY KEY,
 
@@ -11,5 +9,3 @@ CREATE TABLE IF NOT EXISTS batch_spec_execution_cache_entries (
   last_used_at TIMESTAMP WITH TIME ZONE,
   created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
-COMMIT;

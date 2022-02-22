@@ -1,6 +1,4 @@
 
-BEGIN;
-
 CREATE TABLE lsif_indexable_repositories (
     id SERIAL PRIMARY KEY NOT NULL,
     repository_id integer NOT NULL,
@@ -12,5 +10,3 @@ CREATE TABLE lsif_indexable_repositories (
 );
 
 CREATE UNIQUE INDEX lsif_indexable_repositories_repository_id_key ON lsif_indexable_repositories (repository_id);
-
-COMMIT;

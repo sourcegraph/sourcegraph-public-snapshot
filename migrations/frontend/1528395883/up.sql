@@ -1,5 +1,3 @@
-BEGIN;
-
 INSERT INTO lsif_configuration_policies
     (
         name,
@@ -19,5 +17,3 @@ VALUES
         true, false, 8064, -- 12 months ~= 8064 hours = 1 week (168 hours) * 4 * 12
         false, false, 0
     );
-
-COMMIT;

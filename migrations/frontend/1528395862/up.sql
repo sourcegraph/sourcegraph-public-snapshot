@@ -1,5 +1,3 @@
-BEGIN;
-
 DO $$
 BEGIN
     DROP ROLE IF EXISTS sg_service;
@@ -10,5 +8,3 @@ EXCEPTION WHEN dependent_objects_still_exist THEN
     -- test databases still has objects that depend on it.
 END;
 $$;
-
-COMMIT;

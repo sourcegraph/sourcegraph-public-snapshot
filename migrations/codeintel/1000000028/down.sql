@@ -1,5 +1,3 @@
-BEGIN;
-
 --
 -- Public
 
@@ -53,5 +51,3 @@ COMMENT ON COLUMN lsif_data_docs_search_current_private.dump_id IS 'The most rec
 -- Restore old last_cleanup_scan_at column
 COMMENT ON COLUMN lsif_data_docs_search_current_private.last_cleanup_scan_at IS 'The last time outdated records in the lsif_data_docs_search_public table have been cleaned.';
 ALTER TABLE lsif_data_docs_search_current_private ALTER COLUMN last_cleanup_scan_at DROP DEFAULT;
-
-COMMIT;

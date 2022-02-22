@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE batch_spec_workspaces
   ADD COLUMN IF NOT EXISTS ignored BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS unsupported BOOLEAN NOT NULL DEFAULT FALSE,
@@ -12,5 +10,3 @@ ALTER TABLE batch_specs
 ALTER TABLE batch_spec_resolution_jobs
   DROP COLUMN IF EXISTS allow_unsupported,
   DROP COLUMN IF EXISTS allow_ignored;
-
-COMMIT;

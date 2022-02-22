@@ -15,27 +15,18 @@ const newMetadataFileTemplate = `name: %s
 parents: [%s]
 `
 
-const newUpMigrationFileTemplate = `BEGIN;
-
--- Perform migration here.
+const newUpMigrationFileTemplate = `-- Perform migration here.
 --
 -- See /migrations/README.md. Highlights:
 --  * Make migrations idempotent (use IF EXISTS)
 --  * Make migrations backwards-compatible (old readers/writers must continue to work)
---  * Wrap your changes in a transaction
 --  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement
 --    is defined per file, and that each such statement is NOT wrapped in a transaction.
 --    Each such migration must also declare "createIndexConcurrently: true" in their
 --    associated metadata.yaml file.
-
-COMMIT;
 `
 
-const newDownMigrationFileTemplate = `BEGIN;
-
--- Undo the changes made in the up migration
-
-COMMIT;
+const newDownMigrationFileTemplate = `-- Undo the changes made in the up migration
 `
 
 // Add creates a new directory with stub migration files in the given schema and returns the

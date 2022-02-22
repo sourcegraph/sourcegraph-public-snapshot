@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TYPE time_unit AS ENUM ('HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR');
 ALTER TABLE insight_series
     DROP COLUMN IF EXISTS recording_interval_days,

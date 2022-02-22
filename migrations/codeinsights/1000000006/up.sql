@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE commit_index
 (
 	committed_at TIMESTAMPTZ NOT NULL,
@@ -17,5 +15,3 @@ CREATE TABLE commit_index_metadata
     enabled BOOLEAN NOT NULL DEFAULT 'y',
     last_indexed_at TIMESTAMPTZ NOT NULL DEFAULT '1900-01-01'
 );
-
-COMMIT;

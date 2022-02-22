@@ -1,5 +1,3 @@
-BEGIN;
-
 DO $$
 BEGIN
     REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM sg_service;
@@ -12,5 +10,3 @@ EXCEPTION WHEN undefined_object THEN
     -- test databases still has objects that depend on it.
 END;
 $$;
-
-COMMIT;

@@ -318,7 +318,7 @@ outer:
 		filteredContent = pattern.ReplaceAllString(filteredContent, replacement)
 	}
 
-	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
+	return strings.TrimSpace(filteredContent)
 }
 
 // removeAncestorsOf removes all migrations that are an ancestor of the given target version.

@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS executor_heartbeats (
     id SERIAL PRIMARY KEY,
     hostname TEXT NOT NULL UNIQUE,
@@ -27,5 +25,3 @@ COMMENT ON COLUMN executor_heartbeats.ignite_version IS 'The version of Ignite u
 COMMENT ON COLUMN executor_heartbeats.src_cli_version IS 'The version of src-cli used by the executor.';
 COMMENT ON COLUMN executor_heartbeats.first_seen_at IS 'The first time a heartbeat from the executor was received.';
 COMMENT ON COLUMN executor_heartbeats.last_seen_at IS 'The last time a heartbeat from the executor was received.';
-
-COMMIT;

@@ -1,5 +1,3 @@
-BEGIN;
-
 DROP VIEW lsif_dumps_with_repository_name;
 DROP VIEW lsif_dumps;
 
@@ -43,5 +41,3 @@ CREATE VIEW lsif_dumps_with_repository_name AS SELECT u.id,
     u.processed_at,
     r.name AS repository_name
 FROM lsif_dumps u JOIN repo r ON r.id = u.repository_id WHERE r.deleted_at IS NULL;
-
-COMMIT;

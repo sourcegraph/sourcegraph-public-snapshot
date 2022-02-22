@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE IF EXISTS insight_series
     ADD COLUMN IF NOT EXISTS generation_method TEXT,
     ADD COLUMN IF NOT EXISTS just_in_time      BOOL;
@@ -35,5 +33,3 @@ SET just_in_time =
 ALTER TABLE IF EXISTS insight_series
     ALTER COLUMN just_in_time SET NOT NULL,
     ALTER COLUMN just_in_time SET DEFAULT FALSE;
-
-COMMIT;

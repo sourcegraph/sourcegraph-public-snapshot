@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Bust the cache, since we can't recreate the user_id for existing cache entries.
 DELETE FROM batch_spec_execution_cache_entries;
 
@@ -11,5 +9,3 @@ ALTER TABLE batch_spec_execution_cache_entries
 
 ALTER TABLE batch_spec_execution_cache_entries
   ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique UNIQUE (user_id, key);
-
-COMMIT;
