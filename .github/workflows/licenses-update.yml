@@ -44,6 +44,8 @@ jobs:
           Learn more about our GitHub Actions for managing licenses [here](https://docs.sourcegraph.com/dev/background-information/continuous_integration#third-party-licenses).
 
           You're safe to merge this pull request when the required checks are passing.
+
+          Test plan: CI should pass with any updates.
         # token must be a personal access token for pull request to trigger other actions
         # token must have `repo` scope
         # currently @sourcegraph-bot cross-repo-github-actions in 1password
