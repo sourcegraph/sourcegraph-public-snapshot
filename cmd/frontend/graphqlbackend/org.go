@@ -296,15 +296,12 @@ func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	switch orgHardDeletionEnabled {
-	case true:
-		if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
-			return nil, err
-		}
-	case false:
-		if err := database.Orgs(r.db).Delete(ctx, orgID); err != nil {
-			return nil, err
-		}
+	if !orgHardDeletionEnabled {
+		return nil, errors.New("hard deleting organization is not supported")
+	}
+
+	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
