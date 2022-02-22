@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE
     external_services
 ADD COLUMN IF NOT EXISTS
@@ -32,5 +30,3 @@ VALUES (
 ON CONFLICT
     DO NOTHING
 ;
-
-COMMIT;

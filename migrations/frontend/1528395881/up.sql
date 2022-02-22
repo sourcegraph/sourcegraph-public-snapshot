@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS batch_spec_resolution_jobs (
   id              BIGSERIAL PRIMARY KEY,
 
@@ -59,5 +57,3 @@ CREATE TABLE IF NOT EXISTS batch_spec_workspace_execution_jobs (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
-COMMIT;

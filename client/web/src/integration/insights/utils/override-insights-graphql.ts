@@ -90,6 +90,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 },
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
+                searchable: true,
             },
         }),
         ViewerSettings: () => ({

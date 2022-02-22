@@ -697,29 +697,6 @@ func TestReporevToRegex(t *testing.T) {
 	}
 }
 
-func TestFuzzifyRegexPatterns(t *testing.T) {
-	tests := []struct {
-		in   string
-		want string
-	}{
-		{in: "repo:foo$", want: `"repo:foo"`},
-		{in: "file:foo$", want: `"file:foo"`},
-		{in: "repohasfile:foo$", want: `"repohasfile:foo"`},
-		{in: "repo:foo$ file:bar$ author:foo", want: `(and "repo:foo" "file:bar" "author:foo")`},
-		{in: "repo:foo$ ^bar$", want: `(and "repo:foo" "^bar$")`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			query, _ := Parse(tt.in, SearchTypeRegex)
-			got := toString(FuzzifyRegexPatterns(query))
-			if got != tt.want {
-				t.Fatalf("got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestContainsNoGlobSyntax(t *testing.T) {
 	tests := []struct {
 		in   string

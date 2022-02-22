@@ -237,6 +237,17 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(codeInsightsUsage)
 }
 
+func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+
+	insightsCriticalTelemetry, err := usagestats.GetCodeInsightsCriticalTelemetry(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(insightsCriticalTelemetry)
+}
+
 func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeMonitoringUsageJSON")
 
@@ -246,6 +257,17 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	}
 
 	return json.Marshal(codeMonitoringUsage)
+}
+
+func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
+
+	codeHostIntegrationUsage, err := usagestats.GetCodeHostIntegrationUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codeHostIntegrationUsage)
 }
 
 func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -326,23 +348,24 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
-		DeployType:          deploy.Type(),
-		ClientVersionString: version.Version(),
-		LicenseKey:          conf.Get().LicenseKey,
-		CodeIntelUsage:      []byte("{}"),
-		NewCodeIntelUsage:   []byte("{}"),
-		SearchUsage:         []byte("{}"),
-		BatchChangesUsage:   []byte("{}"),
-		GrowthStatistics:    []byte("{}"),
-		SavedSearches:       []byte("{}"),
-		HomepagePanels:      []byte("{}"),
-		Repositories:        []byte("{}"),
-		RetentionStatistics: []byte("{}"),
-		SearchOnboarding:    []byte("{}"),
-		ExtensionsUsage:     []byte("{}"),
-		CodeInsightsUsage:   []byte("{}"),
-		CodeMonitoringUsage: []byte("{}"),
+		ClientSiteID:             siteid.Get(),
+		DeployType:               deploy.Type(),
+		ClientVersionString:      version.Version(),
+		LicenseKey:               conf.Get().LicenseKey,
+		CodeIntelUsage:           []byte("{}"),
+		NewCodeIntelUsage:        []byte("{}"),
+		SearchUsage:              []byte("{}"),
+		BatchChangesUsage:        []byte("{}"),
+		GrowthStatistics:         []byte("{}"),
+		SavedSearches:            []byte("{}"),
+		HomepagePanels:           []byte("{}"),
+		Repositories:             []byte("{}"),
+		RetentionStatistics:      []byte("{}"),
+		SearchOnboarding:         []byte("{}"),
+		ExtensionsUsage:          []byte("{}"),
+		CodeInsightsUsage:        []byte("{}"),
+		CodeMonitoringUsage:      []byte("{}"),
+		CodeHostIntegrationUsage: []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -358,6 +381,14 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	r.DependencyVersions, err = getDependencyVersions(ctx, db, logFunc)
 	if err != nil {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
+	}
+
+	// Yes dear reader, this is a feature ping in critical telemetry. Why do you ask? Because for the purposes of
+	// licensing enforcement, we need to know how many insights our customers have created. Please see RFC 584
+	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
+	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
+	if err != nil {
+		logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsCriticalTelemetry failed", "error", err)
 	}
 
 	if !conf.Get().DisableNonCriticalTelemetry {
@@ -430,6 +461,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}

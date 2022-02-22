@@ -79,7 +79,7 @@ export const _04Completed: Story = () => (
     />
 )
 
-_04Completed.storyName = '0/4 completed'
+_04Completed.storyName = 'Progress 0/4 completed'
 
 export const _14Completed: Story = () => (
     <ActivationDropdown
@@ -96,7 +96,7 @@ export const _14Completed: Story = () => (
     />
 )
 
-_14Completed.storyName = '1/4 completed'
+_14Completed.storyName = 'Progress 1/4 completed'
 _14Completed.parameters = {
     chromatic: {
         enableDarkMode: true,

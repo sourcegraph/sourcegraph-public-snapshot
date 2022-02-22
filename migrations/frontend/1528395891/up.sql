@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE lsif_dependency_indexing_jobs
 RENAME TO lsif_dependency_syncing_jobs;
 
@@ -23,5 +21,3 @@ CREATE TABLE IF NOT EXISTS lsif_dependency_indexing_jobs (
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_sync IS 'The sync time after which external services of the given kind will have synced/created any repositories referenced by the LSIF upload that are resolvable.';
-
-COMMIT;

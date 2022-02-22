@@ -146,7 +146,8 @@ func TestNoMaliciousFiles(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
+	dep := &reposource.MavenDependency{MavenModule: &reposource.MavenModule{}}
+	err = s.commitJar(ctx, dep, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
 	assert.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -259,13 +260,13 @@ func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context,
 	return []dbstore.JVMDependencyRepo{}, nil
 }
 
-// Sanity check errors.Is
-func TestIsError(t *testing.T) {
-	err := coursier.ErrNoSources{Dependency: reposource.MavenDependency{}}
-	if !errors.Is(err, coursier.ErrNoSources{}) {
+// Sanity check errors.HasType
+func TestErrorHasType(t *testing.T) {
+	err := &coursier.ErrNoSources{}
+	if !errors.HasType(err, &coursier.ErrNoSources{}) {
 		t.Fatal("should be true")
 	}
-	if errors.Is(nil, coursier.ErrNoSources{}) {
+	if errors.Is(nil, &coursier.ErrNoSources{}) {
 		t.Fatal("should be false")
 	}
 }

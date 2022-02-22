@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS dashboard
 (
     id                 SERIAL                  NOT NULL CONSTRAINT dashboard_pk PRIMARY KEY,
@@ -59,5 +57,3 @@ CREATE TABLE dashboard_insight_view
 
 CREATE INDEX IF NOT EXISTS dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_view (insight_view_id);
 CREATE INDEX IF NOT EXISTS dashboard_insight_view_dashboard_id_fk_idx ON dashboard_insight_view (dashboard_id);
-
-COMMIT;

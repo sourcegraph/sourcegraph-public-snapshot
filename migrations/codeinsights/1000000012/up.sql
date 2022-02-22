@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
 --  * All migrations must be backward-compatible. Old versions of Sourcegraph
@@ -19,5 +17,3 @@ alter table insight_series
 
 alter table insight_series
     add next_snapshot_after timestamp default CURRENT_TIMESTAMP;
-
-COMMIT;

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -138,16 +137,7 @@ func mustInitializeDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB(dsn, "precise-code-intel-worker", false, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
-	}
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -173,16 +163,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	var (
-		db  *sql.DB
-		err error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		db, err = connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true, &observation.TestContext)
-	} else {
-		db, err = connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
-	}
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Create the OOB migration according to doc/dev/background-information/oobmigrations.md
 INSERT INTO out_of_band_migrations (id, team, component, description, introduced_version_major, introduced_version_minor, non_destructive)
 VALUES (
@@ -12,5 +10,3 @@ VALUES (
     true                                            -- Can be read with previous version without down migration
 )
 ON CONFLICT DO NOTHING;
-
-COMMIT;

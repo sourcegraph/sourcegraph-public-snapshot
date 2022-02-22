@@ -1,13 +1,17 @@
 import { select } from '@storybook/addon-knobs'
-import { useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
+import { ExternalServiceKind } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import { CREATE_BATCH_CHANGES_CREDENTIAL } from './backend'
 
 const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -18,20 +22,32 @@ const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
         },
     })
 
-add('Requires SSH - step 1', () => {
-    const createBatchChangesCredential = useCallback(
-        (): Promise<BatchChangesCredentialFields> =>
-            Promise.resolve({
-                id: '123',
-                isSiteCredential: false,
-                sshPublicKey:
-                    'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-            }),
-        []
-    )
-    return (
-        <WebStory>
-            {props => (
+add('Requires SSH - step 1', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        {
+                            request: {
+                                query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result: {
+                                data: {
+                                    createBatchChangesCredential: {
+                                        id: '123',
+                                        isSiteCredential: false,
+                                        sshPublicKey:
+                                            'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
                 <AddCredentialModal
                     {...props}
                     userID="user-id-1"
@@ -44,12 +60,11 @@ add('Requires SSH - step 1', () => {
                     requiresSSH={true}
                     afterCreate={noop}
                     onCancel={noop}
-                    createBatchChangesCredential={createBatchChangesCredential}
                 />
-            )}
-        </WebStory>
-    )
-})
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
 add('Requires SSH - step 2', () => (
     <WebStory>
         {props => (

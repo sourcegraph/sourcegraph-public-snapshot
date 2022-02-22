@@ -9,7 +9,6 @@ import { useThemeProps } from './theme'
 // Don't test reacting to system-wide theme changes, for simplicity. This means that
 // observeSystemIsLightTheme's initial value will be used, but it will not monitor for subsequent
 // changes.
-// TODO trigger changes
 jest.mock('@sourcegraph/wildcard', () => {
     const actual = jest.requireActual('@sourcegraph/wildcard')
 

@@ -140,7 +140,41 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.InsightTotalCounts = totalCounts
 
+	weeklyGetStartedTabClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabClicks")
+	}
+	stats.WeeklyGetStartedTabClickByTab = weeklyGetStartedTabClickByTab
+
+	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabMoreClicks")
+	}
+	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
+
 	return &stats, nil
+}
+
+func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
+	weeklyGetStartedTabClickByTab := []types.InsightGetStartedTabClickPing{}
+	rows, err := db.QueryContext(ctx, sql, timeNow())
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		weeklyGetStartedTabClick := types.InsightGetStartedTabClickPing{}
+		if err := rows.Scan(
+			&weeklyGetStartedTabClick.TotalCount,
+			&weeklyGetStartedTabClick.TabName,
+		); err != nil {
+			return nil, err
+		}
+		weeklyGetStartedTabClickByTab = append(weeklyGetStartedTabClickByTab, weeklyGetStartedTabClick)
+	}
+	return weeklyGetStartedTabClickByTab, nil
 }
 
 func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
@@ -289,8 +323,6 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 		"InsightsGetStartedBigTemplateClick",
 		"InsightGetStartedTemplateCopyClick",
 		"InsightGetStartedTemplateClick",
-		"InsightsGetStartedTabClick",
-		"InsightsGetStartedTabMoreClick",
 		"InsightsGetStartedDocsClicks",
 	}
 
@@ -327,6 +359,18 @@ FROM event_logs
 WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
+`
+
+const getStartedTabClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
+`
+
+const getStartedTabMoreClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`

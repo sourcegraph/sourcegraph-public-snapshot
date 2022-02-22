@@ -12,7 +12,7 @@ const (
 
 func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.IssueRequest {
 	var (
-		issueTitle      = fmt.Sprintf("pull request %s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, payload.PullRequest.Title)
+		issueTitle      = fmt.Sprintf("%s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, payload.PullRequest.Title)
 		issueBody       string
 		exceptionLabels = []string{}
 		issueAssignees  = []string{}
