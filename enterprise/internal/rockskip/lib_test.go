@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -101,18 +100,15 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() ParseSymbolsFunc { return simpleParse }
 
-	server, err := NewServer(db, git, createParser, 1, 1, false, 1*time.Second, 1)
+	server, err := NewServer(db, git, createParser, 1, 1, false, 1)
 	fatalIfError(err, "NewServer")
 
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
 		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-		blobs, retryMsg, err := server.Search(context.Background(), args)
+		blobs, err := server.Search(context.Background(), args)
 		fatalIfError(err, "Search")
-		if retryMsg != "" {
-			t.Fatalf("Search returned retry message %q", retryMsg)
-		}
 
 		// Make sure the paths match.
 		gotPaths := []string{}
