@@ -79,16 +79,16 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
 
-		globalSearch := args.Mode == search.ZoektGlobalSearch
-		// skipUnindexed is a value that controls whether to run
-		// unindexed search in a specific scenario of queries that
+		repoUniverseSearch := args.Mode == search.ZoektGlobalSearch
+		// skipRepoSubsetSearch is a value that controls whether to
+		// run unindexed search in a specific scenario of queries that
 		// contain no repo-affecting filters (global mode). When on
 		// sourcegraph.com, we resolve only a subset of all indexed
 		// repos to search. This control flow implies len(searcherRepos)
 		// is always 0, meaning that we should not create jobs to run
 		// unindexed searcher.
-		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && jargs.OnSourcegraphDotCom)
-		// searcherOnly is a value that controls whether to run
+		skipRepoSubsetSearch := args.Mode == search.SkipUnindexed || (repoUniverseSearch && jargs.OnSourcegraphDotCom)
+		// onlyRunSearcher is a value that controls whether to run
 		// unindexed search in one of two scenarios. The first scenario
 		// depends on if index:no is set (value true). The second
 		// scenario happens if queries contain no repo-affecting filters
@@ -96,9 +96,9 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		// resolve some subset of nonindexed repos to search, so wemay
 		// generate jobs that run searcher, but it is conditional on
 		// whether global zoekt search will run (value true).
-		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !jargs.OnSourcegraphDotCom)
+		onlyRunSearcher := args.Mode == search.SearcherOnly || (repoUniverseSearch && !jargs.OnSourcegraphDotCom)
 
-		if globalSearch {
+		if repoUniverseSearch {
 			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
 			if err != nil {
 				return nil, err
@@ -163,7 +163,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		}
 
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			if !skipUnindexed {
+			if !skipRepoSubsetSearch {
 				typ := search.TextRequest
 				// TODO(rvantonder): we don't always have to run
 				// this converter. It depends on whether we run
@@ -189,7 +189,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				addJob(true, &textsearch.RepoSubsetTextSearch{
 					ZoektArgs:        zoektArgs,
 					SearcherArgs:     searcherArgs,
-					NotSearcherOnly:  !searcherOnly,
+					NotSearcherOnly:  !onlyRunSearcher,
 					UseIndex:         args.PatternInfo.Index,
 					ContainsRefGlobs: query.ContainsRefGlobs(q),
 					RepoOpts:         repoOptions,
@@ -198,7 +198,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		}
 
 		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-			if !skipUnindexed {
+			if !skipRepoSubsetSearch {
 				typ := search.SymbolRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
@@ -217,7 +217,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					ZoektArgs:        zoektArgs,
 					PatternInfo:      args.PatternInfo,
 					Limit:            maxResults,
-					NotSearcherOnly:  !searcherOnly,
+					NotSearcherOnly:  !onlyRunSearcher,
 					UseIndex:         args.PatternInfo.Index,
 					ContainsRefGlobs: query.ContainsRefGlobs(q),
 					RepoOpts:         repoOptions,
@@ -270,7 +270,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
-				NotSearcherOnly:  !searcherOnly,
+				NotSearcherOnly:  !onlyRunSearcher,
 				UseIndex:         args.PatternInfo.Index,
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
