@@ -10,13 +10,14 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
-	"regexp"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
