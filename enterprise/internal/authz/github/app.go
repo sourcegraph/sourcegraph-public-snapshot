@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/url"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// todo
+// newAppProvider creates a new GitHub Provider with a client that creates a new installation access token.
 func newAppProvider(urn string, baseURL *url.URL, appID, privateKey string, installationID int64) (*Provider, error) {
 	pkey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -43,7 +42,6 @@ func newAppProvider(urn string, baseURL *url.URL, appID, privateKey string, inst
 				return nil, errors.New("empty token returned")
 			}
 
-			fmt.Println("new token:", *token.Token)
 			auther = &auth.OAuthBearerToken{Token: *token.Token}
 			return &ClientAdapter{
 				V3Client: github.NewV3Client(apiURL, auther, nil),
