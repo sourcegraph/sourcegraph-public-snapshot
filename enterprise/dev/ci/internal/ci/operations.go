@@ -523,8 +523,6 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
-			// TODO need doc
-			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
@@ -543,8 +541,6 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
-			// TODO need doc
-			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
