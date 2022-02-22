@@ -272,16 +272,19 @@ type RepoDependenciesPredicate struct {
 	Of string
 }
 
-func (f *RepoDependenciesPredicate) ParseParams(params string) error {
+func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
 	for _, param := range strings.Fields(params) {
 		kv := strings.SplitN(param, ":", 2)
 		if len(kv) != 2 {
 			return errors.Errorf("missing value on repo:dependencies predicate parameter %q", param)
 		}
 
-		v, err := strconv.Unquote(strings.TrimSpace(kv[1]))
-		if err != nil {
-			return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+		v := kv[1]
+		if strings.HasPrefix(v, `"`) {
+			v, err = strconv.Unquote(v)
+			if err != nil {
+				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+			}
 		}
 
 		if v == "" {
@@ -294,13 +297,14 @@ func (f *RepoDependenciesPredicate) ParseParams(params string) error {
 				return errors.Errorf(`repo:dependencies predicate parameter "of" already set to %q`, f.Of)
 			}
 
-			if n := strings.LastIndex(v, "@"); n > 0 {
-				v = v[:n]
+			re := v
+			if n := strings.LastIndex(re, "@"); n > 0 {
+				re = re[:n]
 			}
 
-			_, err := syntax.Parse(v, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+			_, err := syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 			if err != nil {
-				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", v, err)
 			}
 
 			f.Of = v
@@ -372,8 +376,7 @@ func nonPredicateRepos(q Basic) []Node {
 			FieldFork,
 			FieldArchived,
 			FieldVisibility,
-			FieldCase,
-			FieldDependencies:
+			FieldCase:
 			res = append(res, Parameter{
 				Field:      field,
 				Value:      value,
