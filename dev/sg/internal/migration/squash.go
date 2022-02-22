@@ -55,6 +55,16 @@ func Squash(database db.Database, commit string) error {
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
+	// Remove the migration file pairs that were just squashed
+	filenames, err := removeAncestorsOf(database, definitions, newRoot)
+	if err != nil {
+		return err
+	}
+
+	for _, filename := range filenames {
+		block.Writef("Deleted: %s", filename)
+	}
+
 	files, err := makeMigrationFilenames(database, newRoot)
 	if err != nil {
 		return err
@@ -73,16 +83,6 @@ func Squash(database db.Database, commit string) error {
 	block.Writef("Created: %s", files.UpFile)
 	block.Writef("Created: %s", files.DownFile)
 	block.Writef("Created: %s", files.MetadataFile)
-
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeAncestorsOf(database, definitions, newRoot)
-	if err != nil {
-		return err
-	}
-
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
-	}
 
 	return nil
 }
