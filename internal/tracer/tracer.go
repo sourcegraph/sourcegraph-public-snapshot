@@ -173,10 +173,10 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 			// Nothing changed
 			return
 		}
-
+		prevTracer := oldOpts.tracerType
 		oldOpts = opts
 
-		t, closer, err := newTracer(&opts)
+		t, closer, err := newTracer(&opts, prevTracer)
 		if err != nil {
 			log15.Warn("Could not initialize tracer", "tracer", opts.tracerType, "error", err.Error())
 			return
@@ -186,10 +186,12 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 }
 
 // TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
-func newTracer(opts *options) (opentracing.Tracer, io.Closer, error) {
+func newTracer(opts *options, prevTracer tracerType) (opentracing.Tracer, io.Closer, error) {
 	if opts.tracerType == None {
 		log15.Info("tracing disabled")
-		ddtracer.Stop()
+		if prevTracer == Datadog {
+			ddtracer.Stop()
+		}
 		return opentracing.NoopTracer{}, nil, nil
 	}
 	if opts.tracerType == Datadog {
@@ -199,7 +201,9 @@ func newTracer(opts *options) (opentracing.Tracer, io.Closer, error) {
 			ddtracer.WithServiceVersion(opts.version), ddtracer.WithEnv(opts.env))
 		return tracer, nil, nil
 	}
-	ddtracer.Stop()
+	if prevTracer == Datadog {
+		ddtracer.Stop()
+	}
 
 	log15.Info("opentracing: enabled")
 	cfg, err := jaegercfg.FromEnv()
