@@ -258,7 +258,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		}
 		q := plan[0]
 		mode := Batch
-		p := ToTextPatternInfo(q, mode, query.Identity)
+		p := ToTextPatternInfo(q, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}

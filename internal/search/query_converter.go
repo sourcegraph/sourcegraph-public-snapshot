@@ -117,8 +117,7 @@ const (
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *TextPatternInfo {
-	q = transform(q)
+func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
