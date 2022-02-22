@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useState, useRef, SyntheticEvent, useCallback, useMemo } from 'react'
+import React, { useState, useRef, SyntheticEvent, useCallback, useMemo, useEffect } from 'react'
 
 import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
@@ -25,6 +25,10 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
     const { setComplete, currentIndex } = useSteps()
+
+    useEffect(() => {
+        eventLogger.logViewEvent('PostSignUpOrgTabBetaForm')
+    }, [])
 
     const logFormSubmission = useCallback(() => {
         eventLogger.log('PostSignUpOrgTabBetaFormSubmit')
