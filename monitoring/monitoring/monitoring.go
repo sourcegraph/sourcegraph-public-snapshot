@@ -333,14 +333,18 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	}, nil
 }
 
+type ContainerVariableOptionType string
+
+const (
+	OptionTypeInterval = "interval"
+)
+
 type ContainerVariableOptions struct {
 	Options []string
-	// NoAllOption disables the addition of an 'All' option to the options set.
-	NoAllOption bool
-	// Type of the options. You can usually leave this unset.
-	Type string
 	// DefaultOption is the option that should be selected by default.
 	DefaultOption string
+	// Type of the options. You can usually leave this unset.
+	Type ContainerVariableOptionType
 }
 
 // ContainerVariable describes a template variable that can be applied container dashboard
@@ -435,19 +439,35 @@ func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
 		variable.Sort = 3
 
 	case len(c.Options.Options) > 0:
+		// Set the type
 		variable.Type = "custom"
 		if c.Options.Type != "" {
-			variable.Type = c.Options.Type
+			variable.Type = string(c.Options.Type)
 		}
+		// Generate our options
 		variable.Query = strings.Join(c.Options.Options, ",")
-		if !c.Options.NoAllOption {
+
+		// On interval options, don't allow the selection of 'all' intervals, since
+		// this is a one-of-many selection
+		var hasAllOption bool
+		if c.Options.Type != OptionTypeInterval {
 			// Add the AllValue as a default, only selected if a default is not configured
+			hasAllOption = true
 			selected := c.Options.DefaultOption == ""
 			variable.Options = append(variable.Options, sdk.Option{Text: "all", Value: "$__all", Selected: selected})
 		}
-		for _, option := range c.Options.Options {
+		// Generate options
+		for i, option := range c.Options.Options {
 			// Whether this option should be selected
-			selected := c.Options.DefaultOption != "" && option == c.Options.DefaultOption
+			var selected bool
+			if c.Options.DefaultOption != "" {
+				// If an default option is provided, select that
+				selected = option == c.Options.DefaultOption
+			} else if !hasAllOption {
+				// Otherwise if there is no 'all' option generated, select the first
+				selected = i == 0
+			}
+
 			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option, Selected: selected})
 			if selected {
 				// Also configure current

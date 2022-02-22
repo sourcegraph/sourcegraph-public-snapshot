@@ -45,10 +45,9 @@ func Frontend() *monitoring.Container {
 			Name:  "sentinel_sampling_duration",
 			Label: "Sentinel query sampling duration",
 			Options: monitoring.ContainerVariableOptions{
-				Type:          "interval",
+				Type:          monitoring.OptionTypeInterval,
 				Options:       sentinelSamplingIntervals,
 				DefaultOption: defaultSamplingInterval.String(),
-				NoAllOption:   true,
 			},
 		}},
 		Groups: []monitoring.Group{
