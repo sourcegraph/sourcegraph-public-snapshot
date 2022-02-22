@@ -17,7 +17,7 @@ process.env.LANG = 'en_US.UTF-8'
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
   // for example to change the URL in window.location
-  testEnvironment: 'jest-environment-jsdom',
+  testEnvironment: __dirname + '/client/shared/dev/jest-environment.js',
 
   collectCoverage: !!process.env.CI,
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
@@ -59,7 +59,6 @@ const config = {
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
-    path.join(__dirname, 'client/shared/dev/mockQueryCommandSupported.ts'),
   ],
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),

@@ -262,6 +262,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^27.5.1",
     "jest-canvas-mock": "^2.3.0",
+    "jest-environment-jsdom": "^27.5.1",
     "jest-fetch-mock": "^3.0.3",
     "jest-junit": "^13.0.0",
     "jest-mock-extended": "^2.0.2-beta2",

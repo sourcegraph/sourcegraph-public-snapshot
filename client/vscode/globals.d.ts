@@ -20,6 +20,6 @@ declare module '*.worker.ts' {
 }
 
 /**
- * Set by jest-environment-jsdom
+ * Set by shared/dev/jest-environment.js
  */
 declare var jsdom: import('jsdom').JSDOM
