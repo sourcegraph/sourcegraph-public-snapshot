@@ -747,11 +747,6 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
 }
 
-// Identity is the identity transformer for basic queries.
-func Identity(b Basic) Basic {
-	return b
-}
-
 // PatternToFile transforms a search query such that `file:` is prefixed to the
 // pattern. This transformation is used for generating suggestions. Succeeds
 // only when the pattern expression is an atom.
