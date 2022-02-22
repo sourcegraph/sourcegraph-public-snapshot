@@ -59,7 +59,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
 
 ### Quick install
 
-You can quickly try out Sourcegraph locally using Docker, which takes only a few minutes and lets you try out all of its features:
+You can quickly try out Sourcegraph locally using Docker, which takes only a few minutes and lets you try out all of its features except Code Insights:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
