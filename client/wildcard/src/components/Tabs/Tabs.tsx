@@ -57,7 +57,9 @@ export interface TabListProps extends PropsWithAs<As, ReachTabListProps>, React.
 }
 
 export interface TabProps extends PropsWithAs<As, ReachTabProps>, React.HTMLAttributes<HTMLDivElement> {}
+
 export interface TabPanelsProps extends PropsWithAs<As, ReachTabPanelsProps>, React.HTMLAttributes<HTMLDivElement> {}
+
 export interface TabPanelProps extends PropsWithAs<As, ReachTabPanelProps>, React.HTMLAttributes<HTMLDivElement> {}
 
 /**
@@ -82,10 +84,16 @@ export const Tabs: React.FunctionComponent<TabsProps> = React.forwardRef((props,
 })
 
 export const TabList: React.FunctionComponent<TabListProps> = React.forwardRef((props, reference) => {
-    const { actions, as = 'div', wrapperClassName, ...reachProps } = props
+    const { actions, as = 'div', wrapperClassName, className, ...reachProps } = props
     return (
         <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
-            <ReachTabList data-testid="wildcard-tab-list" as={as} ref={reference} {...reachProps} />
+            <ReachTabList
+                data-testid="wildcard-tab-list"
+                as={as}
+                ref={reference}
+                className={classNames(className, styles.tabList)}
+                {...reachProps}
+            />
             {actions}
         </div>
     )

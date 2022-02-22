@@ -12,7 +12,8 @@
     [data-reach-tab] {
         align-items: center;
         letter-spacing: normal;
-        margin: 0 0.375rem;
+        margin: 0;
+        min-height: 2rem;
         padding: 0 0.125rem;
         color: var(--body-color);
         text-transform: none;
@@ -65,12 +66,17 @@
     }
 
     .tablist-wrapper {
-        min-height: 2rem;
         border-bottom: 1px solid var(--border-color-2);
         padding-bottom: 0;
         display: flex;
         align-items: stretch;
         justify-content: space-between;
+    }
+
+    .tab-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
 
     .small {
