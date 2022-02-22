@@ -47,42 +47,11 @@ type Args struct {
 // toSearchJob.
 func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
-
-	b, err := query.ToBasicQuery(q)
+	args, err := toTextParameters(jargs, q)
 	if err != nil {
 		return nil, err
 	}
-
-	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
-
-	forceResultTypes := result.TypeEmpty
-	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
-		if p.Pattern == "" {
-			// Fallback to literal search for searching repos and files if
-			// the structural search pattern is empty.
-			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-			p.IsStructuralPat = false
-			forceResultTypes = result.Types(0)
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
-	}
-
-	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Features:    toFeatures(jargs.SearchInputs.Features),
-		Timeout:     search.TimeoutDuration(b),
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
-
-		Zoekt:        jargs.Zoekt,
-		SearcherURLs: jargs.SearcherURLs,
-	}
-	args = withResultTypes(args, forceResultTypes)
-	args = withMode(args, jargs.SearchInputs.PatternType)
-	repoOptions := toRepoOptions(args.Query, jargs.SearchInputs.UserSettings)
+	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
@@ -277,7 +246,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && args.PatternInfo.Pattern != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
@@ -407,6 +376,44 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	}
 
 	return job, nil
+}
+
+func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return search.TextParameters{}, err
+	}
+
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
+
+	forceResultTypes := result.TypeEmpty
+	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
+		if p.Pattern == "" {
+			// Fallback to literal search for searching repos and files if
+			// the structural search pattern is empty.
+			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
+			p.IsStructuralPat = false
+			forceResultTypes = result.Types(0)
+		} else {
+			forceResultTypes = result.TypeStructural
+		}
+	}
+
+	args := search.TextParameters{
+		PatternInfo: p,
+		Query:       q,
+		Features:    toFeatures(jargs.SearchInputs.Features),
+		Timeout:     search.TimeoutDuration(b),
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
+
+		Zoekt:        jargs.Zoekt,
+		SearcherURLs: jargs.SearcherURLs,
+	}
+	args = withResultTypes(args, forceResultTypes)
+	args = withMode(args, jargs.SearchInputs.PatternType)
+	return args, nil
 }
 
 func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions {
