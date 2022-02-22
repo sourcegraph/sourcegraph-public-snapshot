@@ -33,7 +33,11 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
                 <h4 className={styles.headerText}>{title}</h4>
                 {actionButtons}
             </div>
-        ) : null}
+        ) : (
+            <div className={classNames('position-absolute', styles.header, styles.headerHiddenTitle)}>
+                {actionButtons}
+            </div>
+        )}
 
         <div className={classNames('h-100', styles.content)}>
             {state === 'loading' && loadingContent}
