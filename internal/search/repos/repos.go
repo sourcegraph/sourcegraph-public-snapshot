@@ -531,6 +531,10 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		tr.Finish()
 	}()
 
+	if !conf.ExperimentalFeatures().DependenciesSearch {
+		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
+	}
+
 	// We pass in these methods as functions to avoid a circular dependency between
 	// the codeinteldbstore package and the repos package and to make testing easier.
 	depsStore := codeinteldbstore.NewDependencyInserter(

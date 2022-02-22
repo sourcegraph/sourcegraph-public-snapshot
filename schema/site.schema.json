@@ -95,6 +95,11 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "dependenciesSearch": {
+          "description": "Enables support for repo:dependencies predicate queries.",
+          "type": "boolean",
+          "default": false
+        },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
