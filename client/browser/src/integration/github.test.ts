@@ -944,7 +944,7 @@ describe('GitHub', () => {
                         // For some reason puppeteer when typing into input field prepends the exising value.
                         // To replicate the natural behavior we navigate to the end of exisiting value and then start typing.
                         await searchInput?.focus()
-                        for (const char of initialQuery) {
+                        for (const _char of initialQuery) {
                             await driver.page.keyboard.press('ArrowRight')
                         }
                         await searchInput?.type(` ${query}`, { delay: 100 })
