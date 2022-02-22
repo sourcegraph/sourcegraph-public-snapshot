@@ -4,7 +4,7 @@ This guide documents how to add a new query to the GraphQL API. It explains what
 
 ## GraphQL backend
 
-Each GraphQL query usually retrieves data from a data store. In the case of Sourcegraph, this is usually Postgres. So there needs to be some mechanism in the back-end that does this.
+Each GraphQL query usually retrieves data from a data store. In the case of Sourcegraph, this is usually Postgres. So there needs to be some mechanism in the backend that does this.
 
 ### Query function
 
