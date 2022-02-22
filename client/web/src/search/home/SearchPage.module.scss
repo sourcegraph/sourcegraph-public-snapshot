@@ -34,3 +34,16 @@
         margin-bottom: 5rem;
     }
 }
+
+.panels-container {
+    display: flex;
+    justify-content: center;
+    max-width: 100%;
+    flex-grow: 1;
+
+    @media (--xl-breakpoint-up) {
+        min-width: var(--max-homepage-container-width);
+    }
+
+    position: relative;
+}

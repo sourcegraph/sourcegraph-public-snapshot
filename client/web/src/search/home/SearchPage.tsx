@@ -93,7 +93,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     where="homepage"
                 />
             </div>
-            <div className="flex-grow-1">
+            <div className={styles.panelsContainer}>
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
                 {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
