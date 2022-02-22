@@ -385,6 +385,11 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
+	args.Version = "V2"
+	return graphqlbackend.NewSearchImplementer(ctx, r.db, args)
+}
+
 func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
 	var (
 		userID int32
