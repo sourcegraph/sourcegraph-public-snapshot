@@ -10,20 +10,20 @@ import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BlockProps, MarkdownBlock } from '../..'
-import { BlockMenuAction, SearchNotebookBlockMenu } from '../menu/SearchNotebookBlockMenu'
+import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../SearchNotebookBlock.module.scss'
+import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
-import styles from './SearchNotebookMarkdownBlock.module.scss'
+import styles from './NotebookMarkdownBlock.module.scss'
 
-interface SearchNotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
+interface NotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
     isMacPlatform: boolean
 }
 
-export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebookMarkdownBlockProps> = ({
+export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
     id,
     input,
     output,
@@ -119,7 +119,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         return action.concat(commonMenuActions)
     }, [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions])
 
-    const blockMenu = isSelected && !isReadOnly && <SearchNotebookBlockMenu id={id} actions={menuActions} />
+    const blockMenu = isSelected && !isReadOnly && <NotebookBlockMenu id={id} actions={menuActions} />
 
     if (!isEditing) {
         return (

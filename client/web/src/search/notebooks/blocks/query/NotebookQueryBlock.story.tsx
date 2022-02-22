@@ -15,9 +15,9 @@ import {
 
 import { WebStory } from '../../../../components/WebStory'
 
-import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
+import { NotebookQueryBlock } from './NotebookQueryBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/file/SearchNotebookQueryBlock', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/blocks/query/NotebookQueryBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
@@ -45,7 +45,7 @@ const noopBlockCallbacks = {
 add('default', () => (
     <WebStory>
         {props => (
-            <SearchNotebookQueryBlock
+            <NotebookQueryBlock
                 {...props}
                 {...noopBlockCallbacks}
                 authenticatedUser={null}
@@ -73,7 +73,7 @@ add('default', () => (
 add('selected', () => (
     <WebStory>
         {props => (
-            <SearchNotebookQueryBlock
+            <NotebookQueryBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"
@@ -101,7 +101,7 @@ add('selected', () => (
 add('read-only selected', () => (
     <WebStory>
         {props => (
-            <SearchNotebookQueryBlock
+            <NotebookQueryBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"

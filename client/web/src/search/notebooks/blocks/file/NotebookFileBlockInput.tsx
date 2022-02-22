@@ -11,9 +11,9 @@ import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
-import styles from './SearchNotebookFileBlockInput.module.scss'
+import styles from './NotebookFileBlockInput.module.scss'
 
-interface SearchNotebookFileBlockInputProps {
+interface NotebookFileBlockInputProps {
     id?: string
     className?: string
     inputClassName?: string
@@ -30,7 +30,7 @@ interface SearchNotebookFileBlockInputProps {
     dataTestId?: string
 }
 
-export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
+export const NotebookFileBlockInput: React.FunctionComponent<NotebookFileBlockInputProps> = ({
     id,
     className,
     inputClassName,

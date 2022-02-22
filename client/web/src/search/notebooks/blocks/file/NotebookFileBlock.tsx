@@ -23,17 +23,17 @@ import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcar
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
 import { isSingleLineRange, parseFileBlockInput, serializeLineRange } from '../../serialize'
-import { BlockMenuAction, SearchNotebookBlockMenu } from '../menu/SearchNotebookBlockMenu'
+import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../SearchNotebookBlock.module.scss'
+import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
 
-import styles from './SearchNotebookFileBlock.module.scss'
-import { SearchNotebookFileBlockInputs } from './SearchNotebookFileBlockInputs'
+import styles from './NotebookFileBlock.module.scss'
+import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 import { FileBlockValidationFunctions, useFileBlockInputValidation } from './useFileBlockInputValidation'
 
-interface SearchNotebookFileBlockProps
+interface NotebookFileBlockProps
     extends BlockProps,
         Omit<FileBlock, 'type'>,
         FileBlockValidationFunctions,
@@ -56,7 +56,7 @@ function getFileHeader(input: FileBlockInput): string {
     return `${repositoryName}${filePath}${revision}${lineRangeSummary}`
 }
 
-export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFileBlockProps> = ({
+export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> = ({
     id,
     input,
     output,
@@ -282,7 +282,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                 ref={blockElement}
             >
                 {showInputs ? (
-                    <SearchNotebookFileBlockInputs
+                    <NotebookFileBlockInputs
                         id={id}
                         {...input}
                         lineRangeInput={lineRangeInput}
@@ -339,7 +339,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                 )}
             </div>
             {(isSelected || !isOtherBlockSelected) && (
-                <SearchNotebookBlockMenu id={id} actions={isSelected ? menuActions : linkMenuAction} />
+                <NotebookBlockMenu id={id} actions={isSelected ? menuActions : linkMenuAction} />
             )}
         </div>
     )

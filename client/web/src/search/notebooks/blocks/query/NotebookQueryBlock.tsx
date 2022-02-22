@@ -29,16 +29,16 @@ import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../../auth'
 import { useExperimentalFeatures } from '../../../../stores'
 import { SearchUserNeedsCodeHost } from '../../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
-import { BlockMenuAction, SearchNotebookBlockMenu } from '../menu/SearchNotebookBlockMenu'
+import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../SearchNotebookBlock.module.scss'
+import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
-import styles from './SearchNotebookQueryBlock.module.scss'
+import styles from './NotebookQueryBlock.module.scss'
 
-interface SearchNotebookQueryBlockProps
+interface NotebookQueryBlockProps
     extends BlockProps,
         QueryBlock,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
@@ -55,7 +55,7 @@ interface SearchNotebookQueryBlockProps
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
-export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({
+export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps> = ({
     id,
     input,
     output,
@@ -219,7 +219,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
             </div>
 
             {(isSelected || !isOtherBlockSelected) && (
-                <SearchNotebookBlockMenu
+                <NotebookBlockMenu
                     id={id}
                     mainAction={mainMenuAction}
                     actions={isSelected ? commonMenuActions : linkMenuActions}

@@ -9,9 +9,9 @@ import { FileBlockInput } from '../..'
 import { WebStory } from '../../../../components/WebStory'
 import { RepositoryFields } from '../../../../graphql-operations'
 
-import { SearchNotebookFileBlock } from './SearchNotebookFileBlock'
+import { NotebookFileBlock } from './NotebookFileBlock'
 
-const { add } = storiesOf('web/search/notebooks/blocks/file/SearchNotebookFileBlock', module).addDecorator(story => (
+const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
@@ -38,7 +38,7 @@ const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
 add('default', () => (
     <WebStory>
         {props => (
-            <SearchNotebookFileBlock
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"
@@ -61,7 +61,7 @@ add('default', () => (
 add('edit mode', () => (
     <WebStory>
         {props => (
-            <SearchNotebookFileBlock
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"
@@ -84,7 +84,7 @@ add('edit mode', () => (
 add('error fetching file', () => (
     <WebStory>
         {props => (
-            <SearchNotebookFileBlock
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"

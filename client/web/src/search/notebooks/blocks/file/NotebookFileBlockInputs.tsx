@@ -14,11 +14,11 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange } from '../../serialize'
 
-import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
-import styles from './SearchNotebookFileBlockInputs.module.scss'
+import { NotebookFileBlockInput } from './NotebookFileBlockInput'
+import styles from './NotebookFileBlockInputs.module.scss'
 import { FileBlockInputValidationResult } from './useFileBlockInputValidation'
 
-interface SearchNotebookFileBlockInputsProps
+interface NotebookFileBlockInputsProps
     extends FileBlockInputValidationResult,
         Omit<FileBlockInput, 'lineRange'>,
         Pick<BlockProps, 'onSelectBlock'> {
@@ -54,7 +54,7 @@ function fetchSuggestions<T extends RepositoryMatch | PathMatch>(
     )
 }
 
-export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebookFileBlockInputsProps> = ({
+export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
     repositoryName,
     filePath,
@@ -126,7 +126,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
             </div>
             <label htmlFor={`file-location-input-${id}`}>File location</label>
             <div id={`file-location-input-${id}`} className={styles.fileLocationInputWrapper}>
-                <SearchNotebookFileBlockInput
+                <NotebookFileBlockInput
                     className="flex-1"
                     inputClassName={styles.repositoryNameInput}
                     value={repositoryName}
@@ -141,7 +141,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />
-                <SearchNotebookFileBlockInput
+                <NotebookFileBlockInput
                     className="flex-1"
                     inputClassName={styles.filePathInput}
                     value={filePath}
@@ -160,7 +160,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                 {showRevisionInput && (
                     <div className="w-50 mr-2">
                         <label htmlFor={`file-revision-input-${id}`}>Revision</label>
-                        <SearchNotebookFileBlockInput
+                        <NotebookFileBlockInput
                             id={`file-revision-input-${id}`}
                             inputClassName={styles.revisionInput}
                             value={revision}
@@ -177,7 +177,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                 {showLineRangeInput && (
                     <div className="w-50">
                         <label htmlFor={`file-line-range-input-${id}`}>Line range</label>
-                        <SearchNotebookFileBlockInput
+                        <NotebookFileBlockInput
                             id={`file-line-range-input-${id}`}
                             inputClassName={styles.lineRangeInput}
                             value={lineRangeInput}

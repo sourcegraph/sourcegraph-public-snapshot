@@ -31,10 +31,10 @@ import { getHover, getDocumentHighlights } from '../../../backend/features'
 import { WebHoverOverlay } from '../../../components/WebHoverOverlay'
 import { getLSPTextDocumentPositionParameters } from '../../../repo/blob/Blob'
 import { useExperimentalFeatures } from '../../../stores'
-import { SearchNotebookFileBlock } from '../blocks/file/SearchNotebookFileBlock'
+import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
-import { SearchNotebookMarkdownBlock } from '../blocks/markdown/SearchNotebookMarkdownBlock'
-import { SearchNotebookQueryBlock } from '../blocks/query/SearchNotebookQueryBlock'
+import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
+import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
@@ -385,10 +385,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
             switch (block.type) {
                 case 'md':
-                    return <SearchNotebookMarkdownBlock {...block} {...blockProps} />
+                    return <NotebookMarkdownBlock {...block} {...blockProps} />
                 case 'file':
                     return (
-                        <SearchNotebookFileBlock
+                        <NotebookFileBlock
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
@@ -397,7 +397,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     )
                 case 'query':
                     return (
-                        <SearchNotebookQueryBlock
+                        <NotebookQueryBlock
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}

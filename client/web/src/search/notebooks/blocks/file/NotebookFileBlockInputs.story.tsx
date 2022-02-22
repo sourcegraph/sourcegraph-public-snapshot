@@ -4,12 +4,11 @@ import React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
 
-import { SearchNotebookFileBlockInputs } from './SearchNotebookFileBlockInputs'
+import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
-const { add } = storiesOf(
-    'web/search/notebooks/blocks/file/SearchNotebookFileBlockInputs',
-    module
-).addDecorator(story => <div className="container p-3">{story()}</div>)
+const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlockInputs', module).addDecorator(story => (
+    <div className="container p-3">{story()}</div>
+))
 
 const defaultProps = {
     id: 'block-id',
@@ -30,12 +29,12 @@ const defaultProps = {
     lineRangeInput: '123-321',
 }
 
-add('default', () => <WebStory>{() => <SearchNotebookFileBlockInputs {...defaultProps} />}</WebStory>)
+add('default', () => <WebStory>{() => <NotebookFileBlockInputs {...defaultProps} />}</WebStory>)
 
 add('all valid', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInputs
+            <NotebookFileBlockInputs
                 {...defaultProps}
                 isRepositoryNameValid={true}
                 isFilePathValid={true}
@@ -49,7 +48,7 @@ add('all valid', () => (
 add('all invalid', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInputs
+            <NotebookFileBlockInputs
                 {...defaultProps}
                 isRepositoryNameValid={false}
                 isFilePathValid={false}

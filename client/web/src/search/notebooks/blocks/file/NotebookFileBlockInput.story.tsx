@@ -4,20 +4,18 @@ import React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
 
-import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
+import { NotebookFileBlockInput } from './NotebookFileBlockInput'
 
-const { add } = storiesOf('web/search/notebooks/blocks/file/SearchNotebookFileBlockInput', module).addDecorator(
-    story => (
-        <div className="container" style={{ padding: '1rem 1rem 8rem 1rem' }}>
-            {story()}
-        </div>
-    )
-)
+const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlockInput', module).addDecorator(story => (
+    <div className="container" style={{ padding: '1rem 1rem 8rem 1rem' }}>
+        {story()}
+    </div>
+))
 
 add('default', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInput
+            <NotebookFileBlockInput
                 placeholder="File block input"
                 value="client/web/file.tsx"
                 onChange={noop}
@@ -32,7 +30,7 @@ add('default', () => (
 add('default with suggestions', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInput
+            <NotebookFileBlockInput
                 placeholder="File block input"
                 value="client/web/file"
                 onChange={noop}
@@ -49,7 +47,7 @@ add('default with suggestions', () => (
 add('valid', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInput
+            <NotebookFileBlockInput
                 placeholder="File block input"
                 value="client/web/file.tsx"
                 onChange={noop}
@@ -65,7 +63,7 @@ add('valid', () => (
 add('invalid', () => (
     <WebStory>
         {() => (
-            <SearchNotebookFileBlockInput
+            <NotebookFileBlockInput
                 placeholder="File block input"
                 value="client/web/file.tsx"
                 onChange={noop}

@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
-import styles from './SearchNotebookBlockMenu.module.scss'
+import styles from './NotebookBlockMenu.module.scss'
 
 interface BaseBlockMenuAction {
     type: 'button' | 'link'
@@ -66,17 +66,13 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
     )
 }
 
-interface SearchNotebookBlockMenuProps {
+interface NotebookBlockMenuProps {
     id: string
     mainAction?: BlockMenuButtonAction
     actions: BlockMenuAction[]
 }
 
-export const SearchNotebookBlockMenu: React.FunctionComponent<SearchNotebookBlockMenuProps> = ({
-    id,
-    mainAction,
-    actions,
-}) => (
+export const NotebookBlockMenu: React.FunctionComponent<NotebookBlockMenuProps> = ({ id, mainAction, actions }) => (
     <div className={styles.blockMenu} role="menu">
         {mainAction && (
             <div className={classNames(actions.length > 0 && styles.mainActionButtonWrapper)}>

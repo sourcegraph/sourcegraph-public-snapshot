@@ -6,7 +6,7 @@ import React, { useMemo } from 'react'
 
 import { BlockProps } from '../..'
 
-import { BlockMenuAction } from './SearchNotebookBlockMenu'
+import { BlockMenuAction } from './NotebookBlockMenu'
 
 interface UseCommonBlockMenuActionsOptions
     extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {
