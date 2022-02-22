@@ -10,7 +10,6 @@ use syn::{
 };
 
 struct IncludeOptional {
-    // literals: Punctuated<LitStr, Token![,]>,
     literals: Vec<String>,
 }
 

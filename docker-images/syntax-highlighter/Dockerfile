@@ -1,7 +1,8 @@
 ###################################
 # Build syntect_server statically #
 ###################################
-FROM rust:1.53.0-alpine3.12@sha256:115f359134b85ce7731218cee9e308dbf228eb1e03e9ddc9b92ab7ad0157a50f as ss
+
+FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
 RUN apk add --no-cache musl-dev>=1.1.24-r10
 COPY . /repo
 WORKDIR /repo
@@ -23,7 +24,7 @@ RUN git checkout v1.0.4 && go build -o /http-server-stabilizer .
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
+FROM sourcegraph/alpine-3.14:133078_2022-02-22_93c48931ca68@sha256:bea3854c52314db8dbf33d977117de8bcf8eeb7620da70820d5b1e9b56dc473a
 COPY --from=ss syntect_server /
 COPY --from=hss http-server-stabilizer /
 
