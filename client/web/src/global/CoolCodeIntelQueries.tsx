@@ -96,10 +96,8 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         $filter: String
     ) {
         repository(name: $repository) {
-            __typename
             id
             commit(rev: $commit) {
-                __typename
                 id
                 blob(path: $path) {
                     url
@@ -128,10 +126,8 @@ export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
         $filter: String
     ) {
         repository(name: $repository) {
-            __typename
             id
             commit(rev: $commit) {
-                __typename
                 id
                 blob(path: $path) {
                     url
@@ -166,10 +162,8 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
         $filter: String
     ) {
         repository(name: $repository) {
-            __typename
             id
             commit(rev: $commit) {
-                __typename
                 id
                 blob(path: $path) {
                     url

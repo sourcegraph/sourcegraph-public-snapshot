@@ -31,7 +31,6 @@ export interface UsePreciseCodeIntelResult {
 interface UsePreciseCodeIntelConfig {
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
-    nextFetchPolicy?: WatchQueryFetchPolicy
 }
 
 interface UsePreciseCodeIntelParameters {

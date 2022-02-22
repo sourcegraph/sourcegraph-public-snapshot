@@ -391,6 +391,13 @@ const CollapsibleLocationList: React.FunctionComponent<{
         setDisable(false)
     }, [props.locations])
 
+    const fetchMore = (): void => {
+        if (props.fetchMore) {
+            setDisable(true)
+            props.fetchMore()
+        }
+    }
+
     return (
         <>
             <CardHeader className="p-0">
@@ -434,17 +441,7 @@ const CollapsibleLocationList: React.FunctionComponent<{
                                 </div>
                             ) : (
                                 <div className="text-center mb-1">
-                                    <Button
-                                        variant="secondary"
-                                        disabled={disable}
-                                        onClick={event => {
-                                            event.preventDefault()
-                                            setDisable(true)
-                                            if (props.fetchMore) {
-                                                props.fetchMore()
-                                            }
-                                        }}
-                                    >
+                                    <Button variant="secondary" disabled={disable} onClick={fetchMore}>
                                         Load more {props.name}
                                     </Button>
                                 </div>
