@@ -41,6 +41,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"DATE":                               c.Time.Format(time.RFC3339),
 		"VERSION":                            c.Version,
 
+		// Use athens proxy for go modules downloads
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		"GOPROXY": "http://athens-athens-proxy",
+
 		// Additional flags
 		"GO111MODULE": "on",
 		"FORCE_COLOR": "3",
