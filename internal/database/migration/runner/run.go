@@ -221,11 +221,15 @@ func (r *Runner) applyMigration(
 	)
 
 	applyMigration := func() (err error) {
-		tx, err := schemaContext.store.Transact(ctx)
-		if err != nil {
-			return err
+		tx := schemaContext.store
+
+		if !definition.IsCreateIndexConcurrently {
+			tx, err = schemaContext.store.Transact(ctx)
+			if err != nil {
+				return err
+			}
+			defer func() { err = tx.Done(err) }()
 		}
-		defer func() { err = tx.Done(err) }()
 
 		direction := tx.Up
 		if !up {
