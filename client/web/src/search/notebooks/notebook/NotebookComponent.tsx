@@ -37,11 +37,12 @@ import { SearchNotebookMarkdownBlock } from '../blocks/markdown/SearchNotebookMa
 import { SearchNotebookQueryBlock } from '../blocks/query/SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
-import { Notebook } from './notebook'
-import styles from './SearchNotebook.module.scss'
-import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
+import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
+import styles from './NotebookComponent.module.scss'
 
-export interface SearchNotebookProps
+import { Notebook } from '.'
+
+export interface NotebookComponentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
@@ -84,7 +85,7 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
+export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
     extensionsController,
@@ -455,7 +456,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
                     {!isReadOnly ? (
-                        <SearchNotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
+                        <NotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
                     ) : (
                         <div className="mb-2" />
                     )}
@@ -463,7 +464,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                 </div>
             ))}
             {!isReadOnly && (
-                <SearchNotebookAddBlockButtons
+                <NotebookAddBlockButtons
                     onAddBlock={onAddBlock}
                     index={blocks.length}
                     className="mt-2"

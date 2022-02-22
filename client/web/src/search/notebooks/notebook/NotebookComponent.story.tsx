@@ -14,9 +14,9 @@ import { BlockInit } from '..'
 import { WebStory } from '../../../components/WebStory'
 import { RepositoryFields } from '../../../graphql-operations'
 
-import { SearchNotebook } from './SearchNotebook'
+import { NotebookComponent } from './NotebookComponent'
 
-const { add } = storiesOf('web/search/notebooks/notebook/SearchNotebook', module)
+const { add } = storiesOf('web/search/notebooks/notebook/NotebookComponent', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshots: false } })
 
@@ -42,7 +42,7 @@ const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
 add('default', () => (
     <WebStory>
         {props => (
-            <SearchNotebook
+            <NotebookComponent
                 {...props}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
@@ -69,7 +69,7 @@ add('default', () => (
 add('default read-only', () => (
     <WebStory>
         {props => (
-            <SearchNotebook
+            <NotebookComponent
                 {...props}
                 isReadOnly={true}
                 isMacPlatform={true}

@@ -3,17 +3,17 @@ import React, { useMemo } from 'react'
 import * as uuid from 'uuid'
 
 import { convertMarkdownToBlocks } from '../../search/notebooks/convertMarkdownToBlocks'
-import { SearchNotebook, SearchNotebookProps } from '../../search/notebooks/notebook/SearchNotebook'
+import { NotebookComponent, NotebookComponentProps } from '../../search/notebooks/notebook/NotebookComponent'
 
-import styles from './RenderedSearchNotebookMarkdown.module.scss'
+import styles from './RenderedNotebookMarkdown.module.scss'
 
 export const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 
-interface RenderedSearchNotebookMarkdownProps extends Omit<SearchNotebookProps, 'onSerializeBlocks' | 'blocks'> {
+interface RenderedNotebookMarkdownProps extends Omit<NotebookComponentProps, 'onSerializeBlocks' | 'blocks'> {
     markdown: string
 }
 
-export const RenderedSearchNotebookMarkdown: React.FunctionComponent<RenderedSearchNotebookMarkdownProps> = ({
+export const RenderedNotebookMarkdown: React.FunctionComponent<RenderedNotebookMarkdownProps> = ({
     markdown,
     ...props
 }) => {
@@ -24,7 +24,7 @@ export const RenderedSearchNotebookMarkdown: React.FunctionComponent<RenderedSea
     return (
         <div className={styles.renderedSearchNotebookMarkdownWrapper}>
             <div className={styles.renderedSearchNotebookMarkdown}>
-                <SearchNotebook isReadOnly={true} blocks={blocks} {...props} onSerializeBlocks={noop} />
+                <NotebookComponent isReadOnly={true} blocks={blocks} {...props} onSerializeBlocks={noop} />
             </div>
         </div>
     )

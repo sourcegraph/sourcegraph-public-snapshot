@@ -11,7 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Block, BlockInit } from '..'
 import { SearchStreamingProps } from '../..'
 import { fetchRepository, resolveRevision } from '../../../repo/backend'
-import { SearchNotebook } from '../notebook/SearchNotebook'
+import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
@@ -62,7 +62,7 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
     )
 
     return (
-        <SearchNotebook
+        <NotebookComponent
             {...props}
             isReadOnly={!viewerCanManage}
             blocks={initializerBlocks}

@@ -5,16 +5,16 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
 
-import styles from './SearchNotebookAddBlockButtons.module.scss'
+import styles from './NotebookAddBlockButtons.module.scss'
 
-interface SearchNotebookAddBlockButtonsProps {
+interface NotebookAddBlockButtonsProps {
     onAddBlock: (blockIndex: number, blockInput: BlockInput) => void
     index: number
     alwaysVisible?: boolean
     className?: string
 }
 
-export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebookAddBlockButtonsProps> = ({
+export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
     alwaysVisible,
     index,
     className,
