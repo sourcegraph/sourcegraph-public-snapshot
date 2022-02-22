@@ -336,6 +336,15 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
+					// Note: downstream logic relies on
+					// args.Mode for repoHasFile, so we set
+					// it here. It is slated for removal.
+					if repoUniverseSearch {
+						args.Mode = search.ZoektGlobalSearch
+					}
+					if skipRepoSubsetSearch {
+						args.Mode = search.SkipUnindexed
+					}
 					addJob(true, &run.RepoSearch{
 						Args: &args,
 					})
@@ -481,14 +490,8 @@ func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCo
 	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
-	if isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty {
-		args.Mode = search.ZoektGlobalSearch
-	}
-	if isEmpty {
-		args.Mode = search.SkipUnindexed
-	}
 
-	repoUniverseSearch = args.Mode == search.ZoektGlobalSearch
+	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
 	// skipRepoSubsetSearch is a value that controls whether to
 	// run unindexed search in a specific scenario of queries that
 	// contain no repo-affecting filters (global mode). When on
@@ -496,12 +499,12 @@ func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCo
 	// repos to search. This control flow implies len(searcherRepos)
 	// is always 0, meaning that we should not create jobs to run
 	// unindexed searcher.
-	skipRepoSubsetSearch = args.Mode == search.SkipUnindexed || (repoUniverseSearch && onSourcegraphDotCom)
+	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
 	// onlyRunSearcher is a value that controls whether to run unindexed
 	// search if a query triggers repoUniverseSearch. We want to run
 	// searcher on unindexed repos when we run a repoUniverseSearch, but
 	// only on instances where we are NOT on sourcegraph.com.
-	onlyRunSearcher = args.Mode == search.SearcherOnly || (repoUniverseSearch && !onSourcegraphDotCom)
+	onlyRunSearcher = repoUniverseSearch && !onSourcegraphDotCom
 
 	return repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher
 }
