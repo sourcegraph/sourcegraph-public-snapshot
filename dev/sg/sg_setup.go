@@ -76,7 +76,7 @@ func setupExec(ctx context.Context, args []string) error {
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
-	employeeFailed := []int{}
+	teammateFailed := []int{}
 	for i := range categories {
 		failed = append(failed, i)
 		all = append(all, i)
@@ -108,18 +108,18 @@ func setupExec(ctx context.Context, args []string) error {
 				writeSuccessLinef("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
-				nonEmployeeState := category.CombinedStateNonEmployees()
-				if nonEmployeeState {
+				nonTeammateState := category.CombinedStateNonTeammates()
+				if nonTeammateState {
 					writeWarningLinef("%d. %s", idx, category.name)
-					employeeFailed = append(skipped, idx)
+					teammateFailed = append(skipped, idx)
 				} else {
 					writeFailureLinef("%d. %s", idx, category.name)
 				}
 			}
 		}
 
-		if len(failed) == 0 && len(employeeFailed) == 0 {
-			if len(skipped) == 0 && len(employeeFailed) == 0 {
+		if len(failed) == 0 && len(teammateFailed) == 0 {
+			if len(skipped) == 0 && len(teammateFailed) == 0 {
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 			}
@@ -135,8 +135,8 @@ func setupExec(ctx context.Context, args []string) error {
 
 		stdout.Out.Write("")
 
-		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
-			writeWarningLinef("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
+		if len(teammateFailed) != 0 && len(failed) == len(teammateFailed) {
+			writeWarningLinef("Some checks that are only relevant for Sourcegraph teammates failed.\nIf you're not a Sourcegraph teammate you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph teammate: which one do you want to fix?")
 		} else {
 			writeWarningLinef("Some checks failed. Which one do you want to fix?")
 		}
@@ -448,7 +448,7 @@ func (cat *dependencyCategory) CombinedState() bool {
 	return true
 }
 
-func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
+func (cat *dependencyCategory) CombinedStateNonTeammates() bool {
 	for _, dep := range cat.dependencies {
 		if !dep.IsMet() && !dep.onlyTeammates {
 			return false

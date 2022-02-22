@@ -71,7 +71,7 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh
 				check:                checkDevPrivateInParentOrInCurrentDirectory,
 				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
 				instructionsComment: `` +
-					`In order to run the local development environment as a Sourcegraph employee,
+					`In order to run the local development environment as a Sourcegraph teammate,
 you'll need to clone another repository: github.com/sourcegraph/dev-private.
 
 It contains convenient preconfigured settings and code host connections.
@@ -83,7 +83,7 @@ so they sit alongside each other, like this:
    |-- dev-private
    +-- sourcegraph
 
-NOTE: You can ignore this if you're not a Sourcegraph employee.
+NOTE: You can ignore this if you're not a Sourcegraph teammate.
 `,
 				onlyTeammates: true,
 			},
