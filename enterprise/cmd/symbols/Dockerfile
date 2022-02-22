@@ -28,8 +28,8 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-ENV CACHE_DIR=/mnt/cache/symbols
+ENV CACHE_DIR=/mnt/cache/enterprise-symbols
 RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]
-COPY symbols /usr/local/bin/
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/enterprise-symbols"]
+COPY enterprise-symbols /usr/local/bin/

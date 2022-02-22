@@ -45,4 +45,4 @@ cat "$OUTPUT/enterprise-$(basename $pkg)" | docker run \
   --rm \
   -i \
   sourcegraph/alpine@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 \
-  sh -c "cat > /symbols && chmod a+x /symbols && env SANITY_CHECK=true /symbols"
+  sh -c "cat > /enterprise-symbols && chmod a+x /enterprise-symbols && env SANITY_CHECK=true /enterprise-symbols"
