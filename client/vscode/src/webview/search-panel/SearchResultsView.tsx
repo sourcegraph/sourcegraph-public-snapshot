@@ -7,7 +7,6 @@ import {
     SearchPatternType,
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
-    fetchSearchContexts,
     QueryState,
 } from '@sourcegraph/search'
 import { SearchBox, SearchBoxEditor, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
@@ -23,6 +22,7 @@ import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
+import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { ModalVideo } from './alias/ModalVideo'
 import { setFocusSearchBox } from './api'
 import { SearchBetaIcon } from './components/icons'
