@@ -179,7 +179,7 @@ func parallelRecentCommitters(ctx context.Context, repos []string, recentCommitt
 				for _, author := range commit.Authors.Nodes {
 					parsedTime, _ := time.Parse(time.RFC3339, author.Date)
 					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
-						likelySourcegraphUsername: author.Username,
+						likelySourcegraphUsername: author.User.Login,
 						email:                     author.Email,
 						name:                      author.Name,
 						avatarURL:                 author.AvatarURL,
