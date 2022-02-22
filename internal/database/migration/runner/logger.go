@@ -11,6 +11,10 @@ import (
 // replaced with a no-op logger in unrelated tests that need to run migrations.
 var logger = log15.Root()
 
+func EnableLogging() {
+	logger = log15.Root()
+}
+
 func DisableLogging() {
 	logger = log15.New()
 	logger.SetHandler(log15.DiscardHandler())
