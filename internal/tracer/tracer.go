@@ -211,7 +211,7 @@ func newTracer(opts *options) (opentracing.Tracer, io.Closer, error) {
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-		// enough to connect Sourcegraph to  without any env vars.
+		// enough to connect Sourcegraph to Jaeger without any env vars.
 		cfg.Sampler.Type = jaeger.SamplerTypeConst
 		cfg.Sampler.Param = 1
 	}
