@@ -11,9 +11,9 @@
 ### Changes
 
 - Add Changelog for version tracking purpose [issue/28300](https://github.com/sourcegraph/sourcegraph/issues/28300)
-- Add web support for VS Code Web [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
-- Use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
-- Add configuration settings for custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
+- Add VS Code Web support for instances on 3.36.0+ [issues/28403](https://github.com/sourcegraph/sourcegraph/issues/28403)
+- Update to use API endpoint for stream search [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
+- Add new configuration setting `sourcegraph.requestHeaders` for adding custom headers [issues/30916](https://github.com/sourcegraph/sourcegraph/issues/30916)
 
 ## 2.0.8
 
