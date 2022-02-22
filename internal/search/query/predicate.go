@@ -1,6 +1,8 @@
 package query
 
 import (
+	"regexp/syntax"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -267,49 +269,53 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 // RepoDependenciesPredicate represents the `repo:dependencies(of: regex@rev)` predicate,
 // which filters to repos that are dependencies of the repos matching the given of regex.
 type RepoDependenciesPredicate struct {
-	Repo string
+	Of string
 }
 
 func (f *RepoDependenciesPredicate) ParseParams(params string) error {
-	nodes, err := Parse(params, SearchTypeRegex)
-	if err != nil {
-		return err
-	}
-
-	for _, node := range nodes {
-		if err := f.parseNode(node); err != nil {
-			return err
+	for _, param := range strings.Fields(params) {
+		kv := strings.SplitN(param, ":", 2)
+		if len(kv) != 2 {
+			return errors.Errorf("missing value on repo:dependencies predicate parameter %q", param)
 		}
-	}
 
-	if f.Repo == "" {
-		return errors.New("repo must be set")
+		v, err := strconv.Unquote(strings.TrimSpace(kv[1]))
+		if err != nil {
+			return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+		}
+
+		if v == "" {
+			return errors.Errorf("empty repo:dependencies predicate parameter %q: %v", param, err)
+		}
+
+		switch k := strings.ToLower(kv[0]); k {
+		case "of":
+			if f.Of != "" {
+				return errors.Errorf(`repo:dependencies predicate parameter "of" already set to %q`, f.Of)
+			}
+
+			if n := strings.LastIndex(v, "@"); n > 0 {
+				v = v[:n]
+			}
+
+			_, err := syntax.Parse(v, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+			if err != nil {
+				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+			}
+
+			f.Of = v
+		default:
+			return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", param, err)
+		}
 	}
 
 	return nil
 }
 
-func (f *RepoDependenciesPredicate) parseNode(n Node) error {
-	switch v := n.(type) {
-	case Pattern:
-		f.Repo = v.Value
-		return nil
-	}
-
-	return errors.Errorf("unsupported node type %T", n)
-}
-
 func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
 func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
 func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldDependencies,
-		Value: f.Repo,
-	})
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return ToPlan(Dnf(nodes))
+	return nil, nil
 }
 
 /* repo:contains.content(pattern) */

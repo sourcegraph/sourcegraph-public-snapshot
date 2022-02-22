@@ -70,7 +70,6 @@ export const sanitizeQueryForTelemetry = (query: string): string => {
     const redactedValue = '[REDACTED]'
     const filterToRedact = [
         FilterType.repo,
-        FilterType.dependencies,
         FilterType.file,
         FilterType.rev,
         FilterType.repohasfile,

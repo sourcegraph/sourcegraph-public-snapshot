@@ -326,7 +326,6 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					query.FieldRepoHasCommitAfter: {},
 					query.FieldPatternType:        {},
 					query.FieldSelect:             {},
-					query.FieldDependencies:       {},
 				}
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
@@ -482,7 +481,7 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 			case query.FieldRepo:
 				// We allow -repo: in global search.
 				return n.Negated
-			case query.FieldRepoHasFile, query.FieldDependencies:
+			case query.FieldRepoHasFile:
 				return false
 			default:
 				return true

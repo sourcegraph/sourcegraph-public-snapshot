@@ -19,7 +19,6 @@ const (
 	FieldVisibility         = "visibility"
 	FieldRev                = "rev"
 	FieldContext            = "context"
-	FieldDependencies       = "dependencies"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -71,8 +70,6 @@ var allFields = map[string]struct{}{
 	FieldRev:                empty,
 	"revision":              empty,
 	FieldSelect:             empty,
-	FieldDependencies:       empty,
-	"deps":                  empty,
 }
 
 var aliases = map[string]string{
@@ -85,7 +82,6 @@ var aliases = map[string]string{
 	"m":        FieldMessage,
 	"msg":      FieldMessage,
 	"revision": FieldRev,
-	"deps":     FieldDependencies,
 }
 
 // resolveFieldAlias resolves an aliased field like `r:` to its canonical name
