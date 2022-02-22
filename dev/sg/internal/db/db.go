@@ -24,11 +24,14 @@ type Database struct {
 	// Name of database, used to convert from arguments to Database
 	Name string
 
-	// Table in database for storing information about migrations.
+	// Table in database for storing information about migrations
 	MigrationsTable string
 
 	// Additional data tables for database
 	DataTables []string
+
+	// Additional single-row aggregate ocunt tables for database
+	CountTables []string
 
 	// Used for retrieving the directory where migrations live
 	FS func() (fs.FS, error)
@@ -45,14 +48,19 @@ var (
 	codeIntelDatabase = Database{
 		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
-		DataTables:      nil,
-		FS:              getFSForPath("codeintel"),
+		CountTables: []string{
+			"lsif_data_apidocs_num_dumps",
+			"lsif_data_apidocs_num_dumps_indexed",
+			"lsif_data_apidocs_num_pages",
+			"lsif_data_apidocs_num_search_results_private",
+			"lsif_data_apidocs_num_search_results_public",
+		},
+		FS: getFSForPath("codeintel"),
 	}
 
 	codeInsightsDatabase = Database{
 		Name:            "codeinsights",
 		MigrationsTable: "codeinsights_schema_migrations",
-		DataTables:      nil,
 		FS:              getFSForPath("codeinsights"),
 	}
 
