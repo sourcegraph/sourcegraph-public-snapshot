@@ -8,8 +8,8 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CreateNotebookVariables } from '../../../graphql-operations'
-import { convertMarkdownToBlocks } from '../convertMarkdownToBlocks'
 import { blockToGQLInput } from '../serialize'
+import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
 
 const LOADING = 'loading' as const
 

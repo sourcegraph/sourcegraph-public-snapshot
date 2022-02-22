@@ -1,10 +1,9 @@
 import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
-import { parseBrowserRepoURL } from '../../util/url'
-
-import { Block, BlockInit, BlockInput, FileBlockInput } from '.'
+import { Block, BlockInit, BlockInput, FileBlockInput } from '..'
+import { CreateNotebookBlockInput, NotebookBlockType } from '../../../graphql-operations'
+import { parseBrowserRepoURL } from '../../../util/url'
 
 export function serializeBlocksToURL(blocks: BlockInput[], sourcegraphURL: string): string {
     return blocks

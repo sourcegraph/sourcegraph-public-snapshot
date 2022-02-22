@@ -1,6 +1,6 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
 
-import { parseLineRange, serializeBlockInput, serializeBlocksToURL, serializeLineRange } from './serialize'
+import { parseLineRange, serializeBlockInput, serializeBlocksToURL, serializeLineRange } from '.'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 

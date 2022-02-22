@@ -1,10 +1,9 @@
 import { markdownLexer } from '@sourcegraph/common'
 
-import { parseBrowserRepoURL } from '../../util/url'
+import { BlockInput } from '..'
+import { parseBrowserRepoURL } from '../../../util/url'
 
-import { deserializeBlockInput } from './serialize'
-
-import { BlockInput } from '.'
+import { deserializeBlockInput } from '.'
 
 function isSourcegraphFileBlobURL(url: string): boolean {
     return !!parseBrowserRepoURL(url).filePath
