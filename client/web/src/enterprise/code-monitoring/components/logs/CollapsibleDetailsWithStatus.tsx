@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Badge, Button } from '@sourcegraph/wildcard'
 
@@ -11,7 +11,7 @@ import styles from './CollapsibleDetailsWithStatus.module.scss'
 
 export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
     title: string
-    status: EventStatus
+    status: EventStatus | 'skipped'
     message: string
     startOpen?: boolean
 }> = ({ title, status, message, startOpen = false }) => {
@@ -19,8 +19,31 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
 
-    const statusBadge = status === EventStatus.ERROR ? 'danger' : status === EventStatus.PENDING ? 'warning' : 'primary'
-    const statusText = status === EventStatus.ERROR ? 'Error' : status === EventStatus.PENDING ? 'Pending' : 'Success'
+    const statusBadge = useMemo(() => {
+        switch (status) {
+            case EventStatus.ERROR:
+                return 'danger'
+            case EventStatus.PENDING:
+                return 'warning'
+            case EventStatus.SUCCESS:
+                return 'primary'
+            case 'skipped':
+                return 'warning'
+        }
+    }, [status])
+
+    const statusText = useMemo(() => {
+        switch (status) {
+            case EventStatus.ERROR:
+                return 'Error'
+            case EventStatus.PENDING:
+                return 'Pending'
+            case EventStatus.SUCCESS:
+                return 'Success'
+            case 'skipped':
+                return 'Skipped'
+        }
+    }, [status])
 
     return (
         <div className={styles.wrapper}>

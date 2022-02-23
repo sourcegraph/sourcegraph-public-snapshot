@@ -70,17 +70,28 @@ export const TriggerEvent: React.FunctionComponent<{
                         startOpen={startOpen}
                     />
 
-                    {triggerEvent.actions.nodes.map(action =>
-                        action.events.nodes.map(actionEvent => (
-                            <CollapsibleDetailsWithStatus
-                                key={actionEvent.id}
-                                status={actionEvent.status}
-                                message={getActionEventMessage(actionEvent)}
-                                title={getActionEventTitle(action)}
-                                startOpen={startOpen}
-                            />
-                        ))
-                    )}
+                    {triggerEvent.actions.nodes.map(action => (
+                        <>
+                            {action.events.nodes.map(actionEvent => (
+                                <CollapsibleDetailsWithStatus
+                                    key={actionEvent.id}
+                                    status={actionEvent.status}
+                                    message={getActionEventMessage(actionEvent)}
+                                    title={getActionEventTitle(action)}
+                                    startOpen={startOpen}
+                                />
+                            ))}
+
+                            {action.events.nodes.length === 0 && (
+                                <CollapsibleDetailsWithStatus
+                                    status="skipped"
+                                    message="This action was not run because it was disabled or there were no new results."
+                                    title={getActionEventTitle(action)}
+                                    startOpen={startOpen}
+                                />
+                            )}
+                        </>
+                    ))}
                 </>
             )}
         </>

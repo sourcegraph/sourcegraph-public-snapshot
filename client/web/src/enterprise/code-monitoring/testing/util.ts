@@ -467,13 +467,6 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
                                             {
-                                                __typename: 'MonitorEmail',
-                                                events: {
-                                                    __typename: 'MonitorActionEventConnection',
-                                                    nodes: [],
-                                                },
-                                            },
-                                            {
                                                 __typename: 'MonitorSlackWebhook',
                                                 events: {
                                                     __typename: 'MonitorActionEventConnection',
@@ -536,6 +529,13 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                             timestamp: '2022-02-13T12:29:21Z',
                                                         },
                                                     ],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
                                                 },
                                             },
                                         ],

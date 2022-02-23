@@ -43,22 +43,33 @@ export const MonitorLogNode: React.FunctionComponent<{
     return (
         <>
             <span className={styles.separator} />
-            <Button onClick={toggleExpanded} className="btn-icon mr-2">
-                {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+            <Button onClick={toggleExpanded} className="btn-icon text-left px-1" aria-label="Expand code monitor">
+                {expanded ? <ChevronDownIcon className="mr-2" /> : <ChevronRightIcon className="mr-2" />}
+                {hasError ? (
+                    <AlertCircleIcon
+                        className={classNames(styles.errorIcon, 'icon-inline mr-2')}
+                        aria-label="A run of this code monitor has an error"
+                    />
+                ) : (
+                    <span className={classNames(styles.errorIconSpacer, 'mr-2')} />
+                )}
+                {monitor.description}
             </Button>
-            {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline')} /> : <span />}
-            <span>{monitor.description}</span>
-            <span className="text-nowrap">{lastRun ? <Timestamp date={lastRun} now={now} /> : <>Never</>}</span>
+            <span className="text-nowrap">
+                {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
+            </span>
 
             {expanded && (
                 <div className={styles.expandedRow}>
                     <Link to={`/code-monitoring/${monitor.id}`} className="d-block mb-3">
-                        Monitor details
+                        View code monitor details
                     </Link>
 
                     {monitor.trigger.events.nodes.map(triggerEvent => (
                         <TriggerEvent key={triggerEvent.id} triggerEvent={triggerEvent} startOpen={startOpen} />
                     ))}
+
+                    {monitor.trigger.events.nodes.length === 0 && <div>This code monitor has not been run yet.</div>}
                 </div>
             )}
         </>
