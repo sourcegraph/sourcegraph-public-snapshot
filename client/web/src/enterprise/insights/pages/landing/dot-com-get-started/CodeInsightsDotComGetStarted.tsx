@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/media-has-caption */
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
@@ -173,18 +174,14 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
 
                     <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
 
-                    <Card as={CardBody} className={styles.videoSection}>
-                        <iframe
-                            title="Code Insights demo"
-                            className="percy-hide chromatic-ignore"
-                            width="100%"
-                            height="600"
-                            src="https://www.youtube-nocookie.com/embed/eOmiyXIWTCw"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen={true}
-                        />
-                    </Card>
+                    <div className={styles.videoSection}>
+                        <video className="w-100" playsInline={true} controls={true}>
+                            <source
+                                src="https://storage.googleapis.com/sourcegraph-assets/code_insights/code-insights-demo-orig.mp4"
+                                type="video/mp4"
+                            />
+                        </video>
+                    </div>
 
                     <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
                 </main>

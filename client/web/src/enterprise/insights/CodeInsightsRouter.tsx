@@ -32,7 +32,8 @@ export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>,
 /**
  * Turn on/off the cloud landing page layout. Make sure it's off until GA release will happen.
  */
-const CLOUD_LANDING_PAGE = false
+const GA_DATE = 1645714800000 // Feb 24, 2022 9:00:00 AM PST
+const CLOUD_LANDING_PAGE = Date.now() > GA_DATE
 
 /**
  * Main Insight routing component. Main entry point to code insights UI.
