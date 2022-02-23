@@ -2167,7 +2167,7 @@ Contains security-relevant events with a long time horizon for storage.
 ----------------+--------------------------+-----------+----------+--------------------------------------
  id             | integer                  |           | not null | nextval('settings_id_seq'::regclass)
  org_id         | integer                  |           |          | 
- contents       | text                     |           |          | 
+ contents       | text                     |           | not null | '{}'::text
  created_at     | timestamp with time zone |           | not null | now()
  user_id        | integer                  |           |          | 
  author_user_id | integer                  |           |          | 
@@ -2176,6 +2176,8 @@ Indexes:
     "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
+Check constraints:
+    "settings_no_empty_contents" CHECK (contents <> ''::text)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT

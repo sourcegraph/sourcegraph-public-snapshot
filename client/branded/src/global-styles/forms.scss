@@ -281,18 +281,13 @@ textarea.form-control.is-valid {
 .field-message {
     @extend .valid-feedback;
     display: block;
-    color: var(--text-muted);
-    width: 100%;
-    margin-top: 0.25rem;
-    font-size: 0.75rem;
 }
 
-.is-valid ~ .valid-feedback {
-    display: block;
-}
-
+.was-validated :valid ~ .valid-feedback,
+.was-validated :invalid ~ .invalid-feedback,
+.is-valid ~ .valid-feedback,
 .is-invalid ~ .invalid-feedback {
-    display: block;
+  display: block;
 }
 
 // Checkboxes and radios

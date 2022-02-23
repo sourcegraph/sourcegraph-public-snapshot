@@ -15,7 +15,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -555,67 +554,6 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 	}
 }
 
-// expandPredicates takes a query plan, and replaces any predicates with their expansion. The returned plan
-// is guaranteed to be predicate-free.
-func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Plan) (_ query.Plan, err error) {
-	tr, ctx := trace.New(ctx, "expandPredicates", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	var (
-		mu      sync.Mutex
-		newPlan = make(query.Plan, 0, len(oldPlan))
-	)
-	g, ctx := errgroup.WithContext(ctx)
-
-	for _, q := range oldPlan {
-		q := q
-		g.Go(func() error {
-			predicatePlan, err := predicate.Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				children := make([]job.Job, 0, len(plan))
-				for _, basicQuery := range plan {
-					child, err := job.ToEvaluateJob(r.JobArgs(), basicQuery)
-					if err != nil {
-						return nil, err
-					}
-					children = append(children, child)
-				}
-
-				agg := streaming.NewAggregatingStream()
-				_, err = job.NewOrJob(children...).Run(ctx, r.db, agg)
-				if err != nil {
-					return nil, err
-				}
-				return agg.Results, nil
-			})
-			if errors.Is(err, predicate.ErrNoResults) {
-				// The predicate has no results, so neither will this basic query
-				return nil
-			}
-			if err != nil {
-				// Fail if predicate processing fails.
-				return err
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if predicatePlan != nil {
-				// If the predicate generated a new plan, use that
-				newPlan = append(newPlan, predicatePlan...)
-			} else {
-				// Otherwise, just use the original basic query
-				newPlan = append(newPlan, q)
-			}
-			return nil
-		})
-	}
-
-	return newPlan, g.Wait()
-}
-
 func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
@@ -623,7 +561,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		tr.Finish()
 	}()
 
-	plan, err = r.expandPredicates(ctx, plan)
+	plan, err = predicate.Expand(ctx, r.db, r.JobArgs(), plan)
 	if err != nil {
 		return nil, err
 	}

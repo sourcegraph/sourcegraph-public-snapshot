@@ -82,6 +82,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	type LazyDebugserverEndpoint struct {
 		repoUpdaterStateEndpoint   http.HandlerFunc
 		listAuthzProvidersEndpoint http.HandlerFunc
+		gitserverReposStatus       http.HandlerFunc
 	}
 	debugserverEndpoints := LazyDebugserverEndpoint{}
 
@@ -106,6 +107,14 @@ func Main(enterpriseInit EnterpriseInit) {
 				<-ready
 				// listAuthzProvidersEndpoint is guaranteed to be assigned now
 				debugserverEndpoints.listAuthzProvidersEndpoint(w, r)
+			}),
+		},
+		debugserver.Endpoint{
+			Name: "Gitserver Repo Status",
+			Path: "/gitserver-repo-status",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-ready
+				debugserverEndpoints.gitserverReposStatus(w, r)
 			}),
 		},
 	).Start()
@@ -238,7 +247,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	globals.WatchExternalURL(nil)
 
-	debugserverEndpoints.repoUpdaterStateEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// TODO: Break this out of Main
+	debugserverEndpoints.repoUpdaterStateEndpoint = func(w http.ResponseWriter, r *http.Request) {
 		dumps := []interface{}{
 			scheduler.DebugDump(r.Context(), db),
 		}
@@ -290,9 +300,9 @@ func Main(enterpriseInit EnterpriseInit) {
 				return
 			}
 		}
-	})
+	}
 
-	debugserverEndpoints.listAuthzProvidersEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	debugserverEndpoints.listAuthzProvidersEndpoint = func(w http.ResponseWriter, r *http.Request) {
 		type providerInfo struct {
 			ServiceType        string `json:"service_type"`
 			ServiceID          string `json:"service_id"`
@@ -320,7 +330,29 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
-	})
+	}
+
+	debugserverEndpoints.gitserverReposStatus = func(w http.ResponseWriter, r *http.Request) {
+		repo := r.FormValue("repo")
+		if repo == "" {
+			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
+			return
+		}
+
+		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	}
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
 	// the debugserver constructed at the top of this function. This ensures we don't
