@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+import { useApolloClient } from '@apollo/client'
+import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
@@ -6,7 +9,9 @@ import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/s
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-api/code-insights-gql-backend'
+import { GET_INSIGHTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsights'
+import { GET_INSIGHTS_SUBJECTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsightSubjects'
 import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
@@ -112,13 +117,43 @@ const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
     },
 }
 
-const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE, {} as any)
 add('AddInsightModal', () => {
+    const apolloClient = useApolloClient()
     const [open, setOpen] = useState<boolean>(true)
 
+    const codeInsightsBackend = new CodeInsightsGqlBackend(apolloClient)
+    const mocks: MockedResponse<Record<string, any>>[] = [
+        {
+            request: {
+                query: GET_INSIGHTS_GQL,
+                variables: {},
+            },
+            result: {
+                data: {
+                    insightViews: {
+                        nodes: [],
+                    },
+                },
+            },
+        },
+        {
+            request: {
+                query: GET_INSIGHTS_SUBJECTS_GQL,
+                variables: {},
+            },
+            result: {
+                data: {},
+            },
+        },
+    ]
+
+    // apolloClient.clearStore()
+
     return (
-        <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-            {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
-        </CodeInsightsBackendContext.Provider>
+        <MockedProvider mocks={mocks}>
+            <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+                {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
+            </CodeInsightsBackendContext.Provider>
+        </MockedProvider>
     )
 })
