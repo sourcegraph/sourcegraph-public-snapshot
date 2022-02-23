@@ -119,15 +119,11 @@ func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseCodeIntelSup
 }
 
 func (r *preciseCodeIntelSupportResolver) SupportLevel() string {
-	var hasNative bool
-	for _, indexer := range r.indexers {
-		if strings.HasPrefix(indexer.URL(), "https://github.com/sourcegraph") {
-			hasNative = true
-			break
-		}
-	}
+	// if the first indexer in a list is from us, consider native support
+	nativeRecommendation := len(r.indexers) > 0 &&
+		strings.HasPrefix(r.indexers[0].URL(), "https://github.com/sourcegraph")
 
-	if hasNative {
+	if nativeRecommendation {
 		return string(native)
 	} else if len(r.indexers) > 0 {
 		return string(thirdParty)
