@@ -4,8 +4,8 @@ import '../../shared/polyfills'
 import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { render } from 'react-dom'
-import { from, noop, Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
+import { from, noop, Observable, of } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
@@ -144,6 +144,25 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
+const fetchUserSettingsURL = (sourcegraphURL: string): Observable<string> => {
+    const requestGraphQL = createRequestGraphQL(sourcegraphURL)
+
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query UserSettingsURL {
+                currentUser {
+                    settingsURL
+                }
+            }
+        `,
+        variables: {},
+    }).pipe(
+        map(({ data }) => data?.currentUser?.settingsURL),
+        filter(Boolean),
+        map(url => new URL(`${url as string}/repositories/manage`, sourcegraphURL).href)
+    )
+}
+
 /**
  * Returns unique URLs
  */
@@ -160,40 +179,21 @@ const Options: React.FunctionComponent = () => {
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
-    const [manageRepositoriesURL, setManageRepositoriesURL] = useState<string>()
+    const manageRepositoriesURL = useObservable(
+        useMemo(
+            () =>
+                currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
+                    ? fetchUserSettingsURL(sourcegraphUrl!)
+                    : of(undefined),
+            [currentTabStatus, sourcegraphUrl]
+        )
+    )
 
     useEffect(() => {
         fetchCurrentTabStatus().then(tabStatus => {
             setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
         }, noop)
     }, [])
-
-    useEffect(() => {
-        if (currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            ;(async () => {
-                try {
-                    const requestGraphQL = createRequestGraphQL(sourcegraphUrl!)
-                    const url = await requestGraphQL<GQL.IQuery>({
-                        request: gql`
-                            query UserSettingsURL {
-                                currentUser {
-                                    settingsURL
-                                }
-                            }
-                        `,
-                        variables: {},
-                    })
-                        .pipe(map(({ data }) => data?.currentUser?.settingsURL || undefined))
-                        .toPromise()
-
-                    setManageRepositoriesURL(url && new URL(`${url}/repositories/manage`, sourcegraphUrl).href)
-                } catch {
-                    setManageRepositoriesURL(undefined)
-                }
-            })()
-        }
-    }, [currentTabStatus, sourcegraphUrl])
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
