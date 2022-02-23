@@ -6,7 +6,7 @@ import { Observable } from 'rxjs'
 
 import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonGroup, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, useObservable, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
@@ -128,28 +128,46 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     )
 
     const actionButtons = (
-        <ActionButtonGroup>
-            <ButtonGroup>
-                <Button
-                    onClick={() => setShowAllSearches(false)}
-                    className="test-saved-search-panel-my-searches"
-                    outline={showAllSearches}
-                    variant="secondary"
-                    size="sm"
+        <>
+            <ActionButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
+                <ButtonGroup>
+                    <Button
+                        onClick={() => setShowAllSearches(false)}
+                        className="test-saved-search-panel-my-searches"
+                        outline={showAllSearches}
+                        variant="secondary"
+                        size="sm"
+                    >
+                        My searches
+                    </Button>
+                    <Button
+                        onClick={() => setShowAllSearches(true)}
+                        className="test-saved-search-panel-all-searches"
+                        outline={!showAllSearches}
+                        variant="secondary"
+                        size="sm"
+                    >
+                        All searches
+                    </Button>
+                </ButtonGroup>
+            </ActionButtonGroup>
+            <Menu>
+                <MenuButton
+                    variant="icon"
+                    outline={true}
+                    className="d-block d-sm-none d-lg-block d-xl-none p-0"
+                    size="lg"
+                    aria-label="Filter saved searches"
                 >
-                    My searches
-                </Button>
-                <Button
-                    onClick={() => setShowAllSearches(true)}
-                    className="test-saved-search-panel-all-searches"
-                    outline={!showAllSearches}
-                    variant="secondary"
-                    size="sm"
-                >
-                    All searches
-                </Button>
-            </ButtonGroup>
-        </ActionButtonGroup>
+                    ...
+                </MenuButton>
+
+                <MenuList>
+                    <MenuItem onSelect={() => setShowAllSearches(false)}>My searches</MenuItem>
+                    <MenuItem onSelect={() => setShowAllSearches(true)}>All searches</MenuItem>
+                </MenuList>
+            </Menu>
+        </>
     )
     return (
         <PanelContainer
