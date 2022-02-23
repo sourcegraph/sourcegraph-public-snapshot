@@ -110,7 +110,6 @@ $spacer: 1rem;
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
@@ -125,6 +124,7 @@ $spacer: 1rem;
 @import './code';
 @import './buttons';
 @import './button-group';
+@import './input-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
