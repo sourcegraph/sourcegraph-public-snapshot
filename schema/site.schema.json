@@ -392,9 +392,7 @@
         },
         {
           "tls.external": {
-            "certificates": [
-              "-----BEGIN CERTIFICATE-----\n..."
-            ],
+            "certificates": ["-----BEGIN CERTIFICATE-----\n..."],
             "insecureSkipVerify": true
           }
         }
