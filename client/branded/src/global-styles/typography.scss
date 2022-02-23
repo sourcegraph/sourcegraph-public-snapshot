@@ -83,8 +83,8 @@ $input-font-size-sm: (11/14) + em;
 %form-control-sm,
 .custom-select-sm,
 %custom-select-sm {
-    font-size: $input-font-size-sm !important; // to overwrite the css rule of forms.scss
-    line-height: 1rem !important;
+    font-size: $input-font-size-sm;
+    line-height: 1rem;
 }
 
 // Label / Base

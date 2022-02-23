@@ -1,7 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+$input-font-size-sm: (11/14) + em;
 :root {
-    --input-font-size-sm: calc(var(--font-size-base) * 0.875);
+    --input-font-size-sm: $input-font-size-sm;
     --input-line-height: var(--line-height-base);
     --input-line-height-sm: 1.5;
     --input-border-width: 0.0625rem;
@@ -128,7 +129,7 @@ select.form-control {
     height: var(--input-height-sm);
     padding: var(--input-padding-y-sm) var(--input-padding-x-sm);
     font-size: var(--input-font-size-sm);
-    line-height: var(--input-line-height-sm);
+    line-height: 1rem;
 }
 
 .form-control-lg {
