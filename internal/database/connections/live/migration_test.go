@@ -153,7 +153,8 @@ func formatHint(err error) string {
 		"42723", "42P05", "42P06",
 		"42P07", "42712", "42710":
 
-		return ` (hint: use "IF NOT EXISTS"/"CREATE OR REPLACE" in creation statements (tables, views, functions), or drop existing objects prior to creating them (indexes, constraints, triggers))`
+		return ` (hint: use "IF NOT EXISTS"/"CREATE OR REPLACE" in creation statements (e.g., tables, indexes, views, functions), or drop existing objects prior to creating them (e.g., user-defined types, constraints, triggers))`
+
 	}
 
 	return ""
