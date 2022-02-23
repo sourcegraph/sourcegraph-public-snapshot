@@ -19,6 +19,8 @@ import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/searc
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, TextArea } from '@sourcegraph/wildcard'
 
+import { BlockInput } from '../notebooks'
+import { serializeBlocksToURL } from '../notebooks/serialize'
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import {
@@ -33,8 +35,6 @@ import {
     setEntryAnnotation,
 } from '../stores/searchStack'
 
-import { BlockInput } from './notebooks'
-import { serializeBlocksToURL } from './notebooks/serialize'
 import styles from './SearchStack.module.scss'
 
 const SEARCH_STACK_ID = 'search:search-stack'

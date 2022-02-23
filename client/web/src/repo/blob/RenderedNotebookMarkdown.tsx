@@ -2,8 +2,8 @@ import { noop } from 'lodash'
 import React, { useMemo } from 'react'
 import * as uuid from 'uuid'
 
-import { NotebookComponent, NotebookComponentProps } from '../../search/notebooks/notebook/NotebookComponent'
-import { convertMarkdownToBlocks } from '../../search/notebooks/serialize/convertMarkdownToBlocks'
+import { NotebookComponent, NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'
+import { convertMarkdownToBlocks } from '../../notebooks/serialize/convertMarkdownToBlocks'
 
 import styles from './RenderedNotebookMarkdown.module.scss'
 
