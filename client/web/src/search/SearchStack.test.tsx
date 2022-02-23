@@ -186,7 +186,7 @@ describe('Search Stack', () => {
             // item3
             // item4
             userEvent.click(item[1])
-            expect(screen.queryAllByRole('option', { selected: true }).length).toBe(1)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[1]])
 
             item[2].focus()
             // item1
@@ -213,7 +213,7 @@ describe('Search Stack', () => {
             // item3
             // item4
             userEvent.click(item[1], { ctrlKey: true })
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(2)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1]])
 
             item[3].focus()
             // item1 <-
@@ -222,7 +222,7 @@ describe('Search Stack', () => {
             // item4 <-
             userEvent.keyboard('{ctrl}{space}')
 
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(3)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[3]])
         })
 
         it('selects a range of items on shift+click', () => {
@@ -241,7 +241,7 @@ describe('Search Stack', () => {
             // item4
             userEvent.click(item[2], { shiftKey: true })
 
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(3)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[2]])
         })
 
         it('extends the range of items on shift+click', () => {
@@ -266,7 +266,7 @@ describe('Search Stack', () => {
             // item4 <- (last)
             userEvent.click(item[0], { shiftKey: true })
 
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(4)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual(item)
         })
 
         it('selects a range of items on shift+space', () => {
@@ -287,7 +287,7 @@ describe('Search Stack', () => {
             item[2].focus()
             userEvent.keyboard('{shift}{space}')
 
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(3)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[2]])
         })
 
         it('extends the range of items on shift+space', () => {
@@ -315,7 +315,7 @@ describe('Search Stack', () => {
             item[0].focus()
             userEvent.keyboard('{shift}{space}')
 
-            expect(screen.queryAllByRole('option', { selected: true })).toHaveLength(4)
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual(item)
         })
 
         it('deletes all selected entries', () => {

@@ -149,17 +149,15 @@ export function restorePreviousSession(): void {
 
 export function removeFromSearchStack(idsToDelete: SearchStackEntryID | SearchStackEntryID[]): void {
     useSearchStackState.setState(currentState => {
-        let entries: SearchStackEntry[]
-        if (Array.isArray(idsToDelete)) {
-            entries = [...currentState.entries]
-            for (const id of idsToDelete) {
-                entries.splice(
-                    entries.findIndex(entry => entry.id === id),
-                    1
-                )
-            }
-        } else {
-            entries = currentState.entries.filter(entry => entry.id !== idsToDelete)
+        if (!Array.isArray(idsToDelete)) {
+            idsToDelete = [idsToDelete]
+        }
+        const entries = [...currentState.entries]
+        for (const id of idsToDelete) {
+            entries.splice(
+                entries.findIndex(entry => entry.id === id),
+                1
+            )
         }
         persistSession(entries)
         return { entries }
