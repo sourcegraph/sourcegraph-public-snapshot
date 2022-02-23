@@ -14,37 +14,42 @@ import { resetFilteredConnectionURLQuery } from '../../components/FilteredConnec
 
 import styles from './BatchChangeTabs.module.scss'
 
-/**
- * Record of tab names and the indices for the order that they appear in the UI, which is
- * derived from props on each `BatchChangeTab` and kept in context so that the parent
- * `BatchChangeTabs` can read and write from the URL parameters
- */
-type TabNamesState = Record<string, number>
-interface TabNamesAction {
-    tabName: string
-    tabIndex: number
+interface TabDetails {
+    index: number
+    customPath?: string
 }
 
-const TabNamesStateContext = React.createContext<TabNamesState | undefined>(undefined)
-const TabNamesDispatchContext = React.createContext<React.Dispatch<TabNamesAction> | undefined>(undefined)
+/**
+ * Record of tab names and details with indices in the order that they appear in the UI,
+ * which is derived from props on each `BatchChangeTab` and kept in context so that the
+ * parent `BatchChangeTabs` can read and write from the URL location.
+ */
+type TabsState = Record<string, TabDetails>
+interface TabsActionPayload {
+    name: string
+    details: TabDetails
+}
 
-const tabsReducer = (state: TabNamesState, action: TabNamesAction): TabNamesState => ({
+const TabsStateContext = React.createContext<TabsState | undefined>(undefined)
+const TabsDispatchContext = React.createContext<React.Dispatch<TabsActionPayload> | undefined>(undefined)
+
+const tabsReducer = (state: TabsState, action: TabsActionPayload): TabsState => ({
     ...state,
-    [action.tabName]: action.tabIndex,
+    [action.name]: action.details,
 })
 
-const useTabNamesContext = (): TabNamesState => {
-    const context = React.useContext(TabNamesStateContext)
+const useTabsContext = (): TabsState => {
+    const context = React.useContext(TabsStateContext)
     if (context === undefined) {
-        throw new Error('useTabNamesContext must be used within a TabNamesProvider')
+        throw new Error('useTabsContext must be used within a TabNamesProvider')
     }
     return context
 }
 
-const useTabNamesDispatch = (): React.Dispatch<TabNamesAction> => {
-    const context = React.useContext(TabNamesDispatchContext)
+const useTabsDispatch = (): React.Dispatch<TabsActionPayload> => {
+    const context = React.useContext(TabsDispatchContext)
     if (context === undefined) {
-        throw new Error('useTabNamesDispatch must be used within a TabNamesProvider')
+        throw new Error('useTabsDispatch must be used within a TabNamesProvider')
     }
     return context
 }
@@ -52,39 +57,69 @@ const useTabNamesDispatch = (): React.Dispatch<TabNamesAction> => {
 interface BatchChangeTabsProps {
     history: H.History
     location: H.Location
+    /** The name of the tab that should be initially open */
+    initialTab?: string
 }
 
-const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
-    // We are required to track the current tab locally in order to also control it from the URL parameter
+const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = ({
+    children,
+    history,
+    location,
+    initialTab,
+}) => {
+    // We are required to track the current tab locally in order to also control it from
+    // the URL parameter.
     const [tabIndex, setTabIndex] = useState(0)
-    const tabNames = useTabNamesContext()
-    const defaultTabName = Object.keys(tabNames).find(key => tabNames[key] === 0)
+    const [customPath, setCustomPath] = useState<string | undefined>(undefined)
+    const tabs = useTabsContext()
+    const defaultTabName = Object.keys(tabs).find(tabName => tabs[tabName].index === 0)
 
-    // Determine the initial tab from the URL parameters
+    // Determine the initial tab from the URL parameters and react to changes in the URL.
     useEffect(() => {
-        const initialTabName = new URLSearchParams(location.search).get('tab') || defaultTabName
-        setTabIndex(initialTabName ? tabNames[initialTabName] || 0 : 0)
-    }, [defaultTabName, location.search, tabNames])
+        const initialTabName = new URLSearchParams(location.search).get('tab') || initialTab || defaultTabName
+        if (initialTabName) {
+            setTabIndex(tabs[initialTabName]?.index || 0)
+            setCustomPath(tabs[initialTabName]?.customPath)
+        }
+    }, [initialTab, defaultTabName, location.search, tabs])
 
     const onChange = useCallback(
         (newIndex: number): void => {
             setTabIndex(newIndex)
-            const newTabName = Object.keys(tabNames).find(key => tabNames[key] === newIndex) || defaultTabName
+            const newTabName = Object.keys(tabs).find(tabName => tabs[tabName].index === newIndex) || defaultTabName
+            if (!newTabName) {
+                return
+            }
+
+            const newTab = tabs[newTabName]
 
             const urlParameters = new URLSearchParams(location.search)
             resetFilteredConnectionURLQuery(urlParameters)
 
-            if (!newTabName || newTabName === defaultTabName) {
-                urlParameters.delete('tab')
+            // If the tab uses a custom path, we match the new URL path to it.
+            if (newTab.customPath) {
+                if (location.pathname.includes(newTab.customPath)) {
+                    return
+                }
+                // Remember our custom path, so that we can remove it later
+                setCustomPath(newTab.customPath)
+                history.replace(location.pathname + newTab.customPath)
             } else {
-                urlParameters.set('tab', newTabName)
-            }
+                if (newTabName === defaultTabName) {
+                    urlParameters.delete('tab')
+                } else {
+                    urlParameters.set('tab', newTabName)
+                }
+                // Make sure to unset any custom URL path.
+                const newLocation = customPath
+                    ? { ...location, pathname: location.pathname.replace(customPath, '') }
+                    : location
+                setCustomPath(undefined)
 
-            if (location.search !== urlParameters.toString()) {
-                history.replace({ ...location, search: urlParameters.toString() })
+                history.replace({ ...newLocation, search: urlParameters.toString() })
             }
         },
-        [defaultTabName, history, location, tabNames]
+        [defaultTabName, history, location, tabs, customPath]
     )
 
     return (
@@ -98,11 +133,11 @@ const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = (
 export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = props => {
     const [state, dispatch] = useReducer(tabsReducer, {})
     return (
-        <TabNamesStateContext.Provider value={state}>
-            <TabNamesDispatchContext.Provider value={dispatch}>
+        <TabsStateContext.Provider value={state}>
+            <TabsDispatchContext.Provider value={dispatch}>
                 <BatchChangeTabsInternal {...props} />
-            </TabNamesDispatchContext.Provider>
-        </TabNamesStateContext.Provider>
+            </TabsDispatchContext.Provider>
+        </TabsStateContext.Provider>
     )
 }
 
@@ -119,14 +154,19 @@ export const BatchChangeTabList: React.FunctionComponent = ({ children }) => (
 interface BatchChangeTabProps {
     index: number
     name: string
+    /**
+     * Optionally, if the tab should use a custom URL path, instead of the normal `tab`
+     * URL parameter. Only supports the form "/customPath".
+     */
+    customPath?: string
 }
 
-export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ children, index, name }) => {
-    const dispatch = useTabNamesDispatch()
+export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ children, index, name, customPath }) => {
+    const dispatch = useTabsDispatch()
 
     useEffect(() => {
-        dispatch({ tabName: name, tabIndex: index })
-    }, [index, name, dispatch])
+        dispatch({ name, details: { index, customPath } })
+    }, [index, name, customPath, dispatch])
 
     return <Tab>{children}</Tab>
 }

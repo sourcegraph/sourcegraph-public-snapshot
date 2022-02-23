@@ -18,6 +18,7 @@ export interface BatchChangeDetailsActionSectionProps extends SettingsCascadePro
     batchChangeID: Scalars['ID']
     batchChangeClosed: boolean
     batchChangeNamespaceURL: string
+    batchChangeURL: string
     history: H.History
 
     /** For testing only. */
@@ -28,6 +29,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     batchChangeID,
     batchChangeClosed,
     batchChangeNamespaceURL,
+    batchChangeURL,
     history,
     settingsCascade,
     deleteBatchChange = _deleteBatchChange,
@@ -65,12 +67,12 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Button to={`${location.pathname}/edit`} className="mr-2" variant="secondary" as={Link}>
+                <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
                     <PencilIcon className="icon-inline" /> Edit
                 </Button>
             )}
             <Button
-                to={`${location.pathname}/close`}
+                to={`${batchChangeURL}/close`}
                 className="test-batches-close-btn"
                 data-tooltip="View a preview of all changes that will happen when you close this batch change."
                 variant="danger"

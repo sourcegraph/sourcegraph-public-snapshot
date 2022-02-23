@@ -50,6 +50,9 @@ export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
             id
+            description {
+                name
+            }
             namespace {
                 url
             }

@@ -64,7 +64,7 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
                         </>
                     )}
                     {currentSpecID && (
-                        <Link to={`/batch-changes/executions/${node.id}`}>
+                        <Link to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}>
                             Executed by <strong>{node.creator?.username}</strong>{' '}
                             <Timestamp date={node.createdAt} now={now} />
                         </Link>
@@ -75,7 +75,11 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
                                 {node.namespace.namespaceName}
                             </Link>
                             <span className="text-muted d-inline-block mx-1">/</span>
-                            <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
+                            <Link
+                                to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}
+                            >
+                                {node.description.name || '-'}
+                            </Link>
                         </>
                     )}
                 </h3>

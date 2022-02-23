@@ -121,7 +121,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <Switch>
                 <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
                 <Route
-                    path={`${match.url}/edit`}
+                    path={`${match.url}/spec`}
                     render={() => (
                         <EditPage
                             name={batchSpec.description.name}
@@ -159,7 +159,7 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
             <li className="nav-item">
-                <RouterLink to={`${url}/edit`} role="button" activeClassName="active" className="nav-link">
+                <RouterLink to={`${url}/spec`} role="button" activeClassName="active" className="nav-link">
                     {/* TODO: Rename to edit once this IS an editor. */}
                     <span className="text-content" data-tab-content="1. Batch spec">
                         1. Batch spec
