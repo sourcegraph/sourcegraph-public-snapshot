@@ -29,8 +29,8 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -555,23 +555,7 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 }
 
 func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	plan, err = predicate.Expand(ctx, r.db, r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	planJob, err := job.FromExpandedPlan(r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	return planJob.Run(ctx, r.db, stream)
+	return execute.Execute(ctx, r.db, stream, r.JobArgs(), r.SearchInputs)
 }
 
 type searchResultsStats struct {
