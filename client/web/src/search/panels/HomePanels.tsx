@@ -49,7 +49,10 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                                         <CommunitySearchContextsPanel {...props} hideTitle={true} />
                                     </TabPanel>
                                     <TabPanel className="h-100">
-                                        <CollaboratorsPanel {...props} />
+                                        <CollaboratorsPanel
+                                            hasEmailSendingCapabilities={hasEmailSendingCapabilities}
+                                            {...props}
+                                        />
                                     </TabPanel>
                                 </TabPanels>
                             </Tabs>
@@ -57,7 +60,7 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                     ) : (
                         <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
                     )
-                ) : props.showCollaborators && hasEmailSendingCapabilities ? (
+                ) : props.showCollaborators ? (
                     <div className={classNames('col-lg-5', styles.panel)}>
                         <Tabs
                             defaultIndex={persistedTabIndex}
@@ -73,7 +76,10 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                                     <SavedSearchesPanel {...props} hideTitle={true} />
                                 </TabPanel>
                                 <TabPanel className="h-100">
-                                    <CollaboratorsPanel {...props} />
+                                    <CollaboratorsPanel
+                                        hasEmailSendingCapabilities={hasEmailSendingCapabilities}
+                                        {...props}
+                                    />
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
