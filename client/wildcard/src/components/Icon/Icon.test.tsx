@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 
 describe('Icon', () => {
     it('renders a simple icon correctly', () => {
-        const { asFragment } = render(<Icon svg={<SourcegraphIcon />} />)
+        const { asFragment } = render(<Icon as={SourcegraphIcon} />)
         expect(asFragment()).toMatchSnapshot()
     })
 })

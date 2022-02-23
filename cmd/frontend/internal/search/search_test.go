@@ -230,9 +230,7 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-h.done:
-		return &graphqlbackend.SearchResultsResolver{
-			UserSettings: &schema.Settings{},
-		}, nil
+		return &graphqlbackend.SearchResultsResolver{}, nil
 	}
 }
 

@@ -57,7 +57,7 @@ func main() {
 		return
 	}
 	if payload.PullRequest.Draft {
-		log.Printf("skipping event on draft PR")
+		log.Println("skipping event on draft PR")
 		return
 	}
 	if payload.Action == "closed" && !payload.PullRequest.Merged {
@@ -154,8 +154,8 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
 	default:
-		// No need to set a status
-		return nil
+		prState = "success"
+		stateDescription = "No action needed, nice!"
 	}
 
 	owner, repo := payload.Repository.GetOwnerAndName()

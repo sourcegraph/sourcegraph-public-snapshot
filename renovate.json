@@ -3,6 +3,7 @@
   "extends": ["github>sourcegraph/renovate-config"],
   "semanticCommits": "disabled",
   "rebaseWhen": "never",
+  "prBodyNotes": ["Test plan: CI should pass with updated dependencies."],
   "packageRules": [
     {
       "matchDepTypes": ["engines"],

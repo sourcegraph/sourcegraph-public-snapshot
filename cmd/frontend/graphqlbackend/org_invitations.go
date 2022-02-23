@@ -65,7 +65,7 @@ type inviteUserToOrganizationResult struct {
 }
 
 type orgInvitationClaims struct {
-	InvitationID int64 `json:"invite_ID"`
+	InvitationID int64 `json:"invite_id"`
 	SenderID     int32 `json:"sender_id"`
 	jwt.RegisteredClaims
 }

@@ -92,3 +92,15 @@ func FileContains(fileName, content string) func(context.Context) error {
 		return errors.Newf("file %q did not contain %q", fileName, content)
 	}
 }
+
+// This ties the check to having the library installed with apt-get on Ubuntu,
+// which against the principle of checking dependencies independently of their
+// installation method. Given they're just there for comby and sqlite, the chances
+// that someone needs to install them in a different way is fairly low, making this
+// check acceptable for the time being.
+func HasUbuntuLibrary(name string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", name))
+		return errors.Newf("dpkg: %w", err)
+	}
+}
