@@ -53,7 +53,7 @@ func main() {
 
 	// Discard unwanted events
 	switch ref := payload.PullRequest.Base.Ref; ref {
-	// This is purely an API call usage requirement, so we don't need to be so specific
+	// This is purely an API call usage optimization, so we don't need to be so specific
 	// as to require usage to provide the default branch - we can just rely on a simple
 	// allowlist of commonly used default branches.
 	case "main", "master", "release":
