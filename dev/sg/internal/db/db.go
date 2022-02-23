@@ -41,8 +41,11 @@ var (
 	frontendDatabase = Database{
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
-		DataTables:      []string{"out_of_band_migrations"},
-		FS:              getFSForPath("frontend"),
+		DataTables: []string{
+			"out_of_band_migrations",
+			"lsif_configuration_policies",
+		},
+		FS: getFSForPath("frontend"),
 	}
 
 	codeIntelDatabase = Database{

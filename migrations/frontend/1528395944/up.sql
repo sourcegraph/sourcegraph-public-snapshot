@@ -3293,8 +3293,14 @@ INSERT INTO out_of_band_migrations VALUES (7, 'code-intelligence', 'codeintel-db
 INSERT INTO out_of_band_migrations VALUES (8, 'code-intelligence', 'frontend-db.lsif_uploads', 'Backfill committed_at', 0, '2021-10-08 16:09:37.097218+00', NULL, true, false, true, 3, 28, NULL, NULL, '{}');
 INSERT INTO out_of_band_migrations VALUES (9, 'batch-changes', 'frontend-db.user-credentials', 'Encrypt batch changes user credentials', 0, '2021-10-08 16:09:37.127756+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
 INSERT INTO out_of_band_migrations VALUES (10, 'batch-changes', 'frontend-db.site-credentials', 'Encrypt batch changes site credentials', 0, '2021-10-08 16:09:37.157552+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (11, 'code-intelligence', 'lsif_uploads.num_references', 'Backfill LSIF upload reference counts', 0, '2022-02-22 23:20:31.747526+00', NULL, true, false, false, 3, 22, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (12, 'apidocs', 'codeintel-db.lsif_data_documentation_search', 'Index API docs for search', 0, '2022-02-22 23:20:36.93589+00', NULL, true, false, false, 3, 32, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (13, 'batch-changes', 'frontend-db.external_services', 'Calculate the webhook state of each external service', 0, '2022-02-22 23:20:38.653378+00', NULL, true, false, false, 3, 34, NULL, NULL, '{}');
+INSERT INTO out_of_band_migrations VALUES (11, 'code-intelligence', 'lsif_uploads.num_references', 'Backfill LSIF upload reference counts', 0, '2022-02-23 02:58:26.401303+00', NULL, true, false, false, 3, 22, NULL, NULL, '{}');
+INSERT INTO out_of_band_migrations VALUES (12, 'apidocs', 'codeintel-db.lsif_data_documentation_search', 'Index API docs for search', 0, '2022-02-23 02:58:31.007046+00', NULL, true, false, false, 3, 32, NULL, NULL, '{}');
+INSERT INTO out_of_band_migrations VALUES (13, 'batch-changes', 'frontend-db.external_services', 'Calculate the webhook state of each external service', 0, '2022-02-23 02:58:32.425336+00', NULL, true, false, false, 3, 34, NULL, NULL, '{}');
 
 SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
+
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL);
+
+SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
