@@ -128,6 +128,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         batchChangeClosed={!!batchChange.closedAt}
                         deleteBatchChange={deleteBatchChange}
                         batchChangeNamespaceURL={batchChange.namespace.url}
+                        batchChangeURL={batchChange.url}
                         history={history}
                         settingsCascade={props.settingsCascade}
                     />
