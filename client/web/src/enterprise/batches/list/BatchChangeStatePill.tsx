@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { includes } from 'lodash'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import React, { useMemo } from 'react'
 
@@ -8,6 +7,18 @@ import { Badge } from '@sourcegraph/wildcard'
 import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
 
 import styles from './BatchChangeStatePill.module.scss'
+
+// A batch spec state is actionable if it's not pending, canceling, or canceled.
+const actionableBatchSpecStates = [
+    BatchSpecState.COMPLETED,
+    BatchSpecState.FAILED,
+    BatchSpecState.PROCESSING,
+    BatchSpecState.QUEUED,
+] as const
+type ActionableBatchSpecState = typeof actionableBatchSpecStates[number]
+
+const isLatestExecutionActionable = (executionState: BatchSpecState): executionState is ActionableBatchSpecState =>
+    actionableBatchSpecStates.includes(executionState as any)
 
 export interface BatchChangeStatePillProps {
     className?: string
@@ -24,21 +35,22 @@ export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillP
     currentSpecID,
     latestSpecID,
 }) => {
-    const isCurrentLatest = useMemo(() => currentSpecID === latestSpecID, [currentSpecID, latestSpecID])
+    const isCompleteAndApplied = useMemo(
+        () => currentSpecID === latestSpecID && latestExecutionState === BatchSpecState.COMPLETED,
+        [currentSpecID, latestSpecID, latestExecutionState]
+    )
 
-    const hasExecutionVisible = useMemo(() => {
-        // If the batch change is closed, we don't show any execution state.
-        if (state === BatchChangeState.CLOSED) {
-            return false
-        }
-        // If the batch change is a draft or open, we show execution state that the user
-        // would want to take action on.
-        if (includes([BatchSpecState.FAILED, BatchSpecState.PROCESSING, BatchSpecState.QUEUED], latestExecutionState)) {
-            return true
-        }
-        // If the latest execution is complete, we show execution state if it has not yet been applied.
-        return !isCurrentLatest && latestExecutionState === BatchSpecState.COMPLETED
-    }, [latestExecutionState, state, isCurrentLatest])
+    // We only show the execution status part of the pill if:
+    // - the batch change is not closed
+    // - the latest execution state is actionable
+    // - the latest execution is not already complete and applied
+    const executionStatePill =
+        latestExecutionState &&
+        state !== BatchChangeState.CLOSED &&
+        isLatestExecutionActionable(latestExecutionState) &&
+        !isCompleteAndApplied ? (
+            <ExecutionStatePill latestExecutionState={latestExecutionState} />
+        ) : null
 
     return (
         <div
@@ -50,7 +62,7 @@ export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillP
             })}
         >
             <StatePill state={state} />
-            {hasExecutionVisible && <ExecutionStatePill latestExecutionState={latestExecutionState} />}
+            {executionStatePill}
         </div>
     )
 }
@@ -79,7 +91,7 @@ const StatePill: React.FunctionComponent<Pick<BatchChangeStatePillProps, 'state'
     }
 }
 
-const ExecutionStatePill: React.FunctionComponent<Pick<BatchChangeStatePillProps, 'latestExecutionState'>> = ({
+const ExecutionStatePill: React.FunctionComponent<{ latestExecutionState: ActionableBatchSpecState }> = ({
     latestExecutionState,
 }) => {
     switch (latestExecutionState) {
