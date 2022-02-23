@@ -30,6 +30,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         batchSpecs: {
             nodes: [
                 {
+                    __typename: 'BatchSpec',
                     id: 'test',
                     state: BatchSpecState.PROCESSING,
                     applyURL: null,
@@ -60,6 +61,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         batchSpecs: {
             nodes: [
                 {
+                    __typename: 'BatchSpec',
                     id: 'test',
                     state: BatchSpecState.FAILED,
                     applyURL: null,
@@ -90,6 +92,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         batchSpecs: {
             nodes: [
                 {
+                    __typename: 'BatchSpec',
                     id: 'test',
                     state: BatchSpecState.COMPLETED,
                     applyURL: '/fake-apply-url',
@@ -122,6 +125,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         batchSpecs: {
             nodes: [
                 {
+                    __typename: 'BatchSpec',
                     id: 'test',
                     state: BatchSpecState.COMPLETED,
                     applyURL: '/fake-apply-url',

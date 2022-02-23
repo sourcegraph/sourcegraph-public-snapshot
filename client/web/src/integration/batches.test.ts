@@ -55,6 +55,7 @@ const batchChangeListNode: ListBatchChange = {
     batchSpecs: {
         nodes: [
             {
+                __typename: 'BatchSpec',
                 id: 'test-spec',
                 state: BatchSpecState.COMPLETED,
                 applyURL: '/fake-apply-url',
