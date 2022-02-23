@@ -440,6 +440,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor))
 	}
 
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(batchSpecColumns, ", "),
