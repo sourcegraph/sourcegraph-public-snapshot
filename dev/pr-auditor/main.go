@@ -119,6 +119,14 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 	issue := generateExceptionIssue(payload, &result)
 
+	log.Printf("Ensuring label for repository %q\n", payload.Repository.FullName)
+	_, _, err := ghc.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{
+		Name: github.String(payload.Repository.FullName),
+	})
+	if err != nil {
+		log.Printf("Ignoring error on CreateLabel: %s\n", err)
+	}
+
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
 	if err != nil {
