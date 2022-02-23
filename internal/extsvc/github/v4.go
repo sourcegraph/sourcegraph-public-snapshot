@@ -604,9 +604,12 @@ type RecentCommittersResults struct {
 	Nodes []struct {
 		Authors struct {
 			Nodes []struct {
-				Date      string
-				Email     string
-				Name      string
+				Date  string
+				Email string
+				Name  string
+				User  struct {
+					Login string
+				}
 				AvatarURL string
 			}
 		}
@@ -636,6 +639,9 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 					  nodes {
 						email
 						name
+						user {
+							login
+						}
 						avatarUrl
 						date
 					  }

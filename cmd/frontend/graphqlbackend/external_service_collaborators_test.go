@@ -1,11 +1,14 @@
 package graphqlbackend
 
 import (
+	"strings"
+
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"context"
+	"math/rand"
 	"sort"
 	"sync"
 	"testing"
@@ -30,6 +33,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					User      struct{ Login string }
 					AvatarURL string
 				}
 			}
@@ -39,6 +43,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					User      struct{ Login string }
 					AvatarURL string
 				}
 			}{
@@ -46,6 +51,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
+					User      struct{ Login string }
 					AvatarURL string
 				}{
 					{Name: params.Name + "-joe"},
@@ -157,10 +163,93 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 				email: "beyang@sourcegraph.com",
 			}}),
 		},
+		{
+			recentCommitters: append(
+				collaborators("sqs+sourcegraph-bot@sourcegraph.com", "renovatebot@gmail.com", "stephen@sourcegraph.com"),
+				&invitableCollaboratorResolver{email: "campaigns@sourcegraph.com", name: "Sourcegraph Bot"},
+			),
+			authUserEmails: emails(),
+			want: autogold.Want("bots excluded", []*invitableCollaboratorResolver{{
+				email: "stephen@sourcegraph.com",
+			}}),
+		},
+		{
+			recentCommitters: collaborators("steveexists@github.com", "rando@randi.com", "kimbo@github.com", "stephenexists@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("existing users excluded", []*invitableCollaboratorResolver{
+				{
+					email: "rando@randi.com",
+				},
+				{email: "kimbo@github.com"},
+			}),
+		},
+		{
+			recentCommitters: collaborators("steve@github.com", "rando@randi.com", "kimbo@github.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("same domain first", []*invitableCollaboratorResolver{
+				{
+					email: "stephen@sourcegraph.com",
+				},
+				{email: "beyang@sourcegraph.com"},
+				{email: "sqs@sourcegraph.com"},
+				{email: "steve@github.com"},
+				{email: "kimbo@github.com"},
+				{email: "rando@randi.com"},
+			}),
+		},
+		{
+			recentCommitters: collaborators("steve@gmail.com", "rando@gmail.com", "kimbo@gmail.com", "george@gmail.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("popular personal email domains last", []*invitableCollaboratorResolver{
+				{
+					email: "sqs@sourcegraph.com",
+				},
+				{email: "stephen@sourcegraph.com"},
+				{email: "beyang@sourcegraph.com"},
+				{email: "rando@gmail.com"},
+				{email: "kimbo@gmail.com"},
+				{email: "george@gmail.com"},
+				{email: "steve@gmail.com"},
+			}),
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
-			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails)
+			userExists := func(username, email string) bool {
+				return strings.Contains(username, "exists") || strings.Contains(email, "exists")
+			}
+			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails, userExists)
+			tst.want.Equal(t, got)
+		})
+	}
+}
+
+func TestExternalServiceCollaborators_pickReposToScanForCollaborators(t *testing.T) {
+	rand.Seed(0)
+	tests := []struct {
+		possibleRepos  []string
+		maxReposToScan int
+		want           autogold.Value
+	}{
+		{
+			possibleRepos:  []string{"o", "b", "f", "d", "e", "u", "a", "h", "l", "s", "u", "b", "m"},
+			maxReposToScan: 8,
+			want:           autogold.Want("three", []string{"f", "a", "b", "u", "l", "o", "u", "s"}),
+		},
+		{
+			possibleRepos:  []string{"c"},
+			maxReposToScan: 3,
+			want:           autogold.Want("have one", []string{"c"}),
+		},
+		{
+			possibleRepos:  []string{},
+			maxReposToScan: 3,
+			want:           autogold.Want("have zero", []string{}),
+		},
+	}
+	for _, tst := range tests {
+		t.Run(tst.want.Name(), func(t *testing.T) {
+			got := pickReposToScanForCollaborators(tst.possibleRepos, tst.maxReposToScan)
 			tst.want.Equal(t, got)
 		})
 	}
