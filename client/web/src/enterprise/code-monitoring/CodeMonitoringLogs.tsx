@@ -42,36 +42,41 @@ export const CODE_MONITOR_EVENTS = gql`
     fragment CodeMonitorTriggerEvents on MonitorQuery {
         events(first: $triggerEventsFirst, after: $triggerEventsAfter) {
             nodes {
-                status
-                message
-                timestamp
-                actions {
-                    nodes {
-                        ... on MonitorWebhook {
-                            __typename
-                            events {
-                                ...MonitorActionEvents
-                            }
-                        }
-                        ... on MonitorEmail {
-                            __typename
-                            events {
-                                ...MonitorActionEvents
-                            }
-                        }
-                        ... on MonitorSlackWebhook {
-                            __typename
-                            events {
-                                ...MonitorActionEvents
-                            }
-                        }
-                    }
-                }
+                ...MonitorTriggerEventWithActions
             }
             totalCount
             pageInfo {
                 endCursor
                 hasNextPage
+            }
+        }
+    }
+
+    fragment MonitorTriggerEventWithActions on MonitorTriggerEvent {
+        id
+        status
+        message
+        timestamp
+        actions {
+            nodes {
+                ... on MonitorWebhook {
+                    __typename
+                    events {
+                        ...MonitorActionEvents
+                    }
+                }
+                ... on MonitorEmail {
+                    __typename
+                    events {
+                        ...MonitorActionEvents
+                    }
+                }
+                ... on MonitorSlackWebhook {
+                    __typename
+                    events {
+                        ...MonitorActionEvents
+                    }
+                }
             }
         }
     }
@@ -89,6 +94,7 @@ export const CODE_MONITOR_EVENTS = gql`
 
     fragment MonitorActionEvents on MonitorActionEventConnection {
         nodes {
+            id
             status
             message
             timestamp
@@ -96,7 +102,10 @@ export const CODE_MONITOR_EVENTS = gql`
     }
 `
 
-export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date }> = ({ now }) => {
+export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date; _testStartOpen?: boolean }> = ({
+    now,
+    _testStartOpen = false, // For testing purposes only; force everything to start expanded
+}) => {
     const pageSize = 20
     const runPageSize = 20
 
@@ -135,7 +144,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date }> =
                     <ConnectionList className={styles.grid}>
                         {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
                         {monitors.map(monitor => (
-                            <MonitorLogNode key={monitor.id} monitor={monitor} now={now} />
+                            <MonitorLogNode key={monitor.id} monitor={monitor} now={now} startOpen={_testStartOpen} />
                         ))}
                     </ConnectionList>
                     {loading && <ConnectionLoading />}

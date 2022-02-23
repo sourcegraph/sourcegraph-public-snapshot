@@ -4,18 +4,20 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
 import styles from './MonitorLogNode.module.scss'
+import { TriggerEvent } from './TriggerEvent'
 
-export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithEvents; now?: () => Date }> = ({
-    monitor,
-    now,
-}) => {
-    const [expanded, setExpanded] = useState(false)
+export const MonitorLogNode: React.FunctionComponent<{
+    monitor: CodeMonitorWithEvents
+    now?: () => Date
+    startOpen?: boolean
+}> = ({ monitor, now, startOpen = false }) => {
+    const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
 
@@ -50,7 +52,13 @@ export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithE
 
             {expanded && (
                 <div className={styles.expandedRow}>
-                    <pre>{monitor.trigger.query}</pre>
+                    <Link to={`/code-monitoring/${monitor.id}`} className="d-block mb-3">
+                        Monitor details
+                    </Link>
+
+                    {monitor.trigger.events.nodes.map(triggerEvent => (
+                        <TriggerEvent key={triggerEvent.id} triggerEvent={triggerEvent} startOpen={startOpen} />
+                    ))}
                 </div>
             )}
         </>
