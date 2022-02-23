@@ -723,7 +723,7 @@ export const githubCodeHost: GithubCodeHost = {
     },
     hoverOverlayClassProps: {
         className: 'Box',
-        actionItemClassName: 'btn btn-secondary',
+        actionItemClassName: 'btn btn-sm btn-secondary',
         actionItemPressedClassName: 'active',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
