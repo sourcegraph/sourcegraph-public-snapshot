@@ -2,33 +2,34 @@ package lockfiles
 
 import (
 	"encoding/json"
-	"sort"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const NPMFilename = "package-lock.json"
 
-func ParseNPM(b []byte) ([]*Dependency, error) {
+func ParseNPM(b []byte) (deps []reposource.PackageDependency, err error) {
 	var lockfile struct {
-		Dependencies map[string]*Dependency `json:"dependencies"`
+		Dependencies map[string]*struct{ Version string }
 	}
 
-	err := json.Unmarshal(b, &lockfile)
+	err = json.Unmarshal(b, &lockfile)
 	if err != nil {
 		return nil, err
 	}
 
-	var dependencies []*Dependency
-	for name, dependency := range lockfile.Dependencies {
-		dependency.Name = name
-		dependency.Kind = KindNPM
-		dependencies = append(dependencies, dependency)
+	var errs errors.MultiError
+
+	// TODO: Make json decoder unmarshal dependencies in order.
+	for name, d := range lockfile.Dependencies {
+		dep, err := reposource.ParseNPMDependency(name + "@" + d.Version)
+		if err != nil {
+			errs = errors.Append(errs, err)
+		} else {
+			deps = append(deps, dep)
+		}
 	}
 
-	// TODO: We want to use the json decoder to unmarshal dependencies in
-	// order rather than having to sort here.
-	sort.SliceStable(dependencies, func(i, j int) bool {
-		return dependencies[i].Less(dependencies[j])
-	})
-
-	return dependencies, nil
+	return deps, err
 }

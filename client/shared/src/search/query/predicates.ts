@@ -26,6 +26,12 @@ export const PREDICATES: Access[] = [
                     },
                 ],
             },
+            {
+                name: 'dependencies',
+            },
+            {
+                name: 'deps',
+            },
         ],
     },
     {
