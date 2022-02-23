@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+exit 1
+
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
@@ -123,7 +125,6 @@ export NO_GRAPHQL_LOG=true
 go install github.com/kyoh86/richgo@latest
 asdf reshim golang
 
-
 # Used to ignore directories (for example, when using submodules)
 #   (It appears to be unused, but it's actually used doing -v below)
 #
@@ -136,8 +137,8 @@ declare -A IGNORED_DIRS=(
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
 
   # Skip any ignored directories.
-  if [ -v "IGNORED_DIRS[$d]" ] ; then
-      continue
+  if [ -v "IGNORED_DIRS[$d]" ]; then
+    continue
   fi
 
   pushd "$d" >/dev/null

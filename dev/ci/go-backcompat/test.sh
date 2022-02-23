@@ -106,7 +106,6 @@ git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 # Remove the languages submodules, because they mess these tests up
 rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
 
-
 for schema in frontend codeintel codeinsights; do
   # Force apply newer schema definitions
   rm -rf "./migrations/${schema}"
@@ -136,16 +135,19 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  echo ""
-  echo "!!! This commit contains database schema definitions that caused an"
-  echo "unexpected failure of one or more unit tests at tagged commit ${latest_minor_release_tag}."
-  echo ""
-  echo "If this backwards incompatibility is intentional or of the test is flaky,"
-  echo "an exception for this text can be added to the following flakefile:"
-  echo ""
-  echo "'${flakefile}'"
-  echo ""
-  echo "Rewrite these schema changes to be backwards compatible. For help,"
-  echo "see docs.sourcegraph.com/dev/background-information/sql/migrations."
+  mkdir -p ./annotations
+  annotation_file='./annotations/Backwards incompatibility detected.md'
+  cat <<EOF >"$annotation_file"
+This commit contains database schema definitions that caused an unexpected
+failure of one or more unit tests at tagged commit ${latest_minor_release_tag}.
+If this backwards incompatibility is intentional or of the test is flaky,
+an exception for this text can be added to the following flakefile:
+
+  ${flakefile}
+
+Rewrite these schema changes to be backwards compatible. For help,
+see docs.sourcegraph.com/dev/background-information/sql/migrations.
+EOF
+  echo "$annotation_file"
   exit 1
 fi
