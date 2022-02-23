@@ -2,7 +2,7 @@
 
 $input-font-size-sm: (11/14) + em;
 :root {
-    --input-font-size-sm: $input-font-size-sm;
+    --input-font-size-sm: #{$input-font-size-sm};
     --input-line-height: var(--line-height-base);
     --input-line-height-sm: 1.5;
     --input-border-width: 0.0625rem;
