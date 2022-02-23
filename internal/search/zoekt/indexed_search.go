@@ -191,33 +191,25 @@ type IndexedSearchRequest interface {
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
-func fallbackIndexUnavailable(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
-	return &IndexedSubsetSearchRequest{
-		Unindexed: limitUnindexedRepos(repos, limit, onMissing),
-	}
-}
-
-func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
-	return &IndexedSubsetSearchRequest{
-		Unindexed: limitUnindexedRepos(repos, limit, onMissing),
-	}
-}
-
 func OnlyUnindexed(repos []*search.RepositoryRevisions, zoekt zoekt.Streamer, useIndex query.YesNoOnly, containsRefGlobs bool, onMissing OnMissingRepoRevs) (IndexedSearchRequest, bool, error) {
 	// If Zoekt is disabled just fallback to Unindexed.
 	if zoekt == nil {
 		if useIndex == query.Only {
 			return nil, false, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
 		}
-		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
+
 	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
 	}
 	return nil, false, nil
 }
@@ -402,7 +394,8 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), ctx.Err()
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, ctx.Err()
 	}
 
 	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
