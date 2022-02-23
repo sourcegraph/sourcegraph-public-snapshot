@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
+import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -152,12 +153,13 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                     <div className={styles.avatarContainer}>
                         {invite.recipient && (
                             <UserAvatar
+                                size={24}
                                 className={styles.avatar}
                                 user={invite.recipient}
                                 data-tooltip={invite.recipient.displayName || invite.recipient.username}
                             />
                         )}
-                        {invite.recipientEmail && <EmailIcon className={classNames(styles.avatar, styles.emailIcon)} />}
+                        {!invite.recipient && invite.recipientEmail && <EmailIcon className={styles.emailIcon} />}
                     </div>
                     <div className="d-flex flex-column">
                         {invite.recipient && (
@@ -166,7 +168,9 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                                     <strong>{invite.recipient.displayName || invite.recipient.username}</strong>
                                 </Link>
                                 {invite.recipient.displayName && (
-                                    <span className="text-muted">{invite.recipient.username}</span>
+                                    <span className={classNames('text-muted', styles.displayName)}>
+                                        {invite.recipient.username}
+                                    </span>
                                 )}
                             </div>
                         )}
@@ -179,7 +183,9 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                 </div>
                 <div className={styles.inviteDate}>
                     <span className="text-muted" title={getLocaleFormattedDateFromString(invite.createdAt)}>
-                        {getInvitationCreationDateString(invite.createdAt)}
+                        {`${getInvitationCreationDateString(invite.createdAt)} by ${
+                            invite.sender.displayName || invite.sender.username
+                        }`}
                     </span>
                 </div>
                 <div className={styles.inviteExpiration}>
@@ -190,9 +196,17 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                 <div className={styles.inviteActions}>
                     {viewerCanAdminister && (
                         <Menu>
-                            <MenuButton variant="secondary" outline={false} className={styles.inviteMenu}>
-                                {loading ? <LoadingSpinner /> : <CogIcon />}
-                                <span aria-hidden={true}>▾</span>
+                            <MenuButton
+                                size="sm"
+                                outline={true}
+                                variant="secondary"
+                                className={styles.inviteMenu}
+                                disabled={loading}
+                            >
+                                <CogIcon size={15} />
+                                <span aria-hidden={true}>
+                                    <ChevronDown size={15} />
+                                </span>
                             </MenuButton>
 
                             <MenuList>

@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, Modal } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -65,7 +65,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
 
     return (
         <>
-            <Button variant="primary" onClick={onAddUserClick} className="mr-1">
+            <Button variant="primary" onClick={onAddUserClick} size="sm" className="mr-1">
                 + Add member
             </Button>
             {modalOpened && (
@@ -104,26 +104,3 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
         </>
     )
 }
-
-interface AddMemberNotificationProps {
-    username: string
-    orgName: string
-    onDismiss: () => void
-    className?: string
-}
-
-export const AddMemberNotification: React.FunctionComponent<AddMemberNotificationProps> = ({
-    className,
-    username,
-    orgName,
-    onDismiss,
-}) => (
-    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
-        <div className={styles.message}>
-            <strong>{`You succesfully added ${username} to ${orgName}`}</strong>
-        </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
-        </Button>
-    </Alert>
-)
