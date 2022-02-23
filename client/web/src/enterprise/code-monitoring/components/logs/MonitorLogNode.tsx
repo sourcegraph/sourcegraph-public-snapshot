@@ -43,19 +43,23 @@ export const MonitorLogNode: React.FunctionComponent<{
     return (
         <>
             <span className={styles.separator} />
-            <Button onClick={toggleExpanded} className="btn-icon text-left px-1" aria-label="Expand code monitor">
-                {expanded ? <ChevronDownIcon className="mr-2" /> : <ChevronRightIcon className="mr-2" />}
+            <Button
+                onClick={toggleExpanded}
+                className="btn-icon text-left pl-0 d-flex align-items-center"
+                aria-label="Expand code monitor"
+            >
+                {expanded ? <ChevronDownIcon className="mr-2" /> : <ChevronRightIcon className="mr-1" />}
                 {hasError ? (
                     <AlertCircleIcon
-                        className={classNames(styles.errorIcon, 'icon-inline mr-2')}
+                        className={classNames(styles.errorIcon, 'icon-inline mr-1')}
                         aria-label="A run of this code monitor has an error"
                     />
                 ) : (
-                    <span className={classNames(styles.errorIconSpacer, 'mr-2')} />
+                    <span className={classNames(styles.errorIconSpacer, 'mr-1')} />
                 )}
                 {monitor.description}
             </Button>
-            <span className="text-nowrap">
+            <span className="text-nowrap mr-2">
                 {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
             </span>
 
