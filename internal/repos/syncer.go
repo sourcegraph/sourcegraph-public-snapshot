@@ -247,10 +247,16 @@ func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
-// SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
-// because we don't sync our "cloud_default" code hosts in the background
-// since there are too many repos. Instead we use an incremental approach where we check for
-// changes everytime a user browses a repo. The "background" boolean flag indicates that we should run this
+// SyncRepo syncs a single repository by name and associates it with an external service.
+//
+// It works for repos from:
+// 1. Public "cloud_default" code hosts since we don't sync them in the background
+//    (which would delete lazy synced repos).
+// 2. Any package hosts (i.e. NPM, Maven, etc) since callers are expected to Store
+//    repo to the `lsif_dependency_repos` table which is used as the source of truth
+//    for the next full sync, so lazy added repos don't get wiped.
+//
+// The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
@@ -315,8 +321,13 @@ func (s *Syncer) syncRepo(
 	defer func() { save(svc, err) }()
 
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},
-		OnlyCloudDefault: true,
+		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
+		// Since package host external services have the set of repositories to sync in
+		// the lsif_dependency_repos table, we can lazy-sync individual repos wihout wiping them
+		// out in the next full background sync as long as we add them to that table.
+		//
+		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
+		OnlyCloudDefault: !codehost.IsPackageHost(),
 		LimitOffset:      &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
