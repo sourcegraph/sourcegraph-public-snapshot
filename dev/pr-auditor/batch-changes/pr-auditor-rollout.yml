@@ -4,14 +4,18 @@ name: pr-auditor-rollout
 description: Roll out pr-auditor workflow to more repositories.
 
 on:
-  # - repositoriesMatchingQuery: repo:^github\.com/sourcegraph/about
-  # All repositories that have been updated recently
   - repositoriesMatchingQuery: |
-      select:repo
-      count:all
-      repo:^github\.com/sourcegraph/.*
-      -repo:^github\.com/sourcegraph/(\.github|sourcegraph)$
-      type:commit after:2022-01-01
+      -repohasfile:.github/workflows/pr-auditor.yml count:all
+      (
+      repo:^github\.com/sourcegraph/infrastructure$
+      OR repo:^github\.com/sourcegraph/src-cli$
+      OR repo:^github\.com/sourcegraph/deploy-sourcegraph$
+      OR repo:^github\.com/sourcegraph/deploy-sourcegraph-(docker|cloud|dogfood-k8s|managed|helm)$
+      OR repo:^github\.com/sourcegraph/lsif-.*
+      OR repo:^github\.com/sourcegraph/sbt-sourcegraph$
+      OR repo:^github\.com/sourcegraph/terraform-.*-executors
+      OR repo:^github\.com/sourcegraph/sourcegraph-.*
+      )
 
 changesetTemplate:
   title: 'workflows: add pr-auditor and test plans to PR templates'
