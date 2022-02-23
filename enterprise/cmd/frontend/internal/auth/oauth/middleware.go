@@ -69,12 +69,17 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
 			return
 		}
+		op := req.URL.Query().Get("op")
+		extraScopes := []string{}
+		var err error
+		if op == string(LoginStateOpCreateCodeHostConnection) {
 
-		extraScopes, err := getExtraScopes(req.Context(), db, serviceType)
-		if err != nil {
-			log15.Error("Getting extra OAuth scopes", "error", err)
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
-			return
+			extraScopes, err = getExtraScopes(req.Context(), db, serviceType)
+			if err != nil {
+				log15.Error("Getting extra OAuth scopes", "error", err)
+				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		p.Login(p.OAuth2Config(extraScopes...)).ServeHTTP(w, req)
