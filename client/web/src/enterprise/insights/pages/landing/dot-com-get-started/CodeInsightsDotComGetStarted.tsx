@@ -173,7 +173,18 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
 
                     <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
 
-                    <section className={styles.videoSection}>Demo video placeholder</section>
+                    <Card as={CardBody} className={styles.videoSection}>
+                        <iframe
+                            title="Code Insights demo"
+                            className="percy-hide chromatic-ignore"
+                            width="100%"
+                            height="600"
+                            src="https://www.youtube-nocookie.com/embed/eOmiyXIWTCw"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen={true}
+                        />
+                    </Card>
 
                     <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
                 </main>
