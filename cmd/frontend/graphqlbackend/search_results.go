@@ -29,8 +29,8 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -506,7 +506,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
+	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	r.logBatch(ctx, srr, err)
@@ -514,7 +514,7 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
+	alert, err := execute.Execute(ctx, r.db, r.stream, r.JobArgs())
 	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
 	return srr, err
 }
@@ -552,26 +552,6 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 	default:
 		return "success"
 	}
-}
-
-func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	plan, err = predicate.Expand(ctx, r.db, r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	planJob, err := job.FromExpandedPlan(r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	return planJob.Run(ctx, r.db, stream)
 }
 
 type searchResultsStats struct {
