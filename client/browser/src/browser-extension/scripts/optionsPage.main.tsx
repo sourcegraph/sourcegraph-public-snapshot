@@ -160,7 +160,7 @@ const Options: React.FunctionComponent = () => {
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
-    const [managePrivateRepositoriesURL, setManagePrivateRepositoriesURL] = useState('')
+    const [manageRepositoriesURL, setManageRepositoriesURL] = useState<string>()
 
     useEffect(() => {
         fetchCurrentTabStatus().then(tabStatus => {
@@ -169,26 +169,30 @@ const Options: React.FunctionComponent = () => {
     }, [])
 
     useEffect(() => {
-        if (!currentTabStatus?.status.hasPrivateCloudError || !isDefaultSourcegraphUrl(sourcegraphUrl)) {
-            return
-        }
-        const requestGraphQL = createRequestGraphQL(sourcegraphUrl!)
-        requestGraphQL<GQL.IQuery>({
-            request: gql`
-                query UserSettingsURL {
-                    currentUser {
-                        settingsURL
-                    }
+        if (currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            ;(async () => {
+                try {
+                    const requestGraphQL = createRequestGraphQL(sourcegraphUrl!)
+                    const url = await requestGraphQL<GQL.IQuery>({
+                        request: gql`
+                            query UserSettingsURL {
+                                currentUser {
+                                    settingsURL
+                                }
+                            }
+                        `,
+                        variables: {},
+                    })
+                        .pipe(map(({ data }) => data?.currentUser?.settingsURL || undefined))
+                        .toPromise()
+
+                    setManageRepositoriesURL(url && new URL(`${url}/repositories/manage`, sourcegraphUrl).href)
+                } catch {
+                    setManageRepositoriesURL(undefined)
                 }
-            `,
-            variables: {},
-        })
-            .pipe(map(({ data }) => data?.currentUser?.settingsURL))
-            .toPromise()
-            .then(url => setManagePrivateRepositoriesURL(new URL(`${url}/repositories/manage`, sourcegraphUrl).href))
-            .catch(console.error)
-        // TODO: fetch user settings URL
-        // set it to state
+            })()
+        }
     }, [currentTabStatus, sourcegraphUrl])
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
@@ -252,7 +256,7 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    showPrivateRepositoryAlert={managePrivateRepositoriesURL} // TODO: rename showPrivate -> managePrivateRepositoriesURL
+                    manageRepositoriesURL={manageRepositoriesURL}
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}

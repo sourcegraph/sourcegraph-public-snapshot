@@ -39,7 +39,6 @@ const OptionsPageWrapper: React.FunctionComponent<Partial<OptionsPageProps>> = p
         sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
         validateSourcegraphUrl={validateSourcegraphUrl}
         onChangeSourcegraphUrl={action('onChangeSourcegraphUrl')}
-        showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
         showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
         suggestedSourcegraphUrls={['https://k8s.sgdev.org', 'https://sourcegraph.com']}
         {...props}
@@ -66,7 +65,10 @@ const AskingForPermission: Story = () => (
 )
 
 const OnPrivateRepository: Story = () => (
-    <OptionsPageWrapper showPrivateRepositoryAlert={true} requestPermissionsHandler={requestPermissionsHandler} />
+    <OptionsPageWrapper
+        manageRepositoriesURL={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        requestPermissionsHandler={requestPermissionsHandler}
+    />
 )
 
 const OnSourcegraphCloud: Story = () => (
