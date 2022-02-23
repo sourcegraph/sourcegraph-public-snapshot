@@ -12,7 +12,7 @@
     border: 1px solid var(--border-color-2);
     overflow: hidden;
 
-    width: 15rem;
+    width: 20rem;
 
     h4 {
         margin: 0;
@@ -44,6 +44,10 @@
 
         &:hover {
             background-color: var(--color-bg-2);
+        }
+
+        &.selected {
+            background-color: var(--color-bg-3);
         }
     }
 

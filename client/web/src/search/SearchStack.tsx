@@ -8,7 +8,16 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TrashIcon from 'mdi-react/TrashCanIcon'
-import React, { useCallback, useState, useMemo, KeyboardEvent, SyntheticEvent, useRef, useEffect } from 'react'
+import React, {
+    useCallback,
+    useState,
+    useMemo,
+    KeyboardEvent,
+    SyntheticEvent,
+    MouseEvent,
+    useRef,
+    useEffect,
+} from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -26,11 +35,12 @@ import {
     restorePreviousSession,
     SearchEntry,
     SearchStackEntry,
-    removeSearchStackEntry,
+    removeFromSearchStack,
     removeAllSearchStackEntries,
     SearchStackEntryInput,
     addSearchStackEntry,
     setEntryAnnotation,
+    SearchStackEntryID,
 } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
@@ -38,6 +48,17 @@ import { serializeBlocksToURL } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
 const SEARCH_STACK_ID = 'search:search-stack'
+
+/**
+ * This handler is used on mousedown to prevent text selection when multiple
+ * stack entries are selected with Shift+click.
+ * (tested in Firefox and Chromium)
+ */
+function preventTextSelection(event: MouseEvent): void {
+    if (event.shiftKey) {
+        event.preventDefault()
+    }
+}
 
 /**
  * Helper hook to determine whether a new entry has been added to the search
@@ -63,9 +84,76 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
+    const [selectedEntries, setSelectedEntries] = useState<SearchStackEntryID[]>([])
 
     const reversedEntries = useMemo(() => [...entries].reverse(), [entries])
     const hasNewEntry = useHasNewEntry(reversedEntries)
+
+    const toggleSelectedEntry = useCallback(
+        (entry: SearchStackEntry, event: MouseEvent | KeyboardEvent) => {
+            const { ctrlKey, metaKey, shiftKey } = event
+
+            setSelectedEntries(selectedEntries => {
+                const index = selectedEntries.indexOf(entry.id)
+
+                if (ctrlKey || metaKey) {
+                    // Add or remove item to selection
+                    if (index > -1) {
+                        const copy = selectedEntries.slice()
+                        copy.splice(index, 1)
+                        return copy
+                    }
+                    return [...selectedEntries, entry.id]
+                }
+
+                if (shiftKey) {
+                    // Select range. This will always add items.
+                    // The range of entries is always computed from the last
+                    // selected entry.
+                    if (selectedEntries.length === 0) {
+                        return [entry.id]
+                    }
+
+                    const newSelectedEntries = [...selectedEntries]
+
+                    const lastSelectedID = selectedEntries[selectedEntries.length - 1]
+                    // Find all entries between this one the selected entry
+                    const indexA = reversedEntries.findIndex(entry => entry.id === lastSelectedID)
+                    const indexB = reversedEntries.indexOf(entry)
+                    const direction = indexA > indexB ? -1 : 1
+                    for (let index_ = indexA; index_ !== indexB + direction; index_ += direction) {
+                        // Re-arrange selected entries as necessary
+                        const existingSelectionIndex = newSelectedEntries.indexOf(reversedEntries[index_].id)
+                        if (existingSelectionIndex > -1) {
+                            newSelectedEntries.splice(existingSelectionIndex, 1)
+                        }
+                        newSelectedEntries.push(reversedEntries[index_].id)
+                    }
+                    return newSelectedEntries
+                }
+
+                // Normal (de)selection
+                if (index > -1) {
+                    // If multiple entries are selected then selecting
+                    // (without ctrl/cmd/shift) an already selected entry will
+                    // just select that entry.
+                    if (selectedEntries.length > 1) {
+                        return [entry.id]
+                    }
+                    // Otherwise we delesect it.
+                    return []
+                }
+
+                return [entry.id]
+            })
+        },
+        [reversedEntries, setSelectedEntries]
+    )
+
+    const deleteSelectedEntries = useCallback(() => {
+        removeFromSearchStack(selectedEntries)
+        setSelectedEntries([])
+    }, [selectedEntries, setSelectedEntries])
 
     const createNotebook = useCallback(() => {
         const blocks: BlockInput[] = []
@@ -101,19 +189,29 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
         history.push(location)
     }, [entries, history])
 
+    const toggleOpen = useCallback(() => {
+        setOpen(open => {
+            if (open) {
+                // clear selected entries on close
+                setSelectedEntries([])
+            }
+            return !open
+        })
+    }, [setSelectedEntries, setOpen])
+
     if (!enableSearchStack || (reversedEntries.length === 0 && !addableEntry)) {
         return null
     }
 
     if (open) {
         return (
-            <div className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
+            <section className={classNames(styles.root, { [styles.open]: open })} id={SEARCH_STACK_ID} role="dialog">
                 <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
                     <Button
                         aria-label="Close search session"
                         variant="icon"
                         className="p-2"
-                        onClick={() => setOpen(false)}
+                        onClick={toggleOpen}
                         aria-controls={SEARCH_STACK_ID}
                         aria-expanded="true"
                     >
@@ -127,20 +225,41 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         aria-label="Close search session"
                         variant="icon"
                         className={classNames('pr-2', styles.closeButton, styles.openVisible)}
-                        onClick={() => setOpen(false)}
+                        onClick={toggleOpen}
                         aria-controls={SEARCH_STACK_ID}
                         aria-expanded="true"
                     >
                         <CloseIcon className="icon-inline" />
                     </Button>
                 </div>
-                <ul>
+                <ul role="listbox">
                     <li className="d-flex flex-column">{addableEntry && <AddEntryButton entry={addableEntry} />}</li>
-                    {reversedEntries.map((entry, index) => (
-                        <li key={entry.id}>
-                            <SearchStackEntryComponent entry={entry} focus={hasNewEntry && index === 0} />
-                        </li>
-                    ))}
+                    {reversedEntries.map((entry, index) => {
+                        const selected = selectedEntries.includes(entry.id)
+                        return (
+                            <li
+                                key={entry.id}
+                                role="option"
+                                onClick={event => toggleSelectedEntry(entry, event)}
+                                onKeyUp={event => {
+                                    if (document.activeElement === event.currentTarget && event.key === ' ') {
+                                        toggleSelectedEntry(entry, event)
+                                    }
+                                }}
+                                aria-selected={selected}
+                                aria-label={getLabel(entry)}
+                                onMouseDown={preventTextSelection}
+                                tabIndex={0}
+                            >
+                                <SearchStackEntryComponent
+                                    entry={entry}
+                                    focus={hasNewEntry && index === 0}
+                                    selected={selected}
+                                    onDelete={selected ? deleteSelectedEntries : () => removeFromSearchStack(entry.id)}
+                                />
+                            </li>
+                        )
+                    })}
                 </ul>
                 {confirmRemoveAll && (
                     <div className="p-2">
@@ -189,38 +308,41 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         </Button>
                     </div>
                 </div>
-            </div>
+            </section>
         )
-    }
-    const openNotepad = (): void => {
-        setOpen(true)
     }
 
     const handleEnterKey = (event: KeyboardEvent<HTMLDivElement>): void => {
         if (event.key === 'enter') {
-            openNotepad()
+            toggleOpen()
         }
     }
 
     return (
-        <div
-            className={classNames(styles.root)}
-            role="button"
-            aria-expanded="false"
-            aria-controls={SEARCH_STACK_ID}
-            onClick={openNotepad}
-            onKeyUp={handleEnterKey}
-            aria-label="Open search session"
-            tabIndex={0}
-        >
-            {reversedEntries.length === 0 && addableEntry && <AddEntryButton entry={addableEntry} />}
-            {reversedEntries.length > 0 ? (
-                // `key` is necessary here to force new elemments being created
-                // when the top entry is deleted. Otherwise the annotations
-                // input isn't rendered correctly.
-                <SearchStackEntryComponent key={reversedEntries[0].id} entry={reversedEntries[0]} focus={hasNewEntry} />
-            ) : null}
-        </div>
+        <section id={SEARCH_STACK_ID} className={classNames(styles.root)} aria-label="Notepad">
+            <div
+                role="button"
+                aria-expanded="false"
+                aria-controls={SEARCH_STACK_ID}
+                onClick={toggleOpen}
+                onKeyUp={handleEnterKey}
+                aria-label="Open search session"
+                tabIndex={0}
+            >
+                {reversedEntries.length === 0 && addableEntry && <AddEntryButton entry={addableEntry} />}
+                {reversedEntries.length > 0 ? (
+                    // `key` is necessary here to force new elemments being created
+                    // when the top entry is deleted. Otherwise the annotations
+                    // input isn't rendered correctly.
+                    <SearchStackEntryComponent
+                        key={reversedEntries[0].id}
+                        entry={reversedEntries[0]}
+                        focus={hasNewEntry}
+                        onDelete={() => removeFromSearchStack(reversedEntries[0].id)}
+                    />
+                ) : null}
+            </div>
+        </section>
     )
 }
 
@@ -290,11 +412,15 @@ interface SearchStackEntryComponentProps {
      * If set to true, show and focus the annotations input.
      */
     focus?: boolean
+    selected?: boolean
+    onDelete: (event: MouseEvent | KeyboardEvent) => void
 }
 
 const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryComponentProps> = ({
     entry,
     focus = false,
+    selected,
+    onDelete,
 }) => {
     const { icon, title, location } = getUIComponentsForEntry(entry)
     const [annotation, setAnnotation] = useState(entry.annotation ?? '')
@@ -305,8 +431,10 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
         textarea.current?.focus()
     }, [focus])
 
+    const deletionLabel = selected ? 'Remove all selected entries' : 'Remove entry'
+
     return (
-        <div className={styles.entry}>
+        <div className={classNames(styles.entry, { [styles.selected]: selected })}>
             <div className="d-flex">
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
@@ -328,13 +456,13 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                         <TextBoxIcon className="icon-inline" />
                     </Button>
                     <Button
-                        aria-label="Remove entry"
-                        title="Remove entry"
+                        aria-label={deletionLabel}
+                        title={deletionLabel}
                         variant="icon"
                         className="ml-1 text-muted"
                         onClick={event => {
                             event.stopPropagation()
-                            removeSearchStackEntry(entry)
+                            onDelete(event)
                         }}
                     >
                         <CloseIcon className="icon-inline" />
@@ -395,6 +523,18 @@ function getUIComponentsForEntry(
                     }),
                 },
             }
+    }
+}
+
+function getLabel(entry: SearchStackEntry): string {
+    switch (entry.type) {
+        case 'search':
+            return `search: ${toSearchQuery(entry)}`
+        case 'file':
+            if (entry.lineRange) {
+                return `line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
+            }
+            return `file: ${fileName(entry.path)}`
     }
 }
 
