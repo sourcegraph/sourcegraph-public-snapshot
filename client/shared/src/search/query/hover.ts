@@ -155,7 +155,7 @@ const toSelectorHover = (token: MetaSelector): string => {
     }
 }
 
-const toContainsHover = (token: MetaPredicate): string => {
+const toPredicateHover = (token: MetaPredicate): string => {
     const parameters = token.value.parameters.slice(1, -1)
     switch (token.value.path.join('.')) {
         case 'contains':
@@ -166,6 +166,9 @@ const toContainsHover = (token: MetaPredicate): string => {
             return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
         case 'contains.commit.after':
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
+        case 'dependencies':
+        case 'deps':
+            return '**Built-in predicate**. Search only repository dependencies of repositories matching the regular expression'
     }
     return ''
 }
@@ -187,7 +190,7 @@ const toHover = (token: DecoratedToken): string => {
         case 'metaStructural':
             return toStructuralHover(token)
         case 'metaPredicate': {
-            return toContainsHover(token)
+            return toPredicateHover(token)
         }
     }
     return ''
