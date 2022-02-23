@@ -350,20 +350,23 @@ type indexRequest struct {
 }
 
 func (s *Server) startIndexingThread() (err error) {
-	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-	conn, err := s.db.Conn(context.Background())
-	if err != nil {
-		return err
-	}
-
 	go func() {
 		for indexRequest := range s.indexRequests {
-			err := s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
+			// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+			// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+			conn, err := s.db.Conn(context.Background())
+			if err != nil {
+				log15.Error("Failed to get connection for indexing thread", "error", err)
+				continue
+			}
+
+			err = s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
 			close(indexRequest.done)
 			if err != nil {
 				log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
 			}
+
+			conn.Close()
 		}
 	}()
 
@@ -373,19 +376,22 @@ func (s *Server) startIndexingThread() (err error) {
 func (s *Server) startCleanupThread() error {
 	status := s.status.NewThreadStatus("cleanup")
 
-	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-	// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-	conn, err := s.db.Conn(context.Background())
-	if err != nil {
-		return err
-	}
-
 	go func() {
 		for range s.repoUpdates {
-			err := DeleteOldRepos(context.Background(), conn, s.maxRepos, status)
+			// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+			// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+			conn, err := s.db.Conn(context.Background())
+			if err != nil {
+				log15.Error("Failed to get connection for deleting old repos", "error", err)
+				continue
+			}
+
+			err = DeleteOldRepos(context.Background(), conn, s.maxRepos, status)
 			if err != nil {
 				log15.Error("Failed to delete old repos", "error", err)
 			}
+
+			conn.Close()
 		}
 	}()
 
