@@ -6,7 +6,6 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
@@ -109,7 +108,7 @@ export const ViewsShowcase: Story = () => (
         <section>
             <h2>View with chart content</h2>
             <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
-                <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <View.Content content={[LINE_CHART_DATA]} />
             </View.Root>
         </section>
 
@@ -128,7 +127,7 @@ export const ViewsShowcase: Story = () => (
                     </>
                 }
             >
-                <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <View.Content content={[LINE_CHART_DATA]} />
             </View.Root>
         </section>
     </main>

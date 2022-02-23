@@ -7,7 +7,7 @@ import { isValidNumber } from '../utils/data-guards'
 
 const PATTERN_ID = 'xy-chart-pattern'
 
-export interface NonActiveBackgroundProps<Datum extends object> {
+export interface NonActiveBackgroundProps<Datum> {
     data: Datum[]
     series: LineChartSeries<Datum>[]
     xAxisKey: keyof Datum
@@ -36,7 +36,7 @@ export interface NonActiveBackgroundProps<Datum extends object> {
  * └──────────────────────────────────┘
  * Where ` is a non-active background
  */
-export function NonActiveBackground<Datum extends object>(props: NonActiveBackgroundProps<Datum>): ReactElement | null {
+export function NonActiveBackground<Datum>(props: NonActiveBackgroundProps<Datum>): ReactElement | null {
     const { data, series, xAxisKey, xScale, top, left, width, height } = props
 
     const backgroundWidth = useMemo(() => {

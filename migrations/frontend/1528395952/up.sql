@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS notebooks (
     id BIGSERIAL PRIMARY KEY,
     title CITEXT NOT NULL,
@@ -11,5 +9,3 @@ CREATE TABLE IF NOT EXISTS notebooks (
 
     CONSTRAINT blocks_is_array CHECK (jsonb_typeof(blocks) = 'array')
 );
-
-COMMIT;

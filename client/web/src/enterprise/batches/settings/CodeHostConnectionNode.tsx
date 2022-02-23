@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
-import { Subject } from 'rxjs'
 
 import { Badge, Button } from '@sourcegraph/wildcard'
 
@@ -16,16 +15,16 @@ import { ViewCredentialModal } from './ViewCredentialModal'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
+    refetchAll: () => void
     userID: Scalars['ID'] | null
-    updateList: Subject<void>
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
 
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
+    refetchAll,
     userID,
-    updateList,
 }) => {
     const Icon = defaultExternalServices[node.externalServiceKind].icon
 
@@ -46,8 +45,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
-        updateList.next()
-    }, [updateList])
+        refetchAll()
+    }, [refetchAll])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 

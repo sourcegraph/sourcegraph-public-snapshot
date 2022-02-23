@@ -29,8 +29,8 @@ import (
 
 func TestSearch(t *testing.T) {
 	type Results struct {
-		Results     []interface{}
-		ResultCount int
+		Results    []interface{}
+		MatchCount int
 	}
 	tcs := []struct {
 		name                         string
@@ -58,8 +58,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -81,8 +81,8 @@ func TestSearch(t *testing.T) {
 				return nil, nil
 			},
 			wantResults: Results{
-				Results:     nil,
-				ResultCount: 0,
+				Results:    nil,
+				MatchCount: 0,
 			},
 			searchVersion: "V1",
 		},
@@ -245,7 +245,7 @@ var testSearchGQLQuery = `
 					timedout {
 						name
 					}
-					resultCount
+					matchCount
 					elapsedMilliseconds
 				}
 			}

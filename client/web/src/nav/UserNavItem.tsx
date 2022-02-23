@@ -21,6 +21,7 @@ import {
     Link,
     Position,
     AnchorLink,
+    Select,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -39,8 +40,8 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
-    openByDefault?: boolean
     position?: Position
+    menuButtonRef?: React.Ref<HTMLButtonElement>
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -96,15 +97,13 @@ const showKeyboardShortcutsHelp = (): void => {
  */
 export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     const {
+        menuButtonRef,
         themePreference,
         onThemePreferenceChange,
         isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
-        openByDefault,
         position = Position.bottomEnd,
     } = props
-
-    const [isOpen, setIsOpen] = useState(() => !!openByDefault)
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -126,10 +125,11 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
     const targetID = 'target-user-avatar'
 
     return (
-        <Menu isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
+        <Menu>
             {({ isExpanded }) => (
                 <>
                     <MenuButton
+                        ref={menuButtonRef}
                         variant="link"
                         className={classNames(
                             'd-flex align-items-center text-decoration-none test-user-nav-item-toggle',
@@ -186,15 +186,19 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <div className="px-2 py-1">
                             <div className="d-flex align-items-center">
                                 <div className="mr-2">Theme</div>
-                                <select
-                                    className="custom-select custom-select-sm test-theme-toggle"
+                                <Select
+                                    aria-label=""
+                                    isCustomStyle={true}
+                                    selectSize="sm"
+                                    selectClassName="test-theme-toggle"
                                     onChange={onThemeChange}
                                     value={props.themePreference}
+                                    className="mb-0 flex-1"
                                 >
                                     <option value={ThemePreference.Light}>Light</option>
                                     <option value={ThemePreference.Dark}>Dark</option>
                                     <option value={ThemePreference.System}>System</option>
-                                </select>
+                                </Select>
                             </div>
                             {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
                                 <div className="text-wrap">

@@ -299,7 +299,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "unmarshal response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs *errors.MultiError
+			var errs error
 			for _, err := range errResp.Errors {
 				errs = errors.Append(errs, errors.New(err.Message))
 			}

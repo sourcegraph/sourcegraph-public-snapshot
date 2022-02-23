@@ -31,6 +31,7 @@ export const currentAuthStateQuery = gql`
             viewerCanAdminister
             tags
             tosAccepted
+            searchable
         }
     }
 `

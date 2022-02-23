@@ -146,7 +146,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>
@@ -163,6 +163,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
+                    repositories={repositories.input.value}
                     isBackendInsightEdit={isGqlBackend ? false : isEditMode && allReposMode.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
