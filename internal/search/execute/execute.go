@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+// Execute is the top-level entrypoint to executing a search. It will
+// expand predicates, create jobs, and execute those jobs.
 func Execute(
 	ctx context.Context,
 	db database.DB,
