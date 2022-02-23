@@ -193,8 +193,7 @@ type IndexedSearchRequest interface {
 
 func fallbackIndexUnavailable(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
 	return &IndexedSubsetSearchRequest{
-		Unindexed:        limitUnindexedRepos(repos, limit, onMissing),
-		IndexUnavailable: true,
+		Unindexed: limitUnindexedRepos(repos, limit, onMissing),
 	}
 }
 
@@ -311,13 +310,6 @@ type IndexedSubsetSearchRequest struct {
 	// repository revisions not indexed.
 	Unindexed []*search.RepositoryRevisions
 
-	// IndexUnavailable is true if zoekt is offline or disabled.
-	IndexUnavailable bool
-
-	// DisableUnindexedSearch is true if the query specified that only index
-	// search should be used.
-	DisableUnindexedSearch bool
-
 	// Inputs
 	Args *search.ZoektParameters
 
@@ -432,8 +424,6 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 		Args:      zoektArgs,
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		RepoRevs:  indexed,
-
-		DisableUnindexedSearch: index == query.Only,
 	}, nil
 }
 
