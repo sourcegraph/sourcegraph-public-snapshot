@@ -16,7 +16,6 @@ type SearchInputs struct {
 	PatternType   query.SearchType
 	UserSettings  *schema.Settings
 	Features      featureflag.FlagSet
-	CodeMonitorID *int64
 	Protocol      search.Protocol
 }
 

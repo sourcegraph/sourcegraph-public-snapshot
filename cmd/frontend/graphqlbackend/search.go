@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -103,15 +102,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	var codeMonitorID *int64
-	if args.CodeMonitorID != nil {
-		var i int64
-		if err := relay.UnmarshalSpec(*args.CodeMonitorID, &i); err != nil {
-			return nil, err
-		}
-		codeMonitorID = &i
-	}
-
 	protocol := search.Batch
 	if args.Stream != nil {
 		protocol = search.Streaming
@@ -124,7 +114,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		UserSettings:  settings,
 		Features:      featureflag.FromContext(ctx),
 		PatternType:   searchType,
-		CodeMonitorID: codeMonitorID,
 		Protocol:      protocol,
 	}
 
