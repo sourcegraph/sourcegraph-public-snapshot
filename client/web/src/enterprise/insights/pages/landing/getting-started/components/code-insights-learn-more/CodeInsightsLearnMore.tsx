@@ -11,7 +11,7 @@ import styles from './CodeInsightsLearnMore.module.scss'
 interface CodeInsightsLearnMoreProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
 export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMoreProps> = props => {
-    const { telemetryService, mode = 'in-product', ...otherProps } = props
+    const { telemetryService, ...otherProps } = props
     const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
