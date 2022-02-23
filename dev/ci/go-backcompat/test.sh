@@ -108,7 +108,7 @@ PROTECTED_FILES=(
 # Future code should be able to leave this alone and simply checkout the
 # migration defintions as-is; however we've been incrementally relaxing some
 # constraints, so we need to be cautious here for the next month or so.
-MIGRATION_FORMAT="flat"
+MIGRATION_FORMAT="dirs"
 go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
 
 # Check out the previous code then immediately restore whatever
