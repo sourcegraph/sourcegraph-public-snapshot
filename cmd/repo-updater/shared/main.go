@@ -436,35 +436,36 @@ func watchSyncer(
 			if permsSyncer != nil {
 				// Schedule a repo permissions sync for all private repos that were added or
 				// modified.
-				var repoIDs []api.RepoID
-
-				for _, r := range diff.Added {
-					if r.Private {
-						repoIDs = append(repoIDs, r.ID)
-					}
-				}
-
-				for _, r := range diff.Modified {
-					if r.Private {
-						repoIDs = append(repoIDs, r.ID)
-					}
-				}
-
-				permsSyncer.ScheduleRepos(ctx, repoIDs...)
+				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
 			}
 
-			if gps == nil {
-				continue
+			if gps != nil {
+				go func() {
+					if err := gps.Sync(ctx, diff.Repos()); err != nil {
+						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+					}
+				}()
 			}
-
-			go func() {
-				if err := gps.Sync(ctx, diff.Repos()); err != nil {
-					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-				}
-			}()
-
 		}
 	}
+}
+
+func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
+	repoIDs := make([]api.RepoID, 0, len(diff.Added)+len(diff.Modified))
+
+	for _, r := range diff.Added {
+		if r.Private {
+			repoIDs = append(repoIDs, r.ID)
+		}
+	}
+
+	for _, r := range diff.Modified {
+		if r.Private {
+			repoIDs = append(repoIDs, r.ID)
+		}
+	}
+
+	return repoIDs
 }
 
 // syncScheduler will periodically list the cloned repositories on gitserver and
