@@ -537,6 +537,11 @@ interface TreeEntryLSIFData {
     diagnostics(first: Int): DiagnosticConnection!
 
     """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
+
+    """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
     refers to the current tree entry and can be used to walk all documentation below this tree entry.
 
@@ -625,6 +630,11 @@ type GitTreeLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -850,6 +860,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the path ID "/"
@@ -1337,8 +1352,6 @@ type IndexConfiguration {
 
 type GitBlobCodeIntelInfo {
     support: CodeIntelSupport!
-
-    lsifUploads: LSIFUploadConnection
 }
 
 type CodeIntelSupport {

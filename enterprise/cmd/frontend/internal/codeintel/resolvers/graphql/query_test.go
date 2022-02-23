@@ -10,27 +10,27 @@ import (
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRanges(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFRangesArgs{StartLine: 10, EndLine: 20}
 	if _, err := resolver.Ranges(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.RangesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.RangesFunc.History()))
+	if len(mockQueryResolver.RangesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.RangesFunc.History()))
 	}
-	if val := mockResolver.RangesFunc.History()[0].Arg1; val != 10 {
+	if val := mockQueryResolver.RangesFunc.History()[0].Arg1; val != 10 {
 		t.Fatalf("unexpected start line. want=%d have=%d", 10, val)
 	}
-	if val := mockResolver.RangesFunc.History()[0].Arg2; val != 20 {
+	if val := mockQueryResolver.RangesFunc.History()[0].Arg2; val != 20 {
 		t.Fatalf("unexpected end line. want=%d have=%d", 20, val)
 	}
 }
@@ -38,21 +38,22 @@ func TestRanges(t *testing.T) {
 func TestDefinitions(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Definitions(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.DefinitionsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DefinitionsFunc.History()))
+	if len(mockQueryResolver.DefinitionsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.DefinitionsFunc.History()))
 	}
-	if val := mockResolver.DefinitionsFunc.History()[0].Arg1; val != 10 {
+	if val := mockQueryResolver.DefinitionsFunc.History()[0].Arg1; val != 10 {
 		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
 	}
-	if val := mockResolver.DefinitionsFunc.History()[0].Arg2; val != 15 {
+	if val := mockQueryResolver.DefinitionsFunc.History()[0].Arg2; val != 15 {
 		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
 	}
 }
@@ -60,8 +61,9 @@ func TestDefinitions(t *testing.T) {
 func TestReferences(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(25)
 	cursor := base64.StdEncoding.EncodeToString([]byte("test-cursor"))
@@ -79,19 +81,19 @@ func TestReferences(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.ReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.ReferencesFunc.History()))
+	if len(mockQueryResolver.ReferencesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.ReferencesFunc.History()))
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg1; val != 10 {
+	if val := mockQueryResolver.ReferencesFunc.History()[0].Arg1; val != 10 {
 		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg2; val != 15 {
+	if val := mockQueryResolver.ReferencesFunc.History()[0].Arg2; val != 15 {
 		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg3; val != 25 {
+	if val := mockQueryResolver.ReferencesFunc.History()[0].Arg3; val != 25 {
 		t.Fatalf("unexpected character. want=%d have=%d", 25, val)
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg4; val != "test-cursor" {
+	if val := mockQueryResolver.ReferencesFunc.History()[0].Arg4; val != "test-cursor" {
 		t.Fatalf("unexpected character. want=%s have=%s", "test-cursor", val)
 	}
 }
@@ -99,8 +101,9 @@ func TestReferences(t *testing.T) {
 func TestReferencesDefaultLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFPagedQueryPositionArgs{
 		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
@@ -114,10 +117,10 @@ func TestReferencesDefaultLimit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.ReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DiagnosticsFunc.History()))
+	if len(mockQueryResolver.ReferencesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.DiagnosticsFunc.History()))
 	}
-	if val := mockResolver.ReferencesFunc.History()[0].Arg3; val != DefaultReferencesPageSize {
+	if val := mockQueryResolver.ReferencesFunc.History()[0].Arg3; val != DefaultReferencesPageSize {
 		t.Fatalf("unexpected limit. want=%d have=%d", DefaultReferencesPageSize, val)
 	}
 }
@@ -125,8 +128,9 @@ func TestReferencesDefaultLimit(t *testing.T) {
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(-1)
 	args := &gql.LSIFPagedQueryPositionArgs{
@@ -145,22 +149,23 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 func TestHover(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	mockResolver.HoverFunc.SetDefaultReturn("text", lsifstore.Range{}, true, nil)
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockQueryResolver.HoverFunc.SetDefaultReturn("text", lsifstore.Range{}, true, nil)
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.HoverFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.HoverFunc.History()))
+	if len(mockQueryResolver.HoverFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.HoverFunc.History()))
 	}
-	if val := mockResolver.HoverFunc.History()[0].Arg1; val != 10 {
+	if val := mockQueryResolver.HoverFunc.History()[0].Arg1; val != 10 {
 		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
 	}
-	if val := mockResolver.HoverFunc.History()[0].Arg2; val != 15 {
+	if val := mockQueryResolver.HoverFunc.History()[0].Arg2; val != 15 {
 		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
 	}
 }
@@ -168,8 +173,9 @@ func TestHover(t *testing.T) {
 func TestDiagnostics(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(25)
 	args := &gql.LSIFDiagnosticsArgs{
@@ -180,10 +186,10 @@ func TestDiagnostics(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.DiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DiagnosticsFunc.History()))
+	if len(mockQueryResolver.DiagnosticsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.DiagnosticsFunc.History()))
 	}
-	if val := mockResolver.DiagnosticsFunc.History()[0].Arg1; val != 25 {
+	if val := mockQueryResolver.DiagnosticsFunc.History()[0].Arg1; val != 25 {
 		t.Fatalf("unexpected limit. want=%d have=%d", 25, val)
 	}
 }
@@ -191,8 +197,9 @@ func TestDiagnostics(t *testing.T) {
 func TestDiagnosticsDefaultLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFDiagnosticsArgs{
 		ConnectionArgs: graphqlutil.ConnectionArgs{},
@@ -202,10 +209,10 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockResolver.DiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockResolver.DiagnosticsFunc.History()))
+	if len(mockQueryResolver.DiagnosticsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockQueryResolver.DiagnosticsFunc.History()))
 	}
-	if val := mockResolver.DiagnosticsFunc.History()[0].Arg1; val != DefaultDiagnosticsPageSize {
+	if val := mockQueryResolver.DiagnosticsFunc.History()[0].Arg1; val != DefaultDiagnosticsPageSize {
 		t.Fatalf("unexpected limit. want=%d have=%d", DefaultDiagnosticsPageSize, val)
 	}
 }
@@ -213,8 +220,9 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
+	mockQueryResolver := resolvermocks.NewMockQueryResolver()
+	mockResolver := resolvermocks.NewMockResolver()
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(-1)
 	args := &gql.LSIFDiagnosticsArgs{

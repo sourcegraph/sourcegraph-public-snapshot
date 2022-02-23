@@ -307,7 +307,7 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 		return nil, err
 	}
 
-	return NewQueryResolver(resolver, r.locationResolver, errTracer), nil
+	return NewQueryResolver(resolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
 func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitBlobCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelInfoResolver, err error) {

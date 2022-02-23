@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"strings"
 
@@ -208,7 +207,6 @@ type preciseCodeIntelSupportResolver struct {
 }
 
 func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseCodeIntelSupportResolver {
-	fmt.Println(path.Ext(filepath))
 	return &preciseCodeIntelSupportResolver{
 		indexers: languageToIndexer[path.Ext(filepath)],
 	}
