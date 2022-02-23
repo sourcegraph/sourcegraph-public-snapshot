@@ -32,7 +32,6 @@ steps:
   # Add test plans to PR templates
   - run: |
       read -r -d '' TEMPLATE << 'EOF'
-
       ### Test plan
 
       <!--
@@ -46,8 +45,8 @@ steps:
       EOF
 
       mkdir -p .github
-      echo "$TEMPLATE" >> .github/PULL_REQUEST_TEMPLATE.md
-      echo "$TEMPLATE" | tee -a $(find -name .github/PULL_REQUEST_TEMPLATE/*.md)
+      echo "\n\n$TEMPLATE" >> .github/PULL_REQUEST_TEMPLATE.md
+      echo "\n\n$TEMPLATE" | tee -a $(find -name .github/PULL_REQUEST_TEMPLATE/*.md)
     container: alpine:3
   # Create a GitHub action
   - run: |
