@@ -146,7 +146,7 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ## Usage with PgBouncer
 
-[PgBouncer] is a lightweight connections pooler for PostgreSQL. It allows more clients connection with the PostgreSQL database without running into connection limits. 
+[PgBouncer] is a lightweight connections pooler for PostgreSQL. It allows more clients to connect with the PostgreSQL database without running into connection limits.
 
 When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in the PostgreSQL connection url. This can be done by configuring the `PGDATASOURCE` and `CODEINSIGHTS_PGDATASOURCE` environment variables to `postgres://username:password@pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe`
 
