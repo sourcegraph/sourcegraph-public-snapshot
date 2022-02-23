@@ -144,6 +144,159 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ----
 
+## Usage with PgBouncer
+
+[PgBouncer] is a lightweight connections pooler for PostgreSQL. It allows more clients to connect with the PostgreSQL database without running into connection limits.
+
+When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in the PostgreSQL connection url. This can be done by configuring the `PGDATASOURCE` and `CODEINSIGHTS_PGDATASOURCE` environment variables to `postgres://username:password@pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe`
+
+### sourcegraph/server
+
+Add the following to your `docker run` command:
+
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:3.36.3</code></pre>
+
+### Docker Compose
+
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml):
+
+    ```yml
+    sourcegraph-frontend-0:
+      # ...
+      environment:
+        # ...
+        - 'PGDATASOURCE=postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe'
+        - 'CODEINSIGHTS_PGDATASOURCE=postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe'
+      # ...
+    ```
+
+    See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
+
+1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
+
+    ```yml
+    # # Description: PostgreSQL database for various data.
+    # #
+    # # Disk: 128GB / persistent SSD
+    # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
+    # # Ports exposed to the public internet: none
+    # #
+    # pgsql:
+    # container_name: pgsql
+    # image: 'index.docker.io/sourcegraph/postgres-11.4:19-11-14_b084311b@sha256:072481559d559cfd9a53ad77c3688b5cf583117457fd452ae238a20405923297'
+    # cpus: 4
+    # mem_limit: '2g'
+    # healthcheck:
+    #    test: '/liveness.sh'
+    #    interval: 10s
+    #    timeout: 1s
+    #    retries: 3
+    #    start_period: 15s
+    # volumes:
+    #    - 'pgsql:/data/'
+    # networks:
+    #     - sourcegraph
+    # restart: always
+
+    # # Description: PostgreSQL database for code intelligence data.
+    # #
+    # # Disk: 128GB / persistent SSD
+    # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
+    # # Ports exposed to the public internet: none
+    # #
+    # codeintel-db:
+    #   container_name: codeintel-db
+    #   image: 'index.docker.io/sourcegraph/codeintel-db@sha256:63090799b34b3115a387d96fe2227a37999d432b774a1d9b7966b8c5d81b56ad'
+    #   cpus: 4
+    #   mem_limit: '2g'
+    #   healthcheck:
+    #     test: '/liveness.sh'
+    #     interval: 10s
+    #     timeout: 1s
+    #     retries: 3
+    #     start_period: 15s
+    #   volumes:
+    #     - 'codeintel-db:/data/'
+    #   networks:
+    #     - sourcegraph
+    #   restart: always
+    ```
+
+### Kubernetes
+
+Create a new [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) to store the [PgBouncer] credentials.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-pgbouncer-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  password: ""
+```
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-codeintel-pgbouncer-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  password: ""
+```
+
+Update the environment variables in the `sourcegraph-frontend` deployment YAML.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sourcegraph-frontend
+spec:
+  template:
+    spec:
+      containers:
+      - name: frontend
+        env:
+        - name: PGDATABASE
+          value: sg
+        - name: PGHOST
+          value: sourcegraph-pgbouncer
+        - name: PGPORT
+          value: "5432"
+        - name: PGSSLMODE
+          value: disable
+        - name: PGUSER
+          value: sg
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sourcegraph-pgbouncer-credentials
+              key: password
+        - name: PGDATASOURCE
+          value: postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(PGDATABASE)?statement_cache_mode=describe
+        - name: CODEINTEL_PGDATABASE
+          value: sg-codeintel
+        - name: CODEINTEL_PGHOST
+          value: sourcegraph-codeintel-pgbouncer.mycompany.com
+        - name: CODEINTEL_PGPORT
+          value: "5432"
+        - name: CODEINTEL_PGSSLMODE
+          value: disable
+        - name: CODEINTEL_PGUSER
+          value: sg
+        - name: CODEINTEL_PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sourcegraph-codeintel-pgbouncer-credentials
+              key: password
+        - name: CODEINSIGHTS_PGDATASOURCE
+          value: postgres://$(CODEINTEL_PGUSER):$(CODEINTEL_PGPASSWORD)@$(CODEINTEL_PGHOST):$(CODEINTEL_PGPORT)/$(CODEINTEL_PGDATABASE)?statement_cache_mode=describe
+```
+
+----
+
 ## Postgres Permissions and Database Migrations
 
 There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
@@ -283,3 +436,5 @@ Failed to connect to codeintel database: 1 error occurred:
 
 The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
+
+[pgbouncer]: https://www.pgbouncer.org/
