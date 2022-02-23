@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 	"sync"
@@ -16,7 +15,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -31,7 +29,6 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -44,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -54,19 +50,12 @@ type SearchResultsResolver struct {
 	Stats       streaming.Stats
 	SearchAlert *search.Alert
 
-	// limit is the maximum number of SearchResults to send back to the user.
-	limit int
-
 	// The time it took to compute all results.
 	elapsed time.Duration
-
-	// cache for user settings. Ideally this should be set just once in the code path
-	// by an upstream resolver
-	UserSettings *schema.Settings
 }
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
+	return c.Stats.IsLimitHit
 }
 
 func (c *SearchResultsResolver) matchesRepoIDs() map[api.RepoID]struct{} {
@@ -142,12 +131,7 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	limited := sr.Matches
-	if sr.limit > 0 && sr.limit < len(sr.Matches) {
-		limited = sr.Matches[:sr.limit]
-	}
-
-	return matchesToResolvers(sr.db, limited)
+	return matchesToResolvers(sr.db, sr.Matches)
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
@@ -537,12 +521,10 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 
 func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
 	return &SearchResultsResolver{
-		Matches:      matches,
-		SearchAlert:  alert,
-		Stats:        stats,
-		limit:        r.SearchInputs.MaxResults(),
-		db:           r.db,
-		UserSettings: r.SearchInputs.UserSettings,
+		Matches:     matches,
+		SearchAlert: alert,
+		Stats:       stats,
+		db:          r.db,
 	}
 }
 
@@ -572,72 +554,6 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 	}
 }
 
-// expandPredicates takes a query plan, and replaces any predicates with their expansion. The returned plan
-// is guaranteed to be predicate-free.
-func (r *searchResolver) expandPredicates(ctx context.Context, oldPlan query.Plan) (_ query.Plan, err error) {
-	tr, ctx := trace.New(ctx, "expandPredicates", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	var (
-		mu      sync.Mutex
-		newPlan = make(query.Plan, 0, len(oldPlan))
-	)
-	g, ctx := errgroup.WithContext(ctx)
-
-	for _, q := range oldPlan {
-		q := q
-		g.Go(func() error {
-			predicatePlan, err := predicate.Substitute(q, func(pred query.Predicate) (result.Matches, error) {
-				plan, err := pred.Plan(q)
-				if err != nil {
-					return nil, err
-				}
-
-				children := make([]job.Job, 0, len(plan))
-				for _, basicQuery := range plan {
-					child, err := job.ToEvaluateJob(r.JobArgs(), basicQuery)
-					if err != nil {
-						return nil, err
-					}
-					children = append(children, child)
-				}
-
-				agg := streaming.NewAggregatingStream()
-				_, err = r.evaluateJob(ctx, agg, job.NewOrJob(children...))
-				if err != nil {
-					return nil, err
-				}
-				return agg.Results, nil
-			})
-			if errors.Is(err, predicate.ErrNoResults) {
-				// The predicate has no results, so neither will this basic query
-				return nil
-			}
-			if err != nil {
-				// Fail if predicate processing fails.
-				return err
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if predicatePlan != nil {
-				// If the predicate generated a new plan, use that
-				newPlan = append(newPlan, predicatePlan...)
-			} else {
-				// Otherwise, just use the original basic query
-				newPlan = append(newPlan, q)
-			}
-			return nil
-		})
-	}
-
-	return newPlan, g.Wait()
-}
-
 func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
@@ -645,7 +561,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		tr.Finish()
 	}()
 
-	plan, err = r.expandPredicates(ctx, plan)
+	plan, err = predicate.Expand(ctx, r.db, r.JobArgs(), plan)
 	if err != nil {
 		return nil, err
 	}
@@ -655,77 +571,7 @@ func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, p
 		return nil, err
 	}
 
-	return r.evaluateJob(ctx, stream, planJob)
-}
-
-// evaluateJob is a toplevel function that runs a search job to yield results.
-// A search job represents a tree of evaluation steps. If the deadline
-// is exceeded, returns a search alert with a did-you-mean link for the same
-// query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job job.Job) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "evaluateJob", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	tr.LazyPrintf("job name: %s", job.Name())
-
-	start := time.Now()
-	countingStream := streaming.NewResultCountingStream(stream)
-	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := job.Run(ctx, r.db, statsObserver)
-
-	ao := alert.Observer{
-		Db:           r.db,
-		SearchInputs: r.SearchInputs,
-		HasResults:   countingStream.Count() > 0,
-	}
-	if err != nil {
-		ao.Error(ctx, err)
-	}
-	observerAlert, err := ao.Done()
-
-	// We have an alert for context timeouts and we have a progress
-	// notification for timeouts. We don't want to show both, so we only show
-	// it if no repos are marked as timedout. This somewhat couples us to how
-	// progress notifications work, but this is the third attempt at trying to
-	// fix this behaviour so we are accepting that.
-	if errors.Is(err, context.DeadlineExceeded) {
-		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
-			usedTime := time.Since(start)
-			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, r.SearchInputs.OriginalQuery, r.SearchInputs.PatternType), nil
-		} else {
-			err = nil
-		}
-	}
-
-	return search.MaxPriorityAlert(jobAlert, observerAlert), err
-}
-
-// longer returns a suggested longer time to wait if the given duration wasn't long enough.
-func longer(n int, dt time.Duration) time.Duration {
-	dt2 := func() time.Duration {
-		Ndt := time.Duration(n) * dt
-		dceil := func(x float64) time.Duration {
-			return time.Duration(math.Ceil(x))
-		}
-		switch {
-		case math.Floor(Ndt.Hours()) > 0:
-			return dceil(Ndt.Hours()) * time.Hour
-		case math.Floor(Ndt.Minutes()) > 0:
-			return dceil(Ndt.Minutes()) * time.Minute
-		case math.Floor(Ndt.Seconds()) > 0:
-			return dceil(Ndt.Seconds()) * time.Second
-		default:
-			return 0
-		}
-	}()
-	lowest := 2 * time.Second
-	if dt2 < lowest {
-		return lowest
-	}
-	return dt2
+	return planJob.Run(ctx, r.db, stream)
 }
 
 type searchResultsStats struct {

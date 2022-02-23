@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import BarChartIcon from 'mdi-react/BarChartIcon'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
@@ -11,7 +11,9 @@ import { MenuNavItem } from './MenuNavItem'
 
 const config: Meta = {
     title: 'web/nav/MenuNavItem',
-    decorators: [story => <div className="p-3 container h-100 web-content">{story()}</div>],
+    decorators: [
+        story => <WebStory>{() => <div className="p-3 container h-100 web-content">{story()}</div>}</WebStory>,
+    ],
     parameters: {
         design: {
             type: 'figma',
@@ -36,14 +38,18 @@ const InsightsNavItem: React.FunctionComponent = () => (
     />
 )
 
-export const Menu: Story = () => (
-    <WebStory>
-        {() => (
-            <MenuNavItem openByDefault={true}>
-                <BatchChangesNavItem />
-                <InsightsNavItem />
-                <CodeMonitoringNavItem />
-            </MenuNavItem>
-        )}
-    </WebStory>
-)
+export const Menu: Story = () => {
+    const menuButtonReference = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
+    }, [])
+
+    return (
+        <MenuNavItem menuButtonRef={menuButtonReference}>
+            <BatchChangesNavItem />
+            <InsightsNavItem />
+            <CodeMonitoringNavItem />
+        </MenuNavItem>
+    )
+}

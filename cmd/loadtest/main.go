@@ -60,7 +60,7 @@ func run() error {
 				if count, err := search(v); err != nil {
 					log15.Error("Error issuing search query", "query", v.Query, "error", err)
 				} else {
-					log15.Info("Search results", "query", v.Query, "resultCount", count)
+					log15.Info("Search results", "query", v.Query, "matchCount", count)
 				}
 			}(v)
 		}

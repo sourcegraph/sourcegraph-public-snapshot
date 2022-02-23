@@ -1,5 +1,3 @@
-BEGIN;
-
 -- Note that we have to regenerate the reconciler_changesets view, as the SELECT
 -- c.* in the view definition isn't refreshed when the fields change within the
 -- changesets table.
@@ -26,5 +24,3 @@ CREATE VIEW reconciler_changesets AS
                 namespace_org.deleted_at IS NULL
         )
 ;
-
-COMMIT;

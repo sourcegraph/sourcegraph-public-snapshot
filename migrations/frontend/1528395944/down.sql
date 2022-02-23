@@ -1,3 +1,1 @@
-BEGIN;
-
-COMMIT;
+-- Nothing

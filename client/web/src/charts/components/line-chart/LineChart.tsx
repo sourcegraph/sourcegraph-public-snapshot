@@ -19,8 +19,9 @@ import { getSeriesWithData } from './utils/data-series-processing'
 import { generatePointsField } from './utils/generate-points-field'
 import { getChartContentSizes } from './utils/get-chart-content-sizes'
 import { getMinMaxBoundaries } from './utils/get-min-max-boundary'
+import { getStackedAreaPaths } from './utils/get-stacked-area-paths'
 
-export interface LineChartContentProps<D extends object> {
+export interface LineChartContentProps<D> {
     width: number
     height: number
 
@@ -37,6 +38,11 @@ export interface LineChartContentProps<D extends object> {
     xAxisKey: keyof D
 
     /**
+     * Whether a chart component should stack data based on x value for each series
+     */
+    stacked?: boolean
+
+    /**
      * Callback runs whenever a point-zone (zone around point) and point itself
      * on the chart is clicked.
      */
@@ -47,10 +53,18 @@ export interface LineChartContentProps<D extends object> {
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
  * voronoi area distribution.
  */
-export function LineChart<D extends object>(props: LineChartContentProps<D>): ReactElement | null {
-    const { width: outerWidth, height: outerHeight, data, series, xAxisKey, onDatumClick = noop } = props
+export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | null {
+    const {
+        width: outerWidth,
+        height: outerHeight,
+        data,
+        series,
+        xAxisKey,
+        stacked = false,
+        onDatumClick = noop,
+    } = props
 
-    const [activePoint, setActivePoint] = useState<Point & { element?: Element }>()
+    const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
     const yAxisReference = useRef<SVGGElement>(null)
     const xAxisReference = useRef<SVGGElement>(null)
 
@@ -69,9 +83,15 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
         [outerWidth, outerHeight, yAxisReference]
     )
 
-    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ data, series, xAxisKey }), [
+    const dataSeries = useMemo(() => getSeriesWithData({ data, series, stacked, xAxisKey }), [
         data,
         series,
+        stacked,
+        xAxisKey,
+    ])
+
+    const { minX, maxX, minY, maxY } = useMemo(() => getMinMaxBoundaries({ dataSeries, xAxisKey }), [
+        dataSeries,
         xAxisKey,
     ])
 
@@ -81,6 +101,7 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
                 domain: [minX, maxX],
                 range: [margin.left, width],
                 nice: true,
+                clamp: true,
             }),
         [minX, maxX, margin.left, width]
     )
@@ -95,19 +116,16 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
         [minY, maxY, margin.top, height]
     )
 
-    const points = useMemo(() => generatePointsField({ data, series, xAxisKey, yScale, xScale }), [
-        data,
-        series,
+    const points = useMemo(() => generatePointsField({ dataSeries, xAxisKey, yScale, xScale }), [
+        dataSeries,
         xAxisKey,
         yScale,
         xScale,
     ])
 
-    const dataSeries = useMemo(() => getSeriesWithData({ data, series }), [data, series])
-
     const voronoiLayout = useMemo(
         () =>
-            voronoi<Point>({
+            voronoi<Point<D>>({
                 x: point => point.x,
                 y: point => point.y,
                 width,
@@ -163,6 +181,20 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
             />
 
             <Group top={margin.top}>
+                {stacked && (
+                    <Group>
+                        {getStackedAreaPaths({ data, dataSeries, xScale, yScale, xKey: xAxisKey }).map(line => (
+                            <path
+                                key={`stack-${line.dataKey as string}`}
+                                d={line.path}
+                                stroke="transparent"
+                                opacity={0.5}
+                                fill={line.color}
+                            />
+                        ))}
+                    </Group>
+                )}
+
                 {dataSeries.map(line => (
                     <LinePath
                         key={line.dataKey as string}
@@ -194,7 +226,7 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
 
             {activePoint && (
                 <Tooltip reference={activePoint.element}>
-                    <TooltipContent data={data} series={series} xAxisKey={xAxisKey} activePoint={activePoint} />
+                    <TooltipContent series={series} xAxisKey={xAxisKey} activePoint={activePoint} />
                 </Tooltip>
             )}
         </svg>

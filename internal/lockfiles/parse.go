@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Dependency struct {
 	Name    string
-	Version string `json:"version"`
+	Version string
 	Kind    Kind
 }
 
@@ -39,11 +40,11 @@ var parsers = map[string]ParseFunc{
 	NPMFilename: ParseNPM,
 }
 
-type ParseFunc func([]byte) ([]*Dependency, error)
+type ParseFunc func([]byte) ([]reposource.PackageDependency, error)
 
 var ErrUnsupported = errors.New("unsupported lockfile kind")
 
-func Parse(file string, data []byte) ([]*Dependency, error) {
+func Parse(file string, data []byte) ([]reposource.PackageDependency, error) {
 	parse, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, ErrUnsupported

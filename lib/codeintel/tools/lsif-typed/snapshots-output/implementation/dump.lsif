@@ -1,4 +1,4 @@
-{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"repro_lang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"reprolang","version":"1.0.0"},"type":"vertex","label":"metaData"}
 {"id":2,"type":"vertex","label":"definitionResult"}
 {"id":3,"type":"vertex","label":"resultSet"}
 {"id":4,"type":"vertex","label":"referenceResult"}
@@ -6,7 +6,7 @@
 {"id":6,"type":"edge","label":"textDocument/definition","inV":2,"outV":3}
 {"id":7,"type":"edge","label":"textDocument/references","inV":4,"outV":3}
 {"id":8,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
-{"id":9,"type":"vertex","label":"moniker","identifier":"repro_lang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"export","scheme":"repro_lang"}
+{"id":9,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"export","scheme":"reprolang"}
 {"id":10,"type":"edge","label":"moniker","inV":9,"outV":3}
 {"id":11,"name":"implementation","version":"1.0.0","type":"vertex","label":"packageInformation"}
 {"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
@@ -17,7 +17,7 @@
 {"id":17,"type":"edge","label":"textDocument/definition","inV":13,"outV":14}
 {"id":18,"type":"edge","label":"textDocument/references","inV":15,"outV":14}
 {"id":19,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
-{"id":20,"type":"vertex","label":"moniker","identifier":"repro_lang repro_manager implementation 1.0.0 animal.repro/dog#","kind":"export","scheme":"repro_lang"}
+{"id":20,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/dog#","kind":"export","scheme":"reprolang"}
 {"id":21,"type":"edge","label":"moniker","inV":20,"outV":14}
 {"id":22,"type":"edge","label":"packageInformation","inV":11,"outV":20}
 {"id":23,"type":"vertex","label":"document","uri":"file:/root/animal.repro"}
