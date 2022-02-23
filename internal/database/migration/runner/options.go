@@ -82,7 +82,7 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 			counts[parent] = counts[parent] + 1
 		}
 
-		// Smort :clueless:
+Ensure that we have an entry for this definition (but do not modify the count)
 		counts[definition.ID] = counts[definition.ID] + 0
 	}
 
