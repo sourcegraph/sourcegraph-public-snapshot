@@ -25,8 +25,10 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
+import { render as renderLsifHtml } from '../../lsif/html'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
@@ -130,6 +132,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
+    const settings = getExperimentalFeatures(props.settingsCascade.final)
+    const treeSitterEnabled = !!settings.treeSitterEnabled
+
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
@@ -149,12 +154,19 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             commitID,
                             filePath,
                             disableTimeout,
+                            treeSitterEnabled,
                         })
                     ),
                     map(blob => {
                         if (blob === null) {
                             return blob
                         }
+
+                        // Replace html with lsif generated HTML, if available
+                        if (blob.highlight.lsif) {
+                            blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                        }
+
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
@@ -169,12 +181,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
                         return blobInfo
                     }),
-                    catchError((error): [ErrorLike] => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
+                    catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode]
+            [repoName, revision, commitID, filePath, mode, treeSitterEnabled]
         )
     )
 

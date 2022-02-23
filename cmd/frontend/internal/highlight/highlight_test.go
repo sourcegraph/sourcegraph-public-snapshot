@@ -2,11 +2,36 @@ package highlight
 
 import (
 	"context"
+	"encoding/base64"
 	"html/template"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 )
+
+func TestDeserialize(t *testing.T) {
+	original := new(lsiftyped.Document)
+	original.Occurrences = append(original.Occurrences, &lsiftyped.Occurrence{
+		SyntaxKind: lsiftyped.SyntaxKind_IdentifierAttribute,
+	})
+
+	marshaled, _ := proto.Marshal(original)
+	data, _ := base64.StdEncoding.DecodeString(base64.StdEncoding.EncodeToString(marshaled))
+
+	roundtrip := new(lsiftyped.Document)
+	err := proto.Unmarshal(data, roundtrip)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(original.String(), roundtrip.String()); diff != "" {
+		t.Fatalf("Round trip encode and decode should return the same data: %s", diff)
+	}
+}
 
 func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
@@ -84,8 +109,8 @@ line3`
 	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
-	Mocks.Code = func(p Params) (h template.HTML, aborted bool, err error) {
-		return template.HTML(highlightedCode), false, nil
+	Mocks.Code = func(p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
+		return template.HTML(highlightedCode), nil, false, nil
 	}
 	t.Cleanup(ResetMocks)
 

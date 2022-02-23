@@ -103,6 +103,10 @@ go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
 git checkout "${latest_minor_release_tag}"
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
+# Remove the languages submodules, because they mess these tests up
+rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
+
+
 for schema in frontend codeintel codeinsights; do
   # Force apply newer schema definitions
   rm -rf "./migrations/${schema}"

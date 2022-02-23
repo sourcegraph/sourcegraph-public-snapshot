@@ -123,8 +123,23 @@ export NO_GRAPHQL_LOG=true
 go install github.com/kyoh86/richgo@latest
 asdf reshim golang
 
+
+# Used to ignore directories (for example, when using submodules)
+#   (It appears to be unused, but it's actually used doing -v below)
+#
+# shellcheck disable=SC2034
+declare -A IGNORED_DIRS=(
+  ["./docker-images/syntax-highlighter"]=1
+)
+
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+
+  # Skip any ignored directories.
+  if [ -v "IGNORED_DIRS[$d]" ] ; then
+      continue
+  fi
+
   pushd "$d" >/dev/null
 
   # Separate out time for go mod from go test

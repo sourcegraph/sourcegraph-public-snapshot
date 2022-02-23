@@ -101,7 +101,7 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 	if err != nil {
 		return "", err
 	}
-	result, aborted, err := highlight.Code(ctx, highlight.Params{
+	result, _, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            content,
 		Filepath:           path,
 		DisableTimeout:     false, // use default 3 second timeout
