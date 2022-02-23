@@ -43,11 +43,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
         <CodeInsightsLandingPageContext.Provider value={DOT_COM_CONTEXT}>
             <Page>
                 <PageTitle title="Code Insights" />
-                <PageHeader
-                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
-                    description="Code Insights description copy"
-                    className="mb-4"
-                />
+                <PageHeader path={[{ icon: CodeInsightsIcon, text: 'Insights' }]} className="mb-4" />
                 <main className="pb-5">
                     <Card as={CardBody} className={styles.heroSection}>
                         <aside className={styles.heroVideoBlock}>
@@ -174,14 +170,14 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
 
                     <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
 
-                    <div className={styles.videoSection}>
-                        <video className="w-100" playsInline={true} controls={true}>
-                            <source
-                                src="https://storage.googleapis.com/sourcegraph-assets/code_insights/code-insights-demo-orig.mp4"
-                                type="video/mp4"
-                            />
-                        </video>
-                    </div>
+                    <iframe
+                        src="https://www.youtube.com/embed/fMCUJQHfbUA"
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen={true}
+                        className={styles.videoSection}
+                    />
 
                     <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
                 </main>
