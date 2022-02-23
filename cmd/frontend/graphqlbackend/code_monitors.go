@@ -67,6 +67,8 @@ type MonitorTriggerEventResolver interface {
 	Message() *string
 	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	ResultCount() int32
+	Query() *string
 }
 
 type MonitorActionConnectionResolver interface {

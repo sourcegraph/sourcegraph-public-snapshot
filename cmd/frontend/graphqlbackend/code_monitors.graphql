@@ -265,6 +265,19 @@ type MonitorTriggerEvent implements Node {
     """
     timestamp: DateTime!
     """
+    The query (with after filter) that provides an approximation of the
+    set of results associated with this trigger run. Will always be empty
+    while status is PENDING.
+    """
+    query: String
+
+    """
+    The number of results recorded for this trigger run. Will always be
+    zero until status is SUCCESS.
+    """
+    resultCount: Int!
+
+    """
     A list of actions.
     """
     actions(
