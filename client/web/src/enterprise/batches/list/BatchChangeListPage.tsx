@@ -104,7 +104,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('BatchChangesListPage'), [props.telemetryService])
 
-    const showDrafts = isBatchChangesExecutionEnabled(settingsCascade)
+    const executionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     /*
      * Tracks whether this is the first fetch since this page has been rendered the first time.
@@ -160,15 +160,17 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         {...props}
                         location={location}
                         nodeComponent={BatchChangeNode}
-                        nodeComponentProps={{ displayNamespace }}
+                        nodeComponentProps={{ displayNamespace, executionEnabled }}
                         queryConnection={query}
                         hideSearch={true}
                         defaultFirst={15}
-                        filters={getFilters(showDrafts)}
+                        // Drafts are a new feature of severside execution that for now
+                        // should not be shown otherwise.
+                        filters={getFilters(executionEnabled)}
                         noun="batch change"
                         pluralNoun="batch changes"
                         listComponent="div"
-                        listClassName={styles.batchChangeListPageGrid}
+                        listClassName={classNames(styles.grid, executionEnabled ? styles.wide : styles.narrow)}
                         withCenteredSummary={true}
                         cursorPaging={true}
                         noSummaryIfAllNodesVisible={true}
@@ -260,7 +262,6 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
         <div className="overflow-auto mb-2">
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
-                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <Link
                         to=""
                         onClick={onSelectBatchChanges}
@@ -273,7 +274,6 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                     </Link>
                 </li>
                 <li className="nav-item">
-                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <Link
                         to=""
                         onClick={onSelectGettingStarted}

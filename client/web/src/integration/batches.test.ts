@@ -27,6 +27,7 @@ import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
     BatchChangeState,
+    BatchSpecState,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -47,6 +48,19 @@ const batchChangeListNode: ListBatchChange = {
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
+    },
+    currentSpec: {
+        id: 'test-spec',
+    },
+    batchSpecs: {
+        nodes: [
+            {
+                __typename: 'BatchSpec',
+                id: 'test-spec',
+                state: BatchSpecState.COMPLETED,
+                applyURL: '/fake-apply-url',
+            },
+        ],
     },
 }
 
