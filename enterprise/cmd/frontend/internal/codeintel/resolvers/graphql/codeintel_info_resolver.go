@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/go-ctags"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	indexerconsts "github.com/sourcegraph/sourcegraph/internal/codeintel/indexer-consts"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
@@ -27,101 +28,6 @@ const (
 	thirdParty preciseCodeIntelSupportType = "THIRD_PARTY"
 	unknown    preciseCodeIntelSupportType = "UNKNOWN"
 )
-
-var (
-	lsifNode = codeIntelIndexerResolver{
-		name: "lsif-tsc",
-		urn:  "github.com/sourcegraph/lsif-node",
-	}
-	msftNode = codeIntelIndexerResolver{
-		name: "msft/lsif-node",
-		urn:  "github.com/Microsoft/lsif-node",
-	}
-	lsifTypescript = codeIntelIndexerResolver{
-		name: "lsif-typescript",
-		urn:  "github.com/sourcegraph/lsif-typescript",
-	}
-	lsifJava = codeIntelIndexerResolver{
-		name: "lsif-java",
-		urn:  "github.com/sourcegraph/lsif-java",
-	}
-	msftJava = codeIntelIndexerResolver{
-		name: "msft/lsif-java",
-		urn:  "github.com/Microsoft/lsif-java",
-	}
-	lsifGo = codeIntelIndexerResolver{
-		name: "lsif-go",
-		urn:  "github.com/sourcegraph/lsif-go",
-	}
-	lsifClang = codeIntelIndexerResolver{
-		name: "lsif-clang",
-		urn:  "github.com/sourcegraph/lsif-clang",
-	}
-	lsifCpp = codeIntelIndexerResolver{
-		name: "lsif-cpp",
-		urn:  "github.com/sourcegraph/lsif-cpp",
-	}
-	lsifDart = codeIntelIndexerResolver{
-		name: "lsif-dart",
-		urn:  "github.com/sourcegraph/lsif-dart",
-	}
-	workivaDart = codeIntelIndexerResolver{
-		name: "lsif_indexer",
-		urn:  "github.com/Workiva/lsif_indexer",
-	}
-	hieLsif = codeIntelIndexerResolver{
-		name: "hie-lsif",
-		urn:  "github.com/mpickering/hie-lsif",
-	}
-	lsifJsonnet = codeIntelIndexerResolver{
-		name: "lsif-jsonnet",
-		urn:  "github.com/sourcegraph/lsif-jsonnet",
-	}
-	lsifOcaml = codeIntelIndexerResolver{
-		name: "lsif-ocaml",
-		urn:  "github.com/rvantonder/lsif-ocaml",
-	}
-	lsifPy = codeIntelIndexerResolver{
-		name: "lsif-py",
-		urn:  "github.com/sourcegraph/lsif-py",
-	}
-	rustAnalyzer = codeIntelIndexerResolver{
-		name: "rust-analyzer",
-		urn:  "github.com/rust-analyzer/rust-analyzer",
-	}
-	lsifPhp = codeIntelIndexerResolver{
-		name: "lsif-php",
-		urn:  "github.com/davidrjenni/lsif-php",
-	}
-	lsifTerraform = codeIntelIndexerResolver{
-		name: "lsif-terraform",
-		urn:  "github.com/juliosueiras/lsif-terraform",
-	}
-)
-
-var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
-	".go":      {&lsifGo},
-	".java":    {&lsifJava, &msftJava},
-	".kt":      {&lsifJava},
-	".scala":   {&lsifJava},
-	".js":      {&lsifTypescript, &lsifNode, &msftNode},
-	".jsx":     {&lsifTypescript, &lsifNode, &msftNode},
-	".ts":      {&lsifTypescript, &lsifNode, &msftNode},
-	".tsx":     {&lsifTypescript, &lsifNode, &msftNode},
-	".dart":    {&workivaDart, &lsifDart},
-	".c":       {&lsifClang, &lsifCpp},
-	".cc":      {&lsifClang, &lsifCpp},
-	".cpp":     {&lsifClang, &lsifCpp},
-	".cxx":     {&lsifClang, &lsifCpp},
-	".h":       {&lsifClang, &lsifCpp},
-	".hs":      {&hieLsif},
-	".jsonnet": {&lsifJsonnet},
-	".py":      {&lsifPy},
-	".ml":      {&lsifOcaml},
-	".rs":      {&rustAnalyzer},
-	".php":     {&lsifPhp},
-	".tf":      {&lsifTerraform},
-}
 
 type gitBlobCodeIntelInfoResolver struct {
 	gitBlobMeta *gql.GitBlobCodeIntelInfoArgs
@@ -208,7 +114,7 @@ type preciseCodeIntelSupportResolver struct {
 
 func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseCodeIntelSupportResolver {
 	return &preciseCodeIntelSupportResolver{
-		indexers: languageToIndexer[path.Ext(filepath)],
+		indexers: indexerconsts.LanguageToIndexer[path.Ext(filepath)],
 	}
 }
 
@@ -235,16 +141,4 @@ func (r *preciseCodeIntelSupportResolver) Indexers() *[]gql.CodeIntelIndexerReso
 		return nil
 	}
 	return &r.indexers
-}
-
-type codeIntelIndexerResolver struct {
-	name, urn string
-}
-
-func (r *codeIntelIndexerResolver) Name() string {
-	return r.name
-}
-
-func (r *codeIntelIndexerResolver) URL() string {
-	return "https://" + r.urn
 }
