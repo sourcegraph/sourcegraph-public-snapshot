@@ -259,6 +259,17 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
+
+	codeHostIntegrationUsage, err := usagestats.GetCodeHostIntegrationUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codeHostIntegrationUsage)
+}
+
 func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
@@ -337,23 +348,24 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
-		DeployType:          deploy.Type(),
-		ClientVersionString: version.Version(),
-		LicenseKey:          conf.Get().LicenseKey,
-		CodeIntelUsage:      []byte("{}"),
-		NewCodeIntelUsage:   []byte("{}"),
-		SearchUsage:         []byte("{}"),
-		BatchChangesUsage:   []byte("{}"),
-		GrowthStatistics:    []byte("{}"),
-		SavedSearches:       []byte("{}"),
-		HomepagePanels:      []byte("{}"),
-		Repositories:        []byte("{}"),
-		RetentionStatistics: []byte("{}"),
-		SearchOnboarding:    []byte("{}"),
-		ExtensionsUsage:     []byte("{}"),
-		CodeInsightsUsage:   []byte("{}"),
-		CodeMonitoringUsage: []byte("{}"),
+		ClientSiteID:             siteid.Get(),
+		DeployType:               deploy.Type(),
+		ClientVersionString:      version.Version(),
+		LicenseKey:               conf.Get().LicenseKey,
+		CodeIntelUsage:           []byte("{}"),
+		NewCodeIntelUsage:        []byte("{}"),
+		SearchUsage:              []byte("{}"),
+		BatchChangesUsage:        []byte("{}"),
+		GrowthStatistics:         []byte("{}"),
+		SavedSearches:            []byte("{}"),
+		HomepagePanels:           []byte("{}"),
+		Repositories:             []byte("{}"),
+		RetentionStatistics:      []byte("{}"),
+		SearchOnboarding:         []byte("{}"),
+		ExtensionsUsage:          []byte("{}"),
+		CodeInsightsUsage:        []byte("{}"),
+		CodeMonitoringUsage:      []byte("{}"),
+		CodeHostIntegrationUsage: []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -449,6 +461,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}

@@ -117,8 +117,7 @@ const (
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *TextPatternInfo {
-	q = transform(q)
+func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
@@ -232,33 +231,36 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 }
 
 func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
-	var q zoekt.Q
-	var err error
-
-	var fold func(node query.Node) zoekt.Q
-	fold = func(node query.Node) zoekt.Q {
+	var fold func(node query.Node) (zoekt.Q, error)
+	fold = func(node query.Node) (zoekt.Q, error) {
 		switch n := node.(type) {
 		case query.Operator:
 			children := make([]zoekt.Q, 0, len(n.Operands))
 			for _, op := range n.Operands {
-				children = append(children, fold(op))
+				child, err := fold(op)
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, child)
 			}
 			switch n.Kind {
 			case query.Or:
-				return &zoekt.Or{Children: children}
+				return &zoekt.Or{Children: children}, nil
 			case query.And:
-				return &zoekt.And{Children: children}
+				return &zoekt.And{Children: children}, nil
 			default:
 				// unreachable
-				err = errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+				return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
 			}
 		case query.Pattern:
+			var q zoekt.Q
+			var err error
 			if n.Annotation.Labels.IsSet(query.Regexp) {
 				fileNameOnly := patternMatchesPath && !patternMatchesContent
 				contentOnly := !patternMatchesPath && patternMatchesContent
 				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
 				if err != nil {
-					return nil
+					return nil, err
 				}
 			} else {
 				q = &zoekt.Substring{
@@ -273,14 +275,13 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 			if n.Negated {
 				q = &zoekt.Not{Child: q}
 			}
-			return q
+			return q, nil
 		}
 		// unreachable
-		err = errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
-		return nil
+		return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
 	}
 
-	q = fold(expression)
+	q, err := fold(expression)
 	if err != nil {
 		return nil, err
 	}

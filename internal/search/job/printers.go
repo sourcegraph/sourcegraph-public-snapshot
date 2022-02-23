@@ -131,6 +131,13 @@ func SexpFormat(job Job, sep, indent string) string {
 			writeSexp(j.child)
 			b.WriteString(")")
 			depth--
+		case *alertJob:
+			b.WriteString("(ALERT")
+			depth++
+			writeSep(b, sep, indent, depth)
+			writeSexp(j.child)
+			b.WriteString(")")
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for SexpFormat printer", job))
 		}
@@ -281,6 +288,13 @@ func PrettyMermaid(job Job) string {
 			writeEdge(b, depth, srcId, id)
 			writeMermaid(j.child)
 			depth--
+		case *alertJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "ALERT")
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
 		default:
 			panic(fmt.Sprintf("unsupported job %T for PrettyMermaid printer", job))
 		}
@@ -395,7 +409,12 @@ func toJSON(job Job, verbose bool) interface{} {
 				Select: emitJSON(j.child),
 				Value:  j.path.String(),
 			}
-
+		case *alertJob:
+			return struct {
+				Alert interface{} `json:"ALERT"`
+			}{
+				Alert: emitJSON(j.child),
+			}
 		default:
 			panic(fmt.Sprintf("unsupported job %T for toJSON converter", job))
 		}

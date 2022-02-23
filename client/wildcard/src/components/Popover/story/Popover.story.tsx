@@ -18,9 +18,6 @@ const config: Meta = {
     component: Popover,
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
     parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
         design: [
             {
                 type: 'figma',

@@ -84,7 +84,7 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 	return &metrics{
 		took:        duration,
 		firstResult: duration,
-		matchCount:  respDec.Data.Search.Results.ResultCount,
+		matchCount:  respDec.Data.Search.Results.MatchCount,
 		trace:       resp.Header.Get("x-trace"),
 	}, nil
 }
