@@ -3,14 +3,16 @@ import React from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'
 
-import { useHandleSubmitFeedback } from '../../../../../../hooks'
+import { useHandleSubmitFeedback } from '../../../../../../../hooks'
+import { useLogEventName } from '../../../CodeInsightsLandingPageContext'
 
 import styles from './CodeInsightsLearnMore.module.scss'
 
 interface CodeInsightsLearnMoreProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
 export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMoreProps> = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, mode = 'in-product', ...otherProps } = props
+    const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch: '/insights/about',
@@ -18,7 +20,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMor
     })
 
     const handleLinkClick = (): void => {
-        telemetryService.log('InsightsGetStartedDocsClicks')
+        telemetryService.log(textDocumentClickPingName)
     }
 
     return (
