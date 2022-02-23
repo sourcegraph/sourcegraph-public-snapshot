@@ -93,6 +93,8 @@ $spacer: 1rem;
 
 :root {
     --spacer: #{$spacer};
+    --font-size-base: #{$font-size-base};
+    --line-height-base: #{$line-height-base}em;
 }
 
 // Apply static variables before Bootstrap imports.
@@ -109,7 +111,6 @@ $spacer: 1rem;
 
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
@@ -124,6 +125,7 @@ $spacer: 1rem;
 @import './code';
 @import './buttons';
 @import './button-group';
+@import './input-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
