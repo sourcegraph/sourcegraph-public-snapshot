@@ -253,7 +253,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
-func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitBlobCodeIntelInfoResolver, error) {
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (CodeIntelSupportResolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err

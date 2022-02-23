@@ -310,8 +310,11 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	return NewQueryResolver(resolver, r.resolver, r.locationResolver, errTracer), nil
 }
 
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitBlobCodeIntelInfoArgs) (_ gql.GitBlobCodeIntelInfoResolver, err error) {
-	return NewGitBlobCodeIntelInfoResolver(args, nil), nil
+func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitBlobCodeIntelInfoArgs) (_ gql.CodeIntelSupportResolver, err error) {
+	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return NewCodeIntelSupportResolver(r.resolver, args, errTracer), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID

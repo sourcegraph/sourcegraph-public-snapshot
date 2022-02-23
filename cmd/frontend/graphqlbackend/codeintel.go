@@ -25,7 +25,7 @@ type CodeIntelResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitBlobCodeIntelInfoArgs) (GitBlobCodeIntelInfoResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitBlobCodeIntelInfoArgs) (CodeIntelSupportResolver, error)
 
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)

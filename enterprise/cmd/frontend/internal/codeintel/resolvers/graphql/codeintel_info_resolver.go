@@ -5,13 +5,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gobwas/glob"
-	"github.com/sourcegraph/go-ctags"
+	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	indexerconsts "github.com/sourcegraph/sourcegraph/internal/codeintel/indexer-consts"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 
 type searchBasedCodeIntelSupportType string
@@ -29,57 +28,40 @@ const (
 	unknown    preciseCodeIntelSupportType = "UNKNOWN"
 )
 
-type gitBlobCodeIntelInfoResolver struct {
-	gitBlobMeta *gql.GitBlobCodeIntelInfoArgs
-	errTracer   *observation.ErrCollector
-}
-
-func NewGitBlobCodeIntelInfoResolver(args *gql.GitBlobCodeIntelInfoArgs, errTracer *observation.ErrCollector) gql.GitBlobCodeIntelInfoResolver {
-	return &gitBlobCodeIntelInfoResolver{
-		gitBlobMeta: args,
-		errTracer:   errTracer,
-	}
-}
-
-func (r *gitBlobCodeIntelInfoResolver) Support(ctx context.Context) gql.CodeIntelSupportResolver {
-	return NewCodeIntelSupportResolver(r.gitBlobMeta, r.errTracer)
-}
-
-func (r *gitBlobCodeIntelInfoResolver) LSIFUploads(ctx context.Context) (gql.LSIFUploadConnectionResolver, error) {
-	return nil, nil
-}
-
 type codeIntelSupportResolver struct {
 	gitBlobMeta *gql.GitBlobCodeIntelInfoArgs
+	resolver    resolvers.Resolver
 	errTracer   *observation.ErrCollector
 }
 
-func NewCodeIntelSupportResolver(args *gql.GitBlobCodeIntelInfoArgs, errTracer *observation.ErrCollector) gql.CodeIntelSupportResolver {
+func NewCodeIntelSupportResolver(resolver resolvers.Resolver, args *gql.GitBlobCodeIntelInfoArgs, errTracer *observation.ErrCollector) gql.CodeIntelSupportResolver {
 	return &codeIntelSupportResolver{
 		gitBlobMeta: args,
+		resolver:    resolver,
 		errTracer:   errTracer,
 	}
 }
 
 func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gql.SearchBasedCodeIntelSupportResolver, err error) {
-	defer r.errTracer.Collect(&err)
+	var (
+		ctagsSupported bool
+		language       string
+	)
 
-	mappings, err := symbols.DefaultClient.ListLanguageMappings(ctx, r.gitBlobMeta.Repo)
+	defer func() {
+		r.errTracer.Collect(&err,
+			log.String("codeIntelSupportResolver.field", "searchBasedSupport"),
+			log.String("inferredLanguage", language),
+			log.Bool("ctagsSupported", ctagsSupported))
+	}()
+
+	ctagsSupported, language, err = r.resolver.SupportedByCtags(ctx, r.gitBlobMeta.Path, r.gitBlobMeta.Repo)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, allowedLanguage := range ctags.SupportedLanguages {
-		for _, pattern := range mappings[allowedLanguage] {
-			compiled, err := glob.Compile(pattern)
-			if err != nil {
-				return nil, err
-			}
-
-			if compiled.Match(path.Base(r.gitBlobMeta.Path)) {
-				return NewSearchBasedCodeIntelResolver(&allowedLanguage), nil
-			}
-		}
+	if ctagsSupported {
+		return NewSearchBasedCodeIntelResolver(&language), nil
 	}
 
 	return NewSearchBasedCodeIntelResolver(nil), nil
