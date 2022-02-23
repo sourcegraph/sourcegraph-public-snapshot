@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -11,6 +11,7 @@ import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
+import { CopyableText } from '../../components/CopyableText'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import styles from './CollaboratorsPanel.module.scss'
@@ -21,13 +22,14 @@ interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
+    hasEmailSendingCapabilities: boolean
 }
 
 export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     className,
     authenticatedUser,
+    hasEmailSendingCapabilities,
     fetchCollaborators,
-    telemetryService,
 }) => {
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
@@ -37,6 +39,22 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
     const [successfulInvites, setSuccessfulInvites] = useState<Set<string>>(new Set<string>())
+
+    useEffect(() => {
+        if (!Array.isArray(collaborators)) {
+            return
+        }
+        // When Email is not set up we might find some people to invite but won't show that to the user.
+        if (!hasEmailSendingCapabilities) {
+            return
+        }
+
+        // const loggerPayload = {
+        //     discovered: collaborators.length,
+        // }
+        // eventLogger.log('UserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
+    }, [collaborators, hasEmailSendingCapabilities])
+
     const invitePerson = useCallback(
         async (person: InvitableCollaborator): Promise<void> => {
             if (loadingInvites.has(person.email) || successfulInvites.has(person.email)) {
@@ -65,52 +83,64 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     const loadingDisplay = <LoadingPanelView text="Loading colleagues" />
 
-    const contentDisplay = (
-        <div className={classNames('row', 'py-1')}>
-            {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
+    const contentDisplay =
+        filteredCollaborators?.length === 0 || !hasEmailSendingCapabilities ? (
+            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
+        ) : (
+            <div className={classNames('row', 'py-1')}>
+                {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
-            {filteredCollaborators?.map((person: InvitableCollaborator) => (
-                <div
-                    className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-1', 'mb-1', styles.invitebox)}
-                    key={person.email}
-                >
-                    <Button
-                        variant="icon"
+                {filteredCollaborators?.map((person: InvitableCollaborator) => (
+                    <div
+                        className={classNames(
+                            'd-flex',
+                            'align-items-center',
+                            'col-lg-6',
+                            'mt-1',
+                            'mb-1',
+                            styles.invitebox
+                        )}
                         key={person.email}
-                        disabled={loadingInvites.has(person.email) || successfulInvites.has(person.email)}
-                        className={classNames('w-100', styles.button)}
-                        onClick={() => invitePerson(person)}
                     >
-                        <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
-                        <div className={styles.content}>
-                            <strong className={styles.clipText}>{person.displayName}dasdfjlaskdfjlsakfd</strong>
-                            <div className={styles.inviteButton}>
-                                {loadingInvites.has(person.email) ? (
-                                    <span className=" ml-auto mr-3">
-                                        <LoadingSpinner inline={true} className="icon-inline mr-1" />
-                                        Inviting...
-                                    </span>
-                                ) : successfulInvites.has(person.email) ? (
-                                    <span className="text-success ml-auto mr-3">
-                                        <EmailCheckIcon className="icon-inline mr-1" />
-                                        Invited
-                                    </span>
-                                ) : (
-                                    <>
-                                        <div className={classNames('text-muted', styles.clipText)}>{person.email}</div>
-                                        <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
-                                            <EmailIcon className="icon-inline mr-1" />
-                                            Invite to Sourcegraph
-                                        </div>
-                                    </>
-                                )}
+                        <Button
+                            variant="icon"
+                            key={person.email}
+                            disabled={loadingInvites.has(person.email) || successfulInvites.has(person.email)}
+                            className={classNames('w-100', styles.button)}
+                            onClick={() => invitePerson(person)}
+                        >
+                            <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
+                            <div className={styles.content}>
+                                <strong className={styles.clipText}>{person.displayName}dasdfjlaskdfjlsakfd</strong>
+                                <div className={styles.inviteButton}>
+                                    {loadingInvites.has(person.email) ? (
+                                        <span className=" ml-auto mr-3">
+                                            <LoadingSpinner inline={true} className="icon-inline mr-1" />
+                                            Inviting...
+                                        </span>
+                                    ) : successfulInvites.has(person.email) ? (
+                                        <span className="text-success ml-auto mr-3">
+                                            <EmailCheckIcon className="icon-inline mr-1" />
+                                            Invited
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <div className={classNames('text-muted', styles.clipText)}>
+                                                {person.email}
+                                            </div>
+                                            <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
+                                                <EmailIcon className="icon-inline mr-1" />
+                                                Invite to Sourcegraph
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </Button>
-                </div>
-            ))}
-        </div>
-    )
+                        </Button>
+                    </div>
+                ))}
+            </div>
+        )
 
     return (
         <PanelContainer
@@ -121,5 +151,34 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
         />
+    )
+}
+
+const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }> = ({ username }) => {
+    const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
+
+    return (
+        <div
+            className={classNames(
+                'd-flex',
+                'align-items-center',
+                'flex-column',
+                'justify-content-center',
+                'col-lg-12',
+                'h-100'
+            )}
+        >
+            <div className="text-center">No collaborators found in sampled repositories.</div>
+            <div className="text-muted mt-3 text-center">
+                You can invite people to Sourcegraph with this direct link:
+            </div>
+            <CopyableText
+                className="mt-3"
+                text={inviteURL}
+                flex={true}
+                size={inviteURL.length}
+                onCopy={() => /* eventLogger.log('UserInvitationsCopiedInviteLink') */ null}
+            />
+        </div>
     )
 }
