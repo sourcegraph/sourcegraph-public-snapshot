@@ -21,16 +21,22 @@ eval "$cmd"
 exit_code="$?"
 
 # Check for annotations left behind by the command
+echo "--- uploading annotations"
 for file in "$annotation_dir"/*; do
-  name=$(basename "$file")
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+
+  echo "handling $file"
   annotate_file_opts=$annotate_opts
 
-  case "$name" in
-    # Append markdown annotations as markdown, and remove the suffix from the name
-    *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
-  esac
-
   if [ "$include_names" = "true" ]; then
+    name=$(basename "$file")
+    case "$name" in
+      # Append markdown annotations as markdown, and remove the suffix from the name
+      *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
+    esac
+
     # Set the name of the file as the title of this annotation section
     annotate_file_opts="-s '$name' $annotate_file_opts"
   fi

@@ -135,19 +135,21 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  mkdir -p ./annotations
-  annotation_file='./annotations/Backwards incompatibility detected.md'
-  cat <<EOF >"$annotation_file"
+  read -r -d '' annotation <<EOF
 This commit contains database schema definitions that caused an unexpected
-failure of one or more unit tests at tagged commit ${latest_minor_release_tag}.
+failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
 If this backwards incompatibility is intentional or of the test is flaky,
 an exception for this text can be added to the following flakefile:
 
-  ${flakefile}
+\`\`\`
+${flakefile}
+\`\`\`
 
 Rewrite these schema changes to be backwards compatible. For help,
-see docs.sourcegraph.com/dev/background-information/sql/migrations.
+see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
 EOF
-  echo "$annotation_file"
+  echo "$annotation"
+  mkdir -p ./annotations/
+  echo "$annotation" >'./annotations/go-backcompat.md'
   exit 1
 fi
