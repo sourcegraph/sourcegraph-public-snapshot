@@ -445,6 +445,7 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
+		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
 		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
@@ -474,8 +475,7 @@ func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCo
 			case query.FieldRepo:
 				// We allow -repo: in global search.
 				return n.Negated
-			case
-				query.FieldRepoHasFile:
+			case query.FieldRepoHasFile:
 				return false
 			default:
 				return true
