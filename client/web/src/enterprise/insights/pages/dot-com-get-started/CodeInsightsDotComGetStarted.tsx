@@ -28,11 +28,30 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
         />
         <main className="pb-5">
             <Card as={CardBody} className={styles.heroSection}>
-                <section className={styles.chartSection}>
-                    <div className={styles.heroImage} />
-                </section>
+                <aside className={styles.heroVideoBlock}>
+                    <video
+                        className={classNames('shadow percy-hide w-100 h-auto')}
+                        width={1280}
+                        height={720}
+                        autoPlay={true}
+                        muted={true}
+                        loop={true}
+                        playsInline={true}
+                        controls={false}
+                    >
+                        <source
+                            type="video/webm"
+                            src="https://storage.googleapis.com/sourcegraph-assets/code_insights/code-insights-720.webm"
+                        />
 
-                <section>
+                        <source
+                            type="video/mp4"
+                            src="https://storage.googleapis.com/sourcegraph-assets/code_insights/code-insights-720.mp4"
+                        />
+                    </video>
+                </aside>
+
+                <section className={styles.hereDescriptionBlock}>
                     <h2 className={classNames(styles.heroTitle)}>
                         Draw insights from your codebase about how different initiatives are tracking over time
                     </h2>
@@ -53,10 +72,17 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                     </ul>
 
                     <footer className={styles.heroFooter}>
-                        <Button variant="primary" as={Link} to="/schedule-demo">
+                        <Button
+                            variant="primary"
+                            as={Link}
+                            to="https://about.sourcegraph.com/contacts"
+                            target="_blank"
+                            rel="noopener"
+                        >
                             Schedule a demo
                         </Button>
-                        <Button variant="secondary" as={Link} to="/schedule-demo">
+
+                        <Button variant="secondary" as={Link} to="/help/code_insights/references/common_use_cases">
                             Explore use cases
                         </Button>
                     </footer>
@@ -67,12 +93,13 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                 <h2>Trusted by leading engineering teams around the world:</h2>
 
                 <q className={styles.quote}>
-                    Code insights enables our team to move away from manual spreadsheets and point-in-time documentation
-                    and provides us with a holistic view of our codebase when we undergo complex projects such as
-                    migrations and major platform-related changes.
+                    As we’ve grown, so has the need to better track and communicate our progress and goals across the
+                    engineering team and broader company. With Code Insights, our data and migration tracking is
+                    accurate across our entire codebase, and our engineers and managers can shift out of manual
+                    spreadsheets and spend more time working on code.
                 </q>
 
-                <span className={styles.quoteAuthor}>Jane Doe, Engineering leader</span>
+                <span className={styles.quoteAuthor}>Balázs Tóthfalussy, Engineering Manager</span>
 
                 <img
                     className={styles.quoteLogo}
@@ -105,7 +132,11 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                             You can check it out for free by installing with a single line of code.
                         </p>
 
-                        <Button as={Link} variant="primary" to="/install">
+                        <Button
+                            as={Link}
+                            variant="primary"
+                            to="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-code-insights&term="
+                        >
                             Install local instance
                         </Button>
                     </div>

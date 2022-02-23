@@ -1,14 +1,20 @@
 .hero-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    // Override card default styles with flex-direction: column;
+    flex-direction: row;
     padding: 1.5rem;
     gap: 1.5rem;
+}
 
-    @media (max-width: 761px) {
-        .chart-section {
-            order: 2;
-        }
-    }
+.hero-video-block {
+    flex-grow: 10;
+    flex-basis: 30rem;
+}
+
+.here-description-block {
+    flex-grow: 1;
+    flex-basis: 25rem;
 }
 
 .hero-title {
