@@ -33,7 +33,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
-					Username  string
+					User      struct{ Login string }
 					AvatarURL string
 				}
 			}
@@ -43,7 +43,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
-					Username  string
+					User      struct{ Login string }
 					AvatarURL string
 				}
 			}{
@@ -51,7 +51,7 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 					Date      string
 					Email     string
 					Name      string
-					Username  string
+					User      struct{ Login string }
 					AvatarURL string
 				}{
 					{Name: params.Name + "-joe"},
@@ -195,6 +195,21 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 				{email: "steve@github.com"},
 				{email: "kimbo@github.com"},
 				{email: "rando@randi.com"},
+			}),
+		},
+		{
+			recentCommitters: collaborators("steve@gmail.com", "rando@gmail.com", "kimbo@gmail.com", "george@gmail.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
+			authUserEmails:   emails(),
+			want: autogold.Want("popular personal email domains last", []*invitableCollaboratorResolver{
+				{
+					email: "sqs@sourcegraph.com",
+				},
+				{email: "stephen@sourcegraph.com"},
+				{email: "beyang@sourcegraph.com"},
+				{email: "rando@gmail.com"},
+				{email: "kimbo@gmail.com"},
+				{email: "george@gmail.com"},
+				{email: "steve@gmail.com"},
 			}),
 		},
 	}

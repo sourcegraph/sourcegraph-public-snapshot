@@ -267,14 +267,28 @@ func filterInvitableCollaborators(recentCommitters []*invitableCollaboratorResol
 		invitablePerDomain[domain(person.email)] = current + 1
 	}
 	sort.Slice(invitable, func(i, j int) bool {
-		// Sort by domains with most invitable collaborators first.
-		iPeopleWithDomain := invitablePerDomain[domain(invitable[i].email)]
-		jPeopleWithDomain := invitablePerDomain[domain(invitable[j].email)]
-		if iPeopleWithDomain != jPeopleWithDomain {
-			return iPeopleWithDomain > jPeopleWithDomain
+		// First, sort popular personal email domains lower.
+		iDomain := domain(invitable[i].email)
+		jDomain := domain(invitable[j].email)
+		if iDomain != jDomain {
+			for _, popularPersonalDomain := range []string{"@gmail.com", "@yahoo.com", "@outlook.com", "@fastmail.com", "@protonmail.com"} {
+				if jDomain == popularPersonalDomain {
+					return true
+				}
+				if iDomain == popularPersonalDomain {
+					return false
+				}
+			}
+
+			// Sort domains with most invitable collaborators higher.
+			iPeopleWithDomain := invitablePerDomain[iDomain]
+			jPeopleWithDomain := invitablePerDomain[jDomain]
+			if iPeopleWithDomain != jPeopleWithDomain {
+				return iPeopleWithDomain > jPeopleWithDomain
+			}
 		}
 
-		// Secondarily, sort by most-recent committers.
+		// Finally, sort most-recent committers higher.
 		return invitable[i].date.After(invitable[j].date)
 	})
 	return invitable
