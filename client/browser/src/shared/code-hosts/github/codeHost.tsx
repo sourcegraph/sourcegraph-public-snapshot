@@ -722,7 +722,7 @@ export const githubCodeHost: GithubCodeHost = {
         actionItemIconClass: classNames(styles.icon, 'v-align-text-bottom'),
     },
     hoverOverlayClassProps: {
-        className: classNames('Box', styles.hoverOverlay),
+        className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),

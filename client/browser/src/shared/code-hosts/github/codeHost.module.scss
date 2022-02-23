@@ -51,12 +51,6 @@
     margin-bottom: 4px;
 }
 
-.hover-overlay {
-    /* GitHub buttons are larger than buttons on other codehosts and Sourcegraph cloud,
-     * so we make the container wider to prevent content overflow. */
-    max-width: 38rem !important;
-}
-
 .hover-overlay-badge {
     /* GitHub badges (.label) are larger than badges on other codehosts, so
      * move badges up to prevent spilling over into the next section (hover content) */
