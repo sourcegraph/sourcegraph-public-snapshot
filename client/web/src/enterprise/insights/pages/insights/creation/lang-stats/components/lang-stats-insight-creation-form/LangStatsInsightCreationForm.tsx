@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
@@ -66,7 +67,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
-        <form
+        <Form
             ref={innerRef}
             noValidate={true}
             className={classNames(className, 'd-flex flex-column')}
@@ -155,6 +156,6 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     Clear all fields
                 </Button>
             </div>
-        </form>
+        </Form>
     )
 }

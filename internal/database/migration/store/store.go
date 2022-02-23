@@ -62,9 +62,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY)`, quote(s.schemaName)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.schemaName)),
-
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
@@ -84,65 +81,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 
 	for _, query := range queries {
 		if err := tx.Exec(ctx, query); err != nil {
-			return err
-		}
-	}
-
-	migrationVersionBounds := map[string][2]int{
-		"schema_migrations":              {1528395834, 1528395973},
-		"codeintel_schema_migrations":    {1000000015, 1000000030},
-		"codeinsights_schema_migrations": {1000000000, 1000000027},
-		"test_migrations_table_backfill": {1000000000, 2000000000}, // used in tests
-	}
-
-	if bounds, ok := migrationVersionBounds[s.schemaName]; ok {
-		if err := tx.Exec(ctx, sqlf.Sprintf(
-			`
-				WITH
-					-- Choose the version if it's within the sequential seequence of migrations we want to migrate
-					version_in_bounds AS (SELECT version FROM %s WHERE NOT dirty AND %s <= version AND version <= %s),
-
-					-- Determine if there's any new migration log entry that has already done this
-					new_log_versions_exist AS (SELECT 1 FROM migration_logs WHERE schema = %s AND migration_logs_schema_version > 1),
-
-					-- Delete old migration logs
-					deleted AS (
-						DELETE FROM migration_logs
-						WHERE
-							schema = %s AND
-							migration_logs_schema_version = 1 AND
-							EXISTS (SELECT 1 FROM version_in_bounds) AND      -- only perform if non-dirty and within bounds
-							NOT EXISTS (SELECT 1 FROM new_log_versions_exist) -- only perform once
-					),
-
-					-- Overwrite migration logs
-					inserted AS (
-						INSERT INTO migration_logs (
-							migration_logs_schema_version,
-							schema,
-							version,
-							up,
-							success,
-							started_at,
-							finished_at
-						)
-						SELECT %s, %s, version, true, true, NOW(), NOW()
-						FROM generate_series(%s::int, (SELECT version FROM version_in_bounds)) version
-						WHERE
-							EXISTS (SELECT 1 FROM version_in_bounds) AND      -- only perform if non-dirty and within bounds
-							NOT EXISTS (SELECT 1 FROM new_log_versions_exist) -- only perform once
-					)
-				SELECT 1
-			`,
-			quote(s.schemaName),
-			bounds[0],
-			bounds[1],
-			s.schemaName,
-			s.schemaName,
-			currentMigrationLogSchemaVersion,
-			s.schemaName,
-			bounds[0],
-		)); err != nil {
 			return err
 		}
 	}
@@ -301,11 +239,6 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	}
 
 	defer func() {
-		if err == nil {
-			err = s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty = false`, quote(s.schemaName)))
-		}
-	}()
-	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
 			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
 			err == nil,
@@ -330,17 +263,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 	}
 	defer func() { err = tx.Done(err) }()
 
-	targetVersion := definitionVersion
-	if !up {
-		targetVersion--
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
-		return 0, err
-	}
-
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`
 			INSERT INTO migration_logs (
@@ -363,8 +285,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 
 	return id, nil
 }
-
-var quote = sqlf.Sprintf
 
 func errMsgPtr(err error) *string {
 	if err == nil {

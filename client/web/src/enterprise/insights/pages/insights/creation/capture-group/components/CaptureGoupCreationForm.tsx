@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Form as BrandedForm } from '@sourcegraph/branded/src/components/Form'
 import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
@@ -61,7 +62,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     const isEditMode = mode === 'edit'
 
     return (
-        <form noValidate={true} ref={ref} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
+        <BrandedForm noValidate={true} ref={ref} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"
@@ -224,7 +225,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     Clear all fields
                 </Button>
             </footer>
-        </form>
+        </BrandedForm>
     )
 }
 

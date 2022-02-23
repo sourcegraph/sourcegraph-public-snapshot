@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: ['@sourcegraph/eslint-config', 'plugin:@sourcegraph/wildcard/recommended'],
+  extends: '@sourcegraph/eslint-config',
   env: {
     browser: true,
     node: true,
@@ -85,6 +85,29 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'form',
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
+          },
+          {
+            element: 'select',
+            message: 'Use the <Select /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'textarea',
+            message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'a',
+            message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+        ],
+      },
+    ],
+    '@sourcegraph/wildcard/forbid-class-name': [
+      'error',
+      {
+        forbid: [
+          {
+            className: 'badge',
+            message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

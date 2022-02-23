@@ -208,6 +208,8 @@ type RepoInfo struct {
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
+	LastError       string     // the most recent error seen while fetching or cloning the repo
+	ShardID         string     // the ID of the shard owning this repo
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
 	// re-cloned automatically, so this time is likely to move forward

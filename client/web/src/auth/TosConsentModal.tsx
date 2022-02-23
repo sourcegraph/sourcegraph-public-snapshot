@@ -1,6 +1,7 @@
 import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
@@ -48,7 +49,7 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     We take data privacy seriously. We collect only what we need to provide a great experience, and we
                     never have access to your private data or code.
                 </p>
-                <form onSubmit={onSubmit}>
+                <Form onSubmit={onSubmit}>
                     <div className="form-group">
                         <div className="form-check">
                             <label className="form-check-label">
@@ -73,7 +74,7 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                         className="mt-4"
                         variant="primary"
                     />
-                </form>
+                </Form>
                 <p className="mt-5">
                     If you do not agree, <AnchorLink to="/-/sign-out">sign out</AnchorLink> and contact your site admin
                     to have your account deleted.

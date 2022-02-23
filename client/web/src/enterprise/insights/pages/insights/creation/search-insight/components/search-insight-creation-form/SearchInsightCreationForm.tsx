@@ -1,6 +1,7 @@
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
@@ -107,7 +108,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
-        <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
+        <Form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"
@@ -241,6 +242,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     Clear all fields
                 </Button>
             </div>
-        </form>
+        </Form>
     )
 }

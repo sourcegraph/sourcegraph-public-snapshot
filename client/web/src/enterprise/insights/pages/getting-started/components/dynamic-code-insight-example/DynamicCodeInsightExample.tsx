@@ -3,6 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, Link, useObservable, useDebounce } from '@sourcegraph/wildcard'
 
@@ -111,7 +112,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
-            <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
+            <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"
                     withLivePreviewControls={false}
@@ -158,7 +159,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     {...repositories.input}
                     className="mt-3 mb-0"
                 />
-            </form>
+            </Form>
 
             <section>
                 <h2 className={classNames(styles.cardTitle)}>
