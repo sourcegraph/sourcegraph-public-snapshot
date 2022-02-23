@@ -1,41 +1,41 @@
 .pill-group {
     display: flex;
-    // The .05 is to prevent a tiny gap from forming
-    border-radius: calc(var(--badge-border-radius) * 2.05);
+    border-radius: calc(var(--badge-border-radius) * 1.5);
     border-width: 2px;
     border-style: solid;
+    overflow: hidden;
 
     &.open {
+        background-color: var(--success);
         border-color: var(--success);
     }
 
     &.draft {
+        background-color: var(--secondary);
         border-color: var(--secondary);
     }
 
     &.closed {
+        background-color: var(--danger);
         border-color: var(--danger);
     }
 
     .state-pill {
-        padding: 0.25rem 0.5rem;
+        padding: 0.125rem 0.375rem;
         text-transform: uppercase;
-
-        &:not(:last-child) {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-        }
+        border-radius: 0;
+        border: none;
     }
 
     .execution-pill {
         display: flex;
         align-items: center;
-        padding: 0 0.25rem;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+        border: none;
+        border-radius: 0;
+        padding: 0 0.125rem;
 
         .execution-icon {
-            height: 1.125rem;
+            height: 1rem;
         }
     }
 }
