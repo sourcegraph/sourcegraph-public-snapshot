@@ -120,7 +120,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
+            {showPrivateRepositoryAlert && <PrivateRepositoryAlert url={showPrivateRepositoryAlert} />}
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
@@ -185,32 +185,19 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent = () => (
+const PrivateRepositoryAlert: React.FunctionComponent = ({ url }: { url: string }) => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
             <LockIcon className="icon-inline mr-2" />
             Private repository
         </h4>
         <p>
-            To use the browser extension with your private repositories, you need to set up a{' '}
-            <strong>private Sourcegraph instance</strong> and connect the browser extension to it.
+            To use the browser extension with your private repositories, you need to enable sync in{' '}
+            <a href={url} {...NEW_TAB_LINK_PROPS}>
+                manage repositories settings
+            </a>
+            .
         </p>
-        <ol>
-            <li className="mb-2">
-                <Link to="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
-                    Install and configure Sourcegraph
-                </Link>
-                . Skip this step if you already have a private Sourcegraph instance.
-            </li>
-            <li className="mb-2">Click the Sourcegraph icon in the browser toolbar to bring up this popup again.</li>
-            <li className="mb-2">
-                Enter the URL (including the protocol) of your Sourcegraph instance above, e.g.{' '}
-                <q>https://sourcegraph.example.com</q>.
-            </li>
-            <li>
-                Make sure that the status says <q>Looks good!</q>.
-            </li>
-        </ol>
     </section>
 )
 
