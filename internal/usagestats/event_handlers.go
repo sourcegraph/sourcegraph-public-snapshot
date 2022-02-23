@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -97,6 +98,7 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 
 type bigQueryEvent struct {
 	EventName       string  `json:"name"`
+	URL             string  `json:"url"`
 	AnonymousUserID string  `json:"anonymous_user_id"`
 	FirstSourceURL  string  `json:"first_source_url"`
 	LastSourceURL   string  `json:"last_source_url"`
@@ -155,10 +157,16 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			return nil, err
 		}
 
+		url, err := redactSensitiveInfoFromCloudURL(event.URL)
+		if err != nil {
+			return nil, err
+		}
+
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
 			EventName:       event.EventName,
 			UserID:          int(event.UserID),
 			AnonymousUserID: event.UserCookieID,
+			URL:             url,
 			FirstSourceURL:  firstSourceURL,
 			LastSourceURL:   lastSourceURL,
 			Referrer:        referrer,
@@ -220,4 +228,43 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 	}
 
 	return databaseEvents, nil
+}
+
+// redactSensitiveInfoFromCloudURL redacts portions of URLs that
+// may contain sensitive info on Sourcegraph Cloud. We replace all paths,
+// and only maintain query parameters in a specified allowlist,
+// which are known to be essential for marketing analytics on Sourcegraph Cloud.
+func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	if parsedURL.Host != "sourcegraph.com" {
+		return rawURL, nil
+	}
+
+	parsedURL.RawPath = "/redacted"
+	parsedURL.Path = "/redacted"
+
+	marketingQueryParameters := map[string]struct{}{
+		"utm_source":   {},
+		"utm_campaign": {},
+		"utm_medium":   {},
+		"utm_term":     {},
+		"utm_content":  {},
+	}
+	urlQueryParams, err := url.ParseQuery(parsedURL.RawQuery)
+	if err != nil {
+		return "", err
+	}
+	for key := range urlQueryParams {
+		if _, ok := marketingQueryParameters[key]; !ok {
+			urlQueryParams[key] = []string{"redacted"}
+		}
+	}
+
+	parsedURL.RawQuery = urlQueryParams.Encode()
+
+	return parsedURL.String(), nil
 }
