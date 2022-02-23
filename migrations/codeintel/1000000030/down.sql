@@ -1,1 +1,5 @@
--- Nothing
+DROP TABLE lsif_data_implementations_schema_versions;
+DROP TRIGGER lsif_data_implementations_schema_versions_insert ON lsif_data_implementations;
+DROP FUNCTION update_lsif_data_implementations_schema_versions_insert;
+
+DROP TABLE lsif_data_implementations;

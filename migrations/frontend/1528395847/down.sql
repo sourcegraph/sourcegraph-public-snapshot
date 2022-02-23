@@ -1,0 +1,1 @@
+DROP TABLE lsif_retention_configuration;
