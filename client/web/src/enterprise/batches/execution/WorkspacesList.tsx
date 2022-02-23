@@ -72,9 +72,12 @@ interface WorkspaceNodeProps {
 }
 
 const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => (
-    <li className={classNames('list-group-item', node.id === selectedNode && styles.workspaceSelected)}>
-        <Link to={`?workspace=${node.id}`}>
-            <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
+    <li className={classNames('list-group-item', styles.listGroupItem)}>
+        <Link
+            to={`?workspace=${node.id}`}
+            className={classNames(styles.workspaceListNode, node.id === selectedNode && styles.workspaceSelected)}
+        >
+            <div className="d-flex mb-1">
                 <span>
                     <WorkspaceStateIcon
                         cachedResultFound={node.cachedResultFound}
@@ -82,10 +85,14 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
                         className={classNames(styles.workspaceListIcon, 'mr-2 flex-shrink-0')}
                     />
                 </span>
-                <strong className={classNames(styles.workspaceName, 'flex-grow-1')}>{node.repository.name}</strong>
-                {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+                <div className="flex-grow-1">
+                    <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
+                        <h4 className={classNames(styles.workspaceName, 'flex-grow-1')}>{node.repository.name}</h4>
+                        {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+                    </div>
+                    <Branch name={node.branch.abbrevName} />
+                </div>
             </div>
-            <Branch name={node.branch.abbrevName} />
         </Link>
     </li>
 )
