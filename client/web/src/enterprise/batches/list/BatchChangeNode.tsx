@@ -6,7 +6,12 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Badge, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
-import { BatchChangeState, BatchSpecState, ListBatchChange } from '../../../graphql-operations'
+import {
+    BatchChangeState,
+    BatchSpecState,
+    ListBatchChange,
+    ListBatchChangeLatestSpecFields,
+} from '../../../graphql-operations'
 import {
     ChangesetStatusOpen,
     ChangesetStatusClosed,
@@ -60,7 +65,9 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     now = () => new Date(),
     displayNamespace,
 }) => {
-    const latestExecution = useMemo(() => node.batchSpecs.nodes[0], [node.batchSpecs.nodes])
+    const latestExecution: ListBatchChangeLatestSpecFields | undefined = useMemo(() => node.batchSpecs.nodes?.[0], [
+        node.batchSpecs.nodes,
+    ])
 
     // The URL to follow when a batch change is clicked on depends on the current state
     // and execution state.
@@ -90,7 +97,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             case BatchSpecState.COMPLETED:
                 // If it hasn't been applied, we take you to the preview page. Otherwise,
                 // we just take you to the details page.
-                return node.currentSpec.id === latestExecution?.id
+                return node.currentSpec.id === latestExecution.id
                     ? node.url
                     : `${node.url}/executions/${latestExecution.id}/preview`
             default:
