@@ -40,8 +40,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"DATE":                               c.Time.Format(time.RFC3339),
 		"VERSION":                            c.Version,
 
-		// Additional flags
+		// Go flags
 		"GO111MODULE": "on",
+		// Use athens proxy for go modules downloads, falling back to direct
+		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
+		"GOPROXY": "http://athens-athens-proxy,direct",
+
+		// Additional flags
 		"FORCE_COLOR": "3",
 		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
@@ -313,12 +318,6 @@ func withAgentQueueDefaults(s *bk.Step) {
 		} else {
 			s.Agents["queue"] = bk.AgentQueueStandard
 		}
-	}
-
-	if s.Agents["queue"] != bk.AgentQueueBaremetal {
-		// Use athens proxy for go modules downloads on non-baremetal agents
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Env["GOPROXY"] = "http://athens-athens-proxy"
 	}
 }
 
