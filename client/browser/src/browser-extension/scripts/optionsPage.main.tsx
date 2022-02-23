@@ -9,7 +9,8 @@ import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
-import { GraphQLResult } from '@sourcegraph/http-client'
+import { gql, GraphQLResult } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
@@ -159,12 +160,36 @@ const Options: React.FunctionComponent = () => {
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
+    const [managePrivateRepositoriesURL, setManagePrivateRepositoriesURL] = useState('')
 
     useEffect(() => {
         fetchCurrentTabStatus().then(tabStatus => {
             setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
         }, noop)
     }, [])
+
+    useEffect(() => {
+        if (!currentTabStatus?.status.hasPrivateCloudError || !isDefaultSourcegraphUrl(sourcegraphUrl)) {
+            return
+        }
+        const requestGraphQL = createRequestGraphQL(sourcegraphUrl!)
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
+                query UserSettingsURL {
+                    currentUser {
+                        settingsURL
+                    }
+                }
+            `,
+            variables: {},
+        })
+            .pipe(map(({ data }) => data?.currentUser?.settingsURL))
+            .toPromise()
+            .then(url => setManagePrivateRepositoriesURL(new URL(`${url}/repositories/manage`, sourcegraphUrl).href))
+            .catch(console.error)
+        // TODO: fetch user settings URL
+        // set it to state
+    }, [currentTabStatus, sourcegraphUrl])
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
@@ -227,9 +252,7 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    showPrivateRepositoryAlert={
-                        currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                    }
+                    showPrivateRepositoryAlert={managePrivateRepositoriesURL} // TODO: rename showPrivate -> managePrivateRepositoriesURL
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
