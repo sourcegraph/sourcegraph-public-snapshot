@@ -240,7 +240,7 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		return "", err
 	}
 
-	if parsedURL.Host != "https://sourcegraph.com" {
+	if parsedURL.Host != "sourcegraph.com" {
 		return rawURL, nil
 	}
 
