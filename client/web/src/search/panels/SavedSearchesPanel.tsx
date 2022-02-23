@@ -128,27 +128,10 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     const actionButtons = (
         <ActionButtonGroup>
             <ButtonGroup>
-                {authenticatedUser && (
-                    <Button
-                        to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="mr-2"
-                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
-                        variant="secondary"
-                        outline={true}
-                        as={Link}
-                        size="sm"
-                    >
-                        +
-                    </Button>
-                )}
-            </ButtonGroup>
-            <ButtonGroup>
                 <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('test-saved-search-panel-my-searches', {
-                        active: !showAllSearches,
-                    })}
-                    outline={true}
+                    className="test-saved-search-panel-my-searches"
+                    outline={showAllSearches}
                     variant="secondary"
                     size="sm"
                 >
@@ -156,10 +139,8 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 </Button>
                 <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('test-saved-search-panel-all-searches', {
-                        active: showAllSearches,
-                    })}
-                    outline={true}
+                    className="test-saved-search-panel-all-searches"
+                    outline={!showAllSearches}
                     variant="secondary"
                     size="sm"
                 >
