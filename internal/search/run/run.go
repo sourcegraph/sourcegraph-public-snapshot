@@ -1,10 +1,19 @@
 package run
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,4 +39,138 @@ func (inputs SearchInputs) DefaultLimit() int {
 		return limits.DefaultMaxSearchResults
 	}
 	return limits.DefaultMaxSearchResultsStreaming
+}
+
+func NewSearchInputs(
+	ctx context.Context,
+	db database.DB,
+	version string,
+	patternType *string,
+	searchQuery string,
+	stream streaming.Sender,
+	settings *schema.Settings,
+) (_ *SearchInputs, err error) {
+	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	searchType, err := detectSearchType(version, patternType)
+	if err != nil {
+		return nil, err
+	}
+	searchType = overrideSearchType(searchQuery, searchType)
+
+	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
+	// Beta: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
+	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
+		if err != nil {
+			return "", err
+		}
+		tr.LazyPrintf("substitute query %s for context %s", sc.Query, context)
+		return sc.Query, nil
+	})
+
+	var plan query.Plan
+	plan, err = query.Pipeline(
+		query.Init(searchQuery, searchType),
+		query.With(searchContextsQueryEnabled, substituteContextsStep),
+	)
+	if err != nil {
+		return nil, &QueryError{Query: searchQuery, Err: err}
+	}
+	tr.LazyPrintf("parsing done")
+
+	protocol := search.Batch
+	if stream != nil {
+		protocol = search.Streaming
+	}
+
+	inputs := &SearchInputs{
+		Plan:          plan,
+		Query:         plan.ToParseTree(),
+		OriginalQuery: searchQuery,
+		UserSettings:  settings,
+		Features:      featureflag.FromContext(ctx),
+		PatternType:   searchType,
+		Protocol:      protocol,
+	}
+
+	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+
+	return inputs, nil
+}
+
+type QueryError struct {
+	Query string
+	Err   error
+}
+
+func (e *QueryError) Error() string {
+	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
+}
+
+// detectSearchType returns the search type to perform ("regexp", or
+// "literal"). The search type derives from three sources: the version and
+// patternType parameters passed to the search endpoint (literal search is the
+// default in V2), and the `patternType:` filter in the input query string which
+// overrides the searchType, if present.
+func detectSearchType(version string, patternType *string) (query.SearchType, error) {
+	var searchType query.SearchType
+	if patternType != nil {
+		switch *patternType {
+		case "literal":
+			searchType = query.SearchTypeLiteral
+		case "regexp":
+			searchType = query.SearchTypeRegex
+		case "structural":
+			searchType = query.SearchTypeStructural
+		default:
+			return -1, errors.Errorf("unrecognized patternType: %v", patternType)
+		}
+	} else {
+		switch version {
+		case "V1":
+			searchType = query.SearchTypeRegex
+		case "V2":
+			searchType = query.SearchTypeLiteral
+		default:
+			return -1, errors.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
+		}
+	}
+	return searchType, nil
+}
+
+func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
+	q, err := query.Parse(input, query.SearchTypeLiteral)
+	q = query.LowercaseFieldNames(q)
+	if err != nil {
+		// If parsing fails, return the default search type. Any actual
+		// parse errors will be raised by subsequent parser calls.
+		return searchType
+	}
+	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
+		switch value {
+		case "regex", "regexp":
+			searchType = query.SearchTypeRegex
+		case "literal":
+			searchType = query.SearchTypeLiteral
+		case "structural":
+			searchType = query.SearchTypeStructural
+		}
+	})
+	return searchType
+}
+
+func getBoolPtr(b *bool, def bool) bool {
+	if b == nil {
+		return def
+	}
+	return *b
 }
