@@ -42,7 +42,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Go flags
 		"GO111MODULE": "on",
-		// Use athens proxy for go modules downloads on non-baremetal agents
+		// Use athens proxy for go modules downloads, falling back to direct
 		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
 		"GOPROXY": "http://athens-athens-proxy,direct",
 
