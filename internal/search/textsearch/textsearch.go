@@ -19,39 +19,26 @@ import (
 
 var MockSearchFilesInRepos func() ([]result.Match, *streaming.Stats, error)
 
-// SearchFilesInRepos searches a set of repos for a pattern.
-func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, notSearcherOnly bool, stream streaming.Sender) (err error) {
-	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos()
-		stream.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats:   mockStats.Deref(),
-		})
-		return err
-	}
+// SearchFilesInReposBatch is a convenience function around searchFilesInRepos
+// which collects the results from the stream.
+func SearchFilesInReposBatch(ctx context.Context, request zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, notSearcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
+	agg := streaming.NewAggregatingStream()
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	if notSearcherOnly {
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			return zoektArgs.Search(ctx, stream)
+			return request.Search(ctx, agg)
 		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return searcher.SearchOverRepos(ctx, searcherArgs, stream, zoektArgs.UnindexedRepos(), false)
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
 	})
 
-	return g.Wait()
-}
-
-// SearchFilesInReposBatch is a convenience function around searchFilesInRepos
-// which collects the results from the stream.
-func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
-	agg := streaming.NewAggregatingStream()
-	err := SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, agg)
+	err := g.Wait()
 
 	fms, fmErr := matchesToFileMatches(agg.Results)
 	if fmErr != nil && err == nil {
@@ -103,7 +90,21 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 			}
 		}
 
-		return SearchFilesInRepos(ctx, request, t.SearcherArgs, t.NotSearcherOnly, stream)
+		g, ctx := errgroup.WithContext(ctx)
+
+		if t.NotSearcherOnly {
+			// Run literal and regexp searches on indexed repositories.
+			g.Go(func() error {
+				return request.Search(ctx, stream)
+			})
+		}
+
+		// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+		g.Go(func() error {
+			return searcher.SearchOverRepos(ctx, t.SearcherArgs, stream, request.UnindexedRepos(), false)
+		})
+
+		return g.Wait()
 	})
 }
 
