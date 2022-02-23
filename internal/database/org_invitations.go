@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -114,10 +113,21 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 	if recipientUserID > 0 {
 		column = "recipient_user_id"
 		value = strconv.FormatInt(int64(recipientUserID), 10)
-	}
-	if email != "" {
+	} else if email != "" {
 		column = "recipient_email"
 		value = email
+	}
+
+	// check if the invitation exists first and return that
+	q := sqlf.Sprintf("org_id=%d AND "+column+"=%s AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", orgID, value)
+	results, err := s.list(ctx, []*sqlf.Query{
+		q,
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) > 0 {
+		return results[len(results)-1], nil
 	}
 
 	if err := s.Handle().DB().QueryRowContext(
@@ -125,10 +135,6 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 		fmt.Sprintf("INSERT INTO org_invitations(org_id, sender_user_id, %s, expires_at) VALUES($1, $2, $3, $4) RETURNING id, created_at", column),
 		orgID, senderUserID, value, expiryTime,
 	).Scan(&t.ID, &t.CreatedAt); err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) && e.ConstraintName == "org_invitations_singleflight" {
-			return nil, errors.New("user was already invited to organization (and has not responded yet)")
-		}
 		return nil, err
 	}
 	return t, nil
@@ -177,10 +183,11 @@ func (s *orgInvitationStore) GetPending(ctx context.Context, orgID, recipientUse
 	if len(results) == 0 {
 		return nil, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("pending for org %d recipient %d", orgID, recipientUserID)}}
 	}
-	if results[0].Expired() {
+	lastInvitation := results[len(results)-1]
+	if lastInvitation.Expired() {
 		return nil, errors.New("invitation is expired")
 	}
-	return results[0], nil
+	return lastInvitation, nil
 }
 
 // GetPendingByID retrieves the pending invitation (if any) based on the invitation ID

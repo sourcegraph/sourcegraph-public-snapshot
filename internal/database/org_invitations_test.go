@@ -71,6 +71,12 @@ func TestOrgInvitations(t *testing.T) {
 		{
 			OrgID:           org2.ID,
 			RecipientUserID: recipient.ID,
+			ExpiresAt:       &fiveMinutesAgo,
+		},
+		{
+			OrgID:           org2.ID,
+			RecipientUserID: recipient.ID,
+			RecipientEmail:  email,
 		},
 		{
 			OrgID:           org2.ID,
@@ -120,7 +126,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 		invitations = append(invitations, i)
 	}
-	oi1, oi2, oi3, oi4, emailInvite, expiredInvite := invitations[0], invitations[1], invitations[2], invitations[3], invitations[4], invitations[5]
+	oi1, oi2Expired, oi2, oi3, oi4, emailInvite, expiredInvite := invitations[0], invitations[1], invitations[2], invitations[3], invitations[4], invitations[5], invitations[6]
 
 	testGetByID := func(t *testing.T, id int64, want *OrgInvitation) {
 		t.Helper()
@@ -132,6 +138,7 @@ func TestOrgInvitations(t *testing.T) {
 	}
 	t.Run("GetByID", func(t *testing.T) {
 		testGetByID(t, oi1.ID, oi1)
+		testGetByID(t, oi2Expired.ID, oi2Expired)
 		testGetByID(t, oi2.ID, oi2)
 		testGetByID(t, oi3.ID, oi3)
 		testGetByID(t, oi4.ID, oi4)
@@ -238,7 +245,7 @@ func TestOrgInvitations(t *testing.T) {
 		testListCount(t, OrgInvitationsListOptions{OrgID: org1.ID}, []*OrgInvitation{oi1})
 	})
 	t.Run("List/Count by RecipientUserID", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{RecipientUserID: recipient.ID}, []*OrgInvitation{oi1, oi2})
+		testListCount(t, OrgInvitationsListOptions{RecipientUserID: recipient.ID}, []*OrgInvitation{oi1, oi2Expired, oi2})
 	})
 
 	t.Run("UpdateEmailSentTimestamp", func(t *testing.T) {
@@ -294,11 +301,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 
 		// After responding, these should fail.
-		if oi.RecipientUserID > 0 {
-			_, err = db.OrgInvitations().GetPending(ctx, dbInvitation.OrgID, oi.RecipientUserID)
-		} else {
-			_, err = db.OrgInvitations().GetPendingByID(ctx, dbInvitation.ID)
-		}
+		_, err = db.OrgInvitations().GetPendingByID(ctx, dbInvitation.ID)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
@@ -309,11 +312,11 @@ func TestOrgInvitations(t *testing.T) {
 	t.Run("Respond true", func(t *testing.T) {
 		testRespond(t, oi1, oi1.RecipientUserID, true, "")
 		testRespond(t, emailInvite, recipient2.ID, true, "")
-		testRespond(t, expiredInvite, recipient2.ID, true, "org invitation not found: [id 6 recipient 3]")
+		testRespond(t, expiredInvite, recipient2.ID, true, "org invitation not found: [id 7 recipient 3]")
 	})
 	t.Run("Respond false", func(t *testing.T) {
 		testRespond(t, oi2, oi2.RecipientUserID, false, "")
-		testRespond(t, expiredInvite, recipient2.ID, false, "org invitation not found: [id 6 recipient 3]")
+		testRespond(t, expiredInvite, recipient2.ID, false, "org invitation not found: [id 7 recipient 3]")
 	})
 
 	t.Run("Revoke", func(t *testing.T) {

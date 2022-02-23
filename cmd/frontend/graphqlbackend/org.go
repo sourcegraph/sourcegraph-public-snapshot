@@ -196,6 +196,11 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 			return nil, nil
 		}
 		if err != nil {
+			// ignore expired invitations, otherwise error is returned
+			// for all users who have an expired invitation on record
+			if err.Error() == "invitation is expired" {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &organizationInvitationResolver{o.db, orgInvitation}, nil
