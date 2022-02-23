@@ -130,7 +130,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
             <ButtonGroup>
                 <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('test-saved-search-panel-my-searches')}
+                    className="test-saved-search-panel-my-searches"
                     outline={showAllSearches}
                     variant="secondary"
                     size="sm"
@@ -139,7 +139,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 </Button>
                 <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('test-saved-search-panel-all-searches')}
+                    className="test-saved-search-panel-all-searches"
                     outline={!showAllSearches}
                     variant="secondary"
                     size="sm"
