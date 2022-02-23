@@ -1,5 +1,3 @@
-BEGIN;
-
 ALTER TABLE settings
     ALTER COLUMN contents SET DEFAULT '{}';
 
@@ -10,6 +8,5 @@ WHERE contents = NULL
 
 ALTER TABLE settings
     ALTER COLUMN contents SET NOT NULL,
+    DROP CONSTRAINT IF EXISTS settings_no_empty_contents,
     ADD CONSTRAINT settings_no_empty_contents CHECK ( contents <> '' );
-    
-COMMIT;
