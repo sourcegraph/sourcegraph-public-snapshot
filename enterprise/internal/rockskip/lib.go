@@ -426,13 +426,6 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		repoRows = append(repoRows, repoRow{repo: repo, lastAccessedAt: lastAccessedAt})
 	}
 
-	blobCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_blobs"))
-	if err != nil {
-		log15.Error("Failed to count blobs", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	blobsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
 	if err != nil {
 		log15.Error("Failed to get size of blobs table", "error", err)
@@ -445,7 +438,6 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "")
 
 	fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
-	fmt.Fprintf(w, "Number of blobs indexed: %d\n", blobCount)
 	fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
 	fmt.Fprintln(w, "")
 
