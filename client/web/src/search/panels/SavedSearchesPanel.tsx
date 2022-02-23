@@ -11,7 +11,6 @@ import { Button, ButtonGroup, useObservable, Link, Menu, MenuButton, MenuList, M
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
 
-import { ActionButtonGroup } from './ActionButtonGroup'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { FooterPanel } from './FooterPanel'
 import { LoadingPanelView } from './LoadingPanelView'
@@ -129,28 +128,26 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
 
     const actionButtons = (
         <>
-            <ActionButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
-                <ButtonGroup>
-                    <Button
-                        onClick={() => setShowAllSearches(false)}
-                        className="test-saved-search-panel-my-searches"
-                        outline={showAllSearches}
-                        variant="secondary"
-                        size="sm"
-                    >
-                        My searches
-                    </Button>
-                    <Button
-                        onClick={() => setShowAllSearches(true)}
-                        className="test-saved-search-panel-all-searches"
-                        outline={!showAllSearches}
-                        variant="secondary"
-                        size="sm"
-                    >
-                        All searches
-                    </Button>
-                </ButtonGroup>
-            </ActionButtonGroup>
+            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
+                <Button
+                    onClick={() => setShowAllSearches(false)}
+                    className="test-saved-search-panel-my-searches"
+                    outline={showAllSearches}
+                    variant="secondary"
+                    size="sm"
+                >
+                    My searches
+                </Button>
+                <Button
+                    onClick={() => setShowAllSearches(true)}
+                    className="test-saved-search-panel-all-searches"
+                    outline={!showAllSearches}
+                    variant="secondary"
+                    size="sm"
+                >
+                    All searches
+                </Button>
+            </ButtonGroup>
             <Menu>
                 <MenuButton
                     variant="icon"
