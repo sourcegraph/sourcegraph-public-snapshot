@@ -21,3 +21,14 @@ exports[`Timestamp noAbout 1`] = `
   </span>
 </DocumentFragment>
 `;
+
+exports[`Timestamp with time time 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+    data-tooltip="2006-01-02 1:02:00 AM"
+  >
+    about 21 hours ago
+  </span>
+</DocumentFragment>
+`;
