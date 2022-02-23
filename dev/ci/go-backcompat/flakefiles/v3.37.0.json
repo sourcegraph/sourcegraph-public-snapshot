@@ -1,0 +1,7 @@
+[
+  {
+    "path": "internal/database/migration/store",
+    "prefix": "TestIndexStatus",
+    "reason": "Failed with flake in https://buildkite.com/sourcegraph/sourcegraph/builds/133420."
+  }
+]
