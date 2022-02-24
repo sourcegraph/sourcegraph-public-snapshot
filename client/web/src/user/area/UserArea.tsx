@@ -9,7 +9,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
@@ -186,7 +186,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
             <React.Suspense
                 fallback={
                     <div className="w-100 text-center">
-                        <LoadingSpinner className="icon-inline m-2" />
+                        <Icon className="m-2" as={LoadingSpinner} />
                     </div>
                 }
             >

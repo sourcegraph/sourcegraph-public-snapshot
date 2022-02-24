@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './UserAvatar.module.scss'
 
@@ -42,14 +43,16 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
             // noop
         }
         return (
-            <img
-                className={classNames(styles.userAvatar, className)}
-                src={url}
-                id={targetID}
-                alt=""
-                role="presentation"
-                {...otherProps}
-            />
+            <Icon as="span">
+                <img
+                    className={classNames(styles.userAvatar, className)}
+                    src={url}
+                    id={targetID}
+                    alt=""
+                    role="presentation"
+                    {...otherProps}
+                />
+            </Icon>
         )
     }
 
@@ -64,8 +67,8 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div id={targetID} className={classNames(styles.userAvatar, className)}>
+        <Icon id={targetID} className={classNames(styles.userAvatar, className)} as="span">
             {getInitials(name)}
-        </div>
+        </Icon>
     )
 }

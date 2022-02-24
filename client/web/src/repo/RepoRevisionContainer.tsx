@@ -22,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -156,7 +156,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
             : revision) ||
             resolvedRevisionOrError.defaultBranch ||
             'HEAD'}
-        <RepoRevisionChevronDownIcon className="icon-inline" />
+        <Icon as={RepoRevisionChevronDownIcon} />
         <RepoRevisionContainerPopover
             repo={repo}
             resolvedRevisionOrError={resolvedRevisionOrError}

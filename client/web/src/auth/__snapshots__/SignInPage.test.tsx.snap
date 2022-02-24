@@ -139,7 +139,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               href=""
             >
               <svg
-                class="mdi-icon icon-inline"
+                class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -300,7 +300,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               href=""
             >
               <svg
-                class="mdi-icon icon-inline"
+                class="mdi-icon iconInline"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"

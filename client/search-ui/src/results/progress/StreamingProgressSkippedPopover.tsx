@@ -11,7 +11,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import styles from './StreamingProgressSkippedPopover.module.scss'
@@ -66,17 +66,17 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
-                        <InformationOutlineIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
+                        <Icon className={classNames(styles.icon, 'flex-shrink-0')} as={InformationOutlineIcon} />
                     ) : (
-                        <AlertCircleIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
+                        <Icon className={classNames(styles.icon, 'flex-shrink-0')} as={AlertCircleIcon} />
                     )}
                     <span className="flex-grow-1 text-left">{skipped.title}</span>
 
                     {skipped.message &&
                         (isOpen ? (
-                            <ChevronDownIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
+                            <Icon className={classNames('flex-shrink-0', styles.chevron)} as={ChevronDownIcon} />
                         ) : (
-                            <ChevronLeftIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
+                            <Icon className={classNames('flex-shrink-0', styles.chevron)} as={ChevronLeftIcon} />
                         ))}
                 </h4>
             </Button>
@@ -163,7 +163,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <SearchIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={SearchIcon} />
                         Search again
                     </Button>
                 </Form>

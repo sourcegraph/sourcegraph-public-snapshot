@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
@@ -35,7 +35,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
     if (actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
-                <EyeIcon className="icon-inline" />
+                <Icon as={EyeIcon} />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
         )
@@ -48,7 +48,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
             to={getURLForMode(location, otherMode)}
             data-tooltip={label}
         >
-            <EyeIcon className="icon-inline" />{' '}
+            <Icon as={EyeIcon} />{' '}
             <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
         </RepoHeaderActionButtonLink>
     )

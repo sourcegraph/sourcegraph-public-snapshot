@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -217,16 +217,14 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </h3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && (
-                                <SourcegraphExtensionIcon className={classNames('icon-inline', styles.logo)} />
-                            )}
+                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <WarningIcon className="icon-inline" /> Invalid manifest
+                                    <Icon as={WarningIcon} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +233,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <WarningIcon className="icon-inline" /> No manifest
+                                <Icon as={WarningIcon} /> No manifest
                             </span>
                         )}
                     </div>

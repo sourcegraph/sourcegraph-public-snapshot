@@ -7,13 +7,17 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     data-testid="git-commit-node-byline"
   >
     <div>
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
-        data-tooltip="Alice Zhao"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-1 mr-2"
+          data-tooltip="Alice Zhao"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"
@@ -44,13 +48,17 @@ exports[`GitCommitNodeByline author 1`] = `
     data-testid="git-commit-node-byline"
   >
     <div>
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
-        data-tooltip="Alice Zhao"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-1 mr-2"
+          data-tooltip="Alice Zhao"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"
@@ -83,21 +91,29 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     <div
       class="flex-shrink-0"
     >
-      <img
-        alt=""
-        class="userAvatar icon-inline"
-        data-tooltip="Alice Zhao (author)"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar"
+          data-tooltip="Alice Zhao (author)"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
        
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-2"
-        data-tooltip="bYang (committer)"
-        role="presentation"
-        src="http://example.com/bob.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-2"
+          data-tooltip="bYang (committer)"
+          role="presentation"
+          src="http://example.com/bob.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"
@@ -137,21 +153,29 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     <div
       class="flex-shrink-0"
     >
-      <img
-        alt=""
-        class="userAvatar icon-inline"
-        data-tooltip="Alice Zhao (author)"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar"
+          data-tooltip="Alice Zhao (author)"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
        
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-2"
-        data-tooltip="bYang (committer)"
-        role="presentation"
-        src="http://example.com/bob.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-2"
+          data-tooltip="bYang (committer)"
+          role="presentation"
+          src="http://example.com/bob.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"
@@ -189,13 +213,17 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     data-testid="git-commit-node-byline"
   >
     <div>
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
-        data-tooltip="Alice Zhao"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-1 mr-2"
+          data-tooltip="Alice Zhao"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"
@@ -226,13 +254,17 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     data-testid="git-commit-node-byline"
   >
     <div>
-      <img
-        alt=""
-        class="userAvatar icon-inline mr-1 mr-2"
-        data-tooltip="Alice Zhao"
-        role="presentation"
-        src="http://example.com/alice.png"
-      />
+      <span
+        class="iconInline"
+      >
+        <img
+          alt=""
+          class="userAvatar mr-1 mr-2"
+          data-tooltip="Alice Zhao"
+          role="presentation"
+          src="http://example.com/alice.png"
+        />
+      </span>
     </div>
     <div
       class="overflow-hidden"

@@ -10,7 +10,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -71,7 +71,7 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) =
                         size="sm"
                         as={Link}
                     >
-                        <SettingsIcon className="icon-inline" /> Settings
+                        <Icon as={SettingsIcon} /> Settings
                     </Button>{' '}
                     <Button
                         to={`${orgURL(node.name)}/settings/members`}
@@ -80,7 +80,7 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) =
                         size="sm"
                         as={Link}
                     >
-                        <AccountIcon className="icon-inline" />{' '}
+                        <Icon as={AccountIcon} />{' '}
                         {node.members && (
                             <>
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
@@ -94,7 +94,7 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) =
                         variant="danger"
                         size="sm"
                     >
-                        <DeleteIcon className="icon-inline" />
+                        <Icon as={DeleteIcon} />
                     </Button>
                 </div>
             </div>
@@ -122,7 +122,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Organizations</h2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <AddIcon className="icon-inline" /> Create organization
+                    <Icon as={AddIcon} /> Create organization
                 </Button>
             </div>
             <p>

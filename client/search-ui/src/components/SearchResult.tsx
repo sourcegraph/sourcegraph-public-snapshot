@@ -13,6 +13,7 @@ import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResul
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
@@ -37,7 +38,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
+                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <Markdown
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                     dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
@@ -75,8 +76,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <SourceForkIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={SourceForkIcon}
                                         />
                                     </div>
                                     <div>
@@ -88,8 +90,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <ArchiveIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={ArchiveIcon}
                                         />
                                     </div>
                                     <div>
@@ -101,8 +104,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <LockIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={LockIcon}
                                         />
                                     </div>
                                     <div>

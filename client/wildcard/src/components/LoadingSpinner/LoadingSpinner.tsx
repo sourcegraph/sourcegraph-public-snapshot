@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { Icon } from '../Icon'
+
 import styles from './LoadingSpinner.module.scss'
 
 export interface LoadingSpinnerProps {
@@ -14,5 +16,5 @@ export interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner: React.FunctionComponent<LoadingSpinnerProps> = ({ inline = true, className }) => (
-    <div className={classNames(styles.loadingSpinner, inline && 'icon-inline', className)} />
+    <Icon className={classNames(styles.loadingSpinner, className)} inline={inline} as="div" />
 )

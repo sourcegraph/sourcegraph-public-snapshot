@@ -6,7 +6,7 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useEffect, useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
@@ -78,22 +78,19 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <AlertCircleIcon className="icon-inline text-danger" /> Syncing from code host failed.
+                    <Icon className="text-danger" as={AlertCircleIcon} /> Syncing from code host failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <AlertCircleIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
+                <Icon data-tooltip={lastUpdatedAt.message} className="ml-2 small" as={AlertCircleIcon} />
             )}
             <span data-tooltip={tooltipText}>
-                <UpdateLoaderIcon
-                    className={classNames(
-                        'icon-inline',
-                        typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer'
-                    )}
+                <Icon
+                    className={classNames(typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer')}
                     onClick={enqueueChangeset}
-                    inline={false}
+                    as={UpdateLoaderIcon}
                 />
             </span>
         </small>

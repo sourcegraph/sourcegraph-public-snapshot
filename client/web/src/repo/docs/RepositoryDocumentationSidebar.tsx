@@ -7,7 +7,7 @@ import React, { useCallback, useMemo } from 'react'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Icon } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -145,7 +145,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                 data-tooltip="Show sidebar"
                 variant="icon"
             >
-                <FileTreeIcon className="icon-inline" />
+                <Icon as={FileTreeIcon} />
             </Button>
         )
     }
@@ -165,7 +165,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             data-tooltip="Collapse panel"
                             data-placement="right"
                         >
-                            <ChevronDoubleLeftIcon className="icon-inline" />
+                            <Icon as={ChevronDoubleLeftIcon} />
                         </Button>
                     </div>
                     <div

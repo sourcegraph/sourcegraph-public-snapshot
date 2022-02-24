@@ -1,10 +1,9 @@
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
@@ -44,7 +43,7 @@ export const MonitorLogNode: React.FunctionComponent<{ monitor: CodeMonitorWithE
             <Button onClick={toggleExpanded} className="btn-icon mr-2">
                 {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
             </Button>
-            {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline')} /> : <span />}
+            {hasError ? <Icon className={styles.errorIcon} as={AlertCircleIcon} /> : <span />}
             <span>{monitor.description}</span>
             <span className="text-nowrap">{lastRun ? <Timestamp date={lastRun} now={now} /> : <>Never</>}</span>
 

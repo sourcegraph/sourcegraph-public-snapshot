@@ -30,7 +30,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, useLocalStorage, useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -239,7 +239,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                                 as={Link}
                             >
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
+                                <Icon as={SourceRepositoryIcon} /> {displayRepoName(repoOrError.name)}
                             </Button>
                             <Button
                                 id="repo-popover"
@@ -249,7 +249,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 variant="secondary"
                                 size="sm"
                             >
-                                <ChevronDownIcon className="icon-inline" />
+                                <Icon as={ChevronDownIcon} />
                             </Button>
                         </ButtonGroup>
                         <UncontrolledPopover

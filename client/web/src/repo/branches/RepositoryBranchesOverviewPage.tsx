@@ -9,7 +9,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservabl
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Link, LoadingSpinner, CardHeader, Card } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -148,7 +148,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <ChevronRightIcon className="icon-inline" />
+                                            <Icon as={ChevronRightIcon} />
                                         </Link>
                                     )}
                                 </div>

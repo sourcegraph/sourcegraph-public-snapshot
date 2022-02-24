@@ -16,7 +16,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
@@ -28,13 +28,13 @@ export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> =
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <MapSearchIcon className="icon-inline" /> No locations found
+        <Icon as={MapSearchIcon} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
     <div className="m-2">
-        <MapSearchIcon className="icon-inline" /> No locations found in the current repository
+        <Icon as={MapSearchIcon} /> No locations found in the current repository
     </div>
 )
 

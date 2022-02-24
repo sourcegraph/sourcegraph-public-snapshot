@@ -1,9 +1,10 @@
-import classNames from 'classnames'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './AnnotatedSearchExample.module.scss'
 
@@ -99,14 +100,14 @@ export const AnnotatedSearchInput: React.FunctionComponent<{ showSearchContext: 
                         <tspan className={styles.metaRegexpRangeQuantifier}>*</tspan>
                         <tspan> function auth(){'{'} </tspan>
                     </text>
-                    <FormatLetterCaseIcon className="icon-inline" x="590" y="115" />
-                    <RegexIcon className="icon-inline" x="620" y="115" />
-                    <CodeBracketsIcon className="icon-inline" x="650" y="115" />
+                    <Icon x="590" y="115" as={FormatLetterCaseIcon} />
+                    <Icon x="620" y="115" as={RegexIcon} />
+                    <Icon x="650" y="115" as={CodeBracketsIcon} />
                     <path
                         d="M688 110H731C732.105 110 733 110.895 733 112V142C733 143.105 732.105 144 731 144H688V110Z"
                         fill="#1475CF"
                     />
-                    <SearchIcon className={classNames(styles.searchIcon, 'icon-inline')} x="698" y="115" />
+                    <Icon className={styles.searchIcon} x="698" y="115" as={SearchIcon} />
 
                     {arrow(188, 30, 'above')}
                     <text transform={`translate(${filterTextStart}, 44)`}>

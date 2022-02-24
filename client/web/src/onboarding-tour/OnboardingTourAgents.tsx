@@ -1,10 +1,10 @@
-import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { useOnboardingTourState } from '../stores/onboardingTourState'
 
@@ -71,7 +71,7 @@ export const OnboardingTourInfoAgent: React.FunctionComponent<OnboardingTourInfo
 
         return ReactDOM.createPortal(
             <div className={styles.infoPanel}>
-                <CheckCircleIcon className={classNames('icon-inline', styles.infoIcon)} size="1rem" />
+                <Icon className={styles.infoIcon} size="1rem" as={CheckCircleIcon} />
                 <span dangerouslySetInnerHTML={{ __html: info }} />
             </div>,
             domNode

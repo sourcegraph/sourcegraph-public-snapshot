@@ -3,7 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import styles from './StreamingProgressSkippedButton.module.scss'
@@ -42,7 +42,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         as={DropdownToggle}
                     >
                         {skippedWithWarningOrError ? (
-                            <AlertCircleIcon className={classNames('mr-2 icon-inline', styles.alertDangerIcon)} />
+                            <Icon className={classNames('mr-2', styles.alertDangerIcon)} as={AlertCircleIcon} />
                         ) : null}
                         Some results excluded
                     </Button>

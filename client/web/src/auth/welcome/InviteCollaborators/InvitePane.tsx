@@ -6,7 +6,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
-import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -147,10 +147,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                 className={classNames('d-flex', 'ml-3', 'align-items-center', index !== 0 && 'mt-3')}
                                 key={person.email}
                             >
-                                <UserAvatar
-                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
-                                    user={person}
-                                />
+                                <UserAvatar className={classNames('mr-3', styles.avatar)} user={person} />
                                 <div>
                                     <strong>{person.displayName}</strong>
                                     <div className="text-muted">{person.email}</div>
@@ -159,7 +156,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                     <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
                                 ) : successfulInvites.has(person.email) ? (
                                     <span className="text-muted ml-auto mr-3">
-                                        <CheckCircleIcon className="icon-inline mr-1" />
+                                        <Icon className="mr-1" as={CheckCircleIcon} />
                                         Invited
                                     </span>
                                 ) : (

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { ProductStatusBadge, Button, Link } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, Link, Icon } from '@sourcegraph/wildcard'
 import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
 import { AuthenticatedUser } from '../../auth'
@@ -96,7 +96,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <AddIcon className="icon-inline" /> New organization
+                                    <Icon as={AddIcon} /> New organization
                                 </Button>
                             </div>
                         ))}

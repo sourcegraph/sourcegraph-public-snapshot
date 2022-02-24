@@ -19,7 +19,7 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
 import { isSingleLineRange, parseFileBlockInput, serializeLineRange } from '../../serialize'
@@ -156,7 +156,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: fileURL,
                 isDisabled: !areInputsValid,
             },
@@ -169,7 +169,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'button',
                 label: showInputs ? 'Save' : 'Edit',
-                icon: showInputs ? <CheckIcon className="icon-inline" /> : <PencilIcon className="icon-inline" />,
+                icon: showInputs ? <Icon as={CheckIcon} /> : <Icon as={PencilIcon} />,
                 onClick: () => setShowInputs(!showInputs),
                 keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
             },
@@ -182,7 +182,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'button',
                 label: showRevisionInput ? 'Remove revision' : 'Add revision',
-                icon: showRevisionInput ? <MinusIcon className="icon-inline" /> : <PlusIcon className="icon-inline" />,
+                icon: showRevisionInput ? <Icon as={MinusIcon} /> : <Icon as={PlusIcon} />,
                 onClick: () => {
                     setFileInput({ revision: '' })
                     setShowRevisionInput(!showRevisionInput)
@@ -191,7 +191,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'button',
                 label: showLineRangeInput ? 'Remove line range' : 'Add line range',
-                icon: showLineRangeInput ? <MinusIcon className="icon-inline" /> : <PlusIcon className="icon-inline" />,
+                icon: showLineRangeInput ? <Icon as={MinusIcon} /> : <Icon as={PlusIcon} />,
                 onClick: () => {
                     setLineRangeInput('')
                     setFileInput({ lineRange: null })
@@ -300,7 +300,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
                     />
                 ) : (
                     <div className={styles.header} data-testid="file-block-header">
-                        <FileDocumentIcon className="icon-inline mr-2" />
+                        <Icon className="mr-2" as={FileDocumentIcon} />
                         {areInputsValid ? (
                             <Link className={styles.headerFileLink} to={fileURL}>
                                 {getFileHeader(input)}

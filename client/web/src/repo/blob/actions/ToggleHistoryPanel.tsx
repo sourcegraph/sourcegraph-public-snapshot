@@ -12,7 +12,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -89,7 +89,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <HistoryIcon className="icon-inline" />
+                    <Icon as={HistoryIcon} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -101,7 +101,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
-                <HistoryIcon className="icon-inline" />
+                <Icon as={HistoryIcon} />
             </RepoHeaderActionButtonLink>
         )
     }
