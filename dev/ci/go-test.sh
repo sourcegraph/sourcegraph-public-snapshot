@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-exit 1
-
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
