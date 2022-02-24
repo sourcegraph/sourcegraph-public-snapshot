@@ -633,16 +633,15 @@ func (f *DBStoreCommitsVisibleToUploadFunc) PushHook(hook func(context.Context, 
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *DBStoreCommitsVisibleToUploadFunc) SetDefaultReturn(r0 []string, r1 *string, r2 error) {
 	f.SetDefaultHook(func(context.Context, int, int, *string) ([]string, *string, error) {
 		return r0, r1, r2
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *DBStoreCommitsVisibleToUploadFunc) PushReturn(r0 []string, r1 *string, r2 error) {
 	f.PushHook(func(context.Context, int, int, *string) ([]string, *string, error) {
 		return r0, r1, r2
@@ -5403,16 +5402,15 @@ func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int,
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
 	f.SetDefaultHook(func(context.Context, int, string) (string, time.Time, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientCommitDateFunc) PushReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
 	f.PushHook(func(context.Context, int, string) (string, time.Time, bool, error) {
 		return r0, r1, r2, r3
@@ -5746,16 +5744,15 @@ func (f *GitserverClientCommitsUniqueToBranchFunc) PushHook(hook func(context.Co
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverClientCommitsUniqueToBranchFunc) SetDefaultReturn(r0 map[string]time.Time, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, string, bool, *time.Time) (map[string]time.Time, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientCommitsUniqueToBranchFunc) PushReturn(r0 map[string]time.Time, r1 error) {
 	f.PushHook(func(context.Context, int, string, bool, *time.Time) (map[string]time.Time, error) {
 		return r0, r1
@@ -5867,16 +5864,15 @@ func (f *GitserverClientRefDescriptionsFunc) PushHook(hook func(context.Context,
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverClientRefDescriptionsFunc) SetDefaultReturn(r0 map[string][]gitdomain.RefDescription, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, ...string) (map[string][]gitdomain.RefDescription, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientRefDescriptionsFunc) PushReturn(r0 map[string][]gitdomain.RefDescription, r1 error) {
 	f.PushHook(func(context.Context, int, ...string) (map[string][]gitdomain.RefDescription, error) {
 		return r0, r1
@@ -5988,16 +5984,15 @@ func (f *GitserverClientResolveRevisionFunc) PushHook(hook func(context.Context,
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *GitserverClientResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, string) (api.CommitID, error) {
 		return r0, r1
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
 	f.PushHook(func(context.Context, int, string) (api.CommitID, error) {
 		return r0, r1
