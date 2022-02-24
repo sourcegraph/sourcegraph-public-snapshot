@@ -20,7 +20,7 @@ import (
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
 	urn      string
-	client   client
+	client   func() (client, error)
 	codeHost *extsvc.CodeHost
 	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *cachedGroups
@@ -64,7 +64,9 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		urn:         urn,
 		codeHost:    codeHost,
 		groupsCache: cg,
-		client:      &ClientAdapter{V3Client: opts.GitHubClient},
+		client: func() (client, error) {
+			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
+		},
 	}
 }
 
@@ -94,7 +96,14 @@ func (p *Provider) ValidateConnection(ctx context.Context) []string {
 		return []string{}
 	}
 
-	scopes, err := p.client.GetAuthenticatedOAuthScopes(ctx)
+	client, err := p.client()
+	if err != nil {
+		return []string{
+			fmt.Sprintf("Unable to get client: %v", err),
+		}
+	}
+
+	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
 	if err != nil {
 		return []string{
 			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
@@ -152,7 +161,11 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 // This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	client := p.client.WithToken(token)
+	client, err := p.client()
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+	client = client.WithToken(token)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -254,9 +267,9 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		for page := 1; hasNextPage; page++ {
 			var repos []*github.Repository
 			if isOrg {
-				repos, hasNextPage, _, err = p.client.ListOrgRepositories(ctx, group.Org, page, "")
+				repos, hasNextPage, _, err = client.ListOrgRepositories(ctx, group.Org, page, "")
 			} else {
-				repos, hasNextPage, _, err = p.client.ListTeamRepositories(ctx, group.Org, group.Team, page)
+				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
 			if err != nil {
 				// Add and return what we've found on this page but don't persist group
@@ -380,12 +393,17 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		affiliation = github.AffiliationDirect
 	}
 
+	client, err := p.client()
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+
 	// Sync collaborators
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var users []*github.Collaborator
-		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
+		users, hasNextPage, err = client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
 		if err != nil {
 			return userIDs, errors.Wrap(err, "list users for repo")
 		}
@@ -435,9 +453,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		for page := 1; hasNextPage; page++ {
 			var members []*github.Collaborator
 			if group.Team == "" {
-				members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+				members, hasNextPage, err = client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
 			} else {
-				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
+				members, hasNextPage, err = client.ListTeamMembers(ctx, owner, group.Team, page)
 			}
 			if err != nil {
 				return userIDs, errors.Wrap(err, "list users for group")
@@ -531,8 +549,13 @@ type repoAffiliatedGroup struct {
 // getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
 // Returned groups are populated from cache if a valid value is available.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
+	client, err := p.client()
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+
 	// Check if repo belongs in an org
-	org, err := p.client.GetOrganization(ctx, owner)
+	org, err := client.GetOrganization(ctx, owner)
 	if err != nil {
 		if github.IsNotFound(err) {
 			// Owner is most likely not an org. User repos don't have teams or org permissions,
@@ -560,7 +583,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	// there's no point in making an extra API call if this feature flag is not set explicitly.
 	if p.enableGithubInternalRepoVisibility {
 		var r *github.Repository
-		r, err = p.client.GetRepository(ctx, owner, name)
+		r, err = client.GetRepository(ctx, owner, name)
 		if err != nil {
 			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
 			// repo. Either way, we are not going to syncGroup for this repo.
@@ -585,7 +608,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var teams []*github.Team
-			teams, hasNextPage, err = p.client.ListRepositoryTeams(ctx, owner, name, page)
+			teams, hasNextPage, err = client.ListRepositoryTeams(ctx, owner, name, page)
 			if err != nil {
 				return
 			}
