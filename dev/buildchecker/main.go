@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
+	libhoney "github.com/honeycombio/libhoney-go"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -54,8 +56,11 @@ func main() {
 	historyFlags := &cmdHistoryFlags{}
 	flag.StringVar(&historyFlags.createdFromDate, "created.from", "", "date in YYYY-MM-DD format")
 	flag.StringVar(&historyFlags.createdToDate, "created.to", "", "date in YYYY-MM-DD format")
-	flag.StringVar(&historyFlags.loadFrom, "load-from", "", "file to load builds from")
-	flag.StringVar(&historyFlags.writeTo, "write-to", "builds.json", "file to write builds to (unused if loading from file)")
+	flag.StringVar(&historyFlags.buildsLoadFrom, "builds.load-from", "", "file to load builds from - if unset, fetches from Buildkite")
+	flag.StringVar(&historyFlags.buildsWriteTo, "builds.write-to", ".tmp/builds.json", "file to write builds to (unused if loading from file)")
+	flag.StringVar(&historyFlags.resultsCsvPath, "csv", ".tmp/", "path for CSV results exports")
+	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
+	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
 
 	flags.Parse()
 
@@ -162,12 +167,16 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 type cmdHistoryFlags struct {
 	createdFromDate string
 	createdToDate   string
-	loadFrom        string
-	writeTo         string
+
+	buildsLoadFrom string
+	buildsWriteTo  string
+
+	resultsCsvPath   string
+	honeycombDataset string
+	honeycombToken   string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
-
 	// Time range
 	var err error
 	createdFrom := time.Now().Add(-24 * time.Hour)
@@ -188,7 +197,8 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 	// Get builds
 	var builds []buildkite.Build
-	if historyFlags.loadFrom == "" {
+	if historyFlags.buildsLoadFrom == "" {
+		// Load builds from Buildkite if no cached builds configured
 		log.Println("fetching builds from Buildkite")
 
 		// Buildkite client
@@ -201,8 +211,10 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		// Paginate results
 		var nextPage = 1
 		var pages int
+		log.Printf("request paging progress:")
 		for nextPage > 0 {
 			pages++
+			fmt.Printf(" %d", pages)
 
 			// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 			pageBuilds, resp, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -211,10 +223,8 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 				CreatedTo:          createdTo,
 				IncludeRetriedJobs: false,
 				ListOptions: buildkite.ListOptions{
-					Page: nextPage,
-					// Fix to high page size just in case, default is 30
-					// https://buildkite.com/docs/apis/rest-api#pagination
-					PerPage: 99,
+					Page:    nextPage,
+					PerPage: 50,
 				},
 			})
 			if err != nil {
@@ -224,20 +234,24 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			builds = append(builds, pageBuilds...)
 			nextPage = resp.NextPage
 		}
+		fmt.Println() // end line for progress spinner
 
-		buildsJSON, err := json.Marshal(&builds)
-		if err != nil {
-			log.Fatal("json.Marshal(&builds): ", err)
-		}
-		if historyFlags.writeTo != "" {
-			if err := os.WriteFile(historyFlags.writeTo, buildsJSON, os.ModePerm); err != nil {
+		if historyFlags.buildsWriteTo != "" {
+			// Cache builds for ease of re-running analyses
+			log.Printf("Caching discovered builts in %s\n", historyFlags.buildsWriteTo)
+			buildsJSON, err := json.Marshal(&builds)
+			if err != nil {
+				log.Fatal("json.Marshal(&builds): ", err)
+			}
+			if err := os.WriteFile(historyFlags.buildsWriteTo, buildsJSON, os.ModePerm); err != nil {
 				log.Fatal("os.WriteFile: ", err)
 			}
-			log.Println("wrote to " + historyFlags.writeTo)
+			log.Println("wrote to " + historyFlags.buildsWriteTo)
 		}
 	} else {
-		log.Printf("loading builds from %s\n", historyFlags.loadFrom)
-		data, err := os.ReadFile(historyFlags.loadFrom)
+		// Load builds from configured path
+		log.Printf("loading builds from %s\n", historyFlags.buildsLoadFrom)
+		data, err := os.ReadFile(historyFlags.buildsLoadFrom)
 		if err != nil {
 			log.Fatal("os.ReadFile: ", err)
 		}
@@ -268,18 +282,63 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	log.Printf("inferred %d builds as failed", inferredFail)
 
 	// Generate history
-	totals, flakes, incidents := generateHistory(builds, createdTo, CheckOptions{
+	checkOpts := CheckOptions{
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
-	})
+	}
+	log.Printf("running analyses with options: %+v\n", checkOpts)
+	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
-	// Write to files
-	var errs error
-	errs = errors.CombineErrors(errs, writeCSV("./totals.csv", mapToRecords(totals)))
-	errs = errors.CombineErrors(errs, writeCSV("./flakes.csv", mapToRecords(flakes)))
-	errs = errors.CombineErrors(errs, writeCSV("./incidents.csv", mapToRecords(incidents)))
-	if errs != nil {
-		log.Fatal("csv.WriteAll: ", errs)
+	if historyFlags.resultsCsvPath != "" {
+		// Write to files
+		log.Printf("Writing CSV results to %s\n", historyFlags.resultsCsvPath)
+		var errs error
+		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "totals.csv"), mapToRecords(totals)))
+		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "flakes.csv"), mapToRecords(flakes)))
+		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "incidents.csv"), mapToRecords(incidents)))
+		if errs != nil {
+			log.Fatal("csv.WriteAll: ", errs)
+		}
+	}
+	if historyFlags.honeycombDataset != "" {
+		// Send to honeycomb
+		log.Printf("Sending results to honeycomb dataset %q\n", historyFlags.honeycombDataset)
+		hc, err := libhoney.NewClient(libhoney.ClientConfig{
+			Dataset: historyFlags.honeycombDataset,
+			APIKey:  historyFlags.honeycombToken,
+		})
+		if err != nil {
+			log.Fatal("libhoney.NewClient: ", err)
+		}
+		var events []*libhoney.Event
+		for _, record := range mapToRecords(totals) {
+			recordDateString := record[0]
+			ev := hc.NewEvent()
+			ev.Timestamp, _ = time.Parse(dateFormat, recordDateString)
+			ev.AddField("build_count", totals[recordDateString])         // date:count
+			ev.AddField("incident_minutes", incidents[recordDateString]) // date:minutes
+			ev.AddField("flake_count", flakes[recordDateString])         // date:count
+			events = append(events, ev)
+		}
+
+		// send all at once
+		log.Printf("Sending %d events to Honeycomb\n", len(events))
+		var errs error
+		for _, ev := range events {
+			if err := ev.Send(); err != nil {
+				errs = errors.Append(errs, err)
+			}
+		}
+		hc.Close()
+		if err != nil {
+			log.Fatal("honeycomb.Send: ", err)
+		}
+		// log events that do not send
+		for _, ev := range events {
+			if strings.Contains(ev.String(), "sent:false") {
+				log.Printf("An event did not send: %s", ev.String())
+			}
+		}
 	}
 
 	log.Println("done!")
