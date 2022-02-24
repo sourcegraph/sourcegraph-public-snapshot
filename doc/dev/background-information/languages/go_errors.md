@@ -170,7 +170,7 @@ for _, fn := range fnsThatReturnError {
 return err
 ```
 
-The `MultiErrors` type:
+The `MultiError` type:
 
 - will be treated as a `nil` error if an `Append` or `CombineErrors` only merges errors that are `nil`
 - exposes errors within to introspection methods like `As`, `Is`, etc.
