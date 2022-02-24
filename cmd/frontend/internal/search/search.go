@@ -236,7 +236,7 @@ LOOP:
 			for _, pq := range proposed {
 				pqs = append(pqs, streamhttp.ProposedQuery{
 					Description: pq.Description,
-					Query:       pq.Query,
+					Query:       pq.QueryString(),
 				})
 			}
 		}
