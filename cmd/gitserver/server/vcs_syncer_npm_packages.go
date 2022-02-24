@@ -329,17 +329,15 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposourc
 // so that the action argument can focus on reading the tarball.
 func withTgz(tgzReadSeeker namedReadSeeker, action func(*tar.Reader) error) (err error) {
 	gzipReader, err := gzip.NewReader(tgzReadSeeker.value)
-	defer func() {
-		errClose := gzipReader.Close()
-		if err != nil {
-			err = errClose
-		}
-	}()
 	if err != nil {
 		return errors.Wrapf(err, "unable to decompress tar.gz (label=%s) with package source", tgzReadSeeker.name)
 	}
-	tarReader := tar.NewReader(gzipReader)
 
+	defer func() {
+		err = errors.Append(err, gzipReader.Close())
+	}()
+
+	tarReader := tar.NewReader(gzipReader)
 	return action(tarReader)
 }
 
