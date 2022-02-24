@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,15 +28,6 @@ type SearchArgs struct {
 	// a static representation of our job tree independently of any resolvers.
 	CodeMonitorID *graphql.ID
 
-	// Stream if non-nil will stream all SearchEvents.
-	//
-	// This is how our streaming and our batch interface co-exist. When this
-	// is set, it exposes a way to stream out results as we collect them. By
-	// default we stream all results, including results that are processed
-	// over batch-based evaluation (like and/or expressions), where results
-	// are first collected, merged, and then sent on the stream.
-	Stream streaming.Sender
-
 	// For tests
 	Settings *schema.Settings
 }
@@ -50,8 +40,8 @@ type SearchImplementer interface {
 	Inputs() run.SearchInputs
 }
 
-// NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+// NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
+func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	settings := args.Settings
 	if settings == nil {
 		var err error
@@ -67,7 +57,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		args.Version,
 		args.PatternType,
 		args.Query,
-		args.Stream,
+		search.Batch,
 		settings,
 	)
 	if err != nil {
@@ -81,23 +71,19 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	return &searchResolver{
 		db:           db,
 		SearchInputs: inputs,
-		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
-
-	// stream if non-nil will send all search events we receive down it.
-	stream streaming.Sender
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map

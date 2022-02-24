@@ -295,7 +295,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	}
 
 	searchClient := h.newSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, batchedStream, settings)
+	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings)
 	if err != nil {
 		close(eventsC)
 		var queryErr *run.QueryError
