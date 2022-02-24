@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileBlockInput } from '..'
 import { WebStory } from '../../../components/WebStory'
@@ -52,6 +52,7 @@ add('default', () => (
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
                 fetchRepository={fetchRepository}
+                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -74,6 +75,7 @@ add('edit mode', () => (
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
                 fetchRepository={fetchRepository}
+                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -96,6 +98,7 @@ add('error fetching file', () => (
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
                 fetchRepository={fetchRepository}
+                extensionsController={extensionsController}
             />
         )}
     </WebStory>

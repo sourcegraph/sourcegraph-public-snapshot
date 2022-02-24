@@ -9,10 +9,16 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
@@ -31,9 +37,11 @@ interface SearchNotebookFileBlockProps
     extends BlockProps,
         Omit<FileBlock, 'type'>,
         FileBlockValidationFunctions,
-        TelemetryProps {
+        TelemetryProps,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 const LOADING = 'loading' as const
@@ -57,6 +65,8 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
     isOtherBlockSelected,
     isMacPlatform,
     isReadOnly,
+    hoverifier,
+    extensionsController,
     fetchHighlightedFileLineRanges,
     resolveRevision,
     fetchRepository,
@@ -245,6 +255,12 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
         return () => document.removeEventListener('paste', onFileURLPaste)
     }, [isSelected, onFileURLPaste])
 
+    const codeIntelViewerUpdatesProps = useMemo(() => ({ extensionsController, ...input }), [
+        extensionsController,
+        input,
+    ])
+    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
+
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* See the explanation for the disable in markdown and query blocks. */}
@@ -311,6 +327,8 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                             endLine={input.lineRange?.endLine ?? 1}
                             isFirst={false}
                             fetchHighlightedFileRangeLines={() => of([])}
+                            hoverifier={hoverifier}
+                            viewerUpdates={viewerUpdates}
                         />
                     </div>
                 )}

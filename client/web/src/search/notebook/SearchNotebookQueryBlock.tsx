@@ -7,11 +7,16 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -41,12 +46,14 @@ interface SearchNotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({
@@ -60,6 +67,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     isOtherBlockSelected,
     isMacPlatform,
     sourcegraphSearchLanguageId,
+    hoverifier,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onSelectBlock,
@@ -203,11 +211,14 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             assetsRoot={window.context?.assetsRoot || ''}
                             renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                             platformContext={props.platformContext}
+                            extensionsController={props.extensionsController}
+                            hoverifier={hoverifier}
                             openMatchesInNewTab={true}
                         />
                     </div>
                 )}
             </div>
+
             {(isSelected || !isOtherBlockSelected) && (
                 <SearchNotebookBlockMenu
                     id={id}
