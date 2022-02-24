@@ -55,7 +55,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	settings := args.Settings
 	if settings == nil {
 		var err error
-		settings, err = decodedViewerFinalSettings(ctx, db)
+		settings, err = DecodedViewerFinalSettings(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -107,17 +107,17 @@ func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
 
-var mockDecodedViewerFinalSettings *schema.Settings
+var MockDecodedViewerFinalSettings *schema.Settings
 
-// decodedViewerFinalSettings returns the final (merged) settings for the viewer
-func decodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
+// DecodedViewerFinalSettings returns the final (merged) settings for the viewer
+func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if mockDecodedViewerFinalSettings != nil {
-		return mockDecodedViewerFinalSettings, nil
+	if MockDecodedViewerFinalSettings != nil {
+		return MockDecodedViewerFinalSettings, nil
 	}
 
 	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)

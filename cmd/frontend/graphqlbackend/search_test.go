@@ -93,8 +93,8 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
 
-			mockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { mockDecodedViewerFinalSettings = nil }()
+			MockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { MockDecodedViewerFinalSettings = nil }()
 
 			repos := database.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)

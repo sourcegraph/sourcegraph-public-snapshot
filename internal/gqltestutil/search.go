@@ -556,6 +556,9 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 				})
 			}
 		},
+		OnError: func(e *streamhttp.EventError) {
+			panic(e.Message)
+		},
 	})
 	return results, err
 }
