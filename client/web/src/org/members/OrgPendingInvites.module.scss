@@ -71,6 +71,14 @@
     &:hover {
         background-color: var(--color-bg-2) !important;
     }
+
+    &[aria-expanded='true'] {
+        span {
+            svg {
+                transform: rotate(180deg);
+            }
+        }
+    }
 }
 
 .invite-date {

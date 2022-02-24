@@ -70,14 +70,15 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
             </Button>
             {modalOpened && (
                 <Modal className={styles.modal} onDismiss={onCloseAddUserModal} position="center" aria-label={title}>
-                    <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
-                        <VisuallyHidden>Close</VisuallyHidden>
-                        <CloseIcon />
-                    </Button>
-
-                    <h2>{title}</h2>
+                    <div className="d-flex flex-row align-items-end">
+                        <h3>{title}</h3>
+                        <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
+                            <VisuallyHidden>Close</VisuallyHidden>
+                            <CloseIcon />
+                        </Button>
+                    </div>
                     {error && <ErrorAlert className={styles.alert} error={error} />}
-                    <div className="d-flex flex-row position-relative">
+                    <div className="d-flex flex-row position-relative mt-2">
                         <Input
                             autoFocus={true}
                             value={username}
@@ -89,13 +90,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
                         />
                     </div>
                     <div className="d-flex justify-content-end mt-4">
-                        <Button
-                            type="button"
-                            className="mr-2"
-                            variant="primary"
-                            onClick={debounceAddUser}
-                            disabled={loading}
-                        >
+                        <Button type="button" variant="primary" onClick={debounceAddUser} disabled={loading}>
                             Add member
                         </Button>
                     </div>

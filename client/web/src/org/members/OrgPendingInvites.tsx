@@ -16,6 +16,7 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -38,6 +39,7 @@ import {
     getInvitationCreationDateString,
     getInvitationExpiryDateString,
     getLocaleFormattedDateFromString,
+    OrgMemberNotification,
 } from './utils'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
@@ -89,13 +91,13 @@ const PendingInvitesHeader: React.FunctionComponent = () => (
 interface InvitationItemProps {
     invite: OrganizationInvitation
     viewerCanAdminister: boolean
-    onShouldRefetch: () => void
+    onInviteResentRevoked: (recipient: string, revoked?: boolean) => void
 }
 
 const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
     invite,
     viewerCanAdminister,
-    onShouldRefetch,
+    onInviteResentRevoked,
 }) => {
     const [revokeInvite, { loading: revokeLoading, error: revokeError }] = useMutation<
         RevokeInviteResult,
@@ -118,12 +120,12 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
             try {
                 await revokeInvite({ variables: { id: invite.id } })
                 eventLogger.logViewEvent('OrgRevokeInvitation', { id: invite.id })
-                onShouldRefetch()
+                onInviteResentRevoked(inviteToText, true)
             } catch {
                 eventLogger.logViewEvent('OrgRevokeInvitationError', { id: invite.id })
             }
         }
-    }, [revokeInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
+    }, [revokeInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient])
 
     const onResendInvite = useCallback(async () => {
         const inviteToText = invite.recipient ? invite.recipient.username : (invite.recipientEmail as string)
@@ -131,12 +133,12 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
             try {
                 await resendInvite({ variables: { id: invite.id } })
                 eventLogger.logViewEvent('OrgResendInvitation', { id: invite.id })
-                onShouldRefetch()
+                onInviteResentRevoked(inviteToText, false)
             } catch {
                 eventLogger.logViewEvent('OrgResendInvitationError', { id: invite.id })
             }
         }
-    }, [resendInvite, onShouldRefetch, invite.id, invite.recipientEmail, invite.recipient])
+    }, [resendInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient])
 
     const loading = revokeLoading || resendLoading
     const error = resendError || revokeError
@@ -209,7 +211,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                                 </span>
                             </MenuButton>
 
-                            <MenuList>
+                            <MenuList position={Position.bottomEnd}>
                                 <MenuItem onSelect={onCopyInviteLink} disabled={loading}>
                                     Copy invite link
                                 </MenuItem>
@@ -239,6 +241,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
     }, [orgId])
 
     const [invite, setInvite] = useState<IModalInviteResult>()
+    const [notification, setNotification] = useState<string>()
     const { data, loading, error, refetch } = useQuery<IPendingInvitations, PendingInvitationsVariables>(
         ORG_PENDING_INVITES_QUERY,
         {
@@ -254,13 +257,22 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
         [setInvite, orgId, refetch]
     )
 
+    const onInviteResentRevoked = useCallback(
+        async (recipient: string, revoked?: boolean) => {
+            const message = `${revoked ? 'Revoked' : 'Resent'} invite for ${recipient}`
+            setNotification(message)
+            await refetch({ id: orgId })
+        },
+        [setNotification, orgId, refetch]
+    )
+
     const onInviteSentMessageDismiss = useCallback(() => {
         setInvite(undefined)
     }, [setInvite])
 
-    const onShouldRefetch = useCallback(async () => {
-        await refetch({ id: org.id })
-    }, [refetch, org.id])
+    const onNotificationDismiss = useCallback(() => {
+        setNotification(undefined)
+    }, [setNotification])
 
     const viewerCanInviteUserToOrganization = !!authenticatedUser
 
@@ -276,6 +288,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                         invitationURL={invite.inviteResult.inviteUserToOrganization.invitationURL}
                     />
                 )}
+                {notification && <OrgMemberNotification message={notification} onDismiss={onNotificationDismiss} />}
                 <div className="d-flex flex-0 justify-content-between align-items-center mb-3">
                     <PageHeader path={[{ text: 'Pending Invites' }]} headingElement="h2" />
                     <div>
@@ -305,7 +318,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                     key={item.id}
                                     invite={item}
                                     viewerCanAdminister={true}
-                                    onShouldRefetch={onShouldRefetch}
+                                    onInviteResentRevoked={onInviteResentRevoked}
                                 />
                             ))}
                         </ul>

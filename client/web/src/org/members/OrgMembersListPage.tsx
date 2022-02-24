@@ -15,6 +15,7 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -127,7 +128,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                                 </span>
                             </MenuButton>
 
-                            <MenuList>
+                            <MenuList position={Position.bottomEnd}>
                                 <MenuItem onSelect={onRemoveClick} disabled={onlyMember || loading}>
                                     {isSelf ? 'Leave organization...' : 'Remove from organization...'}
                                 </MenuItem>
