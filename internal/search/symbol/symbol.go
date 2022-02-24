@@ -35,8 +35,6 @@ import (
 
 const DefaultSymbolLimit = 100
 
-var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
-
 func symbolSearchInRepos(
 	ctx context.Context,
 	request zoektutil.IndexedSearchRequest,
