@@ -1,5 +1,5 @@
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useMemo, useRef, useState } from 'react'
+import { ApolloError, QueryResult } from '@apollo/client'
+import { useEffect, useRef, useState } from 'react'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -35,27 +35,17 @@ export interface UsePreciseCodeIntelResult {
     fetchMoreImplementationsLoading: boolean
 }
 
-interface UsePreciseCodeIntelConfig {
-    /** Allows modifying how the query interacts with the Apollo cache */
-    fetchPolicy?: WatchQueryFetchPolicy
-}
-
 interface UsePreciseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
-    options?: UsePreciseCodeIntelConfig
 }
 
-export const usePreciseCodeIntel = ({
-    variables,
-    options,
-}: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
+export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
     const [referenceData, setReferenceData] = useState<PreciseCodeIntelForLocationFields>()
 
     const shouldFetch = useRef(true)
-    useMemo(() => {
+    useEffect(() => {
         // We need to fetch again if the variables change
         shouldFetch.current = true
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [variables])
 
     const { error, loading } = useQuery<
@@ -63,7 +53,7 @@ export const usePreciseCodeIntel = ({
         UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
         variables,
-        notifyOnNetworkStatusChange: true,
+        notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
         skip: !shouldFetch,
         onCompleted: result => {

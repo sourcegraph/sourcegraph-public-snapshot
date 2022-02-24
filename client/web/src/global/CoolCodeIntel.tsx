@@ -272,9 +272,6 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
             firstImplementations: 100,
             afterImplementations: null,
         },
-        options: {
-            fetchPolicy: 'cache-first',
-        },
     })
 
     if (loading) {
@@ -400,12 +397,6 @@ const CollapsibleLocationList: React.FunctionComponent<{
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
-    const fetchMore = (): void => {
-        if (props.fetchMore) {
-            props.fetchMore()
-        }
-    }
-
     return (
         <>
             <CardHeader className="p-0">
@@ -449,7 +440,7 @@ const CollapsibleLocationList: React.FunctionComponent<{
                                 </div>
                             ) : (
                                 <div className="text-center mb-1">
-                                    <Button variant="secondary" onClick={fetchMore}>
+                                    <Button variant="secondary" onClick={props.fetchMore}>
                                         Load more {props.name}
                                     </Button>
                                 </div>
