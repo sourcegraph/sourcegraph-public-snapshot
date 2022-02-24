@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -28,15 +27,6 @@ type SearchArgs struct {
 	// to rip this out in the future, this should be possible once we can build
 	// a static representation of our job tree independently of any resolvers.
 	CodeMonitorID *graphql.ID
-
-	// Stream if non-nil will stream all SearchEvents.
-	//
-	// This is how our streaming and our batch interface co-exist. When this
-	// is set, it exposes a way to stream out results as we collect them. By
-	// default we stream all results, including results that are processed
-	// over batch-based evaluation (like and/or expressions), where results
-	// are first collected, merged, and then sent on the stream.
-	Stream streaming.Sender
 
 	// For tests
 	Settings *schema.Settings
@@ -67,7 +57,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		args.Version,
 		args.PatternType,
 		args.Query,
-		args.Stream,
+		search.Batch,
 		settings,
 	)
 	if err != nil {

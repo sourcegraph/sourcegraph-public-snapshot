@@ -53,7 +53,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 
 	patternType := "regexp"
 	searchClient := client.NewSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, db, "", &patternType, searchQuery, stream, settings)
+	inputs, err := searchClient.Plan(ctx, db, "", &patternType, searchQuery, search.Streaming, settings)
 	if err != nil {
 		close(eventsC)
 		return eventsC, func() error { return err }

@@ -24,7 +24,7 @@ type SearchClient interface {
 		version string,
 		patternType *string,
 		searchQuery string,
-		stream streaming.Sender,
+		protocol search.Protocol,
 		settings *schema.Settings,
 	) (*run.SearchInputs, error)
 
@@ -54,10 +54,10 @@ func (s *searchClient) Plan(
 	version string,
 	patternType *string,
 	searchQuery string,
-	stream streaming.Sender,
+	protocol search.Protocol,
 	settings *schema.Settings,
 ) (*run.SearchInputs, error) {
-	return run.NewSearchInputs(ctx, db, version, patternType, searchQuery, stream, settings)
+	return run.NewSearchInputs(ctx, db, version, patternType, searchQuery, protocol, settings)
 }
 
 func (s *searchClient) Execute(
