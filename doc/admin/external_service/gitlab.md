@@ -92,12 +92,12 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 
 | Request Type | Required GitLab scope | Sourcegraph usage |
 |--------------|-----------------------|-------------------|
-| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` | (1) For repository discovery when specifying `projectQuery` in code host configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
-| [`GET /users`](https://docs.gitlab.com/ee/api/users.html#list-users) | `read_user` or `api` | If you are using an `external` identity provider type, used to discover user accounts. |
-| [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user` or `api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
-| [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
-| [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
-| Batch Changes requests | `api`, `read_repository`, `write_repository` | [Batch Changes](../../batch_changes/index.md) require write access to push commits and create, update and close merge requests on GitLab repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details. |
+| [`GET /projects`](https://docs.gitlab.com/ee/api/projects.html#list-all-projects) | `api` or `read_api`| (1) For repository discovery when specifying `projectQuery` in code host configuration; (2) If using an `external` identity provider type, also used as a test query to ensure token is `sudo` (`sudo` not required otherwise). |
+| [`GET /users`](https://docs.gitlab.com/ee/api/users.html#list-users) | `read_user`, `api` or `read_api` | If you are using an `external` identity provider type, used to discover user accounts. |
+| [`GET /users/:id`](https://docs.gitlab.com/ee/api/users.html#single-user) | `read_user`, `api` or `read_api` | If using GitLab OAuth, used to fetch user metadata during the OAuth sign in process. |
+| [`GET /projects/:id`](https://docs.gitlab.com/ee/api/projects.html#get-single-project) | `api` or `read_api` | (1) If using GitLab OAuth and repository permissions, used to determine if a user has access to a given _project_; (2) Used to query repository metadata (e.g. description) for display on Sourcegraph. |
+| [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` or `read_api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
+| Batch Changes requests | `api` or `read_api`, `read_repository`, `write_repository` | [Batch Changes](../../batch_changes/index.md) require write access to push commits and create, update and close merge requests on GitLab repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details. |
 
 ## Webhooks
 
