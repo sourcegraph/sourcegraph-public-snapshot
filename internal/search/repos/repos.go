@@ -3,8 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,12 +15,15 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -530,7 +531,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	repoStore := r.DB.Repos()
-	repoRevs := make(map[api.RepoName]RevSpecSet, len(op.Dependencies))
+	repoRevs := make(map[api.RepoName]codeintel.RevSpecSet, len(op.Dependencies))
 	for _, depParams := range op.Dependencies {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
 		if len(revs) == 0 {
@@ -554,7 +555,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 				}
 
 				if _, ok := repoRevs[repo.Name]; !ok {
-					repoRevs[repo.Name] = RevSpecSet{}
+					repoRevs[repo.Name] = codeintel.RevSpecSet{}
 				}
 
 				repoRevs[repo.Name][api.RevSpec(rev.RevSpec)] = struct{}{}
@@ -562,7 +563,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depSvc := NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
+	depSvc := codeintel.NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
 	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
