@@ -25,15 +25,20 @@ type RevSpecSet map[api.RevSpec]struct{}
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
 // and package levels.
 type DependenciesService struct {
-	db   database.DB
-	sync func(context.Context, api.RepoName) (*types.Repo, error)
+	db              database.DB
+	sync            func(context.Context, api.RepoName) (*types.Repo, error)
+	lockfileService *lockfiles.Service
 }
 
 func NewDependenciesService(
 	db database.DB,
 	sync func(context.Context, api.RepoName) (*types.Repo, error),
 ) *DependenciesService {
-	return &DependenciesService{db: db, sync: sync}
+	return &DependenciesService{
+		db:              db,
+		sync:            sync,
+		lockfileService: &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive},
+	}
 }
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
@@ -55,7 +60,6 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 	var mu sync.Mutex
 	dependencyRevs = make(map[api.RepoName]RevSpecSet)
 
-	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
 	depsStore := codeinteldbstore.Store{Store: basestore.NewWithDB(r.db, sql.TxOptions{})}
 
 	sem := semaphore.NewWeighted(32)
@@ -71,7 +75,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 				}
 				defer sem.Release(1)
 
-				deps, err := svc.ListDependencies(ctx, repoName, string(rev))
+				deps, err := r.lockfileService.ListDependencies(ctx, repoName, string(rev))
 				if err != nil {
 					return err
 				}
