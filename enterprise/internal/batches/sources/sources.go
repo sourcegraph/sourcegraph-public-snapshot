@@ -233,17 +233,22 @@ func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 // The first external service to have a token configured will be returned then.
 // If no external service matching the above criteria is found, an error is returned.
 func loadExternalService(ctx context.Context, s database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
-	es, err := s.List(ctx, opts)
+	// Make sure we don't user user or org owned external services.
+	// TODO: We do want to use those eventually, but only when we can grab the external
+	// service based on the changesets owner.
+	o := opts
+	o.NoNamespace = true
+	es, err := s.List(ctx, o)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sort the external services so user owned external service go last.
-	// This also retains the initial ORDER BY ID DESC.
+	// Some stable sorting makes debugging easier. We take the oldest external service first.
 	sort.SliceStable(es, func(i, j int) bool {
-		return es[i].NamespaceUserID == 0 && es[i].ID > es[j].ID
+		return es[i].ID < es[j].ID
 	})
 
+	// Find the first external service in the list that has a credential configured.
 	for _, e := range es {
 		cfg, err := e.Configuration()
 		if err != nil {
