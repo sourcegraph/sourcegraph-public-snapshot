@@ -277,8 +277,7 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         },
     })
 
-    // If we're loading and haven't received any data yet
-    if (loading && !lsifData) {
+    if (loading) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />

@@ -63,7 +63,7 @@ export const usePreciseCodeIntel = ({
         UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
         variables,
-        notifyOnNetworkStatusChange: false,
+        notifyOnNetworkStatusChange: true,
         fetchPolicy: 'no-cache',
         skip: !shouldFetch,
         onCompleted: result => {
