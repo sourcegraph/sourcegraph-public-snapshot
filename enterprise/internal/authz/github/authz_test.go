@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,9 +25,11 @@ func TestNewAuthzProviders(t *testing.T) {
 			false,
 		)
 
-		assert.True(t, len(providers) == 0, "unexpected a providers: %+v", providers)
-		assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-		assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
+		assert := assert.New(t)
+
+		assert.Len(providers, 0, "unexpected a providers: %+v", providers)
+		assert.Len(problems, 0, "unexpected problems: %+v", problems)
+		assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
@@ -47,9 +48,15 @@ func TestNewAuthzProviders(t *testing.T) {
 			false,
 		)
 
-		assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
-		assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-		assert.True(t, len(warnings) == 1 && strings.Contains(warnings[0], "no authentication provider"), "unexpected warnings: %+v", warnings)
+		assert := assert.New(t)
+
+		if assert.Len(providers, 1, "expected exactly one provider") {
+			assert.NotNil(providers[0], "expected provider to not be nil")
+		}
+		assert.Len(problems, 0, "unexpected problems: %+v", problems)
+		if assert.Len(warnings, 1, "expected one warning") {
+			assert.Contains(warnings[0], "no authentication provider", "unexpected warnings: %+v", warnings)
+		}
 	})
 
 	t.Run("matching auth provider found", func(t *testing.T) {
@@ -68,9 +75,13 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
-			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
+			assert := assert.New(t)
+
+			if assert.Len(providers, 1, "expected exactly one provider") {
+				assert.NotNil(providers[0], "expected provider to not be nil")
+			}
+			assert.Len(problems, 0, "unexpected problems: %+v", problems)
+			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
@@ -92,10 +103,18 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
-			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-			assert.True(t, len(warnings) == 1 && strings.Contains(warnings[0], "`allowGroupsPermissionsSync`"), "unexpected warnings: %+v", warnings)
-			assert.True(t, (providers[0]).(*Provider).groupsCache == nil, "expected groups cache to be enabled")
+			assert := assert.New(t)
+
+			if assert.Len(providers, 1, "expected exactly one provider") {
+				if assert.NotNil(providers[0], "expected provider to not be nil") {
+					assert.Nil((providers[0].(*Provider).groupsCache), "expected groups cache to be disabled")
+				}
+
+			}
+			assert.Len(problems, 0, "unexpected problems: %+v", problems)
+			if assert.Len(warnings, 1, "expected one warning") {
+				assert.Contains(warnings[0], "`allowGroupsPermissionsSync`", "unexpected warnings: %+v", warnings)
+			}
 		})
 
 		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
@@ -119,10 +138,17 @@ func TestNewAuthzProviders(t *testing.T) {
 				}},
 				false,
 			)
-			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
-			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
-			assert.True(t, (providers[0]).(*Provider).groupsCache != nil, "expected groups cache to be enabled")
+
+			assert := assert.New(t)
+
+			if assert.Len(providers, 1, "expected exactly one provider") {
+				if assert.NotNil(providers[0], "expected provider to not be nil") {
+					assert.NotNil((providers[0].(*Provider).groupsCache), "expected groups cache to be enabled")
+				}
+
+			}
+			assert.Len(problems, 0, "unexpected problems: %+v", problems)
+			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
 		})
 
 		t.Run("github app installation id available", func(t *testing.T) {
@@ -160,9 +186,13 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
-			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
-			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
+			assert := assert.New(t)
+
+			if assert.Len(providers, 1, "expected exactly one provider") {
+				assert.NotNil(providers[0], "expected provider to not be nil")
+			}
+			assert.Len(problems, 0, "unexpected problems: %+v", problems)
+			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
 		})
 	})
 }
