@@ -153,7 +153,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
 
                                 <p>
                                     Code Insights requires a local Sourcegraph installation via Docker Compose or
-                                    Kubernetes. You can check it out for free by installing with a single line of code.
+                                    Kubernetes. You can check it out for free by installing locally.
                                 </p>
 
                                 <Button
