@@ -47,7 +47,7 @@ import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
+import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -333,7 +333,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown
+                <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
                     resolveRevision={resolveRevision}

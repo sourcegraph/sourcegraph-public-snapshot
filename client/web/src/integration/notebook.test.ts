@@ -10,7 +10,7 @@ import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/dri
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '../graphql-operations'
-import { BlockType } from '../search/notebook'
+import { BlockType } from '../notebooks'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'

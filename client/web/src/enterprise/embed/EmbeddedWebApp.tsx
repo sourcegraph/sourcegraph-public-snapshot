@@ -22,7 +22,7 @@ const WILDCARD_THEME: WildcardTheme = {
 }
 
 const EmbeddedNotebookPage = lazyComponent(
-    () => import('../../search/notebook/EmbeddedNotebookPage'),
+    () => import('../../notebooks/notebookPage/EmbeddedNotebookPage'),
     'EmbeddedNotebookPage'
 )
 
