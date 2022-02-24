@@ -1,6 +1,8 @@
 package runner
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type Options struct {
 	Operations []MigrationOperation
@@ -71,17 +73,17 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 	// Construct a map from migration version to the number of its children that are also applied
 	counts := make(map[int]int, len(schemaVersion.appliedVersions))
 	for _, version := range schemaVersion.appliedVersions {
-		counts[version] = 0
-	}
-	for _, version := range schemaVersion.appliedVersions {
 		definition, ok := definitions.GetByID(version)
 		if !ok {
-			return MigrationOperation{}, errors.Newf("unknown version %d", version)
+			continue
 		}
 
 		for _, parent := range definition.Parents {
-			counts[parent]++
+			counts[parent] = counts[parent] + 1
 		}
+
+		// Ensure that we have an entry for this definition (but do not modify the count)
+		counts[definition.ID] = counts[definition.ID] + 0
 	}
 
 	// Find applied migrations with no applied children
