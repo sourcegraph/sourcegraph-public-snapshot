@@ -5,6 +5,7 @@ import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { FORM_ERROR } from '../../../../../form/hooks/useForm'
 
 import {
@@ -19,9 +20,11 @@ const fakeAPIRequest = async () => {
     return { [FORM_ERROR]: new Error('Fake api request error') }
 }
 
-const codeInsightsBackend = {
-    findInsightByName: () => of(null),
+class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
+    public findInsightByName = () => of(null)
 }
+
+const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 const EMPTY_DRILLDOWN_FILTERS: DrillDownFiltersFormValues = {
     excludeRepoRegexp: '',
@@ -37,7 +40,7 @@ export const DrillDownFiltersPanel: Story = () => (
     <section>
         <article>
             <h2>Creation Form</h2>
-            <CodeInsightsBackendContext.Provider value={codeInsightsBackend as any}>
+            <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
                 <DrillDownInsightCreationForm onCreateInsight={fakeAPIRequest} onCancel={() => {}} />
             </CodeInsightsBackendContext.Provider>
         </article>
