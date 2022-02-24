@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
+// IndexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
 	// repoRevs is the Sourcegraph representation of a the list of repoRevs
@@ -191,34 +191,25 @@ type IndexedSearchRequest interface {
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
-func fallbackIndexUnavailable(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
-	return &IndexedSubsetSearchRequest{
-		Unindexed:        limitUnindexedRepos(repos, limit, onMissing),
-		IndexUnavailable: true,
-	}
-}
-
-func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
-	return &IndexedSubsetSearchRequest{
-		Unindexed: limitUnindexedRepos(repos, limit, onMissing),
-	}
-}
-
 func OnlyUnindexed(repos []*search.RepositoryRevisions, zoekt zoekt.Streamer, useIndex query.YesNoOnly, containsRefGlobs bool, onMissing OnMissingRepoRevs) (IndexedSearchRequest, bool, error) {
 	// If Zoekt is disabled just fallback to Unindexed.
 	if zoekt == nil {
 		if useIndex == query.Only {
 			return nil, false, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
 		}
-		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
+
 	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, true, nil
 	}
 	return nil, false, nil
 }
@@ -311,13 +302,6 @@ type IndexedSubsetSearchRequest struct {
 	// repository revisions not indexed.
 	Unindexed []*search.RepositoryRevisions
 
-	// IndexUnavailable is true if zoekt is offline or disabled.
-	IndexUnavailable bool
-
-	// DisableUnindexedSearch is true if the query specified that only index
-	// search should be used.
-	DisableUnindexedSearch bool
-
 	// Inputs
 	Args *search.ZoektParameters
 
@@ -329,7 +313,7 @@ type IndexedSubsetSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-// IndxedRepos is a map of indexed repository revisions will be searched by
+// IndexedRepos is a map of indexed repository revisions will be searched by
 // Zoekt. Do not mutate.
 func (s *IndexedSubsetSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
 	if s.RepoRevs == nil {
@@ -410,7 +394,8 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), ctx.Err()
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return &IndexedSubsetSearchRequest{Unindexed: unindexedRepos}, ctx.Err()
 	}
 
 	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
@@ -432,8 +417,6 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 		Args:      zoektArgs,
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		RepoRevs:  indexed,
-
-		DisableUnindexedSearch: index == query.Only,
 	}, nil
 }
 

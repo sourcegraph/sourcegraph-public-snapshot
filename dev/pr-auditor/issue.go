@@ -11,8 +11,14 @@ const (
 )
 
 func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.IssueRequest {
+	// 🚨 SECURITY: Do not reference other potentially sensitive fields of pull requests
+	prTitle := payload.PullRequest.Title
+	if payload.Repository.Private {
+		prTitle = "<redacted>"
+	}
+
 	var (
-		issueTitle      = fmt.Sprintf("%s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, payload.PullRequest.Title)
+		issueTitle      = fmt.Sprintf("%s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, prTitle)
 		issueBody       string
 		exceptionLabels = []string{}
 		issueAssignees  = []string{}
@@ -27,12 +33,12 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 
 	if !result.Reviewed {
 		if result.HasTestPlan() {
-			issueBody = fmt.Sprintf("%s %q **has a test plan** but **was not reviewed**.", payload.PullRequest.URL, payload.PullRequest.Title)
+			issueBody = fmt.Sprintf("%s %q **has a test plan** but **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		} else {
-			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, payload.PullRequest.Title)
+			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, prTitle)
 		}
 	} else if !result.HasTestPlan() {
-		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, payload.PullRequest.Title)
+		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, prTitle)
 	}
 
 	if !result.HasTestPlan() {

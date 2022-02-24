@@ -31,7 +31,9 @@ func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, up
 	}
 }
 
-func (r *UploadConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFUploadResolver, error) {
+func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []gql.LSIFUploadResolver, err error) {
+	defer r.errTracer.Collect(&err, log.String("uploadConnectionResolver.field", "nodes"))
+
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}

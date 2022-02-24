@@ -9,13 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -174,65 +169,41 @@ type NPMDependencyRepo struct {
 	ID      int
 }
 
+// UpsertDependencyRepo creates the given dependency repo if it doesn't yet exist.
+func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (err error) {
+	txstore, err := s.Transact(ctx)
+	defer func() { err = errors.Append(err, txstore.Done(err)) }()
+
+	var (
+		scheme  = dep.Scheme()
+		name    = dep.PackageSyntax()
+		version = dep.PackageVersion()
+	)
+
+	existsQuery := sqlf.Sprintf(
+		`select count(*) from lsif_dependency_repos where (scheme, name, version) = (%s, %s, %s)`,
+		scheme, name, version,
+	)
+
+	var count int64
+	if err := txstore.QueryRow(ctx, existsQuery).Scan(&count); err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	insertQuery := sqlf.Sprintf(
+		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s)`,
+		scheme, name, version,
+	)
+
+	return txstore.Exec(ctx, insertQuery)
+}
+
 const getLSIFDependencyReposQuery = `
 -- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
 SELECT id, name, version FROM lsif_dependency_repos
 WHERE %s ORDER BY id DESC %s
 `
-
-type DependencyInserter struct {
-	list     func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-	sync     func(context.Context, int64) error
-	inserter *batch.Inserter
-}
-
-func NewDependencyInserter(
-	db dbutil.DB,
-	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error),
-	sync func(context.Context, int64) error,
-) *DependencyInserter {
-	return &DependencyInserter{
-		list: list,
-		sync: sync,
-		inserter: batch.NewInserterWithReturn(
-			context.Background(),
-			db,
-			"lsif_dependency_repos",
-			batch.MaxNumPostgresParameters,
-			[]string{"scheme", "name", "version"},
-			"ON CONFLICT DO NOTHING",
-			[]string{"id"},
-			func(rows *sql.Rows) error {
-				var id int // ignored
-				return rows.Scan(&id)
-			},
-		),
-	}
-}
-
-func (i *DependencyInserter) Insert(ctx context.Context, dep reposource.PackageDependency) error {
-	return i.inserter.Insert(ctx, dep.Scheme(), dep.PackageSyntax(), dep.PackageVersion())
-}
-
-func (i *DependencyInserter) Flush(ctx context.Context) error {
-	err := i.inserter.Flush(ctx)
-	if err != nil {
-		return err
-	}
-
-	svcs, err := i.list(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindNPMPackages, extsvc.KindNPMPackages},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	for _, svc := range svcs {
-		if err = i.sync(ctx, svc.ID); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}

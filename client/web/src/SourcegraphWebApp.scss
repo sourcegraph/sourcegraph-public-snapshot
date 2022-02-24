@@ -37,6 +37,25 @@ body,
     background-color: var(--mark-bg);
 }
 
+.match-highlight,
+.match-highlight-sticky {
+    background-color: var(--mark-bg);
+}
+
+// When a match highlight and a selection highlight overlap,
+// change the color to be able to distinguish between the highlights.
+.match-highlight .selection-highlight,
+.match-highlight.selection-highlight,
+.selection-highlight .match-highlight {
+    .theme-light & {
+        background-color: var(--mark-bg-light);
+    }
+
+    .theme-dark & {
+        background-color: var(--mark-bg-dark);
+    }
+}
+
 .spacer {
     flex: 1;
 }

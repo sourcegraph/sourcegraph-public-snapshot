@@ -24,11 +24,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 
 ### Removed
 
-- The deprecated GraphQL field `SearchResults.resultCount` has been removed in favor of its replacement, `matchCount`. [#31573](https://github.com/sourcegraph/sourcegraph/pull/31573)
+-
 
 ## 3.37.0
 
