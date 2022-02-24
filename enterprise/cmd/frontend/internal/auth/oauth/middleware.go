@@ -69,10 +69,10 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
 			return
 		}
-		op := req.URL.Query().Get("op")
+		op := LoginStateOp(req.URL.Query().Get("op"))
 		extraScopes := []string{}
 		var err error
-		if op == string(LoginStateOpCreateCodeHostConnection) {
+		if op == LoginStateOpCreateCodeHostConnection {
 
 			extraScopes, err = getExtraScopes(req.Context(), db, serviceType)
 			if err != nil {
