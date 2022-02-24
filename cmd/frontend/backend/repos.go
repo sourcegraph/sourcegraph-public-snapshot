@@ -68,10 +68,8 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return s.store.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. On sourcegraph.com,
-// if the name refers to a repository on a github.com or gitlab.com that is not
-// yet present in the database, it will automatically look up the
-// repository externally and add it to the database before returning it.
+// GetByName retrieves the repository with the given name. It will lazy sync a repo
+// not yet present in the database under certain conditions. See repos.Syncer.SyncRepo.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, name)
@@ -80,28 +78,30 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := s.store.GetByName(ctx, name); {
-	case err == nil:
+	repo, err := s.store.GetByName(ctx, name)
+	if err == nil {
 		return repo, nil
-	case !errcode.IsNotFound(err):
+	}
+
+	if !errcode.IsNotFound(err) {
 		return nil, err
-	case envvar.SourcegraphDotComMode():
-		// Automatically add repositories on Sourcegraph.com.
-		newName, err := s.Add(ctx, name)
-		if err != nil {
-			return nil, err
-		}
+	}
+
+	newName, err := s.Add(ctx, name)
+	if err == nil {
 		return s.store.GetByName(ctx, newName)
-	case shouldRedirect(name):
+	}
+
+	if errcode.IsNotFound(err) && shouldRedirect(name) {
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
 			Path:     string(name),
 			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
 		}).String()}
-	default:
-		return nil, err
 	}
+
+	return nil, err
 }
 
 func shouldRedirect(name api.RepoName) bool {
@@ -124,7 +124,8 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host == nil {
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
 		return "", &database.RepoNotFoundErr{Name: name}
 	}
 
@@ -133,14 +134,17 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 		metricIsRepoCloneable.WithLabelValues(status).Inc()
 	}()
 
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
-		if ctx.Err() != nil {
-			status = "timeout"
-		} else {
-			status = "fail"
+	if !codehost.IsPackageHost() {
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
+			if ctx.Err() != nil {
+				status = "timeout"
+			} else {
+				status = "fail"
+			}
+			return "", err
 		}
-		return "", err
 	}
+
 	status = "success"
 
 	// Looking up the repo in repo-updater makes it sync that repo to the

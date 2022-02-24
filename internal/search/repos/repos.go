@@ -16,18 +16,19 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	codeintelstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -535,21 +536,6 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	// We pass in these methods as functions to avoid a circular dependency between
-	// the codeinteldbstore package and the repos package and to make testing easier.
-	depsStore := codeinteldbstore.NewDependencyInserter(
-		r.DB,
-		r.DB.ExternalServices().List,
-		repos.NewStore(r.DB, sql.TxOptions{}).EnqueueSingleSyncJob,
-	)
-
-	defer func() {
-		if err := depsStore.Flush(context.Background()); err != nil {
-			log15.Warn("failed flushing dependency repos", "error", err)
-			return
-		}
-	}()
-
 	g, ctx := errgroup.WithContext(ctx)
 	withRepoRevs := func(depParams string, cb func([]types.MinimalRepo, []search.RevisionSpecifier) error) {
 		g.Go(func() error {
@@ -604,14 +590,24 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		depNames []string
 	)
 
+	depsStore := codeintelstore.Store{Store: basestore.NewWithDB(r.DB, sql.TxOptions{})}
+	reposSvc := backend.NewRepos(r.DB.Repos())
+
 	for _, depParams := range op.Dependencies {
 		withRepoRevs(depParams, func(rs []types.MinimalRepo, revs []search.RevisionSpecifier) error {
 			return withDependencies(rs, revs, func(dep reposource.PackageDependency) error {
-				if err := depsStore.Insert(ctx, dep); err != nil {
+				depName := string(dep.RepoName())
+
+				if err := depsStore.UpsertDependencyRepo(ctx, dep); err != nil {
 					log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
 				}
 
-				depName := string(dep.RepoName())
+				// Trigger a repo sync.
+				_, err := reposSvc.GetByName(ctx, api.RepoName(depName))
+				if err != nil {
+					log15.Warn("failed to sync dependency repo", "error", err, "repo", dep)
+				}
+
 				depRev := search.RevisionSpecifier{RevSpec: dep.GitTagFromVersion()}
 
 				mu.Lock()

@@ -310,14 +310,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var repo *types.Repo
-	if s.SourcegraphDotComMode {
-		repo, err = s.Syncer.SyncRepo(ctx, args.Repo, true)
-	} else {
-		// TODO: Remove all call sites that RPC into repo-updater to just look-up
-		// a repo. They can simply ask the database instead.
-		repo, err = s.Store.RepoStore.GetByName(ctx, args.Repo)
-	}
+	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
 
 	switch {
 	case err == nil:

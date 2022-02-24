@@ -13,6 +13,14 @@ type CodeHost struct {
 	BaseURL     *url.URL
 }
 
+func (c *CodeHost) IsPackageHost() bool {
+	switch c.ServiceType {
+	case TypeNPMPackages, TypeJVMPackages:
+		return true
+	}
+	return false
+}
+
 // Known public code hosts and their URLs
 var (
 	GitHubDotComURL = mustParseURL("https://github.com")

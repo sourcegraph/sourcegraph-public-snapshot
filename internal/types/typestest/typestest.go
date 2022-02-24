@@ -353,12 +353,12 @@ var Assert = struct {
 	ExternalServicesOrderedBy func(func(a, b *types.ExternalService) bool) ExternalServicesAssertion
 }{
 	ReposEqual: func(rs ...*types.Repo) ReposAssertion {
-		want := append(types.Repos{}, rs...).With(Opt.RepoID(0))
+		want := types.Repos(rs)
 		return func(t testing.TB, have types.Repos) {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
-			have = append(types.Repos{}, have...).With(Opt.RepoID(0))
-			if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.Repo{}, "CreatedAt", "UpdatedAt")); diff != "" {
+			opts := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
+			if diff := cmp.Diff(want, have, opts); diff != "" {
 				t.Errorf("repos (-want +got): %s", diff)
 			}
 		}
@@ -376,13 +376,12 @@ var Assert = struct {
 		}
 	},
 	ExternalServicesEqual: func(es ...*types.ExternalService) ExternalServicesAssertion {
-		want := append(types.ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
+		want := types.ExternalServices(es)
 		return func(t testing.TB, have types.ExternalServices) {
 			t.Helper()
-			// Exclude auto-generated IDs from equality tests
-			have = append(types.ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
+			opts := cmpopts.IgnoreFields(types.ExternalService{}, "ID", "CreatedAt", "UpdatedAt")
+			if diff := cmp.Diff(want, have, opts); diff != "" {
+				t.Errorf("external services (-want +got): %s", diff)
 			}
 		}
 	},

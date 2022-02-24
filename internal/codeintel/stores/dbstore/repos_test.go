@@ -2,7 +2,6 @@ package dbstore_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,9 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRepoName(t *testing.T) {
@@ -33,33 +29,14 @@ func TestRepoName(t *testing.T) {
 	}
 }
 
-func TestDependencyInserter(t *testing.T) {
+func TestUpsertDependencyRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	svcsStore := db.ExternalServices()
-	repoStore := repos.NewStore(db, sql.TxOptions{})
 	store := testStore(db)
-
-	npmSvc := &types.ExternalService{
-		DisplayName: "NPM",
-		Kind:        extsvc.KindNPMPackages,
-		Config:      `{}`,
-	}
-
-	err := svcsStore.Upsert(ctx, npmSvc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	in := dbstore.NewDependencyInserter(
-		db,
-		svcsStore.List,
-		repoStore.EnqueueSingleSyncJob,
-	)
 
 	for _, dep := range []reposource.PackageDependency{
 		parseNPMDependency(t, "bar@2.0.0"),
@@ -69,27 +46,9 @@ func TestDependencyInserter(t *testing.T) {
 		parseNPMDependency(t, "foo@1.0.0"),
 		parseNPMDependency(t, "foo@2.0.0"),
 	} {
-		if err := in.Insert(ctx, dep); err != nil {
+		if err := store.UpsertDependencyRepo(ctx, dep); err != nil {
 			t.Fatal(err)
 		}
-	}
-
-	if err := in.Flush(ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	jobs, err := repoStore.ListSyncJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(jobs) != 1 {
-		t.Fatalf("expected one sync job, got zero")
-	}
-
-	job := jobs[0]
-	if job.ExternalServiceID != npmSvc.ID {
-		t.Fatalf("unexpected external service id in %+v", job)
 	}
 
 	have, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{})
