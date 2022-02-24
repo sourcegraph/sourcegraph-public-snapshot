@@ -3,7 +3,6 @@ package job
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -20,7 +19,7 @@ import (
 // timeout). Calling Run on a job object runs a search.
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/job -i Job -o job_mock_test.go
 type Job interface {
-	Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error)
+	Run(context.Context, streaming.Sender) (*search.Alert, error)
 	Name() string
 }
 

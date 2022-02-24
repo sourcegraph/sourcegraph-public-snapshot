@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -26,7 +25,7 @@ type subRepoPermsFilterJob struct {
 	child Job
 }
 
-func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
+func (s *subRepoPermsFilterJob) Run(ctx context.Context, stream streaming.Sender) (*search.Alert, error) {
 	checker := authz.DefaultSubRepoPermsChecker
 
 	var (
@@ -45,7 +44,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		stream.Send(event)
 	})
 
-	alert, err := s.child.Run(ctx, db, filteredStream)
+	alert, err := s.child.Run(ctx, filteredStream)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}

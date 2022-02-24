@@ -319,7 +319,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 		defer close(eventsC)
 		defer batchedStream.Done()
 
-		alert, err := searchClient.Execute(ctx, h.db, batchedStream, inputs)
+		alert, err := searchClient.Execute(ctx, batchedStream, inputs)
 		final <- finalResult{alert: alert, err: err}
 	}()
 

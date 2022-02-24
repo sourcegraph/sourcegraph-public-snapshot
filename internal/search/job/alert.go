@@ -28,10 +28,11 @@ func NewAlertJob(inputs *run.SearchInputs, child Job) Job {
 
 type alertJob struct {
 	inputs *run.SearchInputs
+	db     database.DB
 	child  Job
 }
 
-func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (j *alertJob) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "AlertJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -41,10 +42,10 @@ func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sen
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
 	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := j.child.Run(ctx, db, statsObserver)
+	jobAlert, err := j.child.Run(ctx, statsObserver)
 
 	ao := alert.Observer{
-		Db:           db,
+		Db:           j.db,
 		SearchInputs: j.inputs,
 		HasResults:   countingStream.Count() > 0,
 	}

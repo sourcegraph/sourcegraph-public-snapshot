@@ -158,17 +158,18 @@ type StructuralSearch struct {
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
 
+	DB       database.DB
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "StructuralSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
+	repos := &searchrepos.Resolver{DB: s.DB, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {

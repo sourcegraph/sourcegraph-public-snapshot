@@ -21,10 +21,11 @@ import (
 )
 
 type RepoSearch struct {
+	DB   database.DB
 	Args *search.TextParameters
 }
 
-func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -33,7 +34,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 
 	tr.LogFields(otlog.String("pattern", s.Args.PatternInfo.Pattern))
 
-	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+	repos := &searchrepos.Resolver{DB: s.DB, Opts: s.Args.RepoOptions}
 	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 

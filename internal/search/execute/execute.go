@@ -3,7 +3,6 @@ package execute
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
@@ -15,7 +14,6 @@ import (
 // expand predicates, create jobs, and execute those jobs.
 func Execute(
 	ctx context.Context,
-	db database.DB,
 	stream streaming.Sender,
 	jobArgs *job.Args,
 ) (_ *search.Alert, err error) {
@@ -26,7 +24,7 @@ func Execute(
 	}()
 
 	plan := jobArgs.SearchInputs.Plan
-	plan, err = predicate.Expand(ctx, db, jobArgs, plan)
+	plan, err = predicate.Expand(ctx, jobArgs, plan)
 	if err != nil {
 		return nil, err
 	}
@@ -36,5 +34,5 @@ func Execute(
 		return nil, err
 	}
 
-	return planJob.Run(ctx, db, stream)
+	return planJob.Run(ctx, stream)
 }

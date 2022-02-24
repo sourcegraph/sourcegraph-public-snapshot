@@ -34,9 +34,10 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
+	DB                   database.DB
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "CommitSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -44,7 +45,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 	}()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
-	if err := j.ExpandUsernames(ctx, db); err != nil {
+	if err := j.ExpandUsernames(ctx, j.DB); err != nil {
 		return nil, err
 	}
 
@@ -59,7 +60,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	repos := searchrepos.Resolver{DB: j.DB, Opts: j.RepoOpts}
 	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)

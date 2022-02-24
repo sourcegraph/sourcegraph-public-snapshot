@@ -506,7 +506,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
+	alert, err := execute.Execute(ctx, agg, r.JobArgs())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	r.logBatch(ctx, srr, err)
@@ -602,7 +602,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}

@@ -22,17 +22,18 @@ type RepoSubsetTextSearch struct {
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
 
+	DB       database.DB
 	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSubsetTextSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
+	repos := &searchrepos.Resolver{DB: t.DB, Opts: t.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
@@ -72,18 +73,19 @@ type RepoUniverseTextSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 
+	DB          database.DB
 	RepoOptions search.RepoOptions
 	UserID      int32
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, t.DB, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 

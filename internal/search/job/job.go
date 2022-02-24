@@ -107,6 +107,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 
+					DB:          jargs.SearchInputs.DB,
 					RepoOptions: repoOptions,
 				})
 			}
@@ -133,6 +134,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					PatternInfo:      args.PatternInfo,
 					Limit:            maxResults,
 
+					DB:          jargs.SearchInputs.DB,
 					RepoOptions: repoOptions,
 				})
 			}
@@ -167,6 +169,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				NotSearcherOnly:  !onlyRunSearcher,
 				UseIndex:         args.PatternInfo.Index,
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				DB:               jargs.SearchInputs.DB,
 				RepoOpts:         repoOptions,
 			})
 		}
@@ -193,6 +196,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				NotSearcherOnly:  !onlyRunSearcher,
 				UseIndex:         args.PatternInfo.Index,
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				DB:               jargs.SearchInputs.DB,
 				RepoOpts:         repoOptions,
 			})
 		}
@@ -244,6 +248,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				NotSearcherOnly:  !onlyRunSearcher,
 				UseIndex:         args.PatternInfo.Index,
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				DB:               jargs.SearchInputs.DB,
 				RepoOpts:         repoOptions,
 			})
 		}
@@ -334,6 +339,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 						args.Mode = search.SkipUnindexed
 					}
 					addJob(true, &run.RepoSearch{
+						DB:   jargs.SearchInputs.DB,
 						Args: &args,
 					})
 				}
@@ -342,6 +348,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	}
 
 	addJob(true, &searchrepos.ComputeExcludedRepos{
+		DB:      jargs.SearchInputs.DB,
 		Options: repoOptions,
 	})
 

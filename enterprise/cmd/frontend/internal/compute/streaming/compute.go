@@ -67,7 +67,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 
-		_, err := searchClient.Execute(ctx, db, stream, inputs)
+		_, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{err: err}
 	}()
 

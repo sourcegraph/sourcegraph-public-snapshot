@@ -241,6 +241,7 @@ func TestPrettyJSON(t *testing.T) {
         "NotSearcherOnly": true,
         "UseIndex": "yes",
         "ContainsRefGlobs": false,
+        "DB": null,
         "RepoOpts": {
           "RepoFilters": [
             "foo"
@@ -292,6 +293,7 @@ func TestPrettyJSON(t *testing.T) {
     },
     {
       "Repo": {
+        "DB": null,
         "Args": {
           "PatternInfo": {
             "Pattern": "bar",
@@ -406,6 +408,7 @@ func TestPrettyJSON(t *testing.T) {
     },
     {
       "ComputeExcludedRepos": {
+        "DB": null,
         "Options": {
           "RepoFilters": [
             "foo"

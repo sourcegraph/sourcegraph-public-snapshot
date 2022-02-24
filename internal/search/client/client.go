@@ -30,7 +30,6 @@ type SearchClient interface {
 
 	Execute(
 		ctx context.Context,
-		db database.DB,
 		stream streaming.Sender,
 		inputs *run.SearchInputs,
 	) (_ *search.Alert, err error)
@@ -62,7 +61,6 @@ func (s *searchClient) Plan(
 
 func (s *searchClient) Execute(
 	ctx context.Context,
-	db database.DB,
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
@@ -72,5 +70,5 @@ func (s *searchClient) Execute(
 		SearcherURLs:        s.searcherURLs,
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
 	}
-	return execute.Execute(ctx, db, stream, jobArgs)
+	return execute.Execute(ctx, stream, jobArgs)
 }

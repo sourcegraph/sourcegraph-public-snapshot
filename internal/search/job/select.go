@@ -3,7 +3,6 @@ package job
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -20,9 +19,9 @@ type selectJob struct {
 	child Job
 }
 
-func (j *selectJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
+func (j *selectJob) Run(ctx context.Context, stream streaming.Sender) (*search.Alert, error) {
 	selectingStream := streaming.WithSelect(stream, j.path)
-	return j.child.Run(ctx, db, selectingStream)
+	return j.child.Run(ctx, selectingStream)
 }
 
 func (j *selectJob) Name() string {

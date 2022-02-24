@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -325,20 +324,26 @@ func TestSearchResultsHydration(t *testing.T) {
 	// Act in a user context
 	var ctxUser int32 = 1234
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
+	query := `foobar index:only count:350`
 
-	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
+	literalPatternType := "literal"
+	searchInputs, err := run.NewSearchInputs(
+		ctx,
+		db,
+		"V2",
+		&literalPatternType,
+		query,
+		nil,
+		&schema.Settings{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	resolver := &searchResolver{
-		db: db,
-		SearchInputs: &run.SearchInputs{
-			Plan:         p,
-			Query:        p.ToParseTree(),
-			UserSettings: &schema.Settings{},
-		},
-		zoekt: z,
+		db:           db,
+		SearchInputs: searchInputs,
+		zoekt:        z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -564,19 +569,24 @@ func TestEvaluateAnd(t *testing.T) {
 			repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			p, err := query.Pipeline(query.InitLiteral(tt.query))
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.query,
+				nil,
+				&schema.Settings{},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := &searchResolver{
-				db: db,
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: z,
+				db:           db,
+				SearchInputs: searchInputs,
+				zoekt:        z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -616,11 +626,6 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
@@ -638,14 +643,24 @@ func TestSearchContext(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
 
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.searchQuery,
+				nil,
+				&schema.Settings{},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
+				SearchInputs: searchInputs,
+				zoekt:        mockZoekt,
+				db:           db,
 			}
 
 			_, err = resolver.Results(context.Background())
@@ -747,11 +762,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				authz.DefaultSubRepoPermsChecker = tt.checker()
 			}
 
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
@@ -762,14 +772,24 @@ func TestSubRepoFiltering(t *testing.T) {
 				return database.NewMockEventLogStore()
 			})
 
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.searchQuery,
+				nil,
+				&schema.Settings{},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
+				SearchInputs: searchInputs,
+				zoekt:        mockZoekt,
+				db:           db,
 			}
 
 			ctx := context.Background()
