@@ -1,5 +1,5 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -28,9 +28,11 @@ export interface UsePreciseCodeIntelResult {
 
     referencesHasNextPage: boolean
     fetchMoreReferences: () => void
+    fetchMoreReferencesLoading: boolean
 
     implementationsHasNextPage: boolean
     fetchMoreImplementations: () => void
+    fetchMoreImplementationsLoading: boolean
 }
 
 interface UsePreciseCodeIntelConfig {
@@ -50,18 +52,19 @@ export const usePreciseCodeIntel = ({
     const [referenceData, setReferenceData] = useState<PreciseCodeIntelForLocationFields>()
 
     const isFirstRender = useRef(true)
+    useMemo(() => {
+        isFirstRender.current = true
+    }, [variables])
 
-    console.log('isFirstRender:', isFirstRender.current)
-    const { data, error, loading, fetchMore } = useQuery<
+    const { error, loading } = useQuery<
         UsePreciseCodeIntelForPositionResult,
         UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
         variables,
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
-        skip: !isFirstRender.current,
+        skip: !isFirstRender,
         onCompleted: result => {
-            console.log('On completed called!!!!')
             if (isFirstRender.current) {
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 setReferenceData(lsifData)
@@ -81,7 +84,7 @@ export const usePreciseCodeIntel = ({
             const newReferenceData = result.repository?.commit?.blob?.lsif?.references
 
             if (!previousData || !newReferenceData) {
-                return result
+                return
             }
 
             setReferenceData({
@@ -95,7 +98,6 @@ export const usePreciseCodeIntel = ({
             })
         },
     })
-    console.log('additionalReferencesResult', additionalReferencesResult)
 
     const [fetchAdditionalImplementations, additionalImplementationsResult] = useLazyQuery<
         LoadAdditionalImplementationsResult,
@@ -108,7 +110,7 @@ export const usePreciseCodeIntel = ({
             const newImplementationsData = result.repository?.commit?.blob?.lsif?.implementations
 
             if (!previousData || !newImplementationsData) {
-                return result
+                return
             }
 
             setReferenceData({
@@ -149,10 +151,14 @@ export const usePreciseCodeIntel = ({
         lsifData: referenceData,
         loading,
         error,
+
         fetchMoreReferences,
-        fetchMoreImplementations,
+        fetchMoreReferencesLoading: additionalReferencesResult.loading,
         referencesHasNextPage: referenceData ? referenceData.references.pageInfo.endCursor !== null : false,
+
+        fetchMoreImplementations,
         implementationsHasNextPage: referenceData ? referenceData.implementations.pageInfo.endCursor !== null : false,
+        fetchMoreImplementationsLoading: additionalImplementationsResult.loading,
     }
 }
 

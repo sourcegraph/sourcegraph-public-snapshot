@@ -255,6 +255,8 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         implementationsHasNextPage,
         fetchMoreReferences,
         fetchMoreImplementations,
+        fetchMoreReferencesLoading,
+        fetchMoreImplementationsLoading,
     } = usePreciseCodeIntel({
         variables: {
             repository: props.clickedToken.repoName,
@@ -318,6 +320,8 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
             implementations={implementations}
             fetchMoreImplementations={fetchMoreImplementations}
             fetchMoreReferences={fetchMoreReferences}
+            fetchMoreReferencesLoading={fetchMoreReferencesLoading}
+            fetchMoreImplementationsLoading={fetchMoreImplementationsLoading}
         />
     )
 }
@@ -334,10 +338,12 @@ interface SideReferencesListsProps extends CoolCodeIntelProps {
     references: LocationFields[]
     referencesHasNextPage: boolean
     fetchMoreReferences: () => void
+    fetchMoreReferencesLoading: boolean
 
     implementations: LocationFields[]
     implementationsHasNextPage: boolean
     fetchMoreImplementations: () => void
+    fetchMoreImplementationsLoading: boolean
 }
 
 const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
@@ -353,13 +359,20 @@ const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = p
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
-            <CollapsibleLocationList {...props} name="definitions" locations={definitions} hasMore={false} />
+            <CollapsibleLocationList
+                {...props}
+                name="definitions"
+                locations={definitions}
+                hasMore={false}
+                loadingMore={false}
+            />
             <CollapsibleLocationList
                 {...props}
                 name="references"
                 locations={references}
                 hasMore={props.referencesHasNextPage}
                 fetchMore={props.fetchMoreReferences}
+                loadingMore={props.fetchMoreReferencesLoading}
             />
             {implementations.length > 0 && (
                 <CollapsibleLocationList
@@ -368,6 +381,7 @@ const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = p
                     locations={implementations}
                     hasMore={props.implementationsHasNextPage}
                     fetchMore={props.fetchMoreImplementations}
+                    loadingMore={props.fetchMoreImplementationsLoading}
                 />
             )}
         </>
@@ -382,18 +396,13 @@ const CollapsibleLocationList: React.FunctionComponent<{
     filter: string | undefined
     hasMore: boolean
     fetchMore?: () => void
+    loadingMore: boolean
 }> = props => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
-    const [disable, setDisable] = useState(false)
-    useEffect(() => {
-        setDisable(false)
-    }, [props.locations])
-
     const fetchMore = (): void => {
         if (props.fetchMore) {
-            setDisable(true)
             props.fetchMore()
         }
     }
@@ -434,14 +443,14 @@ const CollapsibleLocationList: React.FunctionComponent<{
                         />
                         {props.hasMore &&
                             props.fetchMore !== undefined &&
-                            (disable ? (
+                            (props.loadingMore ? (
                                 <div className="text-center mb-1">
                                     <em>Loading more {props.name}...</em>
                                     <LoadingSpinner inline={true} />
                                 </div>
                             ) : (
                                 <div className="text-center mb-1">
-                                    <Button variant="secondary" disabled={disable} onClick={fetchMore}>
+                                    <Button variant="secondary" onClick={fetchMore}>
                                         Load more {props.name}
                                     </Button>
                                 </div>
