@@ -11,9 +11,8 @@ import {
     LINE_CHART_WITH_MANY_LINES,
 } from '../../../../views/mocks/charts-content'
 import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from '../../core/backend/gql-api/code-insights-gql-backend'
 import { BackendInsight, Insight, InsightExecutionType, InsightType, isCaptureGroupInsight } from '../../core/types'
-import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
@@ -136,9 +135,9 @@ const insightsWithManyLines: Insight[] = [
     },
 ]
 
-class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend {
+class StoryBackendWithManyLinesCharts extends CodeInsightsGqlBackend {
     constructor() {
-        super(SETTINGS_CASCADE_MOCK, {} as any)
+        super({} as any)
     }
 
     public getBackendInsightData = (insight: BackendInsight) => {
