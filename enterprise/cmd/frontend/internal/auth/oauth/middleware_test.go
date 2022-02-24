@@ -24,8 +24,8 @@ func Test_getExtraScopes(t *testing.T) {
 	}{
 		"withoutScopes_gitlab": {"", extsvc.TypeGitLab, []string{}},
 		"withoutScopes_github": {"", extsvc.TypeGitHub, []string{}},
-		"withScopes_gitlab":    {"createCodeHostConnection", extsvc.TypeGitLab, []string{"api"}},
-		"withScopes_github":    {"createCodeHostConnection", extsvc.TypeGitHub, []string{"repo"}},
+		"withScopes_gitlab":    {LoginStateOpCreateAccount, extsvc.TypeGitLab, []string{"api"}},
+		"withScopes_github":    {LoginStateOpCreateAccount, extsvc.TypeGitHub, []string{"repo"}},
 	} {
 		t.Run(name, func(t *testing.T) {
 
