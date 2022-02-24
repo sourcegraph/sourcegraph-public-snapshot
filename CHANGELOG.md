@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 
 ### Removed
 
@@ -53,7 +53,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed LSIF uploads not being expired according to retention policies when the repository contained tags and branches with the same name but pointing to different commits. [#31108](https://github.com/sourcegraph/sourcegraph/pull/31108)
 - Service discovery for the symbols service can transition from no endpoints to endpoints. Previously we always returned an error after the first empty state. [#31225](https://github.com/sourcegraph/sourcegraph/pull/31225)
 - Fixed performance issue in LSIF upload processing, reducing the latency between uploading an LSIF index and accessing precise code intel in the UI. ([#30978](https://github.com/sourcegraph/sourcegraph/pull/30978), [#31143](https://github.com/sourcegraph/sourcegraph/pull/31143))
-- Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 - Fixed symbols not appearing when no files changed between commits. [#31295](https://github.com/sourcegraph/sourcegraph/pull/31295)
 - Fixed symbols not appearing when too many files changed between commits. [#31110](https://github.com/sourcegraph/sourcegraph/pull/31110)
 - Fixed runaway disk usage in the `symbols` service. [#30647](https://github.com/sourcegraph/sourcegraph/pull/30647)
