@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -10,62 +11,58 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // RevSpecSet is a utility type for a set of RevSpecs.
 type RevSpecSet map[api.RevSpec]struct{}
 
-type DependenciesResolver interface {
+type DependenciesService interface {
 	Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error)
 }
 
-type dependenciesResolver struct {
-	db       database.DB
-	listFunc func(context.Context, database.ExternalServicesListOptions) (dependencyRevs []*types.ExternalService, err error)
-	syncFunc func(context.Context, int64) error
+type dependenciesService struct {
+	db          database.DB
+	repoupdater *repoupdater.Client
 }
 
-func NewDependenciesResolver(
-	db database.DB,
-	listFunc func(context.Context, database.ExternalServicesListOptions) (dependencyRevs []*types.ExternalService, err error),
-	syncFunc func(context.Context, int64) error,
-) *dependenciesResolver {
-	return &dependenciesResolver{
-		db:       db,
-		listFunc: listFunc,
-		syncFunc: syncFunc,
-	}
+func NewDependenciesService(db database.DB) *dependenciesService {
+	return &dependenciesService{db: db}
 }
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to
 // `40-char commit hashes belonging to that repository.
-func (r *dependenciesResolver) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
-	depsStore := codeinteldbstore.NewDependencyInserter(r.db, r.listFunc, r.syncFunc)
+func (r *dependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
+	tr, ctx := trace.New(ctx, "DependenciesService", "Dependencies")
 	defer func() {
-		if flushErr := depsStore.Flush(context.Background()); flushErr != nil {
-			err = errors.Append(err, flushErr)
+		if len(repoRevs) > 1 {
+			tr.LazyPrintf("repoRevs: %d", len(repoRevs))
+		} else {
+			tr.LazyPrintf("repoRevs: %v", repoRevs)
 		}
+		tr.SetError(err)
+		tr.Finish()
 	}()
 
-	var (
-		mu             sync.Mutex
-		dependencyRevs = make(map[api.RepoName]RevSpecSet)
-	)
+	var mu sync.Mutex
+	dependencyRevs := make(map[api.RepoName]RevSpecSet)
 
-	rg, ctx := errgroup.WithContext(ctx)
 	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
+	depsStore := codeinteldbstore.Store{Store: basestore.NewWithDB(r.db, sql.TxOptions{})}
+
 	sem := semaphore.NewWeighted(16)
+	g, ctx := errgroup.WithContext(ctx)
 
 	for repoName, revs := range repoRevs {
 		for rev := range revs {
 			repoName, rev := repoName, rev
 
-			rg.Go(func() error {
+			g.Go(func() error {
 				if err := sem.Acquire(ctx, 1); err != nil {
 					return err
 				}
@@ -77,22 +74,24 @@ func (r *dependenciesResolver) Dependencies(ctx context.Context, repoRevs map[ap
 				}
 
 				for _, dep := range deps {
-					if err := depsStore.Insert(ctx, dep); err != nil {
-						return err
-					}
+					g.Go(func() error {
+						if err := depsStore.UpsertDependencyRepo(ctx, dep); err != nil {
+							return err
+						}
 
-					depName := dep.RepoName()
-					depRev := api.RevSpec(dep.GitTagFromVersion())
+						depName := dep.RepoName()
+						depRev := api.RevSpec(dep.GitTagFromVersion())
 
-					mu.Lock()
+						mu.Lock()
+						defer mu.Unlock()
 
-					if _, ok := dependencyRevs[depName]; !ok {
-						dependencyRevs[depName] = RevSpecSet{}
-					}
+						if _, ok := dependencyRevs[depName]; !ok {
+							dependencyRevs[depName] = RevSpecSet{}
+						}
+						dependencyRevs[depName][depRev] = struct{}{}
 
-					dependencyRevs[depName][depRev] = struct{}{}
-
-					mu.Unlock()
+						return nil
+					})
 				}
 
 				return nil
@@ -100,7 +99,7 @@ func (r *dependenciesResolver) Dependencies(ctx context.Context, repoRevs map[ap
 		}
 	}
 
-	if err := rg.Wait(); err != nil {
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
