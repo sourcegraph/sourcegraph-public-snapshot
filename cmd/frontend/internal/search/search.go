@@ -297,7 +297,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	}
 
 	searchClient := h.newSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, h.db, a.Version, &a.PatternType, a.Query, batchedStream, settings)
+	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, batchedStream, settings)
 	if err != nil {
 		close(eventsC)
 		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
@@ -376,6 +376,13 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
+}
+
+func strPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
