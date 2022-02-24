@@ -9,6 +9,7 @@ import (
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
 	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -84,6 +85,9 @@ type MockResolver struct {
 	// object controlling the behavior of the method
 	// QueueAutoIndexJobsForRepo.
 	QueueAutoIndexJobsForRepoFunc *ResolverQueueAutoIndexJobsForRepoFunc
+	// SupportedByCtagsFunc is an instance of a mock function object
+	// controlling the behavior of the method SupportedByCtags.
+	SupportedByCtagsFunc *ResolverSupportedByCtagsFunc
 	// UpdateConfigurationPolicyFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateConfigurationPolicy.
@@ -199,6 +203,11 @@ func NewMockResolver() *MockResolver {
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: func(context.Context, int, string, string) ([]dbstore.Index, error) {
 				return nil, nil
+			},
+		},
+		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
+			defaultHook: func(context.Context, string, api.RepoName) (bool, string, error) {
+				return false, "", nil
 			},
 		},
 		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
@@ -323,6 +332,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.QueueAutoIndexJobsForRepo")
 			},
 		},
+		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
+			defaultHook: func(context.Context, string, api.RepoName) (bool, string, error) {
+				panic("unexpected invocation of MockResolver.SupportedByCtags")
+			},
+		},
 		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
 			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
 				panic("unexpected invocation of MockResolver.UpdateConfigurationPolicy")
@@ -404,6 +418,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: i.QueueAutoIndexJobsForRepo,
+		},
+		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
+			defaultHook: i.SupportedByCtags,
 		},
 		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
 			defaultHook: i.UpdateConfigurationPolicy,
@@ -2638,6 +2655,120 @@ func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverSupportedByCtagsFunc describes the behavior when the
+// SupportedByCtags method of the parent MockResolver instance is invoked.
+type ResolverSupportedByCtagsFunc struct {
+	defaultHook func(context.Context, string, api.RepoName) (bool, string, error)
+	hooks       []func(context.Context, string, api.RepoName) (bool, string, error)
+	history     []ResolverSupportedByCtagsFuncCall
+	mutex       sync.Mutex
+}
+
+// SupportedByCtags delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) SupportedByCtags(v0 context.Context, v1 string, v2 api.RepoName) (bool, string, error) {
+	r0, r1, r2 := m.SupportedByCtagsFunc.nextHook()(v0, v1, v2)
+	m.SupportedByCtagsFunc.appendCall(ResolverSupportedByCtagsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the SupportedByCtags
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverSupportedByCtagsFunc) SetDefaultHook(hook func(context.Context, string, api.RepoName) (bool, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SupportedByCtags method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverSupportedByCtagsFunc) PushHook(hook func(context.Context, string, api.RepoName) (bool, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverSupportedByCtagsFunc) SetDefaultReturn(r0 bool, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, api.RepoName) (bool, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverSupportedByCtagsFunc) PushReturn(r0 bool, r1 string, r2 error) {
+	f.PushHook(func(context.Context, string, api.RepoName) (bool, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ResolverSupportedByCtagsFunc) nextHook() func(context.Context, string, api.RepoName) (bool, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverSupportedByCtagsFunc) appendCall(r0 ResolverSupportedByCtagsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverSupportedByCtagsFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverSupportedByCtagsFunc) History() []ResolverSupportedByCtagsFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverSupportedByCtagsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverSupportedByCtagsFuncCall is an object that describes an
+// invocation of method SupportedByCtags on an instance of MockResolver.
+type ResolverSupportedByCtagsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverSupportedByCtagsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverSupportedByCtagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ResolverUpdateConfigurationPolicyFunc describes the behavior when the
