@@ -5,6 +5,7 @@ package mocks
 import (
 	"context"
 	"sync"
+	"time"
 
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -85,6 +86,9 @@ type MockResolver struct {
 	// object controlling the behavior of the method
 	// QueueAutoIndexJobsForRepo.
 	QueueAutoIndexJobsForRepoFunc *ResolverQueueAutoIndexJobsForRepoFunc
+	// RetentionPolicyOverviewFunc is an instance of a mock function object
+	// controlling the behavior of the method RetentionPolicyOverview.
+	RetentionPolicyOverviewFunc *ResolverRetentionPolicyOverviewFunc
 	// SupportedByCtagsFunc is an instance of a mock function object
 	// controlling the behavior of the method SupportedByCtags.
 	SupportedByCtagsFunc *ResolverSupportedByCtagsFunc
@@ -203,6 +207,11 @@ func NewMockResolver() *MockResolver {
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: func(context.Context, int, string, string) ([]dbstore.Index, error) {
 				return nil, nil
+			},
+		},
+		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
+			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+				return nil, 0, nil
 			},
 		},
 		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
@@ -332,6 +341,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.QueueAutoIndexJobsForRepo")
 			},
 		},
+		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
+			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+				panic("unexpected invocation of MockResolver.RetentionPolicyOverview")
+			},
+		},
 		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
 			defaultHook: func(context.Context, string, api.RepoName) (bool, string, error) {
 				panic("unexpected invocation of MockResolver.SupportedByCtags")
@@ -418,6 +432,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: i.QueueAutoIndexJobsForRepo,
+		},
+		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
+			defaultHook: i.RetentionPolicyOverview,
 		},
 		SupportedByCtagsFunc: &ResolverSupportedByCtagsFunc{
 			defaultHook: i.SupportedByCtags,
@@ -2655,6 +2672,135 @@ func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverRetentionPolicyOverviewFunc describes the behavior when the
+// RetentionPolicyOverview method of the parent MockResolver instance is
+// invoked.
+type ResolverRetentionPolicyOverviewFunc struct {
+	defaultHook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
+	hooks       []func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)
+	history     []ResolverRetentionPolicyOverviewFuncCall
+	mutex       sync.Mutex
+}
+
+// RetentionPolicyOverview delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) RetentionPolicyOverview(v0 context.Context, v1 dbstore.Upload, v2 bool, v3 int, v4 int64, v5 string, v6 time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+	r0, r1, r2 := m.RetentionPolicyOverviewFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.RetentionPolicyOverviewFunc.appendCall(ResolverRetentionPolicyOverviewFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RetentionPolicyOverview method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RetentionPolicyOverview method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverRetentionPolicyOverviewFunc) PushHook(hook func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverRetentionPolicyOverviewFunc) SetDefaultReturn(r0 []resolvers.RetentionPolicyMatchCandidate, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverRetentionPolicyOverviewFunc) PushReturn(r0 []resolvers.RetentionPolicyMatchCandidate, r1 int, r2 error) {
+	f.PushHook(func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ResolverRetentionPolicyOverviewFunc) nextHook() func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverRetentionPolicyOverviewFunc) appendCall(r0 ResolverRetentionPolicyOverviewFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverRetentionPolicyOverviewFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverRetentionPolicyOverviewFunc) History() []ResolverRetentionPolicyOverviewFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverRetentionPolicyOverviewFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverRetentionPolicyOverviewFuncCall is an object that describes an
+// invocation of method RetentionPolicyOverview on an instance of
+// MockResolver.
+type ResolverRetentionPolicyOverviewFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.Upload
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int64
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.RetentionPolicyMatchCandidate
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverRetentionPolicyOverviewFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverRetentionPolicyOverviewFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ResolverSupportedByCtagsFunc describes the behavior when the

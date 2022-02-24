@@ -8,12 +8,14 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type UploadConnectionResolver struct {
 	db               database.DB
+	gitserver        policies.GitserverClient
 	resolver         resolvers.Resolver
 	uploadsResolver  *resolvers.UploadsResolver
 	prefetcher       *Prefetcher
@@ -21,9 +23,11 @@ type UploadConnectionResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
+		db:               db,
+		gitserver:        gitserver,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
@@ -40,7 +44,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []gql.LSIFUploa
 
 	resolvers := make([]gql.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.db, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.errTracer))
+		resolvers = append(resolvers, NewUploadResolver(r.db, r.gitserver, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }
