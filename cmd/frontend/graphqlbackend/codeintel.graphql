@@ -507,6 +507,9 @@ extend type GitBlob {
         toolName: String
     ): GitBlobLSIFData
 
+    """
+    Provides info on the level of code-intel support.
+    """
     codeIntelInfo: CodeIntelSupport!
 }
 

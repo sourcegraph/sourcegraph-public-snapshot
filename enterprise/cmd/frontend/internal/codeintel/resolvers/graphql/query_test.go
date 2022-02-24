@@ -10,6 +10,7 @@ import (
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRanges(t *testing.T) {
@@ -130,7 +131,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 
 	mockQueryResolver := resolvermocks.NewMockQueryResolver()
 	mockResolver := resolvermocks.NewMockResolver()
-	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
 
 	offset := int32(-1)
 	args := &gql.LSIFPagedQueryPositionArgs{
