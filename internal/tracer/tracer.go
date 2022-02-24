@@ -61,59 +61,14 @@ func (t tracerType) isValid() bool {
 	return false
 }
 
-// Option follows this idiom https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
-type Option func(*options)
-
-func WithTracer(tracer string) Option {
-	t := tracerType(tracer)
-	if !t.isValid() {
-		log15.Info("unsupported tracer: ", tracer)
-		t = None
-	}
-	return func(o *options) {
-		o.tracerType = t
-	}
-}
-
-func WithService(name string) Option {
-	return func(o *options) {
-		o.serviceName = name
-	}
-}
-
-func WithDebug(enabled bool) Option {
-	return func(o *options) {
-		o.debug = enabled
-	}
-}
-
-func WithExternalURL(url string) Option {
-	return func(o *options) {
-		o.externalURL = url
-	}
-}
-
-func WithServiceVersion(v string) Option {
-	return func(o *options) {
-		o.version = v
-	}
-}
-
 // Init should be called from the main function of service
-func Init(c conftypes.WatchableSiteConfig, passedOpts ...Option) {
+func Init(c conftypes.WatchableSiteConfig) {
 	opts := &options{}
-	for _, setter := range passedOpts {
-		setter(opts)
+	opts.serviceName = env.MyName
+	if version.IsDev(version.Version()) {
+		opts.env = "dev"
 	}
-	if opts.serviceName == "" {
-		opts.serviceName = env.MyName
-	}
-	if opts.version == "" {
-		if version.IsDev(version.Version()) {
-			opts.env = "dev"
-		}
-		opts.version = version.Version()
-	}
+	opts.version = version.Version()
 
 	initTracer(opts, c)
 }
@@ -129,11 +84,13 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 
 	// Initially everything is disabled since we haven't read conf yet.
 	oldOpts := options{
-		tracerType:  None,
-		debug:       false,
 		serviceName: opts.serviceName,
 		version:     opts.version,
 		env:         opts.env,
+		// the values below may change
+		tracerType:  None,
+		debug:       false,
+		externalURL: "",
 	}
 
 	// Watch loop
@@ -145,7 +102,9 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 		shouldLog := false
 		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
-			setTracer = tracerType(tracingConfig.Type)
+			if t := tracerType(tracingConfig.Type); t.isValid() {
+				setTracer = t
+			}
 			switch tracingConfig.Sampling {
 			case "all":
 				samplingStrategy = ot.TraceAll
