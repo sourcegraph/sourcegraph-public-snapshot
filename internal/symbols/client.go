@@ -76,6 +76,32 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 	return c.endpoint.Get(string(repo))
 }
 
+func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]string, err error) {
+	mapping := make(map[string][]string)
+
+	resp, err := c.httpPost(ctx, "list-languages", repo, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Symbol.ListLanguageMappings http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	if err = json.NewDecoder(resp.Body).Decode(&mapping); err != nil {
+		return nil, err
+	}
+
+	return mapping, nil
+}
+
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
@@ -99,8 +125,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, errors.Errorf(
-			"Symbol.Search http status %d for %+v: %s",
-			resp.StatusCode,
+			"Symbol.Search http status %d: %s",
 			resp.StatusCode,
 			string(body),
 		)

@@ -506,6 +506,11 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+
+    """
+    Provides info on the level of code-intel support.
+    """
+    codeIntelInfo: CodeIntelSupport!
 }
 
 """
@@ -533,6 +538,11 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -623,6 +633,11 @@ type GitTreeLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -848,6 +863,11 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
+    """
+    lsifUploads: [LSIFUpload!]!
 
     """
     Returns the documentation page corresponding to the given path ID, where the path ID "/"
@@ -1331,4 +1351,100 @@ type IndexConfiguration {
     The raw JSON-encoded index configuration as inferred by the auto-indexer.
     """
     inferredConfiguration: String
+}
+
+"""
+Details the types, tools and levels of code-intel support.
+"""
+type CodeIntelSupport {
+    """
+    Search-based code-intel support overview.
+    """
+    searchBasedSupport: SearchBasedCodeIntelSupport!
+
+    """
+    Precise code-intel support overview.
+    """
+    preciseSupport: PreciseCodeIntelSupport!
+}
+
+"""
+Details precise code-intel support overview.
+"""
+type PreciseCodeIntelSupport {
+    """
+    Level of support/ownership for the most complete/accurate precise code-intel indexer.
+    This may be THIRD_PARTY even where a by us indexer exists, where the third-party indexer is
+    more maintained/accurate/complete etc such as with the Dart indexer, where the Workiva one
+    should be used over our own.
+    """
+    supportLevel: PreciseSupportLevel!
+    """
+    List of indexers in subjective order of recommendation, from most to least recommended
+    (not an indication of absolute quality, rather relative).
+    """
+    indexers: [CodeIntelIndexer!]
+}
+
+"""
+Describes a precise code-intel indexer.
+"""
+type CodeIntelIndexer {
+    """
+    Name of the precise code-intel indexer.
+    """
+    name: String!
+    """
+    URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
+    """
+    url: String!
+}
+
+"""
+Ownership level of the recommended precise code-intel indexer.
+"""
+enum PreciseSupportLevel {
+    """
+    When there is no known indexer.
+    """
+    UNKNOWN
+    """
+    When the recommended indexer is maintained by us.
+    """
+    NATIVE
+    """
+    When the recommended indexer is maintained by a third-party
+    but is recommended over a native indexer, where one exists.
+    """
+    THIRD_PARTY
+}
+
+"""
+Details search-based code-intel support overview.
+"""
+type SearchBasedCodeIntelSupport {
+    """
+    Level of support.
+    """
+    supportLevel: SearchBasedSupportLevel!
+    """
+    The inferred language the underlying tool inferred when building an index for
+    search-based code-intel.
+    """
+    language: String
+}
+
+"""
+Tiered list of types of search-based support for a language. This may be expanded as different
+indexing methods are introduced.
+"""
+enum SearchBasedSupportLevel {
+    """
+    The language has no configured search-based code-intel support.
+    """
+    UNSUPPORTED
+    """
+    Universal-ctags is used for indexing this language.
+    """
+    BASIC
 }

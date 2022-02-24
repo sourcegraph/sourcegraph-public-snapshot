@@ -1993,6 +1993,8 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78 h1:DY/m+6+PnBz49fMU7rE+DfPf09QYgO1RLPDeJ/1BY9w=
 github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
+github.com/sourcegraph/go-ctags v0.0.0-20220221141751-78951a22ec08 h1:cuI0tTyrf6sS2TXh2OJHEKLfpDM7K4V360X9bU+3l0k=
+github.com/sourcegraph/go-ctags v0.0.0-20220221141751-78951a22ec08/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
 github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0HZqLQ=

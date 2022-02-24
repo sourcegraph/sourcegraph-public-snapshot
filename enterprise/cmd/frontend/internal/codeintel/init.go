@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,6 +58,7 @@ func newResolver(ctx context.Context, db database.DB, config *Config, observatio
 		policyMatcher,
 		services.indexEnqueuer,
 		hunkCache,
+		symbols.DefaultClient,
 		observationContext,
 		db,
 	)

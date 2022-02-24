@@ -7,6 +7,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -15,27 +17,32 @@ import (
 
 type apiHandler struct {
 	cachedDatabaseWriter writer.CachedDatabaseWriter
+	ctagsBinary          string
 	operations           *operations
 }
 
 func NewHandler(
 	cachedDatabaseWriter writer.CachedDatabaseWriter,
+	ctagsBinary string,
 	observationContext *observation.Context,
 ) http.Handler {
-	h := newAPIHandler(cachedDatabaseWriter, observationContext)
+	h := newAPIHandler(cachedDatabaseWriter, ctagsBinary, observationContext)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/search", h.handleSearch)
 	mux.HandleFunc("/healthz", h.handleHealthCheck)
+	mux.HandleFunc("/list-languages", h.handleListLanguages)
 	return mux
 }
 
 func newAPIHandler(
 	cachedDatabaseWriter writer.CachedDatabaseWriter,
+	ctagsBinary string,
 	observationContext *observation.Context,
 ) *apiHandler {
 	return &apiHandler{
 		cachedDatabaseWriter: cachedDatabaseWriter,
+		ctagsBinary:          ctagsBinary,
 		operations:           newOperations(observationContext),
 	}
 }
@@ -66,6 +73,17 @@ func (h *apiHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (h *apiHandler) handleListLanguages(w http.ResponseWriter, r *http.Request) {
+	mapping, err := ctags.ListLanguageMappings(r.Context(), h.ctagsBinary)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(mapping); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

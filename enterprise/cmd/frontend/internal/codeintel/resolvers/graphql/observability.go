@@ -18,6 +18,7 @@ type operations struct {
 	commitGraph               *observation.Operation
 	queueAutoIndexJobsForRepo *observation.Operation
 	gitBlobLsifData           *observation.Operation
+	gitBlobCodeIntelInfo      *observation.Operation
 	configurationPolicyByID   *observation.Operation
 	configurationPolicies     *observation.Operation
 	createConfigurationPolicy *observation.Operation
@@ -54,6 +55,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		commitGraph:               op("CommitGraph"),
 		queueAutoIndexJobsForRepo: op("QueueAutoIndexJobsForRepo"),
 		gitBlobLsifData:           op("GitBlobLSIFData"),
+		gitBlobCodeIntelInfo:      op("GitBlobCodeIntelInfo"),
 		configurationPolicyByID:   op("ConfigurationPolicyByID"),
 		configurationPolicies:     op("ConfigurationPolicies"),
 		createConfigurationPolicy: op("CreateConfigurationPolicy"),
