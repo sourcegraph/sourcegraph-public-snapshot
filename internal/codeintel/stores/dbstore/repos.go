@@ -138,6 +138,12 @@ func (s *Store) GetNPMDependencyRepos(ctx context.Context, filter GetNPMDependen
 	return scanNPMDependencyRepo(rows)
 }
 
+const getLSIFDependencyReposQuery = `
+-- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
+SELECT id, name, version FROM lsif_dependency_repos
+WHERE %s ORDER BY id DESC %s
+`
+
 func scanNPMDependencyRepo(rows *sql.Rows) (dependencies []NPMDependencyRepo, err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -178,9 +184,3 @@ func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.Package
 		dep.PackageVersion(),
 	))
 }
-
-const getLSIFDependencyReposQuery = `
--- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
-SELECT id, name, version FROM lsif_dependency_repos
-WHERE %s ORDER BY id DESC %s
-`
