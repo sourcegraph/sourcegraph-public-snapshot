@@ -8,7 +8,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { CodeInsightsContextProps } from '../../insights/types'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
@@ -22,11 +21,7 @@ const CodeInsightsDotComGetStartedLazy = lazyComponent(
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * subcomponents withing app tree.
  */
-export interface CodeInsightsRouterProps
-    extends CodeInsightsContextProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        TelemetryProps {
+export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>, PlatformContextProps, TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)

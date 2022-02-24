@@ -12,11 +12,3 @@ export interface CodeInsightsProps {
     codeInsightsEnabled?: boolean
     extensionViews: React.FunctionComponent<ExtensionViewsSectionProps>
 }
-
-/**
- * Props that are needed to tune code insights internal logic. Like switching different
- * code insights api backend (setting-based vs gql based api)
- */
-export interface CodeInsightsContextProps {
-    isCodeInsightsGqlApiEnabled: boolean
-}

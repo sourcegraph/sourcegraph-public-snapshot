@@ -39,7 +39,7 @@ import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
+import { CodeInsightsProps } from './insights/types'
 import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -81,7 +81,6 @@ export interface LayoutProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        CodeInsightsContextProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

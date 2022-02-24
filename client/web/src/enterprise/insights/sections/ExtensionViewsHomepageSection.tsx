@@ -1,3 +1,4 @@
+import { useApolloClient } from '@apollo/client'
 import React, { useContext, useMemo } from 'react'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
@@ -7,11 +8,10 @@ import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extens
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { ExtensionViewsSectionCommonProps } from '../../../insights/sections/types'
-import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-enabled'
 import { StaticView, ViewGrid } from '../../../views'
 import { SmartInsight } from '../components/insights-view-grid/components/smart-insight/SmartInsight'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
 import { Insight } from '../core/types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
@@ -29,16 +29,9 @@ const EMPTY_INSIGHT_LIST: Insight[] = []
 export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionViewsHomepageSectionProps> = props => {
     const { platformContext, telemetryService, extensionsController, settingsCascade, className = '' } = props
 
-    const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
+    const apolloClient = useApolloClient()
 
-    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
-        platformContext,
-        settingsCascade,
-    ])
-
-    if (!showCodeInsights) {
-        return null
-    }
+    const api = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
