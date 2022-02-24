@@ -155,3 +155,32 @@ Use this function to remove all layers from a given error value and return only 
 ```go
 fmt.Printf("Root error: %s\n", errors.Cause(err))
 ```
+
+### Use of `errors.MultiError`
+
+`MultiError` is an error interface that implements a "_bag_ of errors". Typically, errors are _chains_: where error A causes error B, and so on, through the use of [`Wrap`](#use-of-errorswrap). If you have tasks that run in parallel and return errors in tandem, for example, you may want a _bag_ of errors instead.
+
+To create a `MultiError`, you can use `Append` or `CombineErrors`. A common paradigm is:
+
+```go
+var err errors.MultiError
+for _, fn := range fnsThatReturnError {
+  err = errors.Append(err, fn())
+}
+return err
+```
+
+The `MultiErrors` type:
+
+- will be treated as a `nil` error if an `Append` or `CombineErrors` only merges errors that are `nil`
+- exposes errors within to introspection methods like `As`, `Is`, etc.
+- prints all errors within in a multi-line list format on `(MultiError).Error()`
+- acts like a single error if the bag only contains a single error (notably for printing and introspection behaviours)
+
+Check out the source code for the `MultiError` implementation in [`lib/errors`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/lib/errors).
+
+### Printing errors
+
+Printing errors with most formatting directives like `%s`, `%v`, etc. will render an error by calling its `Error()` implementation.
+
+Errors created from the `lib/errors` library, such as [`New`](#use-of-errorsnew), [`Wrap`](#use-of-errorswrap), etc. also carry additional details such as stack traces. This is exposed to integrations like Sentry, and can be rendered with the `%+v` formatting directive.
