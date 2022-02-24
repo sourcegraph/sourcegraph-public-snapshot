@@ -325,11 +325,6 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	}
 }
 
-type searchResolver interface {
-	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	Inputs() run.SearchInputs
-}
-
 type args struct {
 	Query       string
 	Version     string
@@ -381,20 +376,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func fromStrPtr(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }
 
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
