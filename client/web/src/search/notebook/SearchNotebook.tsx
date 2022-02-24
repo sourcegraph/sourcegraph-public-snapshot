@@ -3,20 +3,33 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
-import { startWith, switchMap, tap } from 'rxjs/operators'
+import { useLocation } from 'react-router'
+import { Observable, ReplaySubject } from 'rxjs'
+import { filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
+import { createHoverifier } from '@sourcegraph/codeintellify'
+import { isDefined, property } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { getHover, getDocumentHighlights } from '../../backend/features'
+import { WebHoverOverlay } from '../../components/WebHoverOverlay'
+import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
+import { useExperimentalFeatures } from '../../stores'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
@@ -34,7 +47,6 @@ export interface SearchNotebookProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'>,
         FileBlockValidationFunctions {
     globbing: boolean
     isMacPlatform: boolean
@@ -42,6 +54,8 @@ export interface SearchNotebookProps
     onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
+    platformContext: Pick<PlatformContext, 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>
     exportedFileName: string
     isEmbedded?: boolean
 }
@@ -290,6 +304,69 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         return () => disposable.dispose()
     }, [])
 
+    // Element reference subjects passed to `hoverifier`
+    const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const nextNotebookElement = useCallback((blockElement: HTMLElement | null) => notebookElements.next(blockElement), [
+        notebookElements,
+    ])
+
+    const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+    const nextOverlayElement = useCallback(
+        (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
+        [hoverOverlayElements]
+    )
+
+    // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
+    // reposition hover overlay if needed when `SearchNotebook` rerenders
+    const rerenders = useMemo(() => new ReplaySubject(1), [])
+    useEffect(() => {
+        rerenders.next()
+    })
+
+    // Create hoverifier.
+    const hoverifier = useMemo(
+        () =>
+            createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
+                hoverOverlayElements,
+                hoverOverlayRerenders: rerenders.pipe(
+                    withLatestFrom(hoverOverlayElements, notebookElements),
+                    map(([, hoverOverlayElement, blockElement]) => ({
+                        hoverOverlayElement,
+                        relativeElement: blockElement,
+                    })),
+                    filter(property('relativeElement', isDefined)),
+                    // Can't reposition HoverOverlay if it wasn't rendered
+                    filter(property('hoverOverlayElement', isDefined))
+                ),
+                getHover: context =>
+                    getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
+                        extensionsController,
+                    }),
+                getDocumentHighlights: context =>
+                    getDocumentHighlights(
+                        getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
+                        { extensionsController }
+                    ),
+                getActions: context =>
+                    getHoverActions({ extensionsController, platformContext: props.platformContext }, context),
+                tokenize: false,
+            }),
+        [
+            // None of these dependencies are likely to change
+            extensionsController,
+            props.platformContext,
+            hoverOverlayElements,
+            notebookElements,
+            rerenders,
+        ]
+    )
+
+    // Passed to HoverOverlay
+    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+
+    // Dispose hoverifier or change/unmount.
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+
     const renderBlock = useCallback(
         (block: Block) => {
             const blockProps = {
@@ -310,13 +387,22 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                 case 'md':
                     return <SearchNotebookMarkdownBlock {...block} {...blockProps} />
                 case 'file':
-                    return <SearchNotebookFileBlock {...block} {...blockProps} />
+                    return (
+                        <SearchNotebookFileBlock
+                            {...block}
+                            {...blockProps}
+                            hoverifier={hoverifier}
+                            extensionsController={extensionsController}
+                        />
+                    )
                 case 'query':
                     return (
                         <SearchNotebookQueryBlock
                             {...block}
                             {...blockProps}
+                            hoverifier={hoverifier}
                             sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            extensionsController={extensionsController}
                         />
                     )
             }
@@ -333,11 +419,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             props,
             selectedBlockId,
             sourcegraphSearchLanguageId,
+            extensionsController,
+            hoverifier,
         ]
     )
 
+    const location = useLocation()
+    const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
+
     return (
-        <div className={styles.searchNotebook}>
+        <div className={styles.searchNotebook} ref={nextNotebookElement}>
             <div className="pb-1">
                 <Button
                     className="mr-2"
@@ -378,6 +469,19 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     index={blocks.length}
                     className="mt-2"
                     alwaysVisible={true}
+                />
+            )}
+            {hoverState.hoverOverlayProps && (
+                <WebHoverOverlay
+                    {...props}
+                    {...hoverState.hoverOverlayProps}
+                    hoveredTokenElement={hoverState.hoveredTokenElement}
+                    hoverRef={nextOverlayElement}
+                    extensionsController={extensionsController}
+                    location={location}
+                    telemetryService={props.telemetryService}
+                    isLightTheme={props.isLightTheme}
+                    coolCodeIntelEnabled={!!coolCodeIntelEnabled}
                 />
             )}
         </div>

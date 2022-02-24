@@ -47,7 +47,7 @@ export function getHoverActions(
     {
         extensionsController,
         platformContext,
-    }: ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
+    }: ExtensionsControllerProps<'extHostAPI'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
 ): Observable<ActionItemAction[]> {
     return getHoverActionsContext(

@@ -26,7 +26,7 @@ import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } 
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded'>,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean

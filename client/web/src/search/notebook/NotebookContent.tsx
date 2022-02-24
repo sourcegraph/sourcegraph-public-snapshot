@@ -3,6 +3,7 @@ import React, { useMemo } from 'react'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -18,8 +19,9 @@ export interface NotebookContentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
     isMacPlatform: boolean
     viewerCanManage: boolean
