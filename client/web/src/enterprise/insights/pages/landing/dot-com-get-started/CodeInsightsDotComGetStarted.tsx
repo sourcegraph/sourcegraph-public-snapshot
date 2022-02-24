@@ -93,7 +93,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                                 <Button
                                     variant="primary"
                                     as={Link}
-                                    to="https://about.sourcegraph.com/contacts"
+                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo"
                                     target="_blank"
                                     rel="noopener"
                                     onClick={handleScheduleDemoClick}
