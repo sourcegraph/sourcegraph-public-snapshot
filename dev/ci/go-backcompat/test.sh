@@ -135,7 +135,8 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  IFS='' read -r -d '' annotation <<EOF
+  annotation=$(
+    cat <<EOF
 This commit contains database schema definitions that caused an unexpected
 failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
 If this backwards incompatibility is intentional or of the test is flaky,
@@ -148,6 +149,7 @@ ${flakefile}
 Rewrite these schema changes to be backwards compatible. For help,
 see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
 EOF
+  )
   echo "$annotation"
   mkdir -p ./annotations/
   echo "$annotation" >'./annotations/go-backcompat.md'

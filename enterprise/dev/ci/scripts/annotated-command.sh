@@ -28,15 +28,15 @@ for file in "$annotation_dir"/*; do
   fi
 
   echo "handling $file"
+  name=$(basename "$file")
   annotate_file_opts=$annotate_opts
 
-  if [ "$include_names" = "true" ]; then
-    name=$(basename "$file")
-    case "$name" in
-      # Append markdown annotations as markdown, and remove the suffix from the name
-      *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
-    esac
+  case "$name" in
+    # Append markdown annotations as markdown, and remove the suffix from the name
+    *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
+  esac
 
+  if [ "$include_names" = "true" ]; then
     # Set the name of the file as the title of this annotation section
     annotate_file_opts="-s '$name' $annotate_file_opts"
   fi
