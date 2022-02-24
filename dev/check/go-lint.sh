@@ -35,9 +35,24 @@ run() {
   fi
 }
 
+
+# Used to ignore directories (for example, when using submodules)
+#   (It appears to be unused, but it's actually used doing -v below)
+#
+# shellcheck disable=SC2034
+declare -A IGNORED_DIRS=(
+    ["./docker-images/syntax-highlighter"]=1
+)
+
 # If no args are given, traverse through each project with a `go.mod`
 if [ $# -eq 0 ]; then
   find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+
+    # Skip any ignored directories.
+    if [ -v "IGNORED_DIRS[$d]" ] ; then
+        continue
+    fi
+
     pushd "$d" >/dev/null
 
     echo "--- golangci-lint $d"
