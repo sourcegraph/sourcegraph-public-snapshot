@@ -22,6 +22,8 @@ import (
 // RevSpecSet is a utility type for a set of RevSpecs.
 type RevSpecSet map[api.RevSpec]struct{}
 
+// DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
+// and package levels.
 type DependenciesService struct {
 	db   database.DB
 	sync func(context.Context, api.RepoName) (*types.Repo, error)
@@ -36,20 +38,22 @@ func NewDependenciesService(
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
+func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (dependencyRevs map[api.RepoName]RevSpecSet, err error) {
 	tr, ctx := trace.New(ctx, "DependenciesService", "Dependencies")
 	defer func() {
 		if len(repoRevs) > 1 {
-			tr.LazyPrintf("repoRevs: %d", len(repoRevs))
+			tr.LazyPrintf("repoRevsCount: %d", len(repoRevs))
 		} else {
 			tr.LazyPrintf("repoRevs: %v", repoRevs)
 		}
+
+		tr.LazyPrintf("depRevsCount: %d", len(dependencyRevs))
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	var mu sync.Mutex
-	dependencyRevs := make(map[api.RepoName]RevSpecSet)
+	dependencyRevs = make(map[api.RepoName]RevSpecSet)
 
 	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
 	depsStore := codeinteldbstore.Store{Store: basestore.NewWithDB(r.db, sql.TxOptions{})}
@@ -76,6 +80,8 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 					if err := sem.Acquire(ctx, 1); err != nil {
 						return err
 					}
+
+					dep := dep
 
 					g.Go(func() error {
 						defer sem.Release(1)
