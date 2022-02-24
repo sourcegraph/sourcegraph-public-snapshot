@@ -7,8 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../../../views/mocks/charts-content'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
     BackendInsight as BackendInsightType,
@@ -20,10 +19,12 @@ import { SearchBackendBasedInsight } from '../../../../core/types/insight/search
 
 import { BackendInsightView } from './BackendInsight'
 
-export default {
+const defaultStory: Meta = {
     title: 'web/insights/BackendInsight',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default defaultStory
 
 const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     title: 'Mock Backend Insight',
@@ -42,31 +43,27 @@ const mockInsightAPI = ({
     delayAmount = 0,
     throwProcessingError = false,
     hasData = true,
-} = {}) => {
-    class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
-        public getBackendInsightData = (insight: BackendInsightType) => {
-            if (isCaptureGroupInsight(insight)) {
-                throw new Error('This demo does not support capture group insight')
-            }
-
-            if (throwProcessingError) {
-                return throwError(new InsightInProcessError())
-            }
-
-            return of({
-                id: insight.id,
-                view: {
-                    title: 'Backend Insight Mock',
-                    subtitle: 'Backend insight description text',
-                    content: [hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY],
-                    isFetchingHistoricalData,
-                },
-            }).pipe(delay(delayAmount))
+} = {}) => ({
+    getBackendInsightData: (insight: BackendInsightType) => {
+        if (isCaptureGroupInsight(insight)) {
+            throw new Error('This demo does not support capture group insight')
         }
-    }
 
-    return new CodeInsightsStoryBackend({} as any)
-}
+        if (throwProcessingError) {
+            return throwError(new InsightInProcessError())
+        }
+
+        return of({
+            id: insight.id,
+            view: {
+                title: 'Backend Insight Mock',
+                subtitle: 'Backend insight description text',
+                content: [hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY],
+                isFetchingHistoricalData,
+            },
+        }).pipe(delay(delayAmount))
+    },
+})
 
 const TestBackendInsight: React.FunctionComponent = () => (
     <BackendInsightView
@@ -81,33 +78,33 @@ export const BackendInsight: Story = () => (
     <section>
         <article>
             <h2>Card</h2>
-            <CodeInsightsBackendContext.Provider value={mockInsightAPI()}>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
                 <TestBackendInsight />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
             <h2>Card with delay API</h2>
-            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ delayAmount: 2000 })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
             <h2>Card backfilling data</h2>
-            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ isFetchingHistoricalData: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
             <h2>Card no data</h2>
-            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ hasData: false })}>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ hasData: false })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
         <article className="mt-3">
             <h2>Card insight syncing</h2>
-            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ throwProcessingError: true })}>
                 <TestBackendInsight />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
     </section>
 )

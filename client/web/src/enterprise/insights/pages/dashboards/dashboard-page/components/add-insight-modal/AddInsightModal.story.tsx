@@ -4,9 +4,8 @@ import React, { useState } from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
 import { ReachableInsight } from '../../../../../core/backend/code-insights-backend-types'
-import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-api/code-insights-gql-backend'
 import {
     InsightsDashboardType,
     InsightsDashboardScope,
@@ -105,19 +104,17 @@ const mockInsights: ReachableInsight[] = [
     visibility: 'global',
 }))
 
-class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
-    public getReachableInsights = () => of(mockInsights)
-    public getDashboardSubjects = () => of([])
+const codeInsightsBackend = {
+    getReachableInsights: () => of(mockInsights),
+    getDashboardSubjects: () => of([]),
 }
-
-const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 add('AddInsightModal', () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (
-        <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
             {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
-        </CodeInsightsBackendContext.Provider>
+        </CodeInsightsBackendStoryMock>
     )
 })

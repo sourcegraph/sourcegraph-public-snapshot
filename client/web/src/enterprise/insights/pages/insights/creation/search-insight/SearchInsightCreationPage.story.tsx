@@ -6,8 +6,7 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../mocks/settings-cascade'
 
@@ -40,26 +39,23 @@ const fakeAPIRequest = async () => {
     throw new Error('Network error')
 }
 
-class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
-    public getSearchInsightContent = async () => {
+const codeInsightsBackend = {
+    getSearchInsightContent: async () => {
         await sleep(2000)
 
         return {
             ...DEFAULT_MOCK_CHART_CONTENT,
             data: getRandomDataForMock(),
         }
-    }
-
+    },
     // eslint-disable-next-line @typescript-eslint/require-await
-    public getRepositorySuggestions = async () => [
+    getRepositorySuggestions: async () => [
         { id: '1', name: 'github.com/example/sub-repo-1' },
         { id: '2', name: 'github.com/example/sub-repo-2' },
         { id: '3', name: 'github.com/another-example/sub-repo-1' },
         { id: '4', name: 'github.com/another-example/sub-repo-2' },
-    ]
+    ],
 }
-
-const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 const SUBJECTS = [
     createUserSubject('Emir Kusturica'),
@@ -68,7 +64,7 @@ const SUBJECTS = [
 ] as SupportedInsightSubject[]
 
 export const SearchInsightCreationPage: Story = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <SearchInsightCreationPageComponent
             visibility="user_test_id"
             subjects={SUBJECTS}
@@ -77,5 +73,5 @@ export const SearchInsightCreationPage: Story = () => (
             onSuccessfulCreation={noop}
             onCancel={noop}
         />
-    </CodeInsightsBackendContext.Provider>
+    </CodeInsightsBackendStoryMock>
 )

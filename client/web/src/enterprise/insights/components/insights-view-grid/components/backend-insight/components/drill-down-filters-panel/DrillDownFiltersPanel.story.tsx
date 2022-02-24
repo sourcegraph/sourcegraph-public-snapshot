@@ -4,8 +4,7 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsBackendStoryMock } from '../../../../../../CodeInsightsBackendStoryMock'
 import { FORM_ERROR } from '../../../../../form/hooks/useForm'
 
 import {
@@ -20,11 +19,9 @@ const fakeAPIRequest = async () => {
     return { [FORM_ERROR]: new Error('Fake api request error') }
 }
 
-class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
-    public findInsightByName = () => of(null)
+const backendMock = {
+    findInsightByName: () => of(null),
 }
-
-const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 const EMPTY_DRILLDOWN_FILTERS: DrillDownFiltersFormValues = {
     excludeRepoRegexp: '',
@@ -40,9 +37,9 @@ export const DrillDownFiltersPanel: Story = () => (
     <section>
         <article>
             <h2>Creation Form</h2>
-            <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+            <CodeInsightsBackendStoryMock mocks={backendMock}>
                 <DrillDownInsightCreationForm onCreateInsight={fakeAPIRequest} onCancel={() => {}} />
-            </CodeInsightsBackendContext.Provider>
+            </CodeInsightsBackendStoryMock>
         </article>
         <article>
             <h2>Filters Form</h2>
@@ -57,7 +54,9 @@ export const DrillDownFiltersPanel: Story = () => (
     </section>
 )
 
-export default {
+const defaultStory: Meta = {
     title: 'web/insights/DrillDownFiltersPanel',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default defaultStory

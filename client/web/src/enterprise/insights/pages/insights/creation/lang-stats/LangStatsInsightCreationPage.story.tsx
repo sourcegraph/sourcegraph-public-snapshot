@@ -6,8 +6,7 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../mocks/settings-cascade'
 
@@ -37,14 +36,13 @@ const fakeAPIRequest = async () => {
     throw new Error('Network error')
 }
 
-class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
-    public getLangStatsInsightContent = async () => {
+const codeInsightsBackend = {
+    getLangStatsInsightContent: async () => {
         await sleep(2000)
 
         return getRandomLangStatsMock()
-    }
-
-    public getRepositorySuggestions = async () => {
+    },
+    getRepositorySuggestions: async () => {
         await sleep(2000)
 
         return [
@@ -53,10 +51,8 @@ class CodeInsightsStoryBackend extends CodeInsightsGqlBackend {
             { id: '3', name: 'github.com/another-example/sub-repo-1' },
             { id: '4', name: 'github.com/another-example/sub-repo-2' },
         ]
-    }
+    },
 }
-
-const codeInsightsBackend = new CodeInsightsStoryBackend({} as any)
 
 const SUBJECTS = [
     createUserSubject('Emir Kusturica'),
@@ -66,7 +62,7 @@ const SUBJECTS = [
 ] as SupportedInsightSubject[]
 
 export const LangStatsInsightCreationPage: Story = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <LangStatsInsightCreationPageComponent
             subjects={SUBJECTS}
             visibility="user_test_id"
@@ -75,5 +71,5 @@ export const LangStatsInsightCreationPage: Story = () => (
             onSuccessfulCreation={noop}
             onCancel={noop}
         />
-    </CodeInsightsBackendContext.Provider>
+    </CodeInsightsBackendStoryMock>
 )
