@@ -3,6 +3,8 @@ package repos
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,34 +17,12 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-<<<<<<< HEAD
-	codeintelstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-||||||| parent of 737cafe325 (search: Factor out codeintel Dependencies resolver)
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-=======
->>>>>>> 737cafe325 (search: Factor out codeintel Dependencies resolver)
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-<<<<<<< HEAD
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-||||||| parent of 737cafe325 (search: Factor out codeintel Dependencies resolver)
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-=======
->>>>>>> 737cafe325 (search: Factor out codeintel Dependencies resolver)
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-<<<<<<< HEAD
-	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-||||||| parent of 737cafe325 (search: Factor out codeintel Dependencies resolver)
-	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-=======
->>>>>>> 737cafe325 (search: Factor out codeintel Dependencies resolver)
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -76,9 +56,8 @@ type Pager interface {
 }
 
 type Resolver struct {
-	DB                   database.DB
-	Opts                 search.RepoOptions
-	DependenciesResolver DependenciesResolver
+	DB   database.DB
+	Opts search.RepoOptions
 }
 
 func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -550,11 +529,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	// FIXME:
-	if r.DependenciesResolver == nil {
-		panic("Failed to set internal/search/repos/Resolver.DependenciesResolver")
-	}
-
+	repoStore := r.DB.Repos()
 	repoRevs := make(map[api.RepoName]RevSpecSet, len(op.Dependencies))
 	for _, depParams := range op.Dependencies {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
@@ -562,7 +537,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 			revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
 		}
 
-		rs, err := r.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
+		rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
 			IncludePatterns:       []string{repoPattern},
 			CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		})
@@ -587,7 +562,8 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := r.DependenciesResolver.Dependencies(ctx, repoRevs)
+	depSvc := NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
+	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}

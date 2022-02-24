@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -14,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -26,17 +26,19 @@ type DependenciesService interface {
 }
 
 type dependenciesService struct {
-	db          database.DB
-	repoupdater *repoupdater.Client
+	db   database.DB
+	sync func(context.Context, api.RepoName) (*types.Repo, error)
 }
 
-func NewDependenciesService(db database.DB) *dependenciesService {
-	return &dependenciesService{db: db}
+func NewDependenciesService(
+	db database.DB,
+	sync func(context.Context, api.RepoName) (*types.Repo, error),
+) *dependenciesService {
+	return &dependenciesService{db: db, sync: sync}
 }
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
-// Both the input repoRevs and the output dependencyRevs are a map from repository names to
-// `40-char commit hashes belonging to that repository.
+// Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (r *dependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
 	tr, ctx := trace.New(ctx, "DependenciesService", "Dependencies")
 	defer func() {
@@ -55,7 +57,7 @@ func (r *dependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
 	depsStore := codeinteldbstore.Store{Store: basestore.NewWithDB(r.db, sql.TxOptions{})}
 
-	sem := semaphore.NewWeighted(16)
+	sem := semaphore.NewWeighted(32)
 	g, ctx := errgroup.WithContext(ctx)
 
 	for repoName, revs := range repoRevs {
@@ -74,12 +76,22 @@ func (r *dependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 				}
 
 				for _, dep := range deps {
+					if err := sem.Acquire(ctx, 1); err != nil {
+						return err
+					}
+
 					g.Go(func() error {
+						defer sem.Release(1)
+
 						if err := depsStore.UpsertDependencyRepo(ctx, dep); err != nil {
 							return err
 						}
 
 						depName := dep.RepoName()
+						if _, err := r.sync(ctx, depName); err != nil {
+							return err
+						}
+
 						depRev := api.RevSpec(dep.GitTagFromVersion())
 
 						mu.Lock()
