@@ -291,7 +291,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
 	if err != nil {
 		close(eventsC)
-		return eventsC, nil, func() (*search.Alert, error) {
+		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
 			return nil, err
 		}
 	}
@@ -300,7 +300,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	inputs, err := searchClient.Plan(ctx, h.db, a.Version, &a.PatternType, a.Query, batchedStream, settings)
 	if err != nil {
 		close(eventsC)
-		return eventsC, nil, func() (*search.Alert, error) {
+		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
 			return nil, err
 		}
 	}
