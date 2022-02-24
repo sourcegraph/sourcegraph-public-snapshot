@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -47,7 +46,7 @@ func NewSearchInputs(
 	version string,
 	patternType *string,
 	searchQuery string,
-	stream streaming.Sender,
+	protocol search.Protocol,
 	settings *schema.Settings,
 ) (_ *SearchInputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
@@ -86,11 +85,6 @@ func NewSearchInputs(
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
 	tr.LazyPrintf("parsing done")
-
-	protocol := search.Batch
-	if stream != nil {
-		protocol = search.Streaming
-	}
 
 	inputs := &SearchInputs{
 		Plan:          plan,
