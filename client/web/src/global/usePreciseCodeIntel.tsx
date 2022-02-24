@@ -53,7 +53,9 @@ export const usePreciseCodeIntel = ({
 
     const shouldFetch = useRef(true)
     useMemo(() => {
+        // We need to fetch again if the variables change
         shouldFetch.current = true
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [variables])
 
     const { error, loading } = useQuery<
