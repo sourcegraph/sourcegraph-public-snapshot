@@ -27,6 +27,6 @@ type Locker interface {
 }
 
 type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }

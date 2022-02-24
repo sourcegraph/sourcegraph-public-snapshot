@@ -3,13 +3,15 @@ package graphql
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,14 +19,15 @@ import (
 
 type UploadResolver struct {
 	db               database.DB
+	gitserver        policies.GitserverClient
 	resolver         resolvers.Resolver
-	upload           store.Upload
+	upload           dbstore.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(db database.DB, resolver resolvers.Resolver, upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) gql.LSIFUploadResolver {
+func NewUploadResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, upload dbstore.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) gql.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -35,6 +38,7 @@ func NewUploadResolver(db database.DB, resolver resolvers.Resolver, upload store
 
 	return &UploadResolver{
 		db:               db,
+		gitserver:        gitserver,
 		resolver:         resolver,
 		upload:           upload,
 		prefetcher:       prefetcher,
@@ -79,9 +83,36 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ gql.LSIFIndexRe
 		return nil, err
 	}
 
-	return NewIndexResolver(r.db, r.resolver, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
+	return NewIndexResolver(r.db, r.gitserver, r.resolver, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
 	return r.locationResolver.Path(ctx, api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root)
+}
+
+func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *gql.LSIFUploadRetentionPolicyMatchesArgs) (_ gql.CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
+	var afterID int64
+	if args.After != nil {
+		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pageSize := DefaultRetentionPolicyMatchesPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	var term string
+	if args.Query != nil {
+		term = *args.Query
+	}
+
+	matches, totalCount, err := r.resolver.RetentionPolicyOverview(ctx, r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.db, r.resolver, matches, totalCount, r.traceErrs), nil
 }

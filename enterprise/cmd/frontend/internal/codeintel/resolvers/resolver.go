@@ -55,6 +55,7 @@ type Resolver interface {
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
+	RetentionPolicyOverview(ctx context.Context, upload store.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
 
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver

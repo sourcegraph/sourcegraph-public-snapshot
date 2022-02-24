@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { LSIFIndexState } from '@sourcegraph/shared/src/schema'
+import { GitObjectType, LSIFIndexState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
 import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
@@ -185,6 +185,58 @@ Completed.args = {
             uploadedAt: '2020-06-14T12:20:30+00:00',
             startedAt: '2020-06-14T12:25:30+00:00',
             finishedAt: '2020-06-14T12:30:30+00:00',
+        }),
+    queryRetentionMatches: () =>
+        of({
+            nodes: [
+                {
+                    matchType: 'UploadReference',
+                    uploadSlice: [
+                        {
+                            id: '10',
+                            inputCommit: 'deadbeef',
+                            inputRoot: '/lib/erals',
+                            projectRoot: {
+                                repository: { id: '500', name: 'github.com/sourcegraph/lib' },
+                            },
+                        },
+                    ],
+                    total: 1,
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: true,
+                    protectingCommits: [],
+                    configurationPolicy: {
+                        id: 'banana',
+                        name: 'Default Test Retention Policy',
+                        type: GitObjectType.GIT_TREE,
+                        retentionDurationHours: 100,
+                    },
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: true,
+                    protectingCommits: ['deadbeef'],
+                    configurationPolicy: {
+                        id: 'banana1',
+                        name: 'Default Tag Retention Policy',
+                        type: GitObjectType.GIT_TAG,
+                        retentionDurationHours: 100,
+                    },
+                },
+                {
+                    matchType: 'RetentionPolicy',
+                    matches: false,
+                    protectingCommits: [],
+                    configurationPolicy: {
+                        id: 'banana',
+                        name: 'Other Test Retention Policy',
+                        type: GitObjectType.GIT_TREE,
+                        retentionDurationHours: 100,
+                    },
+                },
+            ],
         }),
 }
 Completed.parameters = {

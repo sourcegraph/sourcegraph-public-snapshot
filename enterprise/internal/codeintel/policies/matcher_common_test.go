@@ -60,7 +60,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		return commit, commitDate, ok, nil
 	}
 
-	refDescriptions := func(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error) {
+	refDescriptions := func(ctx context.Context, repositoryID int, _ ...string) (map[string][]gitdomain.RefDescription, error) {
 		refDescriptions := map[string][]gitdomain.RefDescription{}
 		for branch, commit := range branchHeads {
 			refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
