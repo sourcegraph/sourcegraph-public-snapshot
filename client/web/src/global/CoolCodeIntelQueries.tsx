@@ -8,7 +8,6 @@ const codeIntelFragments = gql`
         range {
             ...RangeFields
         }
-        url
     }
 
     fragment LocationConnectionFields on LocationConnection {
@@ -21,7 +20,6 @@ const codeIntelFragments = gql`
     }
 
     fragment GitBlobFields on GitBlob {
-        url
         path
         content
         repository {
@@ -100,7 +98,6 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
             commit(rev: $commit) {
                 id
                 blob(path: $path) {
-                    url
                     lsif {
                         ...PreciseCodeIntelForLocationFields
                     }
@@ -130,7 +127,6 @@ export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
             commit(rev: $commit) {
                 id
                 blob(path: $path) {
-                    url
                     lsif {
                         references(
                             line: $line
@@ -166,7 +162,6 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
             commit(rev: $commit) {
                 id
                 blob(path: $path) {
-                    url
                     lsif {
                         implementations(
                             line: $line
@@ -188,7 +183,6 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
-        url
         highlight(disableTimeout: false) {
             aborted
             html
