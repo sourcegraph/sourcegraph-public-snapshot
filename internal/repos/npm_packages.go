@@ -200,5 +200,4 @@ func npmDependencies(connection schema.NPMPackagesConnection) (dependencies []*r
 
 type NPMPackagesRepoStore interface {
 	GetNPMDependencyRepos(ctx context.Context, filter dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)
-	UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) error
 }

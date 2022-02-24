@@ -262,14 +262,17 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
-	if codehost == nil {
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
 	repo, err = s.Store.RepoStore.GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
+	}
+
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
+		if repo != nil {
+			return repo, nil
+		}
+		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
 	if repo != nil {
@@ -350,7 +353,10 @@ func (s *Syncer) syncRepo(
 
 	rg, ok := src.(RepoGetter)
 	if !ok {
-		return nil, errors.Errorf("can't source repo %q", name)
+		return nil, errors.Wrapf(
+			&database.RepoNotFoundErr{Name: name},
+			"can't get repo metadata for service of type %q", codehost.ServiceType,
+		)
 	}
 
 	path := strings.TrimPrefix(string(name), strings.TrimPrefix(codehost.ServiceID, "https://"))
