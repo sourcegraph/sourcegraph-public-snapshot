@@ -9,6 +9,7 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,6 +18,7 @@ import (
 
 type IndexResolver struct {
 	db               database.DB
+	gitserver        policies.GitserverClient
 	resolver         resolvers.Resolver
 	index            store.Index
 	prefetcher       *Prefetcher
@@ -24,7 +26,7 @@ type IndexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
+func NewIndexResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -35,6 +37,7 @@ func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.I
 
 	return &IndexResolver{
 		db:               db,
+		gitserver:        gitserver,
 		resolver:         resolver,
 		index:            index,
 		prefetcher:       prefetcher,
@@ -80,7 +83,7 @@ func (r *IndexResolver) AssociatedUpload(ctx context.Context) (_ gql.LSIFUploadR
 		return nil, err
 	}
 
-	return NewUploadResolver(r.db, r.resolver, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
+	return NewUploadResolver(r.db, r.gitserver, r.resolver, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (_ *gql.GitTreeEntryResolver, err error) {

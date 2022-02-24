@@ -149,8 +149,9 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.Com
 }
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
-// branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]gitdomain.RefDescription, err error) {
+// branch and tag of the given repository. If any git objects are provided, it will
+// only populate entries for descriptions pointing at the given git objects.
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -161,7 +162,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 		return nil, err
 	}
 
-	return git.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker)
+	return git.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker, pointedAt...)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to

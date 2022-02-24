@@ -370,6 +370,48 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     indexIntermediateCommits: Boolean!
 }
 
+"""
+A retention policy match candidate.
+"""
+type CodeIntelligenceRetentionPolicyMatch {
+    """
+    The actual retention policy.
+    """
+    configurationPolicy: CodeIntelligenceConfigurationPolicy
+
+    """
+    Whether the retention policy matches the upload or not. False values may be returned
+    if non-matching policies are requested for inclusion.
+    """
+    matches: Boolean!
+
+    """
+    A list of commits that are visible to this upload for which this retention policy applies.
+    It is empty if the policy applies directly to the commit associated with the upload.
+    """
+    protectingCommits: [String!]
+}
+
+"""
+A list of code intelligence retention policy match candidates.
+"""
+type CodeIntelligenceRetentionPolicyMatchesConnection {
+    """
+    A list of code intelligence retention policies matches.
+    """
+    nodes: [CodeIntelligenceRetentionPolicyMatch!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Repository {
     """
     Gets the indexing configuration associated with the repository.
@@ -1125,6 +1167,34 @@ type LSIFUpload implements Node {
     The LSIF indexing job that created this upload record.
     """
     associatedIndex: LSIFIndex
+
+    """
+    The list of retention policies, optionally filtered by only ones that match/apply to this upload and/or
+    by name substring match.
+    """
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'CodeIntelligenceRetentionPolicyMatchesConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection!
 }
 
 """

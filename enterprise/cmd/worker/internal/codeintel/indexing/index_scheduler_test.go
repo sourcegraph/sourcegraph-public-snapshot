@@ -84,7 +84,6 @@ func TestIndexScheduler(t *testing.T) {
 	if len(enqueueCalls) != 8 {
 		t.Fatalf("unexpected number of calls to QueueIndexes. want=%d have=%d", 8, len(indexEnqueuer.QueueIndexesFunc.History()))
 	}
-
 }
 
 func testIndexSchedulerMockDBStore() *MockDBStore {
@@ -161,7 +160,7 @@ func testIndexSchedulerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 
