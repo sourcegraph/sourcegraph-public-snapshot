@@ -61,9 +61,9 @@ impl<'a> ClassedTableGenerator<'a> {
         for (i, line) in LinesWithEndings::from(self.code).enumerate() {
             open_row(&mut self.html, i);
             if self.max_line_len.map_or(false, |n| line.len() > n) {
-                self.write_escaped_html(&line);
+                self.write_escaped_html(line);
             } else {
-                self.write_spans_for_line(&line);
+                self.write_spans_for_line(line);
             }
             close_row(&mut self.html);
         }
@@ -156,10 +156,10 @@ impl<'a> ClassedTableGenerator<'a> {
             let atom = scope.atom_at(i as usize);
             let atom_s = repo.atom_str(atom);
             if i != 0 {
-                self.html.push_str(" ")
+                self.html.push(' ')
             }
             if let ClassStyle::SpacedPrefixed { prefix } = self.style {
-                self.html.push_str(&prefix)
+                self.html.push_str(prefix)
             }
             self.html.push_str(atom_s);
         }
@@ -234,17 +234,19 @@ impl<'a> fmt::Display for Escape<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{highlight, Query};
+    use crate::{syntect_highlight, SourcegraphQuery};
+    use rocket::serde::json::json;
 
-    fn test_css_table_highlight(q: Query, expected: &str) {
-        let result = highlight(q);
+    fn test_css_table_highlight(q: SourcegraphQuery, expected: &str) {
+        let result = syntect_highlight(q);
         assert_eq!(json!({"data": expected, "plaintext": false}), result);
     }
 
     #[test]
     fn simple_css() {
-        let query = Query {
+        let query = SourcegraphQuery {
             filepath: "test.go".to_string(),
+            filetype: None,
             code: "package main\n".to_string(),
             line_length_limit: None,
             extension: String::new(),
@@ -272,8 +274,9 @@ mod tests {
     // See https://github.com/sourcegraph/sourcegraph/issues/20537
     #[test]
     fn long_line_gets_escaped() {
-        let query = Query {
+        let query = SourcegraphQuery {
             filepath: "test.html".to_string(),
+            filetype: None,
             code: "<div>test</div>".to_string(),
             line_length_limit: Some(10),
             extension: String::new(),
@@ -295,8 +298,9 @@ mod tests {
 
     #[test]
     fn no_highlight_long_line() {
-        let query = Query {
+        let query = SourcegraphQuery {
             filepath: "test.go".to_string(),
+            filetype: None,
             code: "package main\n".to_string(),
             line_length_limit: Some(5),
             extension: String::new(),
@@ -318,8 +322,9 @@ mod tests {
 
     #[test]
     fn multi_line_java() {
-        let query = Query {
+        let query = SourcegraphQuery {
             filepath: "test.java".to_string(),
+            filetype: None,
             code: "package com.lwl.boot.model;\n\npublic class Item implements Serializable {}"
                 .to_string(),
             line_length_limit: None,

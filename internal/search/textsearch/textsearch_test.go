@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -33,7 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestSearchFilesInRepos(t *testing.T) {
+func TestRepoSubsetTextSearch(t *testing.T) {
 	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
@@ -108,7 +109,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, common, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, common, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +150,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	_, _, err = RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
@@ -225,7 +226,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +308,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,4 +430,48 @@ func TestFileMatch_Limit(t *testing.T) {
 			}
 		})
 	}
+}
+
+// RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
+func RunRepoSubsetTextSearch(
+	ctx context.Context,
+	request zoektutil.IndexedSearchRequest,
+	searcherArgs *search.SearcherParameters,
+	notSearcherOnly bool,
+) ([]*result.FileMatch, streaming.Stats, error) {
+	agg := streaming.NewAggregatingStream()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	if notSearcherOnly {
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			return request.Search(ctx, agg)
+		})
+	}
+
+	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+	g.Go(func() error {
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
+	})
+
+	err := g.Wait()
+
+	fms, fmErr := matchesToFileMatches(agg.Results)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
+	}
+	return fms, agg.Stats, err
+}
+
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, errors.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
 }
