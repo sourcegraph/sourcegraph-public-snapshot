@@ -2,7 +2,7 @@
 
 Postgres database migrations can be _privileged_ or _unprivileged_. The vast majority of migrations are unprivileged, and should require relatively low capabilities within the connected database. Some migrations are privileged and contain queries that require additional capabilities within the database (for example, the installation of Postgres extensions).
 
-When [running the migrator](manual_database_migratiohns.md) on your Postgres instance, supply the flag optional command flag `-unprivileged-only` to ensure that only unprivileged migrations will be applied. If the migration runner encounters an unapplied privileged migration, it will stop with an error message similar to the following:
+When [running the migrator](manual_database_migrations.md) on your Postgres instance, supply the flag optional command flag `-unprivileged-only` to ensure that only unprivileged migrations will be applied. If the migration runner encounters an unapplied privileged migration, it will stop with an error message similar to the following:
 
 ```
 error: failed to run migration for schema "frontend": refusing to apply a privileged migration: schema "frontend" requires database migration 1645717519 to be applied by a database user with elevated permissions
