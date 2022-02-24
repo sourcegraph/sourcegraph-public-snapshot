@@ -300,6 +300,12 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, batchedStream, settings)
 	if err != nil {
 		close(eventsC)
+		var queryErr *run.QueryError
+		if errors.As(err, &queryErr) {
+			return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
+				return search.AlertForQuery(queryErr.Query, queryErr.Err), nil
+			}
+		}
 		return eventsC, &run.SearchInputs{}, func() (*search.Alert, error) {
 			return nil, err
 		}
