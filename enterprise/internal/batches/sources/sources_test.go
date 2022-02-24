@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -115,21 +116,14 @@ func TestLoadExternalService(t *testing.T) {
 		DisplayName: "GitHub no token",
 		Config:      `{"url": "https://github.com", "authorization": {}}`,
 	}
-	userOwnedWithToken := types.ExternalService{
-		ID:              2,
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "GitHub user owned",
-		NamespaceUserID: 1234,
-		Config:          `{"url": "https://github.com", "token": "123", "authorization": {}}`,
-	}
 	withToken := types.ExternalService{
-		ID:          3,
+		ID:          2,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub token",
 		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
 	}
 	withTokenNewer := types.ExternalService{
-		ID:          4,
+		ID:          3,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub newer token",
 		Config:      `{"url": "https://github.com", "token": "123456", "authorization": {}}`,
@@ -149,10 +143,6 @@ func TestLoadExternalService(t *testing.T) {
 				ID:       noToken.URN(),
 				CloneURL: "https://github.com/sourcegraph/sourcegraph",
 			},
-			userOwnedWithToken.URN(): {
-				ID:       userOwnedWithToken.URN(),
-				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
-			},
 			withToken.URN(): {
 				ID:       withToken.URN(),
 				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
@@ -169,39 +159,39 @@ func TestLoadExternalService(t *testing.T) {
 		if _, ok := repo.Sources[noToken.URN()]; ok {
 			sources = append(sources, &noToken)
 		}
-		if _, ok := repo.Sources[userOwnedWithToken.URN()]; ok {
-			sources = append(sources, &userOwnedWithToken)
-		}
 		if _, ok := repo.Sources[withToken.URN()]; ok {
 			sources = append(sources, &withToken)
 		}
 		if _, ok := repo.Sources[withTokenNewer.URN()]; ok {
 			sources = append(sources, &withTokenNewer)
 		}
+
+		sort.Slice(sources, func(i, j int) bool { return sources[i].ID < sources[j].ID })
+
 		return sources, nil
 	}
 	t.Cleanup(func() {
 		database.Mocks.ExternalServices.List = nil
 	})
 
-	// Expect the newest public external service with a token to be returned.
+	// Expect the oldest public external service with a token to be returned.
 	svc, err := loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
-	if have, want := svc.ID, withTokenNewer.ID; have != want {
+	if have, want := svc.ID, withToken.ID; have != want {
 		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
 	}
 
-	// Now delete the global external services and expect the user owned external service to be returned.
+	// Now delete the global external services and expect an error.
 	delete(repo.Sources, withTokenNewer.URN())
 	delete(repo.Sources, withToken.URN())
-	svc, err = loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
-	if err != nil {
-		t.Fatalf("invalid error, expected nil, got %v", err)
+	_, err = loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	if err == nil {
+		t.Fatal("invalid error, expected non-nil")
 	}
-	if have, want := svc.ID, userOwnedWithToken.ID; have != want {
-		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
+	if err.Error() != "no external services found" {
+		t.Fatalf("invalid error %q", err)
 	}
 }
 
