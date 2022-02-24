@@ -24,7 +24,7 @@ export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>,
      * Authenticated user info, Used to decide where code insight will appear
      * in personal dashboard (private) or in organisation dashboard (public)
      */
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
 
