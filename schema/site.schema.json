@@ -394,6 +394,12 @@
               "fetch": "customgitbinary someflag anotherflag"
             }
           ]
+        },
+        {
+          "tls.external": {
+            "certificates": ["-----BEGIN CERTIFICATE-----\n..."],
+            "insecureSkipVerify": true
+          }
         }
       ],
       "group": "Experimental"
