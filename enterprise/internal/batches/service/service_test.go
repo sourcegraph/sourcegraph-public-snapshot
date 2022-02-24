@@ -607,7 +607,7 @@ func TestService(t *testing.T) {
 			}
 
 			haveErr := fmt.Sprintf("%v", err)
-			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed\n\n"
+			wantErr := "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRepository is required\n\t* externalID is required\n\t* Additional property externalComputer is not allowed"
 			if diff := cmp.Diff(wantErr, haveErr); diff != "" {
 				t.Fatalf("unexpected error (-want +got):\n%s", diff)
 			}
@@ -706,7 +706,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace", func(t *testing.T) {
-			batchChange := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
+			batchChange := createBatchChange(t, "old-name-1", admin.ID, admin.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org")
 
@@ -726,7 +726,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
-			batchChange := createBatchChange(t, "old-name", user.ID, user.ID, 0)
+			batchChange := createBatchChange(t, "old-name-2", user.ID, user.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
@@ -2254,7 +2254,7 @@ func assertChangesetSpecsNotDeleted(t *testing.T, s *store.Store, specs []*btype
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	c := &btypes.BatchChange{
-		Name:            "test-batch-change",
+		Name:            fmt.Sprintf("test-batch-change-%d", time.Now().UnixMicro()),
 		CreatorID:       user,
 		NamespaceUserID: user,
 		BatchSpecID:     spec.ID,

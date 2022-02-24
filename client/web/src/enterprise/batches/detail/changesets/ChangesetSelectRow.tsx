@@ -144,8 +144,6 @@ export interface ChangesetSelectRowProps {
 
     /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
-    /** For testing only. */
-    dropDownInitiallyOpen?: boolean
 }
 
 /**
@@ -157,7 +155,6 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     onSubmit,
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
-    dropDownInitiallyOpen = false,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -214,12 +211,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton
-                                actions={actions}
-                                dropdownMenuPosition="right"
-                                initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action"
-                            />
+                            <DropdownButton actions={actions} placeholder="Select action" />
                         </div>
                     </div>
                 </div>

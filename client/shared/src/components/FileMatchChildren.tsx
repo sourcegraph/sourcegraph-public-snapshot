@@ -1,10 +1,11 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
@@ -13,11 +14,16 @@ import {
 } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
+import { ActionItemAction } from '../actions/ActionItem'
+import { HoverMerged } from '../api/client/types/hover'
+import { Controller as ExtensionsController } from '../extensions/controller'
+import { HoverContext } from '../hover/HoverOverlay.types'
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
+import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
@@ -28,9 +34,14 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
+    /* Clicking on a match opens the link in a new tab */
+    openInNewTab?: boolean
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 /**
@@ -90,7 +101,7 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
  * In order to replicate the standard behvior as much as possible this function
  * dynamically creates an `<a>` element and triggers a click event on it.
  */
-function openLink(
+function openLinkInNewTab(
     url: string,
     event: Pick<MouseEvent, 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>,
     button: 'primary' | 'middle'
@@ -98,6 +109,8 @@ function openLink(
     const link = document.createElement('a')
     link.href = url
     link.style.display = 'none'
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
     const clickEvent = new window.MouseEvent('click', {
         bubbles: false,
         altKey: event.altKey,
@@ -129,7 +142,7 @@ function openLink(
 function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>): void {
     const href = event.currentTarget.getAttribute('data-href')
     if (href && event.button === 1) {
-        openLink(href, event, 'middle')
+        openLinkInNewTab(href, event, 'middle')
     }
 }
 
@@ -142,8 +155,15 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
-    const history = useHistory()
+    const {
+        result,
+        grouped,
+        fetchHighlightedFileLineRanges,
+        telemetryService,
+        onFirstResultLoad,
+        extensionsController,
+    } = props
+
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine) => {
             const startTime = Date.now()
@@ -190,6 +210,21 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
+    const codeIntelViewerUpdatesProps = useMemo(
+        () =>
+            grouped && result.type === 'content' && extensionsController
+                ? {
+                      extensionsController,
+                      repositoryName: result.repository,
+                      filePath: result.path,
+                      revision: result.commit,
+                  }
+                : undefined,
+        [extensionsController, result, grouped]
+    )
+    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
+
+    const history = useHistory()
     /**
      * This handler implements the logic to simulate the click/keyboard
      * activation behavior of links, while also allowing the selection of text
@@ -209,25 +244,28 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
             // Testing for text selection is only necessary for mouse/click
-            // events.
+            // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.
             if (
-                (event.type === 'click' && !isTextSelectionEvent(event as MouseEvent<HTMLElement>)) ||
+                (event.type === 'click' &&
+                    !isTextSelectionEvent(event as MouseEvent<HTMLElement>) &&
+                    (event as MouseEvent<HTMLElement>).button !== 1) ||
                 (event as KeyboardEvent<HTMLElement>).key === 'Enter'
             ) {
                 const href = event.currentTarget.getAttribute('data-href')
-
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    if (event.ctrlKey || event.metaKey || event.shiftKey) {
-                        openLink(href, event, 'primary')
+                    if (props.openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
+                        openLinkInNewTab(href, event, 'primary')
                     } else {
                         history.push(href)
                     }
                 }
             }
         },
-        [history]
+        [props.openInNewTab, history]
     )
+
+    const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
@@ -246,6 +284,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
+                    {...openInNewTabProps}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
@@ -289,6 +328,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
+                                    viewerUpdates={viewerUpdates}
+                                    hoverifier={props.hoverifier}
                                 />
                             </div>
                         </div>

@@ -71,12 +71,12 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 		})
 	}
 
-	err = g.Wait().ErrorOrNil()
+	err = g.Wait()
 
 	if !sentResults.Load() && limitHit.Load() {
 		maxAlerter.Add(search.AlertForCappedAndExpression())
 	}
-	return maxAlerter.Alert, g.Wait().ErrorOrNil()
+	return maxAlerter.Alert, g.Wait()
 }
 
 func (a *AndJob) Name() string {
@@ -161,7 +161,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 		})
 	}
 
-	err = g.Wait().ErrorOrNil()
+	err = g.Wait()
 	if err = errors.Ignore(err, errors.IsContextCanceled); err != nil {
 		return maxAlerter.Alert, err
 	}

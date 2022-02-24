@@ -70,6 +70,57 @@ export const PlainChart = () => {
     return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" />
 }
 
+export const PlainStackedChart = () => {
+    const DATA: StandardDatum[] = [
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, c: 5000, a: 5600, b: 20000 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, c: 5000, a: 9800, b: 19000 },
+        { x: 1588965700286, c: 5000, a: 6000, b: 17000 },
+    ]
+
+    const SERIES: LineChartSeries<StandardDatum>[] = [
+        {
+            dataKey: 'a',
+            name: 'A metric',
+            color: 'var(--blue)',
+            linkURLs: [
+                'https://google.com/search',
+                'https://google.com/search',
+                'https://google.com/search',
+                'https://google.com/search',
+                'https://google.com/search',
+            ],
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            color: 'var(--warning)',
+            linkURLs: [
+                'https://yandex.com/search',
+                'https://yandex.com/search',
+                'https://yandex.com/search',
+                'https://yandex.com/search',
+                'https://yandex.com/search',
+            ],
+        },
+        {
+            dataKey: 'c',
+            name: 'C metric',
+            color: 'var(--green)',
+            linkURLs: [
+                'https://twitter.com/search',
+                'https://twitter.com/search',
+                'https://twitter.com/search',
+                'https://twitter.com/search',
+                'https://twitter.com/search',
+            ],
+        },
+    ]
+
+    return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" stacked={true} />
+}
+
 export const WithLegendExample = () => {
     const DATA: StandardDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
@@ -296,18 +347,19 @@ export const WithDataSteps = () => {
 interface DatumWithMissingData {
     a: number | null
     b: number | null
+    c: number | null
     x: number
 }
 
 export const WithDataMissingValues = () => {
     const DATA_WITH_STEP: DatumWithMissingData[] = [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
-        { x: 1588965700286, a: 123, b: 170 },
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200, c: 200 },
+        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 134 },
+        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: null },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190, c: 134 },
+        { x: 1588965700286, a: 123, b: 170, c: 123 },
     ]
 
     const SERIES: LineChartSeries<DatumWithMissingData>[] = [
@@ -333,6 +385,53 @@ export const WithDataMissingValues = () => {
                         data={DATA_WITH_STEP}
                         series={SERIES}
                         xAxisKey="x"
+                    />
+                )}
+            </ParentSize>
+        </div>
+    )
+}
+
+export const StackedWithDataMissingValues = () => {
+    const DATA_WITH_STEP: DatumWithMissingData[] = [
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: null, c: null },
+        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 200 },
+        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: 150 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190, c: 190 },
+        { x: 1588965700286, a: 123, b: 170, c: 170 },
+    ]
+
+    const SERIES: LineChartSeries<DatumWithMissingData>[] = [
+        {
+            dataKey: 'a',
+            name: 'A metric',
+            color: 'var(--blue)',
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            color: 'var(--warning)',
+        },
+        {
+            dataKey: 'c',
+            name: 'C metric',
+            color: 'var(--purple)',
+        },
+    ]
+
+    return (
+        <div style={{ width: 400, height: 400 }}>
+            <ParentSize>
+                {({ width, height }) => (
+                    <LineChart<DatumWithMissingData>
+                        width={width}
+                        height={height}
+                        data={DATA_WITH_STEP}
+                        series={SERIES}
+                        xAxisKey="x"
+                        stacked={true}
                     />
                 )}
             </ParentSize>

@@ -13,7 +13,18 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         url
         name
         namespace {
+            __typename
             id
+            ... on User {
+                username
+                displayName
+                viewerCanAdminister
+            }
+            ... on Org {
+                name
+                displayName
+                viewerCanAdminister
+            }
         }
         description
 
@@ -39,6 +50,9 @@ export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
             id
+            description {
+                name
+            }
             namespace {
                 url
             }

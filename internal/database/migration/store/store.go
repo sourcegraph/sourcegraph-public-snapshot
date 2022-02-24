@@ -52,7 +52,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-const currentMigrationLogSchemaVersion = 1
+const currentMigrationLogSchemaVersion = 2
 
 // EnsureSchemaTable creates the bookeeping tables required to track this schema
 // if they do not already exist. If old versions of the tables exist, this method
@@ -62,9 +62,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY)`, quote(s.schemaName)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.schemaName)),
-
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
@@ -74,39 +71,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
-	}
-
-	minMigrationVersions := map[string]int{
-		"schema_migrations":              1528395834,
-		"codeintel_schema_migrations":    1000000015,
-		"codeinsights_schema_migrations": 1000000000,
-		"test_migrations_table_backfill": 1000000000, // used in tests
-	}
-	if minMigrationVersion, ok := minMigrationVersions[s.schemaName]; ok {
-		queries = append(queries, sqlf.Sprintf(`
-			WITH
-				schema_version AS (SELECT * FROM %s LIMIT 1),
-				min_log AS (SELECT MIN(version) AS version FROM migration_logs WHERE schema = %s),
-				target_version AS (SELECT MIN(version) AS version FROM (SELECT version FROM schema_version UNION SELECT version - 1 FROM min_log) s)
-			INSERT INTO migration_logs (
-				migration_logs_schema_version,
-				schema,
-				version,
-				up,
-				success,
-				started_at,
-				finished_at
-			)
-			SELECT %s, %s, version, true, true, NOW(), NOW()
-			FROM generate_series(%s, (SELECT version FROM target_version)) version
-			WHERE NOT (SELECT dirty FROM schema_version)
-		`,
-			quote(s.schemaName),
-			s.schemaName,
-			currentMigrationLogSchemaVersion,
-			s.schemaName,
-			minMigrationVersion,
-		))
 	}
 
 	tx, err := s.Transact(ctx)
@@ -161,7 +125,7 @@ const versionsQuery = `
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY started_at DESC) AS row_number
 	FROM migration_logs
 	WHERE schema = %s
 )
@@ -275,11 +239,6 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	}
 
 	defer func() {
-		if err == nil {
-			err = s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty = false`, quote(s.schemaName)))
-		}
-	}()
-	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
 			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
 			err == nil,
@@ -304,17 +263,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 	}
 	defer func() { err = tx.Done(err) }()
 
-	targetVersion := definitionVersion
-	if !up {
-		targetVersion--
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-		return 0, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
-		return 0, err
-	}
-
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`
 			INSERT INTO migration_logs (
@@ -337,8 +285,6 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 
 	return id, nil
 }
-
-var quote = sqlf.Sprintf
 
 func errMsgPtr(err error) *string {
 	if err == nil {

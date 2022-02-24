@@ -42,6 +42,8 @@ Referenced by:
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_unique_org_id" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
+    "batch_changes_unique_user_id" UNIQUE, btree (name, namespace_user_id) WHERE namespace_user_id IS NOT NULL
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
@@ -2072,17 +2074,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.search_context_repos"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -2176,7 +2167,7 @@ Contains security-relevant events with a long time horizon for storage.
 ----------------+--------------------------+-----------+----------+--------------------------------------
  id             | integer                  |           | not null | nextval('settings_id_seq'::regclass)
  org_id         | integer                  |           |          | 
- contents       | text                     |           |          | 
+ contents       | text                     |           | not null | '{}'::text
  created_at     | timestamp with time zone |           | not null | now()
  user_id        | integer                  |           |          | 
  author_user_id | integer                  |           |          | 
@@ -2185,6 +2176,8 @@ Indexes:
     "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
+Check constraints:
+    "settings_no_empty_contents" CHECK (contents <> ''::text)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -2408,6 +2401,7 @@ Foreign-key constraints:
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
+ searchable              | boolean                  |           | not null | true
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

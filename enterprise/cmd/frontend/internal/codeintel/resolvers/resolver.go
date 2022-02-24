@@ -2,18 +2,24 @@ package resolvers
 
 import (
 	"context"
+	"path"
 	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/go-ctags"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -48,6 +54,7 @@ type Resolver interface {
 	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
+	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
@@ -65,6 +72,7 @@ type resolver struct {
 	hunkCache        HunkCache
 	operations       *operations
 	executorResolver executor.Resolver
+	symbolsClient    *symbols.Client
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -75,10 +83,11 @@ func NewResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
+	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 	dbConn dbutil.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
 }
 
 func newResolver(
@@ -88,6 +97,7 @@ func newResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
+	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 	dbConn dbutil.DB,
 ) *resolver {
@@ -98,6 +108,7 @@ func newResolver(
 		policyMatcher:    policyMatcher,
 		indexEnqueuer:    indexEnqueuer,
 		hunkCache:        hunkCache,
+		symbolsClient:    symbolsClient,
 		operations:       newOperations(observationContext),
 		executorResolver: executor.New(dbConn),
 	}
@@ -284,4 +295,26 @@ func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int,
 	}
 
 	return namesByCommit, nil
+}
+
+func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := r.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for _, allowedLanguage := range ctags.SupportedLanguages {
+		for _, pattern := range mappings[allowedLanguage] {
+			compiled, err := glob.Compile(pattern)
+			if err != nil {
+				return false, "", err
+			}
+
+			if compiled.Match(path.Base(filepath)) {
+				return true, allowedLanguage, nil
+			}
+		}
+	}
+
+	return false, "", nil
 }

@@ -20,6 +20,8 @@ type CodeMonitorsResolver interface {
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
 	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
+	TriggerTestWebhookAction(ctx context.Context, args *TriggerTestWebhookActionArgs) (*EmptyResponse, error)
+	TriggerTestSlackWebhookAction(ctx context.Context, args *TriggerTestSlackWebhookActionArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 
@@ -65,6 +67,8 @@ type MonitorTriggerEventResolver interface {
 	Message() *string
 	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	ResultCount() int32
+	Query() *string
 }
 
 type MonitorActionConnectionResolver interface {
@@ -202,6 +206,18 @@ type TriggerTestEmailActionArgs struct {
 	Namespace   graphql.ID
 	Description string
 	Email       *CreateActionEmailArgs
+}
+
+type TriggerTestWebhookActionArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Webhook     *CreateActionWebhookArgs
+}
+
+type TriggerTestSlackWebhookActionArgs struct {
+	Namespace    graphql.ID
+	Description  string
+	SlackWebhook *CreateActionSlackWebhookArgs
 }
 
 type CreateMonitorArgs struct {

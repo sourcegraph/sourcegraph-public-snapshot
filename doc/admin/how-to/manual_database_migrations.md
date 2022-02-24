@@ -1,6 +1,6 @@
 # How to run `migrator` operations
 
-> NOTE: This feature is only available in versions `3.37` and later
+> NOTE: The `migrator` service is only available in versions `3.37` and later.
 
 The `migrator` is a service that runs as an initial step of the upgrade process for [Kubernetes](../install/kubernetes/update.md#database-migrations) and [Docker-compose](../install/docker-compose/operations.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
 
@@ -38,6 +38,12 @@ The `validate` command validates the current state of the database. The `-db` fl
 
 > NOTE: These default behavior applies to all three databases. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the operation will fail. To work around this, explicitly supply database(s) via the `-db` flag (e.g., `-db=frontend,codeintel`).
 
+### add-log
+
+Usage: **`add-log -db=<schema> -version=<version> [-up=true]`**
+
+The `add-log` command adds an entry to the migration log after a site administrator has explicitly applied the contents of a migration file. The `-db` flag specifies the target schema to modify. The `-version` flag specifies the migration version. The `-up` flag specifies the migration direction.
+
 ## Environments
 
 To run a `migrator` command, follow the guide for your Sourcegraph distribution type:
@@ -65,7 +71,7 @@ yq eval -i \
 # Optional (defaults to `["up", "-db", "all"]`)
 # Update the "args" value of the migrator container in the manifest
 yq eval -i \
-  '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"] \
+  '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"]' \
   configure/migrator/migrator.Job.yaml
 ```
 

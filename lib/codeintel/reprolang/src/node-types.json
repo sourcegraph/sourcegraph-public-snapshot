@@ -1,0 +1,239 @@
+[
+  {
+    "type": "comment",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "definition_statement",
+    "named": true,
+    "fields": {
+      "docstring": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "\n",
+            "named": false
+          },
+          {
+            "type": "docstring",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "roles": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "implementation_relation",
+            "named": true
+          },
+          {
+            "type": "references_relation",
+            "named": true
+          },
+          {
+            "type": "type_definition_relation",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "docstring",
+    "named": true,
+    "fields": {}
+  },
+  {
+    "type": "global_identifier",
+    "named": true,
+    "fields": {
+      "descriptors": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "workspace_identifier",
+            "named": true
+          }
+        ]
+      },
+      "project_name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "workspace_identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "identifier",
+    "named": true,
+    "fields": {
+      "global": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "global_identifier",
+            "named": true
+          }
+        ]
+      },
+      "workspace": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "workspace_identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "implementation_relation",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "reference_statement",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "references_relation",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "source_file",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "comment",
+          "named": true
+        },
+        {
+          "type": "definition_statement",
+          "named": true
+        },
+        {
+          "type": "reference_statement",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "type_definition_relation",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "\n",
+    "named": false
+  },
+  {
+    "type": "#",
+    "named": false
+  },
+  {
+    "type": "# docstring:",
+    "named": false
+  },
+  {
+    "type": "definition",
+    "named": false
+  },
+  {
+    "type": "global",
+    "named": false
+  },
+  {
+    "type": "implements",
+    "named": false
+  },
+  {
+    "type": "reference",
+    "named": false
+  },
+  {
+    "type": "references",
+    "named": false
+  },
+  {
+    "type": "type_defines",
+    "named": false
+  },
+  {
+    "type": "workspace_identifier",
+    "named": true
+  }
+]

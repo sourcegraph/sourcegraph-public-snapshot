@@ -204,6 +204,10 @@ func (r *UserResolver) TosAccepted(ctx context.Context) bool {
 	return r.user.TosAccepted
 }
 
+func (r *UserResolver) Searchable(ctx context.Context) bool {
+	return r.user.Searchable
+}
+
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -411,6 +415,27 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 	}
 
 	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+
+	searchable := args.Searchable
+	update := database.UserUpdate{
+		Searchable: &searchable,
+	}
+
+	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 

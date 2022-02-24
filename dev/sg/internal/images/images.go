@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/opencontainers/go-digest"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+	k8syaml "sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,8 +25,23 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-func Parse(path string, creds credentials.Credentials) error {
+type DeploymentType string
 
+const (
+	DeploymentTypeK8S  DeploymentType = "k8s"
+	DeploymentTypeHelm DeploymentType = "helm"
+)
+
+func Parse(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string) error {
+	if deploy == DeploymentTypeK8S {
+		return ParseK8S(path, creds, pinTag)
+	} else if deploy == DeploymentTypeHelm {
+		return ParseHelm(path, creds, pinTag)
+	}
+	return errors.Newf("deployment kind %s is not supported", deploy)
+}
+
+func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
 		PreserveSeqIndent:     true,
@@ -37,7 +57,7 @@ func Parse(path string, creds credentials.Credentials) error {
 
 	err := kio.Pipeline{
 		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{imageFilter{credentials: &creds}},
+		Filters:               []kio.Filter{imageFilter{credentials: &creds, pinTag: pinTag}},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -45,8 +65,85 @@ func Parse(path string, creds credentials.Credentials) error {
 	return err
 }
 
+func isImgMap(m map[string]interface{}) bool {
+	if m["defaultTag"] != nil && m["name"] != nil {
+		return true
+	}
+	return false
+}
+
+func extraImages(m interface{}, acc *[]string) {
+	for m != nil {
+		switch m := m.(type) {
+		case map[string]interface{}:
+			for k, v := range m {
+				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]interface{})) {
+					imgMap := v.(map[string]interface{})
+					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
+				}
+				extraImages(v, acc)
+			}
+		case []interface{}:
+			for _, v := range m {
+				extraImages(v, acc)
+			}
+		}
+		m = nil
+	}
+}
+
+func ParseHelm(path string, creds credentials.Credentials, pinTag string) error {
+	valuesFilePath := filepath.Join(path, "values.yaml")
+	valuesFile, err := os.ReadFile(valuesFilePath)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't read %s", valuesFilePath)
+	}
+
+	var rawValues []byte
+	rawValues, err = k8syaml.YAMLToJSON(valuesFile)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
+	}
+
+	var values map[string]interface{}
+	json.Unmarshal(rawValues, &values)
+
+	var images []string
+	extraImages(values, &images)
+
+	valuesFileString := string(valuesFile)
+	for _, img := range images {
+		var updatedImg string
+		updatedImg, err = updateImage(img, creds, pinTag)
+		if err != nil {
+			return errors.Wrapf(err, "couldn't update image %s", img)
+		}
+
+		var oldImgRef, newImgRef *ImageReference
+		oldImgRef, err = parseImgString(img)
+		if err != nil {
+			return err
+		}
+		newImgRef, err = parseImgString(updatedImg)
+		if err != nil {
+			return err
+		}
+
+		oldImgDefaultTag := fmt.Sprintf("%s@%s", oldImgRef.Tag, oldImgRef.Digest)
+		newImgDefaultTag := fmt.Sprintf("%s@%s", newImgRef.Tag, newImgRef.Digest)
+		valuesFileString = strings.ReplaceAll(valuesFileString, oldImgDefaultTag, newImgDefaultTag)
+	}
+
+	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0644); err != nil {
+		return errors.Newf("WriteFile: %w", err)
+	}
+
+	return nil
+}
+
 type imageFilter struct {
 	credentials *credentials.Credentials
+	pinTag      string
 }
 
 var _ kio.Filter = &imageFilter{}
@@ -55,7 +152,7 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
-		if err := findImage(r, *filter.credentials); err != nil {
+		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
@@ -71,7 +168,7 @@ var conventionalInitContainerPaths = [][]string{
 	{"spec", "template", "spec", "initContainers"},
 }
 
-func findImage(r *yaml.RNode, credential credentials.Credentials) error {
+func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
 		return errors.Newf("%v: %s", err, r.GetName())
@@ -97,7 +194,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials) error {
 		if err != nil {
 			return err
 		}
-		updatedImage, err := updateImage(s, credential)
+		updatedImage, err := updateImage(s, credential, pinTag)
 		if err != nil {
 			return err
 		}
@@ -136,32 +233,42 @@ func (image ImageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
 
-func updateImage(rawImage string, credential credentials.Credentials) (string, error) {
-	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImage))
+func parseImgString(rawImg string) (*ImageReference, error) {
+	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// TODO Handle images without registry specified
 	imgRef := &ImageReference{
-		Registry:    reference.Domain(ref),
-		Credentials: &credential,
+		Registry: reference.Domain(ref),
 	}
+
 	if nameTagged, ok := ref.(reference.NamedTagged); ok {
 		imgRef.Tag = nameTagged.Tag()
 		imgRef.Name = reference.Path(nameTagged)
 		if canonical, ok := ref.(reference.Canonical); ok {
 			newNamed, err := reference.WithName(canonical.Name())
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			newCanonical, err := reference.WithDigest(newNamed, canonical.Digest())
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			imgRef.Digest = newCanonical.Digest()
 		}
 	}
+
+	return imgRef, nil
+}
+
+func updateImage(rawImage string, credential credentials.Credentials, pinTag string) (string, error) {
+	imgRef, err := parseImgString(rawImage)
+	if err != nil {
+		return "", err
+	}
+	imgRef.Credentials = &credential
+
 	if prevRepo, ok := seenImageRepos[imgRef.Name]; ok {
 		if imgRef.Tag == prevRepo.imageRef.Tag {
 			// no update needed
@@ -174,7 +281,7 @@ func updateImage(rawImage string, credential credentials.Credentials) (string, e
 		return prevRepo.imageRef.String(), nil
 	}
 
-	repo, err := createAndFillImageRepository(imgRef)
+	repo, err := createAndFillImageRepository(imgRef, pinTag)
 	if err != nil {
 		if errors.Is(err, ErrNoUpdateNeeded) {
 			return imgRef.String(), ErrNoUpdateNeeded
@@ -246,7 +353,7 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	return result.AccessToken, nil
 }
 
-func createAndFillImageRepository(ref *ImageReference) (repo *imageRepository, err error) {
+func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
 
 	repo = &imageRepository{name: ref.Name, imageRef: ref}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
@@ -265,13 +372,26 @@ func createAndFillImageRepository(ref *ImageReference) (repo *imageRepository, e
 		Tag:      ref.Tag,
 	}
 
-	latestTag := findLatestTag(tags)
-	if latestTag == ref.Tag || latestTag == "" {
+	var targetTag string
+	isDevTag := pinTag == ""
+	if isDevTag {
+		targetTag = findLatestTag(tags)
+	} else {
+		targetTag = pinTag
+	}
+
+	_, semverErr := semver.NewVersion(targetTag)
+	isReleaseTag := semverErr == nil
+	isAlreadyLatest := targetTag == ref.Tag
+	// for release build, we use semver tags and they are immutable, so no update is needed if the current tag is the same as target tag
+	// for dev builds, if the current tag is the same as the latest tag, also no update is needed
+	// for mutable tags (neither release nor dev tag, e.g. `insiders`), we always need to fetch the latest digest.
+	if (isReleaseTag || isDevTag) && isAlreadyLatest {
 		return repo, ErrNoUpdateNeeded
 	}
-	repo.imageRef.Tag = latestTag
+	repo.imageRef.Tag = targetTag
 
-	dig, err := repo.fetchDigest(latestTag)
+	dig, err := repo.fetchDigest(targetTag)
 	if err != nil {
 		return nil, err
 	}

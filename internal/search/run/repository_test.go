@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,15 +22,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
+		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			rev := "1a2b3c"
-			return []result.Match{&result.FileMatch{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     types.MinimalRepo{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
-			}}, &streaming.Stats{}, nil
+			}}, nil
 		}
 		pat := &search.TextPatternInfo{
 			Pattern:                      "",
@@ -54,8 +52,8 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
-			return nil, &streaming.Stats{}, nil
+		MockReposContainingPath = func() ([]*result.FileMatch, error) {
+			return nil, nil
 		}
 		pat := &search.TextPatternInfo{
 			Pattern:                      "",
@@ -77,15 +75,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
+		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			rev := "1a2b3c"
-			return []result.Match{&result.FileMatch{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     types.MinimalRepo{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
-			}}, &streaming.Stats{}, nil
+			}}, nil
 		}
 		pat := &search.TextPatternInfo{
 			Pattern:                      "",
@@ -107,8 +105,8 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
-			return nil, &streaming.Stats{}, nil
+		MockReposContainingPath = func() ([]*result.FileMatch, error) {
+			return nil, nil
 		}
 		pat := &search.TextPatternInfo{
 			Pattern:                      "",

@@ -39,7 +39,8 @@
           }
         },
         "codeInsightsLandingPage": {
-          "description": "Enables code insights landing page layout.",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -197,6 +198,14 @@
             "pointer": true
           }
         },
+        "treeSitterEnabled": {
+          "description": "Enables tree sitter for enabled filetypes",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
@@ -232,6 +241,14 @@
         },
         "coolCodeIntel": {
           "description": "Use the (cool) experimental reference panel for code intelligence",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showCodeMonitoringLogs": {
+          "description": "Shows code monitoring logs tab.",
           "type": "boolean",
           "default": false,
           "!go": {

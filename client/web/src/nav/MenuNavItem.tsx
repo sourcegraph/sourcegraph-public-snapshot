@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { ComponentType, forwardRef, useCallback, useState } from 'react'
+import React, { ComponentType, forwardRef } from 'react'
 
 import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 
@@ -11,9 +11,9 @@ import styles from './MenuNavItem.module.scss'
 
 interface MenuNavItemProps {
     children: React.ReactNode
-    openByDefault?: boolean
     as?: ComponentType
     position?: Position
+    menuButtonRef?: React.Ref<HTMLButtonElement>
 }
 
 /**
@@ -22,16 +22,13 @@ interface MenuNavItemProps {
  *
  */
 export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef((props, reference) => {
-    const { children, openByDefault, as: Component, position = Position.bottomStart } = props
-
-    const [isOpen, setIsOpen] = useState(() => !!openByDefault)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+    const { children, as: Component, menuButtonRef, position = Position.bottomStart } = props
 
     return (
-        <Menu isOpen={isOpen} onOpenChange={toggleIsOpen} ref={reference} as={Component}>
+        <Menu ref={reference} as={Component}>
             {({ isExpanded }) => (
                 <>
-                    <MenuButton className={classNames('bg-transparent', styles.menuNavItem)}>
+                    <MenuButton className={classNames('bg-transparent', styles.menuNavItem)} ref={menuButtonRef}>
                         <MenuIcon className="icon-inline" />
                         {isExpanded ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
                     </MenuButton>

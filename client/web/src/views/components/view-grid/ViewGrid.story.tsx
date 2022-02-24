@@ -5,7 +5,6 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
@@ -24,7 +23,7 @@ export const SimpleViewGrid: Story = () => (
         <View.Root key="1" title="Empty view" />
 
         <View.Root key="2" title="View with chart">
-            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} />
         </View.Root>
 
         <View.Root
@@ -40,7 +39,7 @@ export const SimpleViewGrid: Story = () => (
                 </>
             }
         >
-            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} />
         </View.Root>
     </ViewGrid>
 )

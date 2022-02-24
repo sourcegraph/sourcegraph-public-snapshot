@@ -85,7 +85,7 @@ type Logger struct {
 
 	replacer *strings.Replacer
 
-	errs   *errors.MultiError
+	errs   error
 	errsMu sync.Mutex
 }
 
@@ -112,7 +112,7 @@ func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, rep
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
-		errs:     &errors.MultiError{},
+		errs:     nil,
 	}
 
 	go l.writeEntries()
@@ -130,7 +130,7 @@ func (l *Logger) Flush() error {
 	l.errsMu.Lock()
 	defer l.errsMu.Unlock()
 
-	return l.errs.ErrorOrNil()
+	return l.errs
 }
 
 // Log redacts secrets from the given log entry and stores it.

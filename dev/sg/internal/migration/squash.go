@@ -55,6 +55,16 @@ func Squash(database db.Database, commit string) error {
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
+	// Remove the migration file pairs that were just squashed
+	filenames, err := removeAncestorsOf(database, definitions, newRoot)
+	if err != nil {
+		return err
+	}
+
+	for _, filename := range filenames {
+		block.Writef("Deleted: %s", filename)
+	}
+
 	files, err := makeMigrationFilenames(database, newRoot)
 	if err != nil {
 		return err
@@ -73,16 +83,6 @@ func Squash(database db.Database, commit string) error {
 	block.Writef("Created: %s", files.UpFile)
 	block.Writef("Created: %s", files.DownFile)
 	block.Writef("Created: %s", files.MetadataFile)
-
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeAncestorsOf(database, definitions, newRoot)
-	if err != nil {
-		return err
-	}
-
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
-	}
 
 	return nil
 }
@@ -144,6 +144,10 @@ func generateSquashedMigrations(database db.Database, targetVersions []int) (up,
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
 func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
+	// Disable runner logs to prevent clashing progress output below
+	runner.DisableLogging()
+	defer runner.EnableLogging()
+
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -277,6 +281,10 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		pgDumpOutput += dataOutput
 	}
 
+	for _, table := range database.CountTables {
+		pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+	}
+
 	return sanitizePgDumpOutput(pgDumpOutput), nil
 }
 
@@ -318,7 +326,7 @@ outer:
 		filteredContent = pattern.ReplaceAllString(filteredContent, replacement)
 	}
 
-	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
+	return strings.TrimSpace(filteredContent)
 }
 
 // removeAncestorsOf removes all migrations that are an ancestor of the given target version.

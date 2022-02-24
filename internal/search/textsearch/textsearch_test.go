@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -34,8 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+func TestRepoSubsetTextSearch(t *testing.T) {
+	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -79,7 +79,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			return false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.FakeSearcher{}
 
@@ -109,7 +109,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, common, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, common, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,14 +150,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	_, _, err = RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -197,7 +197,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			return false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.FakeSearcher{}
 
@@ -226,7 +226,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -270,7 +270,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			panic("unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { searcher.MockSearchFilesInRepo = nil }()
 
 	trueVal := true
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
@@ -308,7 +308,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		PatternInfo:     args.PatternInfo,
 		UseFullDeadline: args.UseFullDeadline,
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -327,44 +327,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
 		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
-	}
-}
-
-func TestRepoShouldBeSearched(t *testing.T) {
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
-		repoName := repo
-		switch repoName {
-		case "foo/one":
-			onMatches([]*protocol.FileMatch{{Path: "main.go"}})
-			return false, nil
-		case "foo/no-filematch":
-			onMatches([]*protocol.FileMatch{})
-			return false, nil
-		default:
-			return false, errors.New("Unexpected repo")
-		}
-	}
-	defer func() { searcher.MockSearch = nil }()
-	info := &search.TextPatternInfo{
-		FileMatchLimit:               limits.DefaultMaxSearchResults,
-		Pattern:                      "foo",
-		FilePatternsReposMustInclude: []string{"main"},
-	}
-
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !shouldBeSearched {
-		t.Errorf("expected repo to be searched, got shouldn't be searched")
-	}
-
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if shouldBeSearched {
-		t.Errorf("expected repo to not be searched, got should be searched")
 	}
 }
 
@@ -468,4 +430,48 @@ func TestFileMatch_Limit(t *testing.T) {
 			}
 		})
 	}
+}
+
+// RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
+func RunRepoSubsetTextSearch(
+	ctx context.Context,
+	request zoektutil.IndexedSearchRequest,
+	searcherArgs *search.SearcherParameters,
+	notSearcherOnly bool,
+) ([]*result.FileMatch, streaming.Stats, error) {
+	agg := streaming.NewAggregatingStream()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	if notSearcherOnly {
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			return request.Search(ctx, agg)
+		})
+	}
+
+	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+	g.Go(func() error {
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
+	})
+
+	err := g.Wait()
+
+	fms, fmErr := matchesToFileMatches(agg.Results)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
+	}
+	return fms, agg.Stats, err
+}
+
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, errors.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
 }

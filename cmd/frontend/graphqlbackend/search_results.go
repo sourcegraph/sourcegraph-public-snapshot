@@ -4,21 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -33,8 +29,7 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/alert"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -46,11 +41,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
+type SearchResultsResolver struct {
+	db          database.DB
+	Matches     result.Matches
+	Stats       streaming.Stats
+	SearchAlert *search.Alert
+
+	// The time it took to compute all results.
+	elapsed time.Duration
+}
+
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
+	return c.Stats.IsLimitHit
 }
 
 func (c *SearchResultsResolver) matchesRepoIDs() map[api.RepoID]struct{} {
@@ -123,37 +128,10 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return false
 }
 
-// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
-type SearchResultsResolver struct {
-	db database.DB
-	*SearchResults
-
-	// limit is the maximum number of SearchResults to send back to the user.
-	limit int
-
-	// The time it took to compute all results.
-	elapsed time.Duration
-
-	// cache for user settings. Ideally this should be set just once in the code path
-	// by an upstream resolver
-	UserSettings *schema.Settings
-}
-
-type SearchResults struct {
-	Matches result.Matches
-	Stats   streaming.Stats
-	Alert   *search.Alert
-}
-
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	limited := sr.Matches
-	if sr.limit > 0 && sr.limit < len(sr.Matches) {
-		limited = sr.Matches[:sr.limit]
-	}
-
-	return matchesToResolvers(sr.db, limited)
+	return matchesToResolvers(sr.db, sr.Matches)
 }
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
@@ -209,7 +187,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 }
 
 func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
-	return NewSearchAlertResolver(sr.SearchResults.Alert)
+	return NewSearchAlertResolver(sr.SearchAlert)
 }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
@@ -465,20 +443,9 @@ func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
 		SearchInputs:        r.SearchInputs,
 		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Protocol:            r.protocol(),
-		PatternType:         r.PatternType,
 		Zoekt:               r.zoekt,
 		SearcherURLs:        r.searcherURLs,
 	}
-}
-
-// evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, args *job.Args, q query.Basic) (*search.Alert, error) {
-	j, err := job.ToEvaluateJob(args, q)
-	if err != nil {
-		return nil, err
-	}
-	return r.evaluateJob(ctx, stream, j)
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -497,37 +464,33 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
-	elapsed := time.Since(start)
-	if srr != nil {
-		srr.elapsed = elapsed
-		var wg sync.WaitGroup
-		LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
-		defer wg.Wait()
-	}
+func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, err error) {
+	var wg sync.WaitGroup
+	LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+	defer wg.Wait()
 
 	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType
+	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
+	if srr.SearchAlert != nil {
+		alertType = srr.SearchAlert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
+	logPrometheusBatch(status, alertType, requestSource, requestName, srr.elapsed)
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	isSlow := srr.elapsed > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		var n int
 		if srr != nil {
 			n = len(srr.Matches)
 		}
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: r.rawQuery(),
+			OriginalQuery: r.SearchInputs.OriginalQuery,
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    elapsed.Milliseconds(),
+			DurationMs:    srr.elapsed.Milliseconds(),
 			ResultSize:    n,
 			Error:         err,
 		})
@@ -542,43 +505,26 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, nil, r.Plan)
-	srr := r.resultsToResolver(sr)
-	r.logBatch(ctx, srr, start, err)
+	agg := streaming.NewAggregatingStream()
+	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
+	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
+	srr.elapsed = time.Since(start)
+	r.logBatch(ctx, srr, err)
 	return srr, err
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	stream := r.stream
-	if !query.IsStreamingCompatible(r.Plan) {
-		srr, err := r.resultsBatch(ctx)
-		if srr != nil {
-			stream.Send(streaming.SearchEvent{
-				Results: srr.Matches,
-				Stats:   srr.Stats,
-			})
-		}
-		return srr, err
-	}
-	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
-		// Ensure downstream events sent on the stream are processed by `select:`.
-		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
-		stream = streaming.WithSelect(stream, selectPath)
-	}
-	sr, err := r.resultsRecursive(ctx, stream, r.Plan)
-	srr := r.resultsToResolver(sr)
+	alert, err := execute.Execute(ctx, r.db, r.stream, r.JobArgs())
+	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
 	return srr, err
 }
 
-func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResultsResolver {
-	if results == nil {
-		results = &SearchResults{}
-	}
+func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
 	return &SearchResultsResolver{
-		SearchResults: results,
-		limit:         r.MaxResults(),
-		db:            r.db,
-		UserSettings:  r.UserSettings,
+		Matches:     matches,
+		SearchAlert: alert,
+		Stats:       stats,
+		db:          r.db,
 	}
 }
 
@@ -591,381 +537,21 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 
 // DetermineStatusForLogs determines the final status of a search for logging
 // purposes.
-func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
+func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
 	switch {
 	case err == context.DeadlineExceeded:
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
+	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
 		return "timeout"
-	case srr.Stats.Status.Any(search.RepoStatusTimedout):
+	case stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
-	case srr.SearchResults.Alert != nil:
+	case alert != nil:
 		return "alert"
 	default:
 		return "success"
 	}
-}
-
-func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	wantCount := defaultMaxSearchResults
-	if count := r.Query.Count(); count != nil {
-		wantCount = *count
-	}
-
-	var (
-		mu     sync.Mutex
-		stats  streaming.Stats
-		alerts []*search.Alert
-		dedup  = result.NewDeduper()
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem = semaphore.NewWeighted(16)
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, q := range plan {
-		q := q
-		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-
-			defer sem.Release(1)
-
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-				plan, err := pred.Plan(q)
-				if err != nil {
-					return nil, err
-				}
-				// Pass a nil stream for subqueries so we can use
-				// the results rather than sending them back to the caller
-				return r.resultsRecursive(ctx, nil, plan)
-			})
-			if errors.Is(err, ErrPredicateNoResults) {
-				return nil
-			}
-			if err != nil {
-				// Fail if predicate processing fails.
-				return err
-			}
-
-			var newResult *SearchResults
-			if predicatePlan != nil {
-				// If a predicate filter generated a new plan, evaluate that plan.
-				newResult, err = r.resultsRecursive(ctx, stream, predicatePlan)
-			} else if stream != nil {
-				args := r.JobArgs()
-				var alert *search.Alert
-				alert, err = r.evaluate(ctx, stream, args, q)
-				newResult = &SearchResults{Alert: alert}
-			} else {
-				args := r.JobArgs()
-				// Always pass a non-nil stream to evaluate
-				agg := streaming.NewAggregatingStream()
-				var alert *search.Alert
-				alert, err = r.evaluate(ctx, agg, args, q)
-				newResult = &SearchResults{
-					Matches: agg.Results,
-					Stats:   agg.Stats,
-					Alert:   alert,
-				}
-			}
-
-			if err != nil || newResult == nil {
-				// Fail if any subexpression fails.
-				return err
-			}
-
-			var selectMatch func(result.Match) result.Match
-			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-				sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-				selectMatch = func(m result.Match) result.Match {
-					return m.Select(sp)
-				}
-			} else {
-				selectMatch = func(m result.Match) result.Match {
-					return m
-				}
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if newResult.Alert != nil {
-				alerts = append(alerts, newResult.Alert)
-			}
-
-			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making query evaluation concurrent.
-			stats.Update(&newResult.Stats)
-
-			for _, m := range newResult.Matches {
-				match := selectMatch(m)
-
-				if match == nil {
-					continue
-				}
-
-				wantCount = match.Limit(wantCount)
-
-				if dedup.Add(match); wantCount <= 0 {
-					return context.Canceled
-				}
-			}
-
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil && err != context.Canceled {
-		return nil, err
-	}
-
-	matches := dedup.Results()
-	if len(matches) > 0 {
-		sort.Sort(matches)
-	}
-
-	var alert *search.Alert
-	if len(alerts) > 0 {
-		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].Priority > alerts[j].Priority
-		})
-		alert = alerts[0]
-	}
-
-	return &SearchResults{
-		Matches: matches,
-		Stats:   stats,
-		Alert:   alert,
-	}, err
-}
-
-// searchResultsToRepoNodes converts a set of search results into repository nodes
-// such that they can be used to replace a repository predicate
-func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
-	nodes := make([]query.Node, 0, len(matches))
-	for _, match := range matches {
-		repoMatch, ok := match.(*result.RepoMatch)
-		if !ok {
-			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
-		}
-
-		repoFieldValue := "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$"
-		if repoMatch.Rev != "" {
-			repoFieldValue += "@" + repoMatch.Rev
-		}
-
-		nodes = append(nodes, query.Parameter{
-			Field: query.FieldRepo,
-			Value: repoFieldValue,
-		})
-	}
-
-	return nodes, nil
-}
-
-// searchResultsToFileNodes converts a set of search results into repo/file nodes so that they
-// can replace a file predicate
-func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
-	nodes := make([]query.Node, 0, len(matches))
-	for _, match := range matches {
-		fileMatch, ok := match.(*result.FileMatch)
-		if !ok {
-			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
-		}
-
-		repoFieldValue := "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$"
-		if fileMatch.InputRev != nil {
-			repoFieldValue += "@" + *fileMatch.InputRev
-		}
-
-		// We create AND nodes to match both the repo and the file at the same time so
-		// we don't get files of the same name from different repositories.
-		nodes = append(nodes, query.Operator{
-			Kind: query.And,
-			Operands: []query.Node{
-				query.Parameter{
-					Field: query.FieldRepo,
-					Value: repoFieldValue,
-				},
-				query.Parameter{
-					Field: query.FieldFile,
-					Value: "^" + regexp.QuoteMeta(fileMatch.Path) + "$",
-				},
-			},
-		})
-	}
-
-	return nodes, nil
-}
-
-// evaluateJob is a toplevel function that runs a search job to yield results.
-// A search job represents a tree of evaluation steps. If the deadline
-// is exceeded, returns a search alert with a did-you-mean link for the same
-// query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job job.Job) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "evaluateJob", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	tr.LazyPrintf("job name: %s", job.Name())
-
-	start := time.Now()
-	countingStream := streaming.NewResultCountingStream(stream)
-	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := job.Run(ctx, r.db, statsObserver)
-
-	ao := alert.Observer{
-		Db:           r.db,
-		SearchInputs: r.SearchInputs,
-		HasResults:   countingStream.Count() > 0,
-	}
-	if err != nil {
-		ao.Error(ctx, err)
-	}
-	observerAlert, err := ao.Done()
-
-	// We have an alert for context timeouts and we have a progress
-	// notification for timeouts. We don't want to show both, so we only show
-	// it if no repos are marked as timedout. This somewhat couples us to how
-	// progress notifications work, but this is the third attempt at trying to
-	// fix this behaviour so we are accepting that.
-	if errors.Is(err, context.DeadlineExceeded) {
-		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
-			usedTime := time.Since(start)
-			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
-		} else {
-			err = nil
-		}
-	}
-
-	return search.MaxPriorityAlert(jobAlert, observerAlert), err
-}
-
-// substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
-// are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResults, error)) (query.Plan, error) {
-	var topErr error
-	success := false
-	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
-		orig := query.Parameter{
-			Field:      field,
-			Value:      value,
-			Negated:    neg,
-			Annotation: ann,
-		}
-
-		if !ann.Labels.IsSet(query.IsPredicate) {
-			return orig
-		}
-
-		if topErr != nil {
-			return orig
-		}
-
-		name, params := query.ParseAsPredicate(value)
-		predicate := query.DefaultPredicateRegistry.Get(field, name)
-		predicate.ParseParams(params)
-		srr, err := evaluate(predicate)
-		if err != nil {
-			topErr = err
-			return nil
-		}
-
-		var nodes []query.Node
-		switch predicate.Field() {
-		case query.FieldRepo:
-			nodes, err = searchResultsToRepoNodes(srr.Matches)
-			if err != nil {
-				topErr = err
-				return nil
-			}
-		case query.FieldFile:
-			nodes, err = searchResultsToFileNodes(srr.Matches)
-			if err != nil {
-				topErr = err
-				return nil
-			}
-		default:
-			topErr = errors.Errorf("unsupported predicate result type %q", predicate.Field())
-			return nil
-		}
-
-		// If no results are returned, we need to return a sentinel error rather
-		// than an empty expansion because an empty expansion means "everything"
-		// rather than "nothing".
-		if len(nodes) == 0 {
-			topErr = ErrPredicateNoResults
-			return nil
-		}
-
-		// A predicate was successfully evaluated and has results.
-		success = true
-
-		// No need to return an operator for only one result
-		if len(nodes) == 1 {
-			return nodes[0]
-		}
-
-		return query.Operator{
-			Kind:     query.Or,
-			Operands: nodes,
-		}
-	})
-
-	if topErr != nil || !success {
-		return nil, topErr
-	}
-	plan, err := query.ToPlan(query.Dnf(newQ))
-	if err != nil {
-		return nil, err
-	}
-	return plan, nil
-}
-
-var ErrPredicateNoResults = errors.New("no results returned for predicate")
-
-// longer returns a suggested longer time to wait if the given duration wasn't long enough.
-func longer(n int, dt time.Duration) time.Duration {
-	dt2 := func() time.Duration {
-		Ndt := time.Duration(n) * dt
-		dceil := func(x float64) time.Duration {
-			return time.Duration(math.Ceil(x))
-		}
-		switch {
-		case math.Floor(Ndt.Hours()) > 0:
-			return dceil(Ndt.Hours()) * time.Hour
-		case math.Floor(Ndt.Minutes()) > 0:
-			return dceil(Ndt.Minutes()) * time.Minute
-		case math.Floor(Ndt.Seconds()) > 0:
-			return dceil(Ndt.Seconds()) * time.Second
-		default:
-			return 0
-		}
-	}()
-	lowest := 2 * time.Second
-	if dt2 < lowest {
-		return lowest
-	}
-	return dt2
 }
 
 type searchResultsStats struct {
@@ -1003,7 +589,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	ctx = context.Background()
 	ctx = opentracing.ContextWithSpan(ctx, opentracing.SpanFromContext(originalCtx))
 
-	cacheKey := r.rawQuery()
+	cacheKey := r.SearchInputs.OriginalQuery
 	// Check if value is in the cache.
 	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
 	if ok {
@@ -1024,19 +610,16 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.Query)
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
 		if err != nil {
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, r.db, agg)
+		alert, err := j.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
-		v = r.resultsToResolver(&SearchResults{
-			Matches: agg.Results,
-			Stats:   agg.Stats,
-		})
+		v = r.resultsToResolver(agg.Results, alert, agg.Stats)
 		if v.MatchCount() > 0 {
 			break
 		}

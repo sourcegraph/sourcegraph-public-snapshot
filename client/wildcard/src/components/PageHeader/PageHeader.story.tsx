@@ -19,12 +19,8 @@ const decorator: DecoratorFn = story => (
 
 const config: Meta = {
     title: 'wildcard/PageHeader',
+    component: PageHeader,
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            enableDarkMode: true,
-        },
-    },
 }
 
 export default config
@@ -77,6 +73,10 @@ export const ComplexHeader: Story = () => (
 ComplexHeader.storyName = 'Complex header'
 
 ComplexHeader.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
     design: {
         type: 'figma',
         name: 'Figma',

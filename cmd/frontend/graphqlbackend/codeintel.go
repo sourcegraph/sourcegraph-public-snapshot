@@ -25,6 +25,7 @@ type CodeIntelResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitBlobCodeIntelInfoArgs) (CodeIntelSupportResolver, error)
 
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
@@ -140,6 +141,7 @@ type QueueAutoIndexJobsForRepoArgs struct {
 }
 
 type GitTreeLSIFDataResolver interface {
+	LSIFUploads(ctx context.Context) ([]LSIFUploadResolver, error)
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
 	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
@@ -339,4 +341,34 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+}
+
+type GitBlobCodeIntelInfoArgs struct {
+	Repo api.RepoName
+	Path string
+}
+
+type GitBlobCodeIntelInfoResolver interface {
+	Support(context.Context) CodeIntelSupportResolver
+	LSIFUploads(context.Context) (LSIFUploadConnectionResolver, error)
+}
+
+type CodeIntelSupportResolver interface {
+	SearchBasedSupport(context.Context) (SearchBasedCodeIntelSupportResolver, error)
+	PreciseSupport(context.Context) (PreciseCodeIntelSupportResolver, error)
+}
+
+type PreciseCodeIntelSupportResolver interface {
+	SupportLevel() string
+	Indexers() *[]CodeIntelIndexerResolver
+}
+
+type CodeIntelIndexerResolver interface {
+	Name() string
+	URL() string
+}
+
+type SearchBasedCodeIntelSupportResolver interface {
+	SupportLevel() string
+	Language() *string
 }

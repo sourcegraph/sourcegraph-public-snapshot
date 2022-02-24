@@ -59,9 +59,6 @@ var rngLock sync.Mutex
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB) *sql.DB {
-	if os.Getenv("USE_FAST_DBTEST") != "" {
-		return NewFastDB(t)
-	}
 	return newFromDSN(t, "migrated")
 }
 

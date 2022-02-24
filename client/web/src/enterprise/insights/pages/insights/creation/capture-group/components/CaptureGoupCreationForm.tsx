@@ -98,7 +98,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>
@@ -127,6 +127,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         title="Search query"
                         required={true}
                         as={CaptureGroupQueryInput}
+                        repositories={repositories.input.value}
                         subtitle={<QueryFieldSubtitle className="mb-3" />}
                         placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}

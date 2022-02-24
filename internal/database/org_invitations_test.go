@@ -197,6 +197,27 @@ func TestOrgInvitations(t *testing.T) {
 		testPendingByID(t, 12345, nil, fmt.Sprintf(errorMessageFormat, 12345))
 	})
 
+	testPendingByOrgID := func(t *testing.T, orgID int32, want []*OrgInvitation) {
+		t.Helper()
+		ois, err := db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		if len(want) == 0 && len(ois) != 0 {
+			t.Errorf("want empty list, got %v", ois)
+		} else if len(want) != 0 && !reflect.DeepEqual(ois, want) {
+			t.Errorf("got %+v, want %+v", ois, want)
+		}
+	}
+	t.Run("GetPendingByOrgID", func(t *testing.T) {
+		testPendingByOrgID(t, oi1.OrgID, []*OrgInvitation{oi1})
+		testPendingByOrgID(t, oi2.OrgID, []*OrgInvitation{oi2, emailInvite})
+
+		// returns empty list if nothing is found
+		testPendingByOrgID(t, 42, []*OrgInvitation{})
+	})
+
 	testListCount := func(t *testing.T, opt OrgInvitationsListOptions, want []*OrgInvitation) {
 		t.Helper()
 		if ois, err := db.OrgInvitations().List(ctx, opt); err != nil {
@@ -315,6 +336,31 @@ func TestOrgInvitations(t *testing.T) {
 		}
 		if _, err := db.OrgInvitations().Respond(ctx, toRevokeInvite.ID, recipient.ID, true); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
+		}
+	})
+
+	t.Run("UpdateExpiryTime", func(t *testing.T) {
+		org4, err := db.Orgs().Create(ctx, "o4", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		toUpdateInvite, err := OrgInvitations(db).Create(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		newExpiry := timeNow().Add(2 * time.Hour)
+		if err := db.OrgInvitations().UpdateExpiryTime(ctx, toUpdateInvite.ID, newExpiry); err != nil {
+			t.Fatal(err)
+		}
+
+		// After updating, the new expiry time on invite should be the same as we expect
+		updatedInvite, err := OrgInvitations(db).GetByID(ctx, toUpdateInvite.ID)
+		if err != nil {
+			t.Fatalf("cannot get invite by id %d", toUpdateInvite.ID)
+		}
+		if updatedInvite.ExpiresAt == nil && *updatedInvite.ExpiresAt != newExpiry {
+			t.Fatalf("expiry time differs, expected %v, got %v", newExpiry, updatedInvite.ExpiresAt)
 		}
 	})
 }

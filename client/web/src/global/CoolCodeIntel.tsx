@@ -1,8 +1,9 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import { capitalize } from 'lodash'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -46,16 +47,14 @@ import {
     Button,
     useObservable,
     Input,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
-    CoolCodeIntelReferencesResult,
-    CoolCodeIntelReferencesVariables,
     HoverFields,
-    LocationConnectionFields,
     LocationFields,
     Maybe,
 } from '../graphql-operations'
@@ -64,7 +63,8 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
+import { FETCH_HIGHLIGHTED_BLOB } from './CoolCodeIntelQueries'
+import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
@@ -239,90 +239,113 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-export const SideReferences: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-    }
-> = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.clickedToken.repoName,
-                commit: props.clickedToken.commitID,
-                path: props.clickedToken.filePath,
-                // On the backend the line/character are 0-indexed, but what we
-                // get from hoverifier is 1-indexed.
-                line: props.clickedToken.line - 1,
-                character: props.clickedToken.character - 1,
-                after: null,
-                filter: props.filter || null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
+interface ReferencesComponentProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+}
 
-    // If we're loading and haven't received any data yet
-    if (loading && !data) {
+export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
+    const {
+        lsifData,
+        error,
+        loading,
+        referencesHasNextPage,
+        implementationsHasNextPage,
+        fetchMoreReferences,
+        fetchMoreImplementations,
+        fetchMoreReferencesLoading,
+        fetchMoreImplementationsLoading,
+    } = usePreciseCodeIntel({
+        variables: {
+            repository: props.clickedToken.repoName,
+            commit: props.clickedToken.commitID,
+            path: props.clickedToken.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.clickedToken.line - 1,
+            character: props.clickedToken.character - 1,
+            filter: props.filter || null,
+            firstReferences: 100,
+            afterReferences: null,
+            firstImplementations: 100,
+            afterImplementations: null,
+        },
+    })
+
+    if (loading) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
-                    <i>Loading references ...</i>
+                    <i>Loading precise code intel ...</i>
                 </p>
             </>
         )
     }
 
     // If we received an error before we had received any data
-    if (error && !data) {
+    if (error && !lsifData) {
         return (
             <div>
-                <p className="text-danger">Loading references failed:</p>
+                <p className="text-danger">Loading precise code intel failed:</p>
                 <pre>{error.message}</pre>
             </div>
         )
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif) {
+    if (!lsifData) {
         return <>Nothing found</>
     }
 
-    const lsif = data.repository?.commit?.blob?.lsif
+    const references = lsifData.references.nodes
+    const definitions = lsifData.definitions.nodes
+    const implementations = lsifData.implementations.nodes
+    const hover = lsifData.hover
 
     return (
         <SideReferencesLists
             {...props}
-            references={lsif.references}
-            definitions={lsif.definitions}
-            implementations={lsif.implementations}
-            hover={lsif.hover}
+            definitions={definitions}
+            references={references}
+            hover={hover}
+            referencesHasNextPage={referencesHasNextPage}
+            implementationsHasNextPage={implementationsHasNextPage}
+            implementations={implementations}
+            fetchMoreImplementations={fetchMoreImplementations}
+            fetchMoreReferences={fetchMoreReferences}
+            fetchMoreReferencesLoading={fetchMoreReferencesLoading}
+            fetchMoreImplementationsLoading={fetchMoreImplementationsLoading}
         />
     )
 }
 
-const SideReferencesLists: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
-        setActiveLocation: (location: Location | undefined) => void
-        activeLocation: Location | undefined
-        filter: string | undefined
-        references: LocationConnectionFields
-        definitions: Omit<LocationConnectionFields, 'pageInfo'>
-        implementations: LocationConnectionFields
-        hover: Maybe<HoverFields>
-    }
-> = props => {
-    const references = useMemo(() => props.references.nodes.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.nodes.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.nodes.map(buildLocation), [props.implementations])
+interface SideReferencesListsProps extends CoolCodeIntelProps {
+    clickedToken: CoolClickedToken
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+
+    definitions: LocationFields[]
+    hover: Maybe<HoverFields>
+
+    references: LocationFields[]
+    referencesHasNextPage: boolean
+    fetchMoreReferences: () => void
+    fetchMoreReferencesLoading: boolean
+
+    implementations: LocationFields[]
+    implementationsHasNextPage: boolean
+    fetchMoreImplementations: () => void
+    fetchMoreImplementationsLoading: boolean
+}
+
+const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
+    const references = useMemo(() => props.references.map(buildLocation), [props.references])
+    const definitions = useMemo(() => props.definitions.map(buildLocation), [props.definitions])
+    const implementations = useMemo(() => props.implementations.map(buildLocation), [props.implementations])
 
     return (
         <>
@@ -332,61 +355,109 @@ const SideReferencesLists: React.FunctionComponent<
                     dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
                 />
             )}
-            <CardHeader>
-                <h4 className="p-1 mb-0">Definitions</h4>
-            </CardHeader>
-            {definitions.length > 0 ? (
-                <LocationsList
-                    locations={definitions}
-                    activeLocation={props.activeLocation}
-                    setActiveLocation={props.setActiveLocation}
-                    filter={props.filter}
-                />
-            ) : (
-                <p className="text-muted my-1 pl-2">
-                    {props.filter ? (
-                        <i>
-                            No definitions matching <strong>{props.filter}</strong> found
-                        </i>
-                    ) : (
-                        <i>No definitions found</i>
-                    )}
-                </p>
-            )}
-            <CardHeader>
-                <h4 className="p-1 mb-0">References</h4>
-            </CardHeader>
-            {references.length > 0 ? (
-                <LocationsList
-                    locations={references}
-                    activeLocation={props.activeLocation}
-                    setActiveLocation={props.setActiveLocation}
-                    filter={props.filter}
-                />
-            ) : (
-                <p className="text-muted pl-2">
-                    {props.filter ? (
-                        <i>
-                            No references matching <strong>{props.filter}</strong> found
-                        </i>
-                    ) : (
-                        <i>No references found</i>
-                    )}
-                </p>
-            )}
+            <CollapsibleLocationList
+                {...props}
+                name="definitions"
+                locations={definitions}
+                hasMore={false}
+                loadingMore={false}
+            />
+            <CollapsibleLocationList
+                {...props}
+                name="references"
+                locations={references}
+                hasMore={props.referencesHasNextPage}
+                fetchMore={props.fetchMoreReferences}
+                loadingMore={props.fetchMoreReferencesLoading}
+            />
             {implementations.length > 0 && (
-                <>
-                    <CardHeader>
-                        <h4 className="p-1 mb-0">Implementations</h4>
-                    </CardHeader>
-                    <LocationsList
-                        locations={implementations}
-                        activeLocation={props.activeLocation}
-                        setActiveLocation={props.setActiveLocation}
-                        filter={props.filter}
-                    />
-                </>
+                <CollapsibleLocationList
+                    {...props}
+                    name="implementations"
+                    locations={implementations}
+                    hasMore={props.implementationsHasNextPage}
+                    fetchMore={props.fetchMoreImplementations}
+                    loadingMore={props.fetchMoreImplementationsLoading}
+                />
             )}
+        </>
+    )
+}
+
+const CollapsibleLocationList: React.FunctionComponent<{
+    name: string
+    locations: Location[]
+    setActiveLocation: (location: Location | undefined) => void
+    activeLocation: Location | undefined
+    filter: string | undefined
+    hasMore: boolean
+    fetchMore?: () => void
+    loadingMore: boolean
+}> = props => {
+    const [isOpen, setOpen] = useState<boolean>(true)
+    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+
+    return (
+        <>
+            <CardHeader className="p-0">
+                <Button
+                    aria-expanded={isOpen}
+                    type="button"
+                    onClick={handleOpen}
+                    className="bg-transparent py-1 px-0 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                >
+                    <h4 className="px-1 py-0 mb-0">
+                        {' '}
+                        {isOpen ? (
+                            <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        ) : (
+                            <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        )}{' '}
+                        {capitalize(props.name)}
+                        <Badge pill={true} variant="secondary" className="ml-2">
+                            {props.locations.length}
+                            {props.hasMore && '+'}
+                        </Badge>
+                    </h4>
+                </Button>
+            </CardHeader>
+
+            <Collapse id="references" isOpen={isOpen}>
+                {props.locations.length > 0 ? (
+                    <>
+                        <LocationsList
+                            locations={props.locations}
+                            activeLocation={props.activeLocation}
+                            setActiveLocation={props.setActiveLocation}
+                            filter={props.filter}
+                        />
+                        {props.hasMore &&
+                            props.fetchMore !== undefined &&
+                            (props.loadingMore ? (
+                                <div className="text-center mb-1">
+                                    <em>Loading more {props.name}...</em>
+                                    <LoadingSpinner inline={true} />
+                                </div>
+                            ) : (
+                                <div className="text-center mb-1">
+                                    <Button variant="secondary" onClick={props.fetchMore}>
+                                        Load more {props.name}
+                                    </Button>
+                                </div>
+                            ))}
+                    </>
+                ) : (
+                    <p className="text-muted pl-2">
+                        {props.filter ? (
+                            <i>
+                                No {props.name} matching <strong>{props.filter}</strong> found
+                            </i>
+                        ) : (
+                            <i>No {props.name} found</i>
+                        )}
+                    </p>
+                )}
+            </Collapse>
         </>
     )
 }
@@ -579,15 +650,15 @@ const RepoReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
-                {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                )}
+                <span className="p-0 mb-0">
+                    {isOpen ? (
+                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                    ) : (
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                    )}
 
-                <span>
                     <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
                 </span>
             </Button>
@@ -629,15 +700,14 @@ const ReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
-                {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                )}
-
                 <span className={styles.coolCodeIntelReferenceFilename}>
+                    {isOpen ? (
+                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                    ) : (
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                    )}
                     {highlighted.length === 2 ? (
                         <span>
                             {highlighted[0]}

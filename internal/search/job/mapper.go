@@ -1,9 +1,11 @@
 package job
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
@@ -33,12 +35,18 @@ type Mapper struct {
 	MapPriorityJob func(required, optional Job) (Job, Job)
 	MapTimeoutJob  func(timeout time.Duration, child Job) (time.Duration, Job)
 	MapLimitJob    func(limit int, child Job) (int, Job)
+	MapSelectJob   func(path filter.SelectPath, child Job) (filter.SelectPath, Job)
+	MapAlertJob    func(inputs *run.SearchInputs, child Job) (*run.SearchInputs, Job)
 
 	// Filter Jobs
 	MapSubRepoPermsFilterJob func(child Job) Job
 }
 
 func (m *Mapper) Map(job Job) Job {
+	if job == nil {
+		return nil
+	}
+
 	if m.MapJob != nil {
 		job = m.MapJob(job)
 	}
@@ -146,6 +154,22 @@ func (m *Mapper) Map(job Job) Job {
 		}
 		return NewLimitJob(limit, child)
 
+	case *selectJob:
+		child := m.Map(j.child)
+		filter := j.path
+		if m.MapLimitJob != nil {
+			filter, child = m.MapSelectJob(filter, child)
+		}
+		return NewSelectJob(filter, child)
+
+	case *alertJob:
+		child := m.Map(j.child)
+		inputs := j.inputs
+		if m.MapLimitJob != nil {
+			inputs, child = m.MapAlertJob(inputs, child)
+		}
+		return NewAlertJob(inputs, child)
+
 	case *subRepoPermsFilterJob:
 		child := m.Map(j.child)
 		if m.MapSubRepoPermsFilterJob != nil {
@@ -156,7 +180,7 @@ func (m *Mapper) Map(job Job) Job {
 	case *noopJob:
 		return j
 
+	default:
+		panic(fmt.Sprintf("unsupported job %T for job.Mapper", job))
 	}
-	// Unreachable
-	return job
 }

@@ -21,6 +21,7 @@ const config: Meta = {
         component: Icon,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
     },
 }
@@ -29,9 +30,9 @@ export default config
 export const Simple: Story = () => (
     <>
         <h3>Small Icon</h3>
-        <Icon svg={<SourcegraphIcon />} size="sm" />
+        <Icon as={SourcegraphIcon} size="sm" />
 
         <h3>Medium Icon</h3>
-        <Icon svg={<SourcegraphIcon />} size="md" />
+        <Icon as={SourcegraphIcon} size="md" />
     </>
 )

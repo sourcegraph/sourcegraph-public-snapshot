@@ -19,6 +19,7 @@ import searchResultStyles from './SearchResult.module.scss'
 
 interface CommitSearchResultMatchProps extends PlatformContextProps<'requestGraphQL'> {
     item: CommitMatch
+    openInNewTab?: boolean
 }
 
 interface CommitSearchResultMatchState {
@@ -146,6 +147,8 @@ export class CommitSearchResultMatch extends React.Component<
             lastLine++
         }
 
+        const openInNewTabProps = this.props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
+
         return (
             <VisibilitySensor
                 active={true}
@@ -165,6 +168,7 @@ export class CommitSearchResultMatch extends React.Component<
                             key={this.props.item.url}
                             to={this.props.item.url}
                             className={searchResultStyles.searchResultMatch}
+                            {...openInNewTabProps}
                         >
                             <code>
                                 <Markdown
