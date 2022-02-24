@@ -7,7 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './ResultContainer.module.scss'
 import { SearchResultStar } from './SearchResultStar'
@@ -141,7 +141,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
             onResultClicked()
         }
     }
-    const Icon = icon
+    const ResultContainerIcon = icon
     return (
         <div
             className={classNames('test-search-result', styles.resultContainer, className)}
@@ -152,7 +152,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
             role="none"
         >
             <div className={styles.header}>
-                <Icon className="icon-inline flex-shrink-0" />
+                <Icon className="flex-shrink-0" as={ResultContainerIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
                     {title}
@@ -174,15 +174,15 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
+                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} />}
                                 {collapseLabel}
-                                {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                                {!collapseLabel && <Icon as={ChevronDownIcon} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && <ArrowExpandDownIcon className="icon-inline mr-1" />}
+                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} />}
                                 {expandLabel}
-                                {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
+                                {!expandLabel && <Icon as={ChevronLeftIcon} />}
                             </>
                         )}
                     </Button>

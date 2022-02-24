@@ -7,6 +7,7 @@ import React, { FunctionComponent, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
@@ -23,8 +24,18 @@ export interface CodeIntelIndexTimelineProps {
 export const CodeIntelIndexTimeline: FunctionComponent<CodeIntelIndexTimelineProps> = ({ index, now, className }) => {
     const stages = useMemo(
         () => [
-            { icon: <TimerSandIcon />, text: 'Queued', date: index.queuedAt, className: 'bg-success' },
-            { icon: <CheckIcon />, text: 'Began processing', date: index.startedAt, className: 'bg-success' },
+            {
+                icon: <Icon as={TimerSandIcon} inline={true} />,
+                text: 'Queued',
+                date: index.queuedAt,
+                className: 'bg-success',
+            },
+            {
+                icon: <Icon as={CheckIcon} inline={false} />,
+                text: 'Began processing',
+                date: index.startedAt,
+                className: 'bg-success',
+            },
 
             indexSetupStage(index, now),
             indexPreIndexStage(index, now),
@@ -33,8 +44,18 @@ export const CodeIntelIndexTimeline: FunctionComponent<CodeIntelIndexTimelinePro
             indexTeardownStage(index, now),
 
             index.state === LSIFIndexState.COMPLETED
-                ? { icon: <CheckIcon />, text: 'Finished', date: index.finishedAt, className: 'bg-success' }
-                : { icon: <AlertCircleIcon />, text: 'Failed', date: index.finishedAt, className: 'bg-danger' },
+                ? {
+                      icon: <Icon as={CheckIcon} inline={false} />,
+                      text: 'Finished',
+                      date: index.finishedAt,
+                      className: 'bg-success',
+                  }
+                : {
+                      icon: <Icon inline={false} as={AlertCircleIcon} />,
+                      text: 'Failed',
+                      date: index.finishedAt,
+                      className: 'bg-danger',
+                  },
         ],
         [index, now]
     )

@@ -1,7 +1,7 @@
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Button, Link, Card } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
@@ -34,7 +34,7 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
         <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
-            <PlusIcon size="2rem" />
+            <Icon as={PlusIcon} inline={false} size="2rem" />
             <span>Create new insight</span>
         </Card>
         <span className="d-flex justify-content-center mt-3">
@@ -67,7 +67,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                     data-placement="right"
                     className={styles.itemCard}
                 >
-                    <PlusIcon size="2rem" />
+                    <Icon as={PlusIcon} inline={false} size="2rem" />
                     <span>Add insights</span>
                 </Card>
             </Button>

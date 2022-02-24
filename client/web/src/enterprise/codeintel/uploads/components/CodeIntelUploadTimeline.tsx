@@ -6,6 +6,7 @@ import React, { FunctionComponent, useMemo } from 'react'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 
@@ -45,7 +46,7 @@ export const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineP
 
 const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
-        icon: <FileUploadIcon />,
+        icon: <Icon as={FileUploadIcon} inline={false} />,
         text:
             upload.state === LSIFUploadState.UPLOADING ||
             (LSIFUploadState.ERRORED && failedStage === FailedStage.UPLOADING)
@@ -65,7 +66,7 @@ const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null)
 
 const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
-        icon: <ProgressClockIcon />,
+        icon: <Icon as={ProgressClockIcon} inline={false} />,
         text:
             upload.state === LSIFUploadState.PROCESSING ||
             (LSIFUploadState.ERRORED && failedStage === FailedStage.PROCESSING)
@@ -85,7 +86,7 @@ const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
     upload.state === LSIFUploadState.COMPLETED
         ? [
               {
-                  icon: <CheckIcon />,
+                  icon: <Icon as={CheckIcon} inline={false} />,
                   text: 'Finished',
                   date: upload.finishedAt,
                   className: 'bg-success',
@@ -94,7 +95,7 @@ const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
         : upload.state === LSIFUploadState.ERRORED
         ? [
               {
-                  icon: <AlertCircleIcon />,
+                  icon: <Icon as={AlertCircleIcon} inline={false} />,
                   text: 'Failed',
                   date: upload.finishedAt,
                   className: 'bg-danger',

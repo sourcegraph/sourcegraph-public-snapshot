@@ -7,7 +7,7 @@ import React, { useMemo } from 'react'
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Badge } from '@sourcegraph/wildcard'
+import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { NotebookFields } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
@@ -57,15 +57,12 @@ export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node 
                 </span>
                 <span className="d-flex align-items-center mr-3">
                     {node.viewerHasStarred ? (
-                        <StarIcon
-                            className={classNames(
-                                'icon-inline',
-                                styles.notebookStarIcon,
-                                styles.notebookStarIconActive
-                            )}
+                        <Icon
+                            className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
+                            as={StarIcon}
                         />
                     ) : (
-                        <StarOutlineIcon className={classNames('icon-inline', styles.notebookStarIcon)} />
+                        <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
                     )}
                     <span className="ml-1">{node.stars.totalCount}</span>
                 </span>

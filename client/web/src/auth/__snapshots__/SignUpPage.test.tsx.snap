@@ -141,6 +141,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
         class="icon bg-transparent"
       >
         <svg
+          class=""
           fill="none"
           height="64"
           viewBox="0 0 52 52"

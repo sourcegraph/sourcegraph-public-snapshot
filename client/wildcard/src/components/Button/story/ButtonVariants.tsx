@@ -2,6 +2,7 @@ import { startCase } from 'lodash'
 import React from 'react'
 import 'storybook-addon-designs'
 
+import { Icon as CustomIcon } from '../../Icon'
 import { Button, ButtonProps } from '../Button'
 import { BUTTON_VARIANTS } from '../constants'
 
@@ -26,11 +27,11 @@ export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
                     {startCase(variant)}
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
-                    {Icon && <Icon className="icon-inline mr-1" />}
+                    {Icon && <CustomIcon as={Icon} className="icon-inline mr-1" />}
                     Focus
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
-                    {Icon && <Icon className="icon-inline mr-1" />}
+                    {Icon && <CustomIcon as={Icon} className="icon-inline mr-1" />}
                     Disabled
                 </Button>
             </React.Fragment>

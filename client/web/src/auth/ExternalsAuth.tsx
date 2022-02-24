@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
@@ -80,7 +80,7 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
                     )}
                     onClick={() => onClick('github')}
                 >
-                    <GithubIcon className="mr-3" /> {githubLabel}
+                    <Icon inline={false} as={GithubIcon} className="mr-3" /> {githubLabel}
                 </Link>
             )}
 

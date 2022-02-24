@@ -6,7 +6,7 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -62,7 +62,7 @@ function ContextMenu() {
     return (
         <Menu>
             <MenuButton as={Button} variant="icon" className="p-1">
-                <DotsVerticalIcon size={16} />
+                <Icon as={DotsVerticalIcon} inline={false} size={16} />
             </MenuButton>
             <MenuPopover>
                 <MenuItems className="d-block position-static dropdown-menu">
@@ -121,7 +121,7 @@ export const ViewsShowcase: Story = () => (
                 actions={
                     <>
                         <Button variant="icon" className="p-1">
-                            <FilterOutlineIcon size="1rem" />
+                            <Icon as={FilterOutlineIcon} inline={false} size="1rem" />
                         </Button>
                         <ContextMenu />
                     </>

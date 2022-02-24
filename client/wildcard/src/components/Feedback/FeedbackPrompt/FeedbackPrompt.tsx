@@ -5,7 +5,7 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'reac
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 
-import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
+import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, Icon } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
 import { Modal } from '../../Modal'
 
@@ -103,11 +103,11 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
     return (
         <>
             <Button className={styles.close} onClick={onClose}>
-                <CloseIcon className={styles.icon} />
+                <Icon as={CloseIcon} inline={false} className={styles.icon} />
             </Button>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
-                    <TickIcon className={styles.successTick} />
+                    <Icon as={TickIcon} inline={false} className={styles.successTick} />
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.

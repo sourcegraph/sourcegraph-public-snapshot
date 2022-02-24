@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -36,7 +36,7 @@ add('GitHub', () => (
             return (
                 <>
                     <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                        <GithubIcon className="icon-inline" />
+                        <Icon as={GithubIcon} />
                     </Button>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -70,7 +70,7 @@ add(
                 return (
                     <>
                         <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                            <GitlabIcon className="icon-inline" />
+                            <Icon as={GitlabIcon} />
                         </Button>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -108,7 +108,7 @@ add(
                 return (
                     <>
                         <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                            <PhabricatorIcon className="icon-inline" />
+                            <Icon as={PhabricatorIcon} />
                         </Button>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -146,7 +146,7 @@ add(
                 return (
                     <>
                         <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
-                            <BitbucketIcon className="icon-inline" />
+                            <Icon as={BitbucketIcon} />
                         </Button>
 
                         <InstallBrowserExtensionPopover

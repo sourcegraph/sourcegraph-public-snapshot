@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields } from '../../../../graphql-operations'
@@ -51,7 +51,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                         <Link
                             to={`/${node.projectRoot.repository.name}/-/code-intelligence/uploads/${node.associatedUpload.id}`}
                         >
-                            <ChevronRightIcon />
+                            <Icon as={ChevronRightIcon} inline={false} />
                         </Link>
                     </span>
                 </div>

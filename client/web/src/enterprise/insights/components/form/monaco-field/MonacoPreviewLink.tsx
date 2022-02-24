@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './MonacoPreviewLink.module.scss'
 
@@ -27,7 +27,7 @@ export const MonacoPreviewLink: React.FunctionComponent<MonacoPreviewLinkProps> 
             target="_blank"
             rel="noopener noreferrer"
         >
-            Preview results <LinkExternalIcon size={18} className={styles.previewLink} />
+            Preview results <Icon as={LinkExternalIcon} inline={false} size={18} className={styles.previewLink} />
         </Button>
     )
 }

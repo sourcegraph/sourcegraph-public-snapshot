@@ -5,7 +5,7 @@ import React, { useCallback } from 'react'
 import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, Link } from '@sourcegraph/wildcard'
+import { Card, Icon, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -171,7 +171,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 title="Search notebooks"
                                 subtitle="Three ways code search is more efficient than your IDE"
                                 examples={exampleNotebooks}
-                                icon={<BookOutlineIcon />}
+                                icon={<Icon as={BookOutlineIcon} inline={false} />}
                                 {...props}
                             />
                         ) : (
@@ -179,7 +179,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 title="Search examples"
                                 subtitle="Find answers faster with code search across multiple repos and commits"
                                 examples={exampleQueries}
-                                icon={<MagnifyingGlassSearchIcon />}
+                                icon={<Icon as={MagnifyingGlassSearchIcon} inline={false} />}
                                 {...props}
                             />
                         )}

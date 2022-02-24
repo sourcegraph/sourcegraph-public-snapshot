@@ -34,6 +34,8 @@ import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 import * as React from 'react'
 
+import { Icon as CustomIcon } from '@sourcegraph/wildcard'
+
 import styles from './DocumentationIcon.module.scss'
 import { Tag } from './graphql'
 
@@ -130,7 +132,9 @@ function getDocumentationIconClassName(tag: Tag): string | undefined {
 export const DocumentationIcon: React.FunctionComponent<Props> = ({ tag, className = '' }) => {
     const Icon = getDocumentationIconComponent(tag)
     return (
-        <Icon
+        <CustomIcon
+            as={Icon}
+            inline={false}
             className={classNames(styles.documentationIcon, getDocumentationIconClassName(tag), className)}
             data-tooltip={tag}
         />

@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -101,14 +101,14 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                         }}
                     >
                         <span className={navItemStyles.linkContent}>
-                            <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
+                            <Icon className={navItemStyles.icon} as={toggleItem.icon} />
                             <span className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}>
                                 {toggleItem.content}
                             </span>
                             {isDropdownOpen ? (
-                                <ChevronUpIcon className={classNames('icon-inline', navItemStyles.icon)} />
+                                <Icon className={navItemStyles.icon} as={ChevronUpIcon} />
                             ) : (
-                                <ChevronDownIcon className={classNames('icon-inline', navItemStyles.icon)} />
+                                <Icon className={navItemStyles.icon} as={ChevronDownIcon} />
                             )}
                         </span>
                     </DropdownToggle>

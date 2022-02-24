@@ -4,7 +4,7 @@ import React from 'react'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 
@@ -34,7 +34,7 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
     return (
         <li data-tooltip="Create search context based on this query" data-delay={10000} className="nav-item mr-2">
             <ButtonLink to={toURL} className="text-decoration-none" variant="secondary" outline={true} size="sm">
-                <MagnifyIcon className="icon-inline mr-1" />
+                <Icon className="mr-1" as={MagnifyIcon} />
                 Create context
             </ButtonLink>
         </li>

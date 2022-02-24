@@ -12,7 +12,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -203,7 +203,7 @@ interface MigrationInvalidBannerProps {
 const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
     <Alert variant="danger">
         <p>
-            <AlertCircleIcon className="icon-inline mr-2" />
+            <Icon className="mr-2" as={AlertCircleIcon} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
@@ -247,7 +247,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngrad
 }) => (
     <Alert variant="warning">
         <p>
-            <WarningIcon className="icon-inline mr-2" />
+            <Icon className="mr-2" as={WarningIcon} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
@@ -304,9 +304,9 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
-                        <ArrowLeftBoldIcon className="icon-inline mr-1 text-danger" />
+                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} />
                     ) : (
-                        <ArrowRightBoldIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={ArrowRightBoldIcon} />
                     )}
                     {Math.floor(node.progress * 100)}%
                 </div>

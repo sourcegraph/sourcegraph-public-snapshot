@@ -21,6 +21,7 @@ import {
     useEventObservable,
     useObservable,
     Alert,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -237,7 +238,9 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 )}
                                 {isNotebookLoaded(latestNotebook) && (
                                     <>
-                                        <CheckCircleIcon
+                                        <Icon
+                                            as={CheckCircleIcon}
+                                            inline={false}
                                             className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                         />
                                         <span>

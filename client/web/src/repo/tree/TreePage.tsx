@@ -41,7 +41,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    useObservable,
+    ButtonGroup,
+    Link,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -359,7 +368,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <BookOpenBlankVariantIcon className="icon-inline" /> API docs
+                                                <Icon as={BookOpenBlankVariantIcon} /> API docs
                                             </Button>
                                         )}
                                         <Button
@@ -368,7 +377,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <SourceCommitIcon className="icon-inline" /> Commits
+                                            <Icon as={SourceCommitIcon} /> Commits
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
@@ -376,7 +385,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <SourceBranchIcon className="icon-inline" /> Branches
+                                            <Icon as={SourceBranchIcon} /> Branches
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
@@ -384,7 +393,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <TagIcon className="icon-inline" /> Tags
+                                            <Icon as={TagIcon} /> Tags
                                         </Button>
                                         <Button
                                             to={
@@ -398,7 +407,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <HistoryIcon className="icon-inline" /> Compare
+                                            <Icon as={HistoryIcon} /> Compare
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
@@ -406,7 +415,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <AccountIcon className="icon-inline" /> Contributors
+                                            <Icon as={AccountIcon} /> Contributors
                                         </Button>
                                         {codeIntelligenceEnabled && (
                                             <Button
@@ -415,7 +424,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <BrainIcon className="icon-inline" /> Code Intelligence
+                                                <Icon as={BrainIcon} /> Code Intelligence
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -426,7 +435,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <SettingsIcon className="icon-inline" /> Settings
+                                                <Icon as={SettingsIcon} /> Settings
                                             </Button>
                                         )}
                                     </ButtonGroup>

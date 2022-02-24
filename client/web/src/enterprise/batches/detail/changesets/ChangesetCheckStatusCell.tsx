@@ -4,6 +4,8 @@ import CloseCircleIcon from 'mdi-react/CloseCircleIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { ExternalChangesetFields, ChangesetCheckState } from '../../../../graphql-operations'
 
 export interface ChangesetCheckStatusCellProps {
@@ -32,7 +34,7 @@ export const ChangesetCheckStatusPending: React.FunctionComponent<{ className?: 
             className
         )}
     >
-        <TimerSandIcon data-tooltip="Check state is pending" />
+        <Icon as={TimerSandIcon} data-tooltip="Check state is pending" />
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -43,7 +45,7 @@ export const ChangesetCheckStatusPassed: React.FunctionComponent<{ className?: s
             className
         )}
     >
-        <CheckCircleIcon data-tooltip="All checks complete" />
+        <Icon as={CheckCircleIcon} data-tooltip="All checks complete" />
         <span className="text-muted">Passed</span>
     </div>
 )
@@ -54,7 +56,7 @@ export const ChangesetCheckStatusFailed: React.FunctionComponent<{ className?: s
             className
         )}
     >
-        <CloseCircleIcon data-tooltip="Some checks failed" />
+        <Icon as={CloseCircleIcon} data-tooltip="Some checks failed" />
         <span className="text-muted">Failed</span>
     </div>
 )

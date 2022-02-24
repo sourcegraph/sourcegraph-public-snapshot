@@ -4,7 +4,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
@@ -109,9 +109,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 >
                     <h5 className="flex-grow-1">{header}</h5>
                     {collapsed ? (
-                        <ChevronLeftIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={ChevronLeftIcon} />
                     ) : (
-                        <ChevronDownIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={ChevronDownIcon} />
                     )}
                 </Button>
 

@@ -23,6 +23,7 @@ import {
     ButtonLink,
     Button,
     PopoverTrigger,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -49,7 +50,7 @@ const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => 
 
 const PageNotFound: React.FunctionComponent = () => (
     <div>
-        <MapSearchIcon className="icon-inline" /> Page not found
+        <Icon as={MapSearchIcon} /> Page not found
     </div>
 )
 
@@ -236,7 +237,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             </FeedbackPrompt>
                         </div>
                         <h1>
-                            <BookOpenBlankVariantIcon className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={BookOpenBlankVariantIcon} />
                             API docs
                             <ProductStatusBadge
                                 status="experimental"
@@ -247,7 +248,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         <p>API documentation generated for all your code</p>
                         <Container>
                             <h2 className="text-muted mb-2">
-                                <MapSearchIcon className="icon-inline mr-2" />
+                                <Icon className="mr-2" as={MapSearchIcon} />
                                 Repository has no LSIF documentation data
                             </h2>
                             <p className="mt-3">

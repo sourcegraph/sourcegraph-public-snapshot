@@ -7,7 +7,7 @@ import {
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
@@ -123,7 +123,7 @@ const Header: React.FunctionComponent<{}> = () => (
 
 const EmptyList: React.FunctionComponent<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon inline={false} as={MapSearchIcon} className="icon" />
         <div className="pt-2">No batch specs have been created so far.</div>
     </div>
 )

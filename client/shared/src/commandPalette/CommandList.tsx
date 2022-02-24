@@ -17,7 +17,7 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
 import { memoizeObservable } from '@sourcegraph/common'
-import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -190,7 +190,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <PuzzleIcon className="icon-inline" />
+                        <Icon as={PuzzleIcon} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -389,8 +389,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
-    const MenuDropdownIcon = (): JSX.Element =>
-        isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
+    const MenuDropdownIcon = (): JSX.Element => (isOpen ? <Icon as={ChevronUpIcon} /> : <Icon as={ChevronDownIcon} />)
 
     return (
         <Button
@@ -401,7 +400,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
             variant={variant}
         >
-            <ConsoleIcon className="icon-inline-md" />
+            <Icon as={ConsoleIcon} size="md" />
 
             {showCaret && <MenuDropdownIcon />}
 

@@ -12,7 +12,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -109,7 +109,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -206,7 +206,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -303,7 +303,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -400,7 +400,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -497,7 +497,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"
@@ -594,7 +594,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
       href="#"
     >
       <svg
-        class="phabricator-icon mdi-icon icon-inline-md"
+        class="phabricator-icon mdi-icon iconInline iconInlineMd"
         data-tooltip="Repositories up-to-date"
         fill="currentColor"
         height="24"

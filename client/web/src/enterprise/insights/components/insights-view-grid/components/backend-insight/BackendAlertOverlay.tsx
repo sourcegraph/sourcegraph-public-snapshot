@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { AlertOverlay } from '../../../alert-overlay/AlertOverlay'
 
 interface BackendAlertOverLayProps {
@@ -16,7 +18,7 @@ export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverLayPro
         <AlertOverlay
             title="This insight is still being processed"
             description="Datapoints shown may be undercounted."
-            icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
+            icon={<Icon as={ProgressWrench} inline={false} className={classNames('mb-3')} size={33} />}
         />
     ) : hasNoData ? (
         <AlertOverlay title="No data to display" description="We couldn’t find any matches for this insight." />

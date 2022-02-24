@@ -6,6 +6,8 @@ import GateArrowRightIcon from 'mdi-react/GateArrowRightIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
 
 export interface ChangesetReviewStatusCellProps {
@@ -19,15 +21,15 @@ export const ChangesetReviewStatusCell: React.FunctionComponent<ChangesetReviewS
 }) => {
     switch (reviewState) {
         case ChangesetReviewState.APPROVED:
-            return <ChangesetReviewStatusApproved className={className} />
+            return <Icon inline={false} as={ChangesetReviewStatusApproved} className={className} />
         case ChangesetReviewState.CHANGES_REQUESTED:
-            return <ChangesetReviewStatusChangesRequested className={className} />
+            return <Icon inline={false} as={ChangesetReviewStatusChangesRequested} className={className} />
         case ChangesetReviewState.COMMENTED:
-            return <ChangesetReviewStatusCommented className={className} />
+            return <Icon inline={false} as={ChangesetReviewStatusCommented} className={className} />
         case ChangesetReviewState.DISMISSED:
-            return <ChangesetReviewStatusDismissed className={className} />
+            return <Icon as={ChangesetReviewStatusDismissed} inline={false} className={className} />
         case ChangesetReviewState.PENDING:
-            return <ChangesetReviewStatusPending className={className} />
+            return <Icon inline={false} as={ChangesetReviewStatusPending} className={className} />
     }
 }
 
@@ -38,7 +40,7 @@ export const ChangesetReviewStatusPending: React.FunctionComponent<{ className?:
             className
         )}
     >
-        <TimerSandIcon />
+        <Icon inline={false} as={TimerSandIcon} />
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -49,7 +51,7 @@ export const ChangesetReviewStatusDismissed: React.FunctionComponent<{ className
             className
         )}
     >
-        <GateArrowRightIcon />
+        <Icon inline={false} as={GateArrowRightIcon} />
         <span className="text-muted">Dismissed</span>
     </div>
 )
@@ -60,7 +62,7 @@ export const ChangesetReviewStatusCommented: React.FunctionComponent<{ className
             className
         )}
     >
-        <CommentOutlineIcon />
+        <Icon inline={false} as={CommentOutlineIcon} />
         <span className="text-muted">Commented</span>
     </div>
 )
@@ -73,7 +75,7 @@ export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<{ cl
             className
         )}
     >
-        <DeltaIcon />
+        <Icon inline={false} as={DeltaIcon} />
         <span className="text-muted">Changes requested</span>
     </div>
 )
@@ -84,7 +86,7 @@ export const ChangesetReviewStatusApproved: React.FunctionComponent<{ className?
             className
         )}
     >
-        <CheckCircleIcon />
+        <Icon as={CheckCircleIcon} inline={false} />
         <span className="text-muted">Approved</span>
     </div>
 )

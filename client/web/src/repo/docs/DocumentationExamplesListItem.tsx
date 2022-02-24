@@ -42,7 +42,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) =>
+        () =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: item.resource.repository.name,
@@ -87,10 +87,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     return (
         <div className={classNames('mt-2', styles.documentationExamplesListItem)}>
             <div className="p-2">
-                <RepoIcon
-                    repoName={item.resource.repository.name}
-                    className="icon-inline text-muted flex-shrink-0 mr-2"
-                />
+                <RepoIcon repoName={item.resource.repository.name} className="text-muted flex-shrink-0 mr-2" />
                 <RepoFileLink
                     repoName={item.resource.repository.name}
                     repoURL={item.resource.repository.url}

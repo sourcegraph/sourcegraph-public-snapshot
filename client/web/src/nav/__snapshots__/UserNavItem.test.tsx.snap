@@ -16,14 +16,14 @@ exports[`UserNavItem simple 1`] = `
       <div
         class="align-items-center d-flex"
       >
-        <div
-          class="userAvatar icon-inline avatar"
+        <span
+          class="iconInline userAvatar avatar"
           id="target-user-avatar"
         >
           ad
-        </div>
+        </span>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"

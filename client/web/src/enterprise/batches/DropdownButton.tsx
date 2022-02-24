@@ -11,6 +11,7 @@ import {
     MenuList,
     Position,
     MenuItem,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -139,7 +140,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                     </Button>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
-                            <ChevronDownIcon />
+                            <Icon inline={false} as={ChevronDownIcon} />
                             <VisuallyHidden>Actions</VisuallyHidden>
                         </MenuButton>
                     )}

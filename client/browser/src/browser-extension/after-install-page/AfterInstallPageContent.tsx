@@ -11,7 +11,7 @@ import React, { VideoHTMLAttributes } from 'react'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
@@ -58,7 +58,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </Link>
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <ExternalLinkIcon className="icon-inline" />
+                    Browser extension docs <Icon as={ExternalLinkIcon} />
                 </Link>
             </div>
 
@@ -101,29 +101,25 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             <h2 className="mb-4">Make it work on your codehost</h2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
                                 <h3 className={classNames('mb-3', styles.codeHostTitles)}>
-                                    <GithubIcon className={classNames('icon-inline', styles.codeHostLogo)} /> github.com
+                                    <Icon className={styles.codeHostLogo} as={GithubIcon} /> github.com
                                 </h3>
                                 <p className="m-0">
-                                    <CheckIcon className="icon-inline" /> No action required.Your extension works here
-                                    by default.
+                                    <Icon as={CheckIcon} /> No action required.Your extension works here by default.
                                 </p>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
                                 <h3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <GithubIcon className={classNames('icon-inline', styles.codeHostLogo)} /> GitHub
-                                        Enterprise
+                                        <Icon className={styles.codeHostLogo} as={GithubIcon} /> GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <GitlabIcon className={classNames('icon-inline', styles.codeHostLogo)} /> GitLab
+                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} /> GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <BitbucketIcon className={classNames('icon-inline', styles.codeHostLogo)} />{' '}
-                                        Bitbucket Server
+                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} /> Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <PhabricatorIcon className={classNames('icon-inline', styles.codeHostLogo)} />{' '}
-                                        Phabricator
+                                        <Icon className={styles.codeHostLogo} as={PhabricatorIcon} /> Phabricator
                                     </div>
                                 </h3>
                                 <p>Your extension needs explicit permissions to your code host:</p>
@@ -161,7 +157,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                             <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <LockIcon className="icon-inline" />
+                                    <Icon as={LockIcon} />
                                 </div>
                                 <p className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
@@ -209,7 +205,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                     <h2 className="mb-4">Additional resources</h2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <BookOpenPageVariantIcon className="icon-inline" />
+                            <Icon as={BookOpenPageVariantIcon} />
                         </div>
                         <p className="m-0 ml-3">
                             Read the{' '}

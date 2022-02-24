@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { OnboardingTourLanguage, useOnboardingTourState } from '../stores/onboardingTourState'
 
@@ -27,7 +27,7 @@ const Card: React.FunctionComponent<CardProps> = ({ title, children, onClose, cl
         <div className={styles.cardInner}>
             <header className={styles.cardHeader}>
                 <h3 className={classNames(styles.cardTitle)}>{title}</h3>
-                <CloseIcon onClick={onClose} size="1rem" />
+                <Icon as={CloseIcon} inline={false} onClick={onClose} size="1rem" />
             </header>
             {showDivider && <hr className={styles.divider} />}
             <div className="flex-grow-1">{children}</div>

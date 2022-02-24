@@ -5,7 +5,7 @@ import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
@@ -16,17 +16,17 @@ export interface CodeIntelStateIconProps {
 
 export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({ state, className }) =>
     state === LSIFUploadState.UPLOADING ? (
-        <FileUploadIcon className={className} />
+        <Icon as={FileUploadIcon} inline={false} className={className} />
     ) : state === LSIFUploadState.DELETING ? (
-        <CheckCircleIcon className={classNames('text-muted', className)} />
+        <Icon as={CheckCircleIcon} inline={false} className={classNames('text-muted', className)} />
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
-        <TimerSandIcon className={className} />
+        <Icon as={TimerSandIcon} inline={false} className={className} />
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (
-        <LoadingSpinner inline={false} className={className} />
+        <Icon as={LoadingSpinner} inline={false} className={className} />
     ) : state === LSIFUploadState.COMPLETED || state === LSIFIndexState.COMPLETED ? (
-        <CheckCircleIcon className={classNames('text-success', className)} />
+        <Icon inline={false} as={CheckCircleIcon} className={classNames('text-success', className)} />
     ) : state === LSIFUploadState.ERRORED || state === LSIFIndexState.ERRORED ? (
-        <AlertCircleIcon className={classNames('text-danger', className)} />
+        <Icon as={AlertCircleIcon} inline={false} className={classNames('text-danger', className)} />
     ) : (
         <></>
     )

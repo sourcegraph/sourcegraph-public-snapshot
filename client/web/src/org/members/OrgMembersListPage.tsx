@@ -14,6 +14,7 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -109,7 +110,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                     {viewerCanAdminister && (
                         <Menu>
                             <MenuButton variant="secondary" outline={false} className={styles.memberMenu}>
-                                {loading ? <LoadingSpinner /> : <CogIcon />}
+                                {loading ? <LoadingSpinner /> : <Icon as={CogIcon} inline={false} />}
                                 <span aria-hidden={true}>▾</span>
                             </MenuButton>
 

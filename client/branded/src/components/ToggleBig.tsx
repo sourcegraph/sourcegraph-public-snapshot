@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import * as React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import styles from './ToggleBig.module.scss'
 
 interface Props {
@@ -99,7 +101,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
                     [styles.knobOn]: value,
                 })}
             >
-                {value && <Check size={16} className={styles.iconOn} />}
+                {value && <Icon inline={false} as={Check} size={16} className={styles.iconOn} />}
             </span>
             <span className={classNames(styles.text, { [styles.textOn]: value })}>
                 {value ? 'Enabled' : 'Disabled'}

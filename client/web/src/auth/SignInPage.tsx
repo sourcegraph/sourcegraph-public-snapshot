@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react'
 import { Redirect } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -81,7 +81,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                             >
                                 {provider.displayName === 'GitHub' && (
                                     <>
-                                        <GithubIcon className="icon-inline" />{' '}
+                                        <Icon as={GithubIcon} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}

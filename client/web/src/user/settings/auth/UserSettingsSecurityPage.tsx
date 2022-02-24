@@ -6,7 +6,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -306,8 +306,8 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
                                 </Button>
                                 {this.state.loading && (
-                                    <div className="icon-inline">
-                                        <LoadingSpinner />
+                                    <div>
+                                        <Icon as={LoadingSpinner} />
                                     </div>
                                 )}
                             </Form>

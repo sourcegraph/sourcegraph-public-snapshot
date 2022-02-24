@@ -24,7 +24,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -47,7 +47,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -250,7 +250,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -273,7 +273,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -431,7 +431,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
-                class="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -454,7 +454,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   title="github.com"
                 >
                   <svg
-                    class="mdi-icon icon-inline text-muted"
+                    class="mdi-icon iconInline text-muted"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -565,7 +565,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
-    class="loadingSpinner icon-inline m-1 test-loading-spinner"
+    class="iconInline loadingSpinner m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;
@@ -573,7 +573,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
-    class="loadingSpinner icon-inline m-1 test-loading-spinner"
+    class="iconInline loadingSpinner m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;

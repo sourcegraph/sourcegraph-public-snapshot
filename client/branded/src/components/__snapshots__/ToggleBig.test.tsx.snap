@@ -101,9 +101,9 @@ exports[`ToggleBig value is true 1`] = `
       <svg
         class="mdi-icon iconOn"
         fill="currentColor"
-        height="16"
+        height="24"
         viewBox="0 0 24 24"
-        width="16"
+        width="24"
       >
         <path
           d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"

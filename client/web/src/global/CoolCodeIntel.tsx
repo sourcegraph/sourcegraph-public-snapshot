@@ -47,6 +47,7 @@ import {
     Button,
     useObservable,
     Input,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -213,7 +214,7 @@ export const ReferencesList: React.FunctionComponent<
                             <h4>
                                 {activeLocation.resource.path}{' '}
                                 <Link to={activeLocation.url}>
-                                    <OpenInAppIcon className="icon-inline" />
+                                    <Icon as={OpenInAppIcon} />
                                 </Link>
                             </h4>
 
@@ -224,7 +225,7 @@ export const ReferencesList: React.FunctionComponent<
                                 data-tooltip="Close panel"
                                 data-placement="left"
                             >
-                                <CloseIcon className="icon-inline" />
+                                <Icon as={CloseIcon} />
                             </Button>
                         </CardHeader>
                         <SideBlob
@@ -364,9 +365,9 @@ const CollapsibleLocationList: React.FunctionComponent<{
                     <h4 className="px-1 py-0 mb-0">
                         {' '}
                         {isOpen ? (
-                            <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
                         {capitalize(props.name)}
                     </h4>
@@ -589,9 +590,9 @@ const RepoReferenceGroup: React.FunctionComponent<{
             >
                 <span className="p-0 mb-0">
                     {isOpen ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
 
                     <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
@@ -639,9 +640,9 @@ const ReferenceGroup: React.FunctionComponent<{
             >
                 <span className={styles.coolCodeIntelReferenceFilename}>
                     {isOpen ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     {highlighted.length === 2 ? (
                         <span>
@@ -733,7 +734,7 @@ const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (
                         data-tooltip="Close panel"
                         data-placement="left"
                     >
-                        <CloseIcon className="icon-inline" />
+                        <Icon as={CloseIcon} />
                     </Button>
                 </div>
             </div>

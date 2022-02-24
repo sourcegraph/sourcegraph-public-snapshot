@@ -7,7 +7,7 @@ import React from 'react'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { FileDecorator } from '../../tree/FileDecorator'
 
@@ -46,8 +46,8 @@ const TreeEntry: React.FunctionComponent<{
             )}
         >
             <span>
-                {isDirectory && <FolderOutlineIcon className="icon-inline mr-1" />}
-                {!isDirectory && <FileDocumentOutlineIcon className="icon-inline mr-1" />}
+                {isDirectory && <Icon className="mr-1" as={FolderOutlineIcon} />}
+                {!isDirectory && <Icon className="mr-1" as={FileDocumentOutlineIcon} />}
                 {name}
                 {isDirectory && '/'}
             </span>

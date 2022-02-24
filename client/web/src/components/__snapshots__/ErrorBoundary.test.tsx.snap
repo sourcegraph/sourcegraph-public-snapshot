@@ -8,7 +8,9 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
     <div
       class="icon"
     >
-      <alertcircleicon />
+      <alertcircleicon
+        class=""
+      />
     </div>
     <div
       class="title"
@@ -54,7 +56,9 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
     <div
       class="icon"
     >
-      <reloadicon />
+      <reloadicon
+        class=""
+      />
     </div>
     <div
       class="title"

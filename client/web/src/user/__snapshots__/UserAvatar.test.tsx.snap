@@ -2,21 +2,25 @@
 
 exports[`UserAvatar no avatar URL 1`] = `
 <DocumentFragment>
-  <div
-    class="userAvatar"
+  <span
+    class="iconInline userAvatar"
   >
     t
-  </div>
+  </span>
 </DocumentFragment>
 `;
 
 exports[`UserAvatar with avatar URL 1`] = `
 <DocumentFragment>
-  <img
-    alt=""
-    class="userAvatar"
-    role="presentation"
-    src="u"
-  />
+  <span
+    class="iconInline"
+  >
+    <img
+      alt=""
+      class="userAvatar"
+      role="presentation"
+      src="u"
+    />
+  </span>
 </DocumentFragment>
 `;

@@ -14,7 +14,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
@@ -199,7 +199,7 @@ export const PoliciesNode: FunctionComponent<PoliciesNodeProps> = ({ node: polic
 
         <span className={classNames(styles.button, 'd-none d-md-inline')}>
             <Link to={`./configuration/${policy.id}`} className="p-0">
-                <ChevronRightIcon />
+                <Icon as={ChevronRightIcon} inline={false} />
             </Link>
         </span>
     </>

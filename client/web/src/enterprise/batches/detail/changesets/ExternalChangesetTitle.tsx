@@ -2,6 +2,7 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -22,7 +23,7 @@ export const ExternalChangesetTitle: React.FunctionComponent<Props> = ({
         {externalURL?.url && (
             <>
                 {' '}
-                <ExternalLinkIcon size="1rem" />
+                <Icon as={ExternalLinkIcon} inline={false} size="1rem" />
             </>
         )}
     </LinkOrSpan>

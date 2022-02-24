@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { positionBottomRight } from '../../../../../components/context-menu/utils'
 import { InsightDashboard } from '../../../../../core/types'
@@ -45,7 +45,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 className={classNames(className, styles.triggerButton, 'btn-icon')}
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
-                <DotsVerticalIcon size={16} />
+                <Icon as={DotsVerticalIcon} inline={false} size={16} />
             </MenuButton>
 
             <MenuPopover portal={true} position={positionBottomRight}>

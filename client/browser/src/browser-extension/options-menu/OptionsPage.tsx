@@ -12,7 +12,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
 import styles from './OptionsPage.module.scss'
@@ -146,13 +146,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
-                        <EarthIcon className="icon-inline mr-2" />
+                        <Icon className="mr-2" as={EarthIcon} />
                         Sourcegraph Cloud
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
                     <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
-                        <BookOpenPageVariantIcon className="icon-inline mr-2" />
+                        <Icon className="mr-2" as={BookOpenPageVariantIcon} />
                         Documentation
                     </Link>
                 </div>
@@ -169,12 +169,12 @@ interface PermissionAlertProps {
 
 const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     name,
-    icon: Icon,
+    icon: AlertIcon,
     onClickGrantPermissions,
 }) => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
-            {Icon && <Icon className="icon-inline mr-2" />} <span>{name}</span>
+            {AlertIcon && <Icon className="mr-2" as={AlertIcon} />} <span>{name}</span>
         </h4>
         <p className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
@@ -188,7 +188,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
 const PrivateRepositoryAlert: React.FunctionComponent = () => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
-            <LockIcon className="icon-inline mr-2" />
+            <Icon className="mr-2" as={LockIcon} />
             Private repository
         </h4>
         <p>
@@ -217,7 +217,7 @@ const PrivateRepositoryAlert: React.FunctionComponent = () => (
 const SourcegraphCloudAlert: React.FunctionComponent = () => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
-            <CheckCircleOutlineIcon className="icon-inline mr-2" />
+            <Icon className="mr-2" as={CheckCircleOutlineIcon} />
             You're on Sourcegraph Cloud
         </h4>
         <p>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</p>

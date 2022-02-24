@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -78,7 +78,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
             <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon />
+                <Icon inline={false} as={CloseIcon} />
             </Button>
 
             <h2 className="mb-3">

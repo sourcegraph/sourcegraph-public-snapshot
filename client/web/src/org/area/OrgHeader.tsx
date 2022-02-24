@@ -3,7 +3,7 @@ import React from 'react'
 import { match } from 'react-router'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -76,7 +76,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true, isActive }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true, isActive }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -91,7 +91,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                                     }
                                                 >
                                                     <span>
-                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

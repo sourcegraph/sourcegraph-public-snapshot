@@ -2,7 +2,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -134,6 +134,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<BatchChangePrevi
     if (loading) {
         return (
             <div className="text-center">
+                <Icon className="mx-auto my-4" as={LoadingSpinner} />
                 <LoadingSpinner className="mx-auto my-4" />
             </div>
         )

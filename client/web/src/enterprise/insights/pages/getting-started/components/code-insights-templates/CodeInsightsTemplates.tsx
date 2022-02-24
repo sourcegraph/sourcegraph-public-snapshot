@@ -17,6 +17,7 @@ import {
     TabPanels,
     Tabs,
     TooltipController,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { InsightType } from '../../../../core/types'
@@ -216,7 +217,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
                 aria-label="Copy Docker command to clipboard"
                 variant="icon"
             >
-                <ContentCopyIcon size="1rem" className="icon-inline" />
+                <Icon size="1rem" as={ContentCopyIcon} />
             </Button>
         </CodeInsightsQueryBlock>
     )

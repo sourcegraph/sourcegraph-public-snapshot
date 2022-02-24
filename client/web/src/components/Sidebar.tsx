@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { useRouteMatch } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-import { AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
+import { AnchorLink, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -49,7 +49,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
     icon?: React.ComponentType<{ className?: string }>
     label?: string
     openByDefault?: boolean
-}> = ({ children, label, icon: Icon, openByDefault = false }) => {
+}> = ({ children, label, icon: CollpaseItemIcon, openByDefault = false }) => {
     const [isOpen, setOpen] = useState<boolean>(openByDefault)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
     return (
@@ -62,12 +62,12 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                 className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
             >
                 <span>
-                    {Icon && <Icon className="icon-inline mr-1" />} {label}
+                    {CollpaseItemIcon && <Icon className="mr-1" as={CollpaseItemIcon} />} {label}
                 </span>
                 {isOpen ? (
-                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
+                    <Icon className={styles.chevron} as={MenuUpIcon} />
                 ) : (
-                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
+                    <Icon className={styles.chevron} as={MenuDownIcon} />
                 )}
             </button>
             <Collapse id={label} isOpen={isOpen} className="border-top">

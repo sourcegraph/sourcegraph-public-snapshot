@@ -36,7 +36,9 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
     target="_blank"
   >
      t 
-    <openinnewicon />
+    <openinnewicon
+      class="iconInline"
+    />
   </a>
 </DocumentFragment>
 `;

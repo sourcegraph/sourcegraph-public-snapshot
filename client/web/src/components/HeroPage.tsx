@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
@@ -31,10 +31,10 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
             <div className={classNames(styles.icon, props.iconClassName)}>
                 {props.iconLinkTo ? (
                     <Link to={props.iconLinkTo}>
-                        <props.icon />
+                        <Icon as={props.icon} inline={false} />
                     </Link>
                 ) : (
-                    <props.icon />
+                    <Icon as={props.icon} inline={false} />
                 )}
             </div>
         )}

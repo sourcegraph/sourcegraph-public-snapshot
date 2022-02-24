@@ -13,6 +13,7 @@ import {
     Popover,
     PopoverContent,
     PopoverTrigger,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './ExecutionOptions.module.scss'
@@ -102,10 +103,10 @@ const ExecutionOption: React.FunctionComponent<ExecutionOptionProps> = props => 
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <InfoCircleOutlineIcon className="icon-inline ml-2" data-tooltip={props.disabledTooltip} tabIndex={0} />
+        <Icon className="ml-2" data-tooltip={props.disabledTooltip} tabIndex={0} as={InfoCircleOutlineIcon} />
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <InfoCircleOutlineIcon className="icon-inline" aria-hidden={true} />
+            <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>
     ) : null

@@ -1,7 +1,7 @@
 import TwitterIcon from 'mdi-react/TwitterIcon'
 import * as React from 'react'
 
-import { ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 export interface TweetFeedbackProps {
     score: number
@@ -26,7 +26,7 @@ export const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ fee
                     rel="noreferrer noopener"
                     variant="primary"
                 >
-                    <TwitterIcon className="icon-inline mr-2" />
+                    <Icon className="mr-2" as={TwitterIcon} />
                     Tweet feedback
                 </ButtonLink>
             </>

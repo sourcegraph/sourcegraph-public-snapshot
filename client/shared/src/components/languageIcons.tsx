@@ -23,7 +23,7 @@ import SassIcon from 'mdi-react/SassIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import React from 'react'
 
-import { IconProps } from './icons'
+import { Icon, IconProps } from '@sourcegraph/wildcard'
 
 interface Props extends IconProps {
     language: string
@@ -73,7 +73,7 @@ export const languageIcons: Record<string, MdiReactIconComponentType | undefined
     webassembly: undefined,
 }
 
-export const LanguageIcon: React.FunctionComponent<Props> = ({ language, size }) => {
+export const LanguageIcon: React.FunctionComponent<Props> = ({ language, size, inline, ref, ...rest }) => {
     const LanguageIconComponent = languageIcons[language] || WebIcon
-    return <LanguageIconComponent size={size} />
+    return <Icon as={LanguageIconComponent} size={size} {...rest} />
 }

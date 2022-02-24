@@ -4,7 +4,7 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Toggles.module.scss'
 
@@ -65,7 +65,6 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
         return () => subscription.unsubscribe()
     }, [onCheckboxToggled])
 
-    const Icon = props.icon
     const isActive = props.isActive && !disabledRule
 
     const interactiveProps = interactive
@@ -92,7 +91,7 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             aria-label={`${props.title} toggle`}
             {...interactiveProps}
         >
-            <Icon className="icon-inline" />
+            <Icon as={props.icon} />
         </Button>
     )
 }

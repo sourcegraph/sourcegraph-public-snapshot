@@ -20,6 +20,7 @@ import {
     MenuList,
     MenuHeader,
     Position,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -247,11 +248,9 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
             onClick={() => onStarToggle(viewerHasStarred)}
         >
             {viewerHasStarred ? (
-                <StarIcon
-                    className={classNames('icon-inline', styles.notebookStarIcon, styles.notebookStarIconActive)}
-                />
+                <Icon className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} as={StarIcon} />
             ) : (
-                <StarOutlineIcon className={classNames('icon-inline', styles.notebookStarIcon)} />
+                <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

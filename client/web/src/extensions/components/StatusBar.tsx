@@ -10,7 +10,7 @@ import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionI
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Badge, Button, useObservable, Link, ButtonLink } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -108,7 +108,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         onClick={onNegativeClicked}
                         variant="link"
                     >
-                        <ChevronLeftIcon className="icon-inline" />
+                        <Icon as={ChevronLeftIcon} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -144,7 +144,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         onClick={onPositiveClicked}
                         variant="link"
                     >
-                        <ChevronRightIcon className="icon-inline" />
+                        <Icon as={ChevronRightIcon} />
                     </Button>
                 )}
             </ErrorBoundary>

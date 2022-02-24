@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable, Link } from '@sourcegraph/wildcard'
+import { useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
@@ -64,7 +64,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
 
     const emptyDisplay = (
         <EmptyPanelContainer className="align-items-center text-muted">
-            <FileCodeIcon className="mb-2" size="2rem" />
+            <Icon as={FileCodeIcon} inline={false} className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
         </EmptyPanelContainer>
     )

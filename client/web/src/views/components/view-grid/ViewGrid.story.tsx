@@ -5,7 +5,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK } from '../../mocks/charts-content'
@@ -33,7 +33,7 @@ export const SimpleViewGrid: Story = () => (
             actions={
                 <>
                     <Button variant="icon" className="p-1">
-                        <FilterOutlineIcon size="1rem" />
+                        <Icon as={FilterOutlineIcon} size="1rem" inline={false} />
                     </Button>
                     <ContextMenu />
                 </>
@@ -48,7 +48,7 @@ function ContextMenu() {
     return (
         <Menu>
             <MenuButton as={Button} variant="icon" className="p-1">
-                <DotsVerticalIcon size={16} />
+                <Icon as={DotsVerticalIcon} inline={false} size={16} />
             </MenuButton>
             <MenuPopover>
                 <MenuItems className="d-block position-static dropdown-menu">

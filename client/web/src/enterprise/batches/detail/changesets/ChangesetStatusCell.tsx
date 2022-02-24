@@ -9,6 +9,8 @@ import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 
 import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
@@ -26,25 +28,25 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
 }) => {
     switch (state) {
         case ChangesetState.FAILED:
-            return <ChangesetStatusError className={className} />
+            return <Icon inline={false} as={ChangesetStatusError} className={className} />
         case ChangesetState.RETRYING:
-            return <ChangesetStatusRetrying className={className} />
+            return <Icon inline={false} as={ChangesetStatusRetrying} className={className} />
         case ChangesetState.SCHEDULED:
-            return <ChangesetStatusScheduled className={className} id={id} />
+            return <Icon inline={false} as={ChangesetStatusScheduled} className={className} />
         case ChangesetState.PROCESSING:
-            return <ChangesetStatusProcessing className={className} />
+            return <Icon inline={false} as={ChangesetStatusProcessing} className={className} />
         case ChangesetState.UNPUBLISHED:
-            return <ChangesetStatusUnpublished className={className} />
+            return <Icon inline={false} as={ChangesetStatusUnpublished} className={className} />
         case ChangesetState.OPEN:
-            return <ChangesetStatusOpen className={className} />
+            return <Icon inline={false} as={ChangesetStatusOpen} className={className} />
         case ChangesetState.DRAFT:
-            return <ChangesetStatusDraft className={className} />
+            return <Icon inline={false} as={ChangesetStatusDraft} className={className} />
         case ChangesetState.CLOSED:
-            return <ChangesetStatusClosed className={className} />
+            return <Icon inline={false} as={ChangesetStatusClosed} className={className} />
         case ChangesetState.MERGED:
-            return <ChangesetStatusMerged className={className} />
+            return <Icon inline={false} as={ChangesetStatusMerged} className={className} />
         case ChangesetState.DELETED:
-            return <ChangesetStatusDeleted className={className} />
+            return <Icon inline={false} as={ChangesetStatusDeleted} className={className} />
     }
 }
 
@@ -60,7 +62,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<ChangesetStatus
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourceBranchIcon />
+        <Icon inline={false} as={SourceBranchIcon} />
         {label}
     </div>
 )
@@ -69,7 +71,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<ChangesetStatusIconP
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-danger" />
+        <Icon inline={false} as={SourcePullIcon} />
         {label}
     </div>
 )
@@ -78,7 +80,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<ChangesetStatusIconP
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourceMergeIcon className="text-merged" />
+        <Icon inline={false} as={SourceMergeIcon} />
         {label}
     </div>
 )
@@ -87,7 +89,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<ChangesetStatusIconPro
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-success" />
+        <Icon inline={false} as={SourcePullIcon} />
         {label}
     </div>
 )
@@ -96,7 +98,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<ChangesetStatusIconPr
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon />
+        <Icon inline={false} as={SourcePullIcon} />
         {label}
     </div>
 )
@@ -105,7 +107,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<ChangesetStatusIcon
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <DeleteIcon />
+        <Icon inline={false} as={DeleteIcon} />
         {label}
     </div>
 )
@@ -114,7 +116,7 @@ export const ChangesetStatusError: React.FunctionComponent<ChangesetStatusIconPr
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <AlertCircleIcon className="text-danger" />
+        <Icon inline={false} as={AlertCircleIcon} />
         {label}
     </div>
 )
@@ -123,7 +125,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<ChangesetStatusIco
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <AutorenewIcon />
+        <Icon inline={false} as={AutorenewIcon} />
         {label}
     </div>
 )
@@ -133,7 +135,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<ChangesetStatusI
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <TimerSandIcon />
+        <Icon inline={false} as={TimerSandIcon} />
         {label}
     </div>
 )
@@ -143,7 +145,7 @@ export const ChangesetStatusArchived: React.FunctionComponent<ChangesetStatusIco
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <ArchiveIcon />
+        <Icon inline={false} as={ArchiveIcon} />
         {label}
     </div>
 )

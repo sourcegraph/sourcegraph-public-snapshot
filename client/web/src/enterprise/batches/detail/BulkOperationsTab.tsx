@@ -16,7 +16,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import {
@@ -67,7 +67,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
 
 const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon as={MapSearchIcon} inline={false} className="icon" />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
 )

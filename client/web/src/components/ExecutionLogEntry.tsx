@@ -3,7 +3,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
+import { LoadingSpinner, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -37,9 +37,9 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 {logEntry.exitCode !== null && (
                     <>
                         {logEntry.exitCode === 0 ? (
-                            <CheckCircleIcon className="text-success mr-1" />
+                            <Icon as={CheckCircleIcon} className="text-success mr-1" />
                         ) : (
-                            <AlertCircleIcon className="text-danger mr-1" />
+                            <Icon as={AlertCircleIcon} className="text-danger mr-1" />
                         )}
                     </>
                 )}

@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
@@ -34,10 +34,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                 className="px-2 d-flex align-items-center cursor-pointer"
                 aria-label="Quick help for search"
             >
-                <HelpCircleOutlineIcon
-                    className="test-search-help-dropdown-button-icon icon-inline"
-                    aria-hidden="true"
-                />
+                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
             </DropdownToggle>
             <DropdownMenu right={true} className="pb-0">
                 <DropdownItem header={true}>
@@ -122,7 +119,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <ExternalLinkIcon className="icon-inline small" /> All search keywords
+                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">

@@ -3,7 +3,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchButton.module.scss'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
@@ -33,7 +33,7 @@ export const SearchButton: React.FunctionComponent<Props> = ({
             aria-label="Search"
             variant="primary"
         >
-            <SearchIcon className="icon-inline" aria-hidden="true" />
+            <Icon aria-hidden="true" as={SearchIcon} />
         </Button>
         {!hideHelpButton && (
             <SearchHelpDropdownButton isSourcegraphDotCom={isSourcegraphDotCom} telemetryService={telemetryService} />

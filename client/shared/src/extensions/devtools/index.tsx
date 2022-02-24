@@ -3,7 +3,7 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
-import { Button, Card, Tab, TabList, TabPanel, TabPanels, Tabs, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, Card, Tab, TabList, TabPanel, TabPanels, Tabs, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
 import { ExtensionsControllerProps } from '../controller'
@@ -65,7 +65,7 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <>
         <Button id="extension-status-popover" className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
+            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
         </Button>
         <UncontrolledPopover
             placement="auto-end"

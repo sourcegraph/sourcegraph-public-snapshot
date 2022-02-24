@@ -9,7 +9,7 @@ import { map } from 'rxjs/operators'
 
 import { PathMatch, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useObservable } from '@sourcegraph/wildcard'
+import { useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange } from '../../serialize'
@@ -120,8 +120,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically fill the inputs, copy a
-                    Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
+                    <Icon as={InfoCircleOutlineIcon} /> To automatically fill the inputs, copy a Sourcegraph file URL,
+                    select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
             <label htmlFor={`file-location-input-${id}`}>File location</label>

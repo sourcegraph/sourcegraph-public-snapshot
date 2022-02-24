@@ -9,6 +9,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
+import { Icon } from '../Icon'
 import { Link } from '../Link'
 
 import { PageHeader } from './PageHeader'
@@ -30,7 +31,7 @@ export const BasicHeader: Story = () => (
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
             <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <SearchIcon className="icon-inline" /> Button with icon
+                <Icon as={SearchIcon} className="icon-inline" /> Button with icon
             </Button>
         }
     />
@@ -63,7 +64,7 @@ export const ComplexHeader: Story = () => (
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">
-                    <PlusIcon className="icon-inline" /> Create
+                    <Icon as={PlusIcon} className="icon-inline" /> Create
                 </Button>
             </div>
         }

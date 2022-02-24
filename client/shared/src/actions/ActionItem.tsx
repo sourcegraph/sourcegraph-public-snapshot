@@ -6,7 +6,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext, Icon } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { ActionContribution, Evaluated } from '../api/protocol'
@@ -291,7 +291,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             >
                 {content}{' '}
                 {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                    <OpenInNewIcon className={this.props.iconClassName} />
+                    <Icon as={OpenInNewIcon} className={this.props.iconClassName} />
                 )}
                 {showLoadingSpinner && (
                     <div className={styles.loader} data-testid="action-item-spinner">

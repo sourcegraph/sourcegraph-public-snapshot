@@ -4,6 +4,8 @@ import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useMemo } from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { BlockProps } from '../..'
 
 import { BlockMenuAction } from './NotebookBlockMenu'
@@ -32,28 +34,28 @@ export const useCommonBlockMenuActions = ({
             {
                 type: 'button',
                 label: 'Duplicate',
-                icon: <ContentDuplicateIcon className="icon-inline" />,
+                icon: <Icon as={ContentDuplicateIcon} />,
                 onClick: onDuplicateBlock,
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 type: 'button',
                 label: 'Move Up',
-                icon: <ArrowUpIcon className="icon-inline" />,
+                icon: <Icon as={ArrowUpIcon} />,
                 onClick: id => onMoveBlock(id, 'up'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 type: 'button',
                 label: 'Move Down',
-                icon: <ArrowDownIcon className="icon-inline" />,
+                icon: <Icon as={ArrowDownIcon} />,
                 onClick: id => onMoveBlock(id, 'down'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 type: 'button',
                 label: 'Delete',
-                icon: <DeleteIcon className="icon-inline" />,
+                icon: <Icon as={DeleteIcon} />,
                 onClick: onDeleteBlock,
                 keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
             },

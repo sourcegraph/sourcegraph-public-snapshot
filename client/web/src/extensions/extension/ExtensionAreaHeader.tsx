@@ -7,7 +7,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -200,7 +200,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="mt-4">
                             <ul className="nav nav-tabs">
                                 {props.navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
                                         condition(props) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -210,7 +210,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Icon, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'
@@ -44,7 +44,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
             <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon />
+                <Icon as={CloseIcon} inline={false} />
             </Button>
 
             <h2 className="text-danger">Delete ”{dashboard.title}”</h2>

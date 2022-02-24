@@ -3,7 +3,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React from 'react'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -68,7 +68,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
             <Menu>
                 <MenuButton size="sm" variant="secondary" outline={true}>
-                    {enablementFilterToLabel[enablementFilter]} <MenuDownIcon className="icon-inline" />
+                    {enablementFilterToLabel[enablementFilter]} <Icon as={MenuDownIcon} />
                 </MenuButton>
                 <MenuList>
                     <MenuItem onSelect={showAll} disabled={enablementFilter === 'all'}>

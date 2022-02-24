@@ -4,7 +4,7 @@ import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
 import * as View from '../../../../../views'
@@ -53,7 +53,7 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
                 <div className="d-flex align-items-center mb-1">
                     Live preview
                     <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
-                        <RefreshIcon size="1rem" />
+                        <Icon as={RefreshIcon} inline={false} size="1rem" />
                     </Button>
                 </div>
             )}

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -47,7 +47,7 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
         </span>
         <span>
             <Link to={`./uploads/${node.id}`}>
-                <ChevronRightIcon />
+                <Icon inline={false} as={ChevronRightIcon} />
             </Link>
         </span>
     </>

@@ -4,6 +4,7 @@ import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { getChangesetScheduleEstimate } from '../backend'
 
@@ -86,7 +87,7 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<Props> = ({ id, l
             onFocus={onMouseOver}
             data-tooltip={tooltip}
         >
-            <TimerOutlineIcon />
+            <Icon as={TimerOutlineIcon} inline={false} />
             {label}
         </div>
     )
@@ -97,7 +98,7 @@ const StaticChangesetStatusScheduled: React.FunctionComponent<Pick<Props, 'label
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <TimerOutlineIcon />
+        <Icon as={TimerOutlineIcon} inline={false} />
         {label}
     </div>
 )

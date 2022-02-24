@@ -9,6 +9,7 @@ import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
 
 import styles from './PageSelector.module.scss'
 
@@ -88,11 +89,11 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
                             <li key={key}>
                                 <PageButton {...omit(page, 'type')}>
                                     {page.type === 'previous' && (
-                                        <ChevronLeftIcon className="icon-inline" aria-hidden={true} />
+                                        <Icon as={ChevronLeftIcon} className="icon-inline" aria-hidden={true} />
                                     )}
                                     <span className={classNames(shouldShrink && 'd-none')}>{page.content}</span>
                                     {page.type === 'next' && (
-                                        <ChevronRightIcon className="icon-inline" aria-hidden={true} />
+                                        <Icon as={ChevronRightIcon} className="icon-inline" aria-hidden={true} />
                                     )}
                                 </PageButton>
                             </li>

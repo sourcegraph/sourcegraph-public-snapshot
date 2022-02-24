@@ -15,6 +15,7 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -191,7 +192,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                     {viewerCanAdminister && (
                         <Menu>
                             <MenuButton variant="secondary" outline={false} className={styles.inviteMenu}>
-                                {loading ? <LoadingSpinner /> : <CogIcon />}
+                                {loading ? <LoadingSpinner /> : <Icon as={CogIcon} inline={false} />}
                                 <span aria-hidden={true}>▾</span>
                             </MenuButton>
 
