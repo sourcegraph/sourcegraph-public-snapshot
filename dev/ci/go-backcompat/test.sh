@@ -151,8 +151,7 @@ ${flakefile}
 
 EOF
   )
-  echo "$annotation"
   mkdir -p ./annotations/
-  echo "$annotation" >'./annotations/go-backcompat.md'
+  echo "$annotation" | tee './annotations/go-backcompat.md'
   exit 1
 fi
