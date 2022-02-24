@@ -13,7 +13,9 @@ import (
 )
 
 func Test_getExtraScopes(t *testing.T) {
+	dotcom := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(dotcom)
 	u := database.NewStrictMockUserStore()
 	u.CurrentUserAllowedExternalServicesFunc.SetDefaultReturn(conf.ExternalServiceModeAll, nil)
 	db := database.NewStrictMockDB()
