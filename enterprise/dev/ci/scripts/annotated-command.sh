@@ -21,7 +21,13 @@ eval "$cmd"
 exit_code="$?"
 
 # Check for annotations left behind by the command
+echo "--- Uploading annotations"
 for file in "$annotation_dir"/*; do
+  if [ ! -f "$file" ]; then
+    continue
+  fi
+
+  echo "handling $file"
   name=$(basename "$file")
   annotate_file_opts=$annotate_opts
 
