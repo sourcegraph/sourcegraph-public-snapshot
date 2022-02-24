@@ -580,7 +580,8 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
+			bk.SoftFail(1))
 	}
 }
 
