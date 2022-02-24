@@ -21,18 +21,22 @@ func TestCheckTestPlan(t *testing.T) {
 			name:     "has test plan",
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			want: checkResult{
+				Reviewed: false,
 				TestPlan: "I have a plan!",
 			},
 		},
 		{
 			name:     "no test plan",
 			bodyFile: "testdata/pull_request_body/no-plan.md",
-			want:     checkResult{},
+			want: checkResult{
+				Reviewed: false,
+			},
 		},
 		{
 			name:     "complicated test plan",
 			bodyFile: "testdata/pull_request_body/has-plan-fancy.md",
 			want: checkResult{
+				Reviewed: false,
 				TestPlan: `This is a plan!
 Quite lengthy
 
@@ -47,6 +51,7 @@ And a little complicated; there's also the following reasons:
 			name:     "inline test plan",
 			bodyFile: "testdata/pull_request_body/inline-plan.md",
 			want: checkResult{
+				Reviewed: false,
 				TestPlan: `This is a plan!
 Quite lengthy
 
@@ -57,6 +62,14 @@ And a little complicated; there's also the following reasons:
 3. C`,
 			},
 		},
+		{
+			name:     "no review required",
+			bodyFile: "testdata/pull_request_body/no-review-required.md",
+			want: checkResult{
+				Reviewed: true,
+				TestPlan: "I have a plan! No review required: this is a bot PR",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -65,21 +78,20 @@ And a little complicated; there's also the following reasons:
 
 			got := checkPR(context.Background(), nil, &EventPayload{
 				PullRequest: PullRequestPayload{
-					Body:           string(body),
-					ReviewComments: 1, // Happy path
+					Body: string(body),
 				},
 			}, checkOpts{
 				ValidateReviews: false,
 			})
 			assert.Equal(t, tt.want.HasTestPlan(), got.HasTestPlan())
-			t.Log("got.Explanation: ", got.TestPlan)
+			t.Log("got.TestPlan: ", got.TestPlan)
 			if tt.want.TestPlan == "" {
 				assert.Empty(t, got.TestPlan)
 			} else {
 				assert.True(t, strings.Contains(got.TestPlan, tt.want.TestPlan),
 					cmp.Diff(got.TestPlan, tt.want.TestPlan))
 			}
-			assert.True(t, got.Reviewed) // Check this is always set
+			assert.Equal(t, tt.want.Reviewed, got.Reviewed)
 		})
 	}
 }
