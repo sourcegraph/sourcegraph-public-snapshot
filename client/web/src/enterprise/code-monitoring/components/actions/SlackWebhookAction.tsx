@@ -63,19 +63,27 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
         SendTestSlackWebhookResult,
         SendTestSlackWebhookVariables
     >(SEND_TEST_SLACK_WEBHOOK)
-    const isSendTestButtonDisabled = loading || !monitorName || called
+    const isSendTestButtonDisabled = loading || (called && !error) || !monitorName || !url
 
     const onSendTestMessage = useCallback(async () => {
-        await sendTestMessage({
-            variables: {
-                namespace: authenticatedUser.id,
-                description: monitorName,
-                slackWebhook: { url, enabled: true, includeResults: false },
-            },
-        })
+        try {
+            await sendTestMessage({
+                variables: {
+                    namespace: authenticatedUser.id,
+                    description: monitorName,
+                    slackWebhook: { url, enabled: true, includeResults: false },
+                },
+            })
+        } catch {
+            // Ignore errors, they will be handled with the error state from useMutation
+        }
     }, [authenticatedUser.id, monitorName, sendTestMessage, url])
 
-    const sendTestEmailButtonText = loading ? 'Sending message...' : called ? 'Test message sent!' : 'Send test message'
+    const sendTestEmailButtonText = loading
+        ? 'Sending message...'
+        : called && !error
+        ? 'Test message sent!'
+        : 'Send test message'
 
     return (
         <ActionEditor
@@ -134,17 +142,17 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                     disabled={isSendTestButtonDisabled}
                     onClick={onSendTestMessage}
                     size="sm"
-                    data-testid="send-test-email"
+                    data-testid="send-test-slack-webhook"
                 >
                     {sendTestEmailButtonText}
                 </Button>
-                {called && !loading && (
+                {called && !error && !loading && monitorName && url && (
                     <Button
                         className="p-0"
                         onClick={onSendTestMessage}
                         variant="link"
                         size="sm"
-                        data-testid="send-test-email-again"
+                        data-testid="send-test-slack-webhook-again"
                     >
                         Send again
                     </Button>
@@ -154,8 +162,13 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                         Please provide a name for the code monitor before sending a test
                     </div>
                 )}
+                {!url && (
+                    <div className={classNames('mt-2', styles.testActionError)}>
+                        Please provide a webhook URL before sending a test
+                    </div>
+                )}
                 {error && (
-                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-slack-webhook-error">
                         {error.message}
                     </div>
                 )}

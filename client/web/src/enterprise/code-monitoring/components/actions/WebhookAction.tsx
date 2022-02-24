@@ -62,21 +62,25 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     const [sendTestMessage, { loading, error, called }] = useMutation<SendTestWebhookResult, SendTestWebhookVariables>(
         SEND_TEST_WEBHOOK
     )
-    const isSendTestButtonDisabled = loading || !monitorName || called
+    const isSendTestButtonDisabled = loading || !monitorName || !url || (called && !error)
 
     const onSendTestMessage = useCallback(async () => {
-        await sendTestMessage({
-            variables: {
-                namespace: authenticatedUser.id,
-                description: monitorName,
-                webhook: { url, enabled: true, includeResults: false },
-            },
-        })
+        try {
+            await sendTestMessage({
+                variables: {
+                    namespace: authenticatedUser.id,
+                    description: monitorName,
+                    webhook: { url, enabled: true, includeResults: false },
+                },
+            })
+        } catch {
+            // Ignore errors, they will be handled with the error state from useMutation
+        }
     }, [authenticatedUser.id, monitorName, sendTestMessage, url])
 
     const sendTestEmailButtonText = loading
         ? 'Calling webhook...'
-        : called
+        : called && !error
         ? 'Test call completed!'
         : 'Call webhook with test payload'
 
@@ -130,17 +134,17 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                     disabled={isSendTestButtonDisabled}
                     onClick={onSendTestMessage}
                     size="sm"
-                    data-testid="send-test-email"
+                    data-testid="send-test-webhook"
                 >
                     {sendTestEmailButtonText}
                 </Button>
-                {called && !loading && (
+                {called && !error && !loading && monitorName && url && (
                     <Button
                         className="p-0"
                         onClick={onSendTestMessage}
                         variant="link"
                         size="sm"
-                        data-testid="send-test-email-again"
+                        data-testid="send-test-webhook-again"
                     >
                         Test again
                     </Button>
@@ -150,8 +154,13 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                         Please provide a name for the code monitor before making a test call
                     </div>
                 )}
+                {!url && (
+                    <div className={classNames('mt-2', styles.testActionError)}>
+                        Please provide a webhook URL before making a test call
+                    </div>
+                )}
                 {error && (
-                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-webhook-error">
                         {error.message}
                     </div>
                 )}

@@ -1,14 +1,16 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
+import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'
-import { ActionProps } from '../FormActionArea'
+import { ActionProps, MonitorAction } from '../FormActionArea'
 
-import { SlackWebhookAction } from './SlackWebhookAction'
+import { SEND_TEST_SLACK_WEBHOOK, SlackWebhookAction } from './SlackWebhookAction'
 
 describe('SlackWebhookAction', () => {
     const props: ActionProps = {
@@ -147,6 +149,108 @@ describe('SlackWebhookAction', () => {
             includeResults: false,
             id: '5',
             url: 'https://example.com',
+        })
+    })
+
+    describe('Send test message', () => {
+        const mockAction: MonitorAction = {
+            __typename: 'MonitorSlackWebhook',
+            enabled: false,
+            includeResults: false,
+            id: '5',
+            url: 'https://example.com',
+        }
+
+        const mockedVars: SendTestSlackWebhookVariables = {
+            namespace: props.authenticatedUser.id,
+            description: props.monitorName,
+            slackWebhook: {
+                enabled: true,
+                includeResults: false,
+                url: mockAction.url,
+            },
+        }
+
+        test('disabled if no webhook url set', () => {
+            const { getByTestId } = render(
+                <MockedTestProvider>
+                    <SlackWebhookAction {...props} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+        })
+
+        test('disabled if no monitor name set', () => {
+            const { getByTestId } = render(
+                <MockedTestProvider>
+                    <SlackWebhookAction {...props} monitorName="" />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+        })
+
+        test('send test message, success', async () => {
+            const mockedResponse: MockedResponse<SendTestSlackWebhookResult> = {
+                request: {
+                    query: SEND_TEST_SLACK_WEBHOOK,
+                    variables: mockedVars,
+                },
+                result: { data: { triggerTestSlackWebhookAction: { alwaysNil: null } } },
+            }
+
+            const { getByTestId, queryByTestId } = render(
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <SlackWebhookAction {...props} action={mockAction} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+            expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Send test message')
+
+            userEvent.click(getByTestId('send-test-slack-webhook'))
+            expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Sending message...')
+
+            await waitForNextApolloResponse()
+
+            expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Test message sent!')
+            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+
+            expect(queryByTestId('send-test-slack-webhook')).toBeInTheDocument()
+            expect(queryByTestId('test-email-slack-webhook')).not.toBeInTheDocument()
+        })
+
+        test('send test message, error', async () => {
+            const mockedResponse: MockedResponse<SendTestSlackWebhookResult> = {
+                request: {
+                    query: SEND_TEST_SLACK_WEBHOOK,
+                    variables: mockedVars,
+                },
+                error: new Error('An error occurred'),
+            }
+
+            const { getByTestId, queryByTestId } = render(
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <SlackWebhookAction {...props} action={mockAction} />
+                </MockedTestProvider>
+            )
+
+            userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+            expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Send test message')
+
+            userEvent.click(getByTestId('send-test-slack-webhook'))
+
+            await waitForNextApolloResponse()
+
+            expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Send test message')
+
+            expect(getByTestId('send-test-slack-webhook')).toBeEnabled()
+
+            expect(queryByTestId('send-test-slack-webhook-again')).not.toBeInTheDocument()
+            expect(queryByTestId('test-slack-webhook-error')).toBeInTheDocument()
         })
     })
 })
