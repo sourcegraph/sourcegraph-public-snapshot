@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// newAppProvider creates a new GitHub Provider with a client that creates a new installation access token.
+// newAppProvider creates a new authz Provider for GitHub App.
 func newAppProvider(urn string, baseURL *url.URL, appID, privateKey string, installationID int64) (*Provider, error) {
 	pkey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
