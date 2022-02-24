@@ -307,10 +307,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				repoRev.Revs = revs[:0]
 			}
 
-			defer func() {
-				log15.Info("reporevs", "repo", repo.Name, "revs", repoRev.Revs)
-			}()
-
 			// Check if the repository actually has the revisions that the user specified.
 			for _, rev := range revs {
 				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
