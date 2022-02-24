@@ -431,3 +431,72 @@ func TestUnmarshalOrgID(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestRemoveOrganization(t *testing.T) {
+	orgs := database.NewMockOrgStore()
+
+	mockedOrg := types.Org{ID: 1, Name: "bla"}
+	orgIDString := string(MarshalOrgID(mockedOrg.ID))
+	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	featureFlags := database.NewMockFeatureFlagStore()
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("Returns an error if feature flag is not enabled", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `
+				mutation RemoveOrganization($organization: ID!) {
+					removeOrganization(organization: $organization) {
+						alwaysNil
+					}
+				}
+				`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+			},
+			ExpectedResult: `
+				{
+					"removeOrganization": null
+				}
+				`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "hard deleting organization is not supported",
+					Path:    []interface{}{string("removeOrganization")},
+				},
+			},
+		})
+	})
+
+	t.Run("Org is successfully deleted when feature flag is enabled", func(t *testing.T) {
+		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `
+				mutation RemoveOrganization($organization: ID!) {
+					removeOrganization(organization: $organization) {
+						alwaysNil
+					}
+				}
+				`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+			},
+			ExpectedResult: `
+				{
+					"removeOrganization": null
+				}
+				`,
+		})
+	})
+
+}
