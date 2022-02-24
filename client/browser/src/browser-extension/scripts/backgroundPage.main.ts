@@ -22,6 +22,7 @@ import { isDefined, fetchCache } from '@sourcegraph/common'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
@@ -29,7 +30,8 @@ import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL } from '../../shared/util/context'
+import { EventLogger } from '../../shared/tracking/eventLogger'
+import { getExtensionVersion, getPlatformName, observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
 import { checkUrlPermissions } from '../util'
@@ -46,6 +48,9 @@ const INTERVAL_FOR_SOURCEGRPAH_URL_CHECK = 5 /* minutes */ * 60 * 1000
 assertEnvironment('BACKGROUND')
 
 initSentry('background')
+
+// Whether current extension is built in dev mode
+const IS_DEVELOPMENT_VERSION = getExtensionVersion().startsWith('0.0.0')
 
 /**
  * For each tab, we store a flag if we know that we are on a private
@@ -112,11 +117,23 @@ async function main(): Promise<void> {
 
     // Open installation page after the extension was installed
     browser.runtime.onInstalled.addListener(event => {
-        if (event.reason === 'install') {
-            browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
-                console.error('Error opening after-install page:', error)
-            })
+        if (event.reason !== 'install') {
+            return
         }
+        if (!IS_DEVELOPMENT_VERSION) {
+            subscriptions.add(
+                observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+                    const eventLogger = new EventLogger(requestGraphQL, sourcegraphURL)
+                    eventLogger
+                        .log('BrowserExtensionInstalled')
+                        .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
+                })
+            )
+        }
+
+        browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
+            console.error('Error opening after-install page:', error)
+        })
     })
 
     // Mirror the managed sourcegraphURL to sync storage
@@ -231,7 +248,18 @@ async function main(): Promise<void> {
         ) => ReturnType<BackgroundPageApi[typeof method]>)(message.payload, sender)
     })
 
-    await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
+    await browser.runtime.setUninstallURL(
+        createURLWithUTM(
+            new URL('https://about.sourcegraph.com/uninstall'),
+            IS_DEVELOPMENT_VERSION
+                ? {
+                      utm_source: getPlatformName(),
+                      utm_campaign: 'browser-extension-uninstall',
+                      utm_content: getExtensionVersion(),
+                  }
+                : {}
+        ).href
+    )
 
     // The `popup=true` param is used by the options page to determine if it's
     // loaded in the popup or in th standalone options page.
