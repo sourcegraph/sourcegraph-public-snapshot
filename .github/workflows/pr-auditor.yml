@@ -1,0 +1,19 @@
+name: pr-auditor
+on:
+  pull_request:
+    types: [ closed, edited, opened ]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with: { repository: 'sourcegraph/sourcegraph' }
+      - uses: actions/setup-go@v2
+        with: { go-version: '1.17' }
+
+      - run: ./dev/pr-auditor/check-pr.sh
+        env:
+          GITHUB_EVENT_PATH: ${{ env.GITHUB_EVENT_PATH }}
+          GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
+          GITHUB_RUN_URL: https://github.com/sourcegraph/infrastructure/actions/runs/${{ github.run_id }}
