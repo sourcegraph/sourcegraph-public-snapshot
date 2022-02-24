@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -37,7 +38,7 @@ var allLintTargets = lintTargets{
 		FlagSet: lintGoFlagSet,
 		Linters: []lint.Runner{
 			lint.RunScript("Go format", "dev/check/gofmt.sh"),
-			lint.RunScript("Go generate", "dev/check/go-generate.sh"),
+			lintGoGenerate,
 			lint.RunScript("Go lint", "dev/check/go-lint.sh"),
 			lint.RunScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh"),
 			lint.RunScript("Go enterprise imports in OSS", "dev/check/go-enterprise-import.sh"),
@@ -133,4 +134,30 @@ func lintDockerfiles() lint.Runner {
 			Err: combinedErrors,
 		}
 	}
+}
+
+func lintGoGenerate(ctx context.Context) *lint.Report {
+	start := time.Now()
+	err := generateDo(ctx, nil, generateQuiet)
+	if err != nil {
+		return &lint.Report{
+			Header:   "Go generate check",
+			Duration: time.Since(start),
+			Err:      err,
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")
+	out, err := cmd.CombinedOutput()
+	r := lint.Report{
+		Header:   "Go generate check",
+		Duration: time.Since(start),
+	}
+	if err != nil {
+		r.Err = err
+		r.Output = string(out)
+		return &r
+	}
+
+	return &r
 }
