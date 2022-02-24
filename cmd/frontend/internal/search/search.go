@@ -232,13 +232,11 @@ LOOP:
 
 	if alert != nil {
 		var pqs []streamhttp.ProposedQuery
-		if proposed := alert.ProposedQueries; proposed != nil {
-			for _, pq := range proposed {
-				pqs = append(pqs, streamhttp.ProposedQuery{
-					Description: pq.Description,
-					Query:       pq.QueryString(),
-				})
-			}
+		for _, pq := range alert.ProposedQueries {
+			pqs = append(pqs, streamhttp.ProposedQuery{
+				Description: pq.Description,
+				Query:       pq.QueryString(),
+			})
 		}
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
 			Title:           alert.Title,
