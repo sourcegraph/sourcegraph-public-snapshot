@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -200,6 +203,64 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		commitsNumber := len(results.Results)
 		if commitsNumber != 1 {
 			t.Fatalf("Should have access to 1 commit but got %d", commitsNumber)
+		}
+	})
+
+	commitAccessTests := []struct {
+		name      string
+		revision  string
+		hasAccess bool
+	}{
+		{
+			name:     "direct access to inaccessible commit",
+			revision: "87440329a7bae580b90280aaaafdc14ee7c1f8ef",
+		},
+		{
+			name:      "direct access to accessible commit",
+			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
+			hasAccess: true,
+		},
+		{
+			name:     "direct access to inaccessible commit-2",
+			revision: "d9d835aa4b08e1dcb06a21a6dffe6e44f0a141d1",
+		},
+	}
+
+	for _, test := range commitAccessTests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := userClient.GitGetCommitMessage(repoName, test.revision)
+			if err != nil {
+				if test.hasAccess {
+					t.Fatal(err)
+				}
+			} else {
+				if !test.hasAccess {
+					t.Fatal("No error during accessing restricted commit")
+				}
+			}
+		})
+	}
+
+	t.Run("archive repo", func(t *testing.T) {
+		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, repoName)
+		response, err := userClient.GetWithHeaders(url, map[string][]string{"Accept": {"application/zip"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if response.StatusCode == http.StatusOK {
+			t.Fatalf("Should not be able to get an archive of repo with enabled sub-repo perms")
+		}
+	})
+
+	t.Run("code intel search", func(t *testing.T) {
+		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@8574314b8de445ec652cab87cbaa1a8dbe6ba6c4")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, file := range result.Results {
+			if strings.HasPrefix(file.File.Name, "hack") {
+				t.Fatal("Should not find references for restricted files")
+			}
 		}
 	})
 }
