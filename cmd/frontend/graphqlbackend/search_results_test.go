@@ -7,13 +7,11 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -28,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -98,11 +95,6 @@ func TestSearchResults(t *testing.T) {
 		})
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { textsearch.MockSearchFilesInRepos = nil }()
-
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
@@ -130,20 +122,8 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { symbol.MockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := atomic.NewBool(false)
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
-			calledSearchFilesInRepos.Store(true)
-			repo := types.MinimalRepo{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo, "dir/file", 123)
-			return []result.Match{fm}, &streaming.Stats{}, nil
-		}
-		defer func() { textsearch.MockSearchFilesInRepos = nil }()
-
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
 		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if !calledSearchFilesInRepos.Load() {
-			t.Error("!calledSearchFilesInRepos")
-		}
 		if calledSearchSymbols {
 			t.Error("calledSearchSymbols")
 		}
@@ -170,20 +150,8 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { symbol.MockSearchSymbols = nil }()
 
-		calledSearchFilesInRepos := atomic.NewBool(false)
-		textsearch.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
-			calledSearchFilesInRepos.Store(true)
-			repo := types.MinimalRepo{ID: 1, Name: "repo"}
-			fm := mkFileMatch(repo, "dir/file", 123)
-			return []result.Match{fm}, &streaming.Stats{}, nil
-		}
-		defer func() { textsearch.MockSearchFilesInRepos = nil }()
-
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if !calledSearchFilesInRepos.Load() {
-			t.Error("!calledSearchFilesInRepos")
-		}
 		if calledSearchSymbols {
 			t.Error("calledSearchSymbols")
 		}
@@ -331,7 +299,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -344,24 +312,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestLonger(t *testing.T) {
-	N := 2
-	noise := time.Nanosecond
-	for dt := time.Millisecond + noise; dt < time.Hour; dt += time.Millisecond {
-		dt2 := longer(N, dt)
-		if dt2 < time.Duration(N)*dt {
-			t.Fatalf("longer(%v)=%v < 2*%v, want more", dt, dt2, dt)
-		}
-		if strings.Contains(dt2.String(), ".") {
-			t.Fatalf("longer(%v).String() = %q contains an unwanted decimal point, want a nice round duration", dt, dt2)
-		}
-		lowest := 2 * time.Second
-		if dt2 < lowest {
-			t.Fatalf("longer(%v) = %v < %s, too short", dt, dt2, lowest)
-		}
 	}
 }
 
@@ -540,12 +490,10 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: database.NewMockDB(),
-				SearchResults: &SearchResults{
-					Stats:   tt.fields.searchResultsCommon,
-					Matches: tt.fields.results,
-					Alert:   tt.fields.alert,
-				},
+				db:          database.NewMockDB(),
+				Stats:       tt.fields.searchResultsCommon,
+				Matches:     tt.fields.results,
+				SearchAlert: tt.fields.alert,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -692,7 +640,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal("Results:", err)
 			}
 			if tt.wantAlert {
-				if results.SearchResults.Alert == nil {
+				if results.SearchAlert == nil {
 					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
@@ -893,92 +841,6 @@ func TestSubRepoFiltering(t *testing.T) {
 			if len(rr.Matches) != tt.wantCount {
 				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
 			}
-		})
-	}
-}
-
-func Test_searchResultsToRepoNodes(t *testing.T) {
-	cases := []struct {
-		matches []result.Match
-		res     string
-		err     string
-	}{{
-		matches: []result.Match{
-			&result.RepoMatch{Name: "repo_a"},
-		},
-		res: `"repo:^repo_a$"`,
-	}, {
-		matches: []result.Match{
-			&result.RepoMatch{Name: "repo_a", Rev: "main"},
-		},
-		res: `"repo:^repo_a$@main"`,
-	}, {
-		matches: []result.Match{
-			&result.FileMatch{},
-		},
-		err: "expected type",
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.res, func(t *testing.T) {
-			nodes, err := searchResultsToRepoNodes(tc.matches)
-			if err != nil {
-				require.Contains(t, err.Error(), tc.err)
-				return
-			}
-			require.Equal(t, tc.res, query.Q(nodes).String())
-		})
-	}
-}
-
-func Test_searchResultsToFileNodes(t *testing.T) {
-	cases := []struct {
-		matches []result.Match
-		res     string
-		err     string
-	}{{
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_a",
-					},
-					Path: "my/file/path.txt",
-				},
-			},
-		},
-		res: `(and "repo:^repo_a$" "file:^my/file/path\\.txt$")`,
-	}, {
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_a",
-					},
-					InputRev: func() *string { s := "main"; return &s }(),
-					Path:     "my/file/path1.txt",
-				},
-			},
-			&result.FileMatch{
-				File: result.File{
-					Repo: types.MinimalRepo{
-						Name: "repo_b",
-					},
-					Path: "my/file/path2.txt",
-				},
-			},
-		},
-		res: `(and "repo:^repo_a$@main" "file:^my/file/path1\\.txt$") (and "repo:^repo_b$" "file:^my/file/path2\\.txt$")`,
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.res, func(t *testing.T) {
-			nodes, err := searchResultsToFileNodes(tc.matches)
-			if err != nil {
-				require.Contains(t, err.Error(), tc.err)
-				return
-			}
-			require.Equal(t, tc.res, query.Q(nodes).String())
 		})
 	}
 }

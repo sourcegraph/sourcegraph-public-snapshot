@@ -212,16 +212,16 @@ func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		return nil, errors.Wrap(err, "failed to list external service repo ids")
 	}
 
-	var errs errors.MultiError
+	var errs error
 	for _, id := range toDelete {
 		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
-			errors.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+			errs = errors.Append(errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
 		} else {
 			deleted = append(deleted, api.RepoID(id))
 		}
 	}
 
-	return deleted, errs.ErrorOrNil()
+	return deleted, errs
 }
 
 const listExternalServiceReposNotInQuery = `

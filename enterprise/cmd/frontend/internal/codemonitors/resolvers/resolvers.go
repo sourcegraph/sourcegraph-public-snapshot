@@ -927,6 +927,28 @@ func (m *monitorTriggerEvent) Status() (string, error) {
 	return "", errors.Errorf("unknown status: %s", m.State)
 }
 
+func (m *monitorTriggerEvent) Query() *string {
+	return m.TriggerJob.QueryString
+}
+
+func (m *monitorTriggerEvent) ResultCount() int32 {
+	var count int
+	for _, res := range m.TriggerJob.SearchResults {
+		var highlightCount int
+		if res.MessagePreview != nil {
+			highlightCount = len(res.MessagePreview.Highlights)
+		} else if res.DiffPreview != nil {
+			highlightCount = len(res.DiffPreview.Highlights)
+		}
+		if highlightCount > 0 {
+			count += highlightCount
+		} else {
+			count += 1
+		}
+	}
+	return int32(count)
+}
+
 func (m *monitorTriggerEvent) Message() *string {
 	return m.FailureMessage
 }

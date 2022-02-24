@@ -5,6 +5,7 @@ import (
 	"math"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -81,7 +82,24 @@ func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisi
 	return matches
 }
 
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, errors.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
+}
+
+var MockReposContainingPath func() ([]*result.FileMatch, error)
+
 func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+	if MockReposContainingPath != nil {
+		return MockReposContainingPath()
+	}
 	// Use a max FileMatchLimit to ensure we get all the repo matches we
 	// can. Setting it to len(repos) could mean we miss some repos since
 	// there could be for example len(repos) file matches in the first repo
@@ -105,7 +123,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	newArgs.UseFullDeadline = true
 
 	globalSearch := newArgs.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}
@@ -114,11 +132,34 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}
-	matches, _, err := textsearch.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
+
+	agg := streaming.NewAggregatingStream()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	if newArgs.Mode != search.SearcherOnly {
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			return request.Search(ctx, agg)
+		})
+	}
+
+	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+	g.Go(func() error {
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
+	})
+
+	err = g.Wait()
+
+	matches, matchesErr := matchesToFileMatches(agg.Results)
+	if matchesErr != nil && err == nil {
+		err = errors.Wrap(matchesErr, "reposContainingPath failed to convert results")
+	}
+
 	if err != nil {
 		return nil, err
 	}
-	return matches, err
+	return matches, nil
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset

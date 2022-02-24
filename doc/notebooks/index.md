@@ -46,7 +46,6 @@ We're still actively developing Notebooks while in Beta and we'd love your [feed
 
 <div class="cta-group">
   <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
-  <a class="btn" href="quickstart">Language Insight Quickstart</a>
 </div>
 
 ## Explanations

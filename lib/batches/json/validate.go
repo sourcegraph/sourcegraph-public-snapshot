@@ -11,7 +11,7 @@ import (
 // If the validation is successful the validated input is unmarshalled into the
 // target.
 func UnmarshalValidate(schema string, input []byte, target interface{}) error {
-	var errs *errors.MultiError
+	var errs error
 	if err := jsonschema.Validate(schema, input); err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -20,5 +20,5 @@ func UnmarshalValidate(schema string, input []byte, target interface{}) error {
 		errs = errors.Append(errs, err)
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }

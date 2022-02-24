@@ -22,7 +22,7 @@ Up migrations will happen automatically in development on service startup. In pr
 
 To create a new migration file, run the following command.
 
-```
+```sh
 $ sg migration add -db=<db_name> <my_migration_name>
 Migration files created
  Up query file: ~/migrations/codeintel/1644260831/up.sql

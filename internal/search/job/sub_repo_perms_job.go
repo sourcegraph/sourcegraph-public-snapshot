@@ -31,7 +31,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 
 	var (
 		mu   sync.Mutex
-		errs = &errors.MultiError{}
+		errs error
 	)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
@@ -49,7 +49,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}
-	return alert, errs.ErrorOrNil()
+	return alert, errs
 }
 
 func (s *subRepoPermsFilterJob) Name() string {
@@ -64,7 +64,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	}
 
 	a := actor.FromContext(ctx)
-	errs := &errors.MultiError{}
+	var errs error
 
 	// Filter matches in place
 	filtered := matches[:0]
@@ -104,7 +104,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 
 	}
 
-	if errs.Len() == 0 {
+	if errs == nil {
 		return filtered, nil
 	}
 
