@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { useApolloClient } from '@apollo/client'
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
-
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-api/code-insights-gql-backend'
-import { GET_INSIGHTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsights'
-import { GET_INSIGHTS_SUBJECTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsightSubjects'
-import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
+import { ReachableInsight } from '../../../../../core/backend/code-insights-backend-types'
+import {
+    InsightsDashboardType,
+    InsightsDashboardScope,
+    CustomInsightDashboard,
+    InsightExecutionType,
+    InsightType,
+} from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -37,123 +37,85 @@ const dashboard: CustomInsightDashboard = {
     },
 }
 
-const ORG_1_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 100,
-    settings: {
-        'searchInsights.insight.testOrg1graphQLTypesMigration': {
-            title:
-                '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-        'searchInsights.insight.testOrg1graphQLTypesMigration1': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-        'searchInsights.insight.testOrg1graphQLTypesMigration2': {
-            title: '[Test ORG 1] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
+const mockInsights: ReachableInsight[] = [
+    {
+        id: 'searchInsights.insight.personalGraphQLTypesMigration',
+        title: '[Personal] Migration to new GraphQL TS types',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+        series: [],
+        step: { weeks: 6 },
+        owner: {
+            id: 'user_test_id',
+            name: 'test',
         },
     },
-    subject: {
-        __typename: 'Org' as const,
-        name: 'test organization 1',
-        displayName: 'Test organization 1 Test organization 1 Test organization 1',
-        viewerCanAdminister: true,
-        id: 'test_org_1_id',
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
+        title:
+            '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+        series: [],
+        step: { weeks: 6 },
+        owner: {
+            id: 'test_org_1_id',
+            name: 'Test organization 1 Test organization 1 Test organization 1',
+        },
     },
-}
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration1',
+        title: '[Test ORG 1] Migration to new GraphQL TS types',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+        series: [],
+        step: { weeks: 6 },
+        owner: {
+            id: 'test_org_1_id',
+            name: 'Test organization 1 Test organization 1 Test organization 1',
+        },
+    },
+    {
+        id: 'searchInsights.insight.testOrg1graphQLTypesMigration2',
+        title: '[Test ORG 1] Migration to new GraphQL TS types',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+        series: [],
+        step: { weeks: 6 },
+        owner: {
+            id: 'test_org_1_id',
+            name: 'Test organization 1 Test organization 1 Test organization 1',
+        },
+    },
+    {
+        id: 'searchInsights.insight.testOrg2graphQLTypesMigration',
+        title: '[Test ORG 2] Migration to new GraphQL TS types',
+        repositories: ['github.com/sourcegraph/sourcegraph'],
+        series: [],
+        step: { weeks: 6 },
+        owner: {
+            id: 'test_org_2_id',
+            name: 'Test organization 2',
+        },
+    },
+].map(insight => ({
+    ...insight,
+    dashboardReferenceCount: 0,
+    otherThreshold: 0,
+    query: '',
+    type: InsightExecutionType.Backend,
+    viewType: InsightType.SearchBased,
+    visibility: 'global',
+}))
 
-const ORG_2_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 101,
-    settings: {
-        'searchInsights.insight.testOrg2graphQLTypesMigration': {
-            title: '[Test ORG 2] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-    },
-    subject: {
-        __typename: 'Org' as const,
-        name: 'test organization 2',
-        displayName: 'Test organization 2',
-        viewerCanAdminister: true,
-        id: 'test_org_2_id',
-    },
-}
-
-const USER_SETTINGS: ConfiguredSubjectOrError = {
-    lastID: 102,
-    settings: {
-        'searchInsights.insight.personalGraphQLTypesMigration': {
-            title: '[Personal] Migration to new GraphQL TS types',
-            repositories: ['github.com/sourcegraph/sourcegraph'],
-            series: [],
-            step: { weeks: 6 },
-        },
-    },
-    subject: {
-        __typename: 'User' as const,
-        id: 'user_test_id',
-        username: 'testusername',
-        displayName: 'test',
-        viewerCanAdminister: true,
-    },
-}
-
-const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
-    subjects: [ORG_1_SETTINGS, ORG_2_SETTINGS, USER_SETTINGS],
-    final: {
-        // Naive merging of subject settings file for testing UI.
-        ...ORG_1_SETTINGS.settings,
-        ...ORG_2_SETTINGS.settings,
-        ...USER_SETTINGS.settings,
-    },
+const codeInsightsBackend = {
+    getReachableInsights: () => of(mockInsights),
+    getDashboardSubjects: () => of(undefined),
+    assignInsightsToDashboard: () => undefined,
 }
 
 add('AddInsightModal', () => {
-    const apolloClient = useApolloClient()
     const [open, setOpen] = useState<boolean>(true)
 
-    const codeInsightsBackend = new CodeInsightsGqlBackend(apolloClient)
-    const mocks: MockedResponse<Record<string, any>>[] = [
-        {
-            request: {
-                query: GET_INSIGHTS_GQL,
-                variables: {},
-            },
-            result: {
-                data: {
-                    insightViews: {
-                        nodes: [],
-                    },
-                },
-            },
-        },
-        {
-            request: {
-                query: GET_INSIGHTS_SUBJECTS_GQL,
-                variables: {},
-            },
-            result: {
-                data: {},
-            },
-        },
-    ]
-
-    // apolloClient.clearStore()
-
     return (
-        <MockedProvider mocks={mocks}>
-            <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-                {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
-            </CodeInsightsBackendContext.Provider>
-        </MockedProvider>
+        <CodeInsightsBackendContext.Provider value={codeInsightsBackend as any}>
+            {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
+        </CodeInsightsBackendContext.Provider>
     )
 })
