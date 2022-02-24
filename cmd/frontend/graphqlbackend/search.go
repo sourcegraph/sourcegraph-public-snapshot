@@ -81,7 +81,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	return &searchResolver{
 		db:           db,
 		SearchInputs: inputs,
-		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
@@ -95,9 +94,6 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
-
-	// stream if non-nil will send all search events we receive down it.
-	stream streaming.Sender
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
