@@ -1,6 +1,7 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { useRef, useState } from 'react'
 
-import { dataOrThrowErrors, getDocumentNode, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
@@ -8,6 +9,10 @@ import {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,
     PreciseCodeIntelForLocationFields,
+    LoadAdditionalReferencesResult,
+    LoadAdditionalReferencesVariables,
+    LoadAdditionalImplementationsResult,
+    LoadAdditionalImplementationsVariables,
 } from '../graphql-operations'
 
 import {
@@ -42,81 +47,112 @@ export const usePreciseCodeIntel = ({
     variables,
     options,
 }: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
+    const [referenceData, setReferenceData] = useState<PreciseCodeIntelForLocationFields>()
+
+    const isFirstRender = useRef(true)
+
+    console.log('isFirstRender:', isFirstRender.current)
     const { data, error, loading, fetchMore } = useQuery<
         UsePreciseCodeIntelForPositionResult,
         UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
         variables,
-        notifyOnNetworkStatusChange: true,
-        fetchPolicy: options?.fetchPolicy,
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+        skip: !isFirstRender.current,
+        onCompleted: result => {
+            console.log('On completed called!!!!')
+            if (isFirstRender.current) {
+                const lsifData = result ? getLsifData({ data: result }) : undefined
+                setReferenceData(lsifData)
+                isFirstRender.current = false
+            }
+        },
     })
 
-    const lsifData = data ? getLsifData({ data, error }) : undefined
+    const [fetchAdditionalReferences, additionalReferencesResult] = useLazyQuery<
+        LoadAdditionalReferencesResult,
+        LoadAdditionalReferencesVariables & ConnectionQueryArguments
+    >(LOAD_ADDITIONAL_REFERENCES_QUERY, {
+        fetchPolicy: 'no-cache',
+        onCompleted: result => {
+            const previousData = referenceData
 
-    const fetchMoreReferences = async (): Promise<void> => {
-        const cursor = lsifData?.references.pageInfo?.endCursor
+            const newReferenceData = result.repository?.commit?.blob?.lsif?.references
 
-        await fetchMore({
-            query: getDocumentNode(LOAD_ADDITIONAL_REFERENCES_QUERY),
+            if (!previousData || !newReferenceData) {
+                return result
+            }
+
+            setReferenceData({
+                implementations: previousData.implementations,
+                definitions: previousData.definitions,
+                hover: previousData.hover,
+                references: {
+                    ...newReferenceData,
+                    nodes: [...previousData.references.nodes, ...newReferenceData.nodes],
+                },
+            })
+        },
+    })
+    console.log('additionalReferencesResult', additionalReferencesResult)
+
+    const [fetchAdditionalImplementations, additionalImplementationsResult] = useLazyQuery<
+        LoadAdditionalImplementationsResult,
+        LoadAdditionalImplementationsVariables & ConnectionQueryArguments
+    >(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, {
+        fetchPolicy: 'no-cache',
+        onCompleted: result => {
+            const previousData = referenceData
+
+            const newImplementationsData = result.repository?.commit?.blob?.lsif?.implementations
+
+            if (!previousData || !newImplementationsData) {
+                return result
+            }
+
+            setReferenceData({
+                references: previousData.references,
+                definitions: previousData.definitions,
+                hover: previousData.hover,
+                implementations: {
+                    ...newImplementationsData,
+                    nodes: [...previousData.implementations.nodes, ...newImplementationsData.nodes],
+                },
+            })
+        },
+    })
+
+    const fetchMoreReferences = (): void => {
+        const cursor = referenceData?.references.pageInfo?.endCursor || null
+
+        fetchAdditionalReferences({
             variables: {
                 ...variables,
                 ...{ afterReferences: cursor },
             },
-            updateQuery: (previousResult, { fetchMoreResult }) => {
-                if (!fetchMoreResult) {
-                    return previousResult
-                }
-
-                const previousData = getLsifData({ data: previousResult })
-                const previousReferencesNodes = previousData.references.nodes
-
-                const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                fetchMoreData.implementations = previousData.implementations
-                fetchMoreData.definitions = previousData.definitions
-                fetchMoreData.hover = previousData.hover
-                fetchMoreData.references.nodes.unshift(...previousReferencesNodes)
-
-                return fetchMoreResult
-            },
         })
     }
 
-    const fetchMoreImplementations = async (): Promise<void> => {
-        const cursor = lsifData?.implementations.pageInfo?.endCursor
+    const fetchMoreImplementations = (): void => {
+        const cursor = referenceData?.implementations.pageInfo?.endCursor || null
 
-        await fetchMore({
-            query: getDocumentNode(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY),
+        fetchAdditionalImplementations({
             variables: {
                 ...variables,
                 ...{ afterImplementations: cursor },
-            },
-            updateQuery: (previousResult, { fetchMoreResult }) => {
-                if (!fetchMoreResult) {
-                    return previousResult
-                }
-
-                const previousData = getLsifData({ data: previousResult })
-                const previousImplementationsNodes = previousData.implementations.nodes
-
-                const fetchMoreData = getLsifData({ data: fetchMoreResult })
-                fetchMoreData.references = previousData.references
-                fetchMoreData.definitions = previousData.definitions
-                fetchMoreData.hover = previousData.hover
-                fetchMoreData.implementations.nodes.unshift(...previousImplementationsNodes)
-
-                return fetchMoreResult
             },
         })
     }
 
     return {
-        lsifData,
+        lsifData: referenceData,
         loading,
         error,
         fetchMoreReferences,
         fetchMoreImplementations,
-        referencesHasNextPage: lsifData ? lsifData.references.pageInfo.endCursor !== null : false,
-        implementationsHasNextPage: lsifData ? lsifData.implementations.pageInfo.endCursor !== null : false,
+        referencesHasNextPage: referenceData ? referenceData.references.pageInfo.endCursor !== null : false,
+        implementationsHasNextPage: referenceData ? referenceData.implementations.pageInfo.endCursor !== null : false,
     }
 }
 
