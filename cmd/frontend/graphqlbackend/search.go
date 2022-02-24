@@ -40,8 +40,8 @@ type SearchImplementer interface {
 	Inputs() run.SearchInputs
 }
 
-// NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+// NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
+func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	settings := args.Settings
 	if settings == nil {
 		var err error
@@ -77,7 +77,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
