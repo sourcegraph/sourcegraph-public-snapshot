@@ -223,7 +223,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	mockQueryResolver := resolvermocks.NewMockQueryResolver()
 	mockResolver := resolvermocks.NewMockResolver()
-	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), nil)
+	resolver := NewQueryResolver(mockQueryResolver, mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
 
 	offset := int32(-1)
 	args := &gql.LSIFDiagnosticsArgs{
