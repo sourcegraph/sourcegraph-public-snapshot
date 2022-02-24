@@ -31,11 +31,6 @@ import (
 )
 
 func TestServeStream_empty(t *testing.T) {
-	mock := &mockSearchResolver{
-		done: make(chan struct{}),
-	}
-	mock.Close()
-
 	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
 
@@ -223,30 +218,4 @@ func mkRepoMatch(id int) *result.RepoMatch {
 		ID:   api2.RepoID(id),
 		Name: api2.RepoName(fmt.Sprintf("repo%d", id)),
 	}
-}
-
-type mockSearchResolver struct {
-	done   chan struct{}
-	c      streaming.Sender
-	inputs *run.SearchInputs
-}
-
-func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-h.done:
-		return &graphqlbackend.SearchResultsResolver{}, nil
-	}
-}
-
-func (h *mockSearchResolver) Close() {
-	close(h.done)
-}
-
-func (h *mockSearchResolver) Inputs() run.SearchInputs {
-	if h.inputs == nil {
-		return run.SearchInputs{}
-	}
-	return *h.inputs
 }
