@@ -33,7 +33,7 @@ func newAppProvider(urn string, baseURL *url.URL, appID, privateKey string, inst
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
 
-			// // TODO(cloud-saas): Cache the installation access token until it expires, see
+			// TODO(cloud-saas): Cache the installation access token until it expires, see
 			// https://sourcegraph.atlassian.net/browse/CLOUD-255
 			token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 			if err != nil {

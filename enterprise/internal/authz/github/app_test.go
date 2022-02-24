@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/go-github/v31/github"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,7 +31,8 @@ func TestNewAppProvider(t *testing.T) {
 					Repositories: []*github.Repository{},
 				}
 
-				respJson, _ := json.Marshal(token)
+				respJson, err := json.Marshal(token)
+				require.NoError(t, err)
 
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(respJson)
@@ -37,9 +40,8 @@ func TestNewAppProvider(t *testing.T) {
 				srvHit = true
 				gotHeader := r.Header.Get("Authorization")
 				wantHeader := "Bearer 1234"
-				if gotHeader != wantHeader {
-					t.Fatalf("wanted authorization header %s, got %s", wantHeader, gotHeader)
-				}
+
+				assert.Equal(t, wantHeader, gotHeader)
 			}
 		}))
 
@@ -54,19 +56,20 @@ func TestNewAppProvider(t *testing.T) {
 			},
 		}
 
-		baseURL, _ := url.Parse(ghConnection.Url)
+		baseURL, err := url.Parse(ghConnection.Url)
+		require.NoError(t, err)
 
 		const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
-		provider, _ := newAppProvider(ghConnection.URN, baseURL, "1234", bogusKey, 1234)
+		provider, err := newAppProvider(ghConnection.URN, baseURL, "1234", bogusKey, 1234)
+		require.NoError(t, err)
 
-		cli, _ := provider.client()
+		cli, err := provider.client()
+		require.NoError(t, err)
 
 		// call any endpoint so that test server can check Authorization header
 		cli.ListTeamMembers(context.Background(), "anyOwner", "anyTeam", 0)
 
-		if !srvHit {
-			t.Fatal("did not hit server endpoint")
-		}
+		assert.True(t, srvHit, "hit server endpoint")
 	})
 }

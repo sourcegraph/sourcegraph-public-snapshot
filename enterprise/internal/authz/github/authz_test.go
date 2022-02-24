@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,15 +25,10 @@ func TestNewAuthzProviders(t *testing.T) {
 			[]schema.AuthProviders{},
 			false,
 		)
-		if len(providers) != 0 {
-			t.Fatalf("unexpected providers: %+v", providers)
-		}
-		if len(problems) != 0 {
-			t.Fatalf("unexpected problems: %+v", problems)
-		}
-		if len(warnings) != 0 {
-			t.Fatalf("unexpected warnings: %+v", warnings)
-		}
+
+		assert.True(t, len(providers) == 0, "unexpected a providers: %+v", providers)
+		assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+		assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
 	})
 
 	t.Run("no matching auth provider", func(t *testing.T) {
@@ -49,15 +46,10 @@ func TestNewAuthzProviders(t *testing.T) {
 			}},
 			false,
 		)
-		if len(providers) != 1 || providers[0] == nil {
-			t.Fatal("expected a provider")
-		}
-		if len(problems) != 0 {
-			t.Fatalf("unexpected problems: %+v", problems)
-		}
-		if len(warnings) != 1 || !strings.Contains(warnings[0], "no authentication provider") {
-			t.Fatalf("unexpected warnings: %+v", warnings)
-		}
+
+		assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
+		assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+		assert.True(t, len(warnings) == 1 && strings.Contains(warnings[0], "no authentication provider"), "unexpected warnings: %+v", warnings)
 	})
 
 	t.Run("matching auth provider found", func(t *testing.T) {
@@ -75,15 +67,10 @@ func TestNewAuthzProviders(t *testing.T) {
 				}},
 				false,
 			)
-			if len(providers) != 1 || providers[0] == nil {
-				t.Fatal("expected a provider")
-			}
-			if len(problems) != 0 {
-				t.Fatalf("unexpected problems: %+v", problems)
-			}
-			if len(warnings) != 0 {
-				t.Fatalf("unexpected warnings: %+v", warnings)
-			}
+
+			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
+			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
@@ -104,19 +91,11 @@ func TestNewAuthzProviders(t *testing.T) {
 				}},
 				false,
 			)
-			if len(providers) != 1 || providers[0] == nil {
-				t.Fatal("expected a provider")
-			}
-			if len(problems) != 0 {
-				t.Fatalf("unexpected problems: %+v", problems)
-			}
-			if len(warnings) != 1 || !strings.Contains(warnings[0], "`allowGroupsPermissionsSync`") {
-				t.Fatalf("unexpected warnings: %+v", warnings)
-			}
-			// assert groups cache is forcibly disabled
-			if (providers[0]).(*Provider).groupsCache != nil {
-				t.Fatal("expected groups cache to be disabled")
-			}
+
+			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
+			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+			assert.True(t, len(warnings) == 1 && strings.Contains(warnings[0], "`allowGroupsPermissionsSync`"), "unexpected warnings: %+v", warnings)
+			assert.True(t, (providers[0]).(*Provider).groupsCache == nil, "expected groups cache to be enabled")
 		})
 
 		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
@@ -140,19 +119,10 @@ func TestNewAuthzProviders(t *testing.T) {
 				}},
 				false,
 			)
-			if len(providers) != 1 || providers[0] == nil {
-				t.Fatal("expected a provider")
-			}
-			if len(problems) != 0 {
-				t.Fatalf("unexpected problems: %+v", problems)
-			}
-			if len(warnings) != 0 {
-				t.Fatalf("unexpected warnings: %+v", warnings)
-			}
-			// assert groups cache is available
-			if (providers[0]).(*Provider).groupsCache == nil {
-				t.Fatal("expected groups cache to be enabled")
-			}
+			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
+			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
+			assert.True(t, (providers[0]).(*Provider).groupsCache != nil, "expected groups cache to be enabled")
 		})
 
 		t.Run("github app installation id available", func(t *testing.T) {
@@ -189,15 +159,10 @@ func TestNewAuthzProviders(t *testing.T) {
 				}},
 				false,
 			)
-			if len(providers) != 1 || providers[0] == nil {
-				t.Fatal("expected a provider")
-			}
-			if len(problems) != 0 {
-				t.Fatalf("unexpected problems: %+v", problems)
-			}
-			if len(warnings) != 0 {
-				t.Fatalf("unexpected warnings: %+v", warnings)
-			}
+
+			assert.True(t, len(providers) == 1 && providers[0] != nil, "expected a provider")
+			assert.True(t, len(problems) == 0, "unexpected problems: %+v", problems)
+			assert.True(t, len(warnings) == 0, "unexpected warnings: %+v", warnings)
 		})
 	})
 }
