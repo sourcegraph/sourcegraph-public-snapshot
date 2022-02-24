@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/client -i SearchClient -o mock_client.go
 type SearchClient interface {
 	Plan(
 		ctx context.Context,
@@ -35,7 +36,7 @@ type SearchClient interface {
 	) (_ *search.Alert, err error)
 }
 
-func NewSearchClient(zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) *searchClient {
+func NewSearchClient(zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
