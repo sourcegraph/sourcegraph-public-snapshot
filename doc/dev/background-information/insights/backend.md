@@ -265,15 +265,9 @@ If you've created an insight that needs to generate series data on the backend, 
 
 ### Unit Tests
 
-The `codeinsights-db` must be running in order for tests against any of the insight related `stores` to work correctly, as these interact with the database. You can add the following commandset to your `sg.config.overwrite.yaml` file to easily start the `codeinsights-db`:
+The `codeinsights-db` must be running in order for tests against any of the insight related `stores` to work correctly, as these interact with the database. You can run the following command to start the `codeinsights-db`:
 ```
-insights-db:
-  checks:
-    - docker
-    - redis
-    - postgres
-  commands:
-    - codeinsights-db
+sg run codeinsights-db
 ```
 
 ## Debugging
