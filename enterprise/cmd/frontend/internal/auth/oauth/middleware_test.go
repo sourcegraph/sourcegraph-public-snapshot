@@ -21,17 +21,17 @@ func Test_getExtraScopes(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(u)
 	for name, test := range map[string]struct {
-		operation, provider string
-		scopes              []string
+		operation LoginStateOp
+		provider  string
+		scopes    []string
 	}{
-		"withoutScopes_gitlab": {"", extsvc.TypeGitLab, []string{}},
-		"withoutScopes_github": {"", extsvc.TypeGitHub, []string{}},
-		"withScopes_gitlab":    {LoginStateOpCreateAccount, extsvc.TypeGitLab, []string{"api"}},
-		"withScopes_github":    {LoginStateOpCreateAccount, extsvc.TypeGitHub, []string{"repo"}},
+		"withoutScopes_gitlab": {LoginStateOpCreateAccount, extsvc.TypeGitLab, []string{}},
+		"withoutScopes_github": {LoginStateOpCreateAccount, extsvc.TypeGitHub, []string{}},
+		"withScopes_gitlab":    {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitLab, []string{"api"}},
+		"withScopes_github":    {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitHub, []string{"repo"}},
 	} {
 		t.Run(name, func(t *testing.T) {
-
-			got, err := getExtraScopes(context.Background(), db, test.provider, LoginStateOp(test.operation))
+			got, err := getExtraScopes(context.Background(), db, test.provider, test.operation)
 			if err != nil {
 				t.Fatal(err)
 			}
