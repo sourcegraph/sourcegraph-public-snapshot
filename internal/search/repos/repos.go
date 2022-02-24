@@ -514,8 +514,6 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 	return excluded.ExcludedRepos, g.Wait()
 }
 
-var once sync.Once
-
 // dependencies resolves `repo:dependencies` predicates to a specific list of
 // dependency repositories for the given repos and revision(s). It does so by:
 //
