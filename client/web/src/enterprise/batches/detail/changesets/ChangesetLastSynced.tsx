@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
@@ -67,13 +66,6 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         }
     }
 
-    const UpdateLoaderIcon =
-        typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt
-            ? LoadingSpinner
-            : viewerCanAdminister
-            ? SyncIcon
-            : InfoCircleOutlineIcon
-
     return (
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
@@ -88,14 +80,29 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
             )}
             <span data-tooltip={tooltipText}>
                 <UpdateLoaderIcon
-                    className={classNames(
-                        'icon-inline',
-                        typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer'
-                    )}
-                    onClick={enqueueChangeset}
-                    inline={false}
+                    changesetUpdatedAt={changeset.updatedAt}
+                    lastUpdatedAt={lastUpdatedAt}
+                    onEnqueueChangeset={enqueueChangeset}
+                    viewerCanAdminister={viewerCanAdminister}
                 />
             </span>
         </small>
     )
+}
+
+const UpdateLoaderIcon: React.FunctionComponent<{
+    lastUpdatedAt: string | Error | null
+    changesetUpdatedAt: string
+    viewerCanAdminister: boolean
+    onEnqueueChangeset: React.MouseEventHandler
+}> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
+    if (typeof lastUpdatedAt === 'string' && changesetUpdatedAt === lastUpdatedAt) {
+        return <LoadingSpinner inline={true} />
+    }
+
+    if (viewerCanAdminister) {
+        return <SyncIcon className="icon-inline cursor-pointer" onClick={onEnqueueChangeset} role="button" />
+    }
+
+    return <InfoCircleOutlineIcon className="icon-inline" />
 }

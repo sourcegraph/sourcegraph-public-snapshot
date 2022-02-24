@@ -144,6 +144,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                     ...MOCK_BATCH_CHANGE.currentSpec,
                     supersedingBatchSpec: supersedingBatchSpec
                         ? {
+                              __typename: 'BatchSpec',
                               createdAt: subDays(new Date(), 1).toISOString(),
                               applyURL: '/users/alice/batch-changes/apply/newspecid',
                           }

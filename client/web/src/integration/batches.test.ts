@@ -663,12 +663,14 @@ describe('Batches', () => {
                             viewerCanAdminister: true,
                             originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 stats: {
                                     archive: 10,
                                 },
                                 totalCount: 10,
                             },
                             viewerBatchChangesCodeHosts: {
+                                __typename: 'BatchChangesCodeHostConnection',
                                 totalCount: 0,
                                 nodes: [],
                             },
@@ -678,11 +680,13 @@ describe('Batches', () => {
                         node: {
                             __typename: 'BatchSpec',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 nodes: [
                                     {
                                         __typename: 'VisibleChangesetApplyPreview',
                                         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
                                         delta: {
+                                            __typename: 'ChangesetSpecDelta',
                                             titleChanged: false,
                                             baseRefChanged: false,
                                             diffChanged: false,
@@ -708,13 +712,16 @@ describe('Batches', () => {
                                                     body: 'Body',
                                                     commits: [
                                                         {
+                                                            __typename: 'GitCommitDescription',
                                                             subject: 'Commit message',
                                                             body: 'And the more explanatory body.',
                                                             author: {
+                                                                __typename: 'Person',
                                                                 avatarURL: null,
                                                                 displayName: 'john',
                                                                 email: 'john@test.not',
                                                                 user: {
+                                                                    __typename: 'User',
                                                                     displayName: 'lejohn',
                                                                     url: '/users/lejohn',
                                                                     username: 'john',
@@ -757,6 +764,7 @@ describe('Batches', () => {
                     }),
                     CreateBatchChange: () => ({
                         createBatchChange: {
+                            __typename: 'BatchChange',
                             id: 'change123',
                             url: namespaceURL + '/batch-changes/test-batch-change',
                         },
