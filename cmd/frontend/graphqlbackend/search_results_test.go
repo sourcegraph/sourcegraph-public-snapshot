@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -98,62 +97,6 @@ func TestSearchResults(t *testing.T) {
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
-		}
-	})
-
-	t.Run("multiple terms regexp", func(t *testing.T) {
-		t.Skip("Skipping because it's currently failing locally")
-
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		repos := database.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
-
-		calledSearchSymbols := false
-		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
-			calledSearchSymbols = true
-			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
-			// TODO return mock results here and assert that they are output as results
-			return nil, nil, nil
-		}
-		defer func() { symbol.MockSearchSymbols = nil }()
-
-		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if calledSearchSymbols {
-			t.Error("calledSearchSymbols")
-		}
-	})
-
-	t.Run("multiple terms literal", func(t *testing.T) {
-		t.Skip("Skipping because it's currently failing locally")
-
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		repos := database.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
-
-		calledSearchSymbols := false
-		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
-			calledSearchSymbols = true
-			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
-			// TODO return mock results here and assert that they are output as results
-			return nil, nil, nil
-		}
-		defer func() { symbol.MockSearchSymbols = nil }()
-
-		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if calledSearchSymbols {
-			t.Error("calledSearchSymbols")
 		}
 	})
 }
