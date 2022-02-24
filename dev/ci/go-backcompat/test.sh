@@ -4,7 +4,7 @@
 # of the continuous backwards compatibility regression tests.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../"
-set -eu
+set -eux
 
 MIGRATION_STAGING=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {

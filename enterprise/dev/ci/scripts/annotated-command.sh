@@ -21,7 +21,7 @@ eval "$cmd"
 exit_code="$?"
 
 # Check for annotations left behind by the command
-echo "--- uploading annotations"
+echo "--- Uploading annotations"
 for file in "$annotation_dir"/*; do
   if [ ! -f "$file" ]; then
     continue
