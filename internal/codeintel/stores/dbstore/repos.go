@@ -171,35 +171,12 @@ type NPMDependencyRepo struct {
 
 // UpsertDependencyRepo creates the given dependency repo if it doesn't yet exist.
 func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (err error) {
-	txstore, err := s.Transact(ctx)
-	defer func() { err = errors.Append(err, txstore.Done(err)) }()
-
-	var (
-		scheme  = dep.Scheme()
-		name    = dep.PackageSyntax()
-		version = dep.PackageVersion()
-	)
-
-	existsQuery := sqlf.Sprintf(
-		`select count(*) from lsif_dependency_repos where (scheme, name, version) = (%s, %s, %s)`,
-		scheme, name, version,
-	)
-
-	var count int64
-	if err := txstore.QueryRow(ctx, existsQuery).Scan(&count); err != nil {
-		return err
-	}
-
-	if count > 0 {
-		return nil
-	}
-
-	insertQuery := sqlf.Sprintf(
-		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s)`,
-		scheme, name, version,
-	)
-
-	return txstore.Exec(ctx, insertQuery)
+	return s.Exec(ctx, sqlf.Sprintf(
+		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s) on conflict do nothing`,
+		dep.Scheme(),
+		dep.PackageSyntax(),
+		dep.PackageVersion(),
+	))
 }
 
 const getLSIFDependencyReposQuery = `
