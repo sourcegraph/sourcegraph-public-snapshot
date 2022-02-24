@@ -1,10 +1,11 @@
-package repos
+package codeintel
 
 import (
 	"context"
 	"database/sql"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -21,11 +22,7 @@ import (
 // RevSpecSet is a utility type for a set of RevSpecs.
 type RevSpecSet map[api.RevSpec]struct{}
 
-type DependenciesService interface {
-	Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error)
-}
-
-type dependenciesService struct {
+type DependenciesService struct {
 	db   database.DB
 	sync func(context.Context, api.RepoName) (*types.Repo, error)
 }
@@ -33,13 +30,13 @@ type dependenciesService struct {
 func NewDependenciesService(
 	db database.DB,
 	sync func(context.Context, api.RepoName) (*types.Repo, error),
-) *dependenciesService {
-	return &dependenciesService{db: db, sync: sync}
+) *DependenciesService {
+	return &DependenciesService{db: db, sync: sync}
 }
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (r *dependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
+func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (_ map[api.RepoName]RevSpecSet, err error) {
 	tr, ctx := trace.New(ctx, "DependenciesService", "Dependencies")
 	defer func() {
 		if len(repoRevs) > 1 {
