@@ -106,6 +106,13 @@ New issues and feature requests can be submitted at https://github.com/sourcegra
 1.  Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
 2.  Search for `Sourcegraph` -> Gear icon -> `Uninstall` and `Reload`.
 
+## Changelog
+
+Click [here](https://marketplace.visualstudio.com/items/sourcegraph.sourcegraph/changelog) to check the full changelog.
+
+VS Code will auto-update extensions to the highest version available. Even if you have opted into a pre-release version, you will be updated to the released version when a higher version is released.
+
+The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.```
 ## Development
 
 To develop the extension:
