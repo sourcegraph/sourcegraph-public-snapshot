@@ -320,7 +320,7 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if s.Agents["queue"] != bk.AgentQueueBaremetal {
 		// Use athens proxy for go modules downloads, falling back to direct
 		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Agents["GOPROXY"] = "http://athens-athens-proxy,direct"
+		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
 	}
 }
 
