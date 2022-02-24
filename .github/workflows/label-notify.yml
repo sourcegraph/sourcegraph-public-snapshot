@@ -19,7 +19,7 @@ jobs:
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@dan-mckean
-                  team/delivery=@dan-mckean @caugustus-sourcegraph @kevinwojo
+                  team/delivery=@dan-mckean @caugustus-sourcegraph @kevinwojo @michaellzc
                   team/security=@dcomas
                   team/dev-experience=@taylorsperry @jhchabran @kstretch9
                   team/repo-management=@jplahn @dan-mckean
