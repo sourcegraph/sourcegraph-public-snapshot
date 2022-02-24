@@ -139,8 +139,8 @@ if ! ./dev/ci/go-test.sh "$@"; then
     cat <<EOF
 This commit contains database schema definitions that caused an unexpected
 failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
-If this backwards incompatibility is intentional or of the test is flaky,
-an exception for this text can be added to the following flakefile:
+If this backwards incompatibility is intentional or if the test is flaky,
+an exception for this test can be added to the following flakefile:
 
 \`\`\`
 ${flakefile}
