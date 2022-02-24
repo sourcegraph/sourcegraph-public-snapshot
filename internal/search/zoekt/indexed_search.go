@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
+// IndexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
 	// repoRevs is the Sourcegraph representation of a the list of repoRevs
@@ -313,7 +313,7 @@ type IndexedSubsetSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-// IndxedRepos is a map of indexed repository revisions will be searched by
+// IndexedRepos is a map of indexed repository revisions will be searched by
 // Zoekt. Do not mutate.
 func (s *IndexedSubsetSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
 	if s.RepoRevs == nil {
