@@ -2,6 +2,7 @@ import { gql } from '@sourcegraph/http-client'
 
 const codeIntelFragments = gql`
     fragment LocationFields on Location {
+        url
         resource {
             ...GitBlobFields
         }

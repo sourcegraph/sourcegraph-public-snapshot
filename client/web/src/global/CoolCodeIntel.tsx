@@ -12,8 +12,6 @@ import { Collapse } from 'reactstrap'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
     formatSearchParameters,
     isErrorLike,
     lprToRange,
@@ -142,7 +140,7 @@ const buildLocation = (node: LocationFields): Location => {
     if (node.range !== null) {
         location.range = node.range
     }
-    location.url = buildFileURL(location)
+    location.url = node.url
     location.lines = location.resource.content.split(/\r?\n/)
     return location
 }
@@ -547,30 +545,6 @@ const SideBlob: React.FunctionComponent<
             }}
         />
     )
-}
-
-const buildFileURL = (location: Location): string => {
-    const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
-    const range = location.range
-
-    if (range !== undefined) {
-        return appendSubtreeQueryParameter(
-            appendLineRangeQueryParameter(
-                path,
-                toPositionOrRangeQueryParameter({
-                    range: {
-                        // ATTENTION: Another off-by-one chaos in the making here
-                        start: {
-                            line: range.start.line + 1,
-                            character: range.start.character + 1,
-                        },
-                        end: { line: range.end.line + 1, character: range.end.character + 1 },
-                    },
-                })
-            )
-        )
-    }
-    return path
 }
 
 const getLineContent = (location: Location): string => {
