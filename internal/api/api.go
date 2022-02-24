@@ -35,6 +35,10 @@ func (c CommitID) Short() string {
 	return string(c)
 }
 
+// RevSpec is a revision range specifier suitable for passing to git. See
+// the manpage gitrevisions(7).
+type RevSpec string
+
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository on Sourcegraph.
