@@ -11,7 +11,9 @@ import (
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -24,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -511,6 +514,8 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 	return excluded.ExcludedRepos, g.Wait()
 }
 
+var once sync.Once
+
 // dependencies resolves `repo:dependencies` predicates to a specific list of
 // dependency repositories for the given repos and revision(s). It does so by:
 //
@@ -563,8 +568,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depSvc := codeintel.NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
-	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := getOrCreateGlobalDependencyService(r.DB, repoStore).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -582,6 +586,25 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, nil
+}
+
+var (
+	depSvc     *codeintel.DependenciesService
+	depSvcOnce sync.Once
+)
+
+func getOrCreateGlobalDependencyService(db database.DB, repoStore database.RepoStore) *codeintel.DependenciesService {
+	depSvcOnce.Do(func() {
+		observationContext := &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+
+		depSvc = codeintel.NewDependenciesService(db, backend.NewRepos(repoStore).GetByName, observationContext)
+	})
+
+	return depSvc
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
