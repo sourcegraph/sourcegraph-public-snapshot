@@ -1,15 +1,29 @@
+import { gql, useMutation } from '@apollo/client'
+import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
+import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
+
+export const SEND_TEST_WEBHOOK = gql`
+    mutation SendTestWebhook($namespace: ID!, $description: String!, $webhook: MonitorWebhookInput!) {
+        triggerTestWebhookAction(namespace: $namespace, description: $description, webhook: $webhook) {
+            alwaysNil
+        }
+    }
+`
 
 export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     action,
     setAction,
     disabled,
+    monitorName,
+    authenticatedUser,
     _testStartOpen,
 }) => {
     const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
@@ -44,6 +58,27 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
     }, [setAction])
+
+    const [sendTestMessage, { loading, error, called }] = useMutation<SendTestWebhookResult, SendTestWebhookVariables>(
+        SEND_TEST_WEBHOOK
+    )
+    const isSendTestButtonDisabled = loading || !monitorName || called
+
+    const onSendTestMessage = useCallback(async () => {
+        await sendTestMessage({
+            variables: {
+                namespace: authenticatedUser.id,
+                description: monitorName,
+                webhook: { url, enabled: true, includeResults: false },
+            },
+        })
+    }, [authenticatedUser.id, monitorName, sendTestMessage, url])
+
+    const sendTestEmailButtonText = loading
+        ? 'Calling webhook...'
+        : called
+        ? 'Test call completed!'
+        : 'Call webhook with test payload'
 
     return (
         <ActionEditor
@@ -88,9 +123,38 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                 />
             </div>
             <div className="flex mt-1">
-                <Button className="mr-2" disabled={true} size="sm" variant="secondary">
-                    Send test message (coming soon)
+                <Button
+                    className="mr-2"
+                    variant="secondary"
+                    outline={!isSendTestButtonDisabled}
+                    disabled={isSendTestButtonDisabled}
+                    onClick={onSendTestMessage}
+                    size="sm"
+                    data-testid="send-test-email"
+                >
+                    {sendTestEmailButtonText}
                 </Button>
+                {called && !loading && (
+                    <Button
+                        className="p-0"
+                        onClick={onSendTestMessage}
+                        variant="link"
+                        size="sm"
+                        data-testid="send-test-email-again"
+                    >
+                        Test again
+                    </Button>
+                )}
+                {!monitorName && (
+                    <div className={classNames('mt-2', styles.testActionError)}>
+                        Please provide a name for the code monitor before making a test call
+                    </div>
+                )}
+                {error && (
+                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                        {error.message}
+                    </div>
+                )}
             </div>
         </ActionEditor>
     )

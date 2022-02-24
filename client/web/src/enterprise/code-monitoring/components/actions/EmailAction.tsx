@@ -6,7 +6,6 @@ import { tap, catchError, startWith, mergeMap, delay } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable, Button } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
 import { MonitorEmailPriority } from '../../../../graphql-operations'
 import { triggerTestEmailAction as _triggerTestEmailAction } from '../../backend'
 import { ActionProps } from '../FormActionArea'
@@ -17,7 +16,6 @@ import { ActionEditor } from './ActionEditor'
 const LOADING = 'LOADING' as const
 
 export interface EmailActionProps extends ActionProps {
-    authenticatedUser: AuthenticatedUser
     triggerTestEmailAction: typeof _triggerTestEmailAction
 }
 

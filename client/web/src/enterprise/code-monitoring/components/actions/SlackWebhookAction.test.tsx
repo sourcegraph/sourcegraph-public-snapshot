@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
@@ -13,11 +16,16 @@ describe('SlackWebhookAction', () => {
         setAction: sinon.stub(),
         disabled: false,
         monitorName: 'Test',
+        authenticatedUser: mockAuthenticatedUser,
     }
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(<SlackWebhookAction {...props} setAction={setActionSpy} />)
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <SlackWebhookAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
 
@@ -40,17 +48,19 @@ describe('SlackWebhookAction', () => {
     test('open and edit', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <SlackWebhookAction
-                {...props}
-                setAction={setActionSpy}
-                action={{
-                    __typename: 'MonitorSlackWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '1',
-                    url: 'https://example.com',
-                }}
-            />
+            <MockedTestProvider>
+                <SlackWebhookAction
+                    {...props}
+                    setAction={setActionSpy}
+                    action={{
+                        __typename: 'MonitorSlackWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '1',
+                        url: 'https://example.com',
+                    }}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
@@ -76,17 +86,19 @@ describe('SlackWebhookAction', () => {
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <SlackWebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorSlackWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '2',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <SlackWebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorSlackWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '2',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
@@ -98,17 +110,19 @@ describe('SlackWebhookAction', () => {
     test('enable and disable', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <SlackWebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorSlackWebhook',
-                    enabled: false,
-                    includeResults: false,
-                    id: '5',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <SlackWebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorSlackWebhook',
+                        enabled: false,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         expect(getByTestId('enable-action-toggle-collapsed-slack-webhook')).not.toBeChecked()

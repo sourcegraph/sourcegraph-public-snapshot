@@ -26,6 +26,7 @@ export interface ActionProps {
     setAction: (action?: MonitorAction) => void
     disabled: boolean
     monitorName: string
+    authenticatedUser: AuthenticatedUser
 
     // For testing purposes only
     _testStartOpen?: boolean
@@ -99,6 +100,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={slackWebhookAction}
                     setAction={setSlackWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 
@@ -108,6 +110,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={webhookAction}
                     setAction={setWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 

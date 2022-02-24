@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
@@ -13,11 +16,16 @@ describe('WebhookAction', () => {
         setAction: sinon.stub(),
         disabled: false,
         monitorName: 'Test',
+        authenticatedUser: mockAuthenticatedUser,
     }
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(<WebhookAction {...props} setAction={setActionSpy} />)
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <WebhookAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
 
@@ -40,17 +48,19 @@ describe('WebhookAction', () => {
     test('open and edit', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                setAction={setActionSpy}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '1',
-                    url: 'https://example.com',
-                }}
-            />
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    setAction={setActionSpy}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '1',
+                        url: 'https://example.com',
+                    }}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
@@ -76,17 +86,19 @@ describe('WebhookAction', () => {
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: true,
-                    includeResults: false,
-                    id: '2',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '2',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
@@ -98,17 +110,19 @@ describe('WebhookAction', () => {
     test('enable and disable', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <WebhookAction
-                {...props}
-                action={{
-                    __typename: 'MonitorWebhook',
-                    enabled: false,
-                    includeResults: false,
-                    id: '5',
-                    url: 'https://example.com',
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: false,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         expect(getByTestId('enable-action-toggle-collapsed-webhook')).not.toBeChecked()
