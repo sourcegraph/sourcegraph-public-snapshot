@@ -19,6 +19,8 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 1. Install Sourcegraph from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
 2. Launch VS Code, and click on the Sourcegraph (Wildcard) icon in the VS Code Activity Bar to open the Sourcegraph extension. Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for “Sourcegraph: Open search tab.”
 
+> NOTE: The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
+
 ### From within VS Code:
 
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
@@ -105,6 +107,10 @@ New issues and feature requests can be submitted at https://github.com/sourcegra
 
 1.  Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
 2.  Search for `Sourcegraph` -> Gear icon -> `Uninstall` and `Reload`.
+
+## Changelog
+
+Click [here](https://marketplace.visualstudio.com/items/sourcegraph.sourcegraph/changelog) to check the full changelog.
 
 ## Development
 
