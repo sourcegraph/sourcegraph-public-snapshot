@@ -27,7 +27,7 @@ const EMPTY_INSIGHT_LIST: Insight[] = []
  * Enterprise version. For Sourcegraph OSS see `./enterprise/insights/sections` components.
  */
 export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionViewsHomepageSectionProps> = props => {
-    const { platformContext, telemetryService, extensionsController, settingsCascade, className = '' } = props
+    const { telemetryService, extensionsController, settingsCascade, className = '' } = props
 
     const apolloClient = useApolloClient()
 
@@ -37,7 +37,6 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
         <CodeInsightsBackendContext.Provider value={api}>
             <ExtensionViewsHomepageSectionContent
                 settingsCascade={settingsCascade}
-                platformContext={platformContext}
                 telemetryService={telemetryService}
                 extensionsController={extensionsController}
                 className={className}

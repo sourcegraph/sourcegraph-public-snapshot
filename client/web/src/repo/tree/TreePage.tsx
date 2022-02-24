@@ -443,7 +443,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             className={classNames('mb-3', styles.section)}
                             telemetryService={props.telemetryService}
                             settingsCascade={settingsCascade}
-                            platformContext={props.platformContext}
                             extensionsController={props.extensionsController}
                             where="directory"
                             uri={uri}

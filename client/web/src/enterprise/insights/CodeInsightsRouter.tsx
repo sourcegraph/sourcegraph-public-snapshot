@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,7 +20,7 @@ const CodeInsightsDotComGetStartedLazy = lazyComponent(
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * subcomponents withing app tree.
  */
-export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>, PlatformContextProps, TelemetryProps {
+export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>, TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)

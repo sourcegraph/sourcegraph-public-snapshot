@@ -88,7 +88,6 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     className="mt-5"
                     telemetryService={props.telemetryService}
                     extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
                     settingsCascade={props.settingsCascade}
                     where="homepage"
                 />

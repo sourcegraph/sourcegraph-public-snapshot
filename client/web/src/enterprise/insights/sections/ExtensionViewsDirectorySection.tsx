@@ -27,7 +27,7 @@ const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
  * Enterprise version. For Sourcegraph OSS see `./src/insights/sections` components.
  */
 export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionViewsDirectorySectionProps> = props => {
-    const { platformContext, settingsCascade, extensionsController, uri, telemetryService, className = '' } = props
+    const { settingsCascade, extensionsController, uri, telemetryService, className = '' } = props
 
     const apolloClient = useApolloClient()
 
@@ -39,7 +39,6 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
                 where="directory"
                 uri={uri}
                 extensionsController={extensionsController}
-                platformContext={platformContext}
                 settingsCascade={settingsCascade}
                 telemetryService={telemetryService}
                 className={className}
