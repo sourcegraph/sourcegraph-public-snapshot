@@ -135,7 +135,7 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  read -r -d '' annotation <<EOF
+  IFS='' read -r -d '' annotation <<EOF
 This commit contains database schema definitions that caused an unexpected
 failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
 If this backwards incompatibility is intentional or of the test is flaky,
