@@ -51,9 +51,9 @@ export const usePreciseCodeIntel = ({
 }: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
     const [referenceData, setReferenceData] = useState<PreciseCodeIntelForLocationFields>()
 
-    const isFirstRender = useRef(true)
+    const shouldFetch = useRef(true)
     useMemo(() => {
-        isFirstRender.current = true
+        shouldFetch.current = true
     }, [variables])
 
     const { error, loading } = useQuery<
@@ -63,12 +63,12 @@ export const usePreciseCodeIntel = ({
         variables,
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
-        skip: !isFirstRender,
+        skip: !shouldFetch,
         onCompleted: result => {
-            if (isFirstRender.current) {
+            if (shouldFetch.current) {
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 setReferenceData(lsifData)
-                isFirstRender.current = false
+                shouldFetch.current = false
             }
         },
     })
