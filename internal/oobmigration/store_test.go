@@ -329,6 +329,7 @@ var testEnterpriseMigrations = []Migration{
 
 func timePtr(t time.Time) *time.Time { return &t }
 
+//nolint:unparam // Same argument for major across call-sites is OK
 func newVersionPtr(major, minor int) *Version {
 	v := NewVersion(major, minor)
 	return &v

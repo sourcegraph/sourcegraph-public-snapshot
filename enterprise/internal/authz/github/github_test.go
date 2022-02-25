@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+//nolint:unparam // Same argument for u across call-sites is OK
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
@@ -98,6 +99,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			},
 		}
 
+		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
@@ -114,9 +116,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return []*github.Repository{}, false, 1, nil
 		}
 
-		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgNoRead2     = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
+		mockOrgNoRead  = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgNoRead2 = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
+		mockOrgRead    = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
+		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListOrgDetails = func(_ context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
 			switch page {
 			case 1:
@@ -138,6 +141,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			return nil, false, 1, nil
 		}
 
+		//nolint:unparam // Returning constant value for 'int' result is OK
 		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			switch org {
 			case mockOrgRead.Login:
@@ -565,6 +569,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			},
 		}
 
+		//nolint:unparam // Allow returning nil error on all code paths
 		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:

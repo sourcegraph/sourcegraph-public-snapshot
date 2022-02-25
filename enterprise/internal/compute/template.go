@@ -202,7 +202,7 @@ var builtinVariables = map[string]struct{}{
 	"email":   empty,
 }
 
-func templatize(pattern string) (string, error) {
+func templatize(pattern string) string {
 	t := scanTemplate([]byte(pattern))
 	var templatized []string
 	for _, atom := range *t {
@@ -220,14 +220,11 @@ func templatize(pattern string) (string, error) {
 			templatized = append(templatized, a.Name)
 		}
 	}
-	return strings.Join(templatized, ""), nil
+	return strings.Join(templatized, "")
 }
 
 func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
-	templated, err := templatize(pattern)
-	if err != nil {
-		return "", err
-	}
+	templated := templatize(pattern)
 	t, err := template.New("").Parse(templated)
 	if err != nil {
 		return "", err

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+//nolint:unparam // Accept args for consistency with other writeXYZ funcs
 func writeOrangeLinef(fmtStr string, args ...interface{}) {
 	stdout.Out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), fmtStr, args...))
 }

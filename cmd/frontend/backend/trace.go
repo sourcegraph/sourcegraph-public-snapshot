@@ -26,6 +26,7 @@ var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Current number of requests running for a method.",
 }, []string{"method"})
 
+//nolint:unparam // Same argument for server across call-sites is OK
 func trace(ctx context.Context, server, method string, arg interface{}, err *error) (context.Context, func()) {
 	requestGauge.WithLabelValues(server + "." + method).Inc()
 

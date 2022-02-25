@@ -2281,6 +2281,7 @@ func testBatchSpec(user int32) *btypes.BatchSpec {
 	}
 }
 
+//nolint:unparam // Same argument for extState across call-sites is OK
 func testChangeset(repoID api.RepoID, batchChange int64, extState btypes.ChangesetExternalState) *btypes.Changeset {
 	changeset := &btypes.Changeset{
 		RepoID:              repoID,

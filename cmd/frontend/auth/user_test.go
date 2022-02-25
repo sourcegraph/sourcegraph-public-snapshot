@@ -97,7 +97,6 @@ func TestGetAndSaveUser(t *testing.T) {
 				},
 			},
 		},
-		// TODO(beyang): add non-verified email cases
 		innerCases: []innerCase{
 			{
 				description: "ext acct exists, user has same username and email",
@@ -737,6 +736,7 @@ func ext(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec 
 	}
 }
 
+//nolint:unparam // TODO: add non-verified email test cases
 func userProps(username, email string, verifiedEmail bool) database.NewUser {
 	return database.NewUser{
 		Username:        username,
