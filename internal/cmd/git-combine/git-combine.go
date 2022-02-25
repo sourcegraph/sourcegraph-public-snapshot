@@ -122,6 +122,10 @@ func Combine(path string, opt Options) error {
 		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.LimitRemote; i++ {
+			if commit.NumParents() == 0 {
+				break
+			}
+
 			commit, err = commit.Parent(0)
 			if err == io.EOF {
 				break
