@@ -11,10 +11,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -31,9 +29,15 @@ import (
 // and package levels.
 type DependenciesService struct {
 	db              database.DB
-	sync            func(context.Context, api.RepoName) (*types.Repo, error)
+	syncer          Syncer
 	lockfileService *lockfiles.Service
 	operations      *dependencyServiceOperations
+}
+
+type Syncer interface {
+	// Sync will lazily sync the repos that have been inserted into the database but have not yet been
+	// cloned. See repos.Syncer.SyncRepo.
+	Sync(ctx context.Context, repos []api.RepoName) error
 }
 
 var (
@@ -41,7 +45,7 @@ var (
 	depSvcOnce sync.Once
 )
 
-func GetOrCreateGlobalDependencyService(db database.DB, repoStore database.RepoStore) *DependenciesService {
+func GetOrCreateGlobalDependencyService(db database.DB, syncer Syncer) *DependenciesService {
 	depSvcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -49,20 +53,20 @@ func GetOrCreateGlobalDependencyService(db database.DB, repoStore database.RepoS
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		depSvc = NewDependenciesService(db, backend.NewRepos(repoStore).GetByName, observationContext)
+		depSvc = newDependenciesService(db, syncer, observationContext)
 	})
 
 	return depSvc
 }
 
-func NewDependenciesService(
+func newDependenciesService(
 	db database.DB,
-	sync func(context.Context, api.RepoName) (*types.Repo, error),
+	syncer Syncer,
 	observationContext *observation.Context,
 ) *DependenciesService {
 	return &DependenciesService{
 		db:              db,
-		sync:            sync,
+		syncer:          syncer,
 		lockfileService: &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive},
 		operations:      newDependencyServiceOperations(observationContext),
 	}
@@ -136,7 +140,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 						}
 
 						depName := dep.RepoName()
-						if _, err := r.sync(ctx, depName); err != nil {
+						if err := r.syncer.Sync(ctx, []api.RepoName{depName}); err != nil {
 							return err
 						}
 
