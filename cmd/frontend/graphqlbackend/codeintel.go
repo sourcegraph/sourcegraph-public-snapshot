@@ -57,6 +57,13 @@ type LSIFRepositoryUploadsQueryArgs struct {
 	RepositoryID graphql.ID
 }
 
+type LSIFUploadRetentionPolicyMatchesArgs struct {
+	MatchesOnly bool
+	First       *int32
+	After       *string
+	Query       *string
+}
+
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
@@ -71,6 +78,7 @@ type LSIFUploadResolver interface {
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -341,6 +349,18 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+}
+
+type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type CodeIntelligenceRetentionPolicyMatchResolver interface {
+	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
+	Matches() bool
+	ProtectingCommits() *[]string
 }
 
 type GitBlobCodeIntelInfoArgs struct {

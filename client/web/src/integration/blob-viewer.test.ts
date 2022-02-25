@@ -859,7 +859,8 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('properly displays reference panel for URIs with spaces', async () => {
+        // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/31806
+        it.skip('properly displays reference panel for URIs with spaces', async () => {
             const repositoryName = 'github.com/sourcegraph/test%20repo'
             const files = ['test.ts', 'test spaces.ts']
             const commitID = '1234'
