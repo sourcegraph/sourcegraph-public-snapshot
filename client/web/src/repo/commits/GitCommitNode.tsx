@@ -114,7 +114,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
                     <Timestamp
                         noAbout={true}
-                        preferAbsoluteTimestamp={preferAbsoluteTimestamps}
+                        preferAbsolute={preferAbsoluteTimestamps}
                         date={node.committer ? node.committer.date : node.author.date}
                     />
                 </small>
