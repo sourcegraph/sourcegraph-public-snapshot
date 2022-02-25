@@ -439,7 +439,6 @@ func TestRemoveOrganization(t *testing.T) {
 
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgIDString := string(MarshalOrgID(mockedOrg.ID))
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	mockedFeatureFlag := featureflag.FeatureFlag{Name: "org-deletion", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
 	featureFlags := database.NewMockFeatureFlagStore()
@@ -504,10 +503,39 @@ func TestRemoveOrganization(t *testing.T) {
 				`,
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "hard deleting organization is only supported on Sourcegraph Cloud",
+					Message: "hard deleting organization is not supported",
 					Path:    []interface{}{string("removeOrganization")},
 				},
 			},
+		})
+	})
+
+	mockedFeatureFlag2 := featureflag.FeatureFlag{Name: "org-deletion", Bool: &featureflag.FeatureFlagBool{Value: true}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+	featureFlags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
+		return &mockedFeatureFlag2, nil
+	})
+	envvar.MockSourcegraphDotComMode(true)
+	t.Run("Delete organization", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `
+				mutation RemoveOrganization($organization: ID!) {
+					removeOrganization(organization: $organization) {
+						alwaysNil
+					}
+				}
+				`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+			},
+			ExpectedResult: `
+				{
+					"removeOrganization": {
+						"alwaysNil": null
+					}
+				}
+				`,
 		})
 	})
 

@@ -301,7 +301,7 @@ func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
+	if err := r.db.Orgs().HardDelete(ctx, orgID); err != nil {
 		return nil, err
 	}
 
