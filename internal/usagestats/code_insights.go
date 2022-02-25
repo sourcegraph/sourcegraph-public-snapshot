@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -152,6 +153,31 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
 
+	totalOrgsWithDashboard, err := GetIntCount(ctx, db, InsightsTotalOrgsWithDashboardPingName)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalOrgsWithDashboard")
+	}
+	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
+
+	totalOrgs, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, getTotalOrgsSql))
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalOrgs")
+	}
+	totalOrgsInt := int32(totalOrgs)
+	stats.TotalOrgs = &totalOrgsInt
+
+	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalDashboards")
+	}
+	stats.WeeklyDashboardCount = &totalDashboards
+
+	insightsPerDashboard, err := GetInsightsPerDashboard(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightsPerDashboard")
+	}
+	stats.InsightsPerDashboard = insightsPerDashboard
+
 	return &stats, nil
 }
 
@@ -252,6 +278,28 @@ func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibl
 	return orgVisibleInsightCounts, nil
 }
 
+func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, error) {
+	store := database.EventLogs(db)
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &pingName,
+	})
+	if err != nil || len(all) == 0 {
+		return 0, err
+	}
+
+	latest := all[0]
+	var count int
+	err = json.Unmarshal([]byte(latest.Argument), &count)
+	if err != nil {
+		return 0, errors.Wrap(err, "Unmarshal")
+	}
+	return int32(count), nil
+}
+
 func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
 	builder := creationPagesPingBuilder(timeSupplier)
 
@@ -261,6 +309,31 @@ func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func
 	}
 
 	return results, nil
+}
+
+func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.InsightsPerDashboardPing, error) {
+	store := database.EventLogs(db)
+	name := InsightsPerDashboardPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return types.InsightsPerDashboardPing{}, err
+	} else if len(all) == 0 {
+		return types.InsightsPerDashboardPing{}, nil
+	}
+
+	latest := all[0]
+	var insightsPerDashboardStats types.InsightsPerDashboardPing
+	err = json.Unmarshal([]byte(latest.Argument), &insightsPerDashboardStats)
+	if err != nil {
+		return types.InsightsPerDashboardPing{}, errors.Wrap(err, "Unmarshal")
+	}
+	return insightsPerDashboardStats, nil
 }
 
 // WithAll adds multiple pings by name to this builder
@@ -373,6 +446,13 @@ WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week',
 GROUP BY argument;
 `
 
+const getTotalOrgsSql = `
+SELECT COUNT(*) FROM orgs WHERE deleted_at IS NOT NULL;
+`
+
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
 const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
 const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
+const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
+const InsightsDashboardTotalCountPingName = `INSIGHT_DASHBOARD_TOTAL_COUNT`
+const InsightsPerDashboardPingName = `INSIGHTS_PER_DASHBORD_STATS`
