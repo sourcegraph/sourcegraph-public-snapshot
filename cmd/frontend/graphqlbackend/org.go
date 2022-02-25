@@ -283,7 +283,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
-// RemoveOrganization removes an org and all resources associated to it. Depending on the flag value, it will hard delete or soft delete the org.
+// RemoveOrganization removes an org and all resources associated to it.
 func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
@@ -292,7 +292,9 @@ func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	}
 
 	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
-	if err != nil || orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
+	if err != nil {
+		return nil, err
+	} else if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
 		return nil, errors.New("hard deleting organization is not supported")
 	}
 

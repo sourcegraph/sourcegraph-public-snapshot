@@ -320,11 +320,11 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		err = tx.Done(err)
 	}()
 
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_members WHERE org_id=$1", id); err != nil {
 		return err
 	}
 
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_members WHERE org_id=$1", id); err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_invitations WHERE org_id=$1", id); err != nil {
 		return err
 	}
 
@@ -332,7 +332,7 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
-	// For On-Prem, notebooks are enabled through settings, so this entry needs to be removed before an org is deleted.
+	// For On-Prem, notebooks are enabled through settings, so the entry in the settings table needs to be removed before an org is deleted.
 	if !envvar.SourcegraphDotComMode() {
 		if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM settings WHERE org_id=$1", id); err != nil {
 			return err

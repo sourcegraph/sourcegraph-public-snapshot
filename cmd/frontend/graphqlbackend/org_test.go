@@ -440,20 +440,28 @@ func TestRemoveOrganization(t *testing.T) {
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgIDString := string(MarshalOrgID(mockedOrg.ID))
 
-	mockedFeatureFlag := featureflag.FeatureFlag{Name: "org-deletion", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+	mockedFeatureFlag := featureflag.FeatureFlag{
+		Name:      "org-deletion",
+		Bool:      &featureflag.FeatureFlagBool{Value: false},
+		Rollout:   nil,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: nil,
+	}
 	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-		return &mockedFeatureFlag, nil
-	})
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	orig := envvar.SourcegraphDotComMode()
 
-	envvar.MockSourcegraphDotComMode(true)
 	t.Run("Returns an error when in DotComMode but feature flag is not enabled", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -481,7 +489,6 @@ func TestRemoveOrganization(t *testing.T) {
 		})
 	})
 
-	envvar.MockSourcegraphDotComMode(false)
 	t.Run("Returns an error when not in DotComMode", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -510,12 +517,20 @@ func TestRemoveOrganization(t *testing.T) {
 		})
 	})
 
-	mockedFeatureFlag2 := featureflag.FeatureFlag{Name: "org-deletion", Bool: &featureflag.FeatureFlagBool{Value: true}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
-	featureFlags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-		return &mockedFeatureFlag2, nil
-	})
-	envvar.MockSourcegraphDotComMode(true)
 	t.Run("Delete organization", func(t *testing.T) {
+		mockedFeatureFlag2 := featureflag.FeatureFlag{
+			Name:      "org-deletion",
+			Bool:      &featureflag.FeatureFlagBool{Value: true},
+			Rollout:   nil,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			DeletedAt: nil,
+		}
+		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag2, nil)
+
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -538,5 +553,4 @@ func TestRemoveOrganization(t *testing.T) {
 				`,
 		})
 	})
-
 }
