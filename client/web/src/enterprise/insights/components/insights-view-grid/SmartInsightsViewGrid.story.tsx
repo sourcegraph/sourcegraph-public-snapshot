@@ -10,14 +10,12 @@ import {
     LINE_CHART_WITH_HUGE_NUMBER_OF_LINES,
     LINE_CHART_WITH_MANY_LINES,
 } from '../../../../views/mocks/charts-content'
-import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsBackendStoryMock } from '../../CodeInsightsBackendStoryMock'
 import { BackendInsight, Insight, InsightExecutionType, InsightType, isCaptureGroupInsight } from '../../core/types'
-import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
-export default {
+const defaultStory: Meta = {
     title: 'web/insights/SmartInsightsViewGridExample',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -26,7 +24,9 @@ export default {
             enableDarkMode: true,
         },
     },
-} as Meta
+}
+
+export default defaultStory
 
 const insightsWithManyLines: Insight[] = [
     {
@@ -136,12 +136,8 @@ const insightsWithManyLines: Insight[] = [
     },
 ]
 
-class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend {
-    constructor() {
-        super(SETTINGS_CASCADE_MOCK, {} as any)
-    }
-
-    public getBackendInsightData = (insight: BackendInsight) => {
+const codeInsightsApiWithManyLines = {
+    getBackendInsightData: (insight: BackendInsight) => {
         if (isCaptureGroupInsight(insight)) {
             throw new Error('This demo does not support capture group insight')
         }
@@ -161,13 +157,11 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
                 isFetchingHistoricalData: false,
             },
         })
-    }
+    },
 }
 
-const codeInsightsApiWithManyLines = new StoryBackendWithManyLinesCharts()
-
-export const SmartInsightsViewGridExample = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsApiWithManyLines}>
+export const SmartInsightsViewGridExample = (): JSX.Element => (
+    <CodeInsightsBackendStoryMock mocks={codeInsightsApiWithManyLines}>
         <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
+    </CodeInsightsBackendStoryMock>
 )
