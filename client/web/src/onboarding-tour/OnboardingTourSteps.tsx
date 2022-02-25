@@ -5,9 +5,10 @@ import ArrowDropDownIcon from 'mdi-react/ArrowDropDownIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link } from '@sourcegraph/wildcard'
 
 import { useOnboardingTourState } from '../stores/onboardingTourState'
 
@@ -26,11 +27,9 @@ interface LinkOrAnchorProps {
 const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => {
     if (isExternalURL(href)) {
         return (
-            // Using <a> tag explicitly for external link
-            // eslint-disable-next-line react/forbid-elements
-            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+            <Link to={href} target="_blank" rel="noopener noreferrer" {...props}>
                 {children}
-            </a>
+            </Link>
         )
     }
 
