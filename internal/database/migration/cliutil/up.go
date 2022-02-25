@@ -16,8 +16,9 @@ import (
 
 func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
+		flagSet              = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
+		schemaNameFlag       = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
+		unprivilegedOnlyFlag = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -50,7 +51,8 @@ func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Co
 		}
 
 		return r.Run(ctx, runner.Options{
-			Operations: operations,
+			Operations:       operations,
+			UnprivilegedOnly: *unprivilegedOnlyFlag,
 		})
 	}
 
