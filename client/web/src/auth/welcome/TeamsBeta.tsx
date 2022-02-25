@@ -15,7 +15,7 @@ const PORTAL_ID = '2762526'
 const FORM_ID = 'b65cc7a2-75ad-4114-be4c-cd9637e7c068'
 
 interface TeamsBeta {
-    username: string,
+    username: string
     onFinish: FinishWelcomeFlow
     onError: (error: Error) => void
 }
@@ -45,7 +45,7 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
             onFormSubmitted: logFormSubmission,
             onError,
             initialFormValues: {
-                cftb_sourcegraph_username: username
+                cftb_sourcegraph_username: username,
             },
         }),
         [logFormSubmission, onError, username]

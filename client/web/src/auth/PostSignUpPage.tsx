@@ -127,7 +127,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     return (
         <div className={styles.wrapper}>
-              <BrandLogo className={ styles.logo} isLightTheme={true} variant="symbol" />
+            <BrandLogo className={styles.logo} isLightTheme={true} variant="symbol" />
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
@@ -197,7 +197,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <TeamsBeta onFinish={finishWelcomeFlow} onError={onError} username={user.username} />
+                                            <TeamsBeta
+                                                onFinish={finishWelcomeFlow}
+                                                onError={onError}
+                                                username={user.username}
+                                            />
                                         </StepPanel>
                                         <StepPanel>
                                             <InviteCollaborators
