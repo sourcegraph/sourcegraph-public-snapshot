@@ -29,7 +29,12 @@ export class EventLogger implements VsceTelemetryService {
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true, url?: string): void {
         if (pageTitle) {
-            this.tracker(`View${pageTitle}`, logAsActiveUser, eventProperties, url)
+            this.tracker(
+                `View${pageTitle}`,
+                logAsActiveUser,
+                eventProperties ? { platform: 'vsce', ...eventProperties } : eventProperties,
+                url
+            )
         }
     }
 
@@ -62,7 +67,12 @@ export class EventLogger implements VsceTelemetryService {
         for (const listener of this.listeners) {
             listener(eventLabel)
         }
-        this.tracker(eventLabel, eventProperties, publicArgument, uri)
+        this.tracker(
+            eventLabel,
+            eventProperties ? { platform: 'vsce', ...eventProperties } : eventProperties,
+            publicArgument,
+            uri
+        )
     }
 
     /**
