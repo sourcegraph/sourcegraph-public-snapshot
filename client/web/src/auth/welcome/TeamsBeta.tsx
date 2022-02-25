@@ -23,6 +23,7 @@ interface TeamsBeta {
 export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onError, username }) => {
     const contentReference = useRef<HTMLDivElement | null>(null)
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
+    const [isSubmitted, setIsSubmitted] = useState<boolean>(false)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
     const { setComplete, currentIndex } = useSteps()
@@ -32,6 +33,7 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
     }, [])
 
     const logFormSubmission = useCallback(() => {
+        setIsSubmitted(true)
         eventLogger.log('PostSignUpOrgTabBetaFormSubmit')
         setComplete(currentIndex, true)
     }, [currentIndex, setComplete])
@@ -75,7 +77,11 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
                 </p>
             </div>
             <div
-                className={classNames({ [styles.content]: true, [styles.contentTransitioning]: isTransitioning })}
+                className={classNames({
+                    [styles.content]: true,
+                    [styles.contentTransitioning]: isTransitioning,
+                    [styles.contentSubmitted]: isSubmitted,
+                })}
                 onTransitionEnd={onTransitionEnd}
                 ref={contentReference}
             >
