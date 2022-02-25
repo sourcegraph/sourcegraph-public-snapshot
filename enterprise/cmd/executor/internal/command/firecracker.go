@@ -33,19 +33,21 @@ const firecrackerContainerDir = "/work"
 func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Options) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
-	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
-	if len(rawOrDockerCommand.Env) > 0 {
+	innerCommand := strings.Join(rawOrDockerCommand.Process.Command, " ")
+	if len(rawOrDockerCommand.Process.Env) > 0 {
 		// If we have env vars that are arguments to the command we need to escape them
-		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
+		quotedEnv := quoteEnv(rawOrDockerCommand.Process.Env)
 		innerCommand = fmt.Sprintf("%s %s", strings.Join(quotedEnv, " "), innerCommand)
 	}
-	if rawOrDockerCommand.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)
+	if rawOrDockerCommand.Process.Dir != "" {
+		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Process.Dir, innerCommand)
 	}
 
 	return command{
-		Key:       spec.Key,
-		Command:   []string{"ignite", "exec", name, "--", innerCommand},
+		Key: spec.Key,
+		Process: &processCommand{
+			Command: []string{"ignite", "exec", name, "--", innerCommand},
+		},
 		Operation: spec.Operation,
 	}
 }
@@ -57,16 +59,18 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 	// Start the VM and wait for the SSH server to become available
 	startCommand := command{
 		Key: "setup.firecracker.start",
-		Command: flatten(
-			"ignite", "run",
-			"--runtime", "docker",
-			"--network-plugin", "cni",
-			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
-			"--ssh",
-			"--name", name,
-			sanitizeImage(options.FirecrackerOptions.Image),
-		),
+		Process: &processCommand{
+			Command: flatten(
+				"ignite", "run",
+				"--runtime", "docker",
+				"--network-plugin", "cni",
+				firecrackerResourceFlags(options.ResourceOptions),
+				firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
+				"--ssh",
+				"--name", name,
+				sanitizeImage(options.FirecrackerOptions.Image),
+			),
+		},
 		Operation: operations.SetupFirecrackerStart,
 	}
 
@@ -76,8 +80,10 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 
 	if options.FirecrackerOptions.VMStartupScriptPath != "" {
 		startupScriptCommand := command{
-			Key:       "setup.startup-script",
-			Command:   flatten("ignite", "exec", name, "--", options.FirecrackerOptions.VMStartupScriptPath),
+			Key: "setup.startup-script",
+			Process: &processCommand{
+				Command: flatten("ignite", "exec", name, "--", options.FirecrackerOptions.VMStartupScriptPath),
+			},
 			Operation: operations.SetupStartupScript,
 		}
 		if err := runner.RunCommand(ctx, startupScriptCommand, logger); err != nil {
@@ -116,8 +122,10 @@ func callWithInstrumentedLock(operations *Operations, f func() error) error {
 // the given name.
 func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, options Options, operations *Operations) error {
 	removeCommand := command{
-		Key:       "teardown.firecracker.remove",
-		Command:   flatten("ignite", "rm", "-f", name),
+		Key: "teardown.firecracker.remove",
+		Process: &processCommand{
+			Command: flatten("ignite", "rm", "-f", name),
+		},
 		Operation: operations.TeardownFirecrackerRemove,
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {

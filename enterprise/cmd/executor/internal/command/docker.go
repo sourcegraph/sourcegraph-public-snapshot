@@ -18,27 +18,31 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 	// TODO - make this a non-special case
 	if spec.Image == "" {
 		return command{
-			Key:       spec.Key,
-			Command:   spec.Command,
-			Dir:       filepath.Join(dir, spec.Dir),
-			Env:       spec.Env,
+			Key: spec.Key,
+			Process: &processCommand{
+				Command: spec.Command,
+				Dir:     filepath.Join(dir, spec.Dir),
+				Env:     spec.Env,
+			},
 			Operation: spec.Operation,
 		}
 	}
 
 	return command{
 		Key: spec.Key,
-		Command: flatten(
-			"docker", "run", "--rm",
-			dockerResourceFlags(options.ResourceOptions),
-			dockerVolumeFlags(dir, spec.ScriptPath),
-			dockerWorkingdirectoryFlags(spec.Dir),
-			// If the env vars will be part of the command line args, we need to quote them
-			dockerEnvFlags(quoteEnv(spec.Env)),
-			dockerEntrypointFlags(),
-			spec.Image,
-			filepath.Join("/data", ScriptsPath, spec.ScriptPath),
-		),
+		Process: &processCommand{
+			Command: flatten(
+				"docker", "run", "--rm",
+				dockerResourceFlags(options.ResourceOptions),
+				dockerVolumeFlags(dir, spec.ScriptPath),
+				dockerWorkingdirectoryFlags(spec.Dir),
+				// If the env vars will be part of the command line args, we need to quote them
+				dockerEnvFlags(quoteEnv(spec.Env)),
+				dockerEntrypointFlags(),
+				spec.Image,
+				filepath.Join("/data", ScriptsPath, spec.ScriptPath),
+			),
+		},
 		Operation: spec.Operation,
 	}
 }
