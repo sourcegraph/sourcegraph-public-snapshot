@@ -198,6 +198,14 @@
             "pointer": true
           }
         },
+        "treeSitterEnabled": {
+          "description": "Enables tree sitter for enabled filetypes",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
@@ -385,6 +393,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "history.preferAbsoluteTimestamps": {
+      "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
+      "type": "boolean",
+      "default": false
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

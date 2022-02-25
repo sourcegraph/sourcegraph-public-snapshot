@@ -246,6 +246,7 @@ func TestPrettyJSON(t *testing.T) {
             "foo"
           ],
           "MinusRepoFilters": null,
+          "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
           "UserSettings": {},
@@ -318,6 +319,7 @@ func TestPrettyJSON(t *testing.T) {
               "bar"
             ],
             "MinusRepoFilters": null,
+            "Dependencies": null,
             "CaseSensitiveRepoFilters": false,
             "SearchContextSpec": "",
             "UserSettings": {},
@@ -409,6 +411,7 @@ func TestPrettyJSON(t *testing.T) {
             "foo"
           ],
           "MinusRepoFilters": null,
+          "Dependencies": null,
           "CaseSensitiveRepoFilters": false,
           "SearchContextSpec": "",
           "UserSettings": {},

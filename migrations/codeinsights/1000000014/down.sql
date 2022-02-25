@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS dashboard_grants CASCADE;
-DROP TABLE IF EXISTS dashboard CASCADE;
-DROP TABLE IF EXISTS dashboard_insight_view CASCADE;
