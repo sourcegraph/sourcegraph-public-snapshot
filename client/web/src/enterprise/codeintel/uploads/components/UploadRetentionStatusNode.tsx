@@ -48,8 +48,12 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
                     Retained: {match.matches ? 'yes' : 'no'}
                     {match.protectingCommits.length !== 0 && (
                         <>
-                            , by visible {pluralize('commit', match.protectingCommits.length)}{' '}
-                            {match.protectingCommits.map(hash => hash.slice(0, 9)).join(', ')}
+                            , by {match.protectingCommits.length} visible{' '}
+                            {pluralize('commit', match.protectingCommits.length)}, including{' '}
+                            {match.protectingCommits
+                                .slice(0, 4)
+                                .map(hash => hash.slice(0, 7))
+                                .join(', ')}
                             <InformationOutlineIcon
                                 className="ml-1 icon-inline"
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."

@@ -30,6 +30,7 @@ func NewIndexConnectionResolver(db database.DB, gitserver policies.GitserverClie
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
+		errTracer:        errTracer,
 	}
 }
 
