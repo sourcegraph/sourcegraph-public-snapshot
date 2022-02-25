@@ -52,7 +52,7 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
                             {pluralize('commit', match.protectingCommits.length)}, including{' '}
                             {match.protectingCommits
                                 .slice(0, 4)
-                                .map(hash => hash.slice(0, 9))
+                                .map(hash => hash.slice(0, 7))
                                 .join(', ')}
                             <InformationOutlineIcon
                                 className="ml-1 icon-inline"
