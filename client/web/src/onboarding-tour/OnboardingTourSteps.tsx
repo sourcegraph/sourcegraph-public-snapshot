@@ -26,9 +26,11 @@ interface LinkOrAnchorProps {
 const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => {
     if (isExternalURL(href)) {
         return (
-            <Link to={href} target="_blank" rel="noopener noreferrer" {...props}>
+            // Using <a> tag explicitly for external link
+            // eslint-disable-next-line react/forbid-elements
+            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
                 {children}
-            </Link>
+            </a>
         )
     }
 
