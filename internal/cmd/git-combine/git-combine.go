@@ -126,8 +126,23 @@ func Combine(path string, opt Options) error {
 
 		for i := 0; i < opt.LimitRemote; i++ {
 			if time.Since(lastLog) > time.Second {
-				log.Printf("Combine: collecting new commits... (remote %s, commit depth %d, commit hash %s)", remote, i, commit.Hash)
+				log.Printf("Combine: collecting new commits... (remote %s, commit depth %d, commit hash %s)", remote, i+1, commit.Hash)
 				lastLog = time.Now()
+			}
+
+			if seen.Contains(commit.TreeHash) {
+				rootTree[remote] = commit.TreeHash
+				break
+			}
+
+			commits = append(commits, &dirCommit{
+				dir:    remote,
+				Commit: commit,
+			})
+
+			if i >= opt.LimitRemote-1 {
+				// Avoid getting the next commit if we're done iterating.
+				break
 			}
 
 			if commit.NumParents() == 0 {
@@ -140,16 +155,6 @@ func Combine(path string, opt Options) error {
 			} else if err != nil {
 				return err
 			}
-
-			if seen.Contains(commit.TreeHash) {
-				rootTree[remote] = commit.TreeHash
-				break
-			}
-
-			commits = append(commits, &dirCommit{
-				dir:    remote,
-				Commit: commit,
-			})
 		}
 	}
 
