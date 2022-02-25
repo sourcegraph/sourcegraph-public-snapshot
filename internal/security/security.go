@@ -91,7 +91,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 		regex := regexp.MustCompile(`\W` + `{` + strconv.Itoa(policy.NumberOfSpecialCharacters) + `}`)
 		foundSpecialCharacters := regex.MatchString(passwd)
 		if !foundSpecialCharacters {
-			return errcode.NewPresentationError(fmt.Sprintf("Password must include at least %d special characters.", policy.NumberOfSpecialCharacters))
+			return errcode.NewPresentationError(fmt.Sprintf("Password must include at least %d special character(s).", policy.NumberOfSpecialCharacters))
 		}
 	}
 
