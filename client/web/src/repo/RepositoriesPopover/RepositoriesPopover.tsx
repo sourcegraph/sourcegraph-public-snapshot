@@ -87,7 +87,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
             return data.repositories
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'no-cache',
         },
     })
 

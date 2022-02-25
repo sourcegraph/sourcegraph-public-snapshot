@@ -153,7 +153,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             return node.commit.symbols
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'no-cache',
         },
     })
 

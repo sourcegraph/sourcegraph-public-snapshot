@@ -1,5 +1,5 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -29,7 +29,7 @@ interface UseConnectionConfig {
     pollInterval?: number
 }
 
-interface UseConnectionParameters<TResult, TVariables, TData> {
+export interface UseConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
@@ -54,6 +54,8 @@ export const useConnection = <TResult, TVariables, TData>({
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
+    const shouldUseLocalState = options?.fetchPolicy === 'no-cache'
+    const [localData, setLocalData] = useState<TResult>()
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
@@ -97,13 +99,19 @@ export const useConnection = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
+    const { data: cachedData, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
+        onCompleted: result => {
+            if (shouldUseLocalState) {
+                console.log('Setting in oncompleted!')
+                setLocalData(result)
+            }
+        },
     })
 
     /**
@@ -115,6 +123,7 @@ export const useConnection = <TResult, TVariables, TData>({
         return getConnectionFromGraphQLResult(result)
     }
 
+    const data = shouldUseLocalState ? localData : cachedData
     const connection = data ? getConnection({ data, error }) : undefined
 
     useConnectionUrl({
@@ -125,6 +134,27 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
+
+        const transformResult = (newResult: TResult, previousResult?: TResult): TResult => {
+            if (cursor) {
+                // Update resultant data in the cache by prepending the `previousResult`s to the
+                // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
+                // order to access and modify the actual `nodes` in the connection response because we
+                // don't know the exact response structure
+                const previousNodes = getConnection({ data: previousResult }).nodes
+                getConnection({ data: newResult }).nodes.unshift(...previousNodes)
+            } else {
+                // With batch-based pagination, we have all the results already in `fetchMoreResult`,
+                // we just need to update `first` to fetch more results next time
+                firstReference.current.actual *= 2
+            }
+
+            return newResult
+        }
+
+        if (shouldUseLocalState) {
+            setLocalData(previous => transformResult(data, previous))
+        }
 
         await fetchMore({
             variables: {
@@ -137,20 +167,7 @@ export const useConnection = <TResult, TVariables, TData>({
                     return previousResult
                 }
 
-                if (cursor) {
-                    // Update resultant data in the cache by prepending the `previousResult`s to the
-                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
-                    // order to access and modify the actual `nodes` in the connection response because we
-                    // don't know the exact response structure
-                    const previousNodes = getConnection({ data: previousResult }).nodes
-                    getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
-                } else {
-                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
-                    // we just need to update `first` to fetch more results next time
-                    firstReference.current.actual *= 2
-                }
-
-                return fetchMoreResult
+                return transformResult(previousResult, fetchMoreResult)
             },
         })
     }
