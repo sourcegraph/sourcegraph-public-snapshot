@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
+import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 
@@ -14,6 +15,7 @@ import {
     MenuButton,
     MenuList,
     MenuItem,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -29,10 +31,11 @@ import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-import { AddMemberNotification, AddMemberToOrgModal } from './AddMemberToOrgModal'
+import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import styles from './OrgMembersListPage.module.scss'
+import { OrgMemberNotification } from './utils'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 interface Member {
@@ -56,7 +59,7 @@ interface MemberItemProps {
     isSelf: boolean
     onlyMember: boolean
     orgId: string
-    onShouldRefetch: () => void
+    onMemberRemoved: (username: string) => void
 }
 
 const MemberItem: React.FunctionComponent<MemberItemProps> = ({
@@ -65,7 +68,7 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     viewerCanAdminister,
     isSelf,
     onlyMember,
-    onShouldRefetch,
+    onMemberRemoved,
 }) => {
     const [removeUserFromOrganization, { loading, error }] = useMutation<
         RemoveUserFromOrganizationResult,
@@ -75,9 +78,9 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     const onRemoveClick = useCallback(async () => {
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
-            onShouldRefetch()
+            onMemberRemoved(member.username)
         }
-    }, [isSelf, member.username, removeUserFromOrganization, onShouldRefetch, member.id, orgId])
+    }, [isSelf, member.username, removeUserFromOrganization, onMemberRemoved, member.id, orgId])
 
     return (
         <li data-test-username={member.username}>
@@ -90,16 +93,20 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                 >
                     <div className={styles.avatarContainer}>
                         <UserAvatar
+                            size={36}
                             className={styles.avatar}
                             user={member}
                             data-tooltip={member.displayName || member.username}
                         />
                     </div>
+
                     <div className="d-flex flex-column">
                         <Link to={userURL(member.username)}>
                             <strong>{member.displayName || member.username}</strong>
                         </Link>
-                        {member.displayName && <span className="text-muted">{member.username}</span>}
+                        {member.displayName && (
+                            <span className={classNames('text-muted', styles.displayName)}>{member.username}</span>
+                        )}
                     </div>
                 </div>
                 <div className={styles.memberRole}>
@@ -108,14 +115,22 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                 <div className={styles.memberActions}>
                     {viewerCanAdminister && (
                         <Menu>
-                            <MenuButton variant="secondary" outline={false} className={styles.memberMenu}>
-                                {loading ? <LoadingSpinner /> : <CogIcon />}
-                                <span aria-hidden={true}>▾</span>
+                            <MenuButton
+                                size="sm"
+                                outline={true}
+                                variant="secondary"
+                                className={styles.memberMenu}
+                                disabled={loading}
+                            >
+                                <CogIcon size={15} />
+                                <span aria-hidden={true}>
+                                    <ChevronDown size={15} />
+                                </span>
                             </MenuButton>
 
-                            <MenuList>
+                            <MenuList position={Position.bottomEnd}>
                                 <MenuItem onSelect={onRemoveClick} disabled={onlyMember || loading}>
-                                    {isSelf ? 'Leave organization' : 'Remove from organization'}
+                                    {isSelf ? 'Leave organization...' : 'Remove from organization...'}
                                 </MenuItem>
                             </MenuList>
                         </Menu>
@@ -141,7 +156,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
                     styles.memberDetails
                 )}
             >
-                {`${total} ${pluralize('person', total)} in the ${orgName} organization`}
+                {`${total} ${pluralize('person', total, 'people')} in the ${orgName} organization`}
             </div>
             <div className={styles.memberRole}>Role</div>
             <div className={styles.memberActions} />
@@ -154,7 +169,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
  */
 export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
-    const [member, setMemberAdded] = useState<string>()
+    const [notification, setNotification] = useState<string>()
 
     const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
@@ -180,17 +195,29 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
         setInvite(undefined)
     }, [setInvite])
 
-    const onShouldRefetch = useCallback(
-        async (username?: string) => {
-            setMemberAdded(username)
-            await refetch({ id: org.id })
+    const onShouldRefetch = useCallback(async () => {
+        await refetch({ id: org.id })
+    }, [refetch, org.id])
+
+    const onMemberAdded = useCallback(
+        async (username: string) => {
+            setNotification(`You succesfully added ${username} to ${org.name}`)
+            await onShouldRefetch()
         },
-        [setMemberAdded, refetch, org.id]
+        [setNotification, onShouldRefetch, org.name]
     )
 
-    const onMemberAddedtMessageDismiss = useCallback(() => {
-        setMemberAdded(undefined)
-    }, [setMemberAdded])
+    const onMemberRemoved = useCallback(
+        async (username: string) => {
+            setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
+            await onShouldRefetch()
+        },
+        [setNotification, onShouldRefetch, org.name]
+    )
+
+    const onNotificationDismiss = useCallback(() => {
+        setNotification(undefined)
+    }, [setNotification])
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
 
@@ -208,22 +235,12 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                         invitationURL={invite.inviteResult.inviteUserToOrganization.invitationURL}
                     />
                 )}
-                {member && (
-                    <AddMemberNotification
-                        orgName={org.name}
-                        username={member}
-                        onDismiss={onMemberAddedtMessageDismiss}
-                    />
-                )}
+                {notification && <OrgMemberNotification message={notification} onDismiss={onNotificationDismiss} />}
                 <div className="d-flex flex-0 justify-content-end align-items-center mb-3 flex-wrap">
-                    <PageHeader
-                        path={[{ text: 'Organization Members' }]}
-                        headingElement="h2"
-                        className={styles.membersListHeader}
-                    />
+                    <PageHeader path={[{ text: 'Members' }]} headingElement="h2" className={styles.membersListHeader} />
 
                     {viewerCanAddUserToOrganization && (
-                        <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onShouldRefetch} />
+                        <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onMemberAdded} />
                     )}
                     {authenticatedUser && (
                         <InviteMemberModalHandler
@@ -248,7 +265,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                                     onlyMember={membersResult.members.totalCount === 1}
                                     viewerCanAdminister={membersResult.viewerCanAdminister}
                                     isSelf={isSelf(usr.id)}
-                                    onShouldRefetch={onShouldRefetch}
+                                    onMemberRemoved={onMemberRemoved}
                                 />
                             ))}
                         </ul>
@@ -267,7 +284,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     isSelf(membersResult.members.nodes[0].id) && (
                         <Container className={styles.onlyYouContainer}>
                             <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                                <h3>Look like it's just you!</h3>
+                                <h3>Looks like it’s just you!</h3>
                                 <div>
                                     <InviteMemberModalHandler
                                         orgName={org.name}
@@ -276,6 +293,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                                         onInviteSent={onInviteSent}
                                         className={styles.inviteMemberLink}
                                         as="a"
+                                        size="lg"
                                         variant="link"
                                     />
                                     {` to join you on ${org.name} on Sourcegraph`}

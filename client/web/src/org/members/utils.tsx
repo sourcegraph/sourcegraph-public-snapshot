@@ -1,3 +1,11 @@
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
+import React from 'react'
+
+import { Alert, Button } from '@sourcegraph/wildcard'
+
+import styles from './InviteMemberModal.module.scss'
+
 export const getInvitationExpiryDateString = (expiring: string): string => {
     const expiryDate = new Date(expiring)
     const now = new Date().getTime()
@@ -34,3 +42,22 @@ export const getInvitationCreationDateString = (creation: string): string => {
 }
 
 export const getLocaleFormattedDateFromString = (jsonDate: string): string => new Date(jsonDate).toLocaleDateString()
+
+interface MembersNotificationProps {
+    message: string
+    onDismiss: () => void
+    className?: string
+}
+
+export const OrgMemberNotification: React.FunctionComponent<MembersNotificationProps> = ({
+    className,
+    message,
+    onDismiss,
+}) => (
+    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
+        <div className={styles.message}>{message}</div>
+        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+            <CloseIcon className="icon-inline" />
+        </Button>
+    </Alert>
+)
