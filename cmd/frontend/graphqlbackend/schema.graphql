@@ -4627,6 +4627,10 @@ type User implements Node & SettingsSubject & Namespace {
         Only return events matching this event name
         """
         eventName: String
+        """
+        Only return events matching this event source
+        """
+        source: EventSource
     ): EventLogsConnection!
     """
     The user's email addresses.

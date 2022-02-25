@@ -12,6 +12,7 @@ import (
 type eventLogsArgs struct {
 	graphqlutil.ConnectionArgs
 	EventName *string // return only event logs matching the event name
+	Source *string // return only event logs matching the event source
 }
 
 func (r *UserResolver) EventLogs(ctx context.Context, args *eventLogsArgs) (*userEventLogsConnectionResolver, error) {
@@ -33,6 +34,7 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *eventLogsArgs) (*use
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	opt.UserID = r.user.ID
 	opt.EventName = args.EventName
+	opt.Source = args.Source
 	return &userEventLogsConnectionResolver{db: r.db, opt: opt}, nil
 }
 
@@ -59,11 +61,7 @@ func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32
 	var count int
 	var err error
 
-	if r.opt.EventName != nil {
-		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
-	} else {
-		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
-	}
+	count, err = r.db.EventLogs().CountAll(ctx, r.opt)
 
 	return int32(count), err
 }
@@ -72,11 +70,7 @@ func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	var count int
 	var err error
 
-	if r.opt.EventName != nil {
-		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
-	} else {
-		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
-	}
+	count, err = r.db.EventLogs().CountAll(ctx, r.opt)
 
 	if err != nil {
 		return nil, err

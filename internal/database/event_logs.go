@@ -67,6 +67,9 @@ type EventLogStore interface {
 	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
 
+	// CountAll counts the number of event logs based on the supplied options.
+	CountAll(ctx context.Context, opt EventLogsListOptions) (int, error)
+
 	// CountByUserID gets a count of events logged by a given user.
 	CountByUserID(ctx context.Context, userID int32) (int, error)
 
@@ -274,6 +277,8 @@ type EventLogsListOptions struct {
 	*LimitOffset
 
 	EventName *string
+
+	Source *string
 }
 
 func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
@@ -284,6 +289,10 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 	if opt.EventName != nil {
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
+	if opt.Source != nil {
+		conds = append(conds, sqlf.Sprintf("source = %s", opt.Source))
+	}
+
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
@@ -296,6 +305,21 @@ func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
 		return nil, sql.ErrNoRows
 	}
 	return rows[0], err
+}
+
+func (l *eventLogStore) CountAll(ctx context.Context, opt EventLogsListOptions) (int, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
+	}
+	if opt.EventName != nil {
+		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
+	}
+	if opt.Source != nil {
+		conds = append(conds, sqlf.Sprintf("source = %s", opt.Source))
+	}
+
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND")))
 }
 
 func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {

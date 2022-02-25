@@ -961,6 +961,66 @@ func TestEventLogs_ListAll(t *testing.T) {
 	}
 }
 
+func TestEventLogs_FilterBySource(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	now := time.Now()
+
+	startDate, _ := calcStartDate(now, Daily, 3)
+
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "CODEHOSTINTEGRATION",
+			Timestamp: startDate,
+		}, {
+			UserID:    2,
+			Name:      "codeintel",
+			URL:       "http://sourcegraph.com",
+			Source:    "CODEHOSTINTEGRATION",
+			Timestamp: startDate,
+		},
+		{
+			UserID:    2,
+			Name:      "ViewRepository",
+			URL:       "http://sourcegraph.com",
+			Source:    "WEB",
+			Timestamp: startDate,
+		},
+		{
+			UserID:    2,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "WEB",
+			Timestamp: startDate,
+		}}
+
+	for _, event := range events {
+		if err := EventLogs(db).Insert(ctx, event); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	searchResultQueriedSource := "CODEHOSTINTEGRATION"
+	have, err := EventLogs(db).ListAll(ctx, EventLogsListOptions{Source: &searchResultQueriedSource})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := 2
+
+	if diff := cmp.Diff(want, len(have)); diff != "" {
+		t.Error(diff)
+	}
+}
+
 func TestEventLogs_LatestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
