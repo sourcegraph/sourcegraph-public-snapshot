@@ -80,6 +80,7 @@ export function useBlobPanelViews({
     )
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
+    const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
@@ -168,6 +169,7 @@ export function useBlobPanelViews({
                                     filePath={filePath}
                                     history={history}
                                     location={location}
+                                    preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                                 />
                             ),
                         }))
@@ -196,7 +198,7 @@ export function useBlobPanelViews({
                     ),
                 },
             ],
-            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges]
+            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges, preferAbsoluteTimestamps]
         )
     )
 
@@ -208,4 +210,12 @@ function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Set
         return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
     }
     return undefined
+}
+
+function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        console.log(settingsCascade.final['history.preferAbsoluteTimestamps'])
+        return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
+    }
+    return false
 }
