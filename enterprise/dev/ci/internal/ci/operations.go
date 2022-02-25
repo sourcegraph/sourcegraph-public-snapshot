@@ -70,7 +70,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
-			clientChromaticTests(opts.ChromaticShouldAutoAccept),
+			// @jhchabran, temporary disable, chromatic is down.
+			// clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
 			addWebApp,       // ~3m
 			addBrowserExt,   // ~2m
