@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// stableCommitMatchJSONMarshaler is a type that is used to marshal and unmarshal
+// stableCommitMatchJSON is a type that is used to marshal and unmarshal
 // a CommitMatch. We create this type as a stable representation of the serialized
 // match so that changes to the shape of the type or types it embeds don't break
 // stored, serialized results. If changes are made, care should be taken to update
@@ -17,7 +17,7 @@ import (
 //
 // Specifically, this representation of commit matches is stored in the database
 // as the results of code monitor runs.
-type stableCommitMatchJSONMarshaler struct {
+type stableCommitMatchJSON struct {
 	RepoID          int32                     `json:"repoID"`
 	RepoName        string                    `json:"repoName"`
 	RepoStars       int                       `json:"repoStars"`
@@ -54,7 +54,7 @@ func (cm CommitMatch) MarshalJSON() ([]byte, error) {
 		parents[i] = string(parent)
 	}
 
-	marshaler := stableCommitMatchJSONMarshaler{
+	marshaler := stableCommitMatchJSON{
 		RepoID:    int32(cm.Repo.ID),
 		RepoName:  string(cm.Repo.Name),
 		RepoStars: cm.Repo.Stars,
@@ -78,7 +78,7 @@ func (cm CommitMatch) MarshalJSON() ([]byte, error) {
 }
 
 func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
-	var unmarshaler stableCommitMatchJSONMarshaler
+	var unmarshaler stableCommitMatchJSON
 	if err := json.Unmarshal(input, &unmarshaler); err != nil {
 		return err
 	}
