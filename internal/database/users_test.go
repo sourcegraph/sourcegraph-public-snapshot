@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"regex"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -93,6 +94,47 @@ func TestUsers_ValidUsernames(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUsers_Password_Policy(t *testing.T) {
+
+	// Numeric Check
+	regex := regexp.MustCompile(`\d+`)
+	numberFound := regex.MatchString("abcdefg")
+	if numberFound {
+		t.Fatal("Number found without being present in regex")
+	}
+
+	// Mixed case check
+		regexUpperCase := regexp.MustCompile(`[A-Z]+`)
+		oneUpperCaseLetterFound := regexUpperCase.MatchString("abcdefg123$")
+		if oneUpperCaseLetterFound {
+			t.Fatal("Uppercase letter found without being present in regex")
+		}
+
+		regexLowerCase := regexp.MustCompile(`[a-z]+`)
+		oneLowerCaseLetterFound := regexLowerCase.MatchString("ABCDEFGB!@#")
+		if oneLowerCaseLetterFound {
+			t.Fatal("Lower case letter found without being present in regex")
+		}
+
+		// Special Character Check
+		num := 2
+		regex := regexp.MustCompile(`\W` + `{` + strconv.Itoa(num) + `}`)
+		foundSpecialCharacters := regex.MatchString("$!")
+		if !foundSpecialCharacters {
+			t.Fatal("Special characters not found in regex")
+		}
+
+		ExtrafoundSpecialCharacters := regex.MatchString("$!#%^")
+		if !ExtrafoundSpecialCharacters {
+			t.Fatal("Special characters not found in regex")
+		}	
+		
+		NumbersOnly := regex.MatchString("1234")
+		if NumbersOnly {
+			t.Fatal("Special characters found not in regex")
+		}			
 }
 
 func TestUsers_Create_CheckPassword(t *testing.T) {
