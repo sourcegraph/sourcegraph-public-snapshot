@@ -114,9 +114,7 @@ func Combine(path string, opt Options) error {
 			continue
 		}
 
-		iter, err := r.Log(&git.LogOptions{
-			From: ref.Hash(),
-		})
+		commit, err := r.CommitObject(ref.Hash())
 		if err != nil {
 			return err
 		}
@@ -124,7 +122,7 @@ func Combine(path string, opt Options) error {
 		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.LimitRemote; i++ {
-			commit, err := iter.Next()
+			commit, err := commit.Parent(0)
 			if err == io.EOF {
 				break
 			} else if err != nil {
@@ -142,10 +140,6 @@ func Combine(path string, opt Options) error {
 			})
 		}
 	}
-
-	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].Committer.When.Before(commits[j].Committer.When)
-	})
 
 	if len(commits) > opt.Limit {
 		// We only take the last Limit commits. But we want to ensure we are
