@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -106,11 +108,9 @@ func TestOrgs_HardDelete(t *testing.T) {
 
 	displayName := "org1"
 	org, err := Orgs(db).Create(ctx, "org1", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	// Hard Delete org
+	// Hard Delete org.
 	if err := Orgs(db).HardDelete(ctx, org.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -120,36 +120,29 @@ func TestOrgs_HardDelete(t *testing.T) {
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
+
 	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "org1"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	if len(orgs) > 0 {
 		t.Errorf("got %d orgs, want 0", len(orgs))
 	}
 
-	// Cannot hard delete an org that doesn't exist
+	// Cannot hard delete an org that doesn't exist.
 	err = Orgs(db).HardDelete(ctx, org.ID)
 	if !errors.HasType(err, &OrgNotFoundError{}) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 
-	// Can hard delete an org that has been soft deleted
+	// Can hard delete an org that has been soft deleted.
 	displayName2 := "org2"
 	org2, err := Orgs(db).Create(ctx, "org2", &displayName2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = Orgs(db).Delete(ctx, org2.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = Orgs(db).HardDelete(ctx, org2.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestOrgs_GetByID(t *testing.T) {

@@ -311,10 +311,21 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 }
 
 func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
+	// Check if the org exists even if it has been previously soft deleted
+	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", id)
+	if err != nil {
+		return err
+	}
+
+	if len(orgs) == 0 {
+		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
+	}
+
 	tx, err := o.Transact(ctx)
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		err = tx.Done(err)
 	}()
@@ -343,17 +354,8 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
-	res, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id)
-	if err != nil {
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id); err != nil {
 		return err
-	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 
 	return nil
