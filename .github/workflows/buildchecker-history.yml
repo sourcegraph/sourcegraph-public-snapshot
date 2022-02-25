@@ -1,5 +1,5 @@
 # See dev/buildchecker/README.md
-name: buildchecker
+name: buildchecker-history
 on:
   schedule:
   - cron: '0 1 * * *'
