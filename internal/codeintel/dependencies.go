@@ -45,7 +45,7 @@ var (
 	depSvcOnce sync.Once
 )
 
-func Dependenciese(db database.DB, syncer Syncer) *DependenciesService {
+func Dependencies(db database.DB, syncer Syncer) *DependenciesService {
 	depSvcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
