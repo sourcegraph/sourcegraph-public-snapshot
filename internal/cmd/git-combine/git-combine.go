@@ -70,6 +70,7 @@ func Combine(path string, opt Options) error {
 
 	parentHash := getHeadHash(r)
 
+	log.Println("Combine: getting recent root trees...")
 	recentRootTrees, err := getRecentRootTrees(r, recentRootTreesMaxEntries)
 	if err != nil {
 		return err
@@ -92,6 +93,8 @@ func Combine(path string, opt Options) error {
 		dir string
 	}
 
+	log.Println("Combine: collecting new commits...")
+	lastLog := time.Now()
 	rootTree := map[string]plumbing.Hash{}
 	var commits []*dirCommit
 	for remote := range conf.Remotes {
@@ -114,9 +117,7 @@ func Combine(path string, opt Options) error {
 			continue
 		}
 
-		iter, err := r.Log(&git.LogOptions{
-			From: ref.Hash(),
-		})
+		commit, err := r.CommitObject(ref.Hash())
 		if err != nil {
 			return err
 		}
@@ -124,11 +125,9 @@ func Combine(path string, opt Options) error {
 		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.LimitRemote; i++ {
-			commit, err := iter.Next()
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				return err
+			if time.Since(lastLog) > time.Second {
+				log.Printf("Combine: collecting new commits... (remote %s, commit depth %d, commit hash %s)", remote, i+1, commit.Hash)
+				lastLog = time.Now()
 			}
 
 			if seen.Contains(commit.TreeHash) {
@@ -140,12 +139,29 @@ func Combine(path string, opt Options) error {
 				dir:    remote,
 				Commit: commit,
 			})
+
+			if i >= opt.LimitRemote-1 {
+				// Avoid getting the next commit if we're done iterating.
+				break
+			}
+
+			if commit.NumParents() == 0 {
+				break
+			}
+
+			commit, err = commit.Parent(0)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
 		}
 	}
 
-	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].Committer.When.Before(commits[j].Committer.When)
-	})
+	// Reverse the commits so we apply them in the right order.
+	for i, j := 0, len(commits)-1; i < j; i, j = i+1, j-1 {
+		commits[i], commits[j] = commits[j], commits[i]
+	}
 
 	if len(commits) > opt.Limit {
 		// We only take the last Limit commits. But we want to ensure we are
@@ -217,7 +233,10 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
+		if time.Since(lastLog) > time.Second {
+			log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
+			lastLog = time.Now()
+		}
 	}
 
 	return nil
@@ -438,7 +457,7 @@ func runGit(dir string, args ...string) error {
 	return err
 }
 
-func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Options) error {
+func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 	isDone := func() bool {
 		select {
 		case <-done:
@@ -455,7 +474,11 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 		// more upstreams.
 		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
 			opt.Logger.Printf("PAUSE file present: %s", string(b))
-			<-ticker
+			select {
+			case <-time.After(time.Minute):
+			case <-done:
+				return nil
+			}
 			continue
 		}
 
@@ -484,7 +507,7 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 		}
 
 		select {
-		case <-ticker:
+		case <-time.After(time.Minute):
 		case <-done:
 			return nil
 		}
@@ -509,7 +532,6 @@ func main() {
 	}
 
 	if *daemon {
-		ticker := time.NewTicker(time.Minute)
 		done := make(chan struct{}, 1)
 
 		go func() {
@@ -519,7 +541,7 @@ func main() {
 			done <- struct{}{}
 		}()
 
-		err := doDaemon(gitDir, ticker.C, done, opt)
+		err := doDaemon(gitDir, done, opt)
 		if err != nil {
 			log.Fatal(err)
 		}
