@@ -27,15 +27,17 @@ import styles from './RepoRevisionSidebarCommits.module.scss'
 interface CommitNodeProps {
     node: GitCommitFields
     location: H.Location
+    preferAbsoluteTimestamps: boolean
 }
 
-const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }) => (
+const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, preferAbsoluteTimestamps }) => (
     <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
         <GitCommitNode
             className={styles.commitNode}
             compact={true}
             node={node}
             hideExpandCommitMessageBody={true}
+            preferAbsoluteTimestamps={preferAbsoluteTimestamps}
             afterElement={
                 <Link
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
@@ -53,33 +55,36 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
     repoID: Scalars['ID']
     history: H.History
     location: H.Location
+    preferAbsoluteTimestamps: boolean
 }
 
-export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        return (
-            <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
-                className="list-group list-group-flush"
-                listClassName={styles.list}
-                summaryClassName={styles.summary}
-                loaderClassName={styles.loader}
-                compact={true}
-                noun="commit"
-                pluralNoun="commits"
-                queryConnection={this.fetchCommits}
-                nodeComponent={CommitNode}
-                nodeComponentProps={{ location: this.props.location }}
-                defaultFirst={100}
-                hideSearch={true}
-                useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
-            />
-        )
-    }
+export const RepoRevisionSidebarCommits: React.FunctionComponent<Props> = props => {
+    const queryCommits = (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
+        fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '' })
 
-    private fetchCommits = (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
-        fetchCommits(this.props.repoID, this.props.revision || '', { ...args, currentPath: this.props.filePath || '' })
+    return (
+        <FilteredConnection<
+            GitCommitFields,
+            Pick<CommitNodeProps, 'location' | 'preferAbsoluteTimestamps'>,
+            CommitAncestorsConnectionFields
+        >
+            className="list-group list-group-flush"
+            listClassName={styles.list}
+            summaryClassName={styles.summary}
+            loaderClassName={styles.loader}
+            compact={true}
+            noun="commit"
+            pluralNoun="commits"
+            queryConnection={queryCommits}
+            nodeComponent={CommitNode}
+            nodeComponentProps={{ location: props.location, preferAbsoluteTimestamps: props.preferAbsoluteTimestamps }}
+            defaultFirst={100}
+            hideSearch={true}
+            useURLQuery={false}
+            history={props.history}
+            location={props.location}
+        />
+    )
 }
 
 function fetchCommits(
