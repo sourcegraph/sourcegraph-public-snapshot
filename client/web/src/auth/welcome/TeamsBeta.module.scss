@@ -21,7 +21,7 @@
     min-height: 56rem;
     // Hard-code white here as the iframe of HubSpot is not easily configurable and ignores our
     // dark-mode setting.
-    background-color: white;
+    background-color: var(--white);
 }
 
 .content-inner {
