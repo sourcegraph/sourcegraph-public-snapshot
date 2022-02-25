@@ -16,8 +16,8 @@ interface Props {
     /** Whether to use exact timestamps (i.e. omit "less than", "about", etc.) */
     strict?: boolean
 
-    /** Whether to show absolute timestamps and show relative ones in tooltip */
-    flip?: boolean
+    /** Whether to show absolute timestamp and show relative one in tooltip */
+    preferAbsolute?: boolean
 }
 
 const RERENDER_INTERVAL_MSEC = 7000
@@ -31,7 +31,7 @@ export const Timestamp: React.FunctionComponent<Props> = ({
     noAbout = false,
     strict = false,
     now = Date.now,
-    flip = false,
+    preferAbsolute = false,
 }) => {
     const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout))
     useEffect(() => {
@@ -51,8 +51,8 @@ export const Timestamp: React.FunctionComponent<Props> = ({
     }, [date])
 
     return (
-        <span className="timestamp" data-tooltip={flip ? label : tooltip}>
-            {flip ? tooltip : label}
+        <span className="timestamp" data-tooltip={preferAbsolute ? label : tooltip}>
+            {preferAbsolute ? tooltip : label}
         </span>
     )
 }

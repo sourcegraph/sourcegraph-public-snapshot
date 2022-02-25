@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
+import { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -59,8 +60,11 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 }
 
 export const RepoRevisionSidebarCommits: React.FunctionComponent<Props> = props => {
-    const queryCommits = (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
-        fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '' })
+    const queryCommits = useCallback(
+        (args: { query?: string }): Observable<CommitAncestorsConnectionFields> =>
+            fetchCommits(props.repoID, props.revision || '', { ...args, currentPath: props.filePath || '' }),
+        [props.repoID, props.revision, props.filePath]
+    )
 
     return (
         <FilteredConnection<
