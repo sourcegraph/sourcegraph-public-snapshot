@@ -16,7 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -127,8 +126,8 @@ func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolv
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
-func newRouter() *muxtrace.Router {
-	r := muxtrace.NewRouter()
+func newRouter() *mux.Router {
+	r := mux.NewRouter()
 	r.StrictSlash(true)
 
 	// Top-level routes.
@@ -227,8 +226,8 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, router *muxtrace.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
-	uirouter.Router = router.Router // make accessible to other packages
+func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
 		return handler(db, serveBrandedPageString(db, titles, nil, index))
@@ -336,7 +335,7 @@ func initRouter(db database.DB, router *muxtrace.Router, codeIntelResolver graph
 		return brandNameSubtitle(repoShortName(c.Repo.Name))
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// debug mode: register the __errorTest handler.
+		// Debug mode: register the __errorTest handler.
 		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
 			return

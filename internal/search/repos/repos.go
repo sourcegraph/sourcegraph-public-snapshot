@@ -15,7 +15,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -563,8 +562,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depSvc := codeintel.NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
-	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, repoStore).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
