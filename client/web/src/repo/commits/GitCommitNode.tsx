@@ -35,6 +35,9 @@ export interface GitCommitNodeProps {
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
 
+    /** Show the absolute timestamp and move relative time to tooltip. */
+    preferAbsoluteTimestamps?: boolean
+
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
 
@@ -58,6 +61,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     hideExpandCommitMessageBody,
     messageSubjectClassName,
     showSHAAndParentsRow,
+    preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
 }) => {
@@ -108,7 +112,11 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
-                    <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
+                    <Timestamp
+                        noAbout={true}
+                        preferAbsolute={preferAbsoluteTimestamps}
+                        date={node.committer ? node.committer.date : node.author.date}
+                    />
                 </small>
             )}
         </div>
@@ -131,6 +139,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             compact={Boolean(compact)}
             messageElement={messageElement}
             commitMessageBody={commitMessageBody}
+            preferAbsoluteTimestamps={preferAbsoluteTimestamps}
         />
     )
 
