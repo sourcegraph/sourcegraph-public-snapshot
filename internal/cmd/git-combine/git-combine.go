@@ -70,6 +70,7 @@ func Combine(path string, opt Options) error {
 
 	parentHash := getHeadHash(r)
 
+	log.Println("Combine: getting recent root trees...")
 	recentRootTrees, err := getRecentRootTrees(r, recentRootTreesMaxEntries)
 	if err != nil {
 		return err
@@ -92,6 +93,8 @@ func Combine(path string, opt Options) error {
 		dir string
 	}
 
+	log.Println("Combine: collecting new commits...")
+	lastLog := time.Now()
 	rootTree := map[string]plumbing.Hash{}
 	var commits []*dirCommit
 	for remote := range conf.Remotes {
@@ -122,6 +125,11 @@ func Combine(path string, opt Options) error {
 		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.LimitRemote; i++ {
+			if time.Since(lastLog) > time.Minute {
+				log.Printf("Combine: collecting new commits... (remote %s, commit depth %d, commit hash %s)", remote, i, commit.Hash)
+				lastLog = time.Now()
+			}
+
 			if commit.NumParents() == 0 {
 				break
 			}
