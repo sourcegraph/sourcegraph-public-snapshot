@@ -50,12 +50,12 @@ type tracerType string
 const (
 	None    tracerType = ""
 	Datadog tracerType = "datadog"
-	Jaeg    tracerType = "opentracing"
+	Ot      tracerType = "opentracing"
 )
 
 func (t tracerType) isValid() bool {
 	switch t {
-	case None, Datadog, Jaeg:
+	case None, Datadog, Ot:
 		return true
 	}
 	return false
@@ -97,19 +97,20 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 	go c.Watch(func() {
 		siteConfig := c.SiteConfig()
 
-		// Set sampling strategy
 		samplingStrategy := ot.TraceNone
 		shouldLog := false
 		setTracer := None
 		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
-			if t := tracerType(tracingConfig.Type); t.isValid() {
-				setTracer = t
-			}
 			switch tracingConfig.Sampling {
 			case "all":
 				samplingStrategy = ot.TraceAll
+				setTracer = Ot
 			case "selective":
 				samplingStrategy = ot.TraceSelective
+				setTracer = Ot
+			}
+			if t := tracerType(tracingConfig.Type); t.isValid() {
+				setTracer = t
 			}
 			shouldLog = tracingConfig.Debug
 		}
