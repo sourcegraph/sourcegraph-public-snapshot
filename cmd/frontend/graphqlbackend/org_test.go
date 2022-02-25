@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -435,11 +437,15 @@ func TestUnmarshalOrgID(t *testing.T) {
 func TestRemoveOrganization(t *testing.T) {
 	orgs := database.NewMockOrgStore()
 
-	mockedOrg := types.Org{ID: 1, Name: "bla"}
+	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgIDString := string(MarshalOrgID(mockedOrg.ID))
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 
+	mockedFeatureFlag := featureflag.FeatureFlag{Name: "org-deletion", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
 	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
+		return &mockedFeatureFlag, nil
+	})
 
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
@@ -447,7 +453,8 @@ func TestRemoveOrganization(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	t.Run("Returns an error if feature flag is not enabled", func(t *testing.T) {
+	envvar.MockSourcegraphDotComMode(true)
+	t.Run("Returns an error when in DotComMode but feature flag is not enabled", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -475,9 +482,8 @@ func TestRemoveOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Org is successfully deleted when feature flag is enabled", func(t *testing.T) {
-		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
-
+	envvar.MockSourcegraphDotComMode(false)
+	t.Run("Returns an error when not in DotComMode", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -496,6 +502,12 @@ func TestRemoveOrganization(t *testing.T) {
 					"removeOrganization": null
 				}
 				`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "hard deleting organization is only supported on Sourcegraph Cloud",
+					Path:    []interface{}{string("removeOrganization")},
+				},
+			},
 		})
 	})
 

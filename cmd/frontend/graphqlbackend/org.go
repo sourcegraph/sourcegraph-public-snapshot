@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -288,16 +287,18 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
-	flags := featureflag.FromContext(ctx)
-	orgHardDeletionEnabled := flags.GetBoolOr("org-hard-deletion", false)
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("hard deleting organization is only supported on Sourcegraph Cloud")
+	}
+
+	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
+	if err != nil || orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
+		return nil, errors.New("hard deleting organization is not supported")
+	}
 
 	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
-	}
-
-	if !orgHardDeletionEnabled {
-		return nil, errors.New("hard deleting organization is not supported")
 	}
 
 	if err := database.Orgs(r.db).HardDelete(ctx, orgID); err != nil {
