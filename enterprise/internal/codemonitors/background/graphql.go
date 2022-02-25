@@ -6,13 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -130,11 +128,4 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
-}
-
-// extractTime extracts the time from the given search result.
-func extractTime(result cmtypes.CommitSearchResult) (time.Time, error) {
-	// This relies on the date format that our API returns. It was previously broken
-	// and should be checked first in case date extraction stops working.
-	return time.Parse(time.RFC3339, result.Commit.Committer.Date)
 }

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -240,8 +241,16 @@ WHERE caj.id = %s
 // GetActionJobMetada returns the set of fields needed to execute all action jobs
 func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, jobID))
+	var resultsJSON []byte
 	m := &ActionJobMetadata{}
-	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.Results, &m.OwnerName)
+	err := row.Scan(&m.Description, &m.Query, &m.MonitorID, &resultsJSON, &m.OwnerName)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(resultsJSON, &m.Results); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 const actionJobForIDFmtStr = `

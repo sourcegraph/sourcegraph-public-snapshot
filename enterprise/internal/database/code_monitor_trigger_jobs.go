@@ -210,7 +210,13 @@ func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 		return nil, err
 	}
 
-	return m, json.Unmarshal(resultsJSON, &m.SearchResults)
+	if len(resultsJSON) > 0 {
+		if err := json.Unmarshal(resultsJSON, &m.SearchResults); err != nil {
+			return nil, err
+		}
+	}
+
+	return m, nil
 }
 
 var TriggerJobsColumns = []*sqlf.Query{
