@@ -1,7 +1,3 @@
-import React from 'react'
-
-import { ExtensionViewsSectionProps } from './sections/ExtensionViewsSection'
-
 /**
  * Common props for code insights consumer components (the homepage, the directory page)
  * These props are needed for condition rendering of Code Insights and extension-like views.
@@ -10,5 +6,4 @@ import { ExtensionViewsSectionProps } from './sections/ExtensionViewsSection'
  */
 export interface CodeInsightsProps {
     codeInsightsEnabled?: boolean
-    extensionViews: React.FunctionComponent<ExtensionViewsSectionProps>
 }

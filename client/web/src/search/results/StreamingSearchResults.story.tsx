@@ -59,7 +59,6 @@ const defaultProps: StreamingSearchResultsProps = {
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
     featureFlags: EMPTY_FEATURE_FLAGS,
-    extensionViews: () => null,
     isSourcegraphDotCom: false,
     searchContextsEnabled: true,
 }

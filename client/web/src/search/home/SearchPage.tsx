@@ -55,7 +55,6 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
-    const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
 
     const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(
@@ -84,13 +83,6 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
-                <ExtensionViewsSection
-                    className="mt-5"
-                    telemetryService={props.telemetryService}
-                    extensionsController={props.extensionsController}
-                    settingsCascade={props.settingsCascade}
-                    where="homepage"
-                />
             </div>
             <div className={styles.panelsContainer}>
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}

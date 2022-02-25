@@ -52,7 +52,6 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { CodeInsightsProps } from '../../insights/types'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -120,7 +119,6 @@ interface Props
         ActivationProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
@@ -152,7 +150,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-    extensionViews: ExtensionViewsSection,
     ...props
 }) => {
     useEffect(() => {
@@ -438,15 +435,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-
-                        <ExtensionViewsSection
-                            className={classNames('mb-3', styles.section)}
-                            telemetryService={props.telemetryService}
-                            settingsCascade={settingsCascade}
-                            extensionsController={props.extensionsController}
-                            where="directory"
-                            uri={uri}
-                        />
 
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <h2>Files and directories</h2>
