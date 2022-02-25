@@ -933,16 +933,15 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "useJaeger": {
+      "description": "DEPRECATED. Use `\"observability.tracing\": { \"sampling\": \"all\" }`, instead. Enables Jaeger tracing.",
+      "type": "boolean",
+      "group": "Misc."
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
       "properties": {
-        "type": {
-          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
-          "type": "string",
-          "enum": ["datadog", "opentracing"],
-          "default": "opentracing"
-        },
         "sampling": {
           "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
           "type": "string",

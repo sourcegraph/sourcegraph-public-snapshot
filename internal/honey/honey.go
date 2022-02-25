@@ -4,9 +4,9 @@ package honey
 
 import (
 	"log"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 
 	"github.com/honeycombio/libhoney-go"
 )
@@ -35,7 +35,7 @@ func init() {
 		return
 	}
 	// HOSTNAME is the name of the pod on kubernetes.
-	if h := hostname.Get(); h != "" {
+	if h := os.Getenv("HOSTNAME"); h != "" {
 		libhoney.AddField("pod_name", h)
 	}
 }
