@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -328,15 +327,21 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return err
 	}
 
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM registry_extensions WHERE publisher_org_id=$1", id); err != nil {
+		return err
+	}
+
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM saved_searches WHERE org_id=$1", id); err != nil {
+		fmt.Println("heeeeeereeee")
+		return err
+	}
+
 	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM notebooks WHERE namespace_org_id=$1", id); err != nil {
 		return err
 	}
 
-	// For On-Prem, notebooks are enabled through settings, so the entry in the settings table needs to be removed before an org is deleted.
-	if !envvar.SourcegraphDotComMode() {
-		if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM settings WHERE org_id=$1", id); err != nil {
-			return err
-		}
+	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM settings WHERE org_id=$1", id); err != nil {
+		return err
 	}
 
 	res, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id)
