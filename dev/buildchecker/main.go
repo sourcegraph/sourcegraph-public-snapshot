@@ -58,7 +58,7 @@ func main() {
 	flag.StringVar(&historyFlags.createdToDate, "created.to", "", "date in YYYY-MM-DD format")
 	flag.StringVar(&historyFlags.buildsLoadFrom, "builds.load-from", "", "file to load builds from - if unset, fetches from Buildkite")
 	flag.StringVar(&historyFlags.buildsWriteTo, "builds.write-to", "", "file to write builds to (unused if loading from file)")
-	flag.StringVar(&historyFlags.resultsCsvPath, "csv", ".tmp/", "path for CSV results exports")
+	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
 
@@ -289,6 +289,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	log.Printf("running analyses with options: %+v\n", checkOpts)
 	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
+	// Prepare output
 	if historyFlags.resultsCsvPath != "" {
 		// Write to files
 		log.Printf("Writing CSV results to %s\n", historyFlags.resultsCsvPath)
