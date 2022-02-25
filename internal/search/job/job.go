@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -214,6 +215,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Gitserver:            gitserver.DefaultClient,
 			})
 		}
 
