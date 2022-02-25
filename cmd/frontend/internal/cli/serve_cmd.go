@@ -99,16 +99,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
-	}
+	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

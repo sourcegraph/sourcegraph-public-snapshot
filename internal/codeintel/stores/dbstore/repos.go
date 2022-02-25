@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,7 +67,7 @@ func (s *Store) GetJVMDependencyRepos(ctx context.Context, filter GetJVMDependen
 	conds = append(conds, sqlf.Sprintf("scheme = %s", JVMPackagesScheme))
 
 	if filter.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id > %d", filter.After))
+		conds = append(conds, sqlf.Sprintf("id < %d", filter.After))
 	}
 
 	if filter.ArtifactName != "" {
@@ -117,7 +118,7 @@ func (s *Store) GetNPMDependencyRepos(ctx context.Context, filter GetNPMDependen
 	conds = append(conds, sqlf.Sprintf("scheme = %s", NPMPackagesScheme))
 
 	if filter.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id > %d", filter.After))
+		conds = append(conds, sqlf.Sprintf("id < %d", filter.After))
 	}
 
 	if filter.ArtifactName != "" {
@@ -136,6 +137,12 @@ func (s *Store) GetNPMDependencyRepos(ctx context.Context, filter GetNPMDependen
 	}
 	return scanNPMDependencyRepo(rows)
 }
+
+const getLSIFDependencyReposQuery = `
+-- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
+SELECT id, name, version FROM lsif_dependency_repos
+WHERE %s ORDER BY id DESC %s
+`
 
 func scanNPMDependencyRepo(rows *sql.Rows) (dependencies []NPMDependencyRepo, err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -168,8 +175,12 @@ type NPMDependencyRepo struct {
 	ID      int
 }
 
-const getLSIFDependencyReposQuery = `
--- source: internal/codeintel/stores/dbstore/repos.go:GetLSIFDependencyRepos
-SELECT id, name, version FROM lsif_dependency_repos
-WHERE %s ORDER BY id %s
-`
+// UpsertDependencyRepo creates the given dependency repo if it doesn't yet exist.
+func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (err error) {
+	return s.Exec(ctx, sqlf.Sprintf(
+		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s) on conflict do nothing`,
+		dep.Scheme(),
+		dep.PackageSyntax(),
+		dep.PackageVersion(),
+	))
+}

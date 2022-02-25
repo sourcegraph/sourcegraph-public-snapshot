@@ -87,7 +87,7 @@ function highlightNodeHelper(
 
                 if (highlightedRange) {
                     const highlight = document.createElement('span')
-                    highlight.className = 'selection-highlight'
+                    highlight.className = 'match-highlight'
                     highlight.append(document.createTextNode(highlightedRange))
                     newNodes.push(highlight)
                 }
@@ -110,7 +110,7 @@ function highlightNodeHelper(
                 // Remove the original child and replace it with the new node
                 child.remove()
                 if (currentNode.childNodes.length === 0 || isLastNode) {
-                    if (currentNode.classList.contains('selection-highlight')) {
+                    if (currentNode.classList.contains('match-highlight')) {
                         // Nothing to do; it's already highlighted.
                         currentNode.append(child)
                     } else {

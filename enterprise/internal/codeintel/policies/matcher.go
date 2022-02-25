@@ -53,7 +53,9 @@ func NewMatcher(
 // filtered out. If false, policy duration is not considered. This is set to true for auto-indexing, but false
 // for data retention as we need to compare the policy duration against the associated upload date, not the
 // commit date.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]PolicyMatch, error) {
+//
+// A subset of all commits can be returned by passing in any number of commit revhash strings.
+func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
 	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
 		return nil, nil
 	}
@@ -72,7 +74,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 		branchRequests: map[string]branchRequestMeta{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repositoryID)
+	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repositoryID, filterCommits...)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
 	}

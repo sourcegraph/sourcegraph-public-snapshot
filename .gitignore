@@ -1,3 +1,6 @@
+# Temporary directory for whatever you want
+.tmp/
+
 # Vim
 *.swp
 
@@ -163,4 +166,3 @@ annotations/
 
 # Buildkite analytics files
 jest-junit.xml
-mocha-junit.xml

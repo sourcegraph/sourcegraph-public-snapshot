@@ -21,6 +21,7 @@ type GitserverRepoStore interface {
 	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
@@ -285,7 +286,29 @@ FROM gitserver_repos
 WHERE repo_id = %s
 `
 
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, id))
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, id)))
+}
+
+func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+	q := `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
+SELECT
+       g.repo_id,
+       g.clone_status,
+       g.shard_id,
+       g.last_error,
+       g.last_fetched,
+       g.last_changed,
+       g.updated_at
+FROM gitserver_repos g
+JOIN repo r on r.id = g.repo_id
+WHERE r.name = %s
+`
+
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
+}
+
+func scanSingleGitserverRepo(row *sql.Row) (*types.GitserverRepo, error) {
 	if row.Err() != nil {
 		return nil, errors.Wrap(row.Err(), "getting GitserverRepo")
 	}

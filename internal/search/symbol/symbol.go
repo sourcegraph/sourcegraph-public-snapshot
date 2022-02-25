@@ -2,7 +2,6 @@ package symbol
 
 import (
 	"context"
-	"fmt"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"sort"
 	"time"
@@ -35,105 +34,6 @@ import (
 )
 
 const DefaultSymbolLimit = 100
-
-var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
-
-func symbolSearchInRepos(
-	ctx context.Context,
-	request zoektutil.IndexedSearchRequest,
-	patternInfo *search.TextPatternInfo,
-	notSearcherOnly bool,
-	limit int,
-	stream streaming.Sender,
-) (err error) {
-	tr, ctx := trace.New(ctx, "Symbol search in repos", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	run := parallel.NewRun(conf.SearchSymbolsParallelism())
-
-	if notSearcherOnly {
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
-			err := request.Search(ctx, stream)
-			if err != nil {
-				tr.LogFields(otlog.Error(err))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
-			}
-		})
-	}
-
-	for _, repoRevs := range request.UnindexedRepos() {
-		repoRevs := repoRevs
-		if ctx.Err() != nil {
-			break
-		}
-		if len(repoRevs.RevSpecs()) == 0 {
-			continue
-		}
-		run.Acquire()
-		goroutine.Go(func() {
-			defer run.Release()
-
-			matches, err := searchInRepo(ctx, repoRevs, patternInfo, limit)
-			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
-			stream.Send(streaming.SearchEvent{
-				Results: matches,
-				Stats: streaming.Stats{
-					Status:     status,
-					IsLimitHit: limitHit,
-				},
-			})
-			if err != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
-				// Only record error if we haven't timed out.
-				if ctx.Err() == nil {
-					cancel()
-					run.Error(err)
-				}
-			}
-		})
-	}
-
-	return run.Wait()
-}
-
-// Search searches the given repos in parallel for symbols matching the given search query
-// it can be used for both search suggestions and search results
-//
-// May return partial results and an error
-func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int, stream streaming.Sender) (err error) {
-	if MockSearchSymbols != nil {
-		results, stats, err := MockSearchSymbols(ctx, args, limit)
-		stream.Send(streaming.SearchEvent{
-			Results: results,
-			Stats:   stats.Deref(),
-		})
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, globalSearch, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
-	if err != nil {
-		return err
-	}
-	return symbolSearchInRepos(ctx, request, args.PatternInfo, notSearcherOnly, limit, stream)
-}
 
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
@@ -441,7 +341,60 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 			}
 		}
 
-		return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, stream)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		run := parallel.NewRun(conf.SearchSymbolsParallelism())
+
+		if s.NotSearcherOnly {
+			run.Acquire()
+			goroutine.Go(func() {
+				defer run.Release()
+				err := request.Search(ctx, stream)
+				if err != nil {
+					tr.LogFields(otlog.Error(err))
+					// Only record error if we haven't timed out.
+					if ctx.Err() == nil {
+						cancel()
+						run.Error(err)
+					}
+				}
+			})
+		}
+
+		for _, repoRevs := range request.UnindexedRepos() {
+			repoRevs := repoRevs
+			if ctx.Err() != nil {
+				break
+			}
+			if len(repoRevs.RevSpecs()) == 0 {
+				continue
+			}
+			run.Acquire()
+			goroutine.Go(func() {
+				defer run.Release()
+
+				matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
+				status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
+				stream.Send(streaming.SearchEvent{
+					Results: matches,
+					Stats: streaming.Stats{
+						Status:     status,
+						IsLimitHit: limitHit,
+					},
+				})
+				if err != nil {
+					tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+					// Only record error if we haven't timed out.
+					if ctx.Err() == nil {
+						cancel()
+						run.Error(err)
+					}
+				}
+			})
+		}
+
+		return run.Wait()
 	})
 }
 
@@ -469,10 +422,18 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
-	// TODO(rvantonder): The `true` argument corresponds to notSearcherOnly,
-	// implied by global search. Separate the concerns in the symbol search
-	// function so that we don't need to pass this value.
-	return nil, symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
+
+	// always search for symbols in indexed repositories when searching the repo universe.
+	err = request.Search(ctx, stream)
+	if err != nil {
+		tr.LogFields(otlog.Error(err))
+		// Only record error if we haven't timed out.
+		if ctx.Err() == nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
 func (*RepoUniverseSymbolSearch) Name() string {

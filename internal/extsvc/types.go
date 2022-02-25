@@ -187,6 +187,8 @@ func TypeToKind(t string) string {
 		return KindPerforce
 	case TypePhabricator:
 		return KindPhabricator
+	case TypeNPMPackages:
+		return KindNPMPackages
 	case TypeJVMPackages:
 		return KindJVMPackages
 	case TypePagure:

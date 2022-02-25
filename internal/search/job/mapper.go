@@ -36,6 +36,7 @@ type Mapper struct {
 	MapTimeoutJob  func(timeout time.Duration, child Job) (time.Duration, Job)
 	MapLimitJob    func(limit int, child Job) (int, Job)
 	MapSelectJob   func(path filter.SelectPath, child Job) (filter.SelectPath, Job)
+	MapAlertJob    func(inputs *run.SearchInputs, child Job) (*run.SearchInputs, Job)
 
 	// Filter Jobs
 	MapSubRepoPermsFilterJob func(child Job) Job
@@ -160,6 +161,14 @@ func (m *Mapper) Map(job Job) Job {
 			filter, child = m.MapSelectJob(filter, child)
 		}
 		return NewSelectJob(filter, child)
+
+	case *alertJob:
+		child := m.Map(j.child)
+		inputs := j.inputs
+		if m.MapLimitJob != nil {
+			inputs, child = m.MapAlertJob(inputs, child)
+		}
+		return NewAlertJob(inputs, child)
 
 	case *subRepoPermsFilterJob:
 		child := m.Map(j.child)

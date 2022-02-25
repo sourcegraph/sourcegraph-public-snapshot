@@ -1937,6 +1937,10 @@ type SearchResults {
     """
     matchCount: Int!
     """
+    DEPRECATED: Renamed to 'matchCount' for less ambiguity.
+    """
+    resultCount: Int! @deprecated(reason: "renamed to matchCount for less ambiguity")
+    """
     The approximate number of results. This is like the length of the results
     array, except it can indicate the number of results regardless of whether
     or not the limit was hit. Currently, this is represented as e.g. "5+"
@@ -3138,6 +3142,7 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4138,6 +4143,8 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4201,6 +4208,7 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4302,6 +4310,7 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4364,6 +4373,10 @@ type HighlightedFile {
     The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+    """
+    lsif: String!
     """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of

@@ -69,8 +69,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
 			return
 		}
-
-		extraScopes, err := getExtraScopes(req.Context(), db, serviceType)
+		op := LoginStateOp(req.URL.Query().Get("op"))
+		extraScopes, err := getExtraScopes(req.Context(), db, serviceType, op)
 		if err != nil {
 			log15.Error("Getting extra OAuth scopes", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
@@ -105,9 +105,13 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitLab: {"api"},
 }
 
-func getExtraScopes(ctx context.Context, db database.DB, serviceType string) ([]string, error) {
+func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
 	// Extra scopes are only needed on Sourcegraph.com
 	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+	// Extra scopes are only needed when creating a code host connection, not for account creation
+	if op == LoginStateOpCreateAccount {
 		return nil, nil
 	}
 	scopes, ok := extraScopes[serviceType]
@@ -115,7 +119,7 @@ func getExtraScopes(ctx context.Context, db database.DB, serviceType string) ([]
 		return nil, nil
 	}
 
-	mode, err := database.Users(db).CurrentUserAllowedExternalServices(ctx)
+	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
 	if err != nil {
 		return nil, err
 	}
