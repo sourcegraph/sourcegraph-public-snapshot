@@ -85,14 +85,17 @@ const queryCommit = memoizeObservable(
                     throw new Error(`Node is a ${data.node.__typename}, not a Repository`)
                 }
                 if (!data.node.commit) {
-                    if (errors) {
-                        errors = errors.filter(error => !error.message.includes('revision not found'))
-                    }
-                    if (!errors || errors?.length === 0) {
+                    const errorsWithoutRevisionError = errors?.filter(
+                        error => !error.message.includes('revision not found')
+                    )
+
+                    // If we have no errors that we care about, throw generic not found error
+                    if (!errorsWithoutRevisionError || errorsWithoutRevisionError.length === 0) {
                         throw new Error('Commit not found')
                     }
+
                     // Aggregating all the 'revision not found' errors into one Commit not found, appending it to any other errors"
-                    throw createAggregateError([new Error('Commit not found'), ...errors])
+                    throw createAggregateError([new Error('Commit not found'), ...errorsWithoutRevisionError])
                 }
                 return data.node.commit
             })
