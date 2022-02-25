@@ -120,7 +120,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {showPrivateRepositoryAlert && <PrivateRepositoryAlert url={showPrivateRepositoryAlert} />}
+            {showPrivateRepositoryAlert && (
+                <PrivateRepositoryAlert manageRepositoriesURL={showPrivateRepositoryAlert} />
+            )}
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
@@ -185,7 +187,9 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent = ({ url }: { url: string }) => (
+const PrivateRepositoryAlert: React.FunctionComponent<{ manageRepositoriesURL: string }> = ({
+    manageRepositoriesURL,
+}) => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
             <LockIcon className="icon-inline mr-2" />
@@ -193,7 +197,7 @@ const PrivateRepositoryAlert: React.FunctionComponent = ({ url }: { url: string 
         </h4>
         <p>
             To use the browser extension with your private repositories, you need to enable sync in{' '}
-            <a href={url} {...NEW_TAB_LINK_PROPS}>
+            <a href={manageRepositoriesURL} {...NEW_TAB_LINK_PROPS}>
                 manage repositories settings
             </a>
             .
