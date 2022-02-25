@@ -563,7 +563,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, &syncer{repoStore}).Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -584,12 +584,14 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 }
 
 type syncer struct {
-	repoStore database.RepoStore
+	svc interface {
+		GetByName(ctx context.Context, repo api.RepoName) (*types.Repo, error)
+	}
 }
 
 func (s *syncer) Sync(ctx context.Context, repos []api.RepoName) error {
 	for _, repo := range repos {
-		if _, err := backend.NewRepos(s.repoStore).GetByName(ctx, repo); err != nil {
+		if _, err := s.svc.GetByName(ctx, repo); err != nil {
 			return err
 		}
 	}
