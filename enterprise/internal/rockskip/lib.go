@@ -374,8 +374,6 @@ func (s *Server) startIndexingThread() (err error) {
 }
 
 func (s *Server) startCleanupThread() error {
-	status := s.status.NewThreadStatus("cleanup")
-
 	go func() {
 		for range s.repoUpdates {
 			// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
@@ -386,7 +384,9 @@ func (s *Server) startCleanupThread() error {
 				continue
 			}
 
-			err = DeleteOldRepos(context.Background(), conn, s.maxRepos, status)
+			threadStatus := s.status.NewThreadStatus("cleanup")
+			err = DeleteOldRepos(context.Background(), conn, s.maxRepos, threadStatus)
+			threadStatus.End()
 			if err != nil {
 				log15.Error("Failed to delete old repos", "error", err)
 			}
