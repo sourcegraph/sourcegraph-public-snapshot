@@ -12,6 +12,7 @@ interface Props {
     className?: string
     avatarClassName?: string
     compact?: boolean
+    preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
 }
@@ -25,6 +26,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     className = '',
     avatarClassName,
     compact,
+    preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
 }) => {
@@ -61,7 +63,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                             {messageElement}
                             <PersonLink person={author.person} className="font-weight-bold" /> authored and commited by{' '}
                             <PersonLink person={committer.person} className="font-weight-bold" />{' '}
-                            <Timestamp date={committer.date} />
+                            <Timestamp date={committer.date} preferAbsolute={preferAbsoluteTimestamps} />
                             {commitMessageBody}
                         </>
                     ) : (
@@ -89,7 +91,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                     <>
                         {messageElement}
                         committed by <PersonLink person={author.person} className="font-weight-bold" />{' '}
-                        <Timestamp date={author.date} />
+                        <Timestamp date={author.date} preferAbsolute={preferAbsoluteTimestamps} />
                         {commitMessageBody}
                     </>
                 )}

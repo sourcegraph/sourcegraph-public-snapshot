@@ -76,6 +76,7 @@ add('Full customizable', () => (
                     expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
                     showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
                     hideExpandCommitMessageBody={boolean('hideExpandCommitMessageBody', false)}
+                    preferAbsoluteTimestamps={boolean('preferAbsoluteTimestamps', false)}
                 />
             </Card>
         )}
