@@ -610,6 +610,8 @@ type ExperimentalFeatures struct {
 	//
 	// JSON array of version context configuration
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
+	// PasswordPolicy description: Enables and configures password policy
+	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -1827,6 +1829,19 @@ type SubRepoPermissions struct {
 	UserCacheSize int `json:"userCacheSize,omitempty"`
 	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
+}
+
+type PasswordPolicy struct {
+	// Enabled description: Enables sub-repo permission checking
+	Enabled bool `json:"enabled,omitempty"`
+	// UserCacheSize description: The number of user permissions to cache
+	MinimumLength int `json:"minimumLength,omitempty"`
+	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
+	NumberOfSpecialCharacters int `json:"numberOfSpecialCharacters,omitempty"`
+	// UserCacheSize description: The number of user permissions to cache
+	RequireAtLeastOneNumber bool `json:"requireAtLeastOneNumber,omitempty"`
+	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
+	RequireUpperandLowerCase bool `json:"requireUpperandLowerCase,omitempty"`	
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

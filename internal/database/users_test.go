@@ -95,7 +95,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	}
 }
 
-func TestUsers_Create_checkPasswordLength(t *testing.T) {
+func TestUsers_Create_CheckPassword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
