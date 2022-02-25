@@ -332,7 +332,6 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 	}
 
 	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM saved_searches WHERE org_id=$1", id); err != nil {
-		fmt.Println("heeeeeereeee")
 		return err
 	}
 
