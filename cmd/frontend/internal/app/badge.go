@@ -19,7 +19,7 @@ import (
 // duplication kludge.
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
-func badgeValue(r *http.Request, db database.DB) (int, error) {
+func badgeValue(r *http.Request, _ database.DB) (int, error) {
 	totalRefs, err := backend.CountGoImporters(r.Context(), httpcli.InternalDoer, routevar.ToRepo(mux.Vars(r)))
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")

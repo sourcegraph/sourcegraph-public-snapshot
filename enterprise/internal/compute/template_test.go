@@ -9,10 +9,7 @@ import (
 
 func Test_scanTemplate(t *testing.T) {
 	test := func(input string) string {
-		t, err := scanTemplate([]byte(input))
-		if err != nil {
-			return fmt.Sprintf("Error: %s", err)
-		}
+		t := scanTemplate([]byte(input))
 		return toJSONString(t)
 	}
 

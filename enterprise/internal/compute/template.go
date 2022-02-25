@@ -50,7 +50,7 @@ const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567
 
 // scanTemplate scans an input string to produce a Template. Recognized
 // metavariable syntax is `$(varAllowed+)`.
-func scanTemplate(buf []byte) (*Template, error) {
+func scanTemplate(buf []byte) *Template {
 	// Tracks whether the current token is a variable.
 	var isVariable bool
 
@@ -148,7 +148,7 @@ func scanTemplate(buf []byte) (*Template, error) {
 		}
 	}
 	t := Template(result)
-	return &t, nil
+	return &t
 }
 
 func toJSON(atom Atom) interface{} {
@@ -203,10 +203,7 @@ var builtinVariables = map[string]struct{}{
 }
 
 func templatize(pattern string) (string, error) {
-	t, err := scanTemplate([]byte(pattern))
-	if err != nil {
-		return "", err
-	}
+	t := scanTemplate([]byte(pattern))
 	var templatized []string
 	for _, atom := range *t {
 		switch a := atom.(type) {
