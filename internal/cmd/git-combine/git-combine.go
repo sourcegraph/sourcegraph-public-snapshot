@@ -125,7 +125,7 @@ func Combine(path string, opt Options) error {
 		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.LimitRemote; i++ {
-			if time.Since(lastLog) > time.Minute {
+			if time.Since(lastLog) > time.Second {
 				log.Printf("Combine: collecting new commits... (remote %s, commit depth %d, commit hash %s)", remote, i, commit.Hash)
 				lastLog = time.Now()
 			}
@@ -223,7 +223,10 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
+		if time.Since(lastLog) > time.Second {
+			log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
+			lastLog = time.Now()
+		}
 	}
 
 	return nil
