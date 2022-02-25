@@ -452,7 +452,7 @@ func runGit(dir string, args ...string) error {
 	return err
 }
 
-func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Options) error {
+func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 	isDone := func() bool {
 		select {
 		case <-done:
@@ -469,7 +469,11 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 		// more upstreams.
 		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
 			opt.Logger.Printf("PAUSE file present: %s", string(b))
-			<-ticker
+			select {
+			case <-time.After(time.Minute):
+			case <-done:
+				return nil
+			}
 			continue
 		}
 
@@ -498,7 +502,7 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 		}
 
 		select {
-		case <-ticker:
+		case <-time.After(time.Minute):
 		case <-done:
 			return nil
 		}
@@ -523,7 +527,6 @@ func main() {
 	}
 
 	if *daemon {
-		ticker := time.NewTicker(time.Minute)
 		done := make(chan struct{}, 1)
 
 		go func() {
@@ -533,7 +536,7 @@ func main() {
 			done <- struct{}{}
 		}()
 
-		err := doDaemon(gitDir, ticker.C, done, opt)
+		err := doDaemon(gitDir, done, opt)
 		if err != nil {
 			log.Fatal(err)
 		}
