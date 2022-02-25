@@ -329,16 +329,17 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 
 	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
+		indexed, unindexed, err := zoektutil.PartitionRepos(
+			ctx,
+			page.RepoRevs,
+			s.ZoektArgs.Zoekt,
+			search.SymbolRequest,
+			s.UseIndex,
+			s.ContainsRefGlobs,
+			zoektutil.MissingRepoRevStatus(stream),
+		)
 		if err != nil {
 			return err
-		}
-
-		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
-			if err != nil {
-				return err
-			}
 		}
 
 		ctx, cancel := context.WithCancel(ctx)
@@ -347,10 +348,20 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 		run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
 		if s.NotSearcherOnly {
+			zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+				Repos:          indexed,
+				Query:          s.ZoektArgs.Query,
+				Typ:            search.SymbolRequest,
+				FileMatchLimit: s.ZoektArgs.FileMatchLimit,
+				Select:         s.ZoektArgs.Select,
+				Zoekt:          s.ZoektArgs.Zoekt,
+				Since:          nil,
+			}
+
 			run.Acquire()
 			goroutine.Go(func() {
 				defer run.Release()
-				err := request.Search(ctx, stream)
+				_, err := zoektJob.Run(ctx, db, stream)
 				if err != nil {
 					tr.LogFields(otlog.Error(err))
 					// Only record error if we haven't timed out.
@@ -362,7 +373,7 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 			})
 		}
 
-		for _, repoRevs := range request.UnindexedRepos() {
+		for _, repoRevs := range unindexed {
 			repoRevs := repoRevs
 			if ctx.Err() != nil {
 				break
