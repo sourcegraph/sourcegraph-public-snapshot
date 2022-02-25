@@ -28,10 +28,26 @@ Also see the [`buildchecker` GitHub Action workflow](../../.github/workflows/bui
 Writes aggregated historical data, including the builds it finds, to a few files.
 
 ```sh
-go run ./dev/buildchecker -buildkite.token=$BUILDKITE_TOKEN -failures.timeout=999 -created.from="2021-08-01" history
+go run ./dev/buildchecker \
+  -buildkite.token=$BUILDKITE_TOKEN \
+  -failures.timeout=999 \
+  -created.from="2021-08-01" \
+  history
 ```
 
-To load builds from a file instead of fetching from Buildkite, use `-load-from="$FILE"`.
+To load builds from a file instead of fetching from Buildkite, use `-builds.load-from="$FILE"`.
+
+You can also send metrics to Honeycomb with `-honeycomb.dataset` and `-honeycomb.token`:
+
+```sh
+go run ./dev/buildchecker \
+  -builds.load-from=".tmp/builds.json" \
+  -failures.timeout=999 \
+  -created.from="2021-08-01" \
+  -honeycomb.dataset="buildkite-history" \
+  -honeycomb.token=$HONEYCOMB_TOKEN \
+  history
+```
 
 ## Tokens
 

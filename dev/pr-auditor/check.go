@@ -9,7 +9,8 @@ import (
 )
 
 type checkResult struct {
-	// Reviewed indicates that *any* review has been made on the PR.
+	// Reviewed indicates that *any* review has been made on the PR. It is also set to
+	// true if the test plan indicates that this PR does not need to be review.
 	Reviewed bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
@@ -22,8 +23,9 @@ func (r checkResult) HasTestPlan() bool {
 }
 
 var (
-	testPlanDividerRegexp = regexp.MustCompile("(?m)(^#+ Test [pP]lan)|(^Test [pP]lan:)")
-	markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+	testPlanDividerRegexp       = regexp.MustCompile("(?m)(^#+ Test [pP]lan)|(^Test [pP]lan:)")
+	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
+	markdownCommentRegexp       = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 )
 
 type checkOpts struct {
@@ -53,23 +55,30 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 			Error:    err,
 		}
 	}
-	testPlanSection := sections[1]
-	testPlanRawLines := strings.Split(testPlanSection, "\n")
-	var testPlanLines []string
-	for _, l := range testPlanRawLines {
-		line := strings.TrimSpace(l)
-		testPlanLines = append(testPlanLines, line)
+
+	testPlan := cleanMarkdown(sections[1])
+
+	// Look for no review required explanation in the test plan
+	if sections := noReviewNeededDividerRegexp.Split(testPlan, 2); len(sections) > 1 {
+		noReviewRequiredExplanation := cleanMarkdown(sections[1])
+		if len(noReviewRequiredExplanation) > 0 {
+			reviewed = true
+		}
 	}
 
-	// Merge into single string
-	testPlan := strings.Join(testPlanLines, "\n")
-	// Remove comments
-	testPlan = markdownCommentRegexp.ReplaceAllString(testPlan, "")
-	// Remove whitespace
-	testPlan = strings.TrimSpace(testPlan)
 	return checkResult{
 		Reviewed: reviewed,
 		TestPlan: testPlan,
 		Error:    err,
 	}
+}
+
+func cleanMarkdown(s string) string {
+	content := s
+	// Remove comments
+	content = markdownCommentRegexp.ReplaceAllString(content, "")
+	// Remove whitespace
+	content = strings.TrimSpace(content)
+
+	return content
 }
