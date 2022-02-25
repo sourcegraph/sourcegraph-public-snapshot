@@ -1,19 +1,19 @@
-import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
+import React, { useEffect } from 'react'
 
-import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-operations'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
-import { fetchBatchSpecById as _fetchBatchSpecById, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
+import { BATCH_SPEC_BY_ID, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
@@ -26,46 +26,35 @@ export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'disp
 
 export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
-    fetchBatchSpecById?: typeof _fetchBatchSpecById
-    /** Used for testing. */
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
 export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
-    const {
-        batchSpecID: specID,
-        history,
-        authenticatedUser,
-        telemetryService,
-        fetchBatchSpecById = _fetchBatchSpecById,
-        queryApplyPreviewStats,
-    } = props
+    const { batchSpecID: specID, history, authenticatedUser, telemetryService, queryApplyPreviewStats } = props
 
-    const spec = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecById(specID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [specID, fetchBatchSpecById]
-        )
-    )
+    const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
+        variables: {
+            batchSpec: specID,
+        },
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 5000,
+    })
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    if (spec === undefined) {
+    if (loading) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    if (spec === null) {
+    if (data?.node?.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
+    const spec = data.node
 
     return (
         <MultiSelectContextProvider>
@@ -127,35 +116,32 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<BatchChangePrevi
         queryChangesetSpecFileDiffs,
         authenticatedUser,
         telemetryService,
-        fetchBatchSpecById = _fetchBatchSpecById,
         queryApplyPreviewStats,
     } = props
 
-    const spec = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecById(specID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [specID, fetchBatchSpecById]
-        )
-    )
+    const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
+        variables: {
+            batchSpec: specID,
+        },
+        fetchPolicy: 'cache-and-network',
+        pollInterval: 5000,
+    })
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    if (spec === undefined) {
+    if (loading) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    if (spec === null) {
+    if (data?.node?.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
+    const spec = data.node
 
     return (
         <MultiSelectContextProvider>

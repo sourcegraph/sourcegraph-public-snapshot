@@ -104,7 +104,7 @@ func main() {
 
 	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.numCtagsProcesses)
 	if err != nil {
-		log.Fatalf("Failed to parser pool: %s", err)
+		log.Fatalf("Failed to create parser pool: %s", err)
 	}
 
 	gitserverClient := gitserver.NewClient(observationContext)
@@ -112,7 +112,7 @@ func main() {
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	apiHandler := api.NewHandler(cachedDatabaseWriter, observationContext)
+	apiHandler := api.NewHandler(cachedDatabaseWriter, config.ctagsCommand, observationContext)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,

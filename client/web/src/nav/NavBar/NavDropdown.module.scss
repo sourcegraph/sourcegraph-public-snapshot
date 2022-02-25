@@ -10,3 +10,19 @@
         visibility: visible;
     }
 }
+
+.nav-dropdown {
+    &-link {
+        --link-hover-color: inherit;
+        --link-hover-decoration: none;
+
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    &-icon-button {
+        height: 100%;
+        padding: 0 0.3125rem;
+    }
+}

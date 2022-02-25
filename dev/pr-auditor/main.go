@@ -152,7 +152,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: true,
+		ValidateReviews: false, // only validate reviews on post-merge
 	})
 	log.Printf("checkPR: %+v\n", result)
 

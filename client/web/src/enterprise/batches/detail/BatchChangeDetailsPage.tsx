@@ -72,7 +72,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             // For subsequent requests while this page is open, make additional network
             // requests; this is necessary for `refetch` to actually use the network. (see
             // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'network-only',
+            nextFetchPolicy: 'cache-and-network',
         }
     )
 

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
@@ -38,7 +39,8 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     const [isOverButton, setIsOverButton] = useState(false)
     const [isOverList, setIsOverList] = useState(false)
 
-    const openMenu = (): void => {
+    // Use this func for toggling menu
+    const triggerMenuButtonEvent = (): void => {
         menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
     }
 
@@ -46,13 +48,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         const isOpen = menuButtonReference.current!.hasAttribute('aria-expanded')
 
         if (isOpen && !isOverButton && !isOverList) {
-            openMenu()
+            triggerMenuButtonEvent()
 
             return
         }
 
         if (!isOpen && (isOverButton || isOverList)) {
-            openMenu()
+            triggerMenuButtonEvent()
         }
     }, [isOverButton, isOverList])
 
@@ -62,58 +64,80 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         <>
             <NavItem className="d-none d-md-flex">
                 <Menu>
-                    <div
-                        className={classNames(
-                            navItemStyles.link,
-                            isItemSelected && navItemStyles.active,
-                            'd-flex',
-                            'align-items-center',
-                            'p-0'
-                        )}
-                        onMouseEnter={() => {
-                            setIsOverButton(true)
-                        }}
-                        onMouseLeave={() => {
-                            setIsOverButton(false)
-                        }}
-                    >
-                        <Link to={toggleItem.path}>
-                            <span className={navItemStyles.linkContent}>
-                                <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
-                                <span className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}>
-                                    {toggleItem.content}
-                                </span>
-                            </span>
-                        </Link>
-                        <MenuButton ref={menuButtonReference}>
-                            <ChevronDownIcon className={classNames('icon-inline', navItemStyles.icon)} />
-                        </MenuButton>
-                    </div>
+                    {({ isExpanded }) => (
+                        <>
+                            <div
+                                className={classNames(
+                                    navItemStyles.link,
+                                    isItemSelected && navItemStyles.active,
+                                    'd-flex',
+                                    'align-items-center',
+                                    'p-0'
+                                )}
+                                onMouseEnter={() => setIsOverButton(true)}
+                                onMouseLeave={() => setIsOverButton(false)}
+                            >
+                                <div className={classNames('h-100 d-flex', navItemStyles.linkContent)}>
+                                    <Link
+                                        to={toggleItem.path}
+                                        className={classNames(styles.navDropdownLink, navItemStyles.itemFocusable)}
+                                        tabIndex={0}
+                                    >
+                                        <span className={navItemStyles.itemFocusableContent}>
+                                            <toggleItem.icon
+                                                className={classNames('icon-inline', navItemStyles.icon)}
+                                            />
+                                            <span
+                                                className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}
+                                            >
+                                                {toggleItem.content}
+                                            </span>
+                                        </span>
+                                    </Link>
+                                    <MenuButton
+                                        className={classNames(
+                                            styles.navDropdownIconButton,
+                                            navItemStyles.itemFocusable
+                                        )}
+                                        ref={menuButtonReference}
+                                    >
+                                        <span className={navItemStyles.itemFocusableContent}>
+                                            {isExpanded ? (
+                                                <ChevronUpIcon
+                                                    className={classNames('icon-inline', navItemStyles.icon)}
+                                                />
+                                            ) : (
+                                                <ChevronDownIcon
+                                                    className={classNames('icon-inline', navItemStyles.icon)}
+                                                />
+                                            )}
+                                        </span>
+                                    </MenuButton>
+                                </div>
+                            </div>
 
-                    <MenuList
-                        position={Position.bottomEnd}
-                        onMouseEnter={() => {
-                            setIsOverList(true)
-                        }}
-                        onMouseLeave={() => {
-                            setIsOverList(false)
-                        }}
-                    >
-                        {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
-                        <MenuLink
-                            as={Link}
-                            key={toggleItem.path}
-                            to={toggleItem.path}
-                            className={styles.showOnTouchScreen}
-                        >
-                            {mobileHomeItem.content}
-                        </MenuLink>
-                        {items.map(item => (
-                            <MenuLink as={Link} key={item.path} to={item.path} role="menuitem">
-                                {item.content}
-                            </MenuLink>
-                        ))}
-                    </MenuList>
+                            <MenuList
+                                position={Position.bottomEnd}
+                                onMouseEnter={() => setIsOverList(true)}
+                                onMouseLeave={() => setIsOverList(false)}
+                            >
+                                <MenuLink
+                                    as={Link}
+                                    key={toggleItem.path}
+                                    to={toggleItem.path}
+                                    className={styles.showOnTouchScreen}
+                                    index={-1}
+                                >
+                                    {mobileHomeItem.content}
+                                </MenuLink>
+                                {items.map(item => (
+                                    <MenuLink as={Link} key={item.path} to={item.path}>
+                                        {item.content}
+                                    </MenuLink>
+                                ))}
+                            </MenuList>
+                        </>
+                    )}
                 </Menu>
             </NavItem>
             {/* All nav items for smaller screens */}

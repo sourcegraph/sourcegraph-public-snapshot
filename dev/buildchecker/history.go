@@ -65,8 +65,10 @@ func generateHistory(builds []buildkite.Build, windowStart time.Time, opts Check
 	return
 }
 
+const dateFormat = "2006-01-02"
+
 func buildDate(created time.Time) string {
-	return created.Format("2006/01/02")
+	return created.Format(dateFormat)
 }
 
 func mapToRecords(m map[string]int) (records [][]string) {
@@ -75,20 +77,29 @@ func mapToRecords(m map[string]int) (records [][]string) {
 	}
 	// Sort by date ascending
 	sort.Slice(records, func(i, j int) bool {
-		iDate, _ := time.Parse("2006/01/02", records[i][0])
-		jDate, _ := time.Parse("2006/01/02", records[j][0])
+		iDate, _ := time.Parse(dateFormat, records[i][0])
+		jDate, _ := time.Parse(dateFormat, records[j][0])
 		return iDate.Before(jDate)
 	})
-	// TODO Fill in the gaps maybe?
-	// prev := records[0]
-	// for _, r := range records {
-	// 	rDate, _ := time.Parse("2006/01/02", r[0])
-	// 	prevDate, _ := time.Parse("2006/01/02", prev[0])
-	// 	if rDate.Sub(prevDate) > 24*time.Hour {
-	// 		records = append(a[:index+1], a[index:]...)
-	// 		a[index] = value
-	// 	}
-	// 	prev = r
-	// }
+	if len(records) <= 1 {
+		return
+	}
+	// Fill in the gaps
+	prev := records[0]
+	length := len(records)
+	for index := 0; index < length; index++ {
+		record := records[index]
+		recordDate, _ := time.Parse(dateFormat, record[0])
+		prevDate, _ := time.Parse(dateFormat, prev[0])
+
+		for gapDate := prevDate.Add(24 * time.Hour); recordDate.Sub(gapDate) >= 24*time.Hour; gapDate = gapDate.Add(24 * time.Hour) {
+			insertRecord := []string{gapDate.Format(dateFormat), "0"}
+			records = append(records[:index], append([][]string{insertRecord}, records[index:]...)...)
+			index += 1
+			length += 1
+		}
+
+		prev = record
+	}
 	return
 }
