@@ -7,8 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -37,7 +37,7 @@ func (a *ActionJob) RecordID() int {
 type ActionJobMetadata struct {
 	Description string
 	MonitorID   int64
-	Results     cmtypes.CommitSearchResults
+	Results     []*result.CommitMatch
 	OwnerName   string
 
 	// The query with after: filter.
