@@ -288,7 +288,7 @@ func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("hard deleting organization is only supported on Sourcegraph Cloud")
+		return nil, errors.New("hard deleting organization is not supported")
 	}
 
 	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
