@@ -58,7 +58,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 			)
 		}
 	} else {
-		logFields = append(logFields, log.Int("numRepositories", len(repoRevs)))
+		logFields = append(logFields, log.Int("repoRevs", len(repoRevs)))
 	}
 
 	ctx, endObservation := r.operations.dependencies.With(ctx, &err, observation.Args{LogFields: logFields})
