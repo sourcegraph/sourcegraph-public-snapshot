@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -70,26 +71,26 @@ func generateDo(ctx context.Context, args []string, verbosity generateVerbosityT
 
 	// Grab the packages list
 	cmd := exec.CommandContext(ctx, "go", "list", "./...")
-	_, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.Wrap(err, "could not run go list ./...")
 	}
 
 	// Run go generate on the packages list
-	// if verbosity != generateQuiet {
-	// 	stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
-	// }
-	// pkgPaths := strings.Split(string(out), "\n")
-	// filtered := make([]string, 0, len(pkgPaths))
-	// for _, pkgPath := range pkgPaths {
-	// 	if !strings.Contains(pkgPath, "doc/cli/references") {
-	// 		filtered = append(filtered, pkgPath)
-	// 	}
-	// }
-	// err = generateGoGenerate(filtered)
-	// if err != nil {
-	// 	return errors.Wrap(err, "could not run go generate ./...")
-	// }
+	if verbosity != generateQuiet {
+		stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
+	}
+	pkgPaths := strings.Split(string(out), "\n")
+	filtered := make([]string, 0, len(pkgPaths))
+	for _, pkgPath := range pkgPaths {
+		if !strings.Contains(pkgPath, "doc/cli/references") {
+			filtered = append(filtered, pkgPath)
+		}
+	}
+	err = generateGoGenerate(filtered, verbosity)
+	if err != nil {
+		return errors.Wrap(err, "could not run go generate ./...")
+	}
 
 	// Run goimports -w
 	if verbosity != generateQuiet {
