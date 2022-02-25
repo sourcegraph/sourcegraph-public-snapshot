@@ -77,6 +77,7 @@ Code intelligence provides advanced code navigation features that let developers
   - [Popover](explanations/features.md#popover)
   - [Go to definition](explanations/features.md#go-to-definition)
   - [Find references](explanations/features.md#find-references)
+  - <span class="badge badge-experimental">Experimental</span> [Dependency navigation](explanations/features.md#dependency-navigation)
   - [Find implementations](explanations/features.md#find-implementations)
   - [Symbol search](explanations/features.md#symbol-search)
 - [Writing an indexer](explanations/writing_an_indexer.md)

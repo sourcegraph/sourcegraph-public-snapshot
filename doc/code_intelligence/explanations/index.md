@@ -8,6 +8,7 @@
   - [Popover](features.md#popover)
   - [Go to definition](features.md#go-to-definition)
   - [Find references](features.md#find-references)
+  - <span class="badge badge-experimental">Experimental</span> [Dependency navigation](features.md#dependency-navigation)
   - [Find implementations](features.md#find-implementations)
   - [Symbol search](features.md#symbol-search)
 - [Writing an indexer](writing_an_indexer.md)
