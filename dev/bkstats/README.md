@@ -20,6 +20,6 @@ On 2021-10-22, the pipeline was red for 1h8m32.856s
 1. Go over [your personal settings](https://buildkite.com/user/api-access-tokens)
 2. Create a new token with the following permissions:
 
-- check `sourcegraph` organization
+- Check `sourcegraph` organization
 - `read_builds`
 - `read_pipelines`
