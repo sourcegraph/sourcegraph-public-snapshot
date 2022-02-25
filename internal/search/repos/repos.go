@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -16,18 +15,15 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -140,7 +136,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	var (
 		depNames []string
-		depRevs  map[string][]search.RevisionSpecifier
+		depRevs  map[api.RepoName][]search.RevisionSpecifier
 	)
 
 	if len(op.Dependencies) > 0 {
@@ -276,7 +272,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			)
 
 			if len(depRevs) > 0 {
-				revs = depRevs[string(repo.Name)]
+				revs = depRevs[repo.Name]
 			}
 
 			if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
@@ -519,11 +515,10 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 // dependency repositories for the given repos and revision(s). It does so by:
 //
 // 1. Expanding each `repo:dependencies(regex@revA:revB:...)` filter regex to a list of repositories that exist in the DB.
-// 2. For each of those (repo, rev) tuple, computing all their dependencies (transitive included).
+// 2. For each of those (repo, rev) tuple, asking the code intelligence dependency API for their (transitive) dependencies.
+//    Calling this API also has the effect of triggering a sync of all discovered dependency repos.
 // 3. Return those dependencies to the caller to be included in repository resolution.
-// 4. Triggering a sync of all the dependency repos.
-//
-func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[string][]search.RevisionSpecifier, err error) {
+func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[api.RepoName][]search.RevisionSpecifier, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
 	defer func() {
 		tr.LazyPrintf("deps: %v", op.Dependencies)
@@ -535,108 +530,55 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	// We pass in these methods as functions to avoid a circular dependency between
-	// the codeinteldbstore package and the repos package and to make testing easier.
-	depsStore := codeinteldbstore.NewDependencyInserter(
-		r.DB,
-		r.DB.ExternalServices().List,
-		repos.NewStore(r.DB, sql.TxOptions{}).EnqueueSingleSyncJob,
-	)
-
-	defer func() {
-		if err := depsStore.Flush(context.Background()); err != nil {
-			log15.Warn("failed flushing dependency repos", "error", err)
-			return
+	repoStore := r.DB.Repos()
+	repoRevs := make(map[api.RepoName]codeintel.RevSpecSet, len(op.Dependencies))
+	for _, depParams := range op.Dependencies {
+		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
+		if len(revs) == 0 {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
 		}
-	}()
 
-	g, ctx := errgroup.WithContext(ctx)
-	withRepoRevs := func(depParams string, cb func([]types.MinimalRepo, []search.RevisionSpecifier) error) {
-		g.Go(func() error {
-			repoPattern, revs := search.ParseRepositoryRevisions(depParams)
-			if len(revs) == 0 {
-				revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
-			}
-
-			rs, err := r.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-				IncludePatterns:       []string{repoPattern},
-				CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
-			})
-
-			if err != nil {
-				return err
-			}
-
-			return cb(rs, revs)
+		rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
+			IncludePatterns:       []string{repoPattern},
+			CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		})
-	}
+		if err != nil {
+			return nil, nil, err
+		}
 
-	svc := &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive}
-	sem := semaphore.NewWeighted(16)
-
-	withDependencies := func(rs []types.MinimalRepo, revs []search.RevisionSpecifier, cb func(reposource.PackageDependency) error) error {
-		rg, ctx := errgroup.WithContext(ctx)
 		for _, repo := range rs {
 			for _, rev := range revs {
-				repo, rev := repo, rev
-				rg.Go(func() error {
-					if rev == (search.RevisionSpecifier{}) {
-						rev.RevSpec = "HEAD"
-					} else if rev.RevSpec == "" {
-						return errors.New("unsupported glob rev in dependencies filter")
-					}
+				if rev == (search.RevisionSpecifier{}) {
+					rev.RevSpec = "HEAD"
+				} else if rev.RevSpec == "" {
+					return nil, nil, errors.New("unsupported glob rev in dependencies filter")
+				}
 
-					if err := sem.Acquire(ctx, 1); err != nil {
-						return err
-					}
-					defer sem.Release(1)
+				if _, ok := repoRevs[repo.Name]; !ok {
+					repoRevs[repo.Name] = codeintel.RevSpecSet{}
+				}
 
-					return svc.StreamDependencies(ctx, repo.Name, rev.RevSpec, cb)
-				})
+				repoRevs[repo.Name][api.RevSpec(rev.RevSpec)] = struct{}{}
 			}
 		}
-		return rg.Wait()
 	}
 
-	var (
-		mu       sync.Mutex
-		depRevs  = make(map[string][]search.RevisionSpecifier)
-		depNames []string
-	)
-
-	for _, depParams := range op.Dependencies {
-		withRepoRevs(depParams, func(rs []types.MinimalRepo, revs []search.RevisionSpecifier) error {
-			return withDependencies(rs, revs, func(dep reposource.PackageDependency) error {
-				if err := depsStore.Insert(ctx, dep); err != nil {
-					log15.Warn("failed to insert lockfile dependency repo", "error", err, "repo", dep)
-				}
-
-				depName := string(dep.RepoName())
-				depRev := search.RevisionSpecifier{RevSpec: dep.GitTagFromVersion()}
-
-				mu.Lock()
-				defer mu.Unlock()
-
-				if _, ok := depRevs[depName]; !ok {
-					depNames = append(depNames, depName)
-					depRevs[depName] = append(depRevs[depName], depRev)
-					return nil
-				}
-
-				for _, other := range depRevs[depName] {
-					if depRev == other {
-						return nil
-					}
-				}
-
-				depRevs[depName] = append(depRevs[depName], depRev)
-				return nil
-			})
-		})
-	}
-
-	if err = g.Wait(); err != nil {
+	depSvc := codeintel.NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
+	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
+	if err != nil {
 		return nil, nil, err
+	}
+
+	depRevs := make(map[api.RepoName][]search.RevisionSpecifier, len(dependencyRepoRevs))
+	depNames := make([]string, 0, len(dependencyRepoRevs))
+
+	for repoName, revs := range dependencyRepoRevs {
+		depNames = append(depNames, string(repoName))
+		revSpecs := make([]search.RevisionSpecifier, 0, len(revs))
+		for rev := range revs {
+			revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: string(rev)})
+		}
+		depRevs[repoName] = revSpecs
 	}
 
 	return depNames, depRevs, nil

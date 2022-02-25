@@ -112,7 +112,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
-            <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
+            <Form innerRef={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"
                     withLivePreviewControls={false}

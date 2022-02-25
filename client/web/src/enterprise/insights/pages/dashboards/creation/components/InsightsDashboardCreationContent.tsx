@@ -1,7 +1,6 @@
 import React, { ReactNode, useCallback, useContext } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 
 import { FormGroup } from '../../../../components/form/form-group/FormGroup'
@@ -114,7 +113,8 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     return (
-        <Form noValidate={true} ref={ref} onSubmit={handleSubmit}>
+        // eslint-disable-next-line react/forbid-elements
+        <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 required={true}
                 autoFocus={true}
@@ -184,6 +184,6 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
             )}
 
             <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>
-        </Form>
+        </form>
     )
 }

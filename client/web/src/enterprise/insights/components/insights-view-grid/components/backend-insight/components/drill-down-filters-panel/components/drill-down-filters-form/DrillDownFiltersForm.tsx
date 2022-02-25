@@ -95,7 +95,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
-        <Form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
+        <Form innerRef={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
 

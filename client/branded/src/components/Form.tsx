@@ -3,6 +3,7 @@ import * as React from 'react'
 
 interface FormProps extends React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> {
     children: React.ReactNode
+    innerRef?: React.Ref<HTMLFormElement>
 }
 
 interface FormState {
@@ -25,6 +26,7 @@ export class Form extends React.PureComponent<FormProps, FormState> {
             // eslint-disable-next-line react/forbid-elements
             <form
                 {...this.props}
+                ref={this.props.innerRef}
                 className={classNames(this.props.className, this.state.wasValidated && 'was-validated')}
                 onInvalid={this.onInvalid}
             >

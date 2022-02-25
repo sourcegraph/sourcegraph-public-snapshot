@@ -118,8 +118,6 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 
 If for a situational reason, a pull request needs to be exempted from the testing guidelines, skipping reviews or not providing a [test plan](#test-plans) will trigger an automated process that create and link an issue requesting that the author document a reason for the exception within [sourcegraph/sec-pr-audit-trail](https://github.com/sourcegraph/sec-pr-audit-trail).
 
-Explanations for exceptions can also simply be provided within a pull request's [test plan](#test-plans).
-
 ### Fixed exceptions
 
 The list below designates source code exempt from the testing guidelines because they do not directly impact the behaviour of the application in any way.
@@ -128,6 +126,19 @@ The list below designates source code exempt from the testing guidelines because
   - `dev/*`: internal tools, scripts for the local environment and continuous integration.
   - `enterprise/dev/*`: internal tools, scripts for the local environment and continuous integration that fall under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
   - Dev environment configuration (e.g. `.editorconfig`, `shell.nix`, etc.)
+
+To indicate exceptions like these, simply write `n/a` within your pull request's [test plan](#test-plans).
+
+### Pull request review exceptions
+
+Certain workflows leverage PRs that deploy already-tested changes or boilerplate work.
+For these PRs a review may not be required. This can be indicated by creating a section within your test plan indicating `No review required`, like so:
+
+```md
+## Test plan
+
+No review required: deploys tested changes.
+```
 
 ## Test health
 

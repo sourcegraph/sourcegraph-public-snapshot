@@ -387,7 +387,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 
 func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
 	args.Version = "V2"
-	return graphqlbackend.NewSearchImplementer(ctx, r.db, args)
+	return graphqlbackend.NewBatchSearchImplementer(ctx, r.db, args)
 }
 
 func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
@@ -925,6 +925,28 @@ func (m *monitorTriggerEvent) Status() (string, error) {
 		return v, nil
 	}
 	return "", errors.Errorf("unknown status: %s", m.State)
+}
+
+func (m *monitorTriggerEvent) Query() *string {
+	return m.TriggerJob.QueryString
+}
+
+func (m *monitorTriggerEvent) ResultCount() int32 {
+	var count int
+	for _, res := range m.TriggerJob.SearchResults {
+		var highlightCount int
+		if res.MessagePreview != nil {
+			highlightCount = len(res.MessagePreview.Highlights)
+		} else if res.DiffPreview != nil {
+			highlightCount = len(res.DiffPreview.Highlights)
+		}
+		if highlightCount > 0 {
+			count += highlightCount
+		} else {
+			count += 1
+		}
+	}
+	return int32(count)
 }
 
 func (m *monitorTriggerEvent) Message() *string {
