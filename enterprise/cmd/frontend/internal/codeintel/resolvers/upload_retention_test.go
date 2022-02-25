@@ -108,6 +108,78 @@ func TestRetentionPolicyOverview(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "direct match (1 of 2 policies)",
+			expectedMatches: 1,
+			upload: dbstore.Upload{
+				Commit:     "deadbeef0",
+				UploadedAt: mockClock.Now().Add(-time.Minute),
+			},
+			mockPolicies: []RetentionPolicyMatchCandidate{
+				{
+					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+						RetentionDuration:         timePtr(time.Hour * 24),
+						RetainIntermediateCommits: false,
+						Type:                      dbstore.GitObjectTypeTag,
+						Pattern:                   "*",
+					},
+					Matched: true,
+				},
+				{
+					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+						RetentionDuration:         timePtr(time.Hour * 24),
+						RetainIntermediateCommits: false,
+						Type:                      dbstore.GitObjectTypeTree,
+						Pattern:                   "*",
+					},
+					Matched: false,
+				},
+			},
+			refDescriptions: map[string][]gitdomain.RefDescription{
+				"deadbeef0": {
+					{
+						Name:            "v4.2.0",
+						Type:            gitdomain.RefTypeTag,
+						IsDefaultBranch: false,
+					},
+				},
+			},
+		},
+		{
+			name:            "direct match (ignore visible)",
+			expectedMatches: 1,
+			upload: dbstore.Upload{
+				Commit:     "deadbeef1",
+				UploadedAt: mockClock.Now().Add(-time.Minute),
+			},
+			mockPolicies: []RetentionPolicyMatchCandidate{
+				{
+					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
+						RetentionDuration:         timePtr(time.Hour * 24),
+						RetainIntermediateCommits: false,
+						Type:                      dbstore.GitObjectTypeTag,
+						Pattern:                   "*",
+					},
+					Matched: true,
+				},
+			},
+			refDescriptions: map[string][]gitdomain.RefDescription{
+				"deadbeef1": {
+					{
+						Name:            "v4.2.0",
+						Type:            gitdomain.RefTypeTag,
+						IsDefaultBranch: false,
+					},
+				},
+				"deadbeef0": {
+					{
+						Name:            "v4.1.9",
+						Type:            gitdomain.RefTypeTag,
+						IsDefaultBranch: false,
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -192,73 +264,26 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 			},
 		},
 		{
-			name:            "direct match (ignore visible)",
+			name:            "visibile to tip of default branch",
 			expectedMatches: 1,
+			visibleCommits:  []string{"deadbeef0", "deadbeef1"},
 			upload: dbstore.Upload{
-				Commit:     "deadbeef1",
-				UploadedAt: mockClock.Now().Add(-time.Minute),
+				Commit:     "deadbeef0",
+				UploadedAt: mockClock.Now().Add(-time.Hour * 24),
 			},
 			mockPolicies: []RetentionPolicyMatchCandidate{
 				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
-						Pattern:                   "*",
-					},
-					Matched: true,
+					ConfigurationPolicy: nil,
+					ProtectingCommits:   []string{"deadbeef1"},
+					Matched:             true,
 				},
 			},
 			refDescriptions: map[string][]gitdomain.RefDescription{
 				"deadbeef1": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
-					},
-				},
-				"deadbeef0": {
-					{
-						Name:            "v4.1.9",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
-					},
-				},
-			},
-		},
-		{
-			name:            "direct match (1 of 2 policies)",
-			expectedMatches: 1,
-			upload: dbstore.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Minute),
-			},
-			mockPolicies: []RetentionPolicyMatchCandidate{
-				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTag,
-						Pattern:                   "*",
-					},
-					Matched: true,
-				},
-				{
-					ConfigurationPolicy: &dbstore.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      dbstore.GitObjectTypeTree,
-						Pattern:                   "*",
-					},
-					Matched: false,
-				},
-			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef0": {
-					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Name:            "main",
+						Type:            gitdomain.RefTypeBranch,
+						IsDefaultBranch: true,
 					},
 				},
 			},
