@@ -54,7 +54,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	
 	// Minimum Length Check
 	pwdLength := utf8.RuneCountInString(passwd)
-	if pwdLength > policy.MinimumLength {
+	if pwdLength < policy.MinimumLength {
 		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d characters.", policy.MinimumLength))
 	}
 
