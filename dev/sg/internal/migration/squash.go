@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -46,43 +48,90 @@ func Squash(database db.Database, commit string) error {
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot})
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID})
+	if err != nil {
+		return err
+	}
+	privilegedUpMigration, unprivilegedUpMigration := splitPrivilegedMigrations(squashedUpMigration)
+
+	// Add newline after progress related to container
+	stdout.Out.Write("")
+
+	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID)
+	if err != nil {
+		return err
+	}
+	// Track the files we're generating so we can list what we changed on disk
+	files := []MigrationFiles{
+		unprivilegedFiles,
+	}
+
+	createMetadata := func(name string, parents []int, privileged bool) string {
+		content, _ := yaml.Marshal(struct {
+			Name          string `yaml:"name"`
+			Parents       []int  `yaml:"parents"`
+			Privileged    bool   `yaml:"privileged"`
+			NonIdempotent bool   `yaml:"nonIdempotent"`
+		}{name, parents, privileged, true})
+
+		return string(content)
+	}
+
+	contents := map[string]string{
+		unprivilegedFiles.UpFile:       unprivilegedUpMigration,
+		unprivilegedFiles.DownFile:     squashedDownMigration,
+		unprivilegedFiles.MetadataFile: createMetadata("squashed migrations", nil, false),
+	}
+	if privilegedUpMigration != "" {
+		if len(newRoot.Parents) == 0 {
+			return errors.New("select (unprivileged) squash root has no parent; create a new privileged root manually for this schema")
+		}
+
+		// We need a deterministic place to put our privileged queries _prior_ to the
+		// squashed migration. Naturally, we want to re-use a migration identifier that's
+		// already been applied. We'll choose any of the parents of this new squash root
+		// and replace its contents.
+		privilegedRoot := newRoot.Parents[0]
+
+		privilegedFiles, err := makeMigrationFilenames(database, privilegedRoot)
+		if err != nil {
+			return err
+		}
+		files = append(files, privilegedFiles)
+
+		// Add privileged queries into new migration
+		contents[privilegedFiles.UpFile] = privilegedUpMigration
+		contents[privilegedFiles.DownFile] = squashedDownMigration
+		contents[privilegedFiles.MetadataFile] = createMetadata("squashed migrations (privileged)", nil, true)
+
+		// Update new (unprivileged) root to declare the new privileged root as its parent
+		contents[unprivilegedFiles.MetadataFile] = createMetadata("squashed migrations (unprivileged)", []int{privilegedRoot}, false)
+	}
+
+	// Remove the migration files that were squashed into a new root
+	filenames, err := removeAncestorsOf(database, definitions, newRoot.ID)
 	if err != nil {
 		return err
 	}
 
-	stdout.Out.Write("")
+	// Write new file back onto disk. We do this after deleting since there might
+	// be some overlap (and we don't want to delete what we just wrote to disk).
+	if err := writeMigrationFiles(contents); err != nil {
+		return err
+	}
+
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
-
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeAncestorsOf(database, definitions, newRoot)
-	if err != nil {
-		return err
-	}
 
 	for _, filename := range filenames {
 		block.Writef("Deleted: %s", filename)
 	}
 
-	files, err := makeMigrationFilenames(database, newRoot)
-	if err != nil {
-		return err
+	for _, files := range files {
+		block.Writef("Up query file: %s", files.UpFile)
+		block.Writef("Down query file: %s", files.DownFile)
+		block.Writef("Metadata file: %s", files.MetadataFile)
 	}
-
-	contents := map[string]string{
-		files.UpFile:       squashedUpMigration,
-		files.DownFile:     squashedDownMigration,
-		files.MetadataFile: "name: 'squashed migrations'\n",
-	}
-
-	if err := writeMigrationFiles(contents); err != nil {
-		return err
-	}
-
-	block.Writef("Created: %s", files.UpFile)
-	block.Writef("Created: %s", files.DownFile)
-	block.Writef("Created: %s", files.MetadataFile)
 
 	return nil
 }
@@ -91,25 +140,25 @@ func Squash(database db.Database, commit string) error {
 // migrations of the schema at the given commit. This ensures that whenever we squash migrations,
 // we do so between a portion of the graph with a single entry and a single exit, which can
 // be easily collapsible into one file that can replace an existing migration node in-place.
-func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (int, bool, error) {
+func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
-		return 0, false, err
+		return definition.Definition{}, false, err
 	}
 
 	ds, err = ds.Filter(parseVersions(strings.Split(output, "\n"), migrationsDir))
 	if err != nil {
-		return 0, false, err
+		return definition.Definition{}, false, err
 	}
 
-	id, ok := ds.LeafDominator()
+	leafDominator, ok := ds.LeafDominator()
 	if !ok {
-		return 0, false, nil
+		return definition.Definition{}, false, nil
 	}
 
-	return id.ID, true, nil
+	return leafDominator, true, nil
 }
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
@@ -327,6 +376,26 @@ outer:
 	}
 
 	return strings.TrimSpace(filteredContent)
+}
+
+var privilegedQueryPattern = lazyregexp.New(`(CREATE|COMMENT ON) EXTENSION .+;\n*`)
+
+// splitPrivilegedMigrations extracts the portion of the squashed migration file that must be run by
+// a user with elevated privileges. Both parts of the migration are returned. THe privileged migration
+// section is empty when there are no privileged queries.
+//
+// Currently, we consider the following query patterns as privileged from pg_dump output:
+//
+//  - CREATE EXTENSION ...
+//  - COMMENT ON EXTENSION ...
+func splitPrivilegedMigrations(content string) (privilegedMigration string, unprivilegedMigration string) {
+	var privilegedQueries []string
+	unprivileged := privilegedQueryPattern.ReplaceAllStringFunc(content, func(s string) string {
+		privilegedQueries = append(privilegedQueries, s)
+		return ""
+	})
+
+	return strings.TrimSpace(strings.Join(privilegedQueries, "")) + "\n", unprivileged
 }
 
 // removeAncestorsOf removes all migrations that are an ancestor of the given target version.

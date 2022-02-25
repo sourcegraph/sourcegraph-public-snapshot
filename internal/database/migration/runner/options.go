@@ -12,6 +12,11 @@ type Options struct {
 	// same database can be targeted by multiple schemas, we do not hit errors that occur
 	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
 	Parallel bool
+
+	// UnprivilegedOnly controls whether privileged migrations can run with the current user
+	// credentials, or if an error should be printed so the site admin can apply manulaly the
+	// privileged migration file with a superuser.
+	UnprivilegedOnly bool
 }
 
 type MigrationOperation struct {

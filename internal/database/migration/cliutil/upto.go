@@ -15,9 +15,10 @@ import (
 
 func UpTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s upto", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
-		targetsFlag    = flagSet.String("target", "", "The migration to apply. Comma-separated values are accepted.")
+		flagSet              = flag.NewFlagSet(fmt.Sprintf("%s upto", commandName), flag.ExitOnError)
+		schemaNameFlag       = flagSet.String("db", "", `The target schema to modify.`)
+		unprivilegedOnlyFlag = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
+		targetsFlag          = flagSet.String("target", "", "The migration to apply. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -60,6 +61,7 @@ func UpTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.
 					TargetVersions: versions,
 				},
 			},
+			UnprivilegedOnly: *unprivilegedOnlyFlag,
 		})
 	}
 

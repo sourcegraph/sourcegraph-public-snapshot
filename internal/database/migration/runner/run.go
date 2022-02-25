@@ -38,7 +38,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		semaphore <- struct{}{}
 		defer func() { <-semaphore }()
 
-		if err := r.runSchema(ctx, operationMap[schemaName], schemaContext); err != nil {
+		if err := r.runSchema(ctx, operationMap[schemaName], schemaContext, options.UnprivilegedOnly); err != nil {
 			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
 		}
 
@@ -50,7 +50,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 // method will attempt to coordinate with other concurrently running instances and may block while
 // attempting to acquire a lock. An error is returned only if user intervention is deemed a necessity,
 // the "dirty database" condition, or on context cancellation.
-func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
+func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, unprivilegedOnly bool) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
 	// upgrade and revert operations into targeted up and down operations.
 	operation, err := desugarOperation(schemaContext, operation)
@@ -123,7 +123,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		// Therefore, some invocations of this method will return with a flag to request re-invocation under a
 		// new lock.
 
-		if retry, err := r.applyMigrations(ctx, operation, schemaContext, definitions); err != nil {
+		if retry, err := r.applyMigrations(ctx, operation, schemaContext, definitions, unprivilegedOnly); err != nil {
 			return err
 		} else if !retry {
 			break
@@ -147,6 +147,7 @@ func (r *Runner) applyMigrations(
 	operation MigrationOperation,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
+	unprivilegedOnly bool,
 ) (retry bool, _ error) {
 	var (
 		droppedLock bool
@@ -181,7 +182,7 @@ func (r *Runner) applyMigrations(
 				}
 			} else {
 				// Apply all other types of migrations uniformly
-				if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
+				if err := r.applyMigration(ctx, schemaContext, operation, definition, unprivilegedOnly); err != nil {
 					return err
 				}
 			}
@@ -210,7 +211,12 @@ func (r *Runner) applyMigration(
 	schemaContext schemaContext,
 	operation MigrationOperation,
 	definition definition.Definition,
+	unprivilegedOnly bool,
 ) error {
+	if definition.Privileged && unprivilegedOnly {
+		return newPrivilegedMigrationError(operation.SchemaName, definition)
+	}
+
 	up := operation.Type == MigrationOperationTypeTargetedUp
 
 	logger.Info(
