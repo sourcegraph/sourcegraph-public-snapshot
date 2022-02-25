@@ -3,6 +3,7 @@ package codeintel
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -76,9 +77,14 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 	logFields := make([]log.Field, 0, 2)
 	if len(repoRevs) == 1 {
 		for repoName, revs := range repoRevs {
+			revStrs := make([]string, 0, len(revs))
+			for rev := range revs {
+				revStrs = append(revStrs, string(rev))
+			}
+
 			logFields = append(logFields,
 				log.String("repo", string(repoName)),
-				log.Int("numRevs", len(revs)),
+				log.String("revs", strings.Join(revStrs, ",")),
 			)
 		}
 	} else {
