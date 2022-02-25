@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -420,6 +421,77 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 	}, nil
 }
 
+func PartitionRepos(
+	ctx context.Context,
+	repos []*search.RepositoryRevisions,
+	zoektStreamer zoekt.Streamer,
+	typ search.IndexedRequestType,
+	useIndex query.YesNoOnly,
+	containsRefGlobs bool,
+	onMissing OnMissingRepoRevs,
+) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
+	if zoektStreamer == nil {
+		if useIndex == query.Only {
+			return nil, nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
+		}
+		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+
+	}
+	// Fallback to Unindexed if the query contains valid ref-globs.
+	if containsRefGlobs {
+		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	}
+	// Fallback to Unindexed if index:no
+	if useIndex == query.No {
+		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	}
+
+	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
+	// Only include indexes with symbol information if a symbol request.
+	var filter func(repo *zoekt.MinimalRepoListEntry) bool
+	if typ == search.SymbolRequest {
+		filter = func(repo *zoekt.MinimalRepoListEntry) bool {
+			return repo.HasSymbols
+		}
+	}
+
+	// Consult Zoekt to find out which repository revisions can be searched.
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	list, err := zoektStreamer.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+	if err != nil {
+		if ctx.Err() == nil {
+			// Only hard fail if the user specified index:only
+			if useIndex == query.Only {
+				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
+			}
+
+			log15.Warn("zoektIndexedRepos failed", "error", err)
+		}
+
+		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+		return nil, unindexedRepos, ctx.Err()
+	}
+
+	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
+
+	// Split based on indexed vs unindexed
+	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
+
+	tr.LogFields(
+		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("searcher_repos.size", len(searcherRepos)),
+	)
+
+	// Disable unindexed search
+	if useIndex == query.Only {
+		searcherRepos = limitUnindexedRepos(searcherRepos, 0, onMissing)
+	}
+
+	unindexed = limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
+	return indexed, unindexed, nil
+}
+
 func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -729,4 +801,39 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onM
 	}
 
 	return unindexed
+}
+
+type ZoektRepoSubsetSearch struct {
+	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
+	Query          zoektquery.Q
+	Typ            search.IndexedRequestType
+	FileMatchLimit int32
+	Select         filter.SelectPath
+	Zoekt          zoekt.Streamer
+	Since          func(time.Time) time.Duration // since if non-nil will be used instead of time.Since. For tests
+}
+
+// ZoektSearch is a job that searches repositories using zoekt.
+func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (*search.Alert, error) {
+	if z.Repos == nil {
+		return nil, nil
+	}
+	if len(z.Repos.repoRevs) == 0 {
+		return nil, nil
+	}
+
+	since := time.Since
+	if z.Since != nil {
+		since = z.Since
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	err := zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, err
+}
+
+func (*ZoektRepoSubsetSearch) Name() string {
+	return "ZoektRepoSubset"
 }

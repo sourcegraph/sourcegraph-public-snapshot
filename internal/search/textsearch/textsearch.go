@@ -34,30 +34,43 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
+
+		indexed, unindexed, err := zoektutil.PartitionRepos(
+			ctx,
+			page.RepoRevs,
+			t.ZoektArgs.Zoekt,
+			search.TextRequest,
+			t.UseIndex,
+			t.ContainsRefGlobs,
+			zoektutil.MissingRepoRevStatus(stream),
+		)
 		if err != nil {
 			return err
-		}
-
-		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
-			if err != nil {
-				return err
-			}
 		}
 
 		g, ctx := errgroup.WithContext(ctx)
 
 		if t.NotSearcherOnly {
+			zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+				Repos:          indexed,
+				Query:          t.ZoektArgs.Query,
+				Typ:            search.TextRequest,
+				FileMatchLimit: t.ZoektArgs.FileMatchLimit,
+				Select:         t.ZoektArgs.Select,
+				Zoekt:          t.ZoektArgs.Zoekt,
+				Since:          nil,
+			}
+
 			// Run literal and regexp searches on indexed repositories.
 			g.Go(func() error {
-				return request.Search(ctx, stream)
+				_, err := zoektJob.Run(ctx, db, stream)
+				return err
 			})
 		}
 
 		// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 		g.Go(func() error {
-			return searcher.SearchOverRepos(ctx, t.SearcherArgs, stream, request.UnindexedRepos(), false)
+			return searcher.SearchOverRepos(ctx, t.SearcherArgs, stream, unindexed, false)
 		})
 
 		return g.Wait()
