@@ -53,7 +53,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 	if len(repoRevs) == 1 {
 		for repoName, revs := range repoRevs {
 			logFields = append(logFields,
-				log.String("repositoryName", string(repoName)),
+				log.String("repo", string(repoName)),
 				log.Int("numRevs", len(revs)),
 			)
 		}
