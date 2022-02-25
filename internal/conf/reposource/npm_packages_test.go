@@ -18,7 +18,7 @@ func TestParseNPMDependency(t *testing.T) {
 		{"package.js@1.2.3", true},
 		{"package-1.2.3", false},
 		{"@scope/package", false},
-		{"@weird.scope/package@1.2.3", false},
+		{"@weird.scope/package@1.2.3", true},
 		{"@scope/package.js@1.2.3", true},
 		{"package@1$%", false},
 		{"@scope-package@1.2.3", false},

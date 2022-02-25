@@ -13,7 +13,8 @@ import (
 
 const (
 	// Exported for [NOTE: npm-tarball-filename-workaround].
-	NPMScopeRegexString = `(?P<scope>[0-9a-z_\\-]+)`
+	// . is allowed in scope names: for example https://www.npmjs.com/package/@dinero.js/core
+	NPMScopeRegexString = `(?P<scope>[0-9a-z_\\-\\.]+)`
 	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
 	npmPackageNameRegexString = `(?P<name>[0-9a-z_\\-]+(\.[0-9a-z_\\-]+)*)`
 )
