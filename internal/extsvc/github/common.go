@@ -1497,7 +1497,19 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (headers http.Header, err error) {
+type httpResponseState struct {
+	statusCode int
+	headers    http.Header
+}
+
+func newHttpResponseState(statusCode int, headers http.Header) *httpResponseState {
+	return &httpResponseState{
+		statusCode: statusCode,
+		headers:    headers,
+	}
+}
+
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1543,10 +1555,10 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		}
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
-		return resp.Header, &err
+		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
 	err = json.NewDecoder(resp.Body).Decode(result)
-	return resp.Header, err
+	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {
@@ -1789,7 +1801,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
 	var result restRepository
-	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
+	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
 			return nil, ErrRepoNotFound
 		}
