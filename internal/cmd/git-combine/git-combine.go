@@ -153,6 +153,11 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
+	// Reverse the commits so we apply them in the right order.
+	for i, j := 0, len(commits)-1; i < j; i, j = i+1, j-1 {
+		commits[i], commits[j] = commits[j], commits[i]
+	}
+
 	if len(commits) > opt.Limit {
 		// We only take the last Limit commits. But we want to ensure we are
 		// using the latest treehash for each dir, so we need to walk over the
