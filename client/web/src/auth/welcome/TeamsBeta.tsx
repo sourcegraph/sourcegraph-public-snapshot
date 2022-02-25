@@ -48,7 +48,7 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
                 cftb_sourcegraph_username: username
             },
         }),
-        [logFormSubmission, onError]
+        [logFormSubmission, onError, username]
     )
     const form = useHubSpotForm(config)
 
