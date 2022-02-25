@@ -35,7 +35,7 @@ type DependenciesService struct {
 }
 
 type Syncer interface {
-	Sync(context.Context, api.RepoName) error
+	Sync(ctx context.Context, repos []api.RepoName) error
 }
 
 var (
@@ -138,7 +138,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 						}
 
 						depName := dep.RepoName()
-						if err := r.syncer.Sync(ctx, depName); err != nil {
+						if err := r.syncer.Sync(ctx, []api.RepoName{depName}); err != nil {
 							return err
 						}
 

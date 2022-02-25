@@ -587,9 +587,14 @@ type syncer struct {
 	repoStore database.RepoStore
 }
 
-func (s *syncer) Sync(ctx context.Context, repo api.RepoName) error {
-	_, err := backend.NewRepos(s.repoStore).GetByName(ctx, repo)
-	return err
+func (s *syncer) Sync(ctx context.Context, repos []api.RepoName) error {
+	for _, repo := range repos {
+		if _, err := backend.NewRepos(s.repoStore).GetByName(ctx, repo); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
