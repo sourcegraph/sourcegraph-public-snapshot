@@ -57,6 +57,10 @@ CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at)
 
 CREATE INDEX rockskip_ancestry_repo_commit_id ON rockskip_ancestry(repo_id, commit_id);
 
+CREATE EXTENSION IF NOT EXISTS intarray;
+
+COMMENT ON EXTENSION intarray IS 'functions, operators, and index support for 1-D arrays of integers';
+
 CREATE INDEX rockskip_blobs_gin ON rockskip_blobs USING GIN (
     singleton_integer(repo_id) gin__int_ops,
     added gin__int_ops,
