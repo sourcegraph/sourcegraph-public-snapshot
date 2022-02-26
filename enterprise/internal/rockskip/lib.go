@@ -1036,6 +1036,9 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	commit := string(args.CommitID)
 
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("searching %+v", args))
+	if s.logQueries {
+		defer threadStatus.Tasklog.Print()
+	}
 	defer threadStatus.End()
 
 	// Acquire a read lock on the repo.
