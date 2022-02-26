@@ -51,3 +51,21 @@ We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of
 We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of a repository on-demand. These symbols are also used for the symbol sidebar, which categorizes declarations by type (variable, function, interface, etc). Clicking on a symbol in the sidebar jumps you to the line where it is defined.
 
 <img src="../img/SymbolSidebar.png" width="500"/>
+
+### Symbol search behavior and performance
+
+Here is the query path for symbol searches:
+
+- **Zoekt**: if [indexed search](../../admin/search.md#indexed-search) is enabled and the search is for the tip commit of an indexed branch, then Zoekt will service the query and it should respond quickly. Zoekt indexes the default branch (usually `master` or `main`) and can be configured for [multi-branch indexing](https://docs.sourcegraph.com/code_search/explanations/features#multi-branch-indexing-experimental). The high commit frequency of monorepos reduces the likelihood that Zoekt will be able to respond to symbol searches. Zoekt **eagerly** indexes by listening to repository updates, whereas the symbols service **lazily** indexes the commit being searched.
+- **Symbols service with an index for the commit**: if the symbols service has already indexed this commit (i.e. someone has visited the commit before) then the query should be resolved quickly. Indexes are deleted in LRU fashion to remain under the configured maximum disk usage which [defaults to 100GB](./search_based_code_intelligence.md#what-configuration-settings-can-i-apply).
+- **Symbols service with an index for a different commit**: if the symbols service has already indexed a **different** commit in the same repository, then it will make a copy of the previous index on disk then run [ctags](https://github.com/universal-ctags/ctags#readme) on the files that changed between the two commits and update the symbols in the new index. This process takes roughly 20 seconds on a monorepo with 40M LOC and 400K files.
+- **Symbols service without any indexes (cold start)**: if the symbols service has never seen this repository before, then it needs to run ctags on all symbols and construct the index from scratch. This process takes roughly 20 minutes on a monorepo with 40M LOC and 400K files.
+
+Once the symbols service has built an index for a commit, here's the query performance:
+
+- Exact matches `^foo$` are optimized to use an index
+- Prefix matches `^foo` are optimized to use an index
+- General regex queries `foo.*bar` need to scan every symbol
+- Path filtering `file:^cmd/` helps narrow the search space
+
+Search-based code intelligence uses exact matches `^foo$` and the symbols sidebar uses prefix matches on paths `file:^cmd/` to respond quickly.
