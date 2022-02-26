@@ -77,10 +77,10 @@ type CommitStatus struct {
 }
 
 type Blob struct {
-	Commit  string
+	Commit  int
 	Path    string
-	Added   []string
-	Deleted []string
+	Added   []int
+	Deleted []int
 	Symbols []Symbol
 }
 
@@ -99,7 +99,7 @@ const (
 	DeletedAD StatusAD = 1
 )
 
-const NULL = "0000000000000000000000000000000000000000"
+const NULL = 0
 
 type ThreadStatus struct {
 	Tasklog   *TaskLog
@@ -514,15 +514,21 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 	tipCommit := NULL
 	tipHeight := 0
 
+	var repoId int
+	err = conn.QueryRowContext(ctx, "SELECT id FROM rockskip_repos WHERE repo = $1", repo).Scan(&repoId)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get repo id for %s", repo)
+	}
+
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = s.git.RevListEach(repo, givenCommit, func(commit string) (shouldContinue bool, err error) {
+	err = s.git.RevListEach(repo, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
-		tasklog.Start("GetCommit")
-		_, height, present, err := GetCommit(ctx, conn, repo, commit)
+		tasklog.Start("GetCommitByHash")
+		commit, height, present, err := GetCommitByHash(ctx, conn, repoId, commitHash)
 		if err != nil {
-			return false, errors.Wrap(err, "GetCommit")
+			return false, err
 		} else if present {
 			tipCommit = commit
 			tipHeight = height
@@ -557,7 +563,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		}
 		defer tx.Rollback()
 
-		hops, err := getHops(ctx, tx, repo, tipCommit, tasklog)
+		hops, err := getHops(ctx, tx, tipCommit, tasklog)
 		if err != nil {
 			return errors.Wrap(err, "getHops")
 		}
@@ -568,18 +574,18 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		}
 
 		tasklog.Start("InsertCommit")
-		err = InsertCommit(ctx, tx, repo, entry.Commit, tipHeight+1, hops[r])
+		commit, err := InsertCommit(ctx, tx, repoId, entry.Commit, tipHeight+1, hops[r])
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
 		}
 
 		tasklog.Start("AppendHop+")
-		err = AppendHop(ctx, tx, repo, hops[0:r], AddedAD, entry.Commit)
+		err = AppendHop(ctx, tx, repoId, hops[0:r], AddedAD, commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		tasklog.Start("AppendHop-")
-		err = AppendHop(ctx, tx, repo, hops[0:r], DeletedAD, entry.Commit)
+		err = AppendHop(ctx, tx, repoId, hops[0:r], DeletedAD, commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -602,7 +608,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 				found := false
 				for _, hop := range hops {
 					tasklog.Start("GetBlob")
-					id, found, err = GetBlob(ctx, tx, repo, hop, deletedPath)
+					id, found, err = GetBlob(ctx, tx, repoId, hop, deletedPath)
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
 					}
@@ -616,7 +622,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			}
 
 			tasklog.Start("UpdateBlobHops")
-			err = UpdateBlobHops(ctx, tx, id, DeletedAD, entry.Commit)
+			err = UpdateBlobHops(ctx, tx, id, DeletedAD, commit)
 			if err != nil {
 				return errors.Wrap(err, "UpdateBlobHops")
 			}
@@ -632,14 +638,14 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 				return errors.Wrap(err, "parse")
 			}
 			blob := Blob{
-				Commit:  entry.Commit,
+				Commit:  commit,
 				Path:    addedPath,
-				Added:   []string{entry.Commit},
-				Deleted: []string{},
+				Added:   []int{commit},
+				Deleted: []int{},
 				Symbols: symbols,
 			}
 			tasklog.Start("InsertBlob")
-			id, err := InsertBlob(ctx, tx, blob, repo)
+			id, err := InsertBlob(ctx, tx, blob, repoId, commit)
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
 			}
@@ -651,7 +657,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		}
 
 		tasklog.Start("DeleteRedundant")
-		err = DeleteRedundant(ctx, tx, entry.Commit)
+		err = DeleteRedundant(ctx, tx, commit)
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
 		}
@@ -662,7 +668,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			return errors.Wrap(err, "commit transaction")
 		}
 
-		tipCommit = entry.Commit
+		tipCommit = commit
 		tipHeight += 1
 
 		return nil
@@ -676,16 +682,16 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 	return nil
 }
 
-func getHops(ctx context.Context, tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, error) {
+func getHops(ctx context.Context, tx Queryable, commit int, tasklog *TaskLog) ([]int, error) {
 	tasklog.Start("get hops")
 
 	current := commit
-	spine := []string{current}
+	spine := []int{current}
 
 	for {
-		ancestor, _, present, err := GetCommit(ctx, tx, repo, current)
+		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetCommit")
+			return nil, errors.Wrap(err, "GetCommitById")
 		} else if !present {
 			break
 		} else {
@@ -721,10 +727,11 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 
 	// Select a candidate repo to delete.
 	threadStatus.Tasklog.Start("select repo to delete")
+	var repoId int
 	var repo string
 	var repoRank int
 	err = db.QueryRowContext(ctx, `
-		SELECT repo, repo_rank
+		SELECT id, repo, repo_rank
 		FROM (
 			SELECT *, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
 			FROM rockskip_repos
@@ -732,7 +739,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 		WHERE repo_rank > $1
 		ORDER BY last_accessed_at ASC
 		LIMIT 1;`, maxRepos,
-	).Scan(&repo, &repoRank)
+	).Scan(&repoId, &repo, &repoRank)
 	if err == sql.ErrNoRows {
 		// No more repos to delete.
 		return false, nil
@@ -756,10 +763,10 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	err = db.QueryRowContext(ctx, `
 		SELECT repo_rank
 		FROM (
-			SELECT repo, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
+			SELECT id, RANK() OVER (ORDER BY last_accessed_at DESC) repo_rank
 			FROM rockskip_repos
 		) sub
-		WHERE repo = $1;`, repo,
+		WHERE id = $1;`, repoId,
 	).Scan(&rank)
 	if err == sql.ErrNoRows {
 		// The repo was deleted in the meantime, so retry.
@@ -787,15 +794,15 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_ancestry WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_ancestry WHERE repo_id = $1;", repoId)
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && singleton(repo);", pg.Array([]string{repo}))
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && singleton_integer(repo_id);", pg.Array([]int{repoId}))
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_repos WHERE repo = $1;", repo)
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_repos WHERE id = $1;", repoId)
 	if err != nil {
 		return false, err
 	}
@@ -807,18 +814,20 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	return true, nil
 }
 
-func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) error {
-	_, err := db.ExecContext(ctx, `
+func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) (int, error) {
+	lastInsertId := 0
+	err := db.QueryRowContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
 			ON CONFLICT (repo)
 			DO UPDATE SET last_accessed_at = now()
-		`, repo)
+			RETURNING id
+		`, repo).Scan(&lastInsertId)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return lastInsertId, nil
 }
 
 // Ruler sequence
@@ -966,34 +975,50 @@ func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string,
 	return nil
 }
 
-func GetCommit(ctx context.Context, db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {
+func GetCommitById(ctx context.Context, db Queryable, givenCommit int) (commitHash string, ancestor int, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
-		SELECT ancestor_id, height
+		SELECT commit_id, ancestor, height
 		FROM rockskip_ancestry
-		WHERE repo = $1 AND commit_id = $2
-	`, repo, givenCommit).Scan(&ancestor, &height)
+		WHERE id = $1
+	`, givenCommit).Scan(&commitHash, &ancestor, &height)
 	if err == sql.ErrNoRows {
-		return "", 0, false, nil
+		return "", 0, 0, false, nil
 	} else if err != nil {
-		return "", 0, false, errors.Newf("GetCommit: %s", err)
+		return "", 0, 0, false, errors.Newf("GetCommitById: %s", err)
 	}
-	return ancestor, height, true, nil
+	return commitHash, ancestor, height, true, nil
 }
 
-func InsertCommit(ctx context.Context, db Queryable, repo, commit string, height int, ancestor string) error {
-	_, err := db.ExecContext(ctx, `
-		INSERT INTO rockskip_ancestry (commit_id, repo, height, ancestor_id)
+func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash string) (commit int, height int, present bool, err error) {
+	err = db.QueryRowContext(ctx, `
+		SELECT id, height
+		FROM rockskip_ancestry
+		WHERE repo_id = $1 AND commit_id = $2
+	`, repoId, commitHash).Scan(&commit, &height)
+	if err == sql.ErrNoRows {
+		return 0, 0, false, nil
+	} else if err != nil {
+		return 0, 0, false, errors.Newf("GetCommitByHash: %s", err)
+	}
+	return commit, height, true, nil
+}
+
+func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash string, height int, ancestor int) (id int, err error) {
+	lastInsertId := 0
+	err = db.QueryRowContext(ctx, `
+		INSERT INTO rockskip_ancestry (commit_id, repo_id, height, ancestor)
 		VALUES ($1, $2, $3, $4)
-	`, commit, repo, height, ancestor)
-	return errors.Wrap(err, "InsertCommit")
+		RETURNING id
+	`, commitHash, repoId, height, ancestor).Scan(&lastInsertId)
+	return lastInsertId, errors.Wrap(err, "InsertCommit")
 }
 
-func GetBlob(ctx context.Context, db Queryable, repo string, hop string, path string) (id int, found bool, err error) {
+func GetBlob(ctx context.Context, db Queryable, repoId int, hop int, path string) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_blobs
-		WHERE $1 && singleton(repo) AND $2 && singleton(path) AND $3 && added AND NOT $3 && deleted
-	`, pg.Array([]string{repo}), pg.Array([]string{path}), pg.Array([]string{hop})).Scan(&id)
+		WHERE $1 && singleton_integer(repo_id) AND $2 && singleton(path) AND $3 && added AND NOT $3 && deleted
+	`, pg.Array([]int{repoId}), pg.Array([]string{path}), pg.Array([]int{hop})).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
@@ -1002,7 +1027,7 @@ func GetBlob(ctx context.Context, db Queryable, repo string, hop string, path st
 	return id, true, nil
 }
 
-func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, hop string) error {
+func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, hop int) error {
 	column := statusADToColumn(status)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
@@ -1012,7 +1037,7 @@ func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, 
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id int, err error) {
+func InsertBlob(ctx context.Context, db Queryable, blob Blob, repoId, commit int) (id int, err error) {
 	symbolNames := []string{}
 	for _, symbol := range blob.Symbols {
 		symbolNames = append(symbolNames, symbol.Name)
@@ -1020,26 +1045,26 @@ func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id i
 
 	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
-		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
+		INSERT INTO rockskip_blobs (repo_id, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, repoId, commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
-func AppendHop(ctx context.Context, db Queryable, repo string, hops []string, givenStatus StatusAD, newHop string) error {
+func AppendHop(ctx context.Context, db Queryable, repoId int, hops []int, givenStatus StatusAD, newHop int) error {
 	column := statusADToColumn(givenStatus)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
-		WHERE $2 && singleton(repo) AND $3 && %s
-	`, column, column, column), newHop, pg.Array([]string{repo}), pg.Array(hops))
+		WHERE $2 && singleton_integer(repo_id) AND $3 && %s
+	`, column, column, column), newHop, pg.Array([]int{repoId}), pg.Array(hops))
 	return errors.Wrap(err, "AppendHop")
 }
 
 func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
 	repo := string(args.Repo)
-	commit := string(args.CommitID)
+	commitHash := string(args.CommitID)
 
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("searching %+v", args))
 	if s.logQueries {
@@ -1059,7 +1084,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 
 	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
 	threadStatus.Tasklog.Start("update last_accessed_at")
-	err = updateLastAccessedAt(ctx, s.db, repo)
+	repoId, err := updateLastAccessedAt(ctx, s.db, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -1072,13 +1097,13 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 
 	// Check if the commit has already been indexed, and if not then index it.
 	threadStatus.Tasklog.Start("check commit presence")
-	_, _, present, err := GetCommit(ctx, s.db, repo, commit)
+	commit, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
 	if err != nil {
 		return nil, err
 	} else if !present {
 
 		// Try to send an index request.
-		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commit})
+		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
 		if err != nil {
 			return nil, err
 		}
@@ -1088,7 +1113,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 		select {
 		case <-done:
 			threadStatus.Tasklog.Start("recheck commit presence")
-			_, _, present, err = GetCommit(ctx, s.db, repo, commit)
+			commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
 			if err != nil {
 				return nil, err
 			}
@@ -1102,7 +1127,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 	}
 
 	// Finally search.
-	symbols, err = querySymbols(ctx, s.db, args, threadStatus, s.logQueries)
+	symbols, err = querySymbols(ctx, s.db, args, repoId, commit, threadStatus, s.logQueries)
 	if err != nil {
 		return nil, err
 	}
@@ -1180,8 +1205,8 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]result.Symbol, error) {
-	hops, err := getHops(ctx, db, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
+func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus, logQueries bool) ([]result.Symbol, error) {
+	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -1196,12 +1221,12 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, thre
 		SELECT path, symbol_data
 		FROM rockskip_blobs
 		WHERE
-			%s && singleton(repo)
+			%s && singleton_integer(repo_id)
 			AND     %s && added
 			AND NOT %s && deleted
 			AND %s
 		LIMIT %s;`,
-		pg.Array([]string{string(args.Repo)}),
+		pg.Array([]int{repoId}),
 		pg.Array(hops),
 		pg.Array(hops),
 		convertSearchArgsToSqlQuery(args),
@@ -1304,7 +1329,7 @@ func argToString(arg interface{}) (string, error) {
 	switch arg := arg.(type) {
 	case string:
 		return fmt.Sprintf("'%s'", sqlEscapeQuotes(arg)), nil
-	case *pg.StringArray:
+	case driver.Valuer:
 		value, err := arg.Value()
 		if err != nil {
 			return "", err
@@ -1312,6 +1337,8 @@ func argToString(arg interface{}) (string, error) {
 		switch value := value.(type) {
 		case string:
 			return fmt.Sprintf("'%s'", sqlEscapeQuotes(value)), nil
+		case int:
+			return fmt.Sprintf("'%d'", value), nil
 		default:
 			return "", errors.Newf("unrecognized array type %T", value)
 		}
@@ -1527,12 +1554,12 @@ func iLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo s
 	return lock(ctx, db, threadStatus, INDEXING_LOCKS_NAMESPACE, "iLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
 }
 
-func DeleteRedundant(ctx context.Context, db Queryable, hop string) error {
+func DeleteRedundant(ctx context.Context, db Queryable, hop int) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE rockskip_blobs
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
 		WHERE $2 && added AND $2 && deleted
-	`, hop, pg.Array([]string{hop}))
+	`, hop, pg.Array([]int{hop}))
 	return errors.Wrap(err, "DeleteRedundant")
 }
 
@@ -1542,8 +1569,9 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 
 	// print all rows in the rockskip_ancestry table
 	rows, err := db.QueryContext(ctx, `
-		SELECT commit_id, height, ancestor_id
-		FROM rockskip_ancestry
+		SELECT a1.commit_id, a1.height, a2.commit_id
+		FROM rockskip_ancestry a1
+		JOIN rockskip_ancestry a2 ON a1.ancestor = a2.id
 		ORDER BY height ASC
 	`)
 	if err != nil {
@@ -1577,18 +1605,26 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 	for rows.Next() {
 		var id int
 		var path string
-		var added, deleted []string
+		var added, deleted []int64
 		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
 		if err != nil {
 			return errors.Wrap(err, "PrintInternals: Scan")
 		}
 		fmt.Printf("  id %d path %-10s\n", id, path)
 		for _, a := range added {
-			fmt.Printf("    + %-40s\n", a)
+			hash, _, _, _, err := GetCommitById(ctx, db, int(a))
+			if err != nil {
+				return err
+			}
+			fmt.Printf("    + %-40s\n", hash)
 		}
 		fmt.Println()
 		for _, d := range deleted {
-			fmt.Printf("    - %-40s\n", d)
+			hash, _, _, _, err := GetCommitById(ctx, db, int(d))
+			if err != nil {
+				return err
+			}
+			fmt.Printf("    - %-40s\n", hash)
 		}
 		fmt.Println()
 
