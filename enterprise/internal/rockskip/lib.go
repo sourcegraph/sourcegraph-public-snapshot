@@ -1233,15 +1233,10 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 		limit,
 	)
 
-	if logQueries {
-		err = logQuery(ctx, db, args, q)
-		if err != nil {
-			return nil, errors.Wrap(err, "logQuery")
-		}
-	}
-
+	start := time.Now()
 	var rows *sql.Rows
 	rows, err = db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	duration := time.Since(start)
 	if err != nil {
 		return nil, errors.Wrap(err, "Search")
 	}
@@ -1278,10 +1273,17 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 		}
 	}
 
+	if logQueries {
+		err = logQuery(ctx, db, args, q, duration, len(symbols))
+		if err != nil {
+			return nil, errors.Wrap(err, "logQuery")
+		}
+	}
+
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.Query) error {
+func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)
@@ -1291,8 +1293,24 @@ func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.
 	if err != nil {
 		return errors.Wrap(err, "sqlfToString")
 	}
-
 	fmt.Fprintln(sb, query)
+
+	fmt.Fprintln(sb, "EXPLAIN:")
+	explain, err := db.QueryContext(ctx, sqlf.Sprintf("EXPLAIN %s", q).Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "EXPLAIN")
+	}
+	defer explain.Close()
+	for explain.Next() {
+		var plan string
+		err = explain.Scan(&plan)
+		if err != nil {
+			return errors.Wrap(err, "EXPLAIN Scan")
+		}
+		fmt.Fprintln(sb, plan)
+	}
+
+	fmt.Fprintln(sb, "Query execution took", duration, "and returned", symbols, "symbols")
 
 	fmt.Println(bracket(sb.String()))
 
