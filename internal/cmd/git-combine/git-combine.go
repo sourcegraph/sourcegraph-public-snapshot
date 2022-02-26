@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"hash/crc32"
@@ -441,11 +440,7 @@ func getGitDir() (string, error) {
 }
 
 func runGit(dir string, args ...string) error {
-	// they should be _much_ faster than this, but we set this incase git gets blocked.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
