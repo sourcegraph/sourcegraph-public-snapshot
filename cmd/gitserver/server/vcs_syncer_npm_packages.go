@@ -408,9 +408,7 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 
 	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-		count := 0
-		tarballFileLimit := 10000
-		for count < tarballFileLimit {
+		for {
 			header, err := tarReader.Next()
 			if err == io.EOF {
 				return nil
@@ -431,12 +429,10 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 				if err != nil {
 					return err
 				}
-				count++
 			default:
 				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
 			}
 		}
-		return errors.Errorf("number of files in tarball for %s exceeded limit (10000)", tgzReadSeeker.name)
 	})
 }
 
