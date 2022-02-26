@@ -50,7 +50,6 @@ func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 		IncludeSubpackages:    true,
 		ErrorIfNonResources:   false,
 		OmitReaderAnnotations: false,
-		SetAnnotations:        nil,
 		NoDeleteFiles:         true, //modify in place
 		WrapBareSeqNode:       false,
 	}
@@ -119,7 +118,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 			return errors.Wrapf(err, "couldn't update image %s", img)
 		}
 
-		var oldImgRef, newImgRef *ImageReference
+		var oldImgRef, newImgRef *imageReference
 		oldImgRef, err = parseImgString(img)
 		if err != nil {
 			return err
@@ -153,7 +152,7 @@ var _ kio.Filter = &imageFilter{}
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
 		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
-			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
+			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) || errors.Is(err, ErrNotSourcegraphImage) || errors.Is(err, ErrUnsupportedRegistry) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
@@ -214,7 +213,8 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 
 }
 
-type ImageReference struct {
+// imageReference uniquely identifies an image from a registry
+type imageReference struct {
 	Registry    string // index.docker.io
 	Credentials *credentials.Credentials
 	Name        string        // sourcegraph/frontend
@@ -226,20 +226,20 @@ type imageRepository struct {
 	name             string
 	isDockerRegistry bool
 	authToken        string
-	imageRef         *ImageReference
+	imageRef         *imageReference
 }
 
-func (image ImageReference) String() string {
+func (image imageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
 
-func parseImgString(rawImg string) (*ImageReference, error) {
+func parseImgString(rawImg string) (*imageReference, error) {
 	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
 	if err != nil {
 		return nil, err
 	}
 
-	imgRef := &ImageReference{
+	imgRef := &imageReference{
 		Registry: reference.Domain(ref),
 	}
 
@@ -283,8 +283,8 @@ func updateImage(rawImage string, credential credentials.Credentials, pinTag str
 
 	repo, err := createAndFillImageRepository(imgRef, pinTag)
 	if err != nil {
-		if errors.Is(err, ErrNoUpdateNeeded) {
-			return imgRef.String(), ErrNoUpdateNeeded
+		if errors.Is(err, ErrNoUpdateNeeded) || errors.Is(err, ErrNotSourcegraphImage) {
+			return imgRef.String(), err
 		}
 		return "", err
 	}
@@ -304,6 +304,8 @@ const (
 )
 
 var ErrNoUpdateNeeded = errors.New("no update needed")
+var ErrNotSourcegraphImage = errors.New("image is not Sourcegraph image")
+var ErrUnsupportedRegistry = errors.New("unsupported registry")
 
 type ErrNoImage struct {
 	Kind string
@@ -313,8 +315,6 @@ type ErrNoImage struct {
 func (m ErrNoImage) Error() string {
 	return fmt.Sprintf("no images found for resource: %s of kind: %s", m.Name, m.Kind)
 }
-
-var ErrUnsupportedRegistry = errors.New("unsupported registry")
 
 func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	if registryName != legacyDockerhub && registryName != dockerhub {
@@ -353,19 +353,22 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	return result.AccessToken, nil
 }
 
-func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
+func createAndFillImageRepository(ref *imageReference, pinTag string) (repo *imageRepository, err error) {
+	if !strings.Contains(ref.Name, "sourcegraph") {
+		return nil, ErrNotSourcegraphImage
+	}
 
 	repo = &imageRepository{name: ref.Name, imageRef: ref}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	tags, err := repo.fetchAllTags()
 	if err != nil {
 		return nil, err
 	}
 
-	repo.imageRef = &ImageReference{
+	repo.imageRef = &imageReference{
 		Registry: ref.Registry,
 		Name:     ref.Name,
 		Digest:   "",
@@ -393,7 +396,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 
 	dig, err := repo.fetchDigest(targetTag)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to fetch tag")
 	}
 	repo.imageRef.Digest = dig
 

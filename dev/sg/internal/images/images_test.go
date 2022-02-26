@@ -81,12 +81,12 @@ func TestParseRawImgString(t *testing.T) {
 	tests := []struct {
 		name string
 		tag  string
-		want *ImageReference
+		want *imageReference
 	}{
 		{
 			"base",
 			"index.docker.io/sourcegraph/server:3.36.2@sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
-			&ImageReference{
+			&imageReference{
 				Registry: "docker.io",
 				Name:     "sourcegraph/server",
 				Tag:      "3.36.2",
@@ -96,7 +96,7 @@ func TestParseRawImgString(t *testing.T) {
 		{
 			"base",
 			"index.docker.io/sourcegraph/server:3.36.2",
-			&ImageReference{
+			&imageReference{
 				Registry: "docker.io",
 				Name:     "sourcegraph/server",
 				Tag:      "3.36.2",
