@@ -573,12 +573,12 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		}
 
 		tasklog.Start("AppendHop+")
-		err = AppendHop(ctx, tx, hops[0:r], AddedAD, entry.Commit)
+		err = AppendHop(ctx, tx, repo, hops[0:r], AddedAD, entry.Commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		tasklog.Start("AppendHop-")
-		err = AppendHop(ctx, tx, hops[0:r], DeletedAD, entry.Commit)
+		err = AppendHop(ctx, tx, repo, hops[0:r], DeletedAD, entry.Commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -601,7 +601,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 				found := false
 				for _, hop := range hops {
 					tasklog.Start("GetBlob")
-					id, found, err = GetBlob(ctx, tx, hop, deletedPath)
+					id, found, err = GetBlob(ctx, tx, repo, hop, deletedPath)
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
 					}
@@ -790,7 +790,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && repo;", pg.Array([]string{repo}))
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && singleton(repo);", pg.Array([]string{repo}))
 	if err != nil {
 		return false, err
 	}
@@ -987,12 +987,12 @@ func InsertCommit(ctx context.Context, db Queryable, repo, commit string, height
 	return errors.Wrap(err, "InsertCommit")
 }
 
-func GetBlob(ctx context.Context, db Queryable, hop string, path string) (id int, found bool, err error) {
+func GetBlob(ctx context.Context, db Queryable, repo string, hop string, path string) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_blobs
-		WHERE $1 && path AND $2 && added AND NOT $2 && deleted
-	`, pg.Array([]string{path}), pg.Array([]string{hop})).Scan(&id)
+		WHERE $1 && singleton(repo) AND $2 && singleton(path) AND $3 && added AND NOT $3 && deleted
+	`, pg.Array([]string{repo}), pg.Array([]string{path}), pg.Array([]string{hop})).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
@@ -1022,17 +1022,17 @@ func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id i
 		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, pg.Array([]string{repo}), blob.Commit, pg.Array([]string{blob.Path}), pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
-func AppendHop(ctx context.Context, db Queryable, hops []string, givenStatus StatusAD, newHop string) error {
+func AppendHop(ctx context.Context, db Queryable, repo string, hops []string, givenStatus StatusAD, newHop string) error {
 	column := statusADToColumn(givenStatus)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
-		WHERE $2 && %s
-	`, column, column, column), newHop, pg.Array(hops))
+		WHERE $2 && singleton(repo) AND $3 && %s
+	`, column, column, column), newHop, pg.Array([]string{repo}), pg.Array(hops))
 	return errors.Wrap(err, "AppendHop")
 }
 
@@ -1165,7 +1165,7 @@ func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, thread
 		SELECT id, commit_id, path, added, deleted, symbol_data
 		FROM rockskip_blobs
 		WHERE
-			%s && repo
+			%s && singleton(repo)
 			AND     %s && added
 			AND NOT %s && deleted
 			AND %s
@@ -1196,17 +1196,13 @@ func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, thread
 	for rows.Next() {
 		var id int
 		var commit string
-		var paths []string
+		var path string
 		var added, deleted []string
 		var allSymbols Symbols
-		err = rows.Scan(&id, &commit, pg.Array(&paths), pg.Array(&added), pg.Array(&deleted), &allSymbols)
+		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &allSymbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		if len(paths) != 1 {
-			return nil, errors.Newf("Search: expected 1 path, got %d", len(paths))
-		}
-		path := paths[0]
 
 		symbols := []Symbol{}
 		for _, symbol := range allSymbols {
@@ -1316,15 +1312,15 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, arrayMatchesRegex("symbol_names", args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch("symbol_names", "symbol_names", columnTypeArrayText, args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, arrayMatchesRegex("path", includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch("singleton(path)", "path", columnTypeText, includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(arrayMatchesRegex("path", args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("singleton(path)", "path", columnTypeText, args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
@@ -1341,13 +1337,20 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	return sqlf.Join(conjuncts, "AND")
 }
 
-func arrayMatchesRegex(column string, regex string, isCaseSensitive bool) *sqlf.Query {
+type columnType int
+
+const (
+	columnTypeText columnType = iota
+	columnTypeArrayText
+)
+
+func regexMatch(columnForLiteralEquality, columnForRegexMatch string, colType columnType, regex string, isCaseSensitive bool) *sqlf.Query {
 	if regex == "" {
 		return nil
 	}
 
 	if literal, isExact, err := isLiteralEquality(regex); err == nil && isExact && isCaseSensitive {
-		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", column), pg.Array([]string{literal}))
+		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralEquality), pg.Array([]string{literal}))
 	}
 
 	operator := "~"
@@ -1355,15 +1358,24 @@ func arrayMatchesRegex(column string, regex string, isCaseSensitive bool) *sqlf.
 		operator = "~*"
 	}
 
-	return sqlf.Sprintf(
-		fmt.Sprintf(`
+	switch colType {
+	case columnTypeText:
+		return sqlf.Sprintf(fmt.Sprintf("%s %s %%s", columnForRegexMatch, operator), regex)
+	case columnTypeArrayText:
+		return sqlf.Sprintf(
+			fmt.Sprintf(`
 			EXISTS (
 				SELECT
-				FROM   unnest(%s) col
-				WHERE  col %s %%s
-			)`, column, operator),
-		regex,
-	)
+				FROM  unnest(%s) col
+				WHERE col %s %%s
+			)`, columnForRegexMatch, operator),
+			regex,
+		)
+	default:
+		log15.Error("Unrecognized column type", "columnForRegexMatch", columnForRegexMatch, "colType", colType)
+	}
+
+	return nil
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.
@@ -1514,16 +1526,12 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 
 	for rows.Next() {
 		var id int
-		var paths []string
+		var path string
 		var added, deleted []string
-		err = rows.Scan(&id, pg.Array(&paths), pg.Array(&added), pg.Array(&deleted))
+		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
 		if err != nil {
 			return errors.Wrap(err, "PrintInternals: Scan")
 		}
-		if len(paths) != 1 {
-			return errors.Newf("Search: expected 1 path, got %d", len(paths))
-		}
-		path := paths[0]
 		fmt.Printf("  id %d path %-10s\n", id, path)
 		for _, a := range added {
 			fmt.Printf("    + %-40s\n", a)
