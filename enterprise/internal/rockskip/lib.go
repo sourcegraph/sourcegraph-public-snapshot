@@ -1312,15 +1312,15 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch("symbol_names", "symbol_names", columnTypeArrayText, args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch("symbol_names", "", "symbol_names", columnTypeArrayText, args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch("singleton(path)", "path", columnTypeText, includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch("singleton(path)", "path_prefixes(path)", "path", columnTypeText, includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("singleton(path)", "path", columnTypeText, args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("singleton(path)", "path_prefixes(path)", "path", columnTypeText, args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
@@ -1344,15 +1344,22 @@ const (
 	columnTypeArrayText
 )
 
-func regexMatch(columnForLiteralEquality, columnForRegexMatch string, colType columnType, regex string, isCaseSensitive bool) *sqlf.Query {
+func regexMatch(columnForLiteralEquality, columnForLiteralPrefix, columnForRegexMatch string, colType columnType, regex string, isCaseSensitive bool) *sqlf.Query {
 	if regex == "" {
 		return nil
 	}
 
-	if literal, isExact, err := isLiteralEquality(regex); err == nil && isExact && isCaseSensitive {
+	// Exact match optimization
+	if literal, ok, err := isLiteralEquality(regex); err == nil && ok && isCaseSensitive {
 		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralEquality), pg.Array([]string{literal}))
 	}
 
+	// Prefix match optimization
+	if literal, ok, err := isLiteralPrefix(regex); err == nil && ok && isCaseSensitive && columnForLiteralPrefix != "" {
+		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralPrefix), pg.Array([]string{literal}))
+	}
+
+	// Regex match
 	operator := "~"
 	if !isCaseSensitive {
 		operator = "~*"
@@ -1397,6 +1404,29 @@ func isLiteralEquality(expr string) (string, bool, error) {
 				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
 					return string(regexp.Sub[1].Rune), true, nil
 				}
+			}
+		}
+	}
+
+	return "", false, nil
+}
+
+// isLiteralPrefix returns true if the given regex matches literal strings by prefix.
+// If so, this function returns true along with the literal search query. If not, this
+// function returns false.
+func isLiteralPrefix(expr string) (string, bool, error) {
+	regexp, err := syntax.Parse(expr, syntax.Perl)
+	if err != nil {
+		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+	}
+
+	// want a concat of size 2 which is [begin, literal]
+	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
+		// starts with ^
+		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+			// is a literal
+			if regexp.Sub[1].Op == syntax.OpLiteral {
+				return string(regexp.Sub[1].Rune), true, nil
 			}
 		}
 	}

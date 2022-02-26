@@ -29,6 +29,15 @@ CREATE OR REPLACE FUNCTION singleton(value TEXT) RETURNS TEXT[] AS $$ BEGIN
     RETURN ARRAY[value];
 END; $$ IMMUTABLE language plpgsql;
 
+CREATE OR REPLACE FUNCTION path_prefixes(path TEXT) RETURNS TEXT[] AS $$ BEGIN
+    RETURN (
+        SELECT array_agg(array_to_string(components[:len], '/')) prefixes
+        FROM
+            (SELECT regexp_split_to_array(path, E'/') components) t,
+            generate_series(1, array_length(components, 1)) AS len
+    );
+END; $$ IMMUTABLE language plpgsql;
+
 CREATE INDEX rockskip_repos_repo ON rockskip_repos(repo);
 
 CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at);
@@ -38,6 +47,7 @@ CREATE INDEX rockskip_blobs_gin ON rockskip_blobs USING GIN (
     added,
     deleted,
     singleton(path),
+    path_prefixes(path),
     symbol_names
 );
 
