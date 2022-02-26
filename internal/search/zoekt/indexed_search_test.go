@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -31,7 +32,8 @@ func TestIndexedSearch(t *testing.T) {
 	type args struct {
 		ctx             context.Context
 		query           string
-		patternInfo     *search.TextPatternInfo
+		fileMatchLimit  int32
+		selectPath      filter.SelectPath
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		results         []zoekt.FileMatch
@@ -70,7 +72,6 @@ func TestIndexedSearch(t *testing.T) {
 			name: "no matches",
 			args: args{
 				ctx:             context.Background(),
-				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
@@ -81,7 +82,6 @@ func TestIndexedSearch(t *testing.T) {
 			name: "no matches timeout",
 			args: args{
 				ctx:             context.Background(),
-				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Minute },
@@ -97,7 +97,6 @@ func TestIndexedSearch(t *testing.T) {
 			name: "context timeout",
 			args: args{
 				ctx:             zeroTimeoutCtx,
-				patternInfo:     &search.TextPatternInfo{},
 				repos:           reposHEAD,
 				useFullDeadline: true,
 				since:           func(time.Time) time.Duration { return 0 },
@@ -108,7 +107,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "results",
 			args: args{
 				ctx:             context.Background(),
-				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				fileMatchLimit:  100,
 				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -168,7 +167,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "results multi-branch",
 			args: args{
 				ctx:             context.Background(),
-				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				fileMatchLimit:  100,
 				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev:main"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -210,7 +209,7 @@ func TestIndexedSearch(t *testing.T) {
 			name: "split branch",
 			args: args{
 				ctx:             context.Background(),
-				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				fileMatchLimit:  100,
 				repos:           makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
@@ -236,7 +235,7 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				query:           "repo:foo/bar@*refs/heads/*",
-				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				fileMatchLimit:  100,
 				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
 				useFullDeadline: false,
 				results:         []zoekt.FileMatch{},
@@ -250,7 +249,7 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				query:           "repo:foo/bar@*refs/tags",
-				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
+				fileMatchLimit:  100,
 				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
 				useFullDeadline: false,
 				results:         []zoekt.FileMatch{},
@@ -272,7 +271,7 @@ func TestIndexedSearch(t *testing.T) {
 				Repos:  zoektRepos,
 			}
 
-			zoektQuery, err := search.QueryToZoektQuery(tt.args.patternInfo, &search.Features{}, search.TextRequest)
+			zoektQuery, err := search.QueryToZoektQuery(&search.TextPatternInfo{}, &search.Features{}, search.TextRequest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -287,7 +286,7 @@ func TestIndexedSearch(t *testing.T) {
 				tt.args.repos,
 				zoekt,
 				search.TextRequest,
-				tt.args.patternInfo.Index,
+				query.Yes,
 				query.ContainsRefGlobs(q),
 				MissingRepoRevStatus(agg),
 			)
@@ -303,8 +302,8 @@ func TestIndexedSearch(t *testing.T) {
 				Repos:          indexed,
 				Query:          zoektQuery,
 				Typ:            search.TextRequest,
-				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
-				Select:         tt.args.patternInfo.Select,
+				FileMatchLimit: tt.args.fileMatchLimit,
+				Select:         tt.args.selectPath,
 				Zoekt:          zoekt,
 				Since:          tt.args.since,
 			}
