@@ -20,8 +20,7 @@ CREATE TABLE rockskip_blobs (
     path         TEXT          NOT NULL,
     added        VARCHAR(40)[] NOT NULL,
     deleted      VARCHAR(40)[] NOT NULL,
-    symbol_names TEXT[]        NOT NULL,
-    symbol_data  JSONB         NOT NULL,
+    symbols      TEXT[]        NOT NULL,
     UNIQUE (repo, commit_id, path)
 );
 
@@ -48,7 +47,7 @@ CREATE INDEX rockskip_blobs_gin ON rockskip_blobs USING GIN (
     deleted,
     singleton(path),
     path_prefixes(path),
-    symbol_names
+    symbols
 );
 
 COMMIT;

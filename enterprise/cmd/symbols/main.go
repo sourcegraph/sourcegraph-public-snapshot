@@ -23,7 +23,6 @@ import (
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -52,15 +51,7 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 		return nil, nil, nil, config.Ctags.Command, err
 	}
 
-	search := func(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
-		blobs, err := server.Search(ctx, args)
-		if err != nil {
-			return nil, err
-		}
-		return convertBlobsToSymbols(blobs), nil
-	}
-
-	return search, server.HandleStatus, nil, config.Ctags.Command, nil
+	return server.Search, server.HandleStatus, nil, config.Ctags.Command, nil
 }
 
 type RockskipConfig struct {
@@ -81,22 +72,6 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
 	}
-}
-
-func convertBlobsToSymbols(blobs []rockskip.Blob) []result.Symbol {
-	res := []result.Symbol{}
-	for _, blob := range blobs {
-		for _, symbol := range blob.Symbols {
-			res = append(res, result.Symbol{
-				Name:   symbol.Name,
-				Path:   blob.Path,
-				Line:   symbol.Line,
-				Kind:   symbol.Kind,
-				Parent: symbol.Parent,
-			})
-		}
-	}
-	return res
 }
 
 func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc {
