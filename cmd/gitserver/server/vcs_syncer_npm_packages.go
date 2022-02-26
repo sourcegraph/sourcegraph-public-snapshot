@@ -447,11 +447,16 @@ func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath stri
 	}
 	// For reference, "pathological" code like SQLite's amalgamation file is
 	// about 7.9 MiB. So a 15 MiB limit seems good enough.
-	const sizeLimitMiB = 15
-	if header.Size >= (sizeLimitMiB * 1024 * 1024) {
-		return errors.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
-			path.Base(outputPath), header.Size, sizeLimitMiB)
+	const sizeLimit = 15 * 1024 * 1024
+	if header.Size >= sizeLimit {
+		log15.Warn("skipping large file in npm package",
+			"path", outputPath,
+			"size", header.Size,
+			"limit", sizeLimit,
+		)
+		return nil
 	}
+
 	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
 		return err
 	}
