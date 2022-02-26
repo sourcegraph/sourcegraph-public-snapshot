@@ -124,7 +124,8 @@ func TestIndex(t *testing.T) {
 		if diff := cmp.Diff(gotPaths, wantPaths); diff != "" {
 			fmt.Println("unexpected paths (-got +want)")
 			fmt.Println(diff)
-			PrintInternals(context.Background(), db)
+			err = PrintInternals(context.Background(), db)
+			fatalIfError(err, "PrintInternals")
 			t.FailNow()
 		}
 
@@ -140,7 +141,8 @@ func TestIndex(t *testing.T) {
 			if diff := cmp.Diff(gotSymbols, wantSymbols); diff != "" {
 				fmt.Println("unexpected symbols (-got +want)")
 				fmt.Println(diff)
-				PrintInternals(context.Background(), db)
+				err = PrintInternals(context.Background(), db)
+				fatalIfError(err, "PrintInternals")
 				t.FailNow()
 			}
 		}
