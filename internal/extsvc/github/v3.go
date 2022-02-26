@@ -13,8 +13,6 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -125,11 +123,6 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		resource:         resource,
 	}
 }
-
-var orgsCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_orgs_github_cache_hit",
-	Help: "Counts cache hits and misses for GitHub orgs list.",
-}, []string{"type"})
 
 // WithAuthenticator returns a new V3Client that uses the same configuration as
 // the current V3Client, except authenticated as the GitHub user with the given
