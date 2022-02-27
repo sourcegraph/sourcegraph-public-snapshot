@@ -231,7 +231,7 @@ func (t *TaskLog) String() string {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Fprintf(&s, "Tasks (%.0fs total, current %s): ", total.Seconds(), t.currentName)
+	fmt.Fprintf(&s, "Tasks (%.2fs total, current %s): ", total.Seconds(), t.currentName)
 
 	type kv struct {
 		Key   string
@@ -248,7 +248,7 @@ func (t *TaskLog) String() string {
 	})
 
 	for _, kv := range kvs {
-		fmt.Fprintf(&s, "%s %d%% %dx, ", kv.Key, kv.Value.Duration*100/total, kv.Value.Count)
+		fmt.Fprintf(&s, "%s %.2f%% %dx, ", kv.Key, kv.Value.Duration.Seconds()*100/total.Seconds(), kv.Value.Count)
 	}
 
 	return s.String()
@@ -1310,9 +1310,11 @@ func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.
 		fmt.Fprintln(sb, plan)
 	}
 
-	fmt.Fprintln(sb, "Query execution took", duration, "and returned", symbols, "symbols")
+	fmt.Fprintf(sb, "%.2fms, %d symbols", float64(duration.Microseconds())/1000, symbols)
 
+	fmt.Println(" ")
 	fmt.Println(bracket(sb.String()))
+	fmt.Println(" ")
 
 	return nil
 }
