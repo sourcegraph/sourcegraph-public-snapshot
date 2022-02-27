@@ -645,7 +645,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 				Symbols: symbols,
 			}
 			tasklog.Start("InsertBlob")
-			id, err := InsertBlob(ctx, tx, blob, repoId, commit)
+			id, err := InsertBlob(ctx, tx, blob, repoId)
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
 			}
@@ -1037,7 +1037,7 @@ func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, 
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func InsertBlob(ctx context.Context, db Queryable, blob Blob, repoId, commit int) (id int, err error) {
+func InsertBlob(ctx context.Context, db Queryable, blob Blob, repoId int) (id int, err error) {
 	symbolNames := []string{}
 	for _, symbol := range blob.Symbols {
 		symbolNames = append(symbolNames, symbol.Name)
@@ -1045,10 +1045,10 @@ func InsertBlob(ctx context.Context, db Queryable, blob Blob, repoId, commit int
 
 	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
-		INSERT INTO rockskip_blobs (repo_id, commit_id, path, added, deleted, symbol_names, symbol_data)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO rockskip_blobs (repo_id, path, added, deleted, symbol_names, symbol_data)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
-	`, repoId, commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, repoId, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 

@@ -25,13 +25,11 @@ VALUES (0 , '0000000000000000000000000000000000000000', 0          , 0     , 0  
 CREATE TABLE rockskip_blobs (
     id           SERIAL        PRIMARY KEY,
     repo_id      INTEGER       NOT NULL,
-    commit_id    INTEGER       NOT NULL,
     path         TEXT          NOT NULL,
     added        INTEGER[]     NOT NULL,
     deleted      INTEGER[]     NOT NULL,
     symbol_names TEXT[]        NOT NULL,
-    symbol_data  JSONB         NOT NULL,
-    UNIQUE (repo_id, commit_id, path)
+    symbol_data  JSONB         NOT NULL
 );
 
 CREATE OR REPLACE FUNCTION singleton(value TEXT) RETURNS TEXT[] AS $$ BEGIN
