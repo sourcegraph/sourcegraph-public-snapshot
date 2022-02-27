@@ -1210,6 +1210,8 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 	if err != nil {
 		return nil, err
 	}
+	// Drop the null commit.
+	hops = hops[:len(hops)-1]
 
 	limit := DEFAULT_LIMIT
 	if args.First > 0 {
