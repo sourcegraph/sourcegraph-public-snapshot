@@ -1415,7 +1415,7 @@ const (
 )
 
 func regexMatch(columnForLiteralEquality, columnForLiteralPrefix, columnForRegexMatch string, colType columnType, regex string, isCaseSensitive bool) *sqlf.Query {
-	if regex == "" {
+	if regex == "" || regex == "^" {
 		return nil
 	}
 
