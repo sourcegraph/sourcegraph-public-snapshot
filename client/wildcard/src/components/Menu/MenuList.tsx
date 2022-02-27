@@ -4,6 +4,7 @@ import {
     MenuItems,
     MenuItemsProps,
 } from '@reach/menu-button'
+import classNames from 'classnames';
 import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
@@ -37,5 +38,6 @@ const Popover = React.forwardRef(({ popoverContentPosition, ...props }, referenc
         focusLocked={false}
         targetPadding={MENU_LIST_PADDING}
         as={MenuItems}
+        className={classNames('py-1', props.className)}
     />
 )) as ForwardReferenceComponent<'div', PopoverProps>
