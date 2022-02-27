@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,21 +43,6 @@ type Symbol struct {
 	Line   int    `json:"line"`
 }
 
-type Symbols []Symbol
-
-func (symbols Symbols) Value() (driver.Value, error) {
-	return json.Marshal(symbols)
-}
-
-func (symbols *Symbols) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New("scan symbol: expected []byte")
-	}
-
-	return json.Unmarshal(bytes, &symbols)
-}
-
 type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
 
 type LogEntry struct {
@@ -74,14 +58,6 @@ type PathStatus struct {
 type CommitStatus struct {
 	Commit string
 	Status StatusAMD
-}
-
-type Blob struct {
-	Commit  int
-	Path    string
-	Added   []int
-	Deleted []int
-	Symbols []Symbol
 }
 
 type StatusAMD int
@@ -438,9 +414,9 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		repoRows = append(repoRows, repoRow{repo: repo, lastAccessedAt: lastAccessedAt})
 	}
 
-	blobsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_blobs'))"))
+	symbolsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_symbols'))"))
 	if err != nil {
-		log15.Error("Failed to get size of blobs table", "error", err)
+		log15.Error("Failed to get size of symbols table", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -450,7 +426,7 @@ func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "")
 
 	fmt.Fprintf(w, "Number of repositories: %d\n", repositoryCount)
-	fmt.Fprintf(w, "Size of blobs table: %s\n", blobsSize)
+	fmt.Fprintf(w, "Size of symbols table: %s\n", symbolsSize)
 	fmt.Fprintln(w, "")
 
 	if repositoryCount > 0 {
@@ -512,6 +488,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 	defer func() { err = combineErrors(err, releaseLock()) }()
 
 	tipCommit := NULL
+	tipCommitHash := ""
 	tipHeight := 0
 
 	var repoId int
@@ -531,6 +508,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			return false, err
 		} else if present {
 			tipCommit = commit
+			tipCommitHash = commitHash
 			tipHeight = height
 			return false, nil
 		}
@@ -547,7 +525,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		return nil
 	}
 
-	pathToBlobIdCache := map[string]int{}
+	symbolCache := map[string]int{}
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -601,59 +579,108 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			}
 		}
 
-		for _, deletedPath := range deletedPaths {
-			id := 0
-			ok := false
-			if id, ok = pathToBlobIdCache[deletedPath]; !ok {
-				found := false
-				for _, hop := range hops {
-					tasklog.Start("GetBlob")
-					id, found, err = GetBlob(ctx, tx, repoId, hop, deletedPath)
-					if err != nil {
-						return errors.Wrap(err, "GetBlob")
-					}
-					if found {
-						break
-					}
-				}
-				if !found {
-					return errors.Newf("could not find blob for path %s", deletedPath)
-				}
-			}
+		getSymbols := func(commit string, paths []string) (map[string]map[string]struct{}, error) {
+			pathToSymbols := map[string]map[string]struct{}{}
+			tasklog.Start("ArchiveEach")
+			err = s.git.ArchiveEach(repo, commit, paths, func(path string, contents []byte) error {
+				defer tasklog.Continue("ArchiveEach")
 
-			tasklog.Start("UpdateBlobHops")
-			err = UpdateBlobHops(ctx, tx, id, DeletedAD, commit)
+				tasklog.Start("parse")
+				symbols, err := parse(path, contents)
+				if err != nil {
+					return errors.Wrap(err, "parse")
+				}
+
+				if _, ok := pathToSymbols[path]; !ok {
+					pathToSymbols[path] = map[string]struct{}{}
+				}
+
+				for _, symbol := range symbols {
+					if _, ok := pathToSymbols[path][symbol.Name]; !ok {
+						pathToSymbols[path][symbol.Name] = struct{}{}
+					}
+					pathToSymbols[path][symbol.Name] = struct{}{}
+				}
+				return nil
+			})
 			if err != nil {
-				return errors.Wrap(err, "UpdateBlobHops")
+				return nil, errors.Wrap(err, "while looping ArchiveEach")
+			}
+			return pathToSymbols, nil
+		}
+
+		symbolsFromDeletedFiles, err := getSymbols(tipCommitHash, deletedPaths)
+		if err != nil {
+			return errors.Wrap(err, "getSymbols (deleted)")
+		}
+		symbolsFromAddedFiles, err := getSymbols(entry.Commit, addedPaths)
+		if err != nil {
+			return errors.Wrap(err, "getSymbols (added)")
+		}
+
+		// Compute the symmetric difference of symbols between the added and deleted paths.
+		deletedSymbols := map[string]map[string]struct{}{}
+		addedSymbols := map[string]map[string]struct{}{}
+		for _, pathStatus := range entry.PathStatuses {
+			switch pathStatus.Status {
+			case DeletedAMD:
+				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
+			case AddedAMD:
+				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
+			case ModifiedAMD:
+				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
+				addedSymbols[pathStatus.Path] = map[string]struct{}{}
+				for name := range symbolsFromDeletedFiles[pathStatus.Path] {
+					if _, ok := symbolsFromAddedFiles[pathStatus.Path][name]; !ok {
+						deletedSymbols[pathStatus.Path][name] = struct{}{}
+					}
+				}
+				for name := range symbolsFromAddedFiles[pathStatus.Path] {
+					if _, ok := symbolsFromDeletedFiles[pathStatus.Path][name]; !ok {
+						addedSymbols[pathStatus.Path][name] = struct{}{}
+					}
+				}
 			}
 		}
 
-		tasklog.Start("ArchiveEach")
-		err = s.git.ArchiveEach(repo, entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
-			defer tasklog.Continue("ArchiveEach")
+		for path, symbols := range deletedSymbols {
+			for symbol := range symbols {
+				id := 0
+				ok := false
+				if id, ok = symbolCache[path+":"+symbol]; !ok {
+					found := false
+					for _, hop := range hops {
+						tasklog.Start("GetSymbol")
+						id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hop)
+						if err != nil {
+							return err
+						}
+						if found {
+							break
+						}
+					}
+					if !found {
+						return errors.Newf("could not find id for path %s symbol %s", path, symbol)
+					}
+				}
 
-			tasklog.Start("parse")
-			symbols, err := parse(addedPath, contents)
-			if err != nil {
-				return errors.Wrap(err, "parse")
+				tasklog.Start("UpdateSymbolHops")
+				err = UpdateSymbolHops(ctx, tx, id, DeletedAD, commit)
+				if err != nil {
+					return errors.Wrap(err, "UpdateSymbolHops")
+				}
 			}
-			blob := Blob{
-				Commit:  commit,
-				Path:    addedPath,
-				Added:   []int{commit},
-				Deleted: []int{},
-				Symbols: symbols,
+		}
+
+		for path, symbols := range addedSymbols {
+			for symbol := range symbols {
+				tasklog.Start("InsertSymbol")
+				id, err := InsertSymbol(ctx, tx, commit, repoId, path, symbol)
+				if err != nil {
+					return errors.Wrap(err, "InsertSymbol")
+				}
+				symbolCache[path+":"+symbol] = id
 			}
-			tasklog.Start("InsertBlob")
-			id, err := InsertBlob(ctx, tx, blob, repoId)
-			if err != nil {
-				return errors.Wrap(err, "InsertBlob")
-			}
-			pathToBlobIdCache[addedPath] = id
-			return nil
-		})
-		if err != nil {
-			return errors.Wrap(err, "while looping ArchiveEach")
 		}
 
 		tasklog.Start("DeleteRedundant")
@@ -669,6 +696,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		}
 
 		tipCommit = commit
+		tipCommitHash = entry.Commit
 		tipHeight += 1
 
 		return nil
@@ -798,7 +826,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	if err != nil {
 		return false, err
 	}
-	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_blobs WHERE $1 && singleton_integer(repo_id);", pg.Array([]int{repoId}))
+	_, err = tx.ExecContext(ctx, "DELETE FROM rockskip_symbols WHERE repo_id = $1;", pg.Array([]int{repoId}))
 	if err != nil {
 		return false, err
 	}
@@ -1013,49 +1041,44 @@ func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash stri
 	return lastInsertId, errors.Wrap(err, "InsertCommit")
 }
 
-func GetBlob(ctx context.Context, db Queryable, repoId int, hop int, path string) (id int, found bool, err error) {
+func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name string, hop int) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
-		FROM rockskip_blobs
-		WHERE $1 && singleton_integer(repo_id) AND $2 && singleton(path) AND $3 && added AND NOT $3 && deleted
-	`, pg.Array([]int{repoId}), pg.Array([]string{path}), pg.Array([]int{hop})).Scan(&id)
+		FROM rockskip_symbols
+		WHERE repo_id = $1 AND path = $2 AND name = $3 AND $4 && added AND NOT $4 && deleted
+	`, repoId, path, name, pg.Array([]int{hop})).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {
-		return 0, false, errors.Newf("GetBlob: %s", err)
+		return 0, false, errors.Newf("GetSymbol: %s", err)
 	}
 	return id, true, nil
 }
 
-func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, hop int) error {
+func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD, hop int) error {
 	column := statusADToColumn(status)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
-		UPDATE rockskip_blobs
+		UPDATE rockskip_symbols
 		SET %s = array_append(%s, $1)
 		WHERE id = $2
 	`, column, column), hop, id)
-	return errors.Wrap(err, "UpdateBlobHops")
+	return errors.Wrap(err, "UpdateSymbolHops")
 }
 
-func InsertBlob(ctx context.Context, db Queryable, blob Blob, repoId int) (id int, err error) {
-	symbolNames := []string{}
-	for _, symbol := range blob.Symbols {
-		symbolNames = append(symbolNames, symbol.Name)
-	}
-
+func InsertSymbol(ctx context.Context, db Queryable, hop int, repoId int, path string, name string) (id int, err error) {
 	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
-		INSERT INTO rockskip_blobs (repo_id, path, added, deleted, symbol_names, symbol_data)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO rockskip_symbols (added, deleted, repo_id, path, name)
+		                      VALUES ($1   , $2     , $3     , $4  , $5  )
 		RETURNING id
-	`, repoId, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
-	return lastInsertId, errors.Wrap(err, "InsertBlob")
+	`, pg.Array([]int{hop}), pg.Array([]int{}), repoId, path, name).Scan(&lastInsertId)
+	return lastInsertId, errors.Wrap(err, "InsertSymbol")
 }
 
 func AppendHop(ctx context.Context, db Queryable, repoId int, hops []int, givenStatus StatusAD, newHop int) error {
 	column := statusADToColumn(givenStatus)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
-		UPDATE rockskip_blobs
+		UPDATE rockskip_symbols
 		SET %s = array_append(%s, $1)
 		WHERE $2 && singleton_integer(repo_id) AND $3 && %s
 	`, column, column, column), newHop, pg.Array([]int{repoId}), pg.Array(hops))
@@ -1127,7 +1150,7 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 	}
 
 	// Finally search.
-	symbols, err = querySymbols(ctx, s.db, args, repoId, commit, threadStatus, s.logQueries)
+	symbols, err = s.querySymbols(ctx, args, repoId, commit, threadStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -1205,8 +1228,8 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus, logQueries bool) ([]result.Symbol, error) {
-	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
+func (s *Server) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) ([]result.Symbol, error) {
+	hops, err := getHops(ctx, s.db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -1220,8 +1243,8 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT path, symbol_data
-		FROM rockskip_blobs
+		SELECT DISTINCT path
+		FROM rockskip_symbols
 		WHERE
 			%s && singleton_integer(repo_id)
 			AND     %s && added
@@ -1237,7 +1260,7 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 
 	start := time.Now()
 	var rows *sql.Rows
-	rows, err = db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	duration := time.Since(start)
 	if err != nil {
 		return nil, errors.Wrap(err, "Search")
@@ -1249,35 +1272,57 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 		return nil, err
 	}
 
-	symbols := []result.Symbol{}
-outer:
+	paths := []string{}
 	for rows.Next() {
 		var path string
-		var fileSymbols Symbols
-		err = rows.Scan(&path, &fileSymbols)
+		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
+		paths = append(paths, path)
+	}
 
-		for _, fileSymbol := range fileSymbols {
-			if isMatch(fileSymbol.Name) {
+	stopErr := errors.New("stop iterating")
+
+	symbols := []result.Symbol{}
+
+	parse := s.createParser()
+
+	threadStatus.Tasklog.Start("ArchiveEach")
+	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
+		defer threadStatus.Tasklog.Continue("ArchiveEach")
+
+		threadStatus.Tasklog.Start("parse")
+		allSymbols, err := parse(path, contents)
+		if err != nil {
+			return err
+		}
+
+		for _, symbol := range allSymbols {
+			if isMatch(symbol.Name) {
 				symbols = append(symbols, result.Symbol{
-					Name:   fileSymbol.Name,
+					Name:   symbol.Name,
 					Path:   path,
-					Line:   fileSymbol.Line,
-					Kind:   fileSymbol.Kind,
-					Parent: fileSymbol.Parent,
+					Line:   symbol.Line,
+					Kind:   symbol.Kind,
+					Parent: symbol.Parent,
 				})
 
 				if len(symbols) >= limit {
-					break outer
+					return stopErr
 				}
 			}
 		}
+
+		return nil
+	})
+
+	if err != nil && err != stopErr {
+		return nil, err
 	}
 
-	if logQueries {
-		err = logQuery(ctx, db, args, q, duration, len(symbols))
+	if s.logQueries {
+		err = logQuery(ctx, s.db, args, q, duration, len(symbols))
 		if err != nil {
 			return nil, errors.Wrap(err, "logQuery")
 		}
@@ -1382,15 +1427,15 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch("symbol_names", "", "symbol_names", columnTypeArrayText, args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch("name", "", args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch("singleton(path)", "path_prefixes(path)", "path", columnTypeText, includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("singleton(path)", "path_prefixes(path)", "path", columnTypeText, args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
@@ -1407,21 +1452,14 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	return sqlf.Join(conjuncts, "AND")
 }
 
-type columnType int
-
-const (
-	columnTypeText columnType = iota
-	columnTypeArrayText
-)
-
-func regexMatch(columnForLiteralEquality, columnForLiteralPrefix, columnForRegexMatch string, colType columnType, regex string, isCaseSensitive bool) *sqlf.Query {
+func regexMatch(column, columnForLiteralPrefix, regex string, isCaseSensitive bool) *sqlf.Query {
 	if regex == "" || regex == "^" {
 		return nil
 	}
 
 	// Exact match optimization
 	if literal, ok, err := isLiteralEquality(regex); err == nil && ok && isCaseSensitive {
-		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralEquality), pg.Array([]string{literal}))
+		return sqlf.Sprintf(fmt.Sprintf("%%s = %s", column), literal)
 	}
 
 	// Prefix match optimization
@@ -1435,24 +1473,7 @@ func regexMatch(columnForLiteralEquality, columnForLiteralPrefix, columnForRegex
 		operator = "~*"
 	}
 
-	switch colType {
-	case columnTypeText:
-		return sqlf.Sprintf(fmt.Sprintf("%s %s %%s", columnForRegexMatch, operator), regex)
-	case columnTypeArrayText:
-		return sqlf.Sprintf(
-			fmt.Sprintf(`
-			EXISTS (
-				SELECT
-				FROM  unnest(%s) col
-				WHERE col %s %%s
-			)`, columnForRegexMatch, operator),
-			regex,
-		)
-	default:
-		log15.Error("Unrecognized column type", "columnForRegexMatch", columnForRegexMatch, "colType", colType)
-	}
-
-	return nil
+	return sqlf.Sprintf(fmt.Sprintf("%s %s %%s", column, operator), regex)
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.
@@ -1579,7 +1600,7 @@ func iLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo s
 
 func DeleteRedundant(ctx context.Context, db Queryable, hop int) error {
 	_, err := db.ExecContext(ctx, `
-		UPDATE rockskip_blobs
+		UPDATE rockskip_symbols
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
 		WHERE $2 && added AND $2 && deleted
 	`, hop, pg.Array([]int{hop}))
@@ -1613,12 +1634,12 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 	}
 
 	fmt.Println()
-	fmt.Println("Blobs:")
+	fmt.Println("Symbols:")
 	fmt.Println()
 
 	rows, err = db.QueryContext(ctx, `
-		SELECT id, path, added, deleted
-		FROM rockskip_blobs
+		SELECT id, path, name, added, deleted
+		FROM rockskip_symbols
 		ORDER BY id ASC
 	`)
 	if err != nil {
@@ -1628,12 +1649,13 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 	for rows.Next() {
 		var id int
 		var path string
+		var name string
 		var added, deleted []int64
-		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
+		err = rows.Scan(&id, &path, &name, pg.Array(&added), pg.Array(&deleted))
 		if err != nil {
 			return errors.Wrap(err, "PrintInternals: Scan")
 		}
-		fmt.Printf("  id %d path %-10s\n", id, path)
+		fmt.Printf("  id %d path %-10s symbol %s\n", id, path, name)
 		for _, a := range added {
 			hash, _, _, _, err := GetCommitById(ctx, db, int(a))
 			if err != nil {
