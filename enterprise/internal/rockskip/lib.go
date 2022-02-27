@@ -1250,6 +1250,7 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 	}
 
 	symbols := []result.Symbol{}
+outer:
 	for rows.Next() {
 		var path string
 		var fileSymbols Symbols
@@ -1269,7 +1270,7 @@ func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, repo
 				})
 
 				if len(symbols) >= limit {
-					return symbols, nil
+					break outer
 				}
 			}
 		}
