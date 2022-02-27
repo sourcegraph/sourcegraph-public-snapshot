@@ -25,6 +25,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -1036,7 +1037,7 @@ func AppendHop(ctx context.Context, db Queryable, repo string, hops []string, gi
 	return errors.Wrap(err, "AppendHop")
 }
 
-func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, err error) {
+func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
@@ -1101,12 +1102,40 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blo
 	}
 
 	// Finally search.
-	blobs, err = queryBlobs(ctx, s.db, args, threadStatus, s.logQueries)
+	symbols, err = querySymbols(ctx, s.db, args, threadStatus, s.logQueries)
 	if err != nil {
 		return nil, err
 	}
 
-	return blobs, nil
+	return symbols, nil
+}
+
+func mkIsMatch(args types.SearchArgs) (func(string) bool, error) {
+	if !args.IsRegExp {
+		if args.IsCaseSensitive {
+			return func(symbol string) bool { return strings.Contains(symbol, args.Query) }, nil
+		} else {
+			return func(symbol string) bool {
+				return strings.Contains(strings.ToLower(symbol), strings.ToLower(args.Query))
+			}, nil
+		}
+	}
+
+	expr := args.Query
+	if !args.IsCaseSensitive {
+		expr = "(?i)" + expr
+	}
+
+	regex, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	if args.IsCaseSensitive {
+		return func(symbol string) bool { return regex.MatchString(symbol) }, nil
+	} else {
+		return func(symbol string) bool { return regex.MatchString(strings.ToLower(symbol)) }, nil
+	}
 }
 
 func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
@@ -1149,20 +1178,22 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 	return done, nil
 }
 
-func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]Blob, error) {
+const DEFAULT_LIMIT = 100
+
+func querySymbols(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]result.Symbol, error) {
 	hops, err := getHops(ctx, db, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
 
-	limit := 100
+	limit := DEFAULT_LIMIT
 	if args.First > 0 {
 		limit = args.First
 	}
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT id, commit_id, path, added, deleted, symbol_data
+		SELECT path, symbol_data
 		FROM rockskip_blobs
 		WHERE
 			%s && singleton(repo)
@@ -1191,49 +1222,38 @@ func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, thread
 	}
 	defer rows.Close()
 
-	symbolCount := 0
-	blobs := []Blob{}
+	isMatch, err := mkIsMatch(args)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := []result.Symbol{}
 	for rows.Next() {
-		var id int
-		var commit string
 		var path string
-		var added, deleted []string
-		var allSymbols Symbols
-		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &allSymbols)
+		var fileSymbols Symbols
+		err = rows.Scan(&path, &fileSymbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
 
-		symbols := []Symbol{}
-		for _, symbol := range allSymbols {
-			if symbolCount >= limit {
-				break
-			}
-			if args.Query == "" {
-				symbols = append(symbols, symbol)
-				symbolCount++
-			} else {
-				regex, err := regexp.Compile(args.Query)
-				if err != nil {
-					return nil, errors.Wrap(err, "Search compile regex")
-				}
-				if regex.MatchString(symbol.Name) {
-					symbols = append(symbols, symbol)
-					symbolCount++
+		for _, fileSymbol := range fileSymbols {
+			if isMatch(fileSymbol.Name) {
+				symbols = append(symbols, result.Symbol{
+					Name:   fileSymbol.Name,
+					Path:   path,
+					Line:   fileSymbol.Line,
+					Kind:   fileSymbol.Kind,
+					Parent: fileSymbol.Parent,
+				})
+
+				if len(symbols) >= limit {
+					return symbols, nil
 				}
 			}
-		}
-
-		if len(symbols) > 0 {
-			blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
-		}
-
-		if symbolCount >= limit {
-			break
 		}
 	}
 
-	return blobs, nil
+	return symbols, nil
 }
 
 func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.Query) error {
