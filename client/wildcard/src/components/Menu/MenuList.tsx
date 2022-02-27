@@ -4,7 +4,7 @@ import {
     MenuItems,
     MenuItemsProps,
 } from '@reach/menu-button'
-import classNames from 'classnames';
+import classNames from 'classnames'
 import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
