@@ -4,10 +4,9 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
 
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Panel } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -151,66 +150,63 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <Resizable
+        <Panel
+            className={styles.panel}
+            handleClassName={styles.panelHandle}
             defaultSize={384}
-            handlePosition="right"
+            position="left"
+            isFloating={false}
             storageKey={SIZE_STORAGE_KEY}
-            element={
-                <div className="repository-documentation-sidebar d-flex flex-column w-100 border-right">
-                    <div className="d-flex flex-0 mx-3">
-                        <Button
-                            onClick={handleSidebarToggle}
-                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                            title="Close panel"
-                            data-tooltip="Collapse panel"
-                            data-placement="right"
-                        >
-                            <ChevronDoubleLeftIcon className="icon-inline" />
-                        </Button>
-                    </div>
-                    <div
-                        aria-hidden={true}
-                        className={classNames('overflow-auto px-3', styles.repositoryDocumentationSidebarScroller)}
+        >
+            <div className="repository-documentation-sidebar d-flex flex-column w-100 h-100 overflow-hidden border-right">
+                <div className="d-flex flex-0 mx-3">
+                    <Button
+                        onClick={handleSidebarToggle}
+                        className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                        title="Close panel"
+                        data-tooltip="Collapse panel"
+                        data-placement="right"
                     >
-                        {props.pathInfo.isIndex && (
-                            <>
-                                <h4 className="text-nowrap">Index</h4>
-                                {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList
-                                        onToggle={onToggle}
-                                        {...props}
-                                        node={node}
-                                        activePathID={activePathID}
-                                    />
-                                ) : (
-                                    <p>Looks like there's nothing to see here..</p>
-                                )}
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
-                            <>
-                                <h4 className="text-nowrap">Subpages</h4>
-                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex &&
-                            props.pathInfo.children.length === 0 &&
-                            isExcluded(node, excludingTags) && (
-                                <>
-                                    <p>Looks like there's nothing to see here..</p>
-                                </>
-                            )}
-                        <DocumentationIndexNode
-                            {...props}
-                            node={indexNode}
-                            pagePathID={props.pagePathID}
-                            depth={0}
-                            excludingTags={excludingTags}
-                        />
-                    </div>
+                        <ChevronDoubleLeftIcon className="icon-inline" />
+                    </Button>
                 </div>
-            }
-        />
+                <div
+                    aria-hidden={true}
+                    className={classNames('overflow-auto px-3', styles.repositoryDocumentationSidebarScroller)}
+                >
+                    {props.pathInfo.isIndex && (
+                        <>
+                            <h4 className="text-nowrap">Index</h4>
+                            {props.pathInfo.children.length > 0 ? (
+                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
+                            ) : (
+                                <p>Looks like there's nothing to see here..</p>
+                            )}
+                        </>
+                    )}
+                    {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
+                        <>
+                            <h4 className="text-nowrap">Subpages</h4>
+                            <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
+                        </>
+                    )}
+                    {!props.pathInfo.isIndex &&
+                        props.pathInfo.children.length === 0 &&
+                        isExcluded(node, excludingTags) && (
+                            <>
+                                <p>Looks like there's nothing to see here..</p>
+                            </>
+                        )}
+                    <DocumentationIndexNode
+                        {...props}
+                        node={indexNode}
+                        pagePathID={props.pagePathID}
+                        depth={0}
+                        excludingTags={excludingTags}
+                    />
+                </div>
+            </div>
+        </Panel>
     )
 }
 

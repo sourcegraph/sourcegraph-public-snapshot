@@ -5,9 +5,18 @@ import React, { useRef } from 'react'
 import { PANEL_POSITIONS } from './constants'
 import styles from './Panel.module.scss'
 import { useResizablePanel } from './useResizablePanel'
+import { getDisplayStyle, getPositionStyle } from './utils'
 
 export interface PanelProps {
+    /**
+     * If true, panel moves over elements on resize, defaults to true
+     */
+    isFloating?: boolean
     className?: string
+    /**
+     * CSS class applied to the resize handle
+     */
+    handleClassName?: string
     storageKey?: string
     defaultSize?: number
     position?: typeof PANEL_POSITIONS[number]
@@ -15,7 +24,9 @@ export interface PanelProps {
 
 export const Panel: React.FunctionComponent<PanelProps> = ({
     children,
+    isFloating = true,
     className,
+    handleClassName,
     defaultSize = 200,
     storageKey,
     position = 'bottom',
@@ -38,7 +49,8 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
             className={classNames(
                 className,
                 styles.panel,
-                styles[`panel${upperFirst(position)}` as keyof typeof styles]
+                getPositionStyle({ position }),
+                getDisplayStyle({ isFloating })
             )}
             ref={panelReference}
         >
@@ -47,6 +59,7 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
                 className={classNames(
                     styles.handle,
                     styles[`handle${upperFirst(position)}` as keyof typeof styles],
+                    handleClassName,
                     isResizing && styles.handleResizing
                 )}
             />

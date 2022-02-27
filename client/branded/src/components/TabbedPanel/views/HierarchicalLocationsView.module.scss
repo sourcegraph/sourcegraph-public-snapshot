@@ -5,20 +5,22 @@
 }
 
 .resizable-group {
+    --panel-bg-color: transparent;
+
     min-width: 6rem;
     padding-top: 0.5rem;
     overflow-y: auto;
+    padding-right: 0.55rem;
+    margin-right: 0.55rem;
 }
 
 .resizable-handle {
-    width: 0;
-    margin-right: 0.5rem;
-    padding-left: 0.5rem;
-    transition: opacity 150ms;
-    border-right: 1px solid var(--border-color-2);
+    --panel-handle-bg-color: transparent;
+
+    transition: opacity 0.15s;
 
     &:hover {
-        opacity: 1;
+        --panel-handle-bg-color: var(--border-color-2);
     }
 }
 

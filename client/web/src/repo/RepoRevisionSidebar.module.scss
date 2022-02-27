@@ -24,3 +24,11 @@
         background-color: var(--color-bg-3);
     }
 }
+
+.panel {
+    --panel-bg-color: transparent;
+}
+
+.panel-handle {
+    right: calc(-1 * var(--panel-handle-size));
+}

@@ -4,13 +4,22 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useMatchMedia, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import {
+    Button,
+    useLocalStorage,
+    useMatchMedia,
+    Panel,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { OnboardingTour } from '../onboarding-tour/OnboardingTour'
@@ -74,78 +83,80 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <Resizable
+        <Panel
+            className={styles.panel}
+            handleClassName={styles.panelHandle}
             defaultSize={256}
-            handlePosition="right"
+            position="left"
+            isFloating={false}
             storageKey={SIZE_STORAGE_KEY}
-            element={
-                <div className="d-flex flex-column w-100">
-                    {props.showOnboardingTour && (
-                        <OnboardingTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
-                    )}
-                    <Tabs
-                        className="w-100 h-100 test-repo-revision-sidebar pr-3"
-                        defaultIndex={persistedTabIndex}
-                        onChange={setPersistedTabIndex}
-                        lazy={true}
+        >
+            <div className="d-flex flex-column w-100 h-100">
+                {props.showOnboardingTour && (
+                    <OnboardingTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
+                )}
+                <Tabs
+                    className="w-100 flex-1 test-repo-revision-sidebar overflow-hidden pr-3"
+                    defaultIndex={persistedTabIndex}
+                    onChange={setPersistedTabIndex}
+                    lazy={true}
+                >
+                    <TabList
+                        actions={
+                            <Button
+                                onClick={() => handleSidebarToggle(false)}
+                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                title="Hide sidebar"
+                                data-tooltip="Hide sidebar"
+                                data-placement="right"
+                            >
+                                <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
+                            </Button>
+                        }
                     >
-                        <TabList
-                            actions={
-                                <Button
-                                    onClick={() => handleSidebarToggle(false)}
-                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                    title="Hide sidebar"
-                                    data-tooltip="Hide sidebar"
-                                    data-placement="right"
-                                >
-                                    <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
-                                </Button>
-                            }
-                        >
-                            <Tab data-tab-content="files">
-                                <span className="tablist-wrapper--tab-label">Files</span>
-                            </Tab>
-                            <Tab data-tab-content="symbols">
-                                <span className="tablist-wrapper--tab-label">Symbols</span>
-                            </Tab>
-                        </TabList>
-                        <div
-                            aria-hidden={true}
-                            className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
-                            tabIndex={-1}
-                        >
-                            <TabPanels>
-                                <TabPanel>
-                                    <Tree
-                                        key="files"
-                                        repoName={props.repoName}
-                                        revision={props.revision}
-                                        commitID={props.commitID}
-                                        history={props.history}
-                                        location={props.location}
-                                        scrollRootSelector=".explorer"
-                                        activePath={props.filePath}
-                                        activePathIsDir={props.isDir}
-                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                        extensionsController={props.extensionsController}
-                                        isLightTheme={props.isLightTheme}
-                                        telemetryService={props.telemetryService}
-                                    />
-                                </TabPanel>
-                                <TabPanel>
-                                    <RepoRevisionSidebarSymbols
-                                        key="symbols"
-                                        repoID={props.repoID}
-                                        revision={props.revision}
-                                        activePath={props.filePath}
-                                        onHandleSymbolClick={handleSymbolClick}
-                                    />
-                                </TabPanel>
-                            </TabPanels>
-                        </div>
-                    </Tabs>
-                </div>
-            }
-        />
+                        <Tab data-tab-content="files">
+                            <span className="tablist-wrapper--tab-label">Files</span>
+                        </Tab>
+                        <Tab data-tab-content="symbols">
+                            <span className="tablist-wrapper--tab-label">Symbols</span>
+                        </Tab>
+                    </TabList>
+                    <div
+                        aria-hidden={true}
+                        className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                        tabIndex={-1}
+                    >
+                        <TabPanels>
+                            <TabPanel>
+                                <Tree
+                                    key="files"
+                                    repoName={props.repoName}
+                                    revision={props.revision}
+                                    commitID={props.commitID}
+                                    history={props.history}
+                                    location={props.location}
+                                    scrollRootSelector=".explorer"
+                                    activePath={props.filePath}
+                                    activePathIsDir={props.isDir}
+                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                    extensionsController={props.extensionsController}
+                                    isLightTheme={props.isLightTheme}
+                                    telemetryService={props.telemetryService}
+                                />
+                            </TabPanel>
+                            <TabPanel>
+                                <RepoRevisionSidebarSymbols
+                                    key="symbols"
+                                    repoID={props.repoID}
+                                    revision={props.revision}
+                                    activePath={props.filePath}
+                                    onHandleSymbolClick={handleSymbolClick}
+                                />
+                            </TabPanel>
+                        </TabPanels>
+                    </div>
+                </Tabs>
+            </div>
+        </Panel>
     )
 }

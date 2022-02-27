@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/cockroachdb/errors"
 	"go.etcd.io/bbolt"
 	bolt "go.etcd.io/bbolt"
 )

@@ -11,12 +11,13 @@ import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
+import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -24,10 +25,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
-import { match } from '../../../../shared/src/api/client/types/textDocument'
-import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
-
-import styles from './Panel.module.scss'
+import styles from './TabbedPanel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -119,7 +117,7 @@ export function useBuiltinPanelViews(
  *
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
-export const Panel = React.memo<Props>(props => {
+export const TabbedPanel = React.memo<Props>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
@@ -321,17 +319,6 @@ export const Panel = React.memo<Props>(props => {
         </Tabs>
     )
 })
-
-/** A wrapper around Panel that makes it resizable. */
-export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <Resizable
-        className={styles.resizablePanel}
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<Panel {...props} />}
-    />
-)
 
 /**
  * Temporary solution to code intel extensions all contributing the same panel actions.

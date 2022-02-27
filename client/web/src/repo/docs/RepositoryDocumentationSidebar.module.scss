@@ -17,3 +17,11 @@
         display: none;
     }
 }
+
+.panel {
+    --panel-bg-color: transparent;
+}
+
+.panel-handle {
+    right: calc(-1 * var(--panel-handle-size));
+}
