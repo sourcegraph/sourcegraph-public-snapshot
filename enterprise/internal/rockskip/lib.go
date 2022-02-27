@@ -4,17 +4,19 @@ import (
 	"bufio"
 	"context"
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os/exec"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 
 	"github.com/inconshreveable/log15"
@@ -23,7 +25,6 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -36,10 +37,25 @@ type Git interface {
 }
 
 type Symbol struct {
-	Name   string
-	Parent string
-	Kind   string
-	Line   int
+	Name   string `json:"name"`
+	Parent string `json:"parent"`
+	Kind   string `json:"kind"`
+	Line   int    `json:"line"`
+}
+
+type Symbols []Symbol
+
+func (symbols Symbols) Value() (driver.Value, error) {
+	return json.Marshal(symbols)
+}
+
+func (symbols *Symbols) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("scan symbol: expected []byte")
+	}
+
+	return json.Unmarshal(bytes, &symbols)
 }
 
 type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
@@ -64,11 +80,7 @@ type Blob struct {
 	Path    string
 	Added   []string
 	Deleted []string
-}
-
-type BlobWithSymbolNames struct {
-	Blob
-	Symbols []string
+	Symbols []Symbol
 }
 
 type StatusAMD int
@@ -218,7 +230,7 @@ func (t *TaskLog) String() string {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Fprintf(&s, "Tasks (%.2fs total, current %s): ", total.Seconds(), t.currentName)
+	fmt.Fprintf(&s, "Tasks (%.0fs total, current %s): ", total.Seconds(), t.currentName)
 
 	type kv struct {
 		Key   string
@@ -235,7 +247,7 @@ func (t *TaskLog) String() string {
 	})
 
 	for _, kv := range kvs {
-		fmt.Fprintf(&s, "%s %.2f%% %dx, ", kv.Key, kv.Value.Duration.Seconds()*100/total.Seconds(), kv.Value.Count)
+		fmt.Fprintf(&s, "%s %d%% %dx, ", kv.Key, kv.Value.Duration*100/total, kv.Value.Count)
 	}
 
 	return s.String()
@@ -618,18 +630,12 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			if err != nil {
 				return errors.Wrap(err, "parse")
 			}
-			symbolNames := []string{}
-			for _, symbol := range symbols {
-				symbolNames = append(symbolNames, symbol.Name)
-			}
-			blob := BlobWithSymbolNames{
-				Blob: Blob{
-					Commit:  entry.Commit,
-					Path:    addedPath,
-					Added:   []string{entry.Commit},
-					Deleted: []string{},
-				},
-				Symbols: symbolNames,
+			blob := Blob{
+				Commit:  entry.Commit,
+				Path:    addedPath,
+				Added:   []string{entry.Commit},
+				Deleted: []string{},
+				Symbols: symbols,
 			}
 			tasklog.Start("InsertBlob")
 			id, err := InsertBlob(ctx, tx, blob, repo)
@@ -1005,13 +1011,18 @@ func UpdateBlobHops(ctx context.Context, db Queryable, id int, status StatusAD, 
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func InsertBlob(ctx context.Context, db Queryable, blob BlobWithSymbolNames, repo string) (id int, err error) {
+func InsertBlob(ctx context.Context, db Queryable, blob Blob, repo string) (id int, err error) {
+	symbolNames := []string{}
+	for _, symbol := range blob.Symbols {
+		symbolNames = append(symbolNames, symbol.Name)
+	}
+
 	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
-		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbols)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(blob.Symbols)).Scan(&lastInsertId)
+	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -1025,7 +1036,7 @@ func AppendHop(ctx context.Context, db Queryable, repo string, hops []string, gi
 	return errors.Wrap(err, "AppendHop")
 }
 
-func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
+func (s *Server) Search(ctx context.Context, args types.SearchArgs) (blobs []Blob, err error) {
 	repo := string(args.Repo)
 	commit := string(args.CommitID)
 
@@ -1090,99 +1101,12 @@ func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []r
 	}
 
 	// Finally search.
-	blobs, err := queryBlobs(ctx, s.db, args, threadStatus, s.logQueries)
+	blobs, err = queryBlobs(ctx, s.db, args, threadStatus, s.logQueries)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.parseBlobs(args, blobs, threadStatus)
-}
-
-func (s *Server) parseBlobs(args types.SearchArgs, blobs []Blob, threadStatus *ThreadStatus) ([]result.Symbol, error) {
-	limit := DEFAULT_LIMIT
-	if args.First > 0 {
-		limit = args.First
-	}
-
-	symbols := []result.Symbol{}
-
-	paths := []string{}
-	for _, blob := range blobs {
-		paths = append(paths, blob.Path)
-	}
-
-	defer threadStatus.Tasklog.Start("create parser")
-	parse := s.createParser()
-
-	stopErr := errors.New("stop iterating")
-
-	isMatch, err := mkIsMatch(args)
-	if err != nil {
-		return nil, err
-	}
-
-	threadStatus.Tasklog.Start("ArchiveEach")
-	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
-		defer threadStatus.Tasklog.Continue("ArchiveEach")
-
-		threadStatus.Tasklog.Start("parse")
-		fileSymbols, err := parse(path, contents)
-		if err != nil {
-			return err
-		}
-
-		for _, fileSymbol := range fileSymbols {
-			if isMatch(fileSymbol.Name) {
-				symbols = append(symbols, result.Symbol{
-					Name:   fileSymbol.Name,
-					Path:   path,
-					Line:   fileSymbol.Line,
-					Kind:   fileSymbol.Kind,
-					Parent: fileSymbol.Parent,
-				})
-
-				if len(symbols) >= limit {
-					return stopErr
-				}
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil && err != stopErr {
-		return nil, err
-	}
-
-	return symbols, nil
-}
-
-func mkIsMatch(args types.SearchArgs) (func(string) bool, error) {
-	if !args.IsRegExp {
-		if args.IsCaseSensitive {
-			return func(symbol string) bool { return strings.Contains(symbol, args.Query) }, nil
-		} else {
-			return func(symbol string) bool {
-				return strings.Contains(strings.ToLower(symbol), strings.ToLower(args.Query))
-			}, nil
-		}
-	}
-
-	expr := args.Query
-	if !args.IsCaseSensitive {
-		expr = "(?i)" + expr
-	}
-
-	regex, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	if args.IsCaseSensitive {
-		return func(symbol string) bool { return regex.MatchString(symbol) }, nil
-	} else {
-		return func(symbol string) bool { return regex.MatchString(strings.ToLower(symbol)) }, nil
-	}
+	return blobs, nil
 }
 
 func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
@@ -1225,22 +1149,20 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 	return done, nil
 }
 
-const DEFAULT_LIMIT = 100
-
 func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, threadStatus *ThreadStatus, logQueries bool) ([]Blob, error) {
 	hops, err := getHops(ctx, db, string(args.Repo), string(args.CommitID), threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
 
-	limit := DEFAULT_LIMIT
+	limit := 100
 	if args.First > 0 {
 		limit = args.First
 	}
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT id, commit_id, path, added, deleted
+		SELECT id, commit_id, path, added, deleted, symbol_data
 		FROM rockskip_blobs
 		WHERE
 			%s && singleton(repo)
@@ -1269,17 +1191,46 @@ func queryBlobs(ctx context.Context, db Queryable, args types.SearchArgs, thread
 	}
 	defer rows.Close()
 
+	symbolCount := 0
 	blobs := []Blob{}
 	for rows.Next() {
 		var id int
 		var commit string
 		var path string
 		var added, deleted []string
-		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted))
+		var allSymbols Symbols
+		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &allSymbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted})
+
+		symbols := []Symbol{}
+		for _, symbol := range allSymbols {
+			if symbolCount >= limit {
+				break
+			}
+			if args.Query == "" {
+				symbols = append(symbols, symbol)
+				symbolCount++
+			} else {
+				regex, err := regexp.Compile(args.Query)
+				if err != nil {
+					return nil, errors.Wrap(err, "Search compile regex")
+				}
+				if regex.MatchString(symbol.Name) {
+					symbols = append(symbols, symbol)
+					symbolCount++
+				}
+			}
+		}
+
+		if len(symbols) > 0 {
+			blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
+		}
+
+		if symbolCount >= limit {
+			break
+		}
 	}
 
 	return blobs, nil
@@ -1361,7 +1312,7 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch("symbols", "", "symbols", columnTypeArrayText, args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch("symbol_names", "", "symbol_names", columnTypeArrayText, args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {

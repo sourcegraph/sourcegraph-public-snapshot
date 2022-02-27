@@ -107,17 +107,13 @@ func TestIndex(t *testing.T) {
 		repo := "somerepo"
 		commit := getHead()
 		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-		symbols, err := server.Search(context.Background(), args)
+		blobs, err := server.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
 		// Make sure the paths match.
-		gotPathSet := map[string]struct{}{}
-		for _, blob := range symbols {
-			gotPathSet[blob.Path] = struct{}{}
-		}
 		gotPaths := []string{}
-		for path := range gotPathSet {
-			gotPaths = append(gotPaths, path)
+		for _, blob := range blobs {
+			gotPaths = append(gotPaths, blob.Path)
 		}
 		wantPaths := []string{}
 		for path := range state {
@@ -133,14 +129,13 @@ func TestIndex(t *testing.T) {
 			t.FailNow()
 		}
 
-		gotPathToSymbols := map[string][]string{}
-		for _, blob := range symbols {
-			gotPathToSymbols[blob.Path] = append(gotPathToSymbols[blob.Path], blob.Name)
-		}
-
 		// Make sure the symbols match.
-		for path, gotSymbols := range gotPathToSymbols {
-			wantSymbols := state[path]
+		for _, blob := range blobs {
+			gotSymbols := []string{}
+			for _, symbol := range blob.Symbols {
+				gotSymbols = append(gotSymbols, symbol.Name)
+			}
+			wantSymbols := state[blob.Path]
 			sort.Strings(gotSymbols)
 			sort.Strings(wantSymbols)
 			if diff := cmp.Diff(gotSymbols, wantSymbols); diff != "" {
