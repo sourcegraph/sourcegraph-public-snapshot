@@ -391,6 +391,8 @@ func strPtr(s string) *string {
 
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
 func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+	// FIXME: Use contextLines to constrain hunks.
+	_ = contextLines
 	if _, ok := internalResult.(*result.FileMatch); !ok {
 		return eventMatch
 	}

@@ -34,7 +34,6 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
@@ -57,8 +56,7 @@ interface RepositoryCompareAreaProps
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
-        BreadcrumbSetters,
-        GlobalCoolCodeIntelProps {
+        BreadcrumbSetters {
     repo: RepositoryFields
     history: H.History
 }
@@ -218,6 +216,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                         hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
+                        coolCodeIntelEnabled={false}
                     />
                 )}
             </div>

@@ -268,7 +268,7 @@ func (q Q) Values(field string) []*Value {
 
 func (q Q) Fields() map[string][]*Value {
 	fields := make(map[string][]*Value)
-	VisitPattern(q, func(value string, _ bool, _ Annotation) {
+	VisitPattern(q, func(_ string, _ bool, _ Annotation) {
 		fields[""] = q.Values("")
 	})
 	VisitParameter(q, func(field, _ string, _ bool, _ Annotation) {
