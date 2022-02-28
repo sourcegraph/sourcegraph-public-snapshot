@@ -166,12 +166,10 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
-	if envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-		// Any changes to the embedding route could have security implications. Please consult the security team
-		// before making changes. See the `serveEmbed` function for further details.
-		r.PathPrefix("/embed").Methods("GET").Name(routeEmbed)
-	}
+	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
+	// Any changes to the embedding route could have security implications. Please consult the security team
+	// before making changes. See the `serveEmbed` function for further details.
+	r.PathPrefix("/embed").Methods("GET").Name(routeEmbed)
 
 	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
 	if envvar.SourcegraphDotComMode() {
@@ -273,12 +271,10 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
-	if envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-		// Any changes to the embedding route could have security implications. Please consult the security team
-		// before making changes. See the `serveEmbed` function for further details.
-		router.Get(routeEmbed).Handler(handler(db, serveEmbed(db)))
-	}
+	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
+	// Any changes to the embedding route could have security implications. Please consult the security team
+	// before making changes. See the `serveEmbed` function for further details.
+	router.Get(routeEmbed).Handler(handler(db, serveEmbed(db)))
 
 	router.Get(routeUserSettings).Handler(brandedNoIndex("User settings"))
 	router.Get(routeUserRedirect).Handler(brandedNoIndex("User"))
