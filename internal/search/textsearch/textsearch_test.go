@@ -99,8 +99,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,8 +139,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	globalSearch = args.Mode == search.ZoektGlobalSearch
-	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,8 +214,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,8 +295,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
