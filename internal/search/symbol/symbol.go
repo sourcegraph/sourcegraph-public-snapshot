@@ -436,10 +436,9 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
-	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = request.Search(ctx, stream)
+	err = zoektutil.DoZoektSearchGlobal(ctx, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.
