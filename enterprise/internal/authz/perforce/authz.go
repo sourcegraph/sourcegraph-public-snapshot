@@ -35,6 +35,7 @@ func newAuthzProvider(
 	host, user, password string,
 	depots []string,
 ) authz.Provider {
+	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
 		return nil
 	}
@@ -57,6 +58,7 @@ func newAuthzProvider(
 
 // ValidateAuthz validates the authorization fields of the given Perforce
 // external service config.
-func ValidateAuthz(cfg *schema.PerforceConnection) error {
+func ValidateAuthz(_ *schema.PerforceConnection) error {
+	// newAuthzProvider always succeeds, so directly return nil here.
 	return nil
 }
