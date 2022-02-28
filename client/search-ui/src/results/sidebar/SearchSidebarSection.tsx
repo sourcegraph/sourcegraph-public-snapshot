@@ -89,8 +89,6 @@ export const SearchSidebarSection: React.FunctionComponent<{
         }
 
         const [collapsed, setCollapsed] = useState(startCollapsed)
-        useEffect(() => setCollapsed(startCollapsed), [startCollapsed])
-
         return visible ? (
             <div className={classNames(styles.sidebarSection, className)}>
                 <Button

@@ -85,8 +85,8 @@ $table-border-color: var(--border-color);
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
-// Disable transitions
-$input-transition: none;
+// Disable all Bootstrap transitions
+$enable-transitions: false;
 
 // Spacer
 $spacer: 1rem;
@@ -102,7 +102,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
@@ -129,6 +128,7 @@ $spacer: 1rem;
 @import './highlight';
 @import './tabs';
 @import './progress';
+@import './collapse';
 
 * {
     box-sizing: border-box;
