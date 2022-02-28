@@ -100,7 +100,7 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() ParseSymbolsFunc { return simpleParse }
 
-	server, err := NewServer(db, git, createParser, 1, 1, false, 1)
+	server, err := NewServer(db, git, createParser, 1, 1, false, 1, 1)
 	fatalIfError(err, "NewServer")
 
 	verifyBlobs := func() {

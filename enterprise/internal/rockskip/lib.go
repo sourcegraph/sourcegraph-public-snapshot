@@ -17,6 +17,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
+	"k8s.io/utils/lru"
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -277,6 +278,7 @@ type Server struct {
 	repoCommitToDone   map[string]chan struct{}
 	repoCommitToDoneMu sync.Mutex
 	indexRequestQueues []chan indexRequest
+	symbolIdCacheSize  int
 }
 
 func NewServer(
@@ -287,6 +289,7 @@ func NewServer(
 	maxRepos int,
 	logQueries bool,
 	indexRequestsQueueSize int,
+	symbolIdCacheSize int,
 ) (*Server, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
@@ -304,6 +307,7 @@ func NewServer(
 		repoCommitToDone:   map[string]chan struct{}{},
 		repoCommitToDoneMu: sync.Mutex{},
 		indexRequestQueues: indexRequestQueues,
+		symbolIdCacheSize:  symbolIdCacheSize,
 	}
 
 	err := server.startCleanupThread()
@@ -525,7 +529,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		return nil
 	}
 
-	symbolCache := map[string]int{}
+	symbolCache := newSymbolIdCache(s.symbolIdCacheSize)
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -647,7 +651,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 			for symbol := range symbols {
 				id := 0
 				ok := false
-				if id, ok = symbolCache[path+":"+symbol]; !ok {
+				if id, ok = symbolCache.get(path, symbol); !ok {
 					found := false
 					for _, hop := range hops {
 						tasklog.Start("GetSymbol")
@@ -679,7 +683,7 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 				if err != nil {
 					return errors.Wrap(err, "InsertSymbol")
 				}
-				symbolCache[path+":"+symbol] = id
+				symbolCache.set(path, symbol, id)
 			}
 		}
 
@@ -708,6 +712,30 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 	threadStatus.SetProgress(entriesIndexed, missingCount)
 
 	return nil
+}
+
+type symbolIdCache struct {
+	cache *lru.Cache
+}
+
+func newSymbolIdCache(size int) *symbolIdCache {
+	return &symbolIdCache{cache: lru.New(size)}
+}
+
+func (s *symbolIdCache) get(path, symbol string) (int, bool) {
+	v, ok := s.cache.Get(symbolIdCacheKey(path, symbol))
+	if !ok {
+		return 0, false
+	}
+	return v.(int), true
+}
+
+func (s *symbolIdCache) set(path, symbol string, id int) {
+	s.cache.Add(symbolIdCacheKey(path, symbol), id)
+}
+
+func symbolIdCacheKey(path, symbol string) string {
+	return path + ":" + symbol
 }
 
 func getHops(ctx context.Context, tx Queryable, commit int, tasklog *TaskLog) ([]int, error) {

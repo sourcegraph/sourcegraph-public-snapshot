@@ -46,7 +46,7 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	git := NewGitserver(repositoryFetcher)
 	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
-	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize)
+	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolIdCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
 	}
@@ -61,6 +61,7 @@ type RockskipConfig struct {
 	LogQueries              bool
 	IndexRequestsQueueSize  int
 	MaxConcurrentlyIndexing int
+	SymbolIdCacheSize       int
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
@@ -71,6 +72,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
+		SymbolIdCacheSize:       baseConfig.GetInt("SYMBOL_ID_CACHE_SIZE", "1000000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
 	}
 }
 
