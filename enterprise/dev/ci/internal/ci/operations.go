@@ -351,7 +351,7 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.Cmd("./dev/ci/go-backcompat/test.sh "+testSuffix),
+				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{}),
 			)
 		})
 	}
@@ -392,8 +392,8 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Docker checks",
-		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
+	pipeline.AddStep(":docker: Docker linters",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations docker", bk.AnnotatedCmdOpts{
 			IncludeNames: true,
 		}))
 }

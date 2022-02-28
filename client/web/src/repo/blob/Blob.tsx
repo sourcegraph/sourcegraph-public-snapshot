@@ -654,7 +654,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 }
 
-function getLSPTextDocumentPositionParameters(
+export function getLSPTextDocumentPositionParameters(
     position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
     mode: string
 ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {

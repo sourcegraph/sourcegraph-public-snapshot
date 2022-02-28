@@ -5,6 +5,7 @@
   - Environments: [Kubernetes](manual_database_migrations.md#kubernetes), [Docker compose](manual_database_migrations.md#docker-compose), [Local development](manual_database_migrations.md#local-development)
 - [How to troubleshoot a dirty database](dirty_database.md)
 - [How to rollback the Postgres database](rollback_database.md)
+- [How to apply privileged migrations](privileged_migrations.md)
 - [How to troubleshoot an unfinished migration](unfinished_migration.md)
 - [How to enable or disable an experimental feature](enable-experimental-feature.md)
 - [How to diagnose an `Unknown Error` during login to your Sourcegraph instance](unknown-error-login.md)

@@ -1,5 +1,5 @@
 .modal {
-    padding: 0.5rem 1rem 1rem 1.5rem;
+    padding: 1rem 1.5rem 1rem 1.5rem;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -8,7 +8,8 @@
 
 .close-button {
     margin-left: auto;
-    margin-right: -0.5rem;
+    padding-right: 0 !important;
+    color: var(--icon-color);
 }
 
 .alert {
@@ -24,6 +25,8 @@
 
 .message {
     flex: 1;
+    align-self: center;
+    font-weight: 500;
 }
 
 .container {

@@ -119,6 +119,14 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	log15.Info("finish resolving npm artifacts", "totalDB", totalDBFetched, "totalDBResolved", totalDBResolved, "totalConfig", len(npmPackages))
 }
 
+func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
+	pkg, err := reposource.ParseNPMPackageFromRepoURL(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.makeRepo(pkg), nil
+}
+
 func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := npmPackage.CloneURL()

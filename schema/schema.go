@@ -1504,6 +1504,8 @@ type Settings struct {
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
 	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
+	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
+	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
@@ -1617,6 +1619,8 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
+	// TreeSitterEnabled description: Enables tree sitter for enabled filetypes
+	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

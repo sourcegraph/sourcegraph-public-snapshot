@@ -3,6 +3,7 @@ package highlight
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -12,25 +13,29 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/gosyntect"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
-	highlightOp   *observation.Operation
+
+	highlightOp *observation.Operation
 )
 
 func init() {
@@ -85,6 +90,11 @@ type Params struct {
 	// respond.
 	SimulateTimeout bool
 
+	// Whether to use tree-sitter to power syntax highlighting instead of
+	// syntect (default). Tree-sitter support is only available for a small
+	// number of programming languages.
+	TreeSitterEnabled bool
+
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 }
@@ -111,7 +121,7 @@ var ErrBinary = errors.New("cannot render binary file")
 // to timeout. In this scenario, a plain text table is returned.
 //
 // In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
@@ -124,6 +134,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
+		otlog.Bool("treeSitterEnabled", p.TreeSitterEnabled),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -151,7 +162,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", false, ErrBinary
+		return "", nil, false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -182,19 +193,24 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	p.Filepath = normalizeFilepath(p.Filepath)
 
+	filetype := enry.GetLanguage(p.Filepath, []byte(code))
+	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
+		Filetype:         filetype,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
-	})
+	}, useTreeSitter)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
 			"filepath", p.Filepath,
+			"filetype", filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
@@ -204,11 +220,12 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 		// Timeout, so render plain table.
 		table, err := generatePlainTable(code)
-		return table, true, err
+		return table, nil, true, err
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
 			"filepath", p.Filepath,
+			"filetype", filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
@@ -238,12 +255,25 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			errCollector.Collect(&err)
 			prometheusStatus = problem
 			table, err := generatePlainTable(code)
-			return table, false, err
+			return table, nil, false, err
 		}
-		return "", false, err
+		return "", nil, false, err
 	}
 
-	return template.HTML(resp.Data), false, nil
+	if useTreeSitter {
+		document := new(lsiftyped.Document)
+		data, err := base64.StdEncoding.DecodeString(resp.Data)
+		if err != nil {
+			return "", nil, false, err
+		}
+		err = proto.Unmarshal(data, document)
+		if err != nil {
+			return "", nil, false, err
+		}
+		return "", document, false, nil
+	}
+
+	return template.HTML(resp.Data), nil, false, nil
 }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
@@ -305,7 +335,7 @@ func generatePlainTable(code string) (template.HTML, error) {
 //
 // In the event the input content is binary, ErrBinary is returned.
 func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
-	html, aborted, err := Code(ctx, p)
+	html, _, aborted, err := Code(ctx, p)
 	if err != nil {
 		return nil, aborted, err
 	}
