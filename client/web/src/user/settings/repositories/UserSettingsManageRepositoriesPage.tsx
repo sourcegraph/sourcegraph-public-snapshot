@@ -183,7 +183,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [onloadRadioValue, setOnloadRadioValue] = useState('')
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState(new URLSearchParams(window.location.search).get('filter') || '')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
@@ -647,6 +647,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
+                defaultValue={query}
                 onChange={event => {
                     setQuery(event.target.value)
                 }}

@@ -55,7 +55,7 @@ import {
     isExternalLink,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { isHTTPAuthError } from '@sourcegraph/http-client'
+import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
@@ -73,6 +73,7 @@ import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -714,6 +715,12 @@ const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = 
     }
 }
 
+const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string, repoName: string): string => {
+    const url = new URL(`${settingsURL}/repositories/manage`, sourcegraphURL)
+    url.searchParams.set('filter', repoName)
+    return url.href
+}
+
 /**
  * @returns boolean indicating whether it is safe to continue initialization
  *
@@ -735,13 +742,19 @@ const isSafeToContinueCodeIntel = async ({
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
         return true
     }
+
+    let rawRepoName: string | undefined
+
     // This is only when connected to Sourcegraph Cloud and code host either GitLab or GitHub
     try {
-        const { privateRepository, rawRepoName } = await codeHost.getContext()
-        if (!privateRepository) {
+        const context = await codeHost.getContext()
+
+        if (!context.privateRepository) {
             // We can auto-clone public repos
             return true
         }
+
+        rawRepoName = context.rawRepoName
 
         const isRepoCloned = await resolvePrivateRepo({
             rawRepoName,
@@ -777,15 +790,39 @@ const isSafeToContinueCodeIntel = async ({
         } else {
             // Show "Configure Sourcegraph" button
             console.warn('Repository is not cloned.', error)
-            render(
-                <ConfigureSourcegraphButton
-                    {...codeHost.viewOnSourcegraphButtonClassProps}
-                    className={classNames('open-on-sourcegraph', codeHost.viewOnSourcegraphButtonClassProps?.className)}
-                    codeHostType={codeHost.type}
-                    onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                />,
-                codeHost.getViewContextOnSourcegraphMount(document.body)
-            )
+
+            const settingsURL = await requestGraphQL<GQL.IQuery>({
+                request: gql`
+                    query UserSettingsURL {
+                        currentUser {
+                            settingsURL
+                        }
+                    }
+                `,
+                variables: {},
+                mightContainPrivateInfo: true,
+            })
+                .pipe(map(({ data }) => data?.currentUser?.settingsURL))
+                .toPromise()
+
+            if (rawRepoName && settingsURL) {
+                render(
+                    <ConfigureSourcegraphButton
+                        {...codeHost.viewOnSourcegraphButtonClassProps}
+                        className={classNames(
+                            'open-on-sourcegraph',
+                            codeHost.viewOnSourcegraphButtonClassProps?.className
+                        )}
+                        codeHostType={codeHost.type}
+                        href={buildManageRepositoriesURL(
+                            sourcegraphURL,
+                            settingsURL,
+                            rawRepoName.split('/').slice(1).join('/')
+                        )}
+                    />,
+                    codeHost.getViewContextOnSourcegraphMount(document.body)
+                )
+            }
         }
 
         return false
