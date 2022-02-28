@@ -19,8 +19,16 @@ export CGO_ENABLED=1
 # Default CC to musl-gcc.
 export CC="${CC:-musl-gcc}"
 
+help() {
+  echo "You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine."
+  echo
+  echo "    Linux: run 'apt-get install -y musl-tools'"
+  echo "    macOS: download https://github.com/FiloSottile/homebrew-musl-cross/blob/6ee3329ee41231fe693306490f8e4d127c70e618/musl-cross.rb and run 'brew install ~/Downloads/musl-cross.rb'"
+}
+
 if ! command -v "$CC" >/dev/null; then
-  echo "$CC not found. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
+  echo "$CC not found."
+  help
   exit 1
 fi
 
@@ -29,7 +37,8 @@ case "$CC" in
   *musl*)
     ;;
   *)
-    echo "$CC doesn't look like a musl compiler. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
+    echo "$CC doesn't look like a musl compiler."
+    help
     exit 1
     ;;
 esac
