@@ -29,10 +29,12 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 		defer func() { internalapi.MockClientConfiguration = nil }()
 
 		var client client
+		client.ready = make(chan struct{})
 		var logMessages []string
 		done := make(chan struct{})
 		sleeps := 0
 		const delayBeforeUnreachableLog = 150 * time.Millisecond // assumes first loop iter executes within this time period
+		client.Ready()
 		go client.continuouslyUpdate(&continuousUpdateOptions{
 			delayBeforeUnreachableLog: delayBeforeUnreachableLog,
 			log: func(format string, v ...interface{}) {
