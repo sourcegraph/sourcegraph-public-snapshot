@@ -10,12 +10,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -35,13 +35,14 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-			ArtifactName: testCase.pkgName,
+		deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+			Scheme: dependenciesStore.NPMPackagesScheme,
+			Name:   testCase.pkgName,
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
 		for _, dep := range deps {
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(dep.Package)
+			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
 				(&reposource.NPMDependency{pkg, dep.Version}).PackageManagerSyntax(),
@@ -56,14 +57,15 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 		depStrs := []string{}
 		lastID := 0
 		for i := 0; i < len(testCase.matches); i++ {
-			deps, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-				ArtifactName: testCase.pkgName,
-				After:        lastID,
-				Limit:        1,
+			deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+				Scheme: dependenciesStore.NPMPackagesScheme,
+				Name:   testCase.pkgName,
+				After:  lastID,
+				Limit:  1,
 			})
 			require.Nil(t, err)
 			require.Equal(t, len(deps), 1)
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(deps[0].Package)
+			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs, (&reposource.NPMDependency{pkg, deps[0].Version}).PackageManagerSyntax())
 			lastID = deps[0].ID
@@ -74,10 +76,10 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 	}
 }
 
-func setupDependenciesInDB(t *testing.T) (*sql.DB, *dbstore.Store, context.Context, []string) {
+func setupDependenciesInDB(t *testing.T) (*sql.DB, *dependenciesStore.Store, context.Context, []string) {
 	t.Helper()
 	db := dbtest.NewDB(t)
-	store := dbstore.NewWithDB(db, &observation.TestContext, nil)
+	store := dependenciesStore.TestStore(database.NewDB(db))
 	ctx := context.Background()
 
 	dependencies := []string{
@@ -138,7 +140,7 @@ func TestListRepos(t *testing.T) {
 	require.Equal(t, expectedRepoURLs, repoURLs)
 }
 
-func insertDependencies(t *testing.T, ctx context.Context, s *dbstore.Store, dependencies []string) {
+func insertDependencies(t *testing.T, ctx context.Context, s *dependenciesStore.Store, dependencies []string) {
 	for _, depStr := range dependencies {
 		dep, err := reposource.ParseNPMDependency(depStr)
 		require.Nil(t, err)
@@ -146,7 +148,7 @@ func insertDependencies(t *testing.T, ctx context.Context, s *dbstore.Store, dep
 		rows, err :=
 			s.Store.Query(ctx, sqlf.Sprintf(
 				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dbstore.NPMPackagesScheme, dep.PackageSyntax(), dep.Version))
+				dependenciesStore.NPMPackagesScheme, dep.PackageSyntax(), dep.Version))
 		require.Nil(t, err)
 		for rows.Next() {
 		}
