@@ -75,7 +75,7 @@ export const MonitorLogNode: React.FunctionComponent<{
                 )}
                 {monitor.description}
                 {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
-                <Link to={`/code-monitoring/${monitor.id}`} className="ml-2" onClick={clickCatcher}>
+                <Link to={`/code-monitoring/${monitor.id}`} className="ml-2 font-weight-normal" onClick={clickCatcher}>
                     Monitor details
                 </Link>
             </Button>
