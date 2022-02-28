@@ -19,6 +19,17 @@ export const ORG_MEMBERS_QUERY = gql`
     }
 `
 
+export const SEARCH_USERS_AUTOCOMPLETE_QUERY = gql`
+    query AutocompleteUsers($query: String!) {
+        autocompleteSearchUsers(query: $query) {
+            id
+            username
+            displayName
+            avatarURL
+        }
+    }
+`
+
 export const ORG_MEMBER_REMOVE_MUTATION = gql`
     mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
         removeUserFromOrganization(user: $user, organization: $organization) {

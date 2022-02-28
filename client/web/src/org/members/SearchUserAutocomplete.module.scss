@@ -1,0 +1,83 @@
+.input-container {
+    width: 100%;
+    position: relative;
+}
+
+.suggestions-container {
+    width: 100%;
+    padding: 4px 0px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 16px -6px rgba(36, 41, 54, 0.2);
+    background-color: var(--color-bg-1);
+    position: absolute;
+    z-index: 1;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 1rem;
+
+    &--error {
+        color: var(--danger) !important;
+    }
+
+    &-name {
+        width: 10rem;
+        margin-right: 0.25rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+    }
+
+    &-description {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+        font-size: 0.75rem;
+    }
+
+    &:not(:active) {
+        > .item-description {
+            color: var(--text-muted);
+        }
+    }
+
+    &--selected {
+        background-color: var(--color-bg-3);
+    }
+
+    &--highlighted {
+        font-weight: 700;
+    }
+
+    &:hover,
+    &:active,
+    &:focus {
+        /* Override default focus styles */
+        box-shadow: none;
+        outline: none;
+
+        background-color: var(--primary);
+        color: var(--light-text);
+
+        > .item-description {
+            color: var(--light-text);
+        }
+    }
+
+    &:hover,
+    &:active,
+    &:focus,
+    &--selected {
+        /* Badge-secondary variant for improved contrast when background color changes */
+        > .item-default {
+            background-color: var(--color-bg-1);
+            border-color: var(--color-bg-1);
+        }
+    }
+}
+
+.empty-results {
+    padding: 0 1rem;
+}
