@@ -8,6 +8,7 @@ import (
 
 type DependencyRepo struct {
 	ID      int
+	Scheme  string
 	Name    string
 	Version string
 }
@@ -19,12 +20,18 @@ func scanDependencyRepos(rows *sql.Rows, queryErr error) (dependencies []Depende
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var dep DependencyRepo
-		if err = rows.Scan(&dep.ID, &dep.Name, &dep.Version); err != nil {
+		var dependencyRepo DependencyRepo
+
+		if err = rows.Scan(
+			&dependencyRepo.ID,
+			&dependencyRepo.Scheme,
+			&dependencyRepo.Name,
+			&dependencyRepo.Version,
+		); err != nil {
 			return nil, err
 		}
 
-		dependencies = append(dependencies, dep)
+		dependencies = append(dependencies, dependencyRepo)
 	}
 
 	return dependencies, nil

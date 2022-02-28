@@ -70,7 +70,7 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 
 const listDependencyReposQuery = `
 -- source: internal/codeintel/dependencies/store/store.go:ListDependencyRepos
-SELECT id, name, version
+SELECT id, scheme, name, version
 FROM lsif_dependency_repos
 WHERE %s
 ORDER BY id DESC
