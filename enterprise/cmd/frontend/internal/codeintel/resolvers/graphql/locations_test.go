@@ -240,7 +240,7 @@ func TestResolveLocations(t *testing.T) {
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}

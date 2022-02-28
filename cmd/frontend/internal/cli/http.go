@@ -44,7 +44,7 @@ func newExternalHTTPHandler(
 	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-) (http.Handler, error) {
+) http.Handler {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
@@ -110,7 +110,7 @@ func newExternalHTTPHandler(
 	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
-	return h, nil
+	return h
 }
 
 func healthCheckMiddleware(next http.Handler) http.Handler {
