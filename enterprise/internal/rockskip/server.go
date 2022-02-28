@@ -22,11 +22,11 @@ type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err err
 
 const NULL CommitId = 0
 
-type Server struct {
+type Service struct {
 	db                   *sql.DB
 	git                  Git
 	createParser         func() ParseSymbolsFunc
-	status               *ServerStatus
+	status               *ServiceStatus
 	repoUpdates          chan struct{}
 	maxRepos             int
 	logQueries           bool
@@ -37,7 +37,7 @@ type Server struct {
 	pathSymbolsCacheSize int
 }
 
-func NewServer(
+func NewService(
 	db *sql.DB,
 	git Git,
 	createParser func() ParseSymbolsFunc,
@@ -47,13 +47,13 @@ func NewServer(
 	indexRequestsQueueSize int,
 	symbolsCacheSize int,
 	pathSymbolsCacheSize int,
-) (*Server, error) {
+) (*Service, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
 		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
 	}
 
-	server := &Server{
+	service := &Service{
 		db:                   db,
 		git:                  git,
 		createParser:         createParser,
@@ -68,16 +68,16 @@ func NewServer(
 		pathSymbolsCacheSize: pathSymbolsCacheSize,
 	}
 
-	go server.startCleanupLoop()
+	go service.startCleanupLoop()
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		go server.startIndexingLoop(server.indexRequestQueues[i])
+		go service.startIndexingLoop(service.indexRequestQueues[i])
 	}
 
-	return server, nil
+	return service, nil
 }
 
-func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
+func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	for indexRequest := range indexRequestQueue {
 		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
@@ -87,7 +87,7 @@ func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	}
 }
 
-func (s *Server) startCleanupLoop() {
+func (s *Service) startCleanupLoop() {
 	for range s.repoUpdates {
 		threadStatus := s.status.NewThreadStatus("cleanup")
 		err := DeleteOldRepos(context.Background(), s.db, s.maxRepos, threadStatus)

@@ -16,22 +16,22 @@ import (
 // RequestId is a unique int for each HTTP request.
 type RequestId = int
 
-// ServerStatus contains the status of all requests.
-type ServerStatus struct {
+// ServiceStatus contains the status of all requests.
+type ServiceStatus struct {
 	threadIdToThreadStatus map[RequestId]*ThreadStatus
 	nextThreadId           RequestId
 	mu                     sync.Mutex
 }
 
-func NewStatus() *ServerStatus {
-	return &ServerStatus{
+func NewStatus() *ServiceStatus {
+	return &ServiceStatus{
 		threadIdToThreadStatus: map[int]*ThreadStatus{},
 		nextThreadId:           0,
 		mu:                     sync.Mutex{},
 	}
 }
 
-func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
+func (s *ServiceStatus) NewThreadStatus(name string) *ThreadStatus {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -49,7 +49,7 @@ func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 	return threadStatus
 }
 
-func (s *Server) HandleStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	repositoryCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))

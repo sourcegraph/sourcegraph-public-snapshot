@@ -46,7 +46,7 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	git := NewGitserver(repositoryFetcher)
 	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
-	server, err := rockskip.NewServer(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
+	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
 	}

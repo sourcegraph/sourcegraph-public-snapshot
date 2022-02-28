@@ -100,14 +100,14 @@ func TestIndex(t *testing.T) {
 
 	createParser := func() ParseSymbolsFunc { return simpleParse }
 
-	server, err := NewServer(db, git, createParser, 1, 1, false, 1, 1, 1)
-	fatalIfError(err, "NewServer")
+	service, err := NewService(db, git, createParser, 1, 1, false, 1, 1, 1)
+	fatalIfError(err, "NewService")
 
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
 		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
-		symbols, err := server.Search(context.Background(), args)
+		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 
 		// Make sure the paths match.

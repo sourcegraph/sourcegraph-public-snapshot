@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Server) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
+func (s *Service) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -121,7 +121,7 @@ func mkIsMatch(args types.SearchArgs) (func(string) bool, error) {
 	}
 }
 
-func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
+func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 	key := fmt.Sprintf("%s@%s", rc.repo, rc.commit)
 
 	s.repoCommitToDoneMu.Lock()
@@ -163,7 +163,7 @@ func (s *Server) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func (s *Server) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) ([]result.Symbol, error) {
+func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) ([]result.Symbol, error) {
 	hops, err := getHops(ctx, s.db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
