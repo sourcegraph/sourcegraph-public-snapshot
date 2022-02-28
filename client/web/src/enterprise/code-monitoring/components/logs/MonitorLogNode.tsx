@@ -50,7 +50,7 @@ export const MonitorLogNode: React.FunctionComponent<{
             <span className={styles.separator} />
             <Button
                 onClick={toggleExpanded}
-                className="btn-icon text-left pl-0 d-flex align-items-center"
+                className="btn-icon text-left pl-0 border-0 d-flex align-items-center"
                 aria-label="Expand code monitor"
             >
                 {expanded ? (
