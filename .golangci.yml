@@ -15,6 +15,8 @@ linters:
     - typecheck
     - unconvert
     - unused
+    - unparam
+    - exportloopref
 
 linters-settings:
   depguard:

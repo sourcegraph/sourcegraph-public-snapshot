@@ -38,16 +38,24 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
-	for _, dep := range []reposource.PackageDependency{
-		parseNPMDependency(t, "bar@2.0.0"),
-		parseNPMDependency(t, "bar@2.0.0"),
-		parseNPMDependency(t, "bar@3.0.0"),
-		parseNPMDependency(t, "foo@1.0.0"),
-		parseNPMDependency(t, "foo@1.0.0"),
-		parseNPMDependency(t, "foo@2.0.0"),
+	for _, dep := range []struct {
+		reposource.PackageDependency
+		isNew bool
+	}{
+		{parseNPMDependency(t, "bar@2.0.0"), true},
+		{parseNPMDependency(t, "bar@2.0.0"), false},
+		{parseNPMDependency(t, "bar@3.0.0"), true},
+		{parseNPMDependency(t, "foo@1.0.0"), true},
+		{parseNPMDependency(t, "foo@1.0.0"), false},
+		{parseNPMDependency(t, "foo@2.0.0"), true},
 	} {
-		if err := store.UpsertDependencyRepo(ctx, dep); err != nil {
+		isNew, err := store.UpsertDependencyRepo(ctx, dep)
+		if err != nil {
 			t.Fatal(err)
+		}
+
+		if have, want := isNew, dep.isNew; have != want {
+			t.Fatalf("%s: want isNew=%t, have %t", dep.PackageManagerSyntax(), want, have)
 		}
 	}
 

@@ -59,25 +59,58 @@ const searchContextFragment = gql`
     }
 `
 
-export function fetchAutoDefinedSearchContexts(
+const searchContextWithSkippableFieldsFragment = gql`
+    fragment SearchContextMinimalFields on SearchContext {
+        __typename
+        id
+        name
+        spec
+        description
+        public
+        query
+        autoDefined
+        updatedAt
+        viewerCanManage
+        namespace @skip(if: $useMinimalFields) {
+            __typename
+            id
+            namespaceName
+        }
+        repositories @skip(if: $useMinimalFields) {
+            __typename
+            repository {
+                name
+            }
+            revisions
+        }
+    }
+`
+
+export function fetchAutoDefinedSearchContexts({
+    platformContext,
+    useMinimalFields,
+}: {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<AutoDefinedSearchContextsResult['autoDefinedSearchContexts']> {
+    useMinimalFields?: boolean
+}): Observable<AutoDefinedSearchContextsResult['autoDefinedSearchContexts']> {
     return platformContext
         .requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>({
             request: gql`
-                query AutoDefinedSearchContexts {
+                query AutoDefinedSearchContexts($useMinimalFields: Boolean!) {
                     autoDefinedSearchContexts {
-                        ...SearchContextFields
+                        ...SearchContextMinimalFields
                     }
                 }
-                ${searchContextFragment}
+                ${searchContextWithSkippableFieldsFragment}
             `,
-            variables: {},
+            variables: {
+                useMinimalFields: useMinimalFields ?? false,
+            },
             mightContainPrivateInfo: false,
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[])
+            map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts)
         )
 }
 
@@ -96,6 +129,7 @@ export function fetchSearchContexts({
     after,
     orderBy,
     descending,
+    useMinimalFields,
     platformContext,
 }: {
     first: number
@@ -104,6 +138,7 @@ export function fetchSearchContexts({
     after?: string
     orderBy?: GQL.SearchContextsOrderBy
     descending?: boolean
+    useMinimalFields?: boolean
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<ListSearchContextsResult['searchContexts']> {
     return platformContext
@@ -116,6 +151,7 @@ export function fetchSearchContexts({
                     $namespaces: [ID]
                     $orderBy: SearchContextsOrderBy
                     $descending: Boolean
+                    $useMinimalFields: Boolean!
                 ) {
                     searchContexts(
                         first: $first
@@ -126,7 +162,7 @@ export function fetchSearchContexts({
                         descending: $descending
                     ) {
                         nodes {
-                            ...SearchContextFields
+                            ...SearchContextMinimalFields
                         }
                         pageInfo {
                             hasNextPage
@@ -135,7 +171,7 @@ export function fetchSearchContexts({
                         totalCount
                     }
                 }
-                ${searchContextFragment}
+                ${searchContextWithSkippableFieldsFragment}
             `,
             variables: {
                 first,
@@ -144,6 +180,7 @@ export function fetchSearchContexts({
                 namespaces: namespaces ?? [],
                 orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                 descending: descending ?? false,
+                useMinimalFields: useMinimalFields ?? false,
             },
             mightContainPrivateInfo: true,
         })

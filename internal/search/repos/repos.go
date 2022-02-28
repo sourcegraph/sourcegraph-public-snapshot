@@ -8,6 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -562,7 +565,12 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, repoStore).Dependencies(ctx, repoRevs)
+	depsSvc := codeintel.GetDependenciesService(
+		r.DB,
+		&packageRepoSyncer{cli: repoupdater.DefaultClient},
+	)
+
+	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -580,6 +588,13 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, nil
+}
+
+type packageRepoSyncer struct{ cli *repoupdater.Client }
+
+func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
+	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
+	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
