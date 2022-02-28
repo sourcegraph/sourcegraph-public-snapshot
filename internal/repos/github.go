@@ -94,11 +94,10 @@ func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
 		dotcom.GithubAppCloud.Slug != ""
 }
 
-// getOrRenewGitHubAppInstallationAccessToken extracts and returns the token
+// GetOrRenewGitHubAppInstallationAccessToken extracts and returns the token
 // stored in the given external service config. It automatically renews and
-// updates the access token in-place if it had expired or about to expire within
-// 5 minutes.
-func getOrRenewGitHubAppInstallationAccessToken(
+// updates the access token if it had expired or about to expire in 5 minutes.
+func GetOrRenewGitHubAppInstallationAccessToken(
 	ctx context.Context,
 	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
@@ -141,7 +140,7 @@ func getOrRenewGitHubAppInstallationAccessToken(
 		// If we failed to update the new token and its expiration time, it is fine to
 		// try again later. We should not block further process since we already have the
 		// new token available for use at this time.
-		log15.Error("getOrRenewGitHubAppInstallationAccessToken.updateExternalService", "id", svc.ID, "error", err)
+		log15.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", "id", svc.ID, "error", err)
 	}
 	return *tok.Token, nil
 }
@@ -238,7 +237,7 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		token, err := getOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, client, installationID)
+		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, client, installationID)
 		if err != nil {
 			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}

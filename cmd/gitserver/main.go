@@ -6,14 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -21,6 +19,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -291,17 +290,9 @@ func getRemoteURLFunc(
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
 			svc.Kind == extsvc.KindGitHub {
-			parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return "", errors.Wrap(err, "parse config")
-			}
-
-			c, ok := parsed.(*schema.GitHubConnection)
-			if !ok {
-				return "", errors.Errorf("expect *schema.GitHubConnection but got %T", parsed)
-			}
-			if c.GithubAppInstallationID != "" {
-				baseURL, err := url.Parse(c.Url)
+			installationID := gjson.Get(svc.Config, "githubAppInstallationID").Int()
+			if installationID > 0 {
+				baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
 				if err != nil {
 					return "", errors.Wrap(err, "parse base URL")
 				}
@@ -323,30 +314,15 @@ func getRemoteURLFunc(
 
 				client := github.NewV3Client(apiURL, auther, cli)
 
-				installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+				token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServiceStore, svc, client, installationID)
 				if err != nil {
-					return "", errors.Wrap(err, "parse installation ID")
+					return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 				}
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-				defer cancel()
-
-				// TODO(cloud-saas): Cache the installation access token until it expires, see
-				// https://sourcegraph.atlassian.net/browse/CLOUD-255
-				token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
+				svc.Config, err = jsonc.Edit(svc.Config, token, "token")
 				if err != nil {
-					return "", errors.Wrap(err, "create app installation access token")
+					return "", errors.Wrap(err, "edit token")
 				}
-				if token.Token == nil {
-					return "", errors.New("empty token returned")
-				}
-
-				c.Token = *token.Token
-				config, err := json.Marshal(c)
-				if err != nil {
-					return "", errors.Wrap(err, "marshal config")
-				}
-				svc.Config = string(config)
 			}
 		}
 
