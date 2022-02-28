@@ -89,12 +89,6 @@ export interface CodeInsightsBackend {
     deleteInsight: (insightId: string) => Observable<unknown>
 
     /**
-     * Returns all available for users subjects (sharing levels, historically it was introduced
-     * from the setting cascade subject levels - global, org levels, personal)
-     */
-    getInsightSubjects: () => Observable<SupportedInsightSubject[]>
-
-    /**
      * Returns backend insight (via gql API handler)
      */
     getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
@@ -141,7 +135,7 @@ export interface CodeInsightsBackend {
 
     /**
      * Used for the dynamic insight example on the insights landing page.
-     * Attempts to return a repoository that contains the string "TODO"
+     * Attempts to return a repository that contains the string "TODO"
      * If a repository is not found it then returns the first repository it finds.
      *
      * Under the hood this is calling the search API with "select:repo TODO count:1"

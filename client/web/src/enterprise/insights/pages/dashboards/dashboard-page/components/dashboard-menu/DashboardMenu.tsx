@@ -8,7 +8,6 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { positionBottomRight } from '../../../../../components/context-menu/utils'
 import { InsightDashboard } from '../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../core/types/subjects'
 import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
 
 import styles from './DashboardMenu.module.scss'
@@ -22,7 +21,6 @@ export enum DashboardMenuAction {
 
 export interface DashboardMenuProps {
     innerRef: React.Ref<HTMLButtonElement>
-    subjects?: SupportedInsightSubject[]
     dashboard?: InsightDashboard
     onSelect?: (action: DashboardMenuAction) => void
     tooltipText?: string
@@ -30,10 +28,10 @@ export interface DashboardMenuProps {
 }
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
-    const { innerRef, dashboard, subjects, onSelect = () => {}, tooltipText, className } = props
+    const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
     const hasDashboard = dashboard !== undefined
-    const permissions = getDashboardPermissions(dashboard, subjects)
+    const permissions = getDashboardPermissions(dashboard)
 
     return (
         <Menu>

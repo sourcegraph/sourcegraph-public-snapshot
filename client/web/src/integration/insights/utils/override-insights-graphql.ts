@@ -62,6 +62,19 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 }),
             },
         }),
+        HasAvailableCodeInsight: () => ({
+            insightViews: {
+                __typename: 'InsightViewConnection',
+                pageInfo: { __typename: 'PageInfo', hasNextPage: true },
+            },
+        }),
+        IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
+        InsightsDashboards: () => ({
+            insightsDashboards: {
+                __typename: 'InsightsDashboardConnection',
+                nodes: [],
+            },
+        }),
         Insights: () => ({ insights: { nodes: [] } }),
         CurrentAuthState: () => ({
             currentUser: {

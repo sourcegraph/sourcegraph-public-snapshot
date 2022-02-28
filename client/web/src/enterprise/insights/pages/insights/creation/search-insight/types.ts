@@ -1,4 +1,4 @@
-import { InsightVisibility, SearchBasedInsightSeries } from '../../../../core/types'
+import { SearchBasedInsightSeries } from '../../../../core/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
@@ -22,12 +22,6 @@ export interface CreateInsightFormFields {
      * Repositories which to be used to get the info for code insights
      */
     repositories: string
-
-    /**
-     * Visibility setting which responsible for where insight will appear.
-     * possible value 'personal' | '<org id 1> ... | ... <org id N>'
-     */
-    visibility: InsightVisibility
 
     /**
      * Setting for set chart step - how often do we collect data.

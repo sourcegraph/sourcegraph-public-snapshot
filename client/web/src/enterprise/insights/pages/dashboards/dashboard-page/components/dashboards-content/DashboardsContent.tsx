@@ -39,9 +39,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
 
     // State to open/close add/remove insights modal UI
@@ -67,7 +66,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
-    const permissions = getDashboardPermissions(currentDashboard, subjects)
+    const permissions = getDashboardPermissions(currentDashboard)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -124,7 +123,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 />
 
                 <DashboardMenu
-                    subjects={subjects}
                     innerRef={menuReference}
                     tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
@@ -146,7 +144,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
             {currentDashboard ? (
                 <DashboardInsights
-                    subjects={subjects}
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
                     onAddInsightRequest={handleAddInsightRequest}

@@ -9,7 +9,6 @@ import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -26,17 +25,6 @@ export interface InsightCreateEvent {
 }
 
 export interface SearchInsightCreationPageProps extends TelemetryProps {
-    /**
-     * Set initial value for insight visibility setting.
-     */
-    visibility: string
-
-    /**
-     * List of all supported by code insights subjects that can store insight entities
-     * it's used for visibility setting section.
-     */
-    subjects: SupportedInsightSubject[]
-
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -57,12 +45,9 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
 }
 
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
-
-    // Set top-level scope value as initial value for the insight visibility
-    const mergedInitialValues = { ...initialValues, visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
@@ -136,8 +121,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                         <SearchInsightCreationContent
                             className="pb-5"
                             dataTestId="search-insight-create-page-content"
-                            initialValue={mergedInitialValues}
-                            subjects={subjects}
+                            initialValue={initialValues}
                             onSubmit={handleSubmit}
                             onCancel={handleCancel}
                             onChange={handleChange}

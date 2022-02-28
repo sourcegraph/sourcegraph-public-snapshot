@@ -12,7 +12,7 @@ export const getSanitizedLangStatsInsight = (values: LangStatsCreationFormFields
     id: `${InsightTypePrefix.langStats}.${camelCase(values.title)}`,
     type: InsightExecutionType.Runtime,
     viewType: InsightType.LangStats,
-    visibility: values.visibility,
+    visibility: '',
     title: values.title.trim(),
     repository: values.repository.trim(),
     otherThreshold: values.threshold / 100,

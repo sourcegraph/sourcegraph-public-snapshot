@@ -146,10 +146,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getBuiltInInsightData = getBuiltInInsight
 
-    // We don't have insight visibility and subject levels in the new GQL API anymore.
-    // it was part of setting-cascade based API.
-    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
-
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
     public updateInsight = (input: InsightUpdateInput): Observable<unknown> => updateInsight(this.apolloClient, input)
@@ -214,7 +210,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         const { dashboardId } = input
 
         // the 'all' dashboardId is not a real dashboard so return nothing
-        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
+        if (!dashboardId || dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }
 

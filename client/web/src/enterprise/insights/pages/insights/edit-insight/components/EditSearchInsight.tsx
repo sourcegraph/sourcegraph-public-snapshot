@@ -3,7 +3,6 @@ import React, { useMemo } from 'react'
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
@@ -11,19 +10,17 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    subjects: SupportedInsightSubject[]
     onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, subjects, onSubmit, onCancel } = props
+    const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
         if (insight.type === InsightExecutionType.Backend) {
             return {
                 title: insight.title,
-                visibility: insight.visibility,
                 repositories: '',
                 series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
                 stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
@@ -35,7 +32,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
 
         return {
             title: insight.title,
-            visibility: insight.visibility,
             repositories: insight.repositories.join(', '),
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
@@ -66,7 +62,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             mode="edit"
             className="pb-5"
             initialValue={insightFormValues}
-            subjects={subjects}
             dataTestId="search-insight-edit-page-content"
             onSubmit={handleSubmit}
             onCancel={onCancel}

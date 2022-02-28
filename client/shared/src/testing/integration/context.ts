@@ -15,6 +15,7 @@ import { first, timeoutWith } from 'rxjs/operators'
 
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
@@ -93,6 +94,12 @@ export interface IntegrationTestOptions {
      * The directory (value of `__dirname`) of the test file.
      */
     directory: string
+
+    /**
+     * Test specific JS context object override. It's used in order to override
+     * standard JSContext object for some particulars test.
+     */
+    customContext?: Partial<SourcegraphContext>
 }
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000

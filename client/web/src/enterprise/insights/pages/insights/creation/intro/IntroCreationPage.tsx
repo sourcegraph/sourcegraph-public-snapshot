@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useContext, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
@@ -8,8 +8,6 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 
 import {
     CaptureGroupInsightCard,
@@ -27,7 +25,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
     const history = useHistory()
     const { search } = useLocation()
-    const api = useContext(CodeInsightsBackendContext)
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -53,8 +50,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
         telemetryService.logViewEvent('CodeInsightsCreationPage')
     }, [telemetryService])
 
-    const isGqlApi = api instanceof CodeInsightsGqlBackend
-
     return (
         <Page className={classNames('container pb-5', styles.container)}>
             <PageHeader
@@ -73,12 +68,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             <div className={styles.sectionContent}>
                 <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
 
-                {isGqlApi && (
-                    <CaptureGroupInsightCard
-                        data-testid="create-capture-group-insight"
-                        onClick={handleCaptureGroupInsightClick}
-                    />
-                )}
+                <CaptureGroupInsightCard
+                    data-testid="create-capture-group-insight"
+                    onClick={handleCaptureGroupInsightClick}
+                />
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"

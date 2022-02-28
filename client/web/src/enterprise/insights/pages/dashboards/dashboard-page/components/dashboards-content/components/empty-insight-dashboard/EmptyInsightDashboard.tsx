@@ -4,7 +4,6 @@ import React from 'react'
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { getTooltipMessage, getDashboardPermissions } from '../../../../utils/get-dashboard-permissions'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
@@ -12,15 +11,14 @@ import styles from './EmptyInsightDashboard.module.scss'
 
 interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
-    subjects?: SupportedInsightSubject[]
     onAddInsight: () => void
 }
 
 export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, dashboard, subjects } = props
+    const { onAddInsight, dashboard } = props
 
     return isDashboardConfigurable(dashboard) ? (
-        <EmptySettingsBasedDashboard dashboard={dashboard} subjects={subjects} onAddInsight={onAddInsight} />
+        <EmptySettingsBasedDashboard dashboard={dashboard} onAddInsight={onAddInsight} />
     ) : (
         <EmptyBuiltInDashboard dashboard={dashboard} />
     )
@@ -50,8 +48,8 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  * Since it is possible with settings based dashboard to add existing insights to it.
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, dashboard, subjects } = props
-    const permissions = getDashboardPermissions(dashboard, subjects)
+    const { onAddInsight, dashboard } = props
+    const permissions = getDashboardPermissions(dashboard)
 
     return (
         <section className={styles.emptySection}>
