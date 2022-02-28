@@ -3,6 +3,7 @@ package codeintel
 import (
 	"context"
 	"database/sql"
+	"io"
 	"strings"
 	"sync"
 
@@ -67,9 +68,15 @@ func newDependenciesService(
 	return &DependenciesService{
 		db:              db,
 		syncer:          syncer,
-		lockfileService: &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive},
+		lockfileService: lockfiles.NewService(defaultArchiveStreamer{}, observationContext),
 		operations:      newDependencyServiceOperations(observationContext),
 	}
+}
+
+type defaultArchiveStreamer struct{}
+
+func (defaultArchiveStreamer) StreamArchive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	return gitserver.DefaultClient.Archive(ctx, repo, opts)
 }
 
 // RevSpecSet is a utility type for a set of RevSpecs.
