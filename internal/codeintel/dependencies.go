@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"io"
 	"strings"
 	"sync"
 
@@ -14,12 +13,14 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
@@ -62,17 +63,16 @@ func newDependenciesService(
 	observationContext *observation.Context,
 ) *DependenciesService {
 	return &DependenciesService{
-		db:              db,
-		syncer:          syncer,
-		lockfileService: lockfiles.NewService(defaultArchiveStreamer{}, observationContext),
-		operations:      newDependencyServiceOperations(observationContext),
+		db:     db,
+		syncer: syncer,
+		lockfileService: lockfiles.NewService(
+			authz.DefaultSubRepoPermsChecker,
+			git.LsFiles,
+			gitserver.DefaultClient.Archive,
+			observationContext,
+		),
+		operations: newDependencyServiceOperations(observationContext),
 	}
-}
-
-type defaultArchiveStreamer struct{}
-
-func (defaultArchiveStreamer) StreamArchive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return gitserver.DefaultClient.Archive(ctx, repo, opts)
 }
 
 // RevSpecSet is a utility type for a set of RevSpecs.
