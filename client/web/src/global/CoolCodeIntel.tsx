@@ -525,11 +525,6 @@ const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
-            onTokenClick={(token: CoolClickedToken | undefined) => {
-                if (props.onTokenClick) {
-                    props.onTokenClick(token)
-                }
-            }}
             coolCodeIntelEnabled={true}
             disableStatusBar={true}
             wrapCode={true}
