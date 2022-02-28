@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 
-import { SearchContextFields } from '@sourcegraph/search'
+import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Link } from '@sourcegraph/wildcard'
@@ -10,7 +10,7 @@ import { Badge, Link } from '@sourcegraph/wildcard'
 import styles from './SearchContextNode.module.scss'
 
 export interface SearchContextNodeProps {
-    node: SearchContextFields
+    node: SearchContextMinimalFields
     location: H.Location
     history: H.History
 }
@@ -41,7 +41,9 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
             )}
         </div>
         <div className={classNames('text-muted d-flex', styles.right)}>
-            {node.repositories.length > 0 && <div className="mr-2">{node.repositories.length} repositories</div>}
+            {node.repositories && node.repositories.length > 0 && (
+                <div className="mr-2">{node.repositories.length} repositories</div>
+            )}
             <div>
                 Updated <Timestamp date={node.updatedAt} noAbout={true} />
             </div>

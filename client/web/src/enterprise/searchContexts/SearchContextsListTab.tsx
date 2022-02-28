@@ -7,8 +7,8 @@ import {
     SearchContextProps,
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    SearchContextFields,
     SearchContextsOrderBy,
+    SearchContextMinimalFields,
 } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -66,7 +66,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
     )
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(() => [])), [
+        useMemo(() => fetchAutoDefinedSearchContexts({ platformContext }).pipe(catchError(() => [])), [
             fetchAutoDefinedSearchContexts,
             platformContext,
         ])
@@ -191,7 +191,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
             )}
 
             <FilteredConnection<
-                SearchContextFields,
+                SearchContextMinimalFields,
                 Omit<SearchContextNodeProps, 'node'>,
                 ListSearchContextsResult['searchContexts']
             >

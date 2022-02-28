@@ -14,7 +14,7 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextFields } from '@sourcegraph/search'
+import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
@@ -158,7 +158,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
 
     const [loadingState, setLoadingState] = useState<LoadingState>('DONE')
     const [searchFilter, setSearchFilter] = useState('')
-    const [searchContexts, setSearchContexts] = useState<SearchContextFields[]>([])
+    const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
 
     const loadNextPageUpdates = useRef(
@@ -198,6 +198,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             after: cursor,
                             namespaces: getUserSearchContextNamespaces(authenticatedUser),
                             platformContext,
+                            useMinimalFields: true,
                         }),
                     ])
                 ),
@@ -231,10 +232,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     ])
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(error => [asError(error)])), [
-            fetchAutoDefinedSearchContexts,
-            platformContext,
-        ])
+        useMemo(
+            () =>
+                fetchAutoDefinedSearchContexts({ platformContext, useMinimalFields: true }).pipe(
+                    catchError(error => [asError(error)])
+                ),
+            [fetchAutoDefinedSearchContexts, platformContext]
+        )
     )
     const filteredAutoDefinedSearchContexts = useMemo(
         () =>
