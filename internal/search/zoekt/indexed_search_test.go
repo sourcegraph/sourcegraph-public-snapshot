@@ -296,11 +296,9 @@ func TestIndexedSearch(t *testing.T) {
 				Zoekt: zoektArgs.Zoekt,
 			}
 
-			globalSearch := args.Mode == search.ZoektGlobalSearch
 			indexed, err := NewIndexedSearchRequest(
 				context.Background(),
 				args,
-				globalSearch,
 				search.TextRequest,
 				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
 			)

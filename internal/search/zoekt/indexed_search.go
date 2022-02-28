@@ -183,9 +183,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 }
 
 // IndexedSearchRequest exposes a method Search(...) to search over indexed
-// repositories. Two kinds of indexed searches implement it:
-// (1) IndexedUniverseSearchRequest that searches over the universe of indexed repositories.
-// (2) IndexedSubsetSearchRequest that searches over an indexed subset of repos in the universe of indexed repositories.
+// repositories.
 type IndexedSearchRequest interface {
 	Search(context.Context, streaming.Sender) error
 	IndexedRepos() map[api.RepoID]*search.RepositoryRevisions
@@ -215,7 +213,7 @@ func OnlyUnindexed(repos []*search.RepositoryRevisions, zoekt zoekt.Streamer, us
 	return nil, false, nil
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, globalSearch bool, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
 	request, ok, err := OnlyUnindexed(args.Repos, args.Zoekt, args.PatternInfo.Index, query.ContainsRefGlobs(args.Query), onMissing)
 	if err != nil {
 		return nil, err
@@ -235,57 +233,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, g
 		Zoekt:          args.Zoekt,
 	}
 
-	if globalSearch {
-		// performance: optimize global searches where Zoekt searches
-		// all shards anyway.
-		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
-	}
 	return NewIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
-}
-
-// IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
-type IndexedUniverseSearchRequest struct {
-	Args *search.ZoektParameters
-}
-
-func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
-	if s.Args == nil {
-		return nil
-	}
-	return DoZoektSearchGlobal(ctx, s.Args, c)
-}
-
-// IndexedRepos for a request over the indexed universe cannot answer which
-// repositories are searched. This return value is always empty.
-func (s *IndexedUniverseSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
-	return map[api.RepoID]*search.RepositoryRevisions{}
-}
-
-// UnindexedRepos over the indexed universe implies that we do not search unindexed repositories.
-func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevisions {
-	return nil
-}
-
-// newIndexedUniverseSearchRequest creates a search request for indexed search
-// on all indexed repositories. Strongly avoid calling this constructor
-// directly, and use NewIndexedSearchRequest instead, which will validate your
-// inputs and figure out the kind of indexed search to run.
-func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.ZoektParameters, repoOptions search.RepoOptions, userPrivateRepos []types.MinimalRepo) (_ *IndexedUniverseSearchRequest, err error) {
-	tr, _ := trace.New(ctx, "newIndexedUniverseSearchRequest", "text")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	defaultScope, err := DefaultGlobalQueryScope(repoOptions)
-	if err != nil {
-		return nil, err
-	}
-	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
-	zoektGlobalQuery := NewGlobalZoektQuery(zoektArgs.Query, defaultScope, includePrivate)
-	zoektGlobalQuery.ApplyPrivateFilter(userPrivateRepos)
-	zoektArgs.Query = zoektGlobalQuery.Generate()
-	return &IndexedUniverseSearchRequest{Args: zoektArgs}, nil
 }
 
 // IndexedSubsetSearchRequest is responsible for:
