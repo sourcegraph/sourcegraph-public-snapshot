@@ -8,6 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -15,7 +18,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -563,7 +565,12 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := codeintel.GetDependenciesService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
+	depsSvc := codeintel.GetDependenciesService(
+		r.DB,
+		&packageRepoSyncer{cli: repoupdater.DefaultClient},
+	)
+
+	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -583,20 +590,11 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	return depNames, depRevs, nil
 }
 
-type syncer struct {
-	svc interface {
-		GetByName(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-	}
-}
+type packageRepoSyncer struct{ cli *repoupdater.Client }
 
-func (s *syncer) Sync(ctx context.Context, repos []api.RepoName) error {
-	for _, repo := range repos {
-		if _, err := s.svc.GetByName(ctx, repo); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
+	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
+	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
