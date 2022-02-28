@@ -1513,6 +1513,16 @@ type Query {
         """
         organization: ID!
     ): [OrganizationInvitation!]!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteSearchUsers(
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [User!]!
 }
 
 """

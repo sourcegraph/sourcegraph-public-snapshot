@@ -37933,6 +37933,9 @@ func (c UserPublicRepoStoreSetUserReposFuncCall) Results() []interface{} {
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
 type MockUserStore struct {
+	// AutocompleteUserSearchFunc is an instance of a mock function object
+	// controlling the behavior of the method AutocompleteUserSearch.
+	AutocompleteUserSearchFunc *UserStoreAutocompleteUserSearchFunc
 	// CheckAndDecrementInviteQuotaFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// CheckAndDecrementInviteQuota.
@@ -38042,6 +38045,11 @@ type MockUserStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockUserStore() *MockUserStore {
 	return &MockUserStore{
+		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
+			defaultHook: func(context.Context, string) ([]*types.User, error) {
+				return nil, nil
+			},
+		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: func(context.Context, int32) (bool, error) {
 				return false, nil
@@ -38214,6 +38222,11 @@ func NewMockUserStore() *MockUserStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockUserStore() *MockUserStore {
 	return &MockUserStore{
+		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
+			defaultHook: func(context.Context, string) ([]*types.User, error) {
+				panic("unexpected invocation of MockUserStore.AutocompleteUserSearch")
+			},
+		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: func(context.Context, int32) (bool, error) {
 				panic("unexpected invocation of MockUserStore.CheckAndDecrementInviteQuota")
@@ -38386,6 +38399,9 @@ func NewStrictMockUserStore() *MockUserStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 	return &MockUserStore{
+		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
+			defaultHook: i.AutocompleteUserSearch,
+		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: i.CheckAndDecrementInviteQuota,
 		},
@@ -38486,6 +38502,117 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 			defaultHook: i.With,
 		},
 	}
+}
+
+// UserStoreAutocompleteUserSearchFunc describes the behavior when the
+// AutocompleteUserSearch method of the parent MockUserStore instance is
+// invoked.
+type UserStoreAutocompleteUserSearchFunc struct {
+	defaultHook func(context.Context, string) ([]*types.User, error)
+	hooks       []func(context.Context, string) ([]*types.User, error)
+	history     []UserStoreAutocompleteUserSearchFuncCall
+	mutex       sync.Mutex
+}
+
+// AutocompleteUserSearch delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) AutocompleteUserSearch(v0 context.Context, v1 string) ([]*types.User, error) {
+	r0, r1 := m.AutocompleteUserSearchFunc.nextHook()(v0, v1)
+	m.AutocompleteUserSearchFunc.appendCall(UserStoreAutocompleteUserSearchFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// AutocompleteUserSearch method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreAutocompleteUserSearchFunc) SetDefaultHook(hook func(context.Context, string) ([]*types.User, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutocompleteUserSearch method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreAutocompleteUserSearchFunc) PushHook(hook func(context.Context, string) ([]*types.User, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreAutocompleteUserSearchFunc) SetDefaultReturn(r0 []*types.User, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]*types.User, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreAutocompleteUserSearchFunc) PushReturn(r0 []*types.User, r1 error) {
+	f.PushHook(func(context.Context, string) ([]*types.User, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreAutocompleteUserSearchFunc) nextHook() func(context.Context, string) ([]*types.User, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreAutocompleteUserSearchFunc) appendCall(r0 UserStoreAutocompleteUserSearchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreAutocompleteUserSearchFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreAutocompleteUserSearchFunc) History() []UserStoreAutocompleteUserSearchFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreAutocompleteUserSearchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreAutocompleteUserSearchFuncCall is an object that describes an
+// invocation of method AutocompleteUserSearch on an instance of
+// MockUserStore.
+type UserStoreAutocompleteUserSearchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.User
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreAutocompleteUserSearchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreAutocompleteUserSearchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreCheckAndDecrementInviteQuotaFunc describes the behavior when the
