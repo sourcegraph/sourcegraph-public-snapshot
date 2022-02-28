@@ -52,9 +52,14 @@ func main() {
 	log.Printf("handling event for pull request %s, payload: %+v\n", payload.PullRequest.URL, payload.Dump())
 
 	// Discard unwanted events
-	if payload.PullRequest.Base.Ref != "main" {
-		log.Printf("unknown pull request base %q - discarding\n", payload.PullRequest.Base.Ref)
-		return
+	switch ref := payload.PullRequest.Base.Ref; ref {
+	// This is purely an API call usage optimization, so we don't need to be so specific
+	// as to require usage to provide the default branch - we can just rely on a simple
+	// allowlist of commonly used default branches.
+	case "main", "master", "release":
+		log.Printf("performing checks against allow-listed pull request base %q", ref)
+	default:
+		log.Printf("unknown pull request base %q - discarding\n", ref)
 	}
 	if payload.PullRequest.Draft {
 		log.Println("skipping event on draft PR")
@@ -114,6 +119,14 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 	issue := generateExceptionIssue(payload, &result)
 
+	log.Printf("Ensuring label for repository %q\n", payload.Repository.FullName)
+	_, _, err := ghc.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{
+		Name: github.String(payload.Repository.FullName),
+	})
+	if err != nil {
+		log.Printf("Ignoring error on CreateLabel: %s\n", err)
+	}
+
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
 	if err != nil {
@@ -139,7 +152,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
-		ValidateReviews: true,
+		ValidateReviews: false, // only validate reviews on post-merge
 	})
 	log.Printf("checkPR: %+v\n", result)
 

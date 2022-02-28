@@ -71,6 +71,35 @@ func (e *dirtySchemaError) Error() string {
 	}).Error()
 }
 
+type privilegedMigrationError struct {
+	schemaName string
+	definition definition.Definition
+}
+
+func newPrivilegedMigrationError(schemaName string, definition definition.Definition) error {
+	return &privilegedMigrationError{
+		schemaName: schemaName,
+		definition: definition,
+	}
+}
+
+func (e *privilegedMigrationError) Error() string {
+	return (instructionalError{
+		class: "refusing to apply a privileged migration",
+		description: fmt.Sprintf(
+			"schema %q requires database migration %d to be applied by a database user with elevated permissions\n",
+			e.schemaName,
+			e.definition.ID,
+		),
+		instructions: strings.Join([]string{
+			`The migration runner is currently being run with -unprivileged-only.`,
+			`The indicated migration is marked as privileged and cannot be applied by this invocation of the migration runner.`,
+			`Before re-invoking the migration runner, follow the instructions on https://docs.sourcegraph.com/admin/how-to/privileged_migrations.`,
+			`Please contact support@sourcegraph.com for further assistance.`,
+		}, " "),
+	}).Error()
+}
+
 type instructionalError struct {
 	class        string
 	description  string

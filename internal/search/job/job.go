@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -60,13 +61,6 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
-		// Filter out any jobs that aren't commit jobs as they are added
-		if jargs.SearchInputs.CodeMonitorID != nil {
-			if _, ok := job.(*commit.CommitSearch); !ok {
-				return
-			}
-		}
-
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -145,67 +139,63 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			}
 		}
 
-		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			if !skipRepoSubsetSearch {
-				typ := search.TextRequest
-				// TODO(rvantonder): we don't always have to run
-				// this converter. It depends on whether we run
-				// a zoekt search at all.
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-				if err != nil {
-					return nil, err
-				}
-				zoektArgs := &search.ZoektParameters{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: args.PatternInfo.FileMatchLimit,
-					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    args.SearcherURLs,
-					PatternInfo:     args.PatternInfo,
-					UseFullDeadline: args.UseFullDeadline,
-				}
-
-				addJob(true, &textsearch.RepoSubsetTextSearch{
-					ZoektArgs:        zoektArgs,
-					SearcherArgs:     searcherArgs,
-					NotSearcherOnly:  !onlyRunSearcher,
-					UseIndex:         args.PatternInfo.Index,
-					ContainsRefGlobs: query.ContainsRefGlobs(q),
-					RepoOpts:         repoOptions,
-				})
+		if args.ResultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
+			typ := search.TextRequest
+			// TODO(rvantonder): we don't always have to run
+			// this converter. It depends on whether we run
+			// a zoekt search at all.
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+			if err != nil {
+				return nil, err
 			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+
+			addJob(true, &textsearch.RepoSubsetTextSearch{
+				ZoektArgs:        zoektArgs,
+				SearcherArgs:     searcherArgs,
+				NotSearcherOnly:  !onlyRunSearcher,
+				UseIndex:         args.PatternInfo.Index,
+				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				RepoOpts:         repoOptions,
+			})
 		}
 
-		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-			if !skipRepoSubsetSearch {
-				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-				if err != nil {
-					return nil, err
-				}
-				zoektArgs := &search.ZoektParameters{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: args.PatternInfo.FileMatchLimit,
-					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
-				}
-
-				required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
-				addJob(required, &symbol.RepoSubsetSymbolSearch{
-					ZoektArgs:        zoektArgs,
-					PatternInfo:      args.PatternInfo,
-					Limit:            maxResults,
-					NotSearcherOnly:  !onlyRunSearcher,
-					UseIndex:         args.PatternInfo.Index,
-					ContainsRefGlobs: query.ContainsRefGlobs(q),
-					RepoOpts:         repoOptions,
-				})
+		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" && !skipRepoSubsetSearch {
+			typ := search.SymbolRequest
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+			if err != nil {
+				return nil, err
 			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
+			addJob(required, &symbol.RepoSubsetSymbolSearch{
+				ZoektArgs:        zoektArgs,
+				PatternInfo:      args.PatternInfo,
+				Limit:            maxResults,
+				NotSearcherOnly:  !onlyRunSearcher,
+				UseIndex:         args.PatternInfo.Index,
+				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				RepoOpts:         repoOptions,
+			})
 		}
 
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
@@ -224,8 +214,8 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Diff:                 diff,
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
-				CodeMonitorID:        jargs.SearchInputs.CodeMonitorID,
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Gitserver:            gitserver.DefaultClient,
 			})
 		}
 
@@ -449,6 +439,7 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
+		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
 		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
@@ -478,8 +469,7 @@ func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCo
 			case query.FieldRepo:
 				// We allow -repo: in global search.
 				return n.Negated
-			case
-				query.FieldRepoHasFile:
+			case query.FieldRepoHasFile:
 				return false
 			default:
 				return true

@@ -696,7 +696,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, mr, inner)
+			p.mockCreateComment(commentBody, inner)
 
 			have := p.source.CreateComment(p.ctx, p.changeset, commentBody)
 			if !errors.Is(have, inner) {
@@ -709,7 +709,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, mr, nil)
+			p.mockCreateComment(commentBody, nil)
 
 			if err := p.source.CreateComment(p.ctx, p.changeset, commentBody); err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -943,6 +943,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequest(expected gitlab.
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlab.ID, notes []*gitlab.Note, pageSize int, err error) {
 	gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
 		p.testCommonParams(ctx, client, project)
@@ -957,6 +958,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
 	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
 		p.testCommonParams(ctx, client, project)
@@ -971,6 +973,7 @@ func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEven
 	}
 }
 
+//nolint:unparam // unparam complains that `pageSize` always has same value across call-sites, but that's OK
 func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
 	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
 		p.testCommonParams(ctx, client, project)
@@ -1006,7 +1009,7 @@ func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, u
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, mr *gitlab.MergeRequest, err error) {
+func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, err error) {
 	gitlab.MockCreateMergeRequestNote = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, body string) error {
 		p.testCommonParams(ctx, client, project)
 		if expected != body {
@@ -1099,7 +1102,7 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src ChangesetSource
-		src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
+		src, err := newGitLabSource(&schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -1123,7 +1126,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src ChangesetSource
-				src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
+				src, err := newGitLabSource(&schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -1153,7 +1156,7 @@ func TestDecorateMergeRequestData(t *testing.T) {
 		src, err := newGitLabSource(&schema.GitLabConnection{
 			Url:   "https://gitlab.com",
 			Token: os.Getenv("GITLAB_TOKEN"),
-		}, cf, nil)
+		}, cf)
 
 		assert.Nil(t, err)
 		return src

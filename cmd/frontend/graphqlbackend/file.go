@@ -55,7 +55,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 }) (string, error) {
 	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
 	filePath := "file." + language
-	html, _, err := highlight.Code(ctx, highlight.Params{
+	html, _, _, err := highlight.Code(ctx, highlight.Params{
 		Content:        []byte(args.Code),
 		Filepath:       filePath,
 		DisableTimeout: args.DisableTimeout,

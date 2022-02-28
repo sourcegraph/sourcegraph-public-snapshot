@@ -210,6 +210,36 @@ func Zoekt() *monitoring.Container {
 				},
 			},
 			{
+				Title: "Git fetch durations",
+				Rows: []monitoring.Row{
+					{
+
+						{
+							Name:        "90th_percentile_successful_git_fetch_durations_5m",
+							Description: "90th percentile successful git fetch durations over 5m",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="true"}[5m])))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Long git fetch times can be a leading indicator of saturation.
+							`,
+						},
+						{
+							Name:        "90th_percentile_failed_git_fetch_durations_5m",
+							Description: "90th percentile failed git fetch durations over 5m",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="false"}[5m])))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Long git fetch times can be a leading indicator of saturation.
+							`,
+						},
+					},
+				},
+			},
+			{
 				Title: "Indexing results",
 				Rows: []monitoring.Row{
 					{
