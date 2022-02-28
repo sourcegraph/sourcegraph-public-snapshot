@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -39,9 +40,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	opts := gitserver.ArchiveOptions{
 		Treeish: rev,
 		Format:  "zip",
-		Paths: []string{
-			"*" + NPMFilename,
-		},
+		Paths:   lockfilePaths,
 	}
 
 	rc, err := s.archiveStreamer.StreamArchive(ctx, repo, opts)
@@ -103,6 +102,15 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	return deps, err
 }
 
+var lockfilePaths = func() (paths []string) {
+	paths = make([]string, 0, len(parsers))
+	for filename := range parsers {
+		paths = append(paths, "*"+filename)
+	}
+	sort.Strings(paths)
+	return
+}()
+
 func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	r, err := f.Open()
 	if err != nil {
@@ -110,12 +118,7 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := Parse(f.Name, contents)
+	ds, err := Parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
