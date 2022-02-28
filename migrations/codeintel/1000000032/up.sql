@@ -62,10 +62,6 @@ CREATE INDEX IF NOT EXISTS rockskip_ancestry_repo_commit_id ON rockskip_ancestry
 
 CREATE INDEX IF NOT EXISTS rockskip_symbols_repo_id_path_name ON rockskip_symbols(repo_id, path, name);
 
-CREATE EXTENSION IF NOT EXISTS intarray;
-
-COMMENT ON EXTENSION intarray IS 'functions, operators, and index support for 1-D arrays of integers';
-
 CREATE INDEX IF NOT EXISTS rockskip_symbols_gin ON rockskip_symbols USING GIN (
     singleton_integer(repo_id) gin__int_ops,
     added gin__int_ops,
