@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -59,7 +58,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		{ID: 1, Name: "bar", Version: "2.0.0"},
 	}
 
-	opt := cmpopts.IgnoreFields(dbstore.NPMDependencyRepo{}, "ID")
+	opt := cmpopts.IgnoreFields(DependencyRepo{}, "ID")
 	if diff := cmp.Diff(have, want, opt); diff != "" {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
 	}
