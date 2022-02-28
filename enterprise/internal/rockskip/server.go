@@ -80,7 +80,7 @@ func NewServer(
 func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	for indexRequest := range indexRequestQueue {
 		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-		// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+		// See doc/dev/background-information/sql/locking_behavior.md for more details.
 		conn, err := s.db.Conn(context.Background())
 		if err != nil {
 			log15.Error("Failed to get connection for indexing thread", "error", err)
@@ -100,7 +100,7 @@ func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
 func (s *Server) startCleanupLoop() {
 	for range s.repoUpdates {
 		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-		// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+		// See doc/dev/background-information/sql/locking_behavior.md for more details.
 		conn, err := s.db.Conn(context.Background())
 		if err != nil {
 			log15.Error("Failed to get connection for deleting old repos", "error", err)
