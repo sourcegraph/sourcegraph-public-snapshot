@@ -12,17 +12,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestListDependencies(t *testing.T) {
-	lsFiles := func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error) {
-		return []string{"client/package-lock.json", "package-lock.json"}, nil
-	}
-
-	archive := func(c context.Context, repo api.RepoName, ao gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	gitSvc := NewMockGitService()
+	gitSvc.LsFilesFunc.SetDefaultReturn([]string{"client/package-lock.json", "package-lock.json"}, nil)
+	gitSvc.ArchiveFunc.SetDefaultHook(func(c context.Context, repo api.RepoName, ao gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		var b bytes.Buffer
 		zw := zip.NewWriter(&b)
 		defer zw.Close()
@@ -43,13 +40,9 @@ func TestListDependencies(t *testing.T) {
 		}
 
 		return io.NopCloser(&b), nil
-	}
+	})
 
-	s := TestService(
-		authz.DefaultSubRepoPermsChecker,
-		lsFiles,
-		archive,
-	)
+	s := TestService(gitSvc)
 
 	ctx := context.Background()
 	got, err := s.ListDependencies(ctx, "foo", "HEAD")

@@ -1,12 +1,15 @@
 package dependencies
 
 import (
+	"context"
+	"io"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
@@ -32,15 +35,23 @@ func GetService(db database.DB, syncer Syncer) *Service {
 
 		svc = newService(
 			store.GetStore(db),
-			lockfiles.GetService(
-				authz.DefaultSubRepoPermsChecker,
-				git.LsFiles,
-				gitserver.DefaultClient.Archive,
-			),
+			lockfiles.GetService(&gitService{authz.DefaultSubRepoPermsChecker}),
 			syncer,
 			observationContext,
 		)
 	})
 
 	return svc
+}
+
+type gitService struct {
+	checker authz.SubRepoPermissionChecker
+}
+
+func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, paths ...string) ([]string, error) {
+	return git.LsFiles(ctx, s.checker, repo, commits, paths...)
+}
+
+func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	return gitserver.DefaultClient.Archive(ctx, repo, opts)
 }
