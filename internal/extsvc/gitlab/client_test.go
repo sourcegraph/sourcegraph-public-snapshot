@@ -6,12 +6,17 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )
+
+func TestSomething(t *testing.T) {
+	time.Sleep(30 * time.Second)
+}
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
 	// To update this test's fixtures, use the GitLab token stored in
