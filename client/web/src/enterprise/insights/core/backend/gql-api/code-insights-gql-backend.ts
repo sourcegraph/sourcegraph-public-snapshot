@@ -492,4 +492,4 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
 const getRepositoryName = (
     result: ApolloQueryResult<ExampleTodoRepositoryResult | ExampleFirstRepositoryResult>
-): string => result.data.search?.results.repositories[0].name || ''
+): string => result.data.search?.results.repositories[0]?.name || ''
