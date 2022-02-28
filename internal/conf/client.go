@@ -2,11 +2,9 @@ package conf
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/rand"
 	"net"
-	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,9 +30,6 @@ var (
 )
 
 func DefaultClient() *client {
-	fmt.Println("-----")
-	debug.PrintStack()
-	fmt.Println("-----")
 	defaultClientOnce.Do(func() {
 		defaultClientVal = initDefaultClient()
 	})

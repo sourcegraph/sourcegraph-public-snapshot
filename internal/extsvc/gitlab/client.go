@@ -34,8 +34,7 @@ var (
 	traceEnabled int32 = 0
 )
 
-// TODO
-func initConfTODO() {
+func tryEnableTracing() {
 	go func() {
 		conf.Watch(func() {
 			exp := conf.Get().ExperimentalFeatures
@@ -86,7 +85,9 @@ type CommonOp struct {
 }
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
-	initConfTODO()
+	// Check the configuration to see if the experimental tracing feature is to be enabled.
+	tryEnableTracing()
+
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
