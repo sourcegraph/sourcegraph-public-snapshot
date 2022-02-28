@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -117,7 +118,7 @@ func (s *Server) startCleanupLoop() {
 	}
 }
 
-func getHops(ctx context.Context, tx Queryable, commit int, tasklog *TaskLog) ([]int, error) {
+func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
 	tasklog.Start("get hops")
 
 	current := commit

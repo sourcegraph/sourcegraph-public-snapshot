@@ -15,6 +15,7 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -265,7 +266,7 @@ func (s *Server) querySymbols(ctx context.Context, args types.SearchArgs, repoId
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db Queryable, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
+func logQuery(ctx context.Context, db dbutil.DB, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)

@@ -9,18 +9,13 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Queryable interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-}
-
 type CommitId = int
 
-func GetCommitById(ctx context.Context, db Queryable, givenCommit CommitId) (commitHash string, ancestor CommitId, height int, present bool, err error) {
+func GetCommitById(ctx context.Context, db dbutil.DB, givenCommit CommitId) (commitHash string, ancestor CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT commit_id, ancestor, height
 		FROM rockskip_ancestry
@@ -34,7 +29,7 @@ func GetCommitById(ctx context.Context, db Queryable, givenCommit CommitId) (com
 	return commitHash, ancestor, height, true, nil
 }
 
-func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash string) (commit CommitId, height int, present bool, err error) {
+func GetCommitByHash(ctx context.Context, db dbutil.DB, repoId int, commitHash string) (commit CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id, height
 		FROM rockskip_ancestry
@@ -48,7 +43,7 @@ func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash s
 	return commit, height, true, nil
 }
 
-func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash string, height int, ancestor CommitId) (id CommitId, err error) {
+func InsertCommit(ctx context.Context, db dbutil.DB, repoId int, commitHash string, height int, ancestor CommitId) (id CommitId, err error) {
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_ancestry (commit_id, repo_id, height, ancestor)
 		VALUES ($1, $2, $3, $4)
@@ -57,7 +52,7 @@ func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash stri
 	return id, errors.Wrap(err, "InsertCommit")
 }
 
-func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name string, hop CommitId) (id int, found bool, err error) {
+func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name string, hop CommitId) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_symbols
@@ -71,7 +66,7 @@ func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name 
 	return id, true, nil
 }
 
-func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD, hop CommitId) error {
+func UpdateSymbolHops(ctx context.Context, db dbutil.DB, id int, status StatusAD, hop CommitId) error {
 	column := statusADToColumn(status)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_symbols
@@ -81,7 +76,7 @@ func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD
 	return errors.Wrap(err, "UpdateSymbolHops")
 }
 
-func InsertSymbol(ctx context.Context, db Queryable, hop CommitId, repoId int, path string, name string) (id int, err error) {
+func InsertSymbol(ctx context.Context, db dbutil.DB, hop CommitId, repoId int, path string, name string) (id int, err error) {
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_symbols (added, deleted, repo_id, path, name)
 		                      VALUES ($1   , $2     , $3     , $4  , $5  )
@@ -90,7 +85,7 @@ func InsertSymbol(ctx context.Context, db Queryable, hop CommitId, repoId int, p
 	return id, errors.Wrap(err, "InsertSymbol")
 }
 
-func AppendHop(ctx context.Context, db Queryable, repoId int, hops []CommitId, givenStatus StatusAD, newHop CommitId) error {
+func AppendHop(ctx context.Context, db dbutil.DB, repoId int, hops []CommitId, givenStatus StatusAD, newHop CommitId) error {
 	column := statusADToColumn(givenStatus)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_symbols
@@ -100,7 +95,7 @@ func AppendHop(ctx context.Context, db Queryable, repoId int, hops []CommitId, g
 	return errors.Wrap(err, "AppendHop")
 }
 
-func DeleteRedundant(ctx context.Context, db Queryable, hop CommitId) error {
+func DeleteRedundant(ctx context.Context, db dbutil.DB, hop CommitId) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE rockskip_symbols
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
@@ -201,7 +196,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 	return true, nil
 }
 
-func PrintInternals(ctx context.Context, db Queryable) error {
+func PrintInternals(ctx context.Context, db dbutil.DB) error {
 	fmt.Println("Commit ancestry:")
 	fmt.Println()
 
@@ -273,7 +268,7 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 	return nil
 }
 
-func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) (id int, err error) {
+func updateLastAccessedAt(ctx context.Context, db dbutil.DB, repo string) (id int, err error) {
 	err = db.QueryRowContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
@@ -303,7 +298,7 @@ func statusADToColumn(status StatusAD) string {
 var RW_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-rw"))
 var INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
 
-func lock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (func() error, error) {
+func lock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (func() error, error) {
 	key := int32(fnv1.HashString32(repo))
 
 	threadStatus.Tasklog.Start(name)
@@ -325,7 +320,7 @@ func lock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, namespa
 	return release, nil
 }
 
-func tryLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (bool, func() error, error) {
+func tryLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (bool, func() error, error) {
 	key := int32(fnv1.HashString32(repo))
 
 	threadStatus.Tasklog.Start(name)
@@ -353,17 +348,17 @@ func tryLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, name
 }
 
 // tryRLock attempts to acquire a read lock on the repo.
-func tryRLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
+func tryRLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, repo string) (bool, func() error, error) {
 	return tryLock(ctx, db, threadStatus, RW_LOCKS_NAMESPACE, "rLock", repo, "pg_try_advisory_lock_shared", "pg_advisory_unlock_shared")
 }
 
 // wLock acquires the write lock on the repo. It blocks only when another connection holds a read or the
 // write lock. That means a single connection can acquire the write lock while holding a read lock.
-func wLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (func() error, error) {
+func wLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, repo string) (func() error, error) {
 	return lock(ctx, db, threadStatus, RW_LOCKS_NAMESPACE, "wLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
 }
 
 // iLock acquires the indexing lock on the repo.
-func iLock(ctx context.Context, db Queryable, threadStatus *ThreadStatus, repo string) (func() error, error) {
+func iLock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, repo string) (func() error, error) {
 	return lock(ctx, db, threadStatus, INDEXING_LOCKS_NAMESPACE, "iLock", repo, "pg_advisory_lock", "pg_advisory_unlock")
 }
