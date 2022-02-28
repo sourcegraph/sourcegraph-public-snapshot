@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -22,9 +23,9 @@ type Sourcer func(*types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(externalServicesStore database.ExternalServiceStore, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(svc, cf)
+		src, err := NewSource(externalServicesStore, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -38,10 +39,10 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
 	case extsvc.KindBitbucketServer:
