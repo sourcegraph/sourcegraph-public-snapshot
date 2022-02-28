@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS rockskip_repos (
     id               SERIAL    PRIMARY KEY,
     repo             TEXT      NOT NULL,
@@ -71,5 +69,3 @@ CREATE INDEX IF NOT EXISTS rockskip_symbols_gin ON rockskip_symbols USING GIN (
     singleton(name),
     name gin_trgm_ops
 );
-
-COMMIT;
