@@ -329,7 +329,7 @@ var testEnterpriseMigrations = []Migration{
 
 func timePtr(t time.Time) *time.Time { return &t }
 
-//nolint:unparam // Same argument for major across call-sites is OK
+//nolint:unparam // unparam complains that `major` always has same value across call-sites, but that's OK
 func newVersionPtr(major, minor int) *Version {
 	v := NewVersion(major, minor)
 	return &v

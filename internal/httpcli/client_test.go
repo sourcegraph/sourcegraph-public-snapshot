@@ -443,7 +443,7 @@ func TestExpJitterDelay(t *testing.T) {
 	}
 }
 
-//nolint:unparam // Same argument for code across call-sites is OK
+//nolint:unparam // unparam complains that `code` always has same value across call-sites, but that's OK
 func newFakeClient(code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()

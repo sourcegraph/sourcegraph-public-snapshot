@@ -833,7 +833,7 @@ func TestComputeLabels(t *testing.T) {
 	}
 }
 
-//nolint:unparam // Same argument for state across call-sites is OK
+//nolint:unparam // unparam complains that `state` always has same value across call-sites, but that's OK
 func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes.Changeset {
 	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeBitbucketServer,

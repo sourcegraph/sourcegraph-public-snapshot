@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//nolint:unparam // Same argument for u across call-sites is OK
+//nolint:unparam // unparam complains that `u` always has same value across call-sites, but that's OK
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {

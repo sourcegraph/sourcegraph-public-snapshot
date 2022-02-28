@@ -1730,7 +1730,7 @@ WHERE perms.repo_id IN
 	return m, nil
 }
 
-//nolint:unparam // Same argument for title across call-sites is OK
+//nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
 	began := s.clock()
 	tr, ctx := trace.New(ctx, "database.PermsStore."+family, title)
