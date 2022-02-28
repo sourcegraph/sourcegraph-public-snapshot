@@ -9,7 +9,6 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	indexerconsts "github.com/sourcegraph/sourcegraph/internal/codeintel/indexer-consts"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -96,7 +95,7 @@ type preciseCodeIntelSupportResolver struct {
 
 func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseCodeIntelSupportResolver {
 	return &preciseCodeIntelSupportResolver{
-		indexers: indexerconsts.LanguageToIndexer[path.Ext(filepath)],
+		indexers: languageToIndexer[path.Ext(filepath)],
 	}
 }
 
