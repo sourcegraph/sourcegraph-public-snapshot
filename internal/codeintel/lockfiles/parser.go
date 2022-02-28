@@ -21,13 +21,14 @@ var parsers = map[string]*parser{
 	"yarn.lock":         {yarn.Parse, npmPackage},
 }
 
-var lockfilePaths = func() (paths []string) {
-	paths = make([]string, 0, len(parsers))
+var lockfilePaths = func() []string {
+	paths := make([]string, 0, len(parsers))
 	for filename := range parsers {
 		paths = append(paths, "*"+filename)
 	}
 	sort.Strings(paths)
-	return
+
+	return paths
 }()
 
 func npmPackage(lib types.Library) (reposource.PackageDependency, error) {
