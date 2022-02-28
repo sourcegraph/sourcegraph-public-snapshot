@@ -8,23 +8,33 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	GitArchive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	archiveStreamer ArchiveStreamer
+	operations      *operations
+}
+
+func NewService(archiveStreamer ArchiveStreamer, observationContext *observation.Context) *Service {
+	return &Service{
+		archiveStreamer: archiveStreamer,
+		operations:      newOperations(observationContext),
+	}
 }
 
 func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
-	tr, ctx := trace.New(ctx, "lockfiles.StreamDependencies", string(repo)+"@"+rev)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	opts := gitserver.ArchiveOptions{
 		Treeish: rev,
@@ -34,7 +44,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 		},
 	}
 
-	rc, err := s.GitArchive(ctx, repo, opts)
+	rc, err := s.archiveStreamer.StreamArchive(ctx, repo, opts)
 	if err != nil {
 		return err
 	}
@@ -79,11 +89,11 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 }
 
 func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
-	tr, ctx := trace.New(ctx, "lockfiles.ListDependencies", string(repo)+"@"+rev)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
 		deps = append(deps, d)
