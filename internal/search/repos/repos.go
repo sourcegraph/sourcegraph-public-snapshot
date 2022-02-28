@@ -565,7 +565,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := codeintel.GetDependenciesService(
+	depsSvc := codeintel.GetService(
 		r.DB,
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)

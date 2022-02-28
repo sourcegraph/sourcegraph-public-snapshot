@@ -6,9 +6,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -19,59 +17,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
+// Service encapsulates the resolution and persistence of dependencies at the repository
 // and package levels.
-type DependenciesService struct {
-	db              database.DB
-	syncer          Syncer
-	lockfileService *lockfiles.Service
-	operations      *dependencyServiceOperations
+type Service struct {
+	db          database.DB
+	syncer      Syncer
+	lockfileSvc *lockfiles.Service
+	operations  *operations
 }
 
-type Syncer interface {
-	// Sync will lazily sync the repos that have been inserted into the database but have not yet been
-	// cloned. See repos.Syncer.SyncRepo.
-	Sync(ctx context.Context, repo api.RepoName) error
-}
+func newService(db database.DB, syncer Syncer, observationContext *observation.Context) *Service {
+	lockfileSvc := lockfiles.NewService(
+		authz.DefaultSubRepoPermsChecker,
+		git.LsFiles,
+		gitserver.DefaultClient.Archive,
+		observationContext,
+	)
 
-var (
-	depSvc     *DependenciesService
-	depSvcOnce sync.Once
-)
-
-func GetDependenciesService(db database.DB, syncer Syncer) *DependenciesService {
-	depSvcOnce.Do(func() {
-		observationContext := &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-
-		depSvc = newDependenciesService(db, syncer, observationContext)
-	})
-
-	return depSvc
-}
-
-func newDependenciesService(
-	db database.DB,
-	syncer Syncer,
-	observationContext *observation.Context,
-) *DependenciesService {
-	return &DependenciesService{
-		db:     db,
-		syncer: syncer,
-		lockfileService: lockfiles.NewService(
-			authz.DefaultSubRepoPermsChecker,
-			git.LsFiles,
-			gitserver.DefaultClient.Archive,
-			observationContext,
-		),
-		operations: newDependencyServiceOperations(observationContext),
+	return &Service{
+		db:          db,
+		syncer:      syncer,
+		lockfileSvc: lockfileSvc,
+		operations:  newOperations(observationContext),
 	}
 }
 
@@ -80,7 +50,7 @@ type RevSpecSet map[api.RevSpec]struct{}
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (dependencyRevs map[api.RepoName]RevSpecSet, err error) {
+func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (dependencyRevs map[api.RepoName]RevSpecSet, err error) {
 	logFields := make([]log.Field, 0, 2)
 	if len(repoRevs) == 1 {
 		for repoName, revs := range repoRevs {
@@ -123,7 +93,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 				}
 				defer sem.Release(1)
 
-				deps, err := r.lockfileService.ListDependencies(ctx, repoName, string(rev))
+				deps, err := r.lockfileSvc.ListDependencies(ctx, repoName, string(rev))
 				if err != nil {
 					return err
 				}
