@@ -56,7 +56,7 @@ export const MonitorLogNode: React.FunctionComponent<{
                 {expanded ? (
                     <ChevronDownIcon className="mr-2 flex-shrink-0" />
                 ) : (
-                    <ChevronRightIcon className="mr-1 flex-shrink-0" />
+                    <ChevronRightIcon className="mr-2 flex-shrink-0" />
                 )}
                 {hasError ? (
                     <AlertCircleIcon
