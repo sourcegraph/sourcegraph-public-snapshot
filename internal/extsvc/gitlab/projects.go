@@ -167,7 +167,7 @@ type cachedProj struct {
 
 // getProjectFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getProjectFromCache(ctx context.Context, key string) *cachedProj {
+func (c *Client) getProjectFromCache(_ context.Context, key string) *cachedProj {
 	b, ok := c.projCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil

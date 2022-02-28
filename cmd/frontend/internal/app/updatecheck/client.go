@@ -270,7 +270,7 @@ func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.
 	return json.Marshal(codeHostIntegrationUsage)
 }
 
-func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()

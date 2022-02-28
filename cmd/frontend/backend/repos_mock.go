@@ -29,7 +29,7 @@ var errRepoNotFound = &errcode.Mock{
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
+	s.Get = func(_ context.Context, repo api.RepoID) (*types.Repo, error) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
@@ -42,7 +42,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 
 func (s *MockRepos) MockGetByName(t *testing.T, wantName api.RepoName, repo api.RepoID) (called *bool) {
 	called = new(bool)
-	s.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+	s.GetByName = func(_ context.Context, name api.RepoName) (*types.Repo, error) {
 		*called = true
 		if name != wantName {
 			t.Errorf("got repo name %q, want %q", name, wantName)
@@ -55,7 +55,7 @@ func (s *MockRepos) MockGetByName(t *testing.T, wantName api.RepoName, repo api.
 
 func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *bool) {
 	called = new(bool)
-	s.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
+	s.Get = func(_ context.Context, repo api.RepoID) (*types.Repo, error) {
 		*called = true
 		if repo != returns.ID {
 			t.Errorf("got repo %d, want %d", repo, returns.ID)
@@ -68,7 +68,7 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *types.Repo) (called *b
 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *bool) {
 	called = new(bool)
-	s.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+	s.List = func(_ context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {

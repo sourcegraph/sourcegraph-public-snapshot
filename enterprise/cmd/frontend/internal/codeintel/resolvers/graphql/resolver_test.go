@@ -89,7 +89,7 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 }
 
 func TestMakeGetUploadsOptions(t *testing.T) {
-	opts, err := makeGetUploadsOptions(context.Background(), &gql.LSIFRepositoryUploadsQueryArgs{
+	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{
 			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
@@ -120,7 +120,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 }
 
 func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
-	opts, err := makeGetUploadsOptions(context.Background(), &gql.LSIFRepositoryUploadsQueryArgs{
+	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{},
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 }
 
 func TestMakeGetIndexesOptions(t *testing.T) {
-	opts, err := makeGetIndexesOptions(context.Background(), &gql.LSIFRepositoryIndexesQueryArgs{
+	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{
 			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
@@ -170,7 +170,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 }
 
 func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
-	opts, err := makeGetIndexesOptions(context.Background(), &gql.LSIFRepositoryIndexesQueryArgs{
+	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{},
 	})
 	if err != nil {

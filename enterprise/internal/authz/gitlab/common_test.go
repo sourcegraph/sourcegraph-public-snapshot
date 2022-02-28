@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -368,13 +366,8 @@ func (m mockAuthnProvider) Refresh(ctx context.Context) error {
 	panic("should not be called")
 }
 
-func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.Account {
+func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) *extsvc.Account {
 	var data extsvc.AccountData
-
-	var authData *oauth2.Token
-	if oauthTok != "" {
-		authData = &oauth2.Token{AccessToken: oauthTok}
-	}
 
 	if serviceType == extsvc.TypeGitLab {
 		gitlabAcctID, err := strconv.Atoi(accountID)
@@ -384,7 +377,7 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 
 		gitlab.SetExternalAccountData(&data, &gitlab.User{
 			ID: int32(gitlabAcctID),
-		}, authData)
+		}, nil)
 	}
 
 	return &extsvc.Account{

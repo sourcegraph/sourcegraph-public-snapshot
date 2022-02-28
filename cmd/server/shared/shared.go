@@ -149,11 +149,7 @@ func Main() {
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
-	monitoringLines, err := maybeMonitoring()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(monitoringLines) != 0 {
+	if monitoringLines := maybeMonitoring(); len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
 	}
 

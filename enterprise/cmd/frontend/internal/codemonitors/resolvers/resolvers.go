@@ -211,7 +211,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	toCreate, toDelete, err := splitActionIDs(ctx, args, actionIDs)
+	toCreate, toDelete, err := splitActionIDs(args, actionIDs)
 	if len(toDelete) == len(actionIDs) && len(toCreate) == 0 {
 		return nil, errors.Errorf("you tried to delete all actions, but every monitor must be connected to at least 1 action")
 	}
@@ -436,7 +436,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 
 // splitActionIDs splits actions into three buckets: create, delete and update.
 // Note: args is mutated. After splitActionIDs, args only contains actions to be updated.
-func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
+func splitActionIDs(args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
 	aMap := make(map[graphql.ID]struct{}, len(actionIDs))
 	for _, id := range actionIDs {
 		aMap[id] = struct{}{}

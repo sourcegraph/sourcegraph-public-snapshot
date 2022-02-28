@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func init() {
@@ -20,9 +19,8 @@ func init() {
 }
 
 func TestIndexScheduler(t *testing.T) {
-	now := timeutil.Now()
 	dbStore := testIndexSchedulerMockDBStore()
-	policyMatcher := testIndexSchedulerMockPolicyMatcher(now)
+	policyMatcher := testIndexSchedulerMockPolicyMatcher()
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	scheduler := &IndexScheduler{
@@ -128,7 +126,7 @@ func testIndexSchedulerMockDBStore() *MockDBStore {
 	return dbStore
 }
 
-func testIndexSchedulerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
+func testIndexSchedulerMockPolicyMatcher() *MockPolicyMatcher {
 	policyMatches := map[int]map[string][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {},

@@ -46,7 +46,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) go
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
 
-func newTriggerQueryResetter(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newTriggerQueryResetter(_ context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForTriggerJobs(s)
 
 	options := dbworker.ResetterOptions{
@@ -92,7 +92,7 @@ func newActionRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMo
 	return worker
 }
 
-func newActionJobResetter(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newActionJobResetter(_ context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForActionJobs(s)
 
 	options := dbworker.ResetterOptions{

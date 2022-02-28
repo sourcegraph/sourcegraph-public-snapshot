@@ -762,9 +762,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
@@ -780,9 +780,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
@@ -940,9 +940,9 @@ func TestSyncRepoState(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
-	cmd := func(name string, arg ...string) string {
+	cmd := func(name string, arg ...string) {
 		t.Helper()
-		return runCmd(t, remoteDir, name, arg...)
+		runCmd(t, remoteDir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.

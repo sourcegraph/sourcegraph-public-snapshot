@@ -1733,7 +1733,7 @@ var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
 func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
-	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+	if cached := c.getRepositoryFromCache(key); cached != nil {
 		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
 			return nil, ErrRepoNotFound

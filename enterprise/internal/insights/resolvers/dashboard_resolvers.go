@@ -37,7 +37,7 @@ type dashboardConnectionResolver struct {
 	err        error
 }
 
-func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, int64, error) {
+func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, error) {
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
@@ -80,11 +80,11 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			}
 		}
 	})
-	return d.dashboards, d.next, d.err
+	return d.dashboards, d.err
 }
 
 func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
-	dashboards, _, err := d.compute(ctx)
+	dashboards, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, err := d.compute(ctx)
+	_, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -18,12 +17,7 @@ import (
 func Revert(databases []db.Database, commit string) error {
 	versionsByDatabase := make(map[string][]int, len(databases))
 	for _, database := range databases {
-		definitions, err := readDefinitions(database)
-		if err != nil {
-			return err
-		}
-
-		versions, err := selectMigrationsDefinedInCommit(database, definitions, commit)
+		versions, err := selectMigrationsDefinedInCommit(database, commit)
 		if err != nil {
 			return err
 		}
@@ -84,7 +78,7 @@ func Revert(databases []db.Database, commit string) error {
 
 // selectMigrationsDefinedInCommit returns the identifiers of migrations defined in the given
 // commit for the given schema.a
-func selectMigrationsDefinedInCommit(database db.Database, ds *definition.Definitions, commit string) ([]int, error) {
+func selectMigrationsDefinedInCommit(database db.Database, commit string) ([]int, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)

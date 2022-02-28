@@ -9,10 +9,7 @@ import (
 
 func Test_scanTemplate(t *testing.T) {
 	test := func(input string) string {
-		t, err := scanTemplate([]byte(input))
-		if err != nil {
-			return fmt.Sprintf("Error: %s", err)
-		}
+		t := scanTemplate([]byte(input))
 		return toJSONString(t)
 	}
 
@@ -63,23 +60,15 @@ func Test_scanTemplate(t *testing.T) {
 }
 
 func Test_templatize(t *testing.T) {
-	test := func(input string) string {
-		t, err := templatize(input)
-		if err != nil {
-			return fmt.Sprintf("Error: %s", err)
-		}
-		return t
-	}
-
 	autogold.Want(
 		"basic templatize",
 		"artifcats: {{.Repo}}").
-		Equal(t, test("artifcats: $repo"))
+		Equal(t, templatize("artifcats: $repo"))
 
 	autogold.Want(
 		"exclude regex var in templatize",
 		"artifcats: {{.Repo}} $1").
-		Equal(t, test("artifcats: $repo $1"))
+		Equal(t, templatize("artifcats: $repo $1"))
 }
 
 func Test_substituteMetaVariables(t *testing.T) {

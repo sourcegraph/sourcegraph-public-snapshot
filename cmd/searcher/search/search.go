@@ -223,7 +223,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat {
 		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
-		return regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}
 }
 

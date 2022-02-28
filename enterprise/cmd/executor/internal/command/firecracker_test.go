@@ -23,7 +23,6 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 			Operation: makeTestOperation(),
 		},
 		"deadbeef",
-		"/proj/src",
 		Options{},
 	)
 
@@ -51,7 +50,6 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 			Operation: makeTestOperation(),
 		},
 		"deadbeef",
-		"/proj/src",
 		Options{
 			ResourceOptions: ResourceOptions{
 				NumCPUs: 4,
@@ -125,10 +123,9 @@ func TestSetupFirecracker(t *testing.T) {
 
 func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
-	options := Options{}
 	operations := NewOperations(&observation.TestContext)
 
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", options, operations); err != nil {
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 

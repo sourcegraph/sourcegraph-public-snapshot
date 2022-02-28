@@ -12,9 +12,8 @@ import (
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -42,9 +41,8 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 
 func TestGetActionJobMetadata(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	userName, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	userName, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -77,9 +75,8 @@ func TestGetActionJobMetadata(t *testing.T) {
 
 func TestScanActionJobs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)

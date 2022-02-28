@@ -7,14 +7,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func makeLocation(s1, c1, s2, c2 int) Location {
-	return Location{
-		URI: "file://example.c",
-		Range: Range{
-			Start: Position{Line: s1, Character: c1},
-			End:   Position{Line: s2, Character: c2},
-		},
-	}
+var locations = []Location{
+	{
+		URI:   "file://example.c",
+		Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 20}},
+	},
+	{
+		URI:   "file://example.c",
+		Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 21}},
+	},
 }
 
 var contents = `
@@ -31,12 +32,7 @@ func TestRequiresSameURI(t *testing.T) {
 }
 
 func TestDrawsWithOneLineDiff(t *testing.T) {
-	res, _ := DrawLocations(
-		contents,
-		makeLocation(2, 4, 2, 20),
-		makeLocation(2, 4, 2, 21),
-		0,
-	)
+	res, _ := DrawLocations(contents, locations[0], locations[1], 0)
 
 	expected := strings.Join([]string{
 		"file://example.c:2",
@@ -51,12 +47,7 @@ func TestDrawsWithOneLineDiff(t *testing.T) {
 }
 
 func TestDrawsWithOneLineDiffContext(t *testing.T) {
-	res, _ := DrawLocations(
-		contents,
-		makeLocation(2, 4, 2, 20),
-		makeLocation(2, 4, 2, 21),
-		1,
-	)
+	res, _ := DrawLocations(contents, locations[0], locations[1], 1)
 
 	expected := strings.Join([]string{
 		"file://example.c:2",

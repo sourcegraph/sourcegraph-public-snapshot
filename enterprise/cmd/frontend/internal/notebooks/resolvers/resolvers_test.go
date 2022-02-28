@@ -182,7 +182,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 	}
 
 	testGetNotebook(t, db, schema, user1)
-	testCreateNotebook(t, db, schema, user1, user2, org)
+	testCreateNotebook(t, schema, user1, user2, org)
 	testUpdateNotebook(t, db, schema, user1, user2, org)
 	testDeleteNotebook(t, db, schema, user1, user2, org)
 }
@@ -205,7 +205,7 @@ func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user 
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
-func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
+func testCreateNotebook(t *testing.T, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
 	tests := []struct {
 		name            string
 		namespaceUserID int32
@@ -506,19 +506,16 @@ func createNotebooks(t *testing.T, db *sql.DB, notebooksToCreate []*notebooks.No
 	return createdNotebooks
 }
 
-func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) []*notebooks.NotebookStar {
+func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) {
 	t.Helper()
 	n := notebooks.Notebooks(db)
 	internalCtx := actor.WithInternalActor(context.Background())
-	createdStars := make([]*notebooks.NotebookStar, 0, len(userIDs))
 	for _, userID := range userIDs {
-		createdStar, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
+		_, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdStars = append(createdStars, createdStar)
 	}
-	return createdStars
 }
 
 func TestListNotebooks(t *testing.T) {

@@ -20,10 +20,8 @@ import (
 // to connection issues.
 func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, problems []string, warnings []string) {
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
-		if err != nil {
-			problems = append(problems, err.Error())
-		} else if p != nil {
+		p := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
+		if p != nil {
 			ps = append(ps, p)
 		}
 	}
@@ -36,9 +34,10 @@ func newAuthzProvider(
 	a *schema.PerforceAuthorization,
 	host, user, password string,
 	depots []string,
-) (authz.Provider, error) {
+) authz.Provider {
+	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
-		return nil, nil
+		return nil
 	}
 
 	var depotIDs []extsvc.RepoID
@@ -54,12 +53,12 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(urn, host, user, password, depotIDs), nil
+	return NewProvider(urn, host, user, password, depotIDs)
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
 // external service config.
-func ValidateAuthz(cfg *schema.PerforceConnection) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.P4Port, cfg.P4User, cfg.P4Passwd, cfg.Depots)
-	return err
+func ValidateAuthz(_ *schema.PerforceConnection) error {
+	// newAuthzProvider always succeeds, so directly return nil here.
+	return nil
 }

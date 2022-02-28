@@ -125,7 +125,7 @@ type uploadState struct {
 // returns a map from repository names to the state of that repository. Each repository
 // state has a flag indicating whether or not its commit graph is stale, and an entry
 // for each upload belonging to that repository including that upload's state.
-func queryRepoState(ctx context.Context, repoNames []string, uploads []uploadMeta) (map[string]repoState, error) {
+func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta) (map[string]repoState, error) {
 	uploadIDs := make([]string, 0, len(uploads))
 	for _, upload := range uploads {
 		uploadIDs = append(uploadIDs, upload.id)

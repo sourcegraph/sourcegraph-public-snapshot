@@ -302,6 +302,7 @@ func insertNearestUploads(t testing.TB, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func insertLinks(t testing.TB, db *sql.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return
@@ -336,6 +337,7 @@ func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
 	return commitGraphView
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
@@ -357,6 +359,7 @@ func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []str
 	return idsByCommit
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,

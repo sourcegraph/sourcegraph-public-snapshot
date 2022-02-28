@@ -87,7 +87,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 
 	var noShardCount int
 	// Iterate again against repos with no shard
-	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(repo types.RepoGitserverStatus) error {
+	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(_ types.RepoGitserverStatus) error {
 		noShardCount++
 		return nil
 	})

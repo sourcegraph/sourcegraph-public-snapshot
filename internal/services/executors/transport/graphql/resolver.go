@@ -45,7 +45,7 @@ func (r *resolver) Executor(ctx context.Context, gqlID graphql.ID) (*ExecutorRes
 }
 
 func (r *resolver) Executors(ctx context.Context, query *string, active *bool, first *int32, after *string) (*ExecutorPaginatedResolver, error) {
-	p, err := validateArgs(ctx, query, active, first, after)
+	p, err := validateArgs(query, active, first, after)
 	if err != nil {
 		return nil, err
 	}

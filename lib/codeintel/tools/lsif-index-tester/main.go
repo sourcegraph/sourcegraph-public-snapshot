@@ -222,7 +222,7 @@ func runIndexer(ctx context.Context, indexer []string, directory, name string) (
 	args := indexer[1:]
 
 	log15.Debug("... Generating dump.lsif")
-	cmd := exec.Command(command, args...)
+	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Dir = directory
 
 	output, err := cmd.CombinedOutput()

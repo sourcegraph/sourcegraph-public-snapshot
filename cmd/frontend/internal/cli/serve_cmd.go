@@ -299,7 +299,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(
+	externalHandler := newExternalHTTPHandler(
 		db,
 		schema,
 		enterprise.GitHubWebhook,
@@ -311,9 +311,6 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
-	if err != nil {
-		return nil, err
-	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,

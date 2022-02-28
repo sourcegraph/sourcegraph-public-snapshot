@@ -252,7 +252,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 			var page *upsertRepoPermissionsPage
 			page, addQueue, removeQueue, hasNextPage = newUpsertRepoPermissionsPage(addQueue, removeQueue)
 
-			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, allRemoved, []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
+			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
 				return err
 			} else if err = txs.execute(ctx, q); err != nil {
 				return errors.Wrap(err, "execute upsert repo permissions batch query")
@@ -956,7 +956,7 @@ func (s *permsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 		var page *upsertRepoPermissionsPage
 		page, addQueue, _, hasNextPage = newUpsertRepoPermissionsPage(addQueue, nil)
 
-		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, nil, allUserIDs, p.Perm, updatedAt); err != nil {
+		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, allUserIDs, p.Perm, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert repo permissions batch query")
@@ -1038,7 +1038,7 @@ func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
 // and deletion (for `removedRepoIDs`) of `userIDs` using upsert.
 //
 // Pages should be set up using the helper function `newUpsertRepoPermissionsPage`
-func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRepoIDs, allRemovedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
 	// If changing the parameters used in this query, make sure to run relevant tests
 	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
@@ -1730,6 +1730,7 @@ WHERE perms.repo_id IN
 	return m, nil
 }
 
+//nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
 	began := s.clock()
 	tr, ctx := trace.New(ctx, "database.PermsStore."+family, title)

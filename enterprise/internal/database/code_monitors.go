@@ -247,14 +247,14 @@ func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) 
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
-func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
 	id = insertTestUser(ctx, t, db, name, true)
-	namespace = relay.MarshalID("User", id)
+	_ = relay.MarshalID("User", id)
 	ctx = actor.WithActor(ctx, actor.FromUser(id))
-	return name, id, namespace, ctx
+	return name, id, ctx
 }
 
 func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {

@@ -15,6 +15,7 @@ linters:
     - typecheck
     - unconvert
     - unused
+    - unparam
 
 linters-settings:
   depguard:

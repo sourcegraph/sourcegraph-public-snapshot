@@ -58,6 +58,7 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	return q, nil
 }
 
+//nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
 	const queryFmtString = `(
     %s                            -- TRUE or FALSE to indicate whether to bypass the check

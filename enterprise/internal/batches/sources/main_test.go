@@ -36,11 +36,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
+func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, update(name))
-	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
-	mw := httpcli.NewMiddleware(mws...)
+	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
 }

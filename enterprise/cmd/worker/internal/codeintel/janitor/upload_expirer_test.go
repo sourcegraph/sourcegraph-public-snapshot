@@ -17,7 +17,7 @@ import (
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
 	dbStore := testUploadExpirerMockDBStore(now)
-	policyMatcher := testUploadExpirerMockPolicyMatcher(now)
+	policyMatcher := testUploadExpirerMockPolicyMatcher()
 
 	uploadExpirer := &uploadExpirer{
 		dbStore:                dbStore,
@@ -202,7 +202,7 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 	return dbStore
 }
 
-func testUploadExpirerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
+func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 	policyMatches := map[int]map[string][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1

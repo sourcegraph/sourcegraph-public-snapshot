@@ -22,7 +22,7 @@ import (
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
-func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) []insights.LangStatsInsight {
+func getLangStatsInsights(settingsRow api.Settings) []insights.LangStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.LangStatsInsight, 0)
@@ -48,7 +48,7 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) []insig
 	return results
 }
 
-func getFrontendInsights(ctx context.Context, settingsRow api.Settings) []insights.SearchInsight {
+func getFrontendInsights(settingsRow api.Settings) []insights.SearchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.SearchInsight, 0)
@@ -75,7 +75,7 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) []insigh
 	return results
 }
 
-func getBackendInsights(ctx context.Context, setting api.Settings) []insights.SearchInsight {
+func getBackendInsights(setting api.Settings) []insights.SearchInsight {
 	prefix := "insights.allrepos"
 
 	results := make([]insights.SearchInsight, 0)
@@ -103,7 +103,7 @@ func getBackendInsights(ctx context.Context, setting api.Settings) []insights.Se
 	return results
 }
 
-func getDashboards(ctx context.Context, settingsRow api.Settings) []insights.SettingDashboard {
+func getDashboards(settingsRow api.Settings) []insights.SettingDashboard {
 	prefix := "insights.dashboards"
 
 	results := make([]insights.SettingDashboard, 0)
