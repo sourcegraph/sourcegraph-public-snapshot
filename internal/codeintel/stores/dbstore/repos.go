@@ -176,11 +176,22 @@ type NPMDependencyRepo struct {
 }
 
 // UpsertDependencyRepo creates the given dependency repo if it doesn't yet exist.
-func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (err error) {
-	return s.Exec(ctx, sqlf.Sprintf(
+func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (isNew bool, err error) {
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(
 		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s) on conflict do nothing`,
 		dep.Scheme(),
 		dep.PackageSyntax(),
 		dep.PackageVersion(),
 	))
+
+	if err != nil {
+		return false, err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return affected == 1, nil
 }

@@ -40,6 +40,7 @@ type RepoQueueState struct {
 	Index    int
 	Total    int
 	Updating bool
+	Priority int
 }
 
 // RepoExternalServicesRequest is a request for the external services
@@ -56,15 +57,17 @@ type RepoExternalServicesResponse struct {
 }
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
-//
-// Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
 	// Repo is the repository name to look up.
 	Repo api.RepoName `json:",omitempty"`
+
+	// Update will enqueue a high priority git update for this repo if it exists and this
+	// field is true.
+	Update bool
 }
 
 func (a *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{%s}", a.Repo)
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", a.Repo, a.Update)
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).

@@ -325,6 +325,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 
+	if s.Scheduler != nil && args.Update {
+		// Enqueue a high priority update for this repo.
+		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	}
+
 	repoInfo := protocol.NewRepoInfo(repo)
 
 	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
