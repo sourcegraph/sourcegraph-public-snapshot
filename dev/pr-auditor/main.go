@@ -136,8 +136,9 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 	log.Println("Created issue: ", created.GetHTMLURL())
 
-	// Let run succeed, create separate status indicating an exception was created
-	_, _, err = ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
+	// Let run succeed, create separate status indicating an exception was created on the
+	// main branch's post-merge commit (otherwise the output will end up on the PR branch)
+	_, _, err = ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Base.Ref, &github.RepoStatus{
 		Context:     github.String(commitStatusPostMerge),
 		State:       github.String("failure"),
 		Description: github.String("Exception detected and audit trail issue created"),
@@ -174,7 +175,9 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	if prState == "success" {
 		setNotice(fmt.Sprintf("pre-merge: %s", stateDescription), stateURL)
 	} else {
-		setError(fmt.Sprintf("pre-merge %s: %s", prState, stateDescription), stateURL)
+		errMessage := fmt.Sprintf("pre-merge %s: %s", prState, stateDescription)
+		setError(errMessage, stateURL)
+		return errors.New(errMessage)
 	}
 	return nil
 }
