@@ -126,9 +126,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const onError = useCallback((error: ErrorLike) => setError(error), [])
 
     return (
-        <>
-            <BrandLogo className={classNames('ml-3 mt-3', styles.logo)} isLightTheme={true} variant="symbol" />
-
+        <div className={styles.wrapper}>
+            <BrandLogo className={styles.logo} isLightTheme={true} variant="symbol" />
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
@@ -146,7 +145,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 <h2>Get started with Sourcegraph</h2>
                                 <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
-                            <div className="mt-2 pb-3 d-flex flex-column align-items-center">
+                            <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
                                     <StepList numeric={true} className={styles.progress}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
@@ -198,7 +197,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <TeamsBeta onFinish={finishWelcomeFlow} onError={onError} />
+                                            <TeamsBeta
+                                                onFinish={finishWelcomeFlow}
+                                                onError={onError}
+                                                username={user.username}
+                                            />
                                         </StepPanel>
                                         <StepPanel>
                                             <InviteCollaborators
@@ -220,6 +223,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     }
                 />
             </div>
-        </>
+        </div>
     )
 }

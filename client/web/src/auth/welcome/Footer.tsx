@@ -30,7 +30,7 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }
             <div>
                 {currentStep.isFirstStep && (
                     <Button
-                        className="font-weight-normal text-secondary"
+                        className="font-weight-normal"
                         onClick={event => {
                             event.currentTarget.blur()
                             setStep(currentIndex + 1)
