@@ -47,7 +47,7 @@ export interface CodeInsightsAppRouter
         PlatformContextProps,
         TelemetryProps {
     /**
-     * Authenticated user info, Used to decide where code insight will appears
+     * Authenticated user info, Used to decide where code insight will appear
      * in personal dashboard (private) or in organisation dashboard (public)
      */
     authenticatedUser: AuthenticatedUser
