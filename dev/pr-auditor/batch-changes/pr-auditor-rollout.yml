@@ -69,7 +69,7 @@ steps:
               env:
                 GITHUB_EVENT_PATH: ${{ "${{ env.GITHUB_EVENT_PATH }}" }}
                 GITHUB_TOKEN: ${{ "${{ secrets.CODENOTIFY_GITHUB_TOKEN }}" }}
-                GITHUB_RUN_URL: https://github.com/sourcegraph/infrastructure/actions/runs/${{ "${{ github.run_id }}" }}
+                GITHUB_RUN_URL: https://github.com/${{ "${{ github.repository }}" }}/actions/runs/${{ "${{ github.run_id }}" }}
       EOF
 
       mkdir -p .github/workflows
