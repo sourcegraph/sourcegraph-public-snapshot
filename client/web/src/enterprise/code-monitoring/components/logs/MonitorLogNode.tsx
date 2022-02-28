@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -48,14 +49,25 @@ export const MonitorLogNode: React.FunctionComponent<{
                 className="btn-icon text-left pl-0 d-flex align-items-center"
                 aria-label="Expand code monitor"
             >
-                {expanded ? <ChevronDownIcon className="mr-2" /> : <ChevronRightIcon className="mr-1" />}
+                {expanded ? (
+                    <ChevronDownIcon className="mr-2 flex-shrink-0" />
+                ) : (
+                    <ChevronRightIcon className="mr-1 flex-shrink-0" />
+                )}
                 {hasError ? (
                     <AlertCircleIcon
-                        className={classNames(styles.errorIcon, 'icon-inline mr-1')}
-                        aria-label="A run of this code monitor has an error"
+                        className={classNames(styles.errorIcon, 'icon-inline mr-1 flex-shrink-0')}
+                        aria-label="One or more runs of this code monitor have an error"
+                        data-tooltip="One or more runs of this code monitor have an error"
+                        data-placement="top"
                     />
                 ) : (
-                    <span className={classNames(styles.errorIconSpacer, 'mr-1')} />
+                    <CheckBoldIcon
+                        className={classNames(styles.checkIcon, 'icon-inline mr-1 flex-shrink-0')}
+                        aria-label="Monitor running as normal"
+                        data-tooltip="Monitor running as normal"
+                        data-placement="top"
+                    />
                 )}
                 {monitor.description}
             </Button>
