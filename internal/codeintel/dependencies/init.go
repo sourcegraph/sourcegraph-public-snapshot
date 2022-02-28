@@ -18,19 +18,19 @@ import (
 )
 
 var (
-	depSvc     *Service
-	depSvcOnce sync.Once
+	svc     *Service
+	svcOnce sync.Once
 )
 
 func GetService(db database.DB, syncer Syncer) *Service {
-	depSvcOnce.Do(func() {
+	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		depSvc = newService(
+		svc = newService(
 			store.GetStore(db),
 			lockfiles.GetService(
 				authz.DefaultSubRepoPermsChecker,
@@ -42,5 +42,5 @@ func GetService(db database.DB, syncer Syncer) *Service {
 		)
 	})
 
-	return depSvc
+	return svc
 }

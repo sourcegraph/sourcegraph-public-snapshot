@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	depSvc     *Service
-	depSvcOnce sync.Once
+	svc     *Service
+	svcOnce sync.Once
 )
 
 func GetService(
@@ -26,17 +26,17 @@ func GetService(
 	lsFiles func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error),
 	archive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error),
 ) *Service {
-	depSvcOnce.Do(func() {
+	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		depSvc = newService(checker, lsFiles, archive, observationContext)
+		globalSvc = newService(checker, lsFiles, archive, observationContext)
 	})
 
-	return depSvc
+	return globalSvc
 }
 
 func TestService(
