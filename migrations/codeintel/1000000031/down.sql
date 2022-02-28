@@ -1,5 +1,1 @@
-BEGIN;
-
 DROP EXTENSION IF EXISTS intarray;
-
-COMMIT;
