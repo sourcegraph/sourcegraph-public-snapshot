@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -75,10 +74,10 @@ func getMode() configurationMode {
 			return modeEmpty
 		}
 
-		if err == nil && strings.Contains(strings.ToLower(filepath.Base(p)), "test") {
-			// If we detect 'go test', defaults to empty mode in that case.
-			return modeEmpty
-		}
+		// if err == nil && strings.Contains(strings.ToLower(filepath.Base(p)), "test") {
+		// 	// If we detect 'go test', defaults to empty mode in that case.
+		// 	return modeEmpty
+		// }
 
 		// Otherwise we default to client mode, so that most services need not
 		// specify CONFIGURATION_MODE=client explicitly.

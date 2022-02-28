@@ -34,7 +34,8 @@ var (
 	traceEnabled int32 = 0
 )
 
-func init() {
+// TODO
+func initConfTODO() {
 	go func() {
 		conf.Watch(func() {
 			exp := conf.Get().ExperimentalFeatures
@@ -85,6 +86,7 @@ type CommonOp struct {
 }
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+	initConfTODO()
 	if cli == nil {
 		cli = httpcli.ExternalDoer
 	}
