@@ -1036,6 +1036,38 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
+// IdeIntegrationUsage represents the daily, weekly and monthly
+// number of unique users, user state, events for IDE extensions usages,
+// and inbound traffic from each IDE extension to Sourcegraph instance
+type IdeExtensionsUsage struct {
+	Month IdeExtensionsUsagePeriod
+	Week  IdeExtensionsUsagePeriod
+	Day   IdeExtensionsUsagePeriod
+}
+
+type IdeExtensionsUsagePeriod struct {
+	StartTime time.Time
+	IDEs      []*IdeExtensionsUsageStatistics
+}
+
+type IdeExtensionsUsageStatistics struct {
+	IdeKind          string
+	UserCount        int32
+	SearchPerformed  IdeExtensionsUsageSearchPerformed
+	MonthlyUserState IdeExtensionsUserStateMonthlyCount
+	RedirectCount    int32
+}
+
+type IdeExtensionsUsageSearchPerformed struct {
+	UniqueCount int32
+	TotalCount  int32
+}
+
+type IdeExtensionsUserStateMonthlyCount struct {
+	Installs   int32
+	Uninstalls int32
+}
+
 // CodeHostIntegrationUsage represents the daily, weekly and monthly
 // number of unique users and events for code host integration usage
 // and inbound traffic from code host integration to Sourcegraph instance

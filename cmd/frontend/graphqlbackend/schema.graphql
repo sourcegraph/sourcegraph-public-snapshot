@@ -867,6 +867,7 @@ enum EventSource {
     CODEHOSTINTEGRATION
     BACKEND
     STATICWEB
+    IDEEXTENSION
 }
 
 """

@@ -336,6 +336,27 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                     </ul>
                 </li>
+                <li>
+                    IDE extension data
+                    <ul>
+                        VS Code extension
+                        <li>
+                            Aggregate daily, weekly, and monthly counts of:
+                            <ul>
+                                <li>Unique searches performed</li>
+                                <li>Total searches performed</li>
+                            </ul>
+                        </li>
+                        <li>
+                            Monthly aggregated user state changes:
+                            <ul>
+                                <li>Count of users who installed the extension</li>
+                                <li>Count of users who uninstalled the extension</li>
+                            </ul>
+                        </li>
+                        <li>Total count of redirects to Sourcegraph instance monthly from the extension</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>
