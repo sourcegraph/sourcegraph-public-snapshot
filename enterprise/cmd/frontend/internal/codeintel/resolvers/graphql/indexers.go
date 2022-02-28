@@ -1,9 +1,10 @@
-package indexerconsts
+package graphql
 
 import gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 
 type codeIntelIndexerResolver struct {
-	name, urn string
+	name string
+	urn  string
 }
 
 func (r *codeIntelIndexerResolver) Name() string {
@@ -15,27 +16,27 @@ func (r *codeIntelIndexerResolver) URL() string {
 }
 
 var (
-	LSIFNode = codeIntelIndexerResolver{
+	lsifNode = codeIntelIndexerResolver{
 		name: "lsif-tsc",
 		urn:  "github.com/sourcegraph/lsif-node",
 	}
-	MSFTNode = codeIntelIndexerResolver{
+	msftNode = codeIntelIndexerResolver{
 		name: "msft/lsif-node",
 		urn:  "github.com/Microsoft/lsif-node",
 	}
-	LSIFTypescript = codeIntelIndexerResolver{
+	lsifTypescript = codeIntelIndexerResolver{
 		name: "lsif-typescript",
 		urn:  "github.com/sourcegraph/lsif-typescript",
 	}
-	LSIFJava = codeIntelIndexerResolver{
+	lsifJava = codeIntelIndexerResolver{
 		name: "lsif-java",
 		urn:  "github.com/sourcegraph/lsif-java",
 	}
-	MSFTJava = codeIntelIndexerResolver{
+	msftJAva = codeIntelIndexerResolver{
 		name: "msft/lsif-java",
 		urn:  "github.com/Microsoft/lsif-java",
 	}
-	LSIFGo = codeIntelIndexerResolver{
+	lsifGo = codeIntelIndexerResolver{
 		name: "lsif-go",
 		urn:  "github.com/sourcegraph/lsif-go",
 	}
@@ -43,47 +44,47 @@ var (
 		name: "lsif-clang",
 		urn:  "github.com/sourcegraph/lsif-clang",
 	}
-	LSIFCpp = codeIntelIndexerResolver{
+	lsifCPP = codeIntelIndexerResolver{
 		name: "lsif-cpp",
 		urn:  "github.com/sourcegraph/lsif-cpp",
 	}
-	LSIFDart = codeIntelIndexerResolver{
+	lsifDart = codeIntelIndexerResolver{
 		name: "lsif-dart",
 		urn:  "github.com/sourcegraph/lsif-dart",
 	}
-	WorkivaDart = codeIntelIndexerResolver{
+	workivaDart = codeIntelIndexerResolver{
 		name: "lsif_indexer",
 		urn:  "github.com/Workiva/lsif_indexer",
 	}
-	HieLSIF = codeIntelIndexerResolver{
+	hieLSIF = codeIntelIndexerResolver{
 		name: "hie-lsif",
 		urn:  "github.com/mpickering/hie-lsif",
 	}
-	LSIFJsonnet = codeIntelIndexerResolver{
+	lsifJsonnet = codeIntelIndexerResolver{
 		name: "lsif-jsonnet",
 		urn:  "github.com/sourcegraph/lsif-jsonnet",
 	}
-	LSIFOcaml = codeIntelIndexerResolver{
+	lsifOcaml = codeIntelIndexerResolver{
 		name: "lsif-ocaml",
 		urn:  "github.com/rvantonder/lsif-ocaml",
 	}
-	LSIFPy = codeIntelIndexerResolver{
+	lsifPy = codeIntelIndexerResolver{
 		name: "lsif-py",
 		urn:  "github.com/sourcegraph/lsif-py",
 	}
-	RustAnalyzer = codeIntelIndexerResolver{
+	rustAnalyzer = codeIntelIndexerResolver{
 		name: "rust-analyzer",
 		urn:  "github.com/rust-analyzer/rust-analyzer",
 	}
-	LSIFPhp = codeIntelIndexerResolver{
+	lsifPHP = codeIntelIndexerResolver{
 		name: "lsif-php",
 		urn:  "github.com/davidrjenni/lsif-php",
 	}
-	LSIFTerraform = codeIntelIndexerResolver{
+	lsifTerraform = codeIntelIndexerResolver{
 		name: "lsif-terraform",
 		urn:  "github.com/juliosueiras/lsif-terraform",
 	}
-	LSIFDotnet = codeIntelIndexerResolver{
+	lsifDotnet = codeIntelIndexerResolver{
 		name: "lsif-dotnet",
 		urn:  "github.com/tcz717/LsifDotnet",
 	}
@@ -91,27 +92,27 @@ var (
 
 // A map of file extension to a list of indexers in order of recommendation
 // from most to least.
-var LanguageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
-	".go":      {&LSIFGo},
-	".java":    {&LSIFJava, &MSFTJava},
-	".kt":      {&LSIFJava},
-	".scala":   {&LSIFJava},
-	".js":      {&LSIFTypescript, &LSIFNode, &MSFTNode},
-	".jsx":     {&LSIFTypescript, &LSIFNode, &MSFTNode},
-	".ts":      {&LSIFTypescript, &LSIFNode, &MSFTNode},
-	".tsx":     {&LSIFTypescript, &LSIFNode, &MSFTNode},
-	".dart":    {&WorkivaDart, &LSIFDart},
-	".c":       {&LSIFClang, &LSIFCpp},
-	".cc":      {&LSIFClang, &LSIFCpp},
-	".cpp":     {&LSIFClang, &LSIFCpp},
-	".cxx":     {&LSIFClang, &LSIFCpp},
-	".h":       {&LSIFClang, &LSIFCpp},
-	".hs":      {&HieLSIF},
-	".jsonnet": {&LSIFJsonnet},
-	".py":      {&LSIFPy},
-	".ml":      {&LSIFOcaml},
-	".rs":      {&RustAnalyzer},
-	".php":     {&LSIFPhp},
-	".tf":      {&LSIFTerraform},
-	".cs":      {&LSIFDotnet},
+var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
+	".go":      {&lsifGo},
+	".java":    {&lsifJava, &msftJAva},
+	".kt":      {&lsifJava},
+	".scala":   {&lsifJava},
+	".js":      {&lsifTypescript, &lsifNode, &msftNode},
+	".jsx":     {&lsifTypescript, &lsifNode, &msftNode},
+	".ts":      {&lsifTypescript, &lsifNode, &msftNode},
+	".tsx":     {&lsifTypescript, &lsifNode, &msftNode},
+	".dart":    {&workivaDart, &lsifDart},
+	".c":       {&LSIFClang, &lsifCPP},
+	".cc":      {&LSIFClang, &lsifCPP},
+	".cpp":     {&LSIFClang, &lsifCPP},
+	".cxx":     {&LSIFClang, &lsifCPP},
+	".h":       {&LSIFClang, &lsifCPP},
+	".hs":      {&hieLSIF},
+	".jsonnet": {&lsifJsonnet},
+	".py":      {&lsifPy},
+	".ml":      {&lsifOcaml},
+	".rs":      {&rustAnalyzer},
+	".php":     {&lsifPHP},
+	".tf":      {&lsifTerraform},
+	".cs":      {&lsifDotnet},
 }
