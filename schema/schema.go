@@ -1595,6 +1595,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
+	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
