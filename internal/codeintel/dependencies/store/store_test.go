@@ -52,10 +52,10 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 
 	want := []DependencyRepo{
-		{ID: 6, Name: "foo", Version: "2.0.0"},
-		{ID: 4, Name: "foo", Version: "1.0.0"},
-		{ID: 3, Name: "bar", Version: "3.0.0"},
-		{ID: 1, Name: "bar", Version: "2.0.0"},
+		{ID: 6, Scheme: "npm", Name: "foo", Version: "2.0.0"},
+		{ID: 4, Scheme: "npm", Name: "foo", Version: "1.0.0"},
+		{ID: 3, Scheme: "npm", Name: "bar", Version: "3.0.0"},
+		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
 	}
 
 	opt := cmpopts.IgnoreFields(DependencyRepo{}, "ID")
