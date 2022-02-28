@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -45,7 +45,7 @@ func handleSearchWith(searchFunc types.SearchFunc) func(w http.ResponseWriter, r
 		result, err := searchFunc(r.Context(), args)
 		if err != nil {
 			// Ignore reporting errors where client disconnected
-			if r.Context().Err() == context.Canceled && isContextCanceled(err) {
+			if r.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
 				return
 			}
 
@@ -79,10 +79,4 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write([]byte("OK")); err != nil {
 		log15.Error("failed to write response to health check, err: %s", err)
 	}
-}
-
-// isContextCanceled checks if the error is a context canceled error. Although `errors.Is(err,
-// context.Canceled)` appears to be the correct way to check for this, it doesn't work for some reason.
-func isContextCanceled(err error) bool {
-	return strings.HasSuffix(err.Error(), "context canceled")
 }
