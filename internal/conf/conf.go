@@ -90,7 +90,7 @@ var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
 	clientStore := newStore()
-	defaultClient := &client{store: clientStore}
+	defaultClient := &client{store: clientStore, ready: make(chan struct{})}
 
 	mode := getMode()
 
