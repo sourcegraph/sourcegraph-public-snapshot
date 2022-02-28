@@ -1,13 +1,13 @@
 BEGIN;
 
-CREATE TABLE rockskip_repos (
+CREATE TABLE IF NOT EXISTS rockskip_repos (
     id               SERIAL    PRIMARY KEY,
     repo             TEXT      NOT NULL,
     last_accessed_at TIMESTAMP WITH TIME ZONE NOT NULL,
     UNIQUE (repo)
 );
 
-CREATE TABLE rockskip_ancestry (
+CREATE TABLE IF NOT EXISTS rockskip_ancestry (
     id          SERIAL      PRIMARY KEY,
     repo_id     INTEGER     NOT NULL,
     commit_id   VARCHAR(40) NOT NULL,
@@ -20,9 +20,10 @@ CREATE TABLE rockskip_ancestry (
 -- defaults to 1.
 INSERT INTO rockskip_ancestry
        (id, commit_id                                 , repo_id    , height, ancestor)
-VALUES (0 , '0000000000000000000000000000000000000000', 0          , 0     , 0       );
+VALUES (0 , '0000000000000000000000000000000000000000', 0          , 0     , 0       )
+ON CONFLICT DO NOTHING;
 
-CREATE TABLE rockskip_symbols (
+CREATE TABLE IF NOT EXISTS rockskip_symbols (
     -- Globally unique ID of this instance of the symbol.
     id           SERIAL        PRIMARY KEY,
     added        INTEGER[]     NOT NULL,
@@ -53,19 +54,19 @@ CREATE OR REPLACE FUNCTION path_prefixes(path TEXT) RETURNS TEXT[] AS $$ BEGIN
     );
 END; $$ IMMUTABLE language plpgsql;
 
-CREATE INDEX rockskip_repos_repo ON rockskip_repos(repo);
+CREATE INDEX IF NOT EXISTS rockskip_repos_repo ON rockskip_repos(repo);
 
-CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at);
+CREATE INDEX IF NOT EXISTS rockskip_repos_last_accessed_at ON rockskip_repos(last_accessed_at);
 
-CREATE INDEX rockskip_ancestry_repo_commit_id ON rockskip_ancestry(repo_id, commit_id);
+CREATE INDEX IF NOT EXISTS rockskip_ancestry_repo_commit_id ON rockskip_ancestry(repo_id, commit_id);
 
-CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols(repo_id, path, name);
+CREATE INDEX IF NOT EXISTS rockskip_symbols_repo_id_path_name ON rockskip_symbols(repo_id, path, name);
 
 CREATE EXTENSION IF NOT EXISTS intarray;
 
 COMMENT ON EXTENSION intarray IS 'functions, operators, and index support for 1-D arrays of integers';
 
-CREATE INDEX rockskip_symbols_gin ON rockskip_symbols USING GIN (
+CREATE INDEX IF NOT EXISTS rockskip_symbols_gin ON rockskip_symbols USING GIN (
     singleton_integer(repo_id) gin__int_ops,
     added gin__int_ops,
     deleted gin__int_ops,
