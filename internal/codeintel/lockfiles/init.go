@@ -33,10 +33,10 @@ func GetService(
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		globalSvc = newService(checker, lsFiles, archive, observationContext)
+		svc = newService(checker, lsFiles, archive, observationContext)
 	})
 
-	return globalSvc
+	return svc
 }
 
 func TestService(
