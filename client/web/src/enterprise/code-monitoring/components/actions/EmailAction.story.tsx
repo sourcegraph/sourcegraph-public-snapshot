@@ -4,23 +4,23 @@ import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
+import { ActionProps } from '../FormActionArea'
 
-import { EmailAction, EmailActionProps } from './EmailAction'
+import { EmailAction } from './EmailAction'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', module).addParameters({
     chromatic: { disableSnapshot: false },
 })
 
-const defaultProps: EmailActionProps = {
+const defaultProps: ActionProps = {
     action: undefined,
     setAction: sinon.fake(),
     disabled: false,
     authenticatedUser: mockAuthenticatedUser,
     monitorName: 'Example code monitor',
-    triggerTestEmailAction: sinon.fake(),
 }
 
-const action: EmailActionProps['action'] = {
+const action: ActionProps['action'] = {
     __typename: 'MonitorEmail',
     id: 'id1',
     recipients: { nodes: [{ id: 'userID' }] },
