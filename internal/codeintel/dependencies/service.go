@@ -11,44 +11,32 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// Service encapsulates the resolution and persistence of dependencies at the repository
-// and package levels.
+// Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	db          database.DB
-	syncer      Syncer
-	lockfileSvc *lockfiles.Service
-	operations  *operations
+	dependenciesStore *store.Store
+	lockfilesSvc      *lockfiles.Service
+	syncer            Syncer
+	operations        *operations
 }
 
-func newService(db database.DB, syncer Syncer, observationContext *observation.Context) *Service {
-	lockfileSvc := lockfiles.NewService(
-		authz.DefaultSubRepoPermsChecker,
-		git.LsFiles,
-		gitserver.DefaultClient.Archive,
-		observationContext,
-	)
-
+func newService(depsStore *store.Store, lockfilesSvc *lockfiles.Service, syncer Syncer, observationContext *observation.Context) *Service {
 	return &Service{
-		db:          db,
-		syncer:      syncer,
-		lockfileSvc: lockfileSvc,
-		operations:  newOperations(observationContext),
+		dependenciesStore: depsStore,
+		lockfilesSvc:      lockfilesSvc,
+		syncer:            syncer,
+		operations:        newOperations(observationContext),
 	}
 }
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
 	logFields := make([]log.Field, 0, 2)
 	if len(repoRevs) == 1 {
 		for repoName, revs := range repoRevs {
@@ -66,7 +54,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		logFields = append(logFields, log.Int("repoRevs", len(repoRevs)))
 	}
 
-	ctx, endObservation := r.operations.dependencies.With(ctx, &err, observation.Args{LogFields: logFields})
+	ctx, endObservation := s.operations.dependencies.With(ctx, &err, observation.Args{LogFields: logFields})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numDependencyRevs", len(dependencyRevs)),
@@ -75,8 +63,6 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 
 	var mu sync.Mutex
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet)
-
-	depsStore := dependenciesStore.GetStore(r.db)
 
 	sem := semaphore.NewWeighted(32)
 	g, ctx := errgroup.WithContext(ctx)
@@ -91,7 +77,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 				}
 				defer sem.Release(1)
 
-				deps, err := r.lockfileSvc.ListDependencies(ctx, repoName, string(rev))
+				deps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
 				if err != nil {
 					return err
 				}
@@ -106,7 +92,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 					g.Go(func() error {
 						defer sem.Release(1)
 
-						isNew, err := depsStore.UpsertDependencyRepo(ctx, dep)
+						isNew, err := s.dependenciesStore.UpsertDependencyRepo(ctx, dep)
 						if err != nil {
 							return err
 						}
@@ -115,7 +101,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 						depRev := api.RevSpec(dep.GitTagFromVersion())
 
 						if isNew {
-							if err := r.syncer.Sync(ctx, depName); err != nil {
+							if err := s.syncer.Sync(ctx, depName); err != nil {
 								log15.Warn("failed to sync dependency repo", "repo", depName, "rev", depRev, "error", err)
 							}
 						}
