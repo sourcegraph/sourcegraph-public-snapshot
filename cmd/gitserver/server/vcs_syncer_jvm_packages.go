@@ -16,7 +16,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -47,8 +47,8 @@ var placeholderMavenDependency = func() *reposource.MavenDependency {
 }()
 
 type JVMPackagesSyncer struct {
-	Config  *schema.JVMPackagesConnection
-	DBStore repos.JVMPackagesRepoStore
+	Config    *schema.JVMPackagesConnection
+	DepsStore repos.DependenciesStore
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
@@ -207,8 +207,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		log15.Warn("non-zero number of timed-out coursier invocations", "count", len(timedout), "dependencies", timedout)
 	}
 
-	dbDeps, err := s.DBStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
-		ArtifactName: repoUrlPath,
+	dbDeps, err := s.DepsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+		Scheme: dependenciesStore.JVMPackagesScheme,
+		Name:   repoUrlPath,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get JVM dependency repos from database", "repoPath", repoUrlPath)
@@ -216,9 +217,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 
 	var totalDBMatched int
 	for _, dep := range dbDeps {
-		parsedModule, err := reposource.ParseMavenModule(dep.Module)
+		parsedModule, err := reposource.ParseMavenModule(dep.Name)
 		if err != nil {
-			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
+			log15.Warn("error parsing maven module", "error", err, "module", dep.Name)
 			continue
 		}
 		if module.Equal(parsedModule) {

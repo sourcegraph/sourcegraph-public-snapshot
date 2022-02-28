@@ -6,7 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -49,14 +49,14 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bo
 }
 
 func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != dbstore.JVMPackagesScheme {
+	if pkg.Scheme != dependenciesStore.JVMPackagesScheme {
 		return "", "", false
 	}
 	return api.RepoName(pkg.Name), "v" + pkg.Version, true
 }
 
 func inferNPMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != dbstore.NPMPackagesScheme {
+	if pkg.Scheme != dependenciesStore.NPMPackagesScheme {
 		return "", "", false
 	}
 	npmPkg, err := reposource.ParseNPMPackageFromPackageSyntax(pkg.Name)

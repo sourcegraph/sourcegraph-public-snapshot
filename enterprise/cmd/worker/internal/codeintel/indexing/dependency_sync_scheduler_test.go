@@ -8,7 +8,7 @@ import (
 
 	enterprisedbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
-	ossdbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -22,7 +22,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: ossdbstore.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependenciesStore.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{
 		dbStore:     mockDBStore,

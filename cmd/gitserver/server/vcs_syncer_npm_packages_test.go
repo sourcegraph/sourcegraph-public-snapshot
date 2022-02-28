@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -53,7 +53,7 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 
 	s := NewNPMPackagesSyncer(
 		schema.NPMPackagesConnection{Dependencies: []string{}},
-		NewMockDBStore(),
+		NewMockDependenciesStore(),
 		nil,
 	)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -104,7 +104,7 @@ func TestNPMCloneCommand(t *testing.T) {
 	}
 	s := NewNPMPackagesSyncer(
 		schema.NPMPackagesConnection{Dependencies: []string{}},
-		NewMockDBStore(),
+		NewMockDependenciesStore(),
 		&client,
 	)
 	bareGitDirectory := path.Join(dir, "git")
@@ -158,24 +158,24 @@ func TestNPMCloneCommand(t *testing.T) {
 	checkTagRemoved()
 
 	// Now run the same tests with the database output instead.
-	mockStore := NewStrictMockDBStore()
-	s.dbStore = mockStore
+	mockStore := NewStrictMockDependenciesStore()
+	s.depsStore = mockStore
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", exampleNPMVersion, 0},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: exampleNPMVersion},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", exampleNPMVersion, 0},
-		{"example", exampleNPMVersion2, 1},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: exampleNPMVersion},
+		{ID: 1, Name: "example", Version: exampleNPMVersion2},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", "1.0.0", 0},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: "1.0.0"},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagRemoved()
