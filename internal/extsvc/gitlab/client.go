@@ -33,11 +33,11 @@ var (
 	// Whether debug logging is turned on
 	traceEnabled int32 = 0
 
-	once sync.Once
+	watchConfigOnce sync.Once
 )
 
 func watchConfig() {
-	once.Do(func() {
+	watchConfigOnce.Do(func() {
 		go func() {
 			conf.Watch(func() {
 				exp := conf.Get().ExperimentalFeatures
