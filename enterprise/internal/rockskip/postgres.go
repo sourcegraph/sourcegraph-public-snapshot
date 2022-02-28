@@ -47,13 +47,12 @@ func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash s
 }
 
 func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash string, height int, ancestor int) (id int, err error) {
-	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_ancestry (commit_id, repo_id, height, ancestor)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id
-	`, commitHash, repoId, height, ancestor).Scan(&lastInsertId)
-	return lastInsertId, errors.Wrap(err, "InsertCommit")
+	`, commitHash, repoId, height, ancestor).Scan(&id)
+	return id, errors.Wrap(err, "InsertCommit")
 }
 
 func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name string, hop int) (id int, found bool, err error) {
@@ -81,13 +80,12 @@ func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD
 }
 
 func InsertSymbol(ctx context.Context, db Queryable, hop int, repoId int, path string, name string) (id int, err error) {
-	lastInsertId := 0
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_symbols (added, deleted, repo_id, path, name)
 		                      VALUES ($1   , $2     , $3     , $4  , $5  )
 		RETURNING id
-	`, pg.Array([]int{hop}), pg.Array([]int{}), repoId, path, name).Scan(&lastInsertId)
-	return lastInsertId, errors.Wrap(err, "InsertSymbol")
+	`, pg.Array([]int{hop}), pg.Array([]int{}), repoId, path, name).Scan(&id)
+	return id, errors.Wrap(err, "InsertSymbol")
 }
 
 func AppendHop(ctx context.Context, db Queryable, repoId int, hops []int, givenStatus StatusAD, newHop int) error {
@@ -273,20 +271,19 @@ func PrintInternals(ctx context.Context, db Queryable) error {
 	return nil
 }
 
-func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) (int, error) {
-	lastInsertId := 0
-	err := db.QueryRowContext(ctx, `
+func updateLastAccessedAt(ctx context.Context, db Queryable, repo string) (id int, err error) {
+	err = db.QueryRowContext(ctx, `
 			INSERT INTO rockskip_repos (repo, last_accessed_at)
 			VALUES ($1, now())
 			ON CONFLICT (repo)
 			DO UPDATE SET last_accessed_at = now()
 			RETURNING id
-		`, repo).Scan(&lastInsertId)
+		`, repo).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
 
-	return lastInsertId, nil
+	return id, nil
 }
 
 func statusADToColumn(status StatusAD) string {
