@@ -30,9 +30,9 @@ import (
 // IndexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
-	// repoRevs is the Sourcegraph representation of a the list of repoRevs
+	// RepoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	repoRevs map[api.RepoID]*search.RepositoryRevisions
+	RepoRevs map[api.RepoID]*search.RepositoryRevisions
 
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
@@ -46,7 +46,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
-	if _, ok := rb.repoRevs[reporev.Repo.ID]; ok {
+	if _, ok := rb.RepoRevs[reporev.Repo.ID]; ok {
 		return reporev.Revs
 	}
 
@@ -60,7 +60,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	}
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.repoRevs[reporev.Repo.ID] = reporev
+		rb.RepoRevs[reporev.Repo.ID] = reporev
 		br, ok := rb.branchRepos["HEAD"]
 		if !ok {
 			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
@@ -111,7 +111,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// We found indexed branches! Track them.
 	if len(indexed) > 0 {
 		reporev.Revs = indexed
-		rb.repoRevs[reporev.Repo.ID] = reporev
+		rb.RepoRevs[reporev.Repo.ID] = reporev
 		for _, branch := range branches {
 			br, ok := rb.branchRepos[branch]
 			if !ok {
@@ -127,7 +127,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
-	repoRev := rb.repoRevs[api.RepoID(file.RepositoryID)]
+	repoRev := rb.RepoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
 	// of sync, so the above lookup will fail. We fallback to linking the rev
@@ -320,7 +320,7 @@ func (s *IndexedSubsetSearchRequest) IndexedRepos() map[api.RepoID]*search.Repos
 	if s.RepoRevs == nil {
 		return nil
 	}
-	return s.RepoRevs.repoRevs
+	return s.RepoRevs.RepoRevs
 }
 
 // UnindexedRepos is a slice of unindexed repositories to search.
@@ -405,7 +405,7 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
-		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("indexed.size", len(indexed.RepoRevs)),
 		log.Int("searcher_repos.size", len(searcherRepos)),
 	)
 
@@ -479,7 +479,7 @@ func PartitionRepos(
 	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
-		log.Int("indexed.size", len(indexed.repoRevs)),
+		log.Int("indexed.size", len(indexed.RepoRevs)),
 		log.Int("searcher_repos.size", len(searcherRepos)),
 	)
 
@@ -529,7 +529,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if len(repos.repoRevs) == 0 {
+	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
 
@@ -543,7 +543,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
-	k := ResultCountFactor(len(repos.repoRevs), fileMatchLimit, false)
+	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
 
 	// Start event stream.
@@ -577,7 +577,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
-		for _, r := range repos.repoRevs {
+		for _, r := range repos.RepoRevs {
 			statusMap.Update(r.Repo.ID, mask)
 		}
 		return statusMap
@@ -751,7 +751,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		repoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
+		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
 		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
@@ -818,7 +818,7 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 	if z.Repos == nil {
 		return nil, nil
 	}
-	if len(z.Repos.repoRevs) == 0 {
+	if len(z.Repos.RepoRevs) == 0 {
 		return nil, nil
 	}
 
