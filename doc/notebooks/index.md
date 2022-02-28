@@ -50,3 +50,4 @@ We're still actively developing Notebooks while in Beta and we'd love your [feed
 
 ## Explanations
 - [Sharing Notebooks](../notebooks/notebook-sharing.md)
+- [Embedding Notebooks](../notebooks/notebook-embedding.md)
