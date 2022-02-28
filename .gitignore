@@ -1,3 +1,6 @@
+# Temporary directory for whatever you want
+.tmp/
+
 # Vim
 *.swp
 

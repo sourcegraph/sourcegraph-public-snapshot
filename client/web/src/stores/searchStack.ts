@@ -9,12 +9,13 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { useExperimentalFeatures } from './experimentalFeatures'
 
+export type SearchStackEntryID = number
 export interface SearchEntry {
     type: 'search'
     /**
      * The ID is primarily used to let the UI uniquily identifiy each entry.
      */
-    id: number
+    id: SearchStackEntryID
     query: string
     caseSensitive: boolean
     searchContext?: string
@@ -27,7 +28,7 @@ export interface FileEntry {
     /**
      * The ID is primarily used to let the UI uniquily identifiy each entry.
      */
-    id: number
+    id: SearchStackEntryID
     path: string
     repo: string
     revision: string
@@ -146,9 +147,18 @@ export function restorePreviousSession(): void {
     }
 }
 
-export function removeSearchStackEntry(entryToDelete: SearchStackEntry): void {
+export function removeFromSearchStack(idsToDelete: SearchStackEntryID | SearchStackEntryID[]): void {
     useSearchStackState.setState(currentState => {
-        const entries = currentState.entries.filter(entry => entry !== entryToDelete)
+        if (!Array.isArray(idsToDelete)) {
+            idsToDelete = [idsToDelete]
+        }
+        const entries = [...currentState.entries]
+        for (const id of idsToDelete) {
+            entries.splice(
+                entries.findIndex(entry => entry.id === id),
+                1
+            )
+        }
         persistSession(entries)
         return { entries }
     })

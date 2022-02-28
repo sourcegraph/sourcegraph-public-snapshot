@@ -3,10 +3,13 @@ package github
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -46,7 +49,7 @@ func NewAuthzProviders(
 
 	for _, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token)
+		p, err := newAuthzProvider(c.URN, c.GitHubConnection)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p == nil {
@@ -88,26 +91,38 @@ func NewAuthzProviders(
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
-func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, token string) (*Provider, error) {
-	if a == nil {
+func newAuthzProvider(urn string, c *schema.GitHubConnection) (*Provider, error) {
+	if c.Authorization == nil {
 		return nil, nil
 	}
 
-	ghURL, err := url.Parse(instanceURL)
+	baseURL, err := url.Parse(c.Url)
 	if err != nil {
-		return nil, errors.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
+		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
+	}
+
+	if c.GithubAppInstallationID != "" {
+		dotcomConfig := conf.SiteConfig().Dotcom
+		if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
+		}
+
+		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "parse installation ID")
+		}
+		return newAppProvider(urn, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID)
 	}
 
 	// Disable by default for now
-	if a.GroupsCacheTTL <= 0 {
-		a.GroupsCacheTTL = -1
+	if c.Authorization.GroupsCacheTTL <= 0 {
+		c.Authorization.GroupsCacheTTL = -1
 	}
 
-	ttl := time.Duration(a.GroupsCacheTTL) * time.Hour
-
+	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
 	return NewProvider(urn, ProviderOptions{
-		GitHubURL:      ghURL,
-		BaseToken:      token,
+		GitHubURL:      baseURL,
+		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
 	}), nil
 }
@@ -115,6 +130,6 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
 func ValidateAuthz(cfg *schema.GitHubConnection) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token)
+	_, err := newAuthzProvider("", cfg)
 	return err
 }

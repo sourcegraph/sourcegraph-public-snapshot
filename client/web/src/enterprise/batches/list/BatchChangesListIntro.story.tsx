@@ -6,7 +6,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const { add } = storiesOf('web/batches/BatchChangesListIntro', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/list/BatchChangesListIntro', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 

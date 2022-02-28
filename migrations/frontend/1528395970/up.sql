@@ -1,4 +1,5 @@
 ALTER TABLE cm_trigger_jobs
+    DROP CONSTRAINT IF EXISTS search_results_is_array,
     ADD COLUMN IF NOT EXISTS search_results JSONB,
     ADD CONSTRAINT search_results_is_array CHECK (jsonb_typeof(search_results) = 'array');
 

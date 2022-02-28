@@ -1,6 +1,6 @@
 import { subDays } from 'date-fns'
 
-import { BatchChangeState, ListBatchChange } from '../../../graphql-operations'
+import { BatchChangeState, BatchSpecState, ListBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()
 
@@ -24,6 +24,50 @@ This is my thorough explanation. And it can also get very long, in that case the
             namespaceName: 'alice',
             url: '/users/alice',
         },
+        currentSpec: {
+            id: 'old-spec',
+        },
+        batchSpecs: {
+            nodes: [
+                {
+                    __typename: 'BatchSpec',
+                    id: 'test',
+                    state: BatchSpecState.PROCESSING,
+                    applyURL: null,
+                },
+            ],
+        },
+    },
+    'Failed draft': {
+        id: 'testdraft',
+        url: '/users/alice/batch-change/test',
+        name: 'Awesome batch',
+        state: BatchChangeState.DRAFT,
+        description: 'The execution of the batch spec failed.',
+        createdAt: subDays(now, 5).toISOString(),
+        closedAt: null,
+        changesetsStats: {
+            open: 10,
+            closed: 0,
+            merged: 5,
+        },
+        namespace: {
+            namespaceName: 'alice',
+            url: '/users/alice',
+        },
+        currentSpec: {
+            id: 'empty-draft',
+        },
+        batchSpecs: {
+            nodes: [
+                {
+                    __typename: 'BatchSpec',
+                    id: 'test',
+                    state: BatchSpecState.FAILED,
+                    applyURL: null,
+                },
+            ],
+        },
     },
     'No description': {
         id: 'test2',
@@ -41,6 +85,19 @@ This is my thorough explanation. And it can also get very long, in that case the
         namespace: {
             namespaceName: 'alice',
             url: '/users/alice',
+        },
+        currentSpec: {
+            id: 'old-spec',
+        },
+        batchSpecs: {
+            nodes: [
+                {
+                    __typename: 'BatchSpec',
+                    id: 'test',
+                    state: BatchSpecState.COMPLETED,
+                    applyURL: '/fake-apply-url',
+                },
+            ],
         },
     },
     'Closed batch change': {
@@ -61,6 +118,19 @@ This is my thorough explanation. And it can also get very long, in that case the
         namespace: {
             namespaceName: 'alice',
             url: '/users/alice',
+        },
+        currentSpec: {
+            id: 'test',
+        },
+        batchSpecs: {
+            nodes: [
+                {
+                    __typename: 'BatchSpec',
+                    id: 'test',
+                    state: BatchSpecState.COMPLETED,
+                    applyURL: '/fake-apply-url',
+                },
+            ],
         },
     },
 }
