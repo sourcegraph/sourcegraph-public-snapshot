@@ -1991,7 +1991,6 @@ github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
-github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78 h1:DY/m+6+PnBz49fMU7rE+DfPf09QYgO1RLPDeJ/1BY9w=
 github.com/sourcegraph/go-ctags v0.0.0-20220210084826-96f4236f0a78/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
 github.com/sourcegraph/go-ctags v0.0.0-20220221141751-78951a22ec08 h1:cuI0tTyrf6sS2TXh2OJHEKLfpDM7K4V360X9bU+3l0k=
 github.com/sourcegraph/go-ctags v0.0.0-20220221141751-78951a22ec08/go.mod h1:ZYjpRXoJrRlxjU9ZfpaUKJkk62AjhJPffN3rlw2aqxM=
