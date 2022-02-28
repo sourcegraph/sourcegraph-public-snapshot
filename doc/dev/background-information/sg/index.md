@@ -268,23 +268,23 @@ sg secret reset buildkite
 
 ```
 
-### `sg check` - Run checks against local code
+### `sg lint` - Run linters against local code
 
 ```bash
 # Run all possible checks 
-sg check
+sg lint
 
 # Run only go related checks
-sg check go
+sg lint go
 
 # Run only shell related checks
-sg check shell
+sg lint shell
 
 # Run only client related checks
-sg check client 
+sg lint client
 
 # List all available check groups 
-sg check --help
+sg lint --help
 ```
 
 ### `sg db` - Interact with your local Sourcegraph database(s)

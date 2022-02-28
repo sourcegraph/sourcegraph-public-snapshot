@@ -14,7 +14,7 @@ fi
 
 set -x
 
-docker build \
+docker build --platform=linux/amd64 \
   --build-arg VERSION="$version" \
   --build-arg COMMIT_SHA="$commit" \
   --tag "$image" \

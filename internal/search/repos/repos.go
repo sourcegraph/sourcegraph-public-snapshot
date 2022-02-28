@@ -563,8 +563,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depSvc := codeintel.NewDependenciesService(r.DB, backend.NewRepos(repoStore).GetByName)
-	dependencyRepoRevs, err := depSvc.Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -582,6 +581,22 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, nil
+}
+
+type syncer struct {
+	svc interface {
+		GetByName(ctx context.Context, repo api.RepoName) (*types.Repo, error)
+	}
+}
+
+func (s *syncer) Sync(ctx context.Context, repos []api.RepoName) error {
+	for _, repo := range repos {
+		if _, err := s.svc.GetByName(ctx, repo); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and

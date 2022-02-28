@@ -3,9 +3,16 @@ package codeintel
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -16,45 +23,83 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
-
-// RevSpecSet is a utility type for a set of RevSpecs.
-type RevSpecSet map[api.RevSpec]struct{}
 
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
 // and package levels.
 type DependenciesService struct {
 	db              database.DB
-	sync            func(context.Context, api.RepoName) (*types.Repo, error)
+	syncer          Syncer
 	lockfileService *lockfiles.Service
+	operations      *dependencyServiceOperations
 }
 
-func NewDependenciesService(
+type Syncer interface {
+	// Sync will lazily sync the repos that have been inserted into the database but have not yet been
+	// cloned. See repos.Syncer.SyncRepo.
+	Sync(ctx context.Context, repos []api.RepoName) error
+}
+
+var (
+	depSvc     *DependenciesService
+	depSvcOnce sync.Once
+)
+
+func GetOrCreateGlobalDependencyService(db database.DB, syncer Syncer) *DependenciesService {
+	depSvcOnce.Do(func() {
+		observationContext := &observation.Context{
+			Logger:     log15.Root(),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+
+		depSvc = newDependenciesService(db, syncer, observationContext)
+	})
+
+	return depSvc
+}
+
+func newDependenciesService(
 	db database.DB,
-	sync func(context.Context, api.RepoName) (*types.Repo, error),
+	syncer Syncer,
+	observationContext *observation.Context,
 ) *DependenciesService {
 	return &DependenciesService{
 		db:              db,
-		sync:            sync,
+		syncer:          syncer,
 		lockfileService: &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive},
+		operations:      newDependencyServiceOperations(observationContext),
 	}
 }
+
+// RevSpecSet is a utility type for a set of RevSpecs.
+type RevSpecSet map[api.RevSpec]struct{}
 
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (dependencyRevs map[api.RepoName]RevSpecSet, err error) {
-	tr, ctx := trace.New(ctx, "DependenciesService", "Dependencies")
-	defer func() {
-		if len(repoRevs) > 1 {
-			tr.LazyPrintf("repoRevsCount: %d", len(repoRevs))
-		} else {
-			tr.LazyPrintf("repoRevs: %v", repoRevs)
-		}
+	logFields := make([]log.Field, 0, 2)
+	if len(repoRevs) == 1 {
+		for repoName, revs := range repoRevs {
+			revStrs := make([]string, 0, len(revs))
+			for rev := range revs {
+				revStrs = append(revStrs, string(rev))
+			}
 
-		tr.LazyPrintf("depRevsCount: %d", len(dependencyRevs))
-		tr.SetError(err)
-		tr.Finish()
+			logFields = append(logFields,
+				log.String("repo", string(repoName)),
+				log.String("revs", strings.Join(revStrs, ",")),
+			)
+		}
+	} else {
+		logFields = append(logFields, log.Int("repoRevs", len(repoRevs)))
+	}
+
+	ctx, endObservation := r.operations.dependencies.With(ctx, &err, observation.Args{LogFields: logFields})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numDependencyRevs", len(dependencyRevs)),
+		}})
 	}()
 
 	var mu sync.Mutex
@@ -95,7 +140,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 						}
 
 						depName := dep.RepoName()
-						if _, err := r.sync(ctx, depName); err != nil {
+						if err := r.syncer.Sync(ctx, []api.RepoName{depName}); err != nil {
 							return err
 						}
 
