@@ -3,5 +3,5 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# This image is identical to our "sourcegraph/postgres-12.7-alpine" image.
-IMAGE="${IMAGE:-sourcegraph/codeintel-db}" ../postgres-12.7-alpine/build.sh
+# This image is identical to our "sourcegraph/postgres-12-alpine" image.
+IMAGE="${IMAGE:-sourcegraph/codeintel-db}" ../postgres-12-alpine/build.sh
