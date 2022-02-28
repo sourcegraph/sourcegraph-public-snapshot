@@ -19,7 +19,7 @@ type Symbol struct {
 
 type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
 
-const NULL = 0
+const NULL CommitId = 0
 
 type Server struct {
 	db                   *sql.DB

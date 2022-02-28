@@ -18,7 +18,9 @@ type Queryable interface {
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
-func GetCommitById(ctx context.Context, db Queryable, givenCommit int) (commitHash string, ancestor int, height int, present bool, err error) {
+type CommitId = int
+
+func GetCommitById(ctx context.Context, db Queryable, givenCommit CommitId) (commitHash string, ancestor CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT commit_id, ancestor, height
 		FROM rockskip_ancestry
@@ -32,7 +34,7 @@ func GetCommitById(ctx context.Context, db Queryable, givenCommit int) (commitHa
 	return commitHash, ancestor, height, true, nil
 }
 
-func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash string) (commit int, height int, present bool, err error) {
+func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash string) (commit CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id, height
 		FROM rockskip_ancestry
@@ -46,7 +48,7 @@ func GetCommitByHash(ctx context.Context, db Queryable, repoId int, commitHash s
 	return commit, height, true, nil
 }
 
-func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash string, height int, ancestor int) (id int, err error) {
+func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash string, height int, ancestor CommitId) (id CommitId, err error) {
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_ancestry (commit_id, repo_id, height, ancestor)
 		VALUES ($1, $2, $3, $4)
@@ -55,7 +57,7 @@ func InsertCommit(ctx context.Context, db Queryable, repoId int, commitHash stri
 	return id, errors.Wrap(err, "InsertCommit")
 }
 
-func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name string, hop int) (id int, found bool, err error) {
+func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name string, hop CommitId) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_symbols
@@ -69,7 +71,7 @@ func GetSymbol(ctx context.Context, db Queryable, repoId int, path string, name 
 	return id, true, nil
 }
 
-func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD, hop int) error {
+func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD, hop CommitId) error {
 	column := statusADToColumn(status)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_symbols
@@ -79,7 +81,7 @@ func UpdateSymbolHops(ctx context.Context, db Queryable, id int, status StatusAD
 	return errors.Wrap(err, "UpdateSymbolHops")
 }
 
-func InsertSymbol(ctx context.Context, db Queryable, hop int, repoId int, path string, name string) (id int, err error) {
+func InsertSymbol(ctx context.Context, db Queryable, hop CommitId, repoId int, path string, name string) (id int, err error) {
 	err = db.QueryRowContext(ctx, `
 		INSERT INTO rockskip_symbols (added, deleted, repo_id, path, name)
 		                      VALUES ($1   , $2     , $3     , $4  , $5  )
@@ -88,7 +90,7 @@ func InsertSymbol(ctx context.Context, db Queryable, hop int, repoId int, path s
 	return id, errors.Wrap(err, "InsertSymbol")
 }
 
-func AppendHop(ctx context.Context, db Queryable, repoId int, hops []int, givenStatus StatusAD, newHop int) error {
+func AppendHop(ctx context.Context, db Queryable, repoId int, hops []CommitId, givenStatus StatusAD, newHop CommitId) error {
 	column := statusADToColumn(givenStatus)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_symbols
@@ -98,7 +100,7 @@ func AppendHop(ctx context.Context, db Queryable, repoId int, hops []int, givenS
 	return errors.Wrap(err, "AppendHop")
 }
 
-func DeleteRedundant(ctx context.Context, db Queryable, hop int) error {
+func DeleteRedundant(ctx context.Context, db Queryable, hop CommitId) error {
 	_, err := db.ExecContext(ctx, `
 		UPDATE rockskip_symbols
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
