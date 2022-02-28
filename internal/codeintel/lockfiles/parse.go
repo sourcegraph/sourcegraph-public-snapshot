@@ -1,53 +1,56 @@
 package lockfiles
 
 import (
-	"fmt"
+	"io"
 	"path"
 
+	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/npm"
+	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/yarn"
+	"github.com/aquasecurity/go-dep-parser/pkg/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Dependency struct {
-	Name    string
-	Version string
-	Kind    Kind
-}
-
-func (d *Dependency) Less(other *Dependency) bool {
-	if d.Kind != other.Kind {
-		return d.Kind < other.Kind
-	}
-
-	if d.Name != other.Name {
-		return d.Name < other.Name
-	}
-
-	return d.Version < other.Version
-}
-
-func (d *Dependency) String() string {
-	return fmt.Sprintf("%s %s %s", d.Kind, d.Name, d.Version)
-}
-
-type Kind string
-
-const (
-	KindNPM Kind = "npm"
-)
-
-var parsers = map[string]ParseFunc{
-	NPMFilename: ParseNPM,
-}
-
-type ParseFunc func([]byte) ([]reposource.PackageDependency, error)
-
 var ErrUnsupported = errors.New("unsupported lockfile kind")
 
-func Parse(file string, data []byte) ([]reposource.PackageDependency, error) {
-	parse, ok := parsers[path.Base(file)]
+func Parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
+	p, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, ErrUnsupported
 	}
-	return parse(data)
+
+	libs, err := p.parse(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		errs errors.MultiError
+		deps = make([]reposource.PackageDependency, 0, len(libs))
+	)
+
+	for _, lib := range libs {
+		dep, err := p.pkg(&lib)
+		if err != nil {
+			errs = errors.Append(errs, err)
+		} else {
+			deps = append(deps, dep)
+		}
+	}
+
+	return deps, err
+}
+
+var parsers = map[string]*parser{
+	"package-lock.json": {npm.Parse, npmPackage},
+	"yarn.lock":         {yarn.Parse, npmPackage},
+}
+
+type parser struct {
+	parse func(io.Reader) ([]types.Library, error)
+	pkg   func(*types.Library) (reposource.PackageDependency, error)
+}
+
+func npmPackage(lib *types.Library) (reposource.PackageDependency, error) {
+	return reposource.ParseNPMDependency(lib.Name + "@" + lib.Version)
 }

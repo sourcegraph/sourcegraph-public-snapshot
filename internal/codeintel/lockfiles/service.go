@@ -5,7 +5,10 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"sort"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -18,14 +21,23 @@ import (
 )
 
 type Service struct {
-	archiveStreamer ArchiveStreamer
-	operations      *operations
+	checker    authz.SubRepoPermissionChecker
+	lsFiles    func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error)
+	archive    func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	operations *operations
 }
 
-func NewService(archiveStreamer ArchiveStreamer, observationContext *observation.Context) *Service {
+func NewService(
+	checker authz.SubRepoPermissionChecker,
+	lsFiles func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error),
+	archive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error),
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		archiveStreamer: archiveStreamer,
-		operations:      newOperations(observationContext),
+		checker:    checker,
+		lsFiles:    lsFiles,
+		archive:    archive,
+		operations: newOperations(observationContext),
 	}
 }
 
@@ -36,15 +48,18 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
+	paths, err := s.lsFiles(ctx, s.checker, repo, api.CommitID(rev), lockfilePaths...)
+	if err != nil {
+		return err
+	}
+
 	opts := gitserver.ArchiveOptions{
 		Treeish: rev,
 		Format:  "zip",
-		Paths: []string{
-			"*" + NPMFilename,
-		},
+		Paths:   paths,
 	}
 
-	rc, err := s.archiveStreamer.StreamArchive(ctx, repo, opts)
+	rc, err := s.archive(ctx, repo, opts)
 	if err != nil {
 		return err
 	}
@@ -103,19 +118,23 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	return deps, err
 }
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
+var lockfilePaths = func() (paths []string) {
+	paths = make([]string, 0, len(parsers))
+	for filename := range parsers {
+		paths = append(paths, "*"+filename)
+	}
+	sort.Strings(paths)
+	return
+}()
+
+func parseZipLockfile(f *zip.File) (deps []reposource.PackageDependency, err error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := Parse(f.Name, contents)
+	ds, err := Parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
