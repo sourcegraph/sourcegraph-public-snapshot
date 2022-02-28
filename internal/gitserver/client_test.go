@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -55,6 +56,29 @@ func TestClient_ListCloned(t *testing.T) {
 	sort.Strings(want)
 	if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
 		t.Errorf("mismatch for (-want +got):\n%s", cmp.Diff(want, got))
+	}
+}
+
+func TestClient_IsRepoCloneable(t *testing.T) {
+	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
+	cli := gitserver.NewTestClient(
+		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			case "http://gitserver/is-repo-cloneable":
+				return &http.Response{
+					StatusCode: http.StatusNotFound,
+					Body:       io.NopCloser(bytes.NewBufferString("{}")),
+				}, nil
+			default:
+				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+			}
+		}),
+		[]string{"gitserver"},
+	)
+
+	err := cli.IsRepoCloneable(context.Background(), repo)
+	if !errcode.IsNotFound(err) {
+		t.Errorf("expected a Not Found error, got %s", err)
 	}
 }
 

@@ -802,6 +802,9 @@ func (c *ClientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	if err != nil {
 		return err
 	}
+	if r.StatusCode == http.StatusNotFound {
+		return &RepoNotCloneableErr{repo: repo, notFound: true}
+	}
 	if r.StatusCode != http.StatusOK {
 		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}

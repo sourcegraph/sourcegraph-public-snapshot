@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -736,6 +737,10 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	// the endpoint is only available internally so it's low risk.
 	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(r.Context()), req.Repo)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		// We use this endpoint to verify if a repo exists without consuming
 		// API rate limit, since many users visit private or bogus repos,
 		// so we deduce the unauthenticated clone URL from the repo name.
