@@ -46,7 +46,7 @@ func (p *provider) Config() schema.AuthProviders {
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newProvider(ctx, p.config.Issuer)
+	p.oidc, p.refreshErr = newProvider(p.config.Issuer)
 	return p.refreshErr
 }
 
@@ -120,7 +120,7 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newProvider(ctx context.Context, issuerURL string) (*oidcProvider, error) {
+func newProvider(issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}

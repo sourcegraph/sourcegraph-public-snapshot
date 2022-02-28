@@ -26,8 +26,10 @@ type uploadExpirer struct {
 	branchesCacheMaxKeys   int
 }
 
-var _ goroutine.Handler = &uploadExpirer{}
-var _ goroutine.ErrorHandler = &uploadExpirer{}
+var (
+	_ goroutine.Handler      = &uploadExpirer{}
+	_ goroutine.ErrorHandler = &uploadExpirer{}
+)
 
 // NewUploadExpirer returns a background routine that periodically compares the age of upload records
 // against the age of uploads protected by global and repository specific data retention policies.
@@ -195,8 +197,10 @@ func (e *uploadExpirer) handleUploads(
 	now time.Time,
 ) (err error) {
 	// Categorize each upload as protected or expired
-	protectedUploadIDs := make([]int, 0, len(uploads))
-	expiredUploadIDs := make([]int, 0, len(uploads))
+	var (
+		protectedUploadIDs = make([]int, 0, len(uploads))
+		expiredUploadIDs   = make([]int, 0, len(uploads))
+	)
 
 	for _, upload := range uploads {
 		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, now)

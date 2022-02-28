@@ -216,84 +216,89 @@ enum SymbolRole {
 enum SyntaxKind {
   UnspecifiedSyntaxKind = 0;
 
-  // `+`, `*`, etc.
-  Operator = 1;
-
   // Comment, including comment markers and text
-  Comment = 2;
+  Comment = 1;
 
   // `;` `.` `,`
-  PunctuationDelimiter = 3;
+  PunctuationDelimiter = 2;
   // (), {}, [] when used syntactically
-  PunctuationBracket = 4;
-  // `{}` within a string.
-  PunctuationSpecial = 5;
+  PunctuationBracket = 3;
 
   // `if`, `else`, `return`, `class`, etc.
-  Keyword = 6;
+  IdentifierKeyword = 4;
 
-  // non-specific variables, function calls, etc.
-  // In general, prefer more specific identifier kinds if possible.
-  Identifier = 7;
+  // `+`, `*`, etc.
+  IdentifierOperator = 5;
+
+  // non-specific catch-all for any identifier not better described elsewhere
+  Identifier = 6;
   // Identifiers builtin to the language: `min`, `print` in Python.
-  BuiltinIdentifier = 8;
-  // Identifiers builtin to the language: `None` in Python, `nil` in Go.
-  NullIdentifier = 9;
+  IdentifierBuiltin = 7;
+  // Identifiers representing `null`-like values: `None` in Python, `nil` in Go.
+  IdentifierNull = 8;
   // `xyz` in `const xyz = "hello"`
-  ConstantIdentifier = 10;
+  IdentifierConstant = 9;
   // `var X = "hello"` in Go
-  MutableGlobalIdentifier = 11;
+  IdentifierMutableGlobal = 10;
   // both parameter definition and references
-  ParameterIdentifier = 12;
+  IdentifierParameter = 11;
   // identifiers for variable definitions and references within a local scope
-  LocalIdentifier = 13;
+  IdentifierLocal = 12;
   // Used when identifier shadowes some other identifier within the scope
-  ShadowedIdentifier = 14;
+  IdentifierShadowed = 13;
   // `package main`
-  ModuleIdentifier = 15;
-  // Macro references only, not definitions
-  MacroIdentifier = 16;
+  IdentifierModule = 14;
 
-  // Literal strings: "Hello, world!"
-  StringLiteral = 17;
-  // ".*" in a string regex
-  StringLiteralRegex = 18;
-  // "\t", "\n"
-  StringLiteralEscape = 19;
-  // datetimes within strings, special words within a string
-  StringLiteralSpecial = 20;
-  // "key" in { "key": "value" }
-  StringLiteralKey = 21;
-  // 'c' or similar, in languages that differentiate strings and characters
-  CharacterLiteral = 22;
-  // Literal numbers, both floats and integers
-  NumericLiteral = 23;
-  // `true`, `false`
-  BooleanLiteral = 24;
+  // Function call/reference
+  IdentifierFunction = 15;
+  // Function definition only
+  IdentifierFunctionDefinition = 16;
 
-  // Function definition only.
-  //    Included because many editors highlight a function definition differently
-  //    from function calls.
-  FunctionDefinition = 25;
-  // Macro definition only.
-  //    Included because many editors highlight a macro definition differently
-  //    from macro usages.
-  MacroDefinition = 26;
+  // Macro call/reference
+  IdentifierMacro = 17;
+  // Macro definition only
+  IdentifierMacroDefinition = 18;
 
   // non-builtin types, including namespaces
-  TypeIdentifier = 27;
+  IdentifierType = 19;
   // builtin types only, such as `str` for Python or `int` in Go
-  BuiltinTypeIdentifier = 28;
+  IdentifierBuiltinType = 20;
 
   // Python decorators, c-like __attribute__
-  AttributeIdentifier = 29;
+  IdentifierAttribute = 21;
+
+  // `\b`
+  RegexEscape = 22;
+  // `*`, `+`
+  RegexRepeated = 23;
+  // `.`
+  RegexWildcard = 24;
+  // `(`, `)`, `[`, `]`
+  RegexDelimiter = 25;
+  // `|`, `-`
+  RegexJoin = 26;
+
+  // Literal strings: "Hello, world!"
+  StringLiteral = 27;
+  // non-regex escapes: "\t", "\n"
+  StringLiteralEscape = 28;
+  // datetimes within strings, special words within a string, `{}` in format strings
+  StringLiteralSpecial = 29;
+  // "key" in { "key": "value" }, useful for example in JSON
+  StringLiteralKey = 30;
+  // 'c' or similar, in languages that differentiate strings and characters
+  CharacterLiteral = 31;
+  // Literal numbers, both floats and integers
+  NumericLiteral = 32;
+  // `true`, `false`
+  BooleanLiteral = 33;
 
   // Used for XML-like tags
-  Tag = 30;
+  Tag = 34;
   // Attribute name in XML-like tags
-  TagAttribute = 31;
+  TagAttribute = 35;
   // Delimiters for XML-like tags
-  TagDelimiter = 32;
+  TagDelimiter = 36;
 }
 
 // Occurrence associates a source position with a symbol and/or highlighting

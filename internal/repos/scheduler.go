@@ -464,6 +464,7 @@ func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedu
 			Index:    update.Index,
 			Total:    len(s.updateQueue.index),
 			Updating: update.Updating,
+			Priority: int(update.Priority),
 		}
 	}
 	s.updateQueue.mu.Unlock()

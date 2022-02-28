@@ -70,3 +70,37 @@ query Files($repoName: String!, $revision: String!) {
 
 	return resp.Data.Repository.Commit.FileNames, nil
 }
+
+// GitGetCommitMessage returns commit message for given repo and revision.
+// This spins up sub-repo permissions for the commit and error is returned when
+// trying to access restricted commit
+func (c *Client) GitGetCommitMessage(repoName, revision string) (string, error) {
+	const gqlQuery = `
+query Files($repoName: String!, $revision: String!) {
+	repository(name: $repoName) {
+		commit(rev: $revision) {
+            message
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"repoName": repoName,
+		"revision": revision,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				Commit struct {
+					Message string `json:"message"`
+				} `json:"commit"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", gqlQuery, variables, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.Commit.Message, nil
+}

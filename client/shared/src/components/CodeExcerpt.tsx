@@ -3,12 +3,17 @@ import { range, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
-import { of, combineLatest, Observable, Subject, Subscription } from 'rxjs'
+import { of, combineLatest, Observable, Subject, Subscription, BehaviorSubject, NEVER } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
-import { asError, ErrorLike, highlightNode, isErrorLike } from '@sourcegraph/common'
+import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 
+import { ActionItemAction } from '../actions/ActionItem'
+import { HoverMerged } from '../api/client/types/hover'
+import { ViewerId } from '../api/viewerTypes'
+import { HoverContext } from '../hover/HoverOverlay.types'
 import * as GQL from '../schema'
 
 import styles from './CodeExcerpt.module.scss'
@@ -36,6 +41,9 @@ interface Props extends Repo {
      * the same start and end lines properties that were provided as component props */
     fetchHighlightedFileRangeLines: (isFirst: boolean, startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
+
+    viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 interface HighlightRange {
@@ -57,12 +65,44 @@ interface State {
     blobLinesOrError?: string[] | ErrorLike
 }
 
+const domFunctions: DOMFunctions = {
+    getCodeElementFromTarget: target => {
+        const row = target.closest('tr')
+        if (!row) {
+            return null
+        }
+        return row.cells[1]
+    },
+    getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
+        const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
+        if (!lineElement) {
+            return null
+        }
+        const row = lineElement.closest('tr')
+        if (!row) {
+            return null
+        }
+        return row.cells[1]
+    },
+    getLineNumberFromCodeElement: codeCell => {
+        const row = codeCell.closest('tr')
+        if (!row) {
+            throw new Error('Could not find closest row for codeCell')
+        }
+        const numberCell = row.cells[0]
+        if (!numberCell || !numberCell.dataset.line) {
+            throw new Error('Could not find line number')
+        }
+        return parseInt(numberCell.dataset.line, 10)
+    },
+}
+
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
 export class CodeExcerpt extends React.PureComponent<Props, State> {
     public state: State = {}
-    private tableContainerElement: HTMLElement | null = null
+    private tableContainerElements = new BehaviorSubject<HTMLElement | null>(null)
     private propsChanges = new Subject<Props>()
     private visibilityChanges = new Subject<boolean>()
     private subscriptions = new Subscription()
@@ -85,6 +125,33 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     this.setState({ blobLinesOrError })
                 })
         )
+
+        let hoverifierSubscription: Subscription | null
+        this.subscriptions.add(
+            combineLatest([
+                props.viewerUpdates ?? NEVER,
+                this.propsChanges.pipe(
+                    map(props => props.hoverifier),
+                    distinctUntilChanged(),
+                    filter(isDefined)
+                ),
+            ]).subscribe(([{ viewerId, ...hoverContext }, hoverifier]) => {
+                if (hoverifierSubscription) {
+                    hoverifierSubscription.unsubscribe()
+                    this.subscriptions.remove(hoverifierSubscription)
+                }
+
+                hoverifierSubscription = hoverifier.hoverify({
+                    positionEvents: this.tableContainerElements.pipe(
+                        filter(isDefined),
+                        findPositionsFromEvents({ domFunctions })
+                    ),
+                    resolveContext: () => hoverContext,
+                    dom: domFunctions,
+                })
+                this.subscriptions.add(hoverifierSubscription)
+            })
+        )
     }
 
     public componentDidMount(): void {
@@ -94,8 +161,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     public componentDidUpdate(): void {
         this.propsChanges.next(this.props)
 
-        if (this.tableContainerElement) {
-            const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
+        if (this.tableContainerElements.value) {
+            const visibleRows = this.tableContainerElements.value.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {
                 // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
                 // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
@@ -165,7 +232,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private setTableContainerElement = (reference: HTMLElement | null): void => {
-        this.tableContainerElement = reference
+        this.tableContainerElements.next(reference)
     }
 
     private makeTableHTML(blobLines: string[]): string {

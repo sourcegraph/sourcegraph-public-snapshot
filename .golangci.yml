@@ -15,6 +15,7 @@ linters:
     - typecheck
     - unconvert
     - unused
+    - unparam
 
 linters-settings:
   depguard:
@@ -63,6 +64,7 @@ run:
     - ui
     - vendor
     - node_modules
+    - docker-images/syntax-highlighter
 
   skip-files:
     # Auto-generated with depguard and forbidigo failures

@@ -4,7 +4,7 @@
 
 <span class="virtual-br"></span>
 
-> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/continuous_integration.md#buildkite-pipelines)".
+> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/ci/index.md#buildkite-pipelines)".
 
 ## Backend tests
 
