@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,6 +26,8 @@ import (
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func NewAuthzProviders(
+	externalServicesStore database.ExternalServiceStore,
+	svcs []*types.ExternalService,
 	conns []*types.GitHubConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
@@ -47,9 +50,9 @@ func NewAuthzProviders(
 		}
 	}
 
-	for _, c := range conns {
+	for i, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(c.URN, c.GitHubConnection)
+		p, err := newAuthzProvider(externalServicesStore, svcs[i], c.URN, c.GitHubConnection)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p == nil {
@@ -91,7 +94,12 @@ func NewAuthzProviders(
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
-func newAuthzProvider(urn string, c *schema.GitHubConnection) (*Provider, error) {
+func newAuthzProvider(
+	externalServicesStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	urn string,
+	c *schema.GitHubConnection,
+) (*Provider, error) {
 	if c.Authorization == nil {
 		return nil, nil
 	}
@@ -111,7 +119,7 @@ func newAuthzProvider(urn string, c *schema.GitHubConnection) (*Provider, error)
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
-		return newAppProvider(urn, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID)
+		return newAppProvider(externalServicesStore, svc, urn, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID)
 	}
 
 	// Disable by default for now
@@ -129,7 +137,7 @@ func newAuthzProvider(urn string, c *schema.GitHubConnection) (*Provider, error)
 
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
-func ValidateAuthz(cfg *schema.GitHubConnection) error {
-	_, err := newAuthzProvider("", cfg)
+func ValidateAuthz(c *schema.GitHubConnection) error {
+	_, err := newAuthzProvider(nil, nil, "", c)
 	return err
 }
