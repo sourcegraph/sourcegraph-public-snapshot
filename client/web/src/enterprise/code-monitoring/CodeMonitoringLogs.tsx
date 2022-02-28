@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -138,10 +139,10 @@ export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date; _te
                 }{' '}
                 most recent runs are shown and old runs are deleted periodically.
             </p>
-            <Card className="px-3 pt-3">
+            <Card className="p-3">
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList className={styles.grid}>
+                    <ConnectionList className={classNames(styles.grid, 'mb-0')}>
                         {monitors.length > 0 ? <CodeMonitorLogsHeader /> : null}
                         {monitors.map(monitor => (
                             <MonitorLogNode key={monitor.id} monitor={monitor} now={now} startOpen={_testStartOpen} />
