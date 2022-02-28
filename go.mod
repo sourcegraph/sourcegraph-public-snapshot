@@ -168,6 +168,7 @@ require (
 	google.golang.org/api v0.66.0
 	google.golang.org/genproto v0.0.0-20220202230416-2a053f022f0d
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/DataDog/dd-trace-go.v1 v1.36.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -180,6 +181,10 @@ require (
 require (
 	cloud.google.com/go/compute v1.1.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
+	github.com/DataDog/datadog-agent/pkg/obfuscate v0.0.0-20211129110424-6491aa3bf583 // indirect
+	github.com/DataDog/datadog-go v4.8.2+incompatible // indirect
+	github.com/DataDog/datadog-go/v5 v5.0.2 // indirect
+	github.com/DataDog/sketches-go v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
@@ -200,8 +205,10 @@ require (
 	github.com/muesli/termenv v0.9.0 // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3 // indirect
+	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/yuin/goldmark v1.4.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
