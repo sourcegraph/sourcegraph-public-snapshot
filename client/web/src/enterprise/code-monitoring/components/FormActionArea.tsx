@@ -5,7 +5,6 @@ import { Link } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
-import { triggerTestEmailAction } from '../backend'
 
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'
@@ -26,6 +25,7 @@ export interface ActionProps {
     setAction: (action?: MonitorAction) => void
     disabled: boolean
     monitorName: string
+    authenticatedUser: AuthenticatedUser
 
     // For testing purposes only
     _testStartOpen?: boolean
@@ -39,7 +39,6 @@ export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
  */
 export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     actions,
-    actionsCompleted,
     setActionsCompleted,
     disabled,
     authenticatedUser,
@@ -90,7 +89,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 setAction={setEmailAction}
                 authenticatedUser={authenticatedUser}
                 monitorName={monitorName}
-                triggerTestEmailAction={triggerTestEmailAction}
             />
 
             {(showWebhooks || slackWebhookAction) && (
@@ -99,6 +97,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={slackWebhookAction}
                     setAction={setSlackWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 
@@ -108,6 +107,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     action={webhookAction}
                     setAction={setWebhookAction}
                     monitorName={monitorName}
+                    authenticatedUser={authenticatedUser}
                 />
             )}
 

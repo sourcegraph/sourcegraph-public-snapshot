@@ -3,6 +3,7 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
@@ -16,6 +17,7 @@ const defaultProps: ActionProps = {
     setAction: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 const action: ActionProps['action'] = {
