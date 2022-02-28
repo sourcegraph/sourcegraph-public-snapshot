@@ -252,12 +252,12 @@ Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/
 
 ## Running Locally
 
-Using [`sg`](../sg), run the `enterprise-codeinsights` to run everything needed for code insights.
+Using [`sg`](../sg.md), run the `enterprise-codeinsights` to run everything needed for code insights.
 ```
 sg start enterprise-codeinsights
 ```
 
-Insights can then be [created either via the locally running webapp](../../../code_insights/how-tos/creating_a_custom_dashboard_of_code_insights), or [created via the GraphQL API](../../../api/graphql/managing-code-insights-with-api).
+Insights can then be [created either via the locally running webapp](../../../code_insights/how-tos/creating_a_custom_dashboard_of_code_insights.md), or [created via the GraphQL API](../../../api/graphql/managing-code-insights-with-api.md).
 
 If you've created an insight that needs to generate series data on the backend, be aware of [the time interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L122) at which these series will be picked up for backfilling. You may want to restart the service so that the new series will be picked up right away for processing.
 
