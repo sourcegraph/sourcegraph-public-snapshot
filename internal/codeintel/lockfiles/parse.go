@@ -42,11 +42,6 @@ func Parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
 	return deps, err
 }
 
-var parsers = map[string]*parser{
-	"package-lock.json": {npm.Parse, npmPackage},
-	"yarn.lock":         {yarn.Parse, npmPackage},
-}
-
 var lockfiles = func() (filenames []string) {
 	filenames = make([]string, 0, len(parsers))
 	for filename := range parsers {
@@ -55,6 +50,11 @@ var lockfiles = func() (filenames []string) {
 	sort.Strings(filenames)
 	return
 }()
+
+var parsers = map[string]*parser{
+	"package-lock.json": {npm.Parse, npmPackage},
+	"yarn.lock":         {yarn.Parse, npmPackage},
+}
 
 type parser struct {
 	parse func(io.Reader) ([]types.Library, error)

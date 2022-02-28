@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"io"
 	"sort"
 	"strings"
@@ -19,14 +20,23 @@ import (
 )
 
 type Service struct {
-	archiveStreamer ArchiveStreamer
-	operations      *operations
+	checker    authz.SubRepoPermissionChecker
+	lsFiles    func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error)
+	archive    func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	operations *operations
 }
 
-func NewService(archiveStreamer ArchiveStreamer, observationContext *observation.Context) *Service {
+func NewService(
+	checker authz.SubRepoPermissionChecker,
+	lsFiles func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error),
+	archive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error),
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		archiveStreamer: archiveStreamer,
-		operations:      newOperations(observationContext),
+		checker:    checker,
+		lsFiles:    lsFiles,
+		archive:    archive,
+		operations: newOperations(observationContext),
 	}
 }
 
@@ -37,13 +47,18 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
+	paths, err := s.lsFiles(ctx, s.checker, repo, api.CommitID(rev), lockfilePaths...)
+	if err != nil {
+		return err
+	}
+
 	opts := gitserver.ArchiveOptions{
 		Treeish: rev,
 		Format:  "zip",
-		Paths:   lockfilePaths,
+		Paths:   paths,
 	}
 
-	rc, err := s.archiveStreamer.StreamArchive(ctx, repo, opts)
+	rc, err := s.archive(ctx, repo, opts)
 	if err != nil {
 		return err
 	}
@@ -111,7 +126,7 @@ var lockfilePaths = func() (paths []string) {
 	return
 }()
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
+func parseZipLockfile(f *zip.File) (deps []reposource.PackageDependency, err error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, err

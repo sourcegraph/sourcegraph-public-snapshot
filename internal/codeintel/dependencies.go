@@ -3,7 +3,9 @@ package codeintel
 import (
 	"context"
 	"database/sql"
-	"io"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"strings"
 	"sync"
 
@@ -23,7 +25,6 @@ import (
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
@@ -66,17 +67,16 @@ func newDependenciesService(
 	observationContext *observation.Context,
 ) *DependenciesService {
 	return &DependenciesService{
-		db:              db,
-		syncer:          syncer,
-		lockfileService: lockfiles.NewService(defaultArchiveStreamer{}, observationContext),
-		operations:      newDependencyServiceOperations(observationContext),
+		db:     db,
+		syncer: syncer,
+		lockfileService: lockfiles.NewService(
+			authz.DefaultSubRepoPermsChecker,
+			git.LsFiles,
+			gitserver.DefaultClient.Archive,
+			observationContext,
+		),
+		operations: newDependencyServiceOperations(observationContext),
 	}
-}
-
-type defaultArchiveStreamer struct{}
-
-func (defaultArchiveStreamer) StreamArchive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return gitserver.DefaultClient.Archive(ctx, repo, opts)
 }
 
 // RevSpecSet is a utility type for a set of RevSpecs.
