@@ -4,10 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"io"
 	"sort"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"

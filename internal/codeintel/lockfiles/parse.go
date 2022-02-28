@@ -1,13 +1,12 @@
 package lockfiles
 
 import (
+	"io"
+	"path"
+
 	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/npm"
 	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/yarn"
 	"github.com/aquasecurity/go-dep-parser/pkg/types"
-	"io"
-	"path"
-	"sort"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,15 +40,6 @@ func Parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
 
 	return deps, err
 }
-
-var lockfiles = func() (filenames []string) {
-	filenames = make([]string, 0, len(parsers))
-	for filename := range parsers {
-		filenames = append(filenames, filename)
-	}
-	sort.Strings(filenames)
-	return
-}()
 
 var parsers = map[string]*parser{
 	"package-lock.json": {npm.Parse, npmPackage},
