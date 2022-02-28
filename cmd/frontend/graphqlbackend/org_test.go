@@ -510,7 +510,7 @@ func TestRemoveOrganization(t *testing.T) {
 				`,
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "hard deleting organization is not supported",
+					Message: "hard deleting organization is only supported on Sourcegraph.com",
 					Path:    []interface{}{string("removeOrganization")},
 				},
 			},
