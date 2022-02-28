@@ -214,7 +214,6 @@ function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Set
 
 function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): boolean {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-        console.log(settingsCascade.final['history.preferAbsoluteTimestamps'])
         return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
     return false
