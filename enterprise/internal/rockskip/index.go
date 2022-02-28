@@ -28,7 +28,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 	if err != nil {
 		return err
 	}
-	defer func() { err = combineErrors(err, releaseLock()) }()
+	defer func() { err = errors.CombineErrors(err, releaseLock()) }()
 
 	tipCommit := NULL
 	tipCommitHash := ""

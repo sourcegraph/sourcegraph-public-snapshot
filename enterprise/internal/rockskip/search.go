@@ -35,7 +35,7 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (symbols []
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = combineErrors(err, releaseRLock()) }()
+	defer func() { err = errors.CombineErrors(err, releaseRLock()) }()
 	if !locked {
 		return nil, errors.Newf("deletion in progress", repo)
 	}

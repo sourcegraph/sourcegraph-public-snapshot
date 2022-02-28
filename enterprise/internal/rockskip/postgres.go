@@ -134,7 +134,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 
 	// Acquire the write lock on the repo.
 	releaseWLock, err := wLock(ctx, db, threadStatus, repo)
-	defer func() { err = combineErrors(err, releaseWLock()) }()
+	defer func() { err = errors.CombineErrors(err, releaseWLock()) }()
 	if err != nil {
 		return false, errors.Wrap(err, "acquiring write lock on repo")
 	}
@@ -164,7 +164,7 @@ func tryDeleteOldestRepo(ctx context.Context, db *sql.Conn, maxRepos int, thread
 
 	// Acquire the indexing lock on the repo.
 	releaseILock, err := iLock(ctx, db, threadStatus, repo)
-	defer func() { err = combineErrors(err, releaseILock()) }()
+	defer func() { err = errors.CombineErrors(err, releaseILock()) }()
 	if err != nil {
 		return false, errors.Wrap(err, "acquiring indexing lock on repo")
 	}
