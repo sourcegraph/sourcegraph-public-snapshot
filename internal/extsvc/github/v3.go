@@ -136,27 +136,27 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-// requestGetConditional sends a Conditional request to the GitHub API which do not count against
-// the rate limits. If the content has not changed, it will return a 304.
+// getConditional sends a conditional request to the GitHub API which does not count against the
+// rate limits. If the resource has not changed since based on teh value of etag, the
+// httpResponseState.status_code will be set to 304 otherwise it will be 200 (HTTP request errors
+// are handled by the underlying doRequest method). It is the caller's responsibility to ensure that
+// they take appropriate decisions based on the value of the status code.
+//
+// GitHub supports conditional requests by allowing us to set either If-None-Match (etag) or
+// If-Modified-Since (time) in the request header. At the moment, getConditional only supports
+// If-None-Match.
 //
 // See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-func (c *V3Client) getConditional(ctx context.Context, requestURI, etag string, result interface{}) (bool, error) {
+func (c *V3Client) getConditional(ctx context.Context, requestURI, etag string, result interface{}) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	req.Header.Add(headerIfNoneMatch, etag)
 
 	// Let the caller of getConditional inspect the err. We will return it as is.
-	respState, err := c.request(ctx, req, result)
-
-	// 304 indicates that this request matching the etag was not modified. The body will be empty.
-	if respState.statusCode == 304 {
-		return false, err
-	}
-
-	return true, err
+	return c.request(ctx, req, result)
 }
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
@@ -528,13 +528,8 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 	}
 
 	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
-	getOrgsFromAPI := func() error {
-		respState, err := c.get(ctx, path, &orgs)
-		if err != nil {
-			return err
-		}
-
-		newEtag := respState.headers.Get("Etag")
+	updateOrgsCache := func(r *httpResponseState) error {
+		newEtag := r.headers.Get("Etag")
 		c.orgsCache.Set(etagKey, []byte(newEtag))
 
 		value, err := json.Marshal(orgs)
@@ -546,23 +541,37 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		return nil
 	}
 
+	// getOrgsFromAPI fetches the new list of orgs from GitHub and updates the orgsCache.
+	getOrgsFromAPI := func() error {
+		respState, err := c.get(ctx, path, &orgs)
+		if err != nil {
+			return err
+		}
+
+		return updateOrgsCache(respState)
+	}
+
 	etag, cacheHit := c.orgsCache.Get(etagKey)
 	if !cacheHit {
-		if err = getOrgsFromAPI(); err != nil {
+		if err := getOrgsFromAPI(); err != nil {
 			return nil, false, err
 		}
 
 		return orgs, len(orgs) > 0, nil
 	}
 
-	modified, err := c.getConditional(ctx, path, string(etag), orgs)
+	respState, err := c.getConditional(ctx, path, string(etag), orgs)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// If the resource was modified since the last time this resource was accessed, the response
 	// body will have a new response and we should return the new result now populated in orgs.
-	if modified {
+	if respState.statusCode == 200 {
+		if err := updateOrgsCache(respState); err != nil {
+			return nil, false, err
+		}
+
 		return orgs, len(orgs) > 0, nil
 	}
 
@@ -572,7 +581,7 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		// Reading the orgs from the cache failed even though the API call to GitHub succeeded. This
 		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
 		// anyway.
-		if err = getOrgsFromAPI(); err != nil {
+		if err := getOrgsFromAPI(); err != nil {
 			return nil, false, err
 		}
 
