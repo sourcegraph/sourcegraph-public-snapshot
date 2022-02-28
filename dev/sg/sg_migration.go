@@ -100,6 +100,16 @@ var (
 )
 
 func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	// Try to read the `sg` configuration so we can read ENV vars from the
+	// configuration and use process env as fallback.
+	var getEnv func(string) string
+	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	if ok {
+		getEnv = globalConf.GetEnv
+	} else {
+		getEnv = os.Getenv
+	}
+
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
@@ -107,7 +117,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	if err != nil {
 		return nil, err
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}

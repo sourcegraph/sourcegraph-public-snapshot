@@ -9,7 +9,7 @@ import (
 )
 
 func DSNsBySchema(schemaNames []string) (map[string]string, error) {
-	dsns := RawDSNsBySchema(schemaNames)
+	dsns := RawDSNsBySchema(schemaNames, os.Getenv)
 
 	// We set this envvar in development to disable the following check
 	if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") == "" {
@@ -26,7 +26,7 @@ func DSNsBySchema(schemaNames []string) (map[string]string, error) {
 	return dsns, nil
 }
 
-func RawDSNsBySchema(schemaNames []string) map[string]string {
+func RawDSNsBySchema(schemaNames []string, getenv func(string) string) map[string]string {
 	username := ""
 	if user, err := user.Current(); err == nil {
 		username = user.Username
@@ -34,7 +34,7 @@ func RawDSNsBySchema(schemaNames []string) map[string]string {
 
 	dsns := make(map[string]string, len(schemaNames))
 	for _, schemaName := range schemaNames {
-		dsns[schemaName] = New(schemaName, username, os.Getenv)
+		dsns[schemaName] = New(schemaName, username, getenv)
 	}
 
 	return dsns
