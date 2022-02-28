@@ -171,15 +171,10 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		stateDescription = "No action needed, nice!"
 	}
 
-	owner, repo := payload.Repository.GetOwnerAndName()
-	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
-		Context:     github.String(commitStatusPreMerge),
-		State:       github.String(prState),
-		Description: github.String(stateDescription),
-		TargetURL:   github.String(stateURL),
-	})
-	if err != nil {
-		return errors.Newf("CreateStatus: %w", err)
+	if prState == "success" {
+		setNotice(fmt.Sprintf("pre-merge: %s", stateDescription), stateURL)
+	} else {
+		setError(fmt.Sprintf("pre-merge %s: %s", prState, stateDescription), stateURL)
 	}
 	return nil
 }
