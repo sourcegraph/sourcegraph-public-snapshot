@@ -4,13 +4,12 @@ import '../../shared/polyfills'
 import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { render } from 'react-dom'
-import { from, noop, Observable, of } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
+import { from, noop, Observable } from 'rxjs'
+import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
-import { gql, GraphQLResult } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { GraphQLResult } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
@@ -144,25 +143,6 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
-const fetchUserSettingsURL = (sourcegraphURL: string): Observable<string> => {
-    const requestGraphQL = createRequestGraphQL(sourcegraphURL)
-
-    return requestGraphQL<GQL.IQuery>({
-        request: gql`
-            query UserSettingsURL {
-                currentUser {
-                    settingsURL
-                }
-            }
-        `,
-        variables: {},
-    }).pipe(
-        map(({ data }) => data?.currentUser?.settingsURL),
-        filter(Boolean),
-        map(url => new URL(`${url as string}/repositories/manage`, sourcegraphURL).href)
-    )
-}
-
 /**
  * Returns unique URLs
  */
@@ -179,15 +159,6 @@ const Options: React.FunctionComponent = () => {
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
-    const manageRepositoriesURL = useObservable(
-        useMemo(
-            () =>
-                currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                    ? fetchUserSettingsURL(sourcegraphUrl!)
-                    : of(undefined),
-            [currentTabStatus, sourcegraphUrl]
-        )
-    )
 
     useEffect(() => {
         fetchCurrentTabStatus().then(tabStatus => {
@@ -256,7 +227,9 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    manageRepositoriesURL={manageRepositoriesURL}
+                    showPrivateRepositoryAlert={
+                        currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
+                    }
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}

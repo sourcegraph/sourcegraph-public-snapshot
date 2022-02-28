@@ -40,7 +40,7 @@ export interface OptionsPageProps {
 
     initialShowAdvancedSettings?: boolean
     isFullPage: boolean
-    manageRepositoriesURL?: string
+    showPrivateRepositoryAlert?: boolean
     showSourcegraphCloudAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
@@ -63,7 +63,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onToggleActivated,
     initialShowAdvancedSettings = false,
     isFullPage,
-    manageRepositoriesURL,
+    showPrivateRepositoryAlert,
     showSourcegraphCloudAlert,
     permissionAlert,
     requestPermissionsHandler,
@@ -120,7 +120,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {manageRepositoriesURL && <PrivateRepositoryAlert manageRepositoriesURL={manageRepositoriesURL} />}
+            {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
@@ -185,21 +185,32 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent<{ manageRepositoriesURL: string }> = ({
-    manageRepositoriesURL,
-}) => (
+const PrivateRepositoryAlert: React.FunctionComponent = () => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
             <LockIcon className="icon-inline mr-2" />
             Private repository
         </h4>
         <p>
-            To use the browser extension with your private repositories, you need to enable sync in{' '}
-            <a href={manageRepositoriesURL} {...NEW_TAB_LINK_PROPS}>
-                manage repositories settings
-            </a>
-            .
+            To use the browser extension with your private repositories, you need to set up a{' '}
+            <strong>private Sourcegraph instance</strong> and connect the browser extension to it.
         </p>
+        <ol>
+            <li className="mb-2">
+                <Link to="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
+                    Install and configure Sourcegraph
+                </Link>
+                . Skip this step if you already have a private Sourcegraph instance.
+            </li>
+            <li className="mb-2">Click the Sourcegraph icon in the browser toolbar to bring up this popup again.</li>
+            <li className="mb-2">
+                Enter the URL (including the protocol) of your Sourcegraph instance above, e.g.{' '}
+                <q>https://sourcegraph.example.com</q>.
+            </li>
+            <li>
+                Make sure that the status says <q>Looks good!</q>.
+            </li>
+        </ol>
     </section>
 )
 
