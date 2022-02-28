@@ -72,10 +72,7 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                                     <SavedSearchesPanel {...props} hideTitle={true} />
                                 </TabPanel>
                                 <TabPanel className="h-100">
-                                    <CollaboratorsPanel
-                                        hasEmailSendingCapabilities={hasEmailSendingCapabilities}
-                                        {...props}
-                                    />
+                                    <CollaboratorsPanel {...props} />
                                 </TabPanel>
                             </TabPanels>
                         </Tabs>
