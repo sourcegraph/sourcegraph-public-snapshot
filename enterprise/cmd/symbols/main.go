@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {

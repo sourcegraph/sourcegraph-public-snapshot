@@ -742,3 +742,49 @@ Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
 ```
+
+# Table "public.rockskip_ancestry"
+```
+   Column    |         Type          | Collation | Nullable | Default 
+-------------+-----------------------+-----------+----------+---------
+ commit_id   | character varying(40) |           | not null | 
+ repo        | text                  |           | not null | 
+ height      | integer               |           | not null | 
+ ancestor_id | character varying(40) |           | not null | 
+Indexes:
+    "rockskip_ancestry_pkey" PRIMARY KEY, btree (repo, commit_id)
+
+```
+
+# Table "public.rockskip_blobs"
+```
+    Column    |          Type           | Collation | Nullable |                  Default                   
+--------------+-------------------------+-----------+----------+--------------------------------------------
+ id           | integer                 |           | not null | nextval('rockskip_blobs_id_seq'::regclass)
+ repo         | text[]                  |           | not null | 
+ commit_id    | character varying(40)   |           | not null | 
+ path         | text[]                  |           | not null | 
+ added        | character varying(40)[] |           | not null | 
+ deleted      | character varying(40)[] |           | not null | 
+ symbol_names | text[]                  |           | not null | 
+ symbol_data  | jsonb                   |           | not null | 
+Indexes:
+    "rockskip_blobs_pkey" PRIMARY KEY, btree (id)
+    "rockskip_blobs_repo_commit_id_path_key" UNIQUE CONSTRAINT, btree (repo, commit_id, path)
+    "rockskip_blobs_path" btree (path)
+    "rockskip_blobs_repo_added_deleted_path_symbol_names" gin (repo, added, deleted, path, symbol_names)
+
+```
+
+# Table "public.rockskip_repos"
+```
+      Column      |           Type           | Collation | Nullable | Default 
+------------------+--------------------------+-----------+----------+---------
+ repo             | text                     |           | not null | 
+ last_accessed_at | timestamp with time zone |           | not null | 
+Indexes:
+    "rockskip_repos_pkey" PRIMARY KEY, btree (repo)
+    "rockskip_repos_last_accessed_at" btree (last_accessed_at)
+    "rockskip_repos_repo" btree (repo)
+
+```
