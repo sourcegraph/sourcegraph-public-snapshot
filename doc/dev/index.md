@@ -103,7 +103,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Code host connections on local dev environment](background-information/code-host.md)
 - [Testing](#testing)
   - [Testing principles and guidelines](background-information/testing_principles.md)
-  - [Continuous integration](background-information/continuous_integration.md)
+  - [Continuous integration](background-information/ci/index.md)
   - [How to write and run tests](how-to/testing.md)
     - [Testing Go code](background-information/languages/testing_go_code.md)
     - [Testing web code](background-information/testing_web_code.md)

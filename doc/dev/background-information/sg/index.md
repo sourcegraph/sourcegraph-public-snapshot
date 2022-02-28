@@ -208,7 +208,7 @@ sg rfc open 420
 
 ### `sg ci` - Interact with Sourcegraph's continuous integration
 
-Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/ci) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
 ```bash
 # Preview what a CI run for your current changes will look like

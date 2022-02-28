@@ -111,7 +111,7 @@ func renderPipelineDocs(w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
 	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
 	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
-	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/continuous_integration).")
+	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/ci).")
 
 	fmt.Fprintln(w, "\n## Run types")
 
