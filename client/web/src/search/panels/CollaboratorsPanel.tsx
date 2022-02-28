@@ -22,13 +22,13 @@ interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
-    hasEmailSendingCapabilities: boolean
 }
+
+const emailEnabled = window.context.emailEnabled
 
 export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     className,
     authenticatedUser,
-    hasEmailSendingCapabilities,
     fetchCollaborators,
 }) => {
     const collaborators = useObservable(
@@ -45,7 +45,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
             return
         }
         // When Email is not set up we might find some people to invite but won't show that to the user.
-        if (!hasEmailSendingCapabilities) {
+        if (!emailEnabled) {
             return
         }
 
@@ -53,7 +53,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
         //     discovered: collaborators.length,
         // }
         // eventLogger.log('UserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
-    }, [collaborators, hasEmailSendingCapabilities])
+    }, [collaborators])
 
     const invitePerson = useCallback(
         async (person: InvitableCollaborator): Promise<void> => {
@@ -84,7 +84,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading colleagues" />
 
     const contentDisplay =
-        filteredCollaborators?.length === 0 || !hasEmailSendingCapabilities ? (
+        filteredCollaborators?.length === 0 || !emailEnabled ? (
             <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
         ) : (
             <div className={classNames('row', 'py-1')}>

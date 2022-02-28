@@ -24,7 +24,6 @@ interface Props extends TelemetryProps, HomePanelsProps {
 const INVITES_TAB_KEY = 'HomePage.UserInvites.Tab'
 
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
-    const hasEmailSendingCapabilities = true
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(INVITES_TAB_KEY, 1)
 
     return (
@@ -49,10 +48,7 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                                         <CommunitySearchContextsPanel {...props} hideTitle={true} />
                                     </TabPanel>
                                     <TabPanel className="h-100">
-                                        <CollaboratorsPanel
-                                            hasEmailSendingCapabilities={hasEmailSendingCapabilities}
-                                            {...props}
-                                        />
+                                        <CollaboratorsPanel {...props} />
                                     </TabPanel>
                                 </TabPanels>
                             </Tabs>
