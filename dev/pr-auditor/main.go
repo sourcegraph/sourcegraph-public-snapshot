@@ -17,7 +17,6 @@ import (
 type Flags struct {
 	GitHubPayloadPath string
 	GitHubToken       string
-	GitHubRunURL      string
 
 	IssuesRepoOwner string
 	IssuesRepoName  string
@@ -26,7 +25,6 @@ type Flags struct {
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubPayloadPath, "github.payload-path", "", "path to JSON file with GitHub event payload")
 	flag.StringVar(&f.GitHubToken, "github.token", "", "GitHub token")
-	flag.StringVar(&f.GitHubRunURL, "github.run-url", "", "URL to GitHub actions run")
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
 	flag.Parse()
@@ -86,11 +84,6 @@ func main() {
 	}
 }
 
-const (
-	commitStatusPostMerge = "pr-auditor / post-merge"
-	commitStatusPreMerge  = "pr-auditor / pre-merge"
-)
-
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
 		ValidateReviews: true,
@@ -103,18 +96,9 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 		return nil
 	}
 
-	owner, repo := payload.Repository.GetOwnerAndName()
 	if result.Error != nil {
-		_, _, statusErr := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
-			Context:     github.String(commitStatusPostMerge),
-			State:       github.String("error"),
-			Description: github.String(fmt.Sprintf("checkPR: %s", result.Error.Error())),
-			TargetURL:   github.String(flags.GitHubRunURL),
-		})
-		if statusErr != nil {
-			return errors.Newf("result.Error != nil (%w), statusErr: %w", result.Error, statusErr)
-		}
-		return nil
+		setError("post-merge check errored", result.Error.Error())
+		return result.Error
 	}
 
 	issue := generateExceptionIssue(payload, &result)
@@ -136,19 +120,9 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 
 	log.Println("Created issue: ", created.GetHTMLURL())
 
-	// Let run succeed, create separate status indicating an exception was created on the
-	// main branch's post-merge commit (otherwise the output will end up on the PR branch)
-	_, _, err = ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Base.Ref, &github.RepoStatus{
-		Context:     github.String(commitStatusPostMerge),
-		State:       github.String("failure"),
-		Description: github.String("Exception detected and audit trail issue created"),
-		TargetURL:   github.String(created.GetHTMLURL()),
-	})
-	if err != nil {
-		return errors.Newf("CreateStatus: %w", err)
-	}
-
-	return nil
+	errMessage := "Exception detected and audit trail issue created: " + created.GetHTMLURL()
+	setError("post-merge check failure", errMessage)
+	return errors.New(errMessage)
 }
 
 func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
@@ -157,8 +131,7 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	var prState, stateDescription string
-	stateURL := flags.GitHubRunURL
+	var prState, stateDescription, stateURL string
 	switch {
 	case result.Error != nil:
 		prState = "error"
@@ -173,10 +146,10 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	}
 
 	if prState == "success" {
-		setNotice(fmt.Sprintf("pre-merge: %s", stateDescription), stateURL)
+		setNotice(fmt.Sprintf("pre-merge check %s", prState), fmt.Sprintf("%s %s", stateDescription, stateURL))
 	} else {
-		errMessage := fmt.Sprintf("pre-merge %s: %s", prState, stateDescription)
-		setError(errMessage, stateURL)
+		errMessage := fmt.Sprintf("%s %s", stateDescription, stateURL)
+		setError(fmt.Sprintf("pre-merge check %s", prState), stateURL)
 		return errors.New(errMessage)
 	}
 	return nil
