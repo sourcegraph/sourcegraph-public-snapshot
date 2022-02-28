@@ -2,7 +2,6 @@ package rockskip
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"k8s.io/utils/lru"
@@ -10,11 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit string, parse ParseSymbolsFunc) (err error) {
+func (s *Server) Index(ctx context.Context, repo, givenCommit string) (err error) {
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
 	defer threadStatus.End()
 
 	tasklog := threadStatus.Tasklog
+
+	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+	// See doc/dev/background-information/sql/locking_behavior.md for more details.
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get connection for indexing")
+	}
+	defer conn.Close()
 
 	// Acquire the indexing lock on the repo.
 	releaseLock, err := iLock(ctx, conn, threadStatus, repo)
@@ -60,6 +67,8 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 	if missingCount == 0 {
 		return nil
 	}
+
+	parse := s.createParser()
 
 	symbolCache := newSymbolIdCache(s.symbolsCacheSize)
 	pathSymbolsCache := newPathSymbolsCache(s.pathSymbolsCacheSize)

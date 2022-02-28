@@ -79,42 +79,22 @@ func NewServer(
 
 func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	for indexRequest := range indexRequestQueue {
-		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-		// See doc/dev/background-information/sql/locking_behavior.md for more details.
-		conn, err := s.db.Conn(context.Background())
-		if err != nil {
-			log15.Error("Failed to get connection for indexing thread", "error", err)
-			continue
-		}
-
-		err = s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
+		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
 		}
-
-		conn.Close()
 	}
 }
 
 func (s *Server) startCleanupLoop() {
 	for range s.repoUpdates {
-		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-		// See doc/dev/background-information/sql/locking_behavior.md for more details.
-		conn, err := s.db.Conn(context.Background())
-		if err != nil {
-			log15.Error("Failed to get connection for deleting old repos", "error", err)
-			continue
-		}
-
 		threadStatus := s.status.NewThreadStatus("cleanup")
-		err = DeleteOldRepos(context.Background(), conn, s.maxRepos, threadStatus)
+		err := DeleteOldRepos(context.Background(), s.db, s.maxRepos, threadStatus)
 		threadStatus.End()
 		if err != nil {
 			log15.Error("Failed to delete old repos", "error", err)
 		}
-
-		conn.Close()
 	}
 }
 
@@ -142,10 +122,18 @@ func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([
 	return spine, nil
 }
 
-func DeleteOldRepos(ctx context.Context, db *sql.Conn, maxRepos int, threadStatus *ThreadStatus) error {
+func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
+	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+	// See doc/dev/background-information/sql/locking_behavior.md for more details.
+	conn, err := db.Conn(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "failed to get connection for deleting old repos")
+	}
+	defer conn.Close()
+
 	// Keep deleting repos until we're back to at most maxRepos.
 	for {
-		more, err := tryDeleteOldestRepo(ctx, db, maxRepos, threadStatus)
+		more, err := tryDeleteOldestRepo(ctx, conn, maxRepos, threadStatus)
 		if err != nil {
 			return err
 		}
