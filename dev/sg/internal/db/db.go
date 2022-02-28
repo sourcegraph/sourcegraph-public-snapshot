@@ -44,6 +44,7 @@ var (
 		DataTables: []string{
 			"out_of_band_migrations",
 			"lsif_configuration_policies",
+			"rockskip_ancestry",
 		},
 		FS: getFSForPath("frontend"),
 	}
