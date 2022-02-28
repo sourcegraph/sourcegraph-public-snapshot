@@ -112,3 +112,41 @@ func TestParseRawImgString(t *testing.T) {
 		})
 	}
 }
+
+func Test_createAndFillImageRepository(t *testing.T) {
+	stdout.Out.SetVerbose()
+
+	tests := []struct {
+		name     string
+		ref      *imageReference
+		pinTag   string
+		wantRepo *imageRepository
+		wantErr  bool
+	}{
+		{
+			"unsupported registry",
+			&imageReference{
+				Registry:    "gcr.io",
+				Credentials: nil,
+				Name:        "",
+				Digest:      "",
+				Tag:         "",
+			},
+			"",
+			nil,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRepo, err := createAndFillImageRepository(tt.ref, tt.pinTag)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("createAndFillImageRepository() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRepo, tt.wantRepo) {
+				t.Errorf("createAndFillImageRepository() gotRepo = %v, want %v", gotRepo, tt.wantRepo)
+			}
+		})
+	}
+}
