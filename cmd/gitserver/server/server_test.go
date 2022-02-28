@@ -762,10 +762,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			//nolint:unparam // Return string for consistency with other cmds
-			cmd = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
@@ -781,10 +780,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			//nolint:unparam // Return string for consistency with other cmds
-			cmd = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
