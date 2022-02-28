@@ -563,7 +563,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := codeintel.GetDependenciesService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
