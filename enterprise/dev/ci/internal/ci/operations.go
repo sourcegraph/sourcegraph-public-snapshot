@@ -71,10 +71,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,   // ~4.5m
-			addWebApp,       // ~3m
-			addBrowserExt,   // ~2m
-			addBrandedTests, // ~1.5m
+			frontendTests, // ~7.5m
+			addWebApp,     // ~3m
+			addBrowserExt, // ~2m
 			addTsLint))
 	}
 
@@ -311,25 +310,12 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	}
 }
 
-// Adds the shared frontend tests (shared between the web app and browser extension).
+// Adds the frontend tests (without the web app and browser extension tests).
 func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest: Test shared client code",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/shared"),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-
-	// Wildcard tests
-	pipeline.AddStep(":jest: Test wildcard client code",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
-func addBrandedTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest: Test branded client code",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
+		bk.Cmd("dev/ci/yarn-test.sh --testPathIgnorePatterns client/web client/browser"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
