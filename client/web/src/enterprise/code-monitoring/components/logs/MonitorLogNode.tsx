@@ -13,6 +13,10 @@ import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operatio
 import styles from './MonitorLogNode.module.scss'
 import { TriggerEvent } from './TriggerEvent'
 
+const clickCatcher = (event: React.MouseEvent<HTMLAnchorElement>): void => {
+    event.stopPropagation()
+}
+
 export const MonitorLogNode: React.FunctionComponent<{
     monitor: CodeMonitorWithEvents
     now?: () => Date
@@ -70,6 +74,10 @@ export const MonitorLogNode: React.FunctionComponent<{
                     />
                 )}
                 {monitor.description}
+                {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
+                <Link to={`/code-monitoring/${monitor.id}`} className="ml-2" onClick={clickCatcher}>
+                    Monitor details
+                </Link>
             </Button>
             <span className="text-nowrap mr-2">
                 {lastRun ? <Timestamp date={lastRun} now={now} noAbout={true} /> : <>Never</>}
@@ -77,10 +85,6 @@ export const MonitorLogNode: React.FunctionComponent<{
 
             {expanded && (
                 <div className={styles.expandedRow}>
-                    <Link to={`/code-monitoring/${monitor.id}`} className="d-block mb-3">
-                        View code monitor details
-                    </Link>
-
                     {monitor.trigger.events.nodes.map(triggerEvent => (
                         <TriggerEvent key={triggerEvent.id} triggerEvent={triggerEvent} startOpen={startOpen} />
                     ))}
