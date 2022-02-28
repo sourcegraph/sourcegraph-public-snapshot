@@ -32,23 +32,27 @@ var (
 
 	// Whether debug logging is turned on
 	traceEnabled int32 = 0
+
+	once sync.Once
 )
 
-func tryEnableTracing() {
-	go func() {
-		conf.Watch(func() {
-			exp := conf.Get().ExperimentalFeatures
-			if exp == nil {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			atomic.StoreInt32(&traceEnabled, 1)
-		})
-	}()
+func watchConfig() {
+	once.Do(func() {
+		go func() {
+			conf.Watch(func() {
+				exp := conf.Get().ExperimentalFeatures
+				if exp == nil {
+					atomic.StoreInt32(&traceEnabled, 0)
+					return
+				}
+				if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
+					atomic.StoreInt32(&traceEnabled, 0)
+					return
+				}
+				atomic.StoreInt32(&traceEnabled, 1)
+			})
+		}()
+	})
 }
 
 func trace(msg string, ctx ...interface{}) {
@@ -85,8 +89,7 @@ type CommonOp struct {
 }
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
-	// Check the configuration to see if the experimental tracing feature is to be enabled.
-	tryEnableTracing()
+	watchConfig()
 
 	if cli == nil {
 		cli = httpcli.ExternalDoer
