@@ -268,17 +268,18 @@ func (s *ServerStatus) NewThreadStatus(name string) *ThreadStatus {
 }
 
 type Server struct {
-	db                 *sql.DB
-	git                Git
-	createParser       func() ParseSymbolsFunc
-	status             *ServerStatus
-	repoUpdates        chan struct{}
-	maxRepos           int
-	logQueries         bool
-	repoCommitToDone   map[string]chan struct{}
-	repoCommitToDoneMu sync.Mutex
-	indexRequestQueues []chan indexRequest
-	symbolIdCacheSize  int
+	db                   *sql.DB
+	git                  Git
+	createParser         func() ParseSymbolsFunc
+	status               *ServerStatus
+	repoUpdates          chan struct{}
+	maxRepos             int
+	logQueries           bool
+	repoCommitToDone     map[string]chan struct{}
+	repoCommitToDoneMu   sync.Mutex
+	indexRequestQueues   []chan indexRequest
+	symbolsCacheSize     int
+	pathSymbolsCacheSize int
 }
 
 func NewServer(
@@ -289,7 +290,8 @@ func NewServer(
 	maxRepos int,
 	logQueries bool,
 	indexRequestsQueueSize int,
-	symbolIdCacheSize int,
+	symbolsCacheSize int,
+	pathSymbolsCacheSize int,
 ) (*Server, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
@@ -297,17 +299,18 @@ func NewServer(
 	}
 
 	server := &Server{
-		db:                 db,
-		git:                git,
-		createParser:       createParser,
-		status:             NewStatus(),
-		repoUpdates:        make(chan struct{}, 1),
-		maxRepos:           maxRepos,
-		logQueries:         logQueries,
-		repoCommitToDone:   map[string]chan struct{}{},
-		repoCommitToDoneMu: sync.Mutex{},
-		indexRequestQueues: indexRequestQueues,
-		symbolIdCacheSize:  symbolIdCacheSize,
+		db:                   db,
+		git:                  git,
+		createParser:         createParser,
+		status:               NewStatus(),
+		repoUpdates:          make(chan struct{}, 1),
+		maxRepos:             maxRepos,
+		logQueries:           logQueries,
+		repoCommitToDone:     map[string]chan struct{}{},
+		repoCommitToDoneMu:   sync.Mutex{},
+		indexRequestQueues:   indexRequestQueues,
+		symbolsCacheSize:     symbolsCacheSize,
+		pathSymbolsCacheSize: pathSymbolsCacheSize,
 	}
 
 	err := server.startCleanupThread()
@@ -529,7 +532,8 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 		return nil
 	}
 
-	symbolCache := newSymbolIdCache(s.symbolIdCacheSize)
+	symbolCache := newSymbolIdCache(s.symbolsCacheSize)
+	pathSymbolsCache := newPathSymbolsCache(s.pathSymbolsCacheSize)
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
@@ -585,8 +589,28 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 
 		getSymbols := func(commit string, paths []string) (map[string]map[string]struct{}, error) {
 			pathToSymbols := map[string]map[string]struct{}{}
+			pathsToFetchSet := map[string]struct{}{}
+			for _, path := range paths {
+				pathsToFetchSet[path] = struct{}{}
+			}
+
+			// Don't fetch files that are already in the cache.
+			if commit == tipCommitHash {
+				for _, path := range paths {
+					if symbols, ok := pathSymbolsCache.get(path); ok {
+						pathToSymbols[path] = symbols
+						delete(pathsToFetchSet, path)
+					}
+				}
+			}
+
+			pathsToFetch := []string{}
+			for path := range pathsToFetchSet {
+				pathsToFetch = append(pathsToFetch, path)
+			}
+
 			tasklog.Start("ArchiveEach")
-			err = s.git.ArchiveEach(repo, commit, paths, func(path string, contents []byte) error {
+			err = s.git.ArchiveEach(repo, commit, pathsToFetch, func(path string, contents []byte) error {
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")
@@ -595,21 +619,25 @@ func (s *Server) Index(ctx context.Context, conn *sql.Conn, repo, givenCommit st
 					return errors.Wrap(err, "parse")
 				}
 
-				if _, ok := pathToSymbols[path]; !ok {
-					pathToSymbols[path] = map[string]struct{}{}
-				}
-
+				pathToSymbols[path] = map[string]struct{}{}
 				for _, symbol := range symbols {
-					if _, ok := pathToSymbols[path][symbol.Name]; !ok {
-						pathToSymbols[path][symbol.Name] = struct{}{}
-					}
 					pathToSymbols[path][symbol.Name] = struct{}{}
 				}
+
 				return nil
 			})
+
 			if err != nil {
 				return nil, errors.Wrap(err, "while looping ArchiveEach")
 			}
+
+			// Cache the symbols we just parsed.
+			if commit != tipCommitHash {
+				for path, symbols := range pathToSymbols {
+					pathSymbolsCache.set(path, symbols)
+				}
+			}
+
 			return pathToSymbols, nil
 		}
 
@@ -736,6 +764,26 @@ func (s *symbolIdCache) set(path, symbol string, id int) {
 
 func symbolIdCacheKey(path, symbol string) string {
 	return path + ":" + symbol
+}
+
+type pathSymbolsCache struct {
+	cache *lru.Cache
+}
+
+func newPathSymbolsCache(size int) *pathSymbolsCache {
+	return &pathSymbolsCache{cache: lru.New(size)}
+}
+
+func (s *pathSymbolsCache) get(path string) (map[string]struct{}, bool) {
+	v, ok := s.cache.Get(path)
+	if !ok {
+		return nil, false
+	}
+	return v.(map[string]struct{}), true
+}
+
+func (s *pathSymbolsCache) set(path string, symbols map[string]struct{}) {
+	s.cache.Add(path, symbols)
 }
 
 func getHops(ctx context.Context, tx Queryable, commit int, tasklog *TaskLog) ([]int, error) {
