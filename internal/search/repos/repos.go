@@ -8,9 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
@@ -23,9 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -533,7 +533,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	repoStore := r.DB.Repos()
-	repoRevs := make(map[api.RepoName]codeintel.RevSpecSet, len(op.Dependencies))
+	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(op.Dependencies))
 	for _, depParams := range op.Dependencies {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
 		if len(revs) == 0 {
@@ -557,7 +557,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 				}
 
 				if _, ok := repoRevs[repo.Name]; !ok {
-					repoRevs[repo.Name] = codeintel.RevSpecSet{}
+					repoRevs[repo.Name] = codeintelTypes.RevSpecSet{}
 				}
 
 				repoRevs[repo.Name][api.RevSpec(rev.RevSpec)] = struct{}{}
@@ -565,7 +565,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := codeintel.GetService(
+	depsSvc := codeintel.GetDependenciesService(
 		r.DB,
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)

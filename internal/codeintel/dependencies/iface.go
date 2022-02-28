@@ -1,4 +1,4 @@
-package codeintel
+package dependencies
 
 import (
 	"context"

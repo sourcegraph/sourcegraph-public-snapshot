@@ -1,4 +1,4 @@
-package codeintel
+package dependencies
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,12 +46,9 @@ func newService(db database.DB, syncer Syncer, observationContext *observation.C
 	}
 }
 
-// RevSpecSet is a utility type for a set of RevSpecs.
-type RevSpecSet map[api.RevSpec]struct{}
-
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]RevSpecSet) (dependencyRevs map[api.RepoName]RevSpecSet, err error) {
+func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
 	logFields := make([]log.Field, 0, 2)
 	if len(repoRevs) == 1 {
 		for repoName, revs := range repoRevs {
@@ -76,7 +74,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]Re
 	}()
 
 	var mu sync.Mutex
-	dependencyRevs = make(map[api.RepoName]RevSpecSet)
+	dependencyRevs = make(map[api.RepoName]types.RevSpecSet)
 
 	depsStore := dependenciesStore.GetStore(r.db)
 
@@ -126,7 +124,7 @@ func (r *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]Re
 						defer mu.Unlock()
 
 						if _, ok := dependencyRevs[depName]; !ok {
-							dependencyRevs[depName] = RevSpecSet{}
+							dependencyRevs[depName] = types.RevSpecSet{}
 						}
 						dependencyRevs[depName][depRev] = struct{}{}
 
