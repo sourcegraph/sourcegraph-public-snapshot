@@ -236,7 +236,7 @@ func TestGetIndexOptions(t *testing.T) {
 		})
 	}
 
-	getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
+	var getRepoIndexOptions getRepoIndexOptsFn = func(repo int32) (*RepoIndexOptions, error) {
 		var priority float64
 		if repo == PRIORITY {
 			priority = 10

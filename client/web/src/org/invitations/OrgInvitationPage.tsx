@@ -134,9 +134,9 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <h3>You've been invited to join the {orgDisplayName} organization.</h3>
+                        <h2>You've been invited to join the {orgDisplayName} organization</h2>
                         <div className="mt-4">
-                            <UserAvatar className="mr-2" user={sender} size={24} />
+                            <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>
                                 Invited by{' '}
                                 <Link to={userURL(sender.username)}>{sender.displayName || `@${sender.username}`}</Link>
@@ -149,16 +149,22 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                                 {orgDisplayName} organization will add this as a verified email on your account.
                             </div>
                         )}
-                        <div className="mt-4 mb-4">
+                        <div className="mt-4">
                             <Button className="mr-sm-2" disabled={loading} onClick={acceptInvitation} variant="primary">
                                 Join {orgDisplayName}
                             </Button>
-                            <Button disabled={loading} onClick={declineInvitation} variant="secondary">
+                            <Button
+                                disabled={loading}
+                                className={styles.declineButton}
+                                onClick={declineInvitation}
+                                variant="secondary"
+                                outline={true}
+                            >
                                 Decline
                             </Button>
                         </div>
                         {data.isVerifiedEmail === false && data.recipientEmail && (
-                            <small className="mt-4 text-muted">
+                            <small className="mt-4 text-muted d-inline-block">
                                 <AnchorLink to="/-/sign-out">Or sign out and create a new account</AnchorLink>
                                 <br />
                                 to join the {orgDisplayName} organization

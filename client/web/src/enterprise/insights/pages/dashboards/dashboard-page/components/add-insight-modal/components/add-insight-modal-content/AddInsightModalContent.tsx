@@ -52,7 +52,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     )
 
     return (
-        <Form innerRef={ref} onSubmit={handleSubmit}>
+        <Form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}
                 description={

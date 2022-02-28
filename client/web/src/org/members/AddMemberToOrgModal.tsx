@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, Modal } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -65,19 +65,20 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
 
     return (
         <>
-            <Button variant="primary" onClick={onAddUserClick} className="mr-1">
+            <Button variant="primary" onClick={onAddUserClick} size="sm" className="mr-1">
                 + Add member
             </Button>
             {modalOpened && (
                 <Modal className={styles.modal} onDismiss={onCloseAddUserModal} position="center" aria-label={title}>
-                    <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
-                        <VisuallyHidden>Close</VisuallyHidden>
-                        <CloseIcon />
-                    </Button>
-
-                    <h2>{title}</h2>
+                    <div className="d-flex flex-row align-items-end">
+                        <h3>{title}</h3>
+                        <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseAddUserModal}>
+                            <VisuallyHidden>Close</VisuallyHidden>
+                            <CloseIcon />
+                        </Button>
+                    </div>
                     {error && <ErrorAlert className={styles.alert} error={error} />}
-                    <div className="d-flex flex-row position-relative">
+                    <div className="d-flex flex-row position-relative mt-2">
                         <Input
                             autoFocus={true}
                             value={username}
@@ -89,13 +90,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
                         />
                     </div>
                     <div className="d-flex justify-content-end mt-4">
-                        <Button
-                            type="button"
-                            className="mr-2"
-                            variant="primary"
-                            onClick={debounceAddUser}
-                            disabled={loading}
-                        >
+                        <Button type="button" variant="primary" onClick={debounceAddUser} disabled={loading}>
                             Add member
                         </Button>
                     </div>
@@ -104,26 +99,3 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
         </>
     )
 }
-
-interface AddMemberNotificationProps {
-    username: string
-    orgName: string
-    onDismiss: () => void
-    className?: string
-}
-
-export const AddMemberNotification: React.FunctionComponent<AddMemberNotificationProps> = ({
-    className,
-    username,
-    orgName,
-    onDismiss,
-}) => (
-    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
-        <div className={styles.message}>
-            <strong>{`You succesfully added ${username} to ${orgName}`}</strong>
-        </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
-        </Button>
-    </Alert>
-)

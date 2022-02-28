@@ -34,9 +34,7 @@ func listLocalRegistryExtensions(ctx context.Context, db database.DB, args graph
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(vs...); err != nil {
-		return nil, err
-	}
+	prefixLocalExtensionID(vs...)
 
 	releasesByExtensionID, err := getLatestForBatch(ctx, db, vs)
 	if err != nil {
