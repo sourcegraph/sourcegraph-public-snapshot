@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -36,12 +36,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import {
-    CoolCodeIntel,
-    CoolClickedToken,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from './global/CoolCodeIntel'
+import { isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -195,11 +190,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // }, [])
 
     // Experimental reference panel
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
-        props.history.push(locationWithoutViewState(props.location))
-        onTokenClick(token)
-    }
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -221,9 +211,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
-        // Experimental reference panel
-        coolCodeIntelEnabled,
-        onTokenClick: coolCodeIntelEnabled ? onTokenClickRemoveViewState : undefined,
     }
 
     return (
@@ -304,17 +291,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            {coolCodeIntelEnabled && (
-                <CoolCodeIntel
-                    {...props}
-                    {...themeProps}
-                    onClose={() => {
-                        onTokenClick(undefined)
-                    }}
-                    onTokenClick={onTokenClick}
-                    clickedToken={clickedToken}
-                />
-            )}
         </div>
     )
 }

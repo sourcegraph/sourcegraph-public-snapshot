@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -66,7 +66,7 @@ import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
-    onTokenClick?: (clickedToken: CoolClickedToken) => void
+    onTokenClick?: (clickedToken: CoolClickedToken | undefined) => void
 }
 
 export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
@@ -79,7 +79,7 @@ interface CoolCodeIntelProps
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
-export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => (
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => (
     <ErrorBoundary
         location={null}
         render={error => (
@@ -525,11 +525,6 @@ const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
-            onTokenClick={(token: CoolClickedToken) => {
-                if (props.onTokenClick) {
-                    props.onTokenClick(token)
-                }
-            }}
             coolCodeIntelEnabled={true}
             disableStatusBar={true}
             wrapCode={true}
@@ -801,20 +796,17 @@ export function locationWithoutViewState(location: H.Location): H.LocationDescri
     return result
 }
 
-const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps & { onClose: () => void }> = props => {
+const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
     let token = props.clickedToken
 
-    const history = useHistory()
     const location = useLocation()
 
     const [closed, close] = useState(false)
     const handlePanelClose = useCallback(() => {
-        // Signal up that panel is closed
-        props.onClose()
-        // Remove 'viewState' from location
-        history.push(locationWithoutViewState(location))
-        // close(true)
-    }, [props, history, location])
+        if (props.onTokenClick) {
+            props.onTokenClick(undefined)
+        }
+    }, [props])
 
     useEffect(() => {
         if (token) {
