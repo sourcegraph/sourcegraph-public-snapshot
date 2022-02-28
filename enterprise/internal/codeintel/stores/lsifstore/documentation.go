@@ -336,6 +336,9 @@ func (s *Store) documentationDefinitions(
 	var found *precise.RangeData
 	for _, rn := range documentData.Document.Ranges {
 		if rn.DocumentationResultID == resultID {
+			//nolint:exportloopref
+			// We immediately break, so there are no more loop iterations, which means
+			// the value of rn will not change.
 			found = &rn
 			break
 		}
