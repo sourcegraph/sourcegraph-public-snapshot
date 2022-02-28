@@ -396,6 +396,9 @@ func TestServer_RepoLookup(t *testing.T) {
 			name: "synced - npm package host",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("npm/package"),
+				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
+				// a high priority git update.
+				Update: true,
 			},
 			stored: []*types.Repo{},
 			src: func() repos.Source {
@@ -627,7 +630,13 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			s := &Server{Syncer: syncer, Store: store}
+			scheduler := repos.NewUpdateScheduler()
+
+			s := &Server{
+				Syncer:    syncer,
+				Store:     store,
+				Scheduler: scheduler,
+			}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -640,11 +649,18 @@ func TestServer_RepoLookup(t *testing.T) {
 
 			res, err := cli.RepoLookup(ctx, tc.args)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have err: %q, want: %q", have, want)
+				t.Fatalf("have err: %q, want: %q", have, want)
 			}
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Errorf("response mismatch(-have, +want): %s", diff)
+				t.Fatalf("response mismatch(-have, +want): %s", diff)
+			}
+
+			if tc.args.Update {
+				scheduleInfo := scheduler.ScheduleInfo(res.Repo.ID)
+				if have, want := scheduleInfo.Queue.Priority, 1; have != want { // highPriority
+					t.Fatalf("scheduler update priority mismatch: have %d, want %d", have, want)
+				}
 			}
 
 			if tc.assert != nil {

@@ -37,7 +37,7 @@ type DependenciesService struct {
 type Syncer interface {
 	// Sync will lazily sync the repos that have been inserted into the database but have not yet been
 	// cloned. See repos.Syncer.SyncRepo.
-	Sync(ctx context.Context, repos []api.RepoName) error
+	Sync(ctx context.Context, repo api.RepoName) error
 }
 
 var (
@@ -135,16 +135,19 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 					g.Go(func() error {
 						defer sem.Release(1)
 
-						if err := depsStore.UpsertDependencyRepo(ctx, dep); err != nil {
+						isNew, err := depsStore.UpsertDependencyRepo(ctx, dep)
+						if err != nil {
 							return err
 						}
 
 						depName := dep.RepoName()
-						if err := r.syncer.Sync(ctx, []api.RepoName{depName}); err != nil {
-							return err
-						}
-
 						depRev := api.RevSpec(dep.GitTagFromVersion())
+
+						if isNew {
+							if err := r.syncer.Sync(ctx, depName); err != nil {
+								log15.Warn("failed to sync dependency repo", "repo", depName, "rev", depRev, "error", err)
+							}
+						}
 
 						mu.Lock()
 						defer mu.Unlock()
