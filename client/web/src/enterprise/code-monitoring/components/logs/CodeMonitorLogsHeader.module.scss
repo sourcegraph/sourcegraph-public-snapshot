@@ -1,6 +1,8 @@
+$chevron-width: 1.5rem;
+$chevron-padding: 0.5rem;
+$alert-icon-width: 1rem;
+$alert-icon-padding: 0.25rem;
+
 .name-column {
-    margin-left: calc(
-        1.5rem /* Chevron icon width */ + 0.5rem /* Chevron icon padding */ + 1rem /* Error/check icon width */ +
-            0.25rem /* Error/check icon padding */
-    );
+    margin-left: $chevron-width + $chevron-padding + $alert-icon-width + $alert-icon-padding;
 }
