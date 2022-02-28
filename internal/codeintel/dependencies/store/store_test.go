@@ -1,4 +1,4 @@
-package dbstore_test
+package store
 
 import (
 	"context"
@@ -6,28 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-func TestRepoName(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(db)
-
-	if _, err := db.Exec(`INSERT INTO repo (id, name) VALUES (50, 'github.com/foo/bar')`); err != nil {
-		t.Fatalf("unexpected error inserting repo: %s", err)
-	}
-
-	name, err := store.RepoName(context.Background(), 50)
-	if err != nil {
-		t.Fatalf("unexpected error getting repo name: %s", err)
-	}
-	if name != "github.com/foo/bar" {
-		t.Errorf("unexpected repo name. want=%s have=%s", "github.com/foo/bar", name)
-	}
-}
 
 func TestUpsertDependencyRepo(t *testing.T) {
 	if testing.Short() {
@@ -42,12 +28,12 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		reposource.PackageDependency
 		isNew bool
 	}{
-		{parseNPMDependency(t, "bar@2.0.0"), true},
-		{parseNPMDependency(t, "bar@2.0.0"), false},
-		{parseNPMDependency(t, "bar@3.0.0"), true},
-		{parseNPMDependency(t, "foo@1.0.0"), true},
-		{parseNPMDependency(t, "foo@1.0.0"), false},
-		{parseNPMDependency(t, "foo@2.0.0"), true},
+		{mustParseNPMDependency(t, "bar@2.0.0"), true},
+		{mustParseNPMDependency(t, "bar@2.0.0"), false},
+		{mustParseNPMDependency(t, "bar@3.0.0"), true},
+		{mustParseNPMDependency(t, "foo@1.0.0"), true},
+		{mustParseNPMDependency(t, "foo@1.0.0"), false},
+		{mustParseNPMDependency(t, "foo@2.0.0"), true},
 	} {
 		isNew, err := store.UpsertDependencyRepo(ctx, dep)
 		if err != nil {
@@ -59,16 +45,18 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		}
 	}
 
-	have, err := store.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{})
+	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+		Scheme: NPMPackagesScheme,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := []dbstore.NPMDependencyRepo{
-		{Package: "foo", Version: "2.0.0"},
-		{Package: "foo", Version: "1.0.0"},
-		{Package: "bar", Version: "3.0.0"},
-		{Package: "bar", Version: "2.0.0"},
+	want := []DependencyRepo{
+		{ID: 6, Name: "foo", Version: "2.0.0"},
+		{ID: 4, Name: "foo", Version: "1.0.0"},
+		{ID: 3, Name: "bar", Version: "3.0.0"},
+		{ID: 1, Name: "bar", Version: "2.0.0"},
 	}
 
 	opt := cmpopts.IgnoreFields(dbstore.NPMDependencyRepo{}, "ID")
@@ -77,7 +65,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 }
 
-func parseNPMDependency(t testing.TB, dep string) reposource.PackageDependency {
+func mustParseNPMDependency(t testing.TB, dep string) reposource.PackageDependency {
 	t.Helper()
 
 	d, err := reposource.ParseNPMDependency(dep)
@@ -86,4 +74,8 @@ func parseNPMDependency(t testing.TB, dep string) reposource.PackageDependency {
 	}
 
 	return d
+}
+
+func testStore(db dbutil.DB) *Store {
+	return newStore(db, &observation.TestContext)
 }

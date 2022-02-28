@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"context"
-	"database/sql"
 	"io"
 	"strings"
 	"sync"
@@ -11,19 +10,16 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
@@ -112,7 +108,7 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 	var mu sync.Mutex
 	dependencyRevs = make(map[api.RepoName]RevSpecSet)
 
-	depsStore := codeinteldbstore.Store{Store: basestore.NewWithDB(r.db, sql.TxOptions{})}
+	depsStore := dependenciesStore.GetStore(r.db)
 
 	sem := semaphore.NewWeighted(32)
 	g, ctx := errgroup.WithContext(ctx)
