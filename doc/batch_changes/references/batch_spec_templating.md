@@ -153,7 +153,7 @@ Run a command for each search result file path:
 ```yaml
 steps:
   - run: |
-      for file in "${{ join repository.search_result_paths " " }}";
+      for file in "${{repository.search_result_paths}}";
       do
         sed -i 's/mydockerhub-user/ci-dockerhub-user/g;' ${file}
       done
