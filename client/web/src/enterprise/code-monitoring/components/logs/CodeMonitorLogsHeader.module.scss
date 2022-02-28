@@ -1,3 +1,6 @@
 .name-column {
-    margin-left: 2.25rem;
+    margin-left: calc(
+        1.5rem /* Chevron icon width */ + 0.25rem /* Chevron icon padding */ + 1rem /* Error/check icon width */ +
+            0.25rem /* Error/check icon padding */
+    );
 }
