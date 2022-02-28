@@ -99,16 +99,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-	matches, common, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, common, err := RunRepoSubsetTextSearch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,16 +130,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	searcherArgs = &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-	_, _, err = RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	_, _, err = RunRepoSubsetTextSearch(context.Background(), args)
 	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
@@ -214,16 +196,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,16 +268,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
-	if err != nil {
-		t.Fatal(err)
-	}
-	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-	matches, _, err := RunRepoSubsetTextSearch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	matches, _, err := RunRepoSubsetTextSearch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,29 +393,63 @@ func TestFileMatch_Limit(t *testing.T) {
 }
 
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
-func RunRepoSubsetTextSearch(
-	ctx context.Context,
-	request zoektutil.IndexedSearchRequest,
-	searcherArgs *search.SearcherParameters,
-	notSearcherOnly bool,
-) ([]*result.FileMatch, streaming.Stats, error) {
+func RunRepoSubsetTextSearch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	repos := args.Repos
+	q := args.Query
+	notSearcherOnly := args.Mode != search.SearcherOnly
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+
 	agg := streaming.NewAggregatingStream()
+
+	indexed, unindexed, err := zoektutil.PartitionRepos(
+		context.Background(),
+		repos,
+		args.Zoekt,
+		search.TextRequest,
+		query.Yes,
+		query.ContainsRefGlobs(q),
+		zoektutil.MissingRepoRevStatus(agg),
+	)
+	if err != nil {
+		return nil, streaming.Stats{}, err
+	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	if notSearcherOnly {
+		typ := search.TextRequest
+		zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, nil, typ)
+		if err != nil {
+			return nil, streaming.Stats{}, err
+		}
+
+		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+			Repos:          indexed,
+			Query:          zoektQuery,
+			Typ:            search.TextRequest,
+			FileMatchLimit: args.PatternInfo.FileMatchLimit,
+			Select:         args.PatternInfo.Select,
+			Zoekt:          args.Zoekt,
+			Since:          nil,
+		}
+
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			return request.Search(ctx, agg)
+			_, err := zoektJob.Run(ctx, nil, agg)
+			return err
 		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, unindexed, false)
 	})
 
-	err := g.Wait()
+	err = g.Wait()
 
 	fms, fmErr := matchesToFileMatches(agg.Results)
 	if fmErr != nil && err == nil {

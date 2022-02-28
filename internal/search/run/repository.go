@@ -122,10 +122,19 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
 
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	indexed, unindexed, err := zoektutil.PartitionRepos(
+		ctx,
+		newArgs.Repos,
+		newArgs.Zoekt,
+		search.TextRequest,
+		newArgs.PatternInfo.Index,
+		query.ContainsRefGlobs(newArgs.Query),
+		func([]*search.RepositoryRevisions) {},
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	searcherArgs := &search.SearcherParameters{
 		SearcherURLs:    newArgs.SearcherURLs,
 		PatternInfo:     newArgs.PatternInfo,
@@ -137,15 +146,40 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	g, ctx := errgroup.WithContext(ctx)
 
 	if newArgs.Mode != search.SearcherOnly {
+		typ := search.TextRequest
+		zoektQuery, err := search.QueryToZoektQuery(newArgs.PatternInfo, &newArgs.Features, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		zoektArgs := search.ZoektParameters{
+			Query:          zoektQuery,
+			Typ:            typ,
+			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
+			Select:         newArgs.PatternInfo.Select,
+			Zoekt:          newArgs.Zoekt,
+		}
+
+		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+			Repos:          indexed,
+			Query:          zoektArgs.Query,
+			Typ:            search.TextRequest,
+			FileMatchLimit: zoektArgs.FileMatchLimit,
+			Select:         zoektArgs.Select,
+			Zoekt:          zoektArgs.Zoekt,
+			Since:          nil,
+		}
+
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			return request.Search(ctx, agg)
+			_, err := zoektJob.Run(ctx, nil, agg)
+			return err
 		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return searcher.SearchOverRepos(ctx, searcherArgs, agg, request.UnindexedRepos(), false)
+		return searcher.SearchOverRepos(ctx, searcherArgs, agg, unindexed, false)
 	})
 
 	err = g.Wait()
