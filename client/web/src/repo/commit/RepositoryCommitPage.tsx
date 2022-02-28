@@ -90,7 +90,8 @@ const queryCommit = memoizeObservable(
                         error => !error.message.includes('revision not found')
                     )
 
-                    const revisionErrorsFiltered = errors && errorsWithoutRevisionError && errorsWithoutRevisionError.length < errors?.length
+                    const revisionErrorsFiltered =
+                        errors && errorsWithoutRevisionError && errorsWithoutRevisionError.length < errors?.length
 
                     // If there are no other errors left (or there wasn't any errors to begin with throw out a Commit not found error
                     if (!errorsWithoutRevisionError || errorsWithoutRevisionError.length === 0) {
@@ -98,7 +99,7 @@ const queryCommit = memoizeObservable(
                     }
 
                     // if we found at least 1 "revision nor found error" add "Commit not found" to the errors
-                    if (revisionErrorsFiltered){
+                    if (revisionErrorsFiltered) {
                         throw createAggregateError([new Error('Commit not found'), ...errorsWithoutRevisionError])
                     }
 
