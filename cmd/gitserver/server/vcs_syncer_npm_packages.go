@@ -13,7 +13,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -38,7 +38,7 @@ var (
 type NPMPackagesSyncer struct {
 	// Configuration object describing the connection to the NPM registry.
 	connection schema.NPMPackagesConnection
-	dbStore    repos.NPMPackagesRepoStore
+	depsStore  repos.DependenciesStore
 	// The client to use for making queries against NPM.
 	client npm.Client
 }
@@ -47,7 +47,7 @@ type NPMPackagesSyncer struct {
 // for the syncer is configured based on the connection parameter.
 func NewNPMPackagesSyncer(
 	connection schema.NPMPackagesConnection,
-	dbStore repos.NPMPackagesRepoStore,
+	dbStore repos.DependenciesStore,
 	customClient npm.Client,
 ) *NPMPackagesSyncer {
 	var client = customClient
@@ -200,17 +200,18 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	if err != nil {
 		return nil, err
 	}
-	dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-		ArtifactName: parsedPackage.PackageSyntax(),
+	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+		Scheme: dependenciesStore.NPMPackagesScheme,
+		Name:   parsedPackage.PackageSyntax(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get npm dependencies from dbStore")
 	}
 
 	for _, dbDep := range dbDeps {
-		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Package)
+		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
 		if err != nil {
-			log15.Error("failed to parse npm package", "package", dbDep.Package, "message", err)
+			log15.Error("failed to parse npm package", "package", dbDep.Name, "message", err)
 			continue
 		}
 		if repoPackage.Equal(parsedDbPackage) {
