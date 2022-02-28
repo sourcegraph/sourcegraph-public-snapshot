@@ -67,68 +67,54 @@ func NewServer(
 		pathSymbolsCacheSize: pathSymbolsCacheSize,
 	}
 
-	err := server.startCleanupThread()
-	if err != nil {
-		return nil, err
-	}
+	go server.startCleanupLoop()
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		err = server.startIndexingThread(server.indexRequestQueues[i])
-		if err != nil {
-			return nil, err
-		}
+		go server.startIndexingLoop(server.indexRequestQueues[i])
 	}
 
 	return server, nil
 }
 
-func (s *Server) startIndexingThread(indexRequestQueue chan indexRequest) (err error) {
-	go func() {
-		for indexRequest := range indexRequestQueue {
-			// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-			// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-			conn, err := s.db.Conn(context.Background())
-			if err != nil {
-				log15.Error("Failed to get connection for indexing thread", "error", err)
-				continue
-			}
-
-			err = s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
-			close(indexRequest.done)
-			if err != nil {
-				log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
-			}
-
-			conn.Close()
+func (s *Server) startIndexingLoop(indexRequestQueue chan indexRequest) {
+	for indexRequest := range indexRequestQueue {
+		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+		// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+		conn, err := s.db.Conn(context.Background())
+		if err != nil {
+			log15.Error("Failed to get connection for indexing thread", "error", err)
+			continue
 		}
-	}()
 
-	return nil
+		err = s.Index(context.Background(), conn, indexRequest.repo, indexRequest.commit, s.createParser())
+		close(indexRequest.done)
+		if err != nil {
+			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)
+		}
+
+		conn.Close()
+	}
 }
 
-func (s *Server) startCleanupThread() error {
-	go func() {
-		for range s.repoUpdates {
-			// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-			// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
-			conn, err := s.db.Conn(context.Background())
-			if err != nil {
-				log15.Error("Failed to get connection for deleting old repos", "error", err)
-				continue
-			}
-
-			threadStatus := s.status.NewThreadStatus("cleanup")
-			err = DeleteOldRepos(context.Background(), conn, s.maxRepos, threadStatus)
-			threadStatus.End()
-			if err != nil {
-				log15.Error("Failed to delete old repos", "error", err)
-			}
-
-			conn.Close()
+func (s *Server) startCleanupLoop() {
+	for range s.repoUpdates {
+		// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
+		// https://www.postgresql.org/docs/9.1/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS
+		conn, err := s.db.Conn(context.Background())
+		if err != nil {
+			log15.Error("Failed to get connection for deleting old repos", "error", err)
+			continue
 		}
-	}()
 
-	return nil
+		threadStatus := s.status.NewThreadStatus("cleanup")
+		err = DeleteOldRepos(context.Background(), conn, s.maxRepos, threadStatus)
+		threadStatus.End()
+		if err != nil {
+			log15.Error("Failed to delete old repos", "error", err)
+		}
+
+		conn.Close()
+	}
 }
 
 func getHops(ctx context.Context, tx Queryable, commit int, tasklog *TaskLog) ([]int, error) {
