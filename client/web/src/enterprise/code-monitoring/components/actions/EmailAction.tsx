@@ -1,5 +1,6 @@
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { useState, useCallback } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
@@ -69,24 +70,20 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
     )
     const isSendTestEmailButtonDisabled = loading || (called && !error) || !monitorName
 
-    const onSendTestEmail = useCallback(async () => {
-        try {
-            await sendTestEmail({
-                variables: {
-                    namespace: authenticatedUser.id,
-                    description: monitorName,
-                    email: {
-                        enabled: true,
-                        includeResults: false,
-                        priority: MonitorEmailPriority.NORMAL,
-                        recipients: [authenticatedUser.id],
-                        header: '',
-                    },
+    const onSendTestEmail = useCallback(() => {
+        sendTestEmail({
+            variables: {
+                namespace: authenticatedUser.id,
+                description: monitorName,
+                email: {
+                    enabled: true,
+                    includeResults: false,
+                    priority: MonitorEmailPriority.NORMAL,
+                    recipients: [authenticatedUser.id],
+                    header: '',
                 },
-            })
-        } catch {
-            // Ignore errors, they will be handled with the error state from useMutation
-        }
+            },
+        }).catch(noop) // Ignore errors, they will be handled with the error state from useMutation
     }, [authenticatedUser.id, monitorName, sendTestEmail])
 
     const sendTestEmailButtonText = loading

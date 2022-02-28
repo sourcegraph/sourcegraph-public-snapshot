@@ -1,5 +1,6 @@
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { useCallback, useState } from 'react'
 
 import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
@@ -64,18 +65,14 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     )
     const isSendTestButtonDisabled = loading || !monitorName || !url || (called && !error)
 
-    const onSendTestMessage = useCallback(async () => {
-        try {
-            await sendTestMessage({
-                variables: {
-                    namespace: authenticatedUser.id,
-                    description: monitorName,
-                    webhook: { url, enabled: true, includeResults: false },
-                },
-            })
-        } catch {
-            // Ignore errors, they will be handled with the error state from useMutation
-        }
+    const onSendTestMessage = useCallback(() => {
+        sendTestMessage({
+            variables: {
+                namespace: authenticatedUser.id,
+                description: monitorName,
+                webhook: { url, enabled: true, includeResults: false },
+            },
+        }).catch(noop) // Ignore errors, they will be handled with the error state from useMutation
     }, [authenticatedUser.id, monitorName, sendTestMessage, url])
 
     const sendTestEmailButtonText = loading
