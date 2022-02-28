@@ -17,4 +17,6 @@ func Init() {
 			httpcli.SetTLSExternalConfig(after)
 		}
 	})
+
+	Ready()
 }

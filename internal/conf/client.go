@@ -42,6 +42,10 @@ func Raw() conftypes.RawUnified {
 	return DefaultClient().Raw()
 }
 
+func Ready() {
+	DefaultClient().Ready()
+}
+
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
 //
