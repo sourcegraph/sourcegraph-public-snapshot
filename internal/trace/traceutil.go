@@ -17,6 +17,7 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,9 +44,13 @@ func IDFromSpan(span opentracing.Span) string {
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.
-func URL(traceID, externalURL string) string {
+func URL(traceID, externalURL, traceProvider string) string {
 	if traceID == "" {
 		return ""
+	}
+
+	if traceProvider == string(tracer.Datadog) {
+		return "https://app.datadoghq.com/apm/trace/" + traceID
 	}
 
 	if os.Getenv("ENABLE_GRAFANA_CLOUD_TRACE_URL") != "true" {
