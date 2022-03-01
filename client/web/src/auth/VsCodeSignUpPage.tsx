@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { VSCodeIcon } from '../components/CtaIcons'
@@ -92,7 +92,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
                     Go back
                 </Link>
             </small>

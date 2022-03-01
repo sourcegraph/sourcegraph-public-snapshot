@@ -85,7 +85,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"

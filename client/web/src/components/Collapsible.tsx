@@ -3,7 +3,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Collapsible.module.scss'
 
@@ -97,11 +97,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    {isExpanded ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close section" />
-                    ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
-                    )}
+                    <Icon aria-label="Close section" as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
                 </Button>
                 {!titleAtStart && titleNode}
             </div>
