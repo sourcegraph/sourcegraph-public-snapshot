@@ -112,7 +112,7 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	for i, res := range agg.Results {
 		cm, ok := res.(*result.CommitMatch)
 		if !ok {
-			errors.Errorf("expected search to only return commit matches, but got type %T", res)
+			return nil, errors.Errorf("expected search to only return commit matches, but got type %T", res)
 		}
 		results[i] = cm
 	}
