@@ -22,8 +22,7 @@ func TypeScriptPatterns() []*regexp.Regexp {
 	}
 }
 
-const lsifTscImage = "sourcegraph/lsif-node:autoindex"
-const nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
+const lsifTypescriptImage = "sourcegraph/lsif-typescript:autoindex"
 
 var tscSegmentBlockList = append([]string{"node_modules"}, segmentBlockList...)
 
@@ -53,19 +52,9 @@ func inferSingleTypeScriptIndexJob(
 
 		dockerSteps = append(dockerSteps, config.DockerStep{
 			Root:     dir,
-			Image:    lsifTscImage,
+			Image:    lsifTypescriptImage,
 			Commands: commands,
 		})
-	}
-
-	var localSteps []string
-	if checkCanDeriveNodeVersion(gitclient, tsConfigPath, pathMap) {
-		for i, step := range dockerSteps {
-			step.Commands = append([]string{nMuslCommand}, step.Commands...)
-			dockerSteps[i] = step
-		}
-
-		localSteps = append(localSteps, nMuslCommand)
 	}
 
 	n := len(dockerSteps)
@@ -73,16 +62,16 @@ func inferSingleTypeScriptIndexJob(
 		dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
 	}
 
-	indexerArgs := []string{"lsif-tsc", "-p", "."}
+	indexerArgs := []string{"lsif-typescript-autoindex", "index"}
 	if shouldInferConfig {
 		indexerArgs = append(indexerArgs, "--inferTSConfig")
 	}
 
 	return &config.IndexJob{
 		Steps:       dockerSteps,
-		LocalSteps:  localSteps,
+		LocalSteps:  nil,
 		Root:        dirWithoutDot(tsConfigPath),
-		Indexer:     lsifTscImage,
+		Indexer:     lsifTypescriptImage,
 		IndexerArgs: indexerArgs,
 		Outfile:     "",
 	}
@@ -126,34 +115,4 @@ func checkLernaFile(gitclient GitClient, path string, pathMap pathMap) (isYarn b
 		}
 	}
 	return false
-}
-
-func checkCanDeriveNodeVersion(gitclient GitClient, path string, pathMap pathMap) bool {
-	for _, dir := range ancestorDirs(path) {
-		packageJSONPath := filepath.Join(dir, "package.json")
-		if (pathMap.contains(dir, "package.json") && hasEnginesField(gitclient, packageJSONPath)) ||
-			pathMap.contains(dir, ".nvmrc") ||
-			pathMap.contains(dir, ".node-version") ||
-			pathMap.contains(dir, ".n-node-version") {
-			return true
-		}
-	}
-	return false
-}
-
-func hasEnginesField(gitclient GitClient, packageJSONPath string) (hasField bool) {
-	packageJSON := struct {
-		Engines *struct {
-			Node *string `json:"node"`
-		} `json:"engines"`
-	}{}
-
-	if b, err := gitclient.RawContents(context.TODO(), packageJSONPath); err == nil {
-		if err := json.Unmarshal(b, &packageJSON); err == nil {
-			if packageJSON.Engines != nil && packageJSON.Engines.Node != nil {
-				return true
-			}
-		}
-	}
-	return
 }
