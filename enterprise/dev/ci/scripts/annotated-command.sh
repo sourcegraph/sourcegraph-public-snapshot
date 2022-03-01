@@ -17,7 +17,7 @@ eval "$cmd"
 exit_code="$?"
 
 # Check for annotations left behind by the command
-if [ -n "$ANNOTATE_OPTS" ]; then
+if [ -n "${ANNOTATE_OPTS-''}" ]; then
   # Parse annotation options:
   # - args[0] => include_names
   # - args[1:] => annotate_opts, base options for the ./annotate.sh script
