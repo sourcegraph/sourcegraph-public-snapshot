@@ -246,24 +246,24 @@ func (i *Inserter) checkInvariants() {
 // pop removes and returns as many values from the current batch that can be attached to a single
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
 // This method additionally returns the total (approximate) size of the batch being inserted.
-func (i *Inserter) pop() (batch []interface{}, batchPayloadSize int) {
+func (i *Inserter) pop() (batch []interface{}, payloadSize int) {
 	if len(i.batch) == 0 {
 		return nil, 0
 	}
 
 	if len(i.batch) < i.maxBatchSize {
 		// Grab size before overwriting it
-		batchPayloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
+		payloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
 
 		// Use entire batch. This allows us to cleanly reset the sizes we were tracking for value
 		// payloads by just cutting the length of the slice back to zero.
 		batch, i.batch = i.batch, i.batch[:0]
 		i.cumulativeValueSizes = i.cumulativeValueSizes[:0]
-		return batch, batchPayloadSize
+		return batch, payloadSize
 	}
 
 	// Grab size before altering containing slice
-	batchPayloadSize = i.cumulativeValueSizes[i.maxBatchSize-1]
+	payloadSize = i.cumulativeValueSizes[i.maxBatchSize-1]
 
 	// Extract partial batch along with the size tracking data for each elemetn
 	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
@@ -273,10 +273,10 @@ func (i *Inserter) pop() (batch []interface{}, batchPayloadSize int) {
 		// Batch payload sizes are cumulative. Remove the size of the batch we've just
 		// extracted from every value remaining in the slice. This should generally only
 		// be a handful of elements and shouldn't be anywhere near a dominating loop.
-		i.cumulativeValueSizes[idx] -= batchPayloadSize
+		i.cumulativeValueSizes[idx] -= payloadSize
 	}
 
-	return batch, batchPayloadSize
+	return batch, payloadSize
 }
 
 // makeQuery returns a parameterized SQL query that has the given number of values worth of
