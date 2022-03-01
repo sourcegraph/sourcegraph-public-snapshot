@@ -1,78 +1,17 @@
 import assert from 'assert'
 
-import { TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { InsightViewNode } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
 
-import { INSIGHT_TYPES_MIGRATION_BULK_SEARCH, INSIGHT_TYPES_MIGRATION_COMMITS } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
-
-const SEARCH_BASED_INSIGHT_FIXTURE: InsightViewNode = {
-    __typename: 'InsightView',
-    id: '001',
-    dashboardReferenceCount: 0,
-    appliedFilters: {
-        __typename: 'InsightViewFilters',
-        includeRepoRegex: '',
-        excludeRepoRegex: '',
-    },
-    presentation: {
-        __typename: 'LineChartInsightViewPresentation',
-        title: 'Migration to new GraphQL TS types',
-        seriesPresentation: [
-            {
-                __typename: 'LineChartDataSeriesPresentation',
-                seriesId: '001',
-                label: 'Imports of old GQL.* types',
-                color: 'var(--oc-red-7)',
-            },
-            {
-                __typename: 'LineChartDataSeriesPresentation',
-                seriesId: '002',
-                label: 'Imports of new graphql-operations types',
-                color: 'var(--oc-blue-7',
-            },
-        ],
-    },
-    dataSeriesDefinitions: [
-        {
-            __typename: 'SearchInsightDataSeriesDefinition',
-            seriesId: '001',
-            query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-            isCalculated: false,
-            generatedFromCaptureGroups: false,
-            repositoryScope: {
-                __typename: 'InsightRepositoryScope',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-            },
-            timeScope: {
-                __typename: 'InsightIntervalTimeScope',
-                unit: TimeIntervalStepUnit.WEEK,
-                value: 6,
-            },
-        },
-        {
-            __typename: 'SearchInsightDataSeriesDefinition',
-            seriesId: '002',
-            query: "patternType:regexp case:yes /graphql-operations'",
-            isCalculated: false,
-            generatedFromCaptureGroups: false,
-            repositoryScope: {
-                __typename: 'InsightRepositoryScope',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-            },
-            timeScope: {
-                __typename: 'InsightIntervalTimeScope',
-                unit: TimeIntervalStepUnit.WEEK,
-                value: 6,
-            },
-        },
-    ],
-}
+import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
+import {
+    MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+    MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+} from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 interface InsightValues {
     series: {
@@ -147,7 +86,7 @@ describe('Code insight edit insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
                 // Mock insight config query
@@ -155,7 +94,7 @@ describe('Code insight edit insight page', () => {
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
-                        nodes: [SEARCH_BASED_INSIGHT_FIXTURE],
+                        nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'just-in-time' })],
                     },
                 }),
 
@@ -166,8 +105,8 @@ describe('Code insight edit insight page', () => {
                 }),
 
                 // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
@@ -178,7 +117,7 @@ describe('Code insight edit insight page', () => {
                     __typename: 'Mutation',
                     updateLineChartSearchInsight: {
                         __typename: 'InsightViewPayload',
-                        view: SEARCH_BASED_INSIGHT_FIXTURE,
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'just-in-time' }),
                     },
                 }),
             },
@@ -310,28 +249,6 @@ describe('Code insight edit insight page', () => {
     })
 
     it.skip('should open the edit page with pre-filled fields with values from user/org settings', async () => {
-        const settings = {
-            'searchInsights.insight.graphQLTypesMigration': {
-                title: 'Migration to new GraphQL TS types',
-                repositories: ['github.com/sourcegraph/sourcegraph'],
-                series: [
-                    {
-                        name: 'Imports of old GQL.* types',
-                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        stroke: 'var(--oc-red-7)',
-                    },
-                    {
-                        name: 'Imports of new graphql-operations types',
-                        query: "patternType:regexp case:yes /graphql-operations'",
-                        stroke: 'var(--oc-blue-7)',
-                    },
-                ],
-                step: {
-                    weeks: 6,
-                },
-            },
-        }
-
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             const mockDate = new Date('June 1, 2021 00:00:00 UTC')
@@ -341,13 +258,8 @@ describe('Code insight edit insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-
-            // Since search insight and code stats insights work via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock setting cascade data
-            userSettings: settings,
             overrides: {
                 // Mock for async repositories field validation.
                 BulkRepositoriesSearch: () => ({
@@ -355,8 +267,8 @@ describe('Code insight edit insight page', () => {
                 }),
 
                 // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({

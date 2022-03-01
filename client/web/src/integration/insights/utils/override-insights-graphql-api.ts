@@ -9,10 +9,9 @@ import {
 } from '../../../graphql-operations'
 import { WebIntegrationTestContext } from '../../context'
 import { commonWebGraphQlResults } from '../../graphQlResults'
-import { siteGQLID, siteID } from '../../jscontext'
 
 /**
- * Some of insight creation UI gql api requests do not have
+ * Some insight creation UI gql api requests do not have
  * generated types due their dynamic nature. Because of that we
  * must write these api call types below manually for testing purposes.
  */
@@ -33,8 +32,6 @@ interface CustomInsightsOperations {
 interface OverrideGraphQLExtensionsProps {
     testContext: WebIntegrationTestContext
     overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
-    userSettings?: Record<any, any>
-    orgSettings?: Record<any, any>
 }
 
 /**
@@ -43,8 +40,8 @@ interface OverrideGraphQLExtensionsProps {
  *
  * @param props - Custom override for code insight APIs (gql, user setting, extensions)
  */
-export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps): void {
-    const { testContext, overrides = {}, userSettings = {}, orgSettings = {} } = props
+export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps): void {
+    const { testContext, overrides = {} } = props
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
@@ -62,6 +59,14 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 }),
             },
         }),
+        // Mock insight config query
+        GetInsights: () => ({
+            __typename: 'Query',
+            insightViews: {
+                __typename: 'InsightViewConnection',
+                nodes: [],
+            },
+        }),
         HasAvailableCodeInsight: () => ({
             insightViews: {
                 __typename: 'InsightViewConnection',
@@ -75,7 +80,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 nodes: [],
             },
         }),
-        Insights: () => ({ insights: { nodes: [] } }),
+
         CurrentAuthState: () => ({
             currentUser: {
                 __typename: 'User',
@@ -106,66 +111,6 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 searchable: true,
             },
         }),
-        ViewerSettings: () => ({
-            viewerSettings: {
-                __typename: 'SettingsCascade',
-                subjects: [
-                    {
-                        __typename: 'DefaultSettings',
-                        settingsURL: null,
-                        viewerCanAdminister: false,
-                        latestSettings: {
-                            id: 0,
-                            contents: JSON.stringify({
-                                experimentalFeatures: { codeInsights: true },
-                            }),
-                        },
-                    },
-                    {
-                        __typename: 'Site',
-                        id: siteGQLID,
-                        siteID,
-                        latestSettings: {
-                            id: 470,
-                            contents: JSON.stringify({}),
-                        },
-                        settingsURL: '/site-admin/global-settings',
-                        viewerCanAdminister: true,
-                        allowSiteSettingsEdits: true,
-                    },
-                    {
-                        __typename: 'Org',
-                        name: 'test organization',
-                        displayName: 'Test organization',
-                        id: 'Org_test_id',
-                        viewerCanAdminister: true,
-                        settingsURL: '/organizations/test_organization/settings',
-                        latestSettings: {
-                            id: 320,
-                            contents: JSON.stringify({
-                                ...orgSettings,
-                            }),
-                        },
-                    },
-                    {
-                        __typename: 'User',
-                        id: testUserID,
-                        username: 'testusername',
-                        settingsURL: '/user/testusername/settings',
-                        displayName: 'test',
-                        viewerCanAdminister: true,
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify({
-                                ...userSettings,
-                            }),
-                        },
-                    },
-                ],
-                final: JSON.stringify({}),
-            },
-        }),
-        Extensions: () => ({ extensionRegistry: { __typename: 'ExtensionRegistry', extensions: { nodes: [] } } }),
         ...overrides,
     })
 }

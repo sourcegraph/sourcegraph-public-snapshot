@@ -1,6 +1,25 @@
-import { BulkSearchCommits } from '../../../graphql-operations'
+import { BulkSearchCommits, BulkSearchFields, SearchResultsStatsResult } from '../../../graphql-operations'
 
-export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
+/**
+ * All just in time insights on the fronted since we don't have pre-calculated data for them in
+ * the code insights database tables work through our Search API gql handlers and have two steps
+ * pipeline.
+ *
+ * 1. FE logic calculates list of dates for possible commits in insight's repositories field -
+ * BulkSearchCommits mock
+ *
+ * 2. Then we query insight query for each commit that we got on the first step and process search
+ * matches - BulkSearchCommits
+ *
+ * Note that code stats insight works in one-step pipeline since we don't history quries there and
+ * always show the latest data for code stat insight repository.
+ */
+
+/**
+ * Metadata for just in time (FE) insight commit search. This fixture provides commits metadata
+ * - the first step in just in time insight processing
+ */
+export const STORYBOOK_GROWTH_INSIGHT_COMMITS_FIXTURE: Record<string, BulkSearchCommits> = {
     search0: {
         results: {
             results: [
@@ -108,7 +127,11 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
     },
 }
 
-export const SEARCH_INSIGHT_RESULT_MOCK = {
+/**
+ * This fixture provides search API matches data - the second step in just in time processing
+ * data.
+ */
+export const STORYBOOK_GROWTH_INSIGHT_MATCH_DATA_FIXTURE: Record<string, BulkSearchFields> = {
     search0: { results: { matchCount: 10245 } },
     search1: { results: { matchCount: 16502 } },
     search2: { results: { matchCount: 17207 } },
@@ -118,95 +141,7 @@ export const SEARCH_INSIGHT_RESULT_MOCK = {
     search6: { results: { matchCount: 41029 } },
 }
 
-export const CODE_STATS_RESULT_MOCK = {
-    search: {
-        results: { limitHit: false },
-        stats: {
-            languages: [
-                { name: 'Go', totalLines: 4498 },
-                { name: 'JavaScript', totalLines: 948 },
-                { name: 'Markdown', totalLines: 557 },
-                { name: 'CSS', totalLines: 338 },
-                { name: 'HTML', totalLines: 48 },
-                { name: 'Text', totalLines: 21 },
-                { name: 'YAML', totalLines: 1 },
-            ],
-        },
-    },
-}
-
-/**
- * Backend Insight with linear increasing data
- */
-export const LINEAR_BACKEND_INSIGHT = {
-    id: 'backend_ID_001',
-    title: 'Testing Insight',
-    description: 'Insight for testing',
-    series: [
-        {
-            label: 'Insight',
-            points: [
-                {
-                    dateTime: '2021-02-11T00:00:00Z',
-                    value: 9,
-                },
-                {
-                    dateTime: '2021-01-27T00:00:00Z',
-                    value: 8,
-                },
-                {
-                    dateTime: '2021-01-12T00:00:00Z',
-                    value: 7,
-                },
-                {
-                    dateTime: '2020-12-28T00:00:00Z',
-                    value: 6,
-                },
-                {
-                    dateTime: '2020-12-13T00:00:00Z',
-                    value: 5,
-                },
-                {
-                    dateTime: '2020-11-28T00:00:00Z',
-                    value: 4,
-                },
-                {
-                    dateTime: '2020-11-13T00:00:00Z',
-                    value: 3,
-                },
-                {
-                    dateTime: '2020-10-29T00:00:00Z',
-                    value: 2,
-                },
-                {
-                    dateTime: '2020-10-14T00:00:00Z',
-                    value: 1,
-                },
-                {
-                    dateTime: '2020-09-29T00:00:00Z',
-                    value: 0,
-                },
-            ],
-            status: {
-                pendingJobs: 0,
-                completedJobs: 0,
-                failedJobs: 0,
-                backfillQueuedAt: '2021-02-11T00:00:00Z',
-            },
-        },
-    ],
-}
-
-/**
- * Mock data for gql api our backend insights.
- */
-export const BACKEND_INSIGHTS = [LINEAR_BACKEND_INSIGHT]
-
-/**
- * Mock gql api for live preview chart of `INSIGHT_VIEW_TYPES_MIGRATION` insight.
- * {@link INSIGHT_VIEW_TYPES_MIGRATION}
- */
-export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> = {
+export const MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE: Record<string, BulkSearchCommits> = {
     search0: {
         results: {
             results: [
@@ -215,7 +150,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: '2a1cd8a30c72780ad884159161d0ec828cfe69a3',
                         committer: {
-                            date: '2020-05-30T19:48:57Z',
+                            date: '2020-05-29T19:48:57Z',
                         },
                     },
                 },
@@ -230,7 +165,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: '68afed3a2812a197096720c80df928eba0ea0703',
                         committer: {
-                            date: '2020-07-31T20:36:59Z',
+                            date: '2020-07-29T20:36:59Z',
                         },
                     },
                 },
@@ -245,7 +180,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: 'f62cb0864d367cfd09fb6f755807e6c25b44e6dd',
                         committer: {
-                            date: '2020-09-30T20:22:52Z',
+                            date: '2020-09-29T20:22:52Z',
                         },
                     },
                 },
@@ -260,7 +195,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: 'ccede06037725365c3391e36b9d90c85eb00b71a',
                         committer: {
-                            date: '2020-11-30T20:27:10Z',
+                            date: '2020-11-29T20:27:10Z',
                         },
                     },
                 },
@@ -275,7 +210,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: 'b29a72431e10adac2267cd4e5097f11d517e9139',
                         committer: {
-                            date: '2021-01-30T00:52:56Z',
+                            date: '2021-01-31T00:52:56Z',
                         },
                     },
                 },
@@ -290,7 +225,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     commit: {
                         oid: '4e565e36dc880f75c12982e2aba41f2445eeb4e1',
                         committer: {
-                            date: '2021-03-31T20:47:08Z',
+                            date: '2021-03-30T20:47:08Z',
                         },
                     },
                 },
@@ -314,10 +249,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
     },
 }
 
-/**
- * Mock Bulk Search gql api for live preview chart of `INSIGHT_VIEW_TYPES_MIGRATION` insight.
- * */
-export const INSIGHT_TYPES_MIGRATION_BULK_SEARCH = {
+export const MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE: Record<string, BulkSearchFields> = {
     search0: {
         results: {
             matchCount: 256,
@@ -391,79 +323,21 @@ export const INSIGHT_TYPES_MIGRATION_BULK_SEARCH = {
 }
 
 /**
- * Code stats insight (gql query - LangStatsInsightContent) live preview mock.
+ * For code-stats insight we have 1 step just in time processing. This fixture provides mock
+ * data for this single step.
  */
-export const LangStatsInsightContent = {
+export const SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE: SearchResultsStatsResult = {
     search: {
-        results: {
-            limitHit: false,
-        },
+        results: { limitHit: false },
         stats: {
             languages: [
-                {
-                    name: 'Markdown',
-                    totalLines: 83176,
-                },
-                {
-                    name: 'SVG',
-                    totalLines: 17369,
-                },
-                {
-                    name: 'YAML',
-                    totalLines: 16226,
-                },
-                {
-                    name: 'TypeScript',
-                    totalLines: 9164,
-                },
-                {
-                    name: 'SCSS',
-                    totalLines: 2597,
-                },
-                {
-                    name: 'JSON',
-                    totalLines: 1801,
-                },
-                {
-                    name: 'HTML',
-                    totalLines: 1281,
-                },
-                {
-                    name: 'CSS',
-                    totalLines: 1188,
-                },
-                {
-                    name: 'JavaScript',
-                    totalLines: 473,
-                },
-                {
-                    name: 'Go',
-                    totalLines: 260,
-                },
-                {
-                    name: 'Text',
-                    totalLines: 174,
-                },
-                {
-                    name: 'TOML',
-                    totalLines: 106,
-                },
-                {
-                    name: 'EditorConfig',
-                    totalLines: 20,
-                },
-                {
-                    name: 'Jsonnet',
-                    totalLines: 15,
-                },
-                {
-                    name: 'Makefile',
-                    totalLines: 12,
-                },
-                {
-                    name: 'Ignore List',
-                    totalLines: 8,
-                },
+                { name: 'Go', totalLines: 4498 },
+                { name: 'JavaScript', totalLines: 948 },
+                { name: 'Markdown', totalLines: 557 },
+                { name: 'CSS', totalLines: 338 },
+                { name: 'HTML', totalLines: 48 },
+                { name: 'Text', totalLines: 21 },
+                { name: 'YAML', totalLines: 1 },
             ],
         },
     },

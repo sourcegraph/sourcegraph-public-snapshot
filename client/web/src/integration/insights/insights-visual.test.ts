@@ -6,13 +6,18 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
 
+import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from './fixtures/calculated-insights'
 import {
-    BACKEND_INSIGHTS,
-    CODE_STATS_RESULT_MOCK,
-    SEARCH_INSIGHT_COMMITS_MOCK,
-    SEARCH_INSIGHT_RESULT_MOCK,
-} from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+    createJITMigrationToGQLInsightMetadataFixture,
+    SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE,
+    STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE,
+} from './fixtures/insights-metadata'
+import {
+    SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
+    STORYBOOK_GROWTH_INSIGHT_COMMITS_FIXTURE,
+    STORYBOOK_GROWTH_INSIGHT_MATCH_DATA_FIXTURE,
+} from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('[VISUAL] Code insights page', () => {
     let driver: Driver
@@ -22,18 +27,21 @@ describe('[VISUAL] Code insights page', () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
-
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
+            customContext: {
+                // Enforce using a new gql API for code insights pages
+                codeInsightsGqlApiEnabled: true,
+            },
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
@@ -42,19 +50,24 @@ describe('[VISUAL] Code insights page', () => {
     }
 
     it('is styled correctly with back-end insights', async () => {
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-            userSettings: {
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {
-                        title: 'Testing Insight',
-                        series: [],
-                    },
-                },
-            },
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+                // Mock insight config query
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
+                    },
+                }),
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
             },
         })
 
@@ -63,47 +76,19 @@ describe('[VISUAL] Code insights page', () => {
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
-    it('is styled correctly with search-based insights ', async () => {
-        overrideGraphQLExtensions({
+    it('is styled correctly with just-in-time insights ', async () => {
+        overrideInsightsGraphQLApi({
             testContext,
-
-            // Since search insight and code stats insight are working via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock data - mocking extension work.
-            userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {
-                    title: 'The First search-based insight',
-                    repositories: ['github.com/sourcegraph/sourcegraph'],
-                    series: [
-                        {
-                            name: 'The first series of the first chart',
-                            stroke: 'var(--oc-grape-7)',
-                            query: 'Kapica',
-                        },
-                    ],
-                    step: {
-                        months: 8,
-                    },
-                },
-                'searchInsights.insight.teamSize': {
-                    title: 'The Second search-based insight',
-                    repositories: ['github.com/sourcegraph/sourcegraph'],
-                    series: [
-                        {
-                            name: 'The second series of the second chart',
-                            stroke: 'var(--oc-blue-7)',
-                            query: 'Korolev',
-                        },
-                    ],
-                    step: {
-                        months: 8,
-                    },
-                },
-                'insights.allrepos': {},
-            },
             overrides: {
-                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
-                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE],
+                    },
+                }),
+                BulkSearchCommits: () => STORYBOOK_GROWTH_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => STORYBOOK_GROWTH_INSIGHT_MATCH_DATA_FIXTURE,
             },
         })
 
@@ -112,88 +97,58 @@ describe('[VISUAL] Code insights page', () => {
     })
 
     it('is styled correctly with errored insight', async () => {
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-
-            // Since search insight and code stats insights work via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock settings cascade data.
-            userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {
-                    title: 'The First search-based insight',
-                    repositories: ['github.com/sourcegraph/sourcegraph'],
-                    series: [
-                        {
-                            name: 'The first series of the first chart',
-                            stroke: 'var(--oc-grape-7)',
-                            query: 'Kapica',
-                        },
-                    ],
-                    step: {
-                        months: 8,
-                    },
-                },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {
-                        title: 'Testing Insight',
-                        series: [],
-                    },
-                },
-            },
             overrides: {
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE],
+                    },
+                }),
                 BulkSearchCommits: () => ({ error: 'Inappropriate data shape will cause an insight error' } as any),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await takeChartSnapshot('Code insights page with search-based errored insight')
+
+        await delay(500)
+        await percySnapshotWithVariants(driver.page, 'Code insights page with search-based errored insight')
     })
 
     it('is styled correctly with all types of insight', async () => {
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
 
-            // Since search insight and code stats insight are working via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock data - mocking extension work.
-            userSettings: {
-                'searchInsights.insight.graphQLTypesMigration': {
-                    title: 'The First search-based insight',
-                    repositories: ['github.com/sourcegraph/sourcegraph'],
-                    series: [
-                        {
-                            name: 'The first series of the first chart',
-                            stroke: 'var(--oc-grape-7)',
-                            query: 'Kapica',
-                        },
-                    ],
-                    step: {
-                        months: 8,
-                    },
-                },
-                'codeStatsInsights.insight.langUsage': {
-                    title: 'Adobe lang stats usage',
-                    repository: 'ghe.sgdev.org/sourcegraph/adobe-adobe.github.com',
-                    otherThreshold: 0.03,
-                },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {
-                        title: 'Testing Insight',
-                        series: [],
-                    },
-                },
-            },
             overrides: {
-                // Backend insight mock
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [
+                            createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
+                            STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE,
+                            SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE,
+                        ],
+                    },
+                }),
 
-                // Search built-in insight mock
-                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
-                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
+                // Calculated insight mock
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
 
-                // Code stats built-in insight mock
-                LangStatsInsightContent: () => CODE_STATS_RESULT_MOCK,
+                // Search just-in-time insight mock
+                BulkSearchCommits: () => STORYBOOK_GROWTH_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => STORYBOOK_GROWTH_INSIGHT_MATCH_DATA_FIXTURE,
+
+                // Code stats just-in-time insight mock
+                LangStatsInsightContent: () => SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
             },
         })
 
@@ -203,7 +158,44 @@ describe('[VISUAL] Code insights page', () => {
 
     describe('Add dashboard page', () => {
         it('is styled correctly', async () => {
-            overrideGraphQLExtensions({ testContext })
+            overrideInsightsGraphQLApi({
+                testContext,
+                overrides: {
+                    InsightSubjects: () => ({
+                        currentUser: {
+                            __typename: 'User',
+                            id: '001',
+                            displayName: 'Kapica',
+                            username: 'kapica@sourcegraph.com',
+                            viewerCanAdminister: true,
+                            organizations: {
+                                nodes: [
+                                    {
+                                        __typename: 'Org',
+                                        name: 'test organization 1',
+                                        displayName: 'Test organization 1',
+                                        id: 'Org_test_id_001',
+                                        viewerCanAdminister: true,
+                                    },
+                                    {
+                                        __typename: 'Org',
+                                        name: 'test organization 2',
+                                        displayName: 'Test organization 2',
+                                        id: 'Org_test_id_002',
+                                        viewerCanAdminister: true,
+                                    },
+                                ],
+                            },
+                        },
+                        site: {
+                            __typename: 'Site',
+                            id: '003',
+                            allowSiteSettingsEdits: true,
+                            viewerCanAdminister: true,
+                        },
+                    }),
+                },
+            })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/add-dashboard')
             await driver.page.waitForSelector('input[name="name"]')
 
