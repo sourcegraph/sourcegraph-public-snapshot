@@ -176,7 +176,7 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
 	batch := i.pop()
-	if len(batch) != 0 {
+	if len(batch) == 0 {
 		return nil
 	}
 
