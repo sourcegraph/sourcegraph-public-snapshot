@@ -11,6 +11,9 @@ cmd=$1
 annotation_dir="./annotations"
 rm -rf $annotation_dir
 mkdir -p $annotation_dir
+test_report_dir="./test-reports"
+rm -rf $test_report_dir
+mkdir -p $test_report_dir
 
 # Run the provided command
 eval "$cmd"
@@ -51,6 +54,22 @@ if [ -n "${ANNOTATE_OPTS-''}" ]; then
 
     # Generate annotation from file contents
     eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
+  done
+fi
+
+# Check for test reports left behind by the command
+if [ -n "${TEST_REPORT_OPTS-''}" ]; then
+  test_report_opts="$TEST_REPORT_OPTS"
+
+  echo "~~~ Uploading test reports"
+  echo "test_report_opts=$test_report_opts"
+  for file in "$test_report_dir"/*; do
+    if [ ! -f "$file" ]; then
+      continue
+    fi
+
+    echo "handling $file"
+    eval "./enterprise/dev/ci/scripts/upload-test-report.sh $file $test_report_opts"
   done
 fi
 
