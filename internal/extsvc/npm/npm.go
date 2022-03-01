@@ -34,8 +34,6 @@ type Client interface {
 	//
 	// It is preferable to use this method instead of calling DoesDependencyExist
 	// in a loop, if different dependencies may share the same underlying package.
-	//
-	// If err is nil, versions should be non-empty.
 	GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (*PackageInfo, error)
 
 	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
