@@ -5,10 +5,8 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"sort"
+	"path"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -21,24 +19,30 @@ import (
 )
 
 type Service struct {
-	checker    authz.SubRepoPermissionChecker
-	lsFiles    func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error)
-	archive    func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	gitSvc     GitService
 	operations *operations
 }
 
-func NewService(
-	checker authz.SubRepoPermissionChecker,
-	lsFiles func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error),
-	archive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error),
-	observationContext *observation.Context,
-) *Service {
+func newService(gitSvc GitService, observationContext *observation.Context) *Service {
 	return &Service{
-		checker:    checker,
-		lsFiles:    lsFiles,
-		archive:    archive,
+		gitSvc:     gitSvc,
 		operations: newOperations(observationContext),
 	}
+}
+
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
+	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
+		deps = append(deps, d)
+		return nil
+	})
+
+	return deps, err
 }
 
 func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
@@ -48,7 +52,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := s.lsFiles(ctx, s.checker, repo, api.CommitID(rev), lockfilePaths...)
+	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePaths...)
 	if err != nil {
 		return err
 	}
@@ -59,12 +63,12 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 		Paths:   paths,
 	}
 
-	rc, err := s.archive(ctx, repo, opts)
+	rc, err := s.gitSvc.Archive(ctx, repo, opts)
 	if err != nil {
 		return err
 	}
-
 	defer rc.Close()
+
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		if strings.Contains(err.Error(), "did not match any files") {
@@ -103,41 +107,42 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
-	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("rev", rev),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
-		deps = append(deps, d)
-		return nil
-	})
-
-	return deps, err
-}
-
-var lockfilePaths = func() (paths []string) {
-	paths = make([]string, 0, len(parsers))
-	for filename := range parsers {
-		paths = append(paths, "*"+filename)
-	}
-	sort.Strings(paths)
-	return
-}()
-
-func parseZipLockfile(f *zip.File) (deps []reposource.PackageDependency, err error) {
+func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	ds, err := Parse(f.Name, r)
+	packageDependencies, err := parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
 
-	return ds, nil
+	return packageDependencies, nil
+}
+
+func parse(file string, r io.Reader) (_ []reposource.PackageDependency, err error) {
+	parser, ok := parsers[path.Base(file)]
+	if !ok {
+		return nil, ErrUnsupported
+	}
+
+	libraries, err := parser.parseLockfileContents(r)
+	if err != nil {
+		return nil, err
+	}
+
+	packageDependencies := make([]reposource.PackageDependency, 0, len(libraries))
+	for _, library := range libraries {
+		packageDependency, transformErr := parser.transformLibraryToPackageDependency(library)
+		if transformErr != nil {
+			err = errors.Append(err, transformErr)
+			continue
+		}
+
+		packageDependencies = append(packageDependencies, packageDependency)
+	}
+
+	return packageDependencies, err
 }

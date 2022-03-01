@@ -1,6 +1,15 @@
 .error-icon {
     color: var(--danger);
-    margin-right: 0.5rem;
+}
+
+.check-icon {
+    color: var(--icon-color);
+}
+
+.error-icon-spacer {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
 }
 
 .separator {
@@ -11,5 +20,9 @@
 }
 
 .expanded-row {
-    grid-column: 3 / span 2;
+    grid-column: 1 / span 2;
+    margin-left: 2rem;
+    background-color: var(--body-bg);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
 }

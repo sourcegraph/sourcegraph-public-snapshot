@@ -1,4 +1,4 @@
-package dependencies
+package lockfiles
 
 import (
 	"sync"
@@ -7,8 +7,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -18,7 +16,7 @@ var (
 	svcOnce sync.Once
 )
 
-func GetService(db database.DB, lockfilesService LockfilesService, syncer Syncer) *Service {
+func GetService(gitSvc GitService) *Service {
 	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -26,13 +24,12 @@ func GetService(db database.DB, lockfilesService LockfilesService, syncer Syncer
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		svc = newService(
-			store.GetStore(db),
-			lockfilesService,
-			syncer,
-			observationContext,
-		)
+		svc = newService(gitSvc, observationContext)
 	})
 
 	return svc
+}
+
+func TestService(gitSvc GitService) *Service {
+	return newService(gitSvc, &observation.TestContext)
 }
