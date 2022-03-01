@@ -65,7 +65,7 @@ function highlightNodeHelper(
         const isLastNode = index === currentNode.childNodes.length - 1
         const child = currentNode.childNodes[index]
 
-        switch (child.nodeType) {
+        switch (child?.nodeType) {
             case Node.TEXT_NODE: {
                 const nodeText = child.textContent!
 
@@ -99,7 +99,7 @@ function highlightNodeHelper(
                 let newNode: Node
                 if (newNodes.length === 1) {
                     // If we only have one new node, no need to wrap it in a containing span
-                    newNode = newNodes[0]
+                    newNode = (newNodes as [Node])[0]
                 } else {
                     // If there are more than one new nodes, wrap them in a span
                     const containerNode = document.createElement('span')

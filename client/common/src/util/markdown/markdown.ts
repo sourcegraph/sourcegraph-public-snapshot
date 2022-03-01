@@ -112,13 +112,13 @@ export const renderMarkdown = (
             allowedAttributes: {
                 ...sanitize.defaults.allowedAttributes,
                 a: [
-                    ...sanitize.defaults.allowedAttributes.a,
+                    ...(sanitize.defaults.allowedAttributes.a || []),
                     'title',
                     'data-tooltip', // TODO support fancy tooltips through native titles
                     'class',
                     { name: 'rel', values: ['noopener', 'noreferrer'] },
                 ],
-                img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
+                img: [...(sanitize.defaults.allowedAttributes.img || []), 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
                 // Support SVGs for code insights.
@@ -161,7 +161,7 @@ export const renderMarkdown = (
             },
         }
         if (options.allowDataUriLinksAndDownloads) {
-            sanitizeOptions.allowedAttributes.a = [...sanitizeOptions.allowedAttributes.a, 'download']
+            sanitizeOptions.allowedAttributes.a = [...(sanitizeOptions.allowedAttributes.a || []), 'download']
             sanitizeOptions.allowedSchemesByTag = {
                 ...sanitizeOptions.allowedSchemesByTag,
                 a: [...(sanitizeOptions.allowedSchemesByTag.a || sanitizeOptions.allowedSchemes), 'data'],

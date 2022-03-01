@@ -377,8 +377,8 @@ async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Pro
     const milestone = milestones.data.filter(milestone => milestone.title === milestoneTitle)
     return milestone.length > 0
         ? {
-              number: milestone[0].number,
-              url: milestone[0].html_url,
+              number: milestone[0]?.number || -1,
+              url: milestone[0]?.html_url || '',
               owner,
               repo,
           }
@@ -411,7 +411,7 @@ async function getIssueByTitle(octokit: Octokit, title: string, labels: string[]
     if (matchingIssues.length > 1) {
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
-    return matchingIssues[0]
+    return matchingIssues[0] || null
 }
 
 export type EditFunc = (d: string) => void

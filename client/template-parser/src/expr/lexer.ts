@@ -261,7 +261,7 @@ export class Lexer {
     }
 
     private scanOperator(): Token | undefined {
-        let searchTree: OperatorTree | boolean = OPERATOR_CHARS
+        let searchTree: OperatorTree | boolean | undefined = OPERATOR_CHARS
         let value = ''
         while (searchTree && searchTree !== true) {
             const character = this.peekNextChar()
