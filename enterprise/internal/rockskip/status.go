@@ -127,7 +127,13 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		status.WithLock(func() {
 			fmt.Fprintf(w, "%s\n", status.Name)
 			if status.Total > 0 {
-				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits)\n", float64(status.Indexed)/float64(status.Total)*100, status.Indexed, status.Total)
+				progress := float64(status.Indexed) / float64(status.Total)
+				remaining := "unknown"
+				if progress != 0 {
+					total := status.Tasklog.TotalDuration()
+					remaining = fmt.Sprint(time.Duration(total.Seconds()/progress)*time.Second - total)
+				}
+				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits), %s remaining\n", progress*100, status.Indexed, status.Total, remaining)
 			}
 			fmt.Fprintf(w, "    %s\n", status.Tasklog)
 			locks := []string{}
@@ -294,4 +300,13 @@ func (t *TaskLog) String() string {
 	}
 
 	return s.String()
+}
+
+func (t *TaskLog) TotalDuration() time.Duration {
+	t.Continue(t.currentName)
+	var total time.Duration = 0
+	for _, task := range t.nameToTask {
+		total += task.Duration
+	}
+	return total
 }
