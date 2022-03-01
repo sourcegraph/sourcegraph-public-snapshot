@@ -198,7 +198,7 @@ The pipeline generator provides an API for this that, at a high level, works lik
   fi
   ```
 
-1. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
+2. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
 
   ```go
     pipeline.AddStep(":memo: Check and build docsite",
@@ -207,7 +207,7 @@ The pipeline generator provides an API for this that, at a high level, works lik
       }))
   ```
 
-1. That's it!
+3. That's it!
 
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
@@ -253,8 +253,8 @@ In order to track a new test suite, test results must be converted to JUnit XML 
 The pipeline generator provides an API for this that, at a high level, works like this:
 
 1. In your script, leave your JUnit XML test report in `./test-reports`
-1. [Create a new Test Suite](https://buildkite.com/organizations/sourcegraph/analytics/suites/new) in the Buildkite Analytics UI.
-1. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
+2. [Create a new Test Suite](https://buildkite.com/organizations/sourcegraph/analytics/suites/new) in the Buildkite Analytics UI.
+3. In your pipeline operation, replace the usual `bk.Cmd` with `bk.AnnotatedCmd`:
 
   ```go
   pipeline.AddStep(":jest::globe_with_meridians: Test",
@@ -264,7 +264,7 @@ The pipeline generator provides an API for this that, at a high level, works lik
     }),
   ```
 
-1. That's it!
+4. That's it!
 
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
