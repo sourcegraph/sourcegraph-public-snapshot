@@ -2,44 +2,29 @@ package repos
 
 import (
 	"context"
-	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var (
-	observationContext *observation.Context
-	operationMetrics   *metrics.REDMetrics
-	once               sync.Once
-)
-
 // A JVMPackagesSource creates git repositories from `*-sources.jar` files of
 // published Maven dependencies from the JVM ecosystem.
 type JVMPackagesSource struct {
-	svc     *types.ExternalService
-	config  *schema.JVMPackagesConnection
-	dbStore JVMPackagesRepoStore
-}
-
-type JVMPackagesRepoStore interface {
-	GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error)
+	svc       *types.ExternalService
+	config    *schema.JVMPackagesConnection
+	depsStore DependenciesStore
 }
 
 // NewJVMPackagesSource returns a new MavenSource from the given external
@@ -53,22 +38,14 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error
 }
 
 func (s *JVMPackagesSource) SetDB(db dbutil.DB) {
-	once.Do(func() {
-		observationContext = &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		operationMetrics = dbstore.NewREDMetrics(observationContext)
-	})
-	s.dbStore = dbstore.NewWithDB(db, observationContext, operationMetrics)
+	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
 }
 
 func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConnection) (*JVMPackagesSource, error) {
 	return &JVMPackagesSource{
-		svc:     svc,
-		config:  c,
-		dbStore: nil, // set via SetDB decorator
+		svc:       svc,
+		config:    c,
+		depsStore: nil, // set via SetDB decorator
 	}, nil
 }
 
@@ -106,9 +83,10 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		timedOut        int
 	)
 	for {
-		dbDeps, err := s.dbStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
-			After: lastID,
-			Limit: 100,
+		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+			Scheme: dependenciesStore.JVMPackagesScheme,
+			After:  lastID,
+			Limit:  100,
 		})
 		if err != nil {
 			results <- SourceResult{Err: err}
@@ -124,9 +102,9 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		lastID = dbDeps[len(dbDeps)-1].ID
 
 		for _, dep := range dbDeps {
-			parsedModule, err := reposource.ParseMavenModule(dep.Module)
+			parsedModule, err := reposource.ParseMavenModule(dep.Name)
 			if err != nil {
-				log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
+				log15.Warn("error parsing maven module", "error", err, "module", dep.Name)
 				continue
 			}
 			mavenDependency := &reposource.MavenDependency{MavenModule: parsedModule, Version: dep.Version}

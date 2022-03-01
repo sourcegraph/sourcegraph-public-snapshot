@@ -24,6 +24,8 @@ func TestParseNPMDependency(t *testing.T) {
 		{"@scope-package@1.2.3", false},
 		{"@/package@1.2.3", false},
 		{"@scope/@1.2.3", false},
+		{"@dashed-scope/abc@0", true},
+		{"@a.b-c.d-e/f.g--h.ijk-l@0.1-abc", true},
 	}
 	for _, entry := range table {
 		dep, err := ParseNPMDependency(entry.testName)

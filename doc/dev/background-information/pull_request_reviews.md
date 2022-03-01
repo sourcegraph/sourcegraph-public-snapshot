@@ -9,7 +9,7 @@ GitHub repositories are configured to prevent merging without a review (includin
 
 Our goal is to have a pull request review process and culture that everyone would opt-in to even if reviews weren't required. 
 
-In addition to being peer-reviewed, all contributions must pass our [continuous integration](./continuous_integration.md).
+In addition to being peer-reviewed, all contributions must pass our [continuous integration](./ci/index.md).
 
 ## Why do we require peer reviews?
 
