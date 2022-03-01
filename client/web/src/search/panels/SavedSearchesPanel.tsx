@@ -169,8 +169,8 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     return (
         <PanelContainer
             hideTitle={hideTitle}
-            className={classNames(className, 'saved-searches-panel', 'h-100')}
             title="Saved searches"
+            className={classNames(className, 'saved-searches-panel', { 'h-100': hideTitle })}
             state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
