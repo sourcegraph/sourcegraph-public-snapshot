@@ -28,7 +28,7 @@ type Inserter struct {
 	returningSuffix  string
 	returningScanner ReturningScanner
 	operations       *operations
-	logFields        []log.Field
+	commonLogFields  []log.Field
 }
 
 type ReturningScanner func(rows *sql.Rows) error
@@ -147,7 +147,7 @@ func NewInserterWithReturn(
 		returningSuffix:  returningSuffix,
 		returningScanner: returningScanner,
 		operations:       getOperations(),
-		logFields: []log.Field{
+		commonLogFields: []log.Field{
 			log.String("tableName", tableName),
 			log.String("columnNames", strings.Join(columnNames, ",")),
 			log.Int("numColumns", numColumns),
@@ -180,10 +180,11 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 		return nil
 	}
 
-	logFields := []log.Field{
+	operationlogFields := []log.Field{
 		log.Int("batchSize", len(batch)),
 	}
-	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: append(logFields, i.logFields...)})
+	combinedLogFields := append(operationlogFields, i.commonLogFields...)
+	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
 	endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should
