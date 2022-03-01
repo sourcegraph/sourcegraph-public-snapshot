@@ -167,25 +167,25 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 		return errors.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
 
-	size := 0
+	currentCumulativeValueSize := 0
 	if n := len(i.cumulativeValueSizes); n != 0 {
-		size = i.cumulativeValueSizes[n-1]
+		currentCumulativeValueSize = i.cumulativeValueSizes[n-1]
 	}
 
-	sizes := make([]int, 0, len(values))
+	valueSizes := make([]int, 0, len(values))
 	for _, value := range values {
 		switch v := value.(type) {
 		case string:
-			size += len(v)
+			currentCumulativeValueSize += len(v)
 		default:
-			size += 1
+			currentCumulativeValueSize += 1
 		}
 
-		sizes = append(sizes, size)
+		valueSizes = append(valueSizes, currentCumulativeValueSize)
 	}
 
 	i.batch = append(i.batch, values...)
-	i.cumulativeValueSizes = append(i.cumulativeValueSizes, sizes...)
+	i.cumulativeValueSizes = append(i.cumulativeValueSizes, valueSizes...)
 
 	if len(i.batch) >= i.maxBatchSize {
 		// Flush full batch
@@ -201,14 +201,14 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 	i.checkInvariants()
 	defer i.checkInvariants()
 
-	batch, batchPayloadSize := i.pop()
+	batch, payloadSize := i.pop()
 	if len(batch) == 0 {
 		return nil
 	}
 
 	operationlogFields := []log.Field{
 		log.Int("batchSize", len(batch)),
-		log.Int("batchPayloadSizes", batchPayloadSize),
+		log.Int("payloadSize", payloadSize),
 	}
 	combinedLogFields := append(operationlogFields, i.commonLogFields...)
 	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
@@ -239,7 +239,7 @@ var checkBatchInserterInvariants = false
 
 func (i *Inserter) checkInvariants() {
 	if checkBatchInserterInvariants && len(i.batch) != len(i.cumulativeValueSizes) {
-		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.batchPayloadSizes): %d != %d", len(i.batch), len(i.cumulativeValueSizes)))
+		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.batch), len(i.cumulativeValueSizes)))
 	}
 }
 
