@@ -201,16 +201,17 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
 
         const groupsToDisplay = GROUPS.map(({ name, key, defaultSize }, index) => {
             const group = { name, key, defaultSize }
-            if (!groups[index]) {
+            const groupsAtLevel = groups[index]
+            if (!groupsAtLevel) {
                 // No groups exist at this level. Don't display anything.
                 return null
             }
-            if (groups[index].length > 1) {
+            if (groupsAtLevel.length > 1) {
                 // Always display when there is more than 1 group.
                 return group
             }
-            if (groups[index].length === 1) {
-                if (selectedGroups[index] !== groups[index][0].key) {
+            if (groupsAtLevel.length === 1) {
+                if (selectedGroups[index] !== groupsAtLevel[0]?.key) {
                     // When the only group is not the currently selected group, show it. This occurs when the
                     // references list changes after the user made an initial selection. The group must be shown so
                     // that the user can update their selection to the only available group; otherwise they would
@@ -263,7 +264,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     data-testid="hierarchical-locations-view-list"
                                                     className={classNames('list-group', styles.groupList)}
                                                 >
-                                                    {groups[index].map((group, innerIndex) => (
+                                                    {groups[index]?.map((group, innerIndex) => (
                                                         <HierarchicalLocationsViewButton
                                                             key={innerIndex}
                                                             groupKey={group.key}

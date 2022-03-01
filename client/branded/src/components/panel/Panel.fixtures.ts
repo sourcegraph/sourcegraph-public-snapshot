@@ -9,7 +9,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-export const panels: PanelViewData[] = [
+export const panels: [PanelViewData, PanelViewData, PanelViewData] = [
     {
         id: 'panel_1',
         title: 'Panel 1',

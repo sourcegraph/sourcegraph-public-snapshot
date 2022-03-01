@@ -64,11 +64,13 @@ export function groupLocations<L = Location, G = string>(
             if (!groups[index]) {
                 groups[index] = []
             }
-            const groupEntry = groups[index].find(groupEntry => groupEntry.key === group)
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const groupEntry = groups[index]!.find(groupEntry => groupEntry.key === group)
             if (groupEntry) {
                 groupEntry.count++
             } else {
-                groups[index].push({ key: group, count: 1 })
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                groups[index]!.push({ key: group, count: 1 })
             }
             if (selectedGroups[index] === undefined) {
                 selectedGroups[index] = group

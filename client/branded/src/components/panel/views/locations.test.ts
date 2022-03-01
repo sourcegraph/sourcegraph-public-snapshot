@@ -6,7 +6,7 @@ type TestLocation = string
 
 type TestGroup = string
 
-const LOCATIONS: TestLocation[] = ['a/a/0', 'b/a/0', 'a/a/1', 'a/b/0']
+const LOCATIONS: [TestLocation, TestLocation, TestLocation, TestLocation] = ['a/a/0', 'b/a/0', 'a/a/1', 'a/b/0']
 
 const GROUP_KEYS: ((location: TestLocation) => TestGroup | undefined)[] = [
     location => location.split('/')[0],

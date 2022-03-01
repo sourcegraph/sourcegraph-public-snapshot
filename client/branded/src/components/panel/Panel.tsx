@@ -130,7 +130,7 @@ export const Panel = React.memo<Props>(props => {
     const { hash, pathname, search } = location
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
-    const [currentTabLabel, currentTabID] = hash.split('=')
+    const [currentTabLabel = '', currentTabID = ''] = hash.split('=')
 
     const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
@@ -239,7 +239,7 @@ export const Panel = React.memo<Props>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
+            history.replace(`${pathname}${search}${currentTabLabel}=${items[index]?.id || ''}`)
         },
         [currentTabLabel, history, items, pathname, search]
     )
