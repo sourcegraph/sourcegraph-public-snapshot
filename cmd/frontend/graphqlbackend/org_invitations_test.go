@@ -873,6 +873,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 		email := "foo@bar.baz"
 		yesterday := timeNow().Add(-24 * time.Hour)
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
+		wantErr := database.NewOrgInvitationExpiredErr(invitationID)
 
 		RunTests(t, []*Test{
 			{
@@ -891,7 +892,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "invitation is expired",
+						Message: wantErr.Error(),
 						Path:    []interface{}{"resendOrganizationInvitationNotification"},
 					},
 				},
