@@ -2,13 +2,13 @@ import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { DropdownItem } from 'reactstrap'
-// import { Key } from 'ts-key-enum'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Input } from '@sourcegraph/wildcard'
 
-import { AutocompleteUsersResult, AutocompleteUsersVariables } from '../../graphql-operations'
+import { AutocompleteUsersResult, AutocompleteUsersVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { UserAvatar } from '../../user/UserAvatar'
 
 import { SEARCH_USERS_AUTOCOMPLETE_QUERY } from './gqlQueries'
 import styles from './SearchUserAutocomplete.module.scss'
@@ -16,8 +16,8 @@ import styles from './SearchUserAutocomplete.module.scss'
 interface IUserItem {
     id: string
     username: string
-    displayName?: string
-    avatarUrl?: string
+    displayName: Maybe<string>
+    avatarURL: Maybe<string>
 }
 
 interface AutocompleteSearchUsersProps {
@@ -25,40 +25,70 @@ interface AutocompleteSearchUsersProps {
     onValueChanged: (value: string, isEmail: boolean) => void
 }
 
-export const UserResultItem: React.FunctionComponent<{
-    onKeyDown: (key: string) => void
+const UserResultItem: React.FunctionComponent<{
     onSelectUser: (user: IUserItem) => void
+    onKeyDown: (key: string, index: number) => void
+    index: number
     user: IUserItem
-}> = ({ onKeyDown, user, onSelectUser }) => {
+}> = ({ user, onSelectUser, onKeyDown, index }) => {
     const selectUser = useCallback(() => {
         onSelectUser(user)
     }, [onSelectUser, user])
 
-    const itemKeyDown = useCallback(
+    const keyDown = useCallback(
         (event: React.KeyboardEvent) => {
-            onKeyDown(event.key)
-            event.stopPropagation()
-            event.preventDefault()
+            onKeyDown(event.key, index)
         },
-        [onKeyDown]
+        [onKeyDown, index]
     )
 
     return (
         <DropdownItem
             data-testid="search-context-menu-item"
             data-res-user-id={user.id}
-            toggle={false}
             className={styles.item}
             onClick={selectUser}
             role="menuitem"
-            onKeyDown={itemKeyDown}
+            onKeyDown={keyDown}
         >
-            <div>
-                {user.username} - {user.displayName} - {user.avatarUrl}
+            <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
+                <div className={styles.avatarContainer}>
+                    <UserAvatar
+                        size={24}
+                        className={styles.avatar}
+                        user={user}
+                        data-tooltip={user.displayName || user.username}
+                    />
+                </div>
+                <div className="d-flex flex-column">
+                    <strong>{user.displayName || user.username}</strong>
+                </div>
+                {user.displayName && (
+                    <div className="d-flex flex-column">
+                        <span className={styles.userName}>{user.username}</span>
+                    </div>
+                )}
             </div>
         </DropdownItem>
     )
 }
+
+const EmptyResultsItem: React.FunctionComponent<{
+    userNameOrEmail: string
+}> = ({ userNameOrEmail }) => (
+    <DropdownItem data-testid="search-context-menu-item" role="menuitem">
+        <div className={classNames('d-flex', 'flex-column', styles.emptyResults)}>
+            <span>
+                <small>
+                    <strong>{`Nobody found with the username “${userNameOrEmail}”`}</strong>
+                </small>
+            </span>
+            <span className="text-muted">
+                <small>Try sending invite via email instead</small>
+            </span>
+        </div>
+    </DropdownItem>
+)
 
 const getUserSearchResultItem = (userId: string): HTMLButtonElement | null =>
     document.querySelector(`[data-res-user-id="${userId}"]`)
@@ -69,7 +99,6 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
-    const resultList = useRef<HTMLDivElement | null>(null)
     const inputReference = useRef<HTMLInputElement | null>(null)
     const [openResults, setOpenResults] = useState<boolean>(true)
 
@@ -134,55 +163,56 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
         setUsernameOrEmail(user.username)
     }, [])
 
-    const onMenuKeyDown = useCallback((key: string, index: number): void => {
-        if (key === 'Escape') {
+    const onMenuKeyDown = useCallback((event: React.KeyboardEvent): void => {
+        if (event.key === 'Escape') {
             setOpenResults(false)
-        } else if (key === 'ArrowUp' && index === 0) {
+            event.stopPropagation()
+            event.preventDefault()
             focusInputElement()
         }
     }, [])
 
+    const toggleOpen = useCallback(() => {
+        setOpenResults(false)
+    }, [])
+
+    const onResultItemKeydown = useCallback((key: string, index: number) => {
+        if (index === 0 && key === 'ArrowUp') {
+            window.requestAnimationFrame(() => focusInputElement())
+        }
+    }, [])
+
     return (
-        <div className={styles.inputContainer}>
-            <Input
-                autoFocus={true}
-                ref={inputReference}
-                value={userNameOrEmail}
-                label="Email address or username"
-                title="Email address or username"
-                onChange={onUsernameChange}
-                onKeyDown={onInputKeyDown}
-                disabled={disabled}
-                status={loading ? 'loading' : error ? 'error' : undefined}
-            />
-            <div
-                data-testid="search-context-menu-list"
-                className={styles.suggestionsContainer}
-                ref={resultList}
-                role="menu"
-            >
-                {renderResults &&
-                    results.map((usr, index) => (
-                        <UserResultItem
-                            key={usr.id}
-                            user={usr}
-                            onSelectUser={onSelectUser}
-                            onKeyDown={key => onMenuKeyDown(key, index)}
-                        />
-                    ))}
-                {renderNoMatch && (
-                    <div className={classNames('d-flex', 'flex-column', styles.emptyResults)}>
-                        <span>
-                            <small>
-                                <strong>{`Nobody found with the username “${userNameOrEmail}”`}</strong>
-                            </small>
-                        </span>
-                        <span className="text-muted">
-                            <small>Try sending invite via email instead</small>
-                        </span>
-                    </div>
-                )}
-            </div>
+        <div className={styles.inputContainer} onKeyDown={onMenuKeyDown} tabIndex={-1} role="menu">
+            <Dropdown isOpen={resultsEnabled} toggle={toggleOpen}>
+                <DropdownToggle tag="div" data-toggle="dropdown">
+                    <Input
+                        autoFocus={true}
+                        ref={inputReference}
+                        value={userNameOrEmail}
+                        label="Email address or username"
+                        title="Email address or username"
+                        onChange={onUsernameChange}
+                        onKeyDown={onInputKeyDown}
+                        aria-expanded={renderResults ? 'true' : 'false'}
+                        disabled={disabled}
+                        status={loading ? 'loading' : error ? 'error' : undefined}
+                    />
+                </DropdownToggle>
+                <DropdownMenu className={styles.suggestionsContainer}>
+                    {renderResults &&
+                        results.map((usr, index) => (
+                            <UserResultItem
+                                key={usr.id}
+                                index={index}
+                                user={usr}
+                                onSelectUser={onSelectUser}
+                                onKeyDown={onResultItemKeydown}
+                            />
+                        ))}
+                    {renderNoMatch && <EmptyResultsItem userNameOrEmail={userNameOrEmail} />}
+                </DropdownMenu>
+            </Dropdown>
         </div>
     )
 }
