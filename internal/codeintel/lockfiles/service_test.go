@@ -13,7 +13,6 @@ import (
 	"github.com/sebdah/goldie/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -91,15 +90,4 @@ func zipArchive(t testing.TB, files map[string]io.Reader) func(context.Context, 
 
 		return io.NopCloser(&b), nil
 	}
-}
-
-func npmDependency(t testing.TB, dep string) *reposource.NPMDependency {
-	t.Helper()
-
-	d, err := reposource.ParseNPMDependency(dep)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return d
 }
