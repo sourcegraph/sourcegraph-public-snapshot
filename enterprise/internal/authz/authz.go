@@ -65,8 +65,7 @@ func ProvidersFromConfig(
 	}
 
 	var (
-		gitHubSvcs           []*types.ExternalService
-		gitHubConns          []*types.GitHubConnection
+		gitHubConns          []*github.ExternalConnection
 		gitLabConns          []*types.GitLabConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
@@ -95,11 +94,15 @@ func ProvidersFromConfig(
 
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				gitHubSvcs = append(gitHubSvcs, svc)
-				gitHubConns = append(gitHubConns, &types.GitHubConnection{
-					URN:              svc.URN(),
-					GitHubConnection: c,
-				})
+				gitHubConns = append(gitHubConns,
+					&github.ExternalConnection{
+						ExternalService: svc,
+						GitHubConnection: &types.GitHubConnection{
+							URN:              svc.URN(),
+							GitHubConnection: c,
+						},
+					},
+				)
 			case *schema.GitLabConnection:
 				gitLabConns = append(gitLabConns, &types.GitLabConnection{
 					URN:              svc.URN(),
@@ -133,7 +136,7 @@ func ProvidersFromConfig(
 			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 		}
 
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(store, gitHubSvcs, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(store, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
@@ -217,11 +220,13 @@ func ProviderFromExternalService(
 	case *schema.GitHubConnection:
 		providers, problems, _ = github.NewAuthzProviders(
 			externalServicesStore,
-			[]*types.ExternalService{svc},
-			[]*types.GitHubConnection{
+			[]*github.ExternalConnection{
 				{
-					URN:              svc.URN(),
-					GitHubConnection: c,
+					ExternalService: svc,
+					GitHubConnection: &types.GitHubConnection{
+						URN:              svc.URN(),
+						GitHubConnection: c,
+					},
 				},
 			},
 			siteConfig.AuthProviders,

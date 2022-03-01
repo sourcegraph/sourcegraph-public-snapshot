@@ -123,6 +123,9 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 		return "", errors.New("empty token returned")
 	}
 
+	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+	// validation with missing "repos" property when no repository has been selected,
+	// due to generated JSON tag of ",omitempty".
 	config, err := jsonc.Edit(svc.Config, *tok.Token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")

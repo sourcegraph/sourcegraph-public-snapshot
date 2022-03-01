@@ -17,8 +17,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -310,11 +308,14 @@ func getRemoteURLFunc(
 
 				client := github.NewV3Client(apiURL, auther, cli)
 
-				token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServiceStore, svc, client, installationID)
+				token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 				if err != nil {
 					return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 				}
 
+				// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+				// validation with missing "repos" property when no repository has been selected,
+				// due to generated JSON tag of ",omitempty".
 				svc.Config, err = jsonc.Edit(svc.Config, token, "token")
 				if err != nil {
 					return "", errors.Wrap(err, "edit token")

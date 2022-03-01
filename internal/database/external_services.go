@@ -145,7 +145,7 @@ type ExternalServiceStore interface {
 type externalServiceStore struct {
 	*basestore.Store
 
-	gitHubValidators          []func(*schema.GitHubConnection) error
+	gitHubValidators          []func(*types.GitHubConnection) error
 	gitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error
 	perforceValidators        []func(*schema.PerforceConnection) error
@@ -173,7 +173,7 @@ func NewExternalServiceStore(db dbutil.DB) ExternalServiceStore {
 
 func NewExternalServiceStoreWithValidators(
 	db dbutil.DB,
-	gitHubValidators []func(*schema.GitHubConnection) error,
+	gitHubValidators []func(*types.GitHubConnection) error,
 	gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error,
 	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error,
 	perforceValidators []func(*schema.PerforceConnection) error,
@@ -505,7 +505,12 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range e.gitHubValidators {
-		err = errors.Append(err, validate(c))
+		err = errors.Append(err,
+			validate(&types.GitHubConnection{
+				URN:              extsvc.URN(extsvc.KindGitHub, id),
+				GitHubConnection: c,
+			}),
+		)
 	}
 
 	if c.Token == "" && c.GithubAppInstallationID == "" {
