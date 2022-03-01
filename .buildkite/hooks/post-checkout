@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 ## -- START: ADD git lfs
+echo "Installing Git LFS"
+
 curl -s https://github.com/git-lfs/git-lfs/releases/download/v3.1.2/git-lfs-linux-amd64-v3.1.2.tar.gz
+pwd
 mkdir git-lfs
 tar -xvzf git-lfs.tgz -C git-lfs
 mkdir .gitlfs/git-lfs
