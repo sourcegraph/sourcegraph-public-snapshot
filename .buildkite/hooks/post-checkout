@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+## -- START: ADD git lfs
+curl -s https://github.com/git-lfs/git-lfs/releases/download/v3.1.2/git-lfs-linux-amd64-v3.1.2.tar.gz
+mkdir git-lfs
+tar -xvzf git-lfs.tgz -C git-lfs
+mv git-lfs/git-lfs .gitlfs/git-lfs
+rm -rf git-lfs.tgz git-lfs/
+
+git lfs install
+
+echo "Git LFS installed"
+
+## -- END: ADD git lfs
+
 # shellcheck disable=SC1090
 source "$HOME/.profile"
 
@@ -7,6 +20,7 @@ source "$HOME/.profile"
 # files on this branch.
 echo "Running git fetch..."
 git fetch
+git lfs fetch
 echo "Running git fetch... done"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
