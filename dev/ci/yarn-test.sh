@@ -9,7 +9,6 @@ yarn --mutex network --frozen-lockfile --network-timeout 60000
 echo "--- generate"
 yarn gulp generate
 
-cd "$1"
 echo "--- test"
 
 function yarn_test() {
@@ -25,7 +24,7 @@ function yarn_test() {
   # Limit the number of workers to prevent the default of 1 worker per core from
   # causing OOM on the buildkite nodes that have 96 CPUs. 4 matches the CPU limits
   # in infrastructure/kubernetes/ci/buildkite/buildkite-agent/buildkite-agent.Deployment.yaml
-  yarn -s run test --maxWorkers 4 --verbose --testResultsProcessor jest-junit
+  yarn -s run test --maxWorkers 4 --verbose --testResultsProcessor jest-junit "$1"
 
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="$?"
@@ -71,4 +70,4 @@ EOF
 
 BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
-yarn_test
+yarn_test "$1"
