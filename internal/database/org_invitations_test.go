@@ -91,11 +91,11 @@ func TestOrgInvitations(t *testing.T) {
 		{
 			OrgID:          org2.ID,
 			RecipientEmail: email,
+			ExpiresAt:      &fiveMinutesAgo,
 		},
 		{
 			OrgID:          org2.ID,
 			RecipientEmail: email,
-			ExpiresAt:      &fiveMinutesAgo,
 		},
 	}
 	var invitations []*OrgInvitation
@@ -126,7 +126,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 		invitations = append(invitations, i)
 	}
-	oi1, oi2Expired, oi2, oi3, oi4, emailInvite, expiredInvite := invitations[0], invitations[1], invitations[2], invitations[3], invitations[4], invitations[5], invitations[6]
+	oi1, oi2Expired, oi2, oi3, oi4, expiredInvite, emailInvite := invitations[0], invitations[1], invitations[2], invitations[3], invitations[4], invitations[5], invitations[6]
 
 	testGetByID := func(t *testing.T, id int64, want *OrgInvitation) {
 		t.Helper()
@@ -199,7 +199,7 @@ func TestOrgInvitations(t *testing.T) {
 		// was responded, so should not be returned
 		testPendingByID(t, oi4.ID, oi4, fmt.Sprintf(errorMessageFormat, oi4.ID))
 		// is expired, so should not be returned
-		testPendingByID(t, expiredInvite.ID, expiredInvite, "invitation is expired")
+		testPendingByID(t, expiredInvite.ID, expiredInvite, fmt.Sprintf("invitation with id %d is expired", expiredInvite.ID))
 		// does not exist
 		testPendingByID(t, 12345, nil, fmt.Sprintf(errorMessageFormat, 12345))
 	})
@@ -312,11 +312,11 @@ func TestOrgInvitations(t *testing.T) {
 	t.Run("Respond true", func(t *testing.T) {
 		testRespond(t, oi1, oi1.RecipientUserID, true, "")
 		testRespond(t, emailInvite, recipient2.ID, true, "")
-		testRespond(t, expiredInvite, recipient2.ID, true, "org invitation not found: [id 7 recipient 3]")
+		testRespond(t, expiredInvite, recipient2.ID, true, fmt.Sprintf("org invitation not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
 	})
 	t.Run("Respond false", func(t *testing.T) {
 		testRespond(t, oi2, oi2.RecipientUserID, false, "")
-		testRespond(t, expiredInvite, recipient2.ID, false, "org invitation not found: [id 7 recipient 3]")
+		testRespond(t, expiredInvite, recipient2.ID, false, fmt.Sprintf("org invitation not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
 	})
 
 	t.Run("Revoke", func(t *testing.T) {

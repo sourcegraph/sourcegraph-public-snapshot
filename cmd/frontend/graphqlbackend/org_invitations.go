@@ -376,7 +376,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 
 	// Do not allow to resend for expired invitation
 	if orgInvitation.Expired() {
-		return nil, errors.New("invitation is expired")
+		return nil, database.NewOrgInvitationExpiredErr(orgInvitation.ID)
 	}
 
 	if !conf.CanSendEmail() {

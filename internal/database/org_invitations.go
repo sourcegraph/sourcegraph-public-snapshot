@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var timeNow = time.Now
@@ -42,6 +41,18 @@ func (oi *OrgInvitation) Pending() bool {
 // because it has not been expired yet).
 func (oi *OrgInvitation) Expired() bool {
 	return oi.ExpiresAt != nil && timeNow().After(*oi.ExpiresAt)
+}
+
+type OrgInvitationExpiredErr struct {
+	id int64
+}
+
+func (e OrgInvitationExpiredErr) Error() string {
+	return fmt.Sprintf("invitation with id %d is expired", e.id)
+}
+
+func NewOrgInvitationExpiredErr(id int64) OrgInvitationExpiredErr {
+	return OrgInvitationExpiredErr{id: id}
 }
 
 type OrgInvitationStore interface {
@@ -119,7 +130,7 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 	}
 
 	// check if the invitation exists first and return that
-	q := sqlf.Sprintf("org_id=%d AND "+column+"=%s AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", orgID, value)
+	q := sqlf.Sprintf(fmt.Sprintf("org_id=%%d AND %s=%%s AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", column), orgID, value)
 	results, err := s.list(ctx, []*sqlf.Query{
 		q,
 	}, nil)
@@ -185,7 +196,7 @@ func (s *orgInvitationStore) GetPending(ctx context.Context, orgID, recipientUse
 	}
 	lastInvitation := results[len(results)-1]
 	if lastInvitation.Expired() {
-		return nil, errors.New("invitation is expired")
+		return nil, NewOrgInvitationExpiredErr(lastInvitation.ID)
 	}
 	return lastInvitation, nil
 }
@@ -204,7 +215,7 @@ func (s *orgInvitationStore) GetPendingByID(ctx context.Context, id int64) (*Org
 		return nil, NewOrgInvitationNotFoundError(id)
 	}
 	if results[0].Expired() {
-		return nil, errors.New("invitation is expired")
+		return nil, NewOrgInvitationExpiredErr(results[0].ID)
 	}
 	return results[0], nil
 }
