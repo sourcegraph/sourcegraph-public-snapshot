@@ -634,20 +634,6 @@ func TestListOrganizations(t *testing.T) {
 		// New request but with orgs modified.
 		runTest(mockNewOrgs)
 	})
-
-	t.Run("githubdotcom", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "ListOrganizations")
-		defer save()
-
-		if cli.orgsCache != nil {
-			t.Fatal("expected orgsCache to be nil but is initialised")
-		}
-
-		_, _, err := cli.ListOrganizations(context.Background(), 1)
-		if err == nil {
-			t.Fatal("expected error but found none")
-		}
-	})
 }
 
 func TestListMembers(t *testing.T) {
