@@ -46,10 +46,10 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 
 var _ npm.Client = &MockClient{}
 
-func (m *MockClient) GetPackage(_ context.Context, name string) (info *npm.PackageInfo, err error) {
-	info = m.Packages[name]
+func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (info *npm.PackageInfo, err error) {
+	info = m.Packages[pkg.PackageSyntax()]
 	if info == nil {
-		return nil, errors.Newf("No version for package: %s", name)
+		return nil, errors.Newf("No version for package: %s", pkg)
 	}
 	return info, nil
 }

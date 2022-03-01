@@ -58,7 +58,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	}
 
 	for _, npmPackage := range npmPackages {
-		info, err := s.client.GetPackage(ctx, npmPackage.PackageSyntax())
+		info, err := s.client.GetPackageInfo(ctx, npmPackage)
 		if err != nil {
 			results <- SourceResult{Err: err}
 			continue
@@ -99,8 +99,9 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 			pkgKey := npmDependency.PackageSyntax()
 			info := pkgVersions[pkgKey]
 			if info == nil {
-				info, err = s.client.GetPackage(ctx, npmDependency.PackageSyntax())
+				info, err = s.client.GetPackageInfo(ctx, npmDependency.NPMPackage)
 				if err != nil {
+					pkgVersions[pkgKey] = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
 					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
 					continue
 				}
@@ -127,7 +128,7 @@ func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Re
 		return nil, err
 	}
 
-	info, err := s.client.GetPackage(ctx, pkg.PackageSyntax())
+	info, err := s.client.GetPackageInfo(ctx, pkg)
 	if err != nil {
 		return nil, err
 	}
