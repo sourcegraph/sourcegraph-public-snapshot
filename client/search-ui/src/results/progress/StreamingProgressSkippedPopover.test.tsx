@@ -160,7 +160,8 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
         expect(checkboxes).toHaveLength(3)
-        userEvent.click(checkboxes[1])
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        userEvent.click(checkboxes[1]!)
 
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
@@ -211,13 +212,15 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
         expect(checkboxes).toHaveLength(3)
-        userEvent.click(checkboxes[1])
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        userEvent.click(checkboxes[1]!)
 
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeEnabled()
 
-        userEvent.click(checkboxes[1])
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        userEvent.click(checkboxes[1]!)
         expect(searchAgainButton).toBeDisabled()
     })
 
@@ -266,11 +269,13 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
         expect(checkboxes).toHaveLength(3)
-        const checkbox1 = checkboxes[1]
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const checkbox1 = checkboxes[1]!
         userEvent.click(checkbox1)
 
         expect(checkboxes).toHaveLength(3)
-        const checkbox2 = checkboxes[2]
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const checkbox2 = checkboxes[2]!
         userEvent.click(checkbox2)
 
         const form = screen.getByTestId('popover-form')

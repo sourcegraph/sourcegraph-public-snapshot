@@ -147,6 +147,9 @@ describe('SearchContextMenu', () => {
         })
 
         const item = screen.getAllByTestId('search-context-menu-item')[1]
+        if (!item) {
+            throw new Error('No search context menu item found')
+        }
         userEvent.click(item)
 
         sinon.assert.calledOnce(selectSearchContextSpec)
@@ -171,6 +174,9 @@ describe('SearchContextMenu', () => {
         )
 
         const button = screen.getAllByTestId('search-context-menu-header-input')[0]
+        if (!button) {
+            throw new Error('No search context menu button found')
+        }
         userEvent.type(button, '{esc}')
         sinon.assert.calledOnce(closeMenu)
     })

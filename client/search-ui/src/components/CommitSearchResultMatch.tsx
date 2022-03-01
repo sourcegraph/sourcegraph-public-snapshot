@@ -107,7 +107,7 @@ export class CommitSearchResultMatch extends React.Component<
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             if (visibleRows.length > 0) {
-                for (const [line, character, length] of this.props.item.ranges) {
+                for (const [line = 0, character = 0, length = 0] of this.props.item.ranges) {
                     const code = visibleRows[line - 1]
                     if (code) {
                         highlightNode(code as HTMLElement, character, length)
@@ -126,7 +126,7 @@ export class CommitSearchResultMatch extends React.Component<
             // If there are no highlights, the calculation below results in -Infinity.
             return 0
         }
-        return Math.max(0, Math.min(...this.props.item.ranges.map(([line]) => line)) - 1)
+        return Math.max(0, Math.min(...this.props.item.ranges.map(([line]) => line || 0)) - 1)
     }
 
     private getLastLine(): number {
@@ -135,7 +135,7 @@ export class CommitSearchResultMatch extends React.Component<
             // so we set lastLine to 5, which is a just a heuristic for a medium-sized result.
             return 5
         }
-        const lastLine = Math.max(...this.props.item.ranges.map(([line]) => line)) + 1
+        const lastLine = Math.max(...this.props.item.ranges.map(([line]) => line || 0)) + 1
         return this.props.item.ranges ? Math.min(lastLine, this.props.item.ranges.length) : lastLine
     }
 

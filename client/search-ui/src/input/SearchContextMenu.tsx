@@ -14,7 +14,9 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
+// TODO: This import is broken
+// import { SearchContextInputProps, SearchContextMinimalFields } from '@sourcegraph/search'
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
@@ -158,7 +160,9 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
 
     const [loadingState, setLoadingState] = useState<LoadingState>('DONE')
     const [searchFilter, setSearchFilter] = useState('')
-    const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
+    // TODO: This type is missing
+    // const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
+    const [searchContexts, setSearchContexts] = useState<any[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
 
     const loadNextPageUpdates = useRef(
@@ -262,7 +266,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         if (!infiniteScrollTrigger.current || !infiniteScrollList.current) {
             return
         }
-        const intersectionObserver = new IntersectionObserver(entries => entries[0].isIntersecting && loadNextPage(), {
+        const intersectionObserver = new IntersectionObserver(entries => entries[0]?.isIntersecting && loadNextPage(), {
             root: infiniteScrollList.current,
         })
         intersectionObserver.observe(infiniteScrollTrigger.current)
@@ -273,7 +277,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
 
     const onInputKeyDown = useCallback(
         (event: React.KeyboardEvent) => {
-            if (filteredList.length > 0 && event.key === 'ArrowDown') {
+            if (filteredList[0] && event.key === 'ArrowDown') {
                 getSearchContextMenuItem(filteredList[0].spec)?.focus()
                 event.stopPropagation()
                 event.preventDefault()

@@ -56,7 +56,8 @@ describe('SearchSidebarSection', () => {
 
         rerender(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks([filters[0], filters[5], filters[3]], onFilterChosen)}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                {getDynamicFilterLinks([filters[0]!, filters[5]!, filters[3]!], onFilterChosen)}
             </SearchSidebarSection>
         )
 
@@ -68,7 +69,8 @@ describe('SearchSidebarSection', () => {
     it('should not show search if only one item in list', () => {
         render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
-                {getDynamicFilterLinks([filters[2]], onFilterChosen)}
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                {getDynamicFilterLinks([filters[2]!], onFilterChosen)}
             </SearchSidebarSection>
         )
 

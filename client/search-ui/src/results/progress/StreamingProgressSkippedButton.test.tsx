@@ -197,7 +197,11 @@ describe('StreamingProgressSkippedButton', () => {
 
         // Trigger onSearchAgain event and check for changes
         // Find `archived:yes` checkbox
-        userEvent.click(screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1], undefined, {
+        const checkbox = screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1]
+        if (!checkbox) {
+            throw new Error('Could not find `archived:yes` checkbox')
+        }
+        userEvent.click(checkbox, undefined, {
             skipPointerEventsCheck: true,
         })
         userEvent.click(screen.getByTestId('skipped-popover-form-submit-btn'), undefined, {

@@ -28,7 +28,7 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
         if (scanResult.type === 'success') {
             queryRepoFilters = findFilters(scanResult.term, FilterType.repo)
             if (queryRepoFilters.length === 1) {
-                queryRepo = queryRepoFilters[0].value?.value ?? ''
+                queryRepo = queryRepoFilters[0]?.value?.value ?? ''
             }
         }
         const repoFilters = getFiltersOfKind(filters, FilterType.repo)
@@ -50,10 +50,10 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
                     // repo name from the search results. This way, if one of the
                     // rev links is clicked and we add both, rev and repo filters
                     // (see ./Revisions.tsx), the revisions section won't disappear.
-                    queryRepo = `^${repoFilters[0].label}$`
+                    queryRepo = `^${repoFilters[0]?.label || ''}$`
                 }
                 lastRepoQuery.current = queryRepo
-                setRepoName(repoFilters[0].label)
+                setRepoName(repoFilters[0]?.label || '')
                 break
             default:
                 // multiple repos are matched, clear everything
