@@ -7,6 +7,10 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
@@ -110,10 +114,28 @@ func TestListRepos(t *testing.T) {
 	require.Nil(t, err)
 	packageSource.SetDB(db)
 	packageSource.client = &npmtest.MockClient{
-		TarballMap: func() map[string]string {
-			m := map[string]string{}
+		Packages: func() map[string]*npm.PackageInfo {
+			m := map[string]*npm.PackageInfo{}
 			for _, dep := range dependencies {
-				m[dep] = ""
+				d, err := reposource.ParseNPMDependency(dep)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				name := d.PackageSyntax()
+				info := m[name]
+
+				if info == nil {
+					info = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
+					m[name] = info
+				}
+
+				info.Description = name + " description"
+				version := info.Versions[d.Version]
+				if version == nil {
+					version = &npm.DependencyInfo{}
+					info.Versions[d.Version] = version
+				}
 			}
 			return m
 		}(),
@@ -123,21 +145,48 @@ func TestListRepos(t *testing.T) {
 		packageSource.ListRepos(ctx, results)
 		close(results)
 	}()
-	repoURLs := []string{}
-	for val := range results {
-		require.NotNil(t, val.Repo)
-		repoURLs = append(repoURLs, string(val.Repo.Name))
+
+	var have []*types.Repo
+	for r := range results {
+		if r.Err != nil {
+			t.Fatal(r.Err)
+		}
+		have = append(have, r.Repo)
 	}
-	sort.Strings(repoURLs)
-	expectedRepoURLs := []string{}
+
+	sort.Sort(types.Repos(have))
+
+	var want []*types.Repo
 	for _, dep := range dependencies {
 		dep, err := reposource.ParseNPMDependency(dep)
-		require.Nil(t, err)
-		expectedRepoURLs = append(expectedRepoURLs, string(dep.RepoName()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		want = append(want, &types.Repo{
+			Name:        dep.RepoName(),
+			Description: dep.PackageSyntax() + " description",
+			URI:         string(dep.RepoName()),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          string(dep.RepoName()),
+				ServiceID:   extsvc.TypeNPMPackages,
+				ServiceType: extsvc.TypeNPMPackages,
+			},
+			Sources: map[string]*types.SourceInfo{
+				packageSource.svc.URN(): {
+					ID:       packageSource.svc.URN(),
+					CloneURL: dep.CloneURL(),
+				},
+			},
+			Metadata: &npmpackages.Metadata{
+				Package: dep.NPMPackage,
+			},
+		})
 	}
-	sort.Strings(expectedRepoURLs)
+
+	sort.Sort(types.Repos(want))
+
 	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
-	require.Equal(t, expectedRepoURLs, repoURLs)
+	require.Equal(t, want, have)
 }
 
 func insertDependencies(t *testing.T, ctx context.Context, s *dependenciesStore.Store, dependencies []string) {

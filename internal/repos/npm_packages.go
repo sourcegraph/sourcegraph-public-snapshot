@@ -56,19 +56,23 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		results <- SourceResult{Err: err}
 		return
 	}
+
 	for _, npmPackage := range npmPackages {
-		repo := s.makeRepo(npmPackage)
+		info, err := s.client.GetPackage(ctx, npmPackage.PackageSyntax())
+		if err != nil {
+			results <- SourceResult{Err: err}
+			continue
+		}
+
+		repo := s.makeRepo(npmPackage, info.Description)
 		results <- SourceResult{
 			Source: s,
 			Repo:   repo,
 		}
 	}
-	if err != nil {
-		results <- SourceResult{Err: err}
-		return
-	}
+
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
-	pkgVersions := map[string]map[string]struct{}{}
+	pkgVersions := map[string]*npm.PackageInfo{}
 	for {
 		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
 			Scheme: dependenciesStore.NPMPackagesScheme,
@@ -90,26 +94,26 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Name, "error", err)
 				continue
 			}
+
 			npmDependency := reposource.NPMDependency{NPMPackage: parsedDbPackage, Version: dbDep.Version}
 			pkgKey := npmDependency.PackageSyntax()
-			versions, found := pkgVersions[pkgKey]
-			if !found {
-				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.NPMPackage)
+			info := pkgVersions[pkgKey]
+			if info == nil {
+				info, err = s.client.GetPackage(ctx, npmDependency.PackageSyntax())
 				if err != nil {
-					pkgVersions[pkgKey] = map[string]struct{}{}
 					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
 					continue
 				}
-				pkgVersions[pkgKey] = versions
+				pkgVersions[pkgKey] = info
 			}
-			if _, hasVersion := versions[npmDependency.Version]; !hasVersion {
-				if len(versions) != 0 { // We must've already logged a package not found earlier if len is 0.
+			if _, hasVersion := info.Versions[npmDependency.Version]; !hasVersion {
+				if len(info.Versions) != 0 { // We must've already logged a package not found earlier if len is 0.
 					log15.Warn("npm dependency does not exist",
 						"dependency", npmDependency.PackageManagerSyntax())
 				}
 				continue
 			}
-			repo := s.makeRepo(npmDependency.NPMPackage)
+			repo := s.makeRepo(npmDependency.NPMPackage, info.Description)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
 		}
@@ -122,16 +126,23 @@ func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Re
 	if err != nil {
 		return nil, err
 	}
-	return s.makeRepo(pkg), nil
+
+	info, err := s.client.GetPackage(ctx, pkg.PackageSyntax())
+	if err != nil {
+		return nil, err
+	}
+
+	return s.makeRepo(pkg, info.Description), nil
 }
 
-func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage) *types.Repo {
+func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage, description string) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := npmPackage.CloneURL()
 	repoName := npmPackage.RepoName()
 	return &types.Repo{
-		Name: repoName,
-		URI:  string(repoName),
+		Name:        repoName,
+		Description: description,
+		URI:         string(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceID:   extsvc.TypeNPMPackages,
