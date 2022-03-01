@@ -13,7 +13,7 @@ FROM prom/alertmanager:v0.23.0@sha256:9ab73a421b65b80be072f96a88df756fc5b52a1bc8
 
 # Prepare final image
 # hadolint ignore=DL3007
-FROM quay.io/prometheus/busybox-linux-amd64:latest
+FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:42977f138f0655240a4bd4aed4fe1731cff3bc57077ff695ea7cd4653fc1c6e6
 
 # Should reflect versions above
 LABEL com.sourcegraph.prometheus.version=v2.33.1

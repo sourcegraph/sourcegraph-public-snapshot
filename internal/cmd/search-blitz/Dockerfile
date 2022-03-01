@@ -1,4 +1,4 @@
-FROM golang:1.16 AS builder
+FROM golang:1.16@sha256:47cf06768e90a096d1ccf99d71fbe46c192e53b43c832308d25d4136c677767a AS builder
 WORKDIR /build
 COPY go.sum go.mod ./
 COPY . .

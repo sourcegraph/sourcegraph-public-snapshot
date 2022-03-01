@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine AS builder
+FROM golang:1.16-alpine@sha256:b01ec89462a86eaa0e839285559d3909c60379beed0c08c3e1abd1503f96c625 AS builder
 
 WORKDIR /go/src/progress-bot
 

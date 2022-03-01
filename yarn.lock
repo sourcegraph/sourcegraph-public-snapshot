@@ -5555,7 +5555,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/vscode@^1.63.1":
+"@types/vscode@1.63.1":
   version "1.63.1"
   resolved "https://registry.npmjs.org/@types/vscode/-/vscode-1.63.1.tgz#b40f9f18055e2c9498ae543d18c59fbd6ef2e8a3"
   integrity sha512-Z+ZqjRcnGfHP86dvx/BtSwWyZPKQ/LBdmAVImY82TphyjOw2KgTKcp7Nx92oNwCTsHzlshwexAG/WiY2JuUm3g==
