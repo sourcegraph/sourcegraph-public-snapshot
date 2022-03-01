@@ -284,7 +284,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{
                         height: this.state.computedHeight,
-                        width: 'relative',
+                        position: 'relative',
                     }}
                     data-placeholder={this.props.placeholder}
                     ref={this.setRef}
