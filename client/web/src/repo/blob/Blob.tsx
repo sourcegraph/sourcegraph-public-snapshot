@@ -204,6 +204,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
+    console.log('blob location.hash', location.hash)
     const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
         location.search,
         location.hash,

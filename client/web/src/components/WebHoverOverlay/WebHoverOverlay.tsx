@@ -46,7 +46,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken, onTokenClick, coolCodeIntelEnabled } = props
+    const { onHoverShown, hoveredToken, coolCodeIntelEnabled } = props
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
@@ -91,13 +91,9 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
                         return
                     }
 
-                    if (coolCodeIntelEnabled && onTokenClick !== undefined && hoveredToken !== undefined) {
-                        onTokenClick(hoveredToken)
-                    } else {
-                        const actionType = action === definitionAction ? 'definition' : 'reference'
-                        props.telemetryService.log(`${actionType}HoverOverlay.click`)
-                        nav(url)
-                    }
+                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                    nav(url)
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
             )
@@ -112,7 +108,6 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         props.telemetryService,
         hoveredToken,
         coolCodeIntelEnabled,
-        onTokenClick,
     ])
 
     const onlyGoToDefinition = Array.isArray(props.actionsOrError)

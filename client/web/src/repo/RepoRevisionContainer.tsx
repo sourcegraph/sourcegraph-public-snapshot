@@ -1,7 +1,7 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { Popover } from 'reactstrap'
 
@@ -31,13 +31,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import {
-    CoolClickedToken,
-    CoolCodeIntel,
-    GlobalCoolCodeIntelProps,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from '../global/CoolCodeIntel'
+import { CoolCodeIntel, GlobalCoolCodeIntelProps, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -216,23 +210,9 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 }) => {
     // Experimental reference panel
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-
     // We only render the reference panel when looking at files
     const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
     const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
-
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    const onTokenClickRemoveViewState = (token: CoolClickedToken | undefined): void => {
-        props.history.push(locationWithoutViewState(context.location))
-        onTokenClick(token)
-    }
-    useEffect(() => {
-        // If we don't have a route match anymore, we reset the state of the
-        // reference panel by setting the token to undefined
-        if (coolCodeIntelEnabled && !referencePanelRouteMatch) {
-            onTokenClick(undefined)
-        }
-    }, [coolCodeIntelEnabled, referencePanelRouteMatch])
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
@@ -303,7 +283,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
-        onTokenClick: onTokenClickRemoveViewState,
         coolCodeIntelEnabled,
     }
 
@@ -356,9 +335,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {coolCodeIntelEnabled && referencePanelRouteMatch && (
-                <CoolCodeIntel {...props} onTokenClick={onTokenClickRemoveViewState} clickedToken={clickedToken} />
-            )}
+            {coolCodeIntelEnabled && referencePanelRouteMatch && <CoolCodeIntel {...props} />}
         </>
     )
 }
