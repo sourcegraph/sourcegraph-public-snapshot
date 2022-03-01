@@ -30,7 +30,7 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, timestamp, public_argument, version)
 		VALUES
-			(1, 'IDESearchSubmitted', '{"version": "2.0.8", "platform": "vscode"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'IDEEXTENSION', $1::timestamp - interval '1 day', '{}', '3.36.1'),
+			(1, 'IDESearchSubmitted', '{"version": "2.0.8", "platform": "vscode"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'IDEEXTENSION', $1::timestamp - interval '1 hour', '{}', '3.36.1'),
 			(2, 'VSCESearchSubmitted', '{"version": "2.2.8", "platform": "vscode"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'BACKEND', $1::timestamp - interval '1 day', '{}', '3.34.1'),
 			(3, 'IDESearchSubmitted', '{"version": "0.0.5", "platform": "jetbrains"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '1 day', '{}', '3.36.1'),
 			(4, 'VSCESearchSubmitted', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'BACKEND', $1::timestamp - interval '1 day', '{}', '3.36.1'),
@@ -38,11 +38,12 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 			(6, 'ViewBlob', '{}', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/client/vscode/README.md?L8%3A1=&utm_source=VSCode-2.0.9', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', $1::timestamp - interval '1 months', '{}', '3.33.3'),
 			(7, 'ViewBlob', '{}', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/client/vscode/README.md?L8%3A1=&utm_source=VSCode-2.0.5', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', $1::timestamp - interval '1 months', '{}', '3.32.2'),
 			(8, 'ViewBlob', '{}', 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/package.json', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', $1::timestamp - interval '2 months', '{}', '3.32.2'),
-			(9, 'IDERedirects', '{"version": "0.0.1", "platform": "jetbrains"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '1 day', '{}', '3.35.0'),
-			(10, 'IDERedirects', '{"version": "2.2.1", "platform": "vscode"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '1 day', '{}', '3.35.0'),
+			(9, 'IDERedirects', '{"version": "0.0.1", "platform": "jetbrains"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '1 hour', '{}', '3.35.0'),
+			(10, 'IDERedirects', '{"version": "2.2.1", "platform": "vscode"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '3 hour', '{}', '3.35.0'),
 			(11, 'IDESearchSubmitted', '{"version": "2.0.8", "platform": "vscode"}', '', 3, '420657f0-d443-4d16-ac7d-003d8cdc24xy', 'IDEEXTENSION', $1::timestamp - interval '1 day', '{}', '3.36.1'),
 			(12, 'IDESearchSubmitted', '{"version": "2.0.9", "platform": "vscode"}', '', 3, '420657f0-d443-4d16-ac7d-003d8cdc24xy', 'IDEEXTENSION', $1::timestamp - interval '2 months', '{}', '3.37.0'),
-			(13, 'IDESearchSubmitted', '{"version": "2.0.9", "platform": "vscode"}', '', 3, '420657f0-d443-4d16-ac7d-003d8cdc24xy', 'IDEEXTENSION', $1::timestamp - interval '8 days', '{}', '3.37.0')
+			(13, 'IDESearchSubmitted', '{"version": "2.0.9", "platform": "vscode"}', '', 3, '420657f0-d443-4d16-ac7d-003d8cdc24xy', 'IDEEXTENSION', $1::timestamp - interval '1 week', '{}', '3.37.0'),
+			(14, 'IDERedirects', '{"version": "2.2.1", "platform": "vscode"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'IDEEXTENSION', $1::timestamp - interval '1 week', '{}', '3.35.0')
 	`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +74,7 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 						UniqueCount: int32(2),
 						TotalCount:  int32(3),
 					},
-					RedirectCount: int32(1),
+					RedirectCount: int32(2),
 				},
 			},
 		},
@@ -94,7 +95,7 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 					UserCount: int32(3),
 					SearchPerformed: types.IdeExtensionsUsageSearchPerformed{
 						UniqueCount: int32(2),
-						TotalCount:  int32(3),
+						TotalCount:  int32(2),
 					},
 					RedirectCount: int32(1),
 				},
@@ -107,17 +108,17 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 					IdeKind:   "jetbrains",
 					UserCount: int32(1),
 					SearchPerformed: types.IdeExtensionsUsageSearchPerformed{
-						UniqueCount: int32(1),
-						TotalCount:  int32(1),
+						UniqueCount: int32(0),
+						TotalCount:  int32(0),
 					},
 					RedirectCount: int32(1),
 				},
 				{
 					IdeKind:   "vscode",
-					UserCount: int32(3),
+					UserCount: int32(2),
 					SearchPerformed: types.IdeExtensionsUsageSearchPerformed{
-						UniqueCount: int32(2),
-						TotalCount:  int32(3),
+						UniqueCount: int32(1),
+						TotalCount:  int32(1),
 					},
 					RedirectCount: int32(1),
 				},

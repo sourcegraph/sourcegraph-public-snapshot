@@ -73,6 +73,92 @@ func GetIdeExtensionsUsageStatistics(ctx context.Context, db database.DB) (*type
 		return nil, err
 	}
 
+	ideExtensionsPeriodUsageQueryWeekly := `
+	SELECT
+		argument ->> 'platform'::text AS ide_kind,
+		COUNT(DISTINCT user_id) AS user_count,
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted'),
+		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted'),
+		COUNT(*) FILTER (WHERE name = 'IDERedirects')
+	FROM event_logs
+	WHERE
+		source = 'IDEEXTENSION' AND timestamp >= DATE_TRUNC('week', $1::timestamp)
+	GROUP BY ide_kind;
+	`
+	usageStatisticsByIdeWeekly := []*types.IdeExtensionsUsageStatistics{}
+
+	rowsWeek, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQueryWeekly, timeNow())
+	if err != nil {
+		return nil, err
+	}
+
+	defer rowsWeek.Close()
+
+	for rowsWeek.Next() {
+		ideaExtensionUsageStatisticsWeekly := types.IdeExtensionsUsageStatistics{}
+
+		if err := rowsWeek.Scan(
+			&ideaExtensionUsageStatisticsWeekly.IdeKind,
+			&ideaExtensionUsageStatisticsWeekly.UserCount,
+			&ideaExtensionUsageStatisticsWeekly.SearchPerformed.TotalCount,
+			&ideaExtensionUsageStatisticsWeekly.SearchPerformed.UniqueCount,
+			&ideaExtensionUsageStatisticsWeekly.RedirectCount,
+		); err != nil {
+			return nil, err
+		}
+
+		usageStatisticsByIdeWeekly = append(usageStatisticsByIdeWeekly, &ideaExtensionUsageStatisticsWeekly)
+	}
+
+	stats.Week.IDEs = usageStatisticsByIdeWeekly
+
+	if err := rowsWeek.Err(); err != nil {
+		return nil, err
+	}
+
+	ideExtensionsPeriodUsageQueryDaily := `
+	SELECT
+		argument ->> 'platform'::text AS ide_kind,
+		COUNT(DISTINCT user_id) AS user_count,
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted'),
+		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted'),
+		COUNT(*) FILTER (WHERE name = 'IDERedirects')
+	FROM event_logs
+	WHERE
+		source = 'IDEEXTENSION' AND timestamp >= DATE_TRUNC('day', $1::timestamp)
+	GROUP BY ide_kind;
+	`
+	usageStatisticsByIdeDaily := []*types.IdeExtensionsUsageStatistics{}
+
+	rowsDay, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQueryDaily, timeNow())
+	if err != nil {
+		return nil, err
+	}
+
+	defer rowsDay.Close()
+
+	for rowsDay.Next() {
+		ideaExtensionUsageStatisticsDaily := types.IdeExtensionsUsageStatistics{}
+
+		if err := rowsDay.Scan(
+			&ideaExtensionUsageStatisticsDaily.IdeKind,
+			&ideaExtensionUsageStatisticsDaily.UserCount,
+			&ideaExtensionUsageStatisticsDaily.SearchPerformed.TotalCount,
+			&ideaExtensionUsageStatisticsDaily.SearchPerformed.UniqueCount,
+			&ideaExtensionUsageStatisticsDaily.RedirectCount,
+		); err != nil {
+			return nil, err
+		}
+
+		usageStatisticsByIdeDaily = append(usageStatisticsByIdeDaily, &ideaExtensionUsageStatisticsDaily)
+	}
+
+	stats.Day.IDEs = usageStatisticsByIdeDaily
+
+	if err := rowsDay.Err(); err != nil {
+		return nil, err
+	}
+
 	return &stats, nil
 
 	// TODO: Monthly Installs
