@@ -583,6 +583,7 @@ func TestListOrganizations(t *testing.T) {
 				}
 
 				w.WriteHeader(304)
+				return
 			}
 
 			// Pretend like this is a request where the existing request has been modified and will
@@ -591,8 +592,7 @@ func TestListOrganizations(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			w.WriteHeader(304)
-			return
+			w.WriteHeader(200)
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
