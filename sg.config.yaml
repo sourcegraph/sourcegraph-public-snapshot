@@ -346,11 +346,13 @@ commands:
     cmd: |
       docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
+      sourcegraph/syntax-highlighter:insiders
     install: |
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
+      # Pull syntax-highlighter latest insider image, only during install
+      docker pull -q sourcegraph/syntax-highlighter:insiders
     env:
       # This is not needed actually
       INSECURE_DEV: 1
