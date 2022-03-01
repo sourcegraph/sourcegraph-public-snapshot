@@ -289,7 +289,7 @@ type TestReportOpts struct {
 	// TestSuiteKeyVariableName is the name of the variable in gcloud secrets that holds
 	// the test suite key to upload to.
 	//
-	// TODO: move to manifest, see https://github.com/sourcegraph/sourcegraph/issues/28469
+	// TODO: This is not finalized, see https://github.com/sourcegraph/sourcegraph/issues/31971
 	TestSuiteKeyVariableName string
 }
 
