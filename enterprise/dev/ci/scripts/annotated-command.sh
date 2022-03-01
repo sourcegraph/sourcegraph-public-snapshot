@@ -19,8 +19,8 @@ exit_code="$?"
 # Check for annotations left behind by the command
 if [ -n "${ANNOTATE_OPTS-''}" ]; then
   # Parse annotation options:
-  # - args[0] => include_names
-  # - args[1:] => annotate_opts, base options for the ./annotate.sh script
+  # - $1 => include_names
+  # - $2... => annotate_opts, base options for the ./annotate.sh script
   # shellcheck disable=SC2086
   set -- $ANNOTATE_OPTS
   include_names=$1
