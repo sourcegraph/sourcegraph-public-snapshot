@@ -18,7 +18,7 @@ interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {
 export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
     const {
         isSourcegraphDotCom,
-        isOpen
+        isOpen,
     } = props
 
     // const history = useHistory()

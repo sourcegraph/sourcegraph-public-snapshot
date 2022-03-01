@@ -1,4 +1,5 @@
 import { useMutation } from '@apollo/client'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
@@ -50,6 +51,11 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             <h3 className="text-danger" id={deleteLabelId}>
                Please contact support to delete this organization
             </h3>
+            <CloseIcon
+                className="icon-inline position-absolute cursor-pointer"
+                style={{ top: '1rem', right: '1rem' }}
+                onClick={toggleDeleteModal}
+            />
             <p>
                 To delete this orgnaization, please contact our support on{' '}
                 <Link target="_blank" rel="noopener noreferrer" to="mailto:support@sourcegraph.com">
