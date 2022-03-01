@@ -11,7 +11,9 @@ import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
+import { useInviteEmailToSourcegraph } from '../../auth/welcome/InviteCollaborators/useInviteEmailToSourcegraph'
 import { CopyableText } from '../../components/CopyableText'
+import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import styles from './CollaboratorsPanel.module.scss'
@@ -31,6 +33,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
     fetchCollaborators,
 }) => {
+    const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
     )
@@ -49,10 +52,10 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
             return
         }
 
-        // const loggerPayload = {
-        //     discovered: collaborators.length,
-        // }
-        // eventLogger.log('UserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
+        const loggerPayload = {
+            discovered: collaborators.length,
+        }
+        eventLogger.log('HomepageUserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
     }, [collaborators])
 
     const invitePerson = useCallback(
@@ -63,8 +66,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
             setLoadingInvites(set => new Set(set).add(person.email))
 
             try {
-                // await inviteEmailToSourcegraph({ variables: { email: person.email } })
-                await new Promise(resolve => setTimeout(resolve, 2000))
+                await inviteEmailToSourcegraph({ variables: { email: person.email } })
 
                 setLoadingInvites(set => {
                     const removed = new Set(set)
@@ -73,12 +75,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                 })
                 setSuccessfulInvites(set => new Set(set).add(person.email))
 
-                // eventLogger.log('UserInvitationsSentEmailInvite')
+                eventLogger.log('HomepageUserInvitationsSentEmailInvite')
             } catch (error) {
                 setInviteError(error)
             }
         },
-        [loadingInvites, successfulInvites]
+        [inviteEmailToSourcegraph, loadingInvites, successfulInvites]
     )
 
     const loadingDisplay = <LoadingPanelView text="Loading colleagues" />
@@ -177,7 +179,7 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 text={inviteURL}
                 flex={true}
                 size={inviteURL.length}
-                onCopy={() => /* eventLogger.log('UserInvitationsCopiedInviteLink') */ null}
+                onCopy={() => eventLogger.log('HomepageUserInvitationsCopiedInviteLink')}
             />
         </div>
     )
