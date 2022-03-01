@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/inconshreveable/log15"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewHandler(
