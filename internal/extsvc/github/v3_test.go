@@ -455,7 +455,7 @@ func TestGetOrganization(t *testing.T) {
 // username milton in 1password. The token used for this test is named sourcegraph-vcr-token and is
 // also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	t.Run("enterprise", func(t *testing.T) {
+	t.Run("enterprise-integration", func(t *testing.T) {
 		rcache.SetupForTest(t)
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
@@ -548,6 +548,91 @@ func TestListOrganizations(t *testing.T) {
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(uri, gheToken, testServer.Client())
 		testCli.ListOrganizations(context.Background(), 1)
+	})
+
+	t.Run("enterprise-cache-behaviour", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// Marshal a list of orgs.
+
+		// Existing list of orgs.
+		mockOldOrgs, err := json.Marshal([]*Org{
+			{Login: "foo"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Updated list of orgs after an initial request is already made, used to verify that the
+		// cache was updated correctly.
+		mockNewOrgs, err := json.Marshal([]*Org{
+			{Login: "bar"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMockOldOrgs := true
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Pretend like this is a request where the existing resource has not been modified yet.
+			if testMockOldOrgs {
+				testMockOldOrgs = false
+				w.Write(mockOldOrgs)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				w.WriteHeader(304)
+			}
+
+			// Pretend like this is a request where the existing request has been modified and will
+			// require a cache invalidation on the client.
+			_, err := w.Write(mockNewOrgs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.WriteHeader(304)
+			return
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client(uri, gheToken, testServer.Client())
+
+		runTest := func(expectedOrgs []byte) {
+			orgs, hasNextPage, err := testCli.ListOrganizations(context.Background(), 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !hasNextPage {
+				t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+			}
+
+			gotOrgs, err := json.Marshal(orgs)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, gotOrgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs returned from API: (-want +got):\n%s", diff)
+			}
+
+			key := testCli.auth.Hash() + "-orgs-1"
+			gotCachedOrgs, ok := testCli.orgsCache.Get(key)
+			if !ok {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, gotCachedOrgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs cached in the client: (-want +got):\n%s", diff)
+			}
+		}
+
+		// Initial request.
+		runTest(mockOldOrgs)
+
+		// New request but with orgs modified.
+		runTest(mockNewOrgs)
 	})
 
 	t.Run("githubdotcom", func(t *testing.T) {

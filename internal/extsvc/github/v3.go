@@ -560,7 +560,7 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		return orgs, len(orgs) > 0, nil
 	}
 
-	respState, err := c.getConditional(ctx, path, string(etag), orgs)
+	respState, err := c.getConditional(ctx, path, string(etag), &orgs)
 	if err != nil {
 		return nil, false, err
 	}
