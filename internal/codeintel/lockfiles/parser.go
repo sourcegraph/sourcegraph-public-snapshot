@@ -4,21 +4,14 @@ import (
 	"io"
 	"sort"
 
-	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/npm"
-	"github.com/aquasecurity/go-dep-parser/pkg/nodejs/yarn"
-	"github.com/aquasecurity/go-dep-parser/pkg/types"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
-type parser struct {
-	parseLockfileContents               func(io.Reader) ([]types.Library, error)
-	transformLibraryToPackageDependency func(types.Library) (reposource.PackageDependency, error)
-}
+type parser func(io.Reader) ([]reposource.PackageDependency, error)
 
-var parsers = map[string]*parser{
-	"package-lock.json": {npm.Parse, npmPackage},
-	"yarn.lock":         {yarn.Parse, npmPackage},
+var parsers = map[string]parser{
+	"package-lock.json": parsePackageLockFile,
+	"yarn.lock":         parseYarnLockFile,
 }
 
 var lockfilePaths = func() []string {
@@ -30,7 +23,3 @@ var lockfilePaths = func() []string {
 
 	return paths
 }()
-
-func npmPackage(lib types.Library) (reposource.PackageDependency, error) {
-	return reposource.ParseNPMDependency(lib.Name + "@" + lib.Version)
-}
