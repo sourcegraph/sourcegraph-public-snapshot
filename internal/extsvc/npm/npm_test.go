@@ -111,7 +111,7 @@ func TestGetPackage(t *testing.T) {
 	defer stop()
 	pkg, err := reposource.ParseNPMPackageFromPackageSyntax("is-sorted")
 	require.Nil(t, err)
-	info, err := client.GetPackage(ctx, pkg.PackageSyntax())
+	info, err := client.GetPackageInfo(ctx, pkg)
 	require.Nil(t, err)
 	require.Equal(t, info.Description, "A small module to check if an Array is sorted")
 	versions := []string{}

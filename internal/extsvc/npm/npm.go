@@ -30,13 +30,11 @@ import (
 )
 
 type Client interface {
-	// GetPackage gets a package's data from the registry, including versions.
+	// GetPackageInfo gets a package's data from the registry, including versions.
 	//
 	// It is preferable to use this method instead of calling DoesDependencyExist
 	// in a loop, if different dependencies may share the same underlying package.
-	//
-	// If err is nil, versions should be non-empty.
-	GetPackage(ctx context.Context, name string) (*PackageInfo, error)
+	GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (*PackageInfo, error)
 
 	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
 	//
@@ -122,8 +120,8 @@ type PackageInfo struct {
 	Versions    map[string]*DependencyInfo `json:"versions"`
 }
 
-func (client *HTTPClient) GetPackage(ctx context.Context, name string) (info *PackageInfo, err error) {
-	url := fmt.Sprintf("%s/%s", client.registryURL, name)
+func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (info *PackageInfo, err error) {
+	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
 	jsonBytes, err := client.makeGetRequest(ctx, url)
 	if err != nil {
 		return nil, err
