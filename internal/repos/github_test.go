@@ -142,6 +142,22 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
+func TestListPublicReposPagination(t *testing.T) {
+	u, _ := url.Parse("https://ghe.sgdev.org/api/v3")
+	a := &auth.OAuthBearerToken{
+		Token: "REDACTED",
+	}
+
+	client := github.NewV3Client(u, a, nil)
+
+	ctx := context.Background()
+	repos, err := client.ListPublicRepositories(ctx, 500000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Fatal(repos)
+}
+
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 	testCases := []struct {
 		name          string
