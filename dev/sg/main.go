@@ -111,7 +111,7 @@ func checkSgVersion() {
 		rev = BuildCommit[len("dev-"):]
 	}
 
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", rev), "./dev/sg")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
 		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
