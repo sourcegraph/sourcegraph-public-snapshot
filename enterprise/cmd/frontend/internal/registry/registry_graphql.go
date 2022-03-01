@@ -30,9 +30,7 @@ func registryExtensionByIDInt32(ctx context.Context, db database.DB, id int32) (
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(x); err != nil {
-		return nil, err
-	}
+	prefixLocalExtensionID(x)
 	return &extensionDBResolver{db: db, v: x}, nil
 }
 

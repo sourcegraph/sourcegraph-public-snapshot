@@ -96,7 +96,7 @@ func ReadDir(
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -106,6 +106,12 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 		"--with-tree",
 		string(commit),
 	}
+
+	if len(pathspecs) > 0 {
+		args = append(args, "--")
+		args = append(args, pathspecs...)
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
@@ -35,6 +35,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     )
 
     const menuButtonReference = useRef<HTMLButtonElement>(null)
+    const linkReference = useRef<HTMLAnchorElement>(null)
 
     const [isOverButton, setIsOverButton] = useState(false)
     const [isOverList, setIsOverList] = useState(false)
@@ -57,6 +58,23 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
             triggerMenuButtonEvent()
         }
     }, [isOverButton, isOverList])
+
+    useEffect(() => {
+        const currentLink = linkReference.current!
+        const handleTouchStart = (event: TouchEvent): void => {
+            event.preventDefault()
+
+            triggerMenuButtonEvent()
+        }
+
+        // Have to add/remove `touchstart` manually like this to prevent
+        // page navigation on touch screen (onTouchStart binding doesn't work)
+        currentLink.addEventListener('touchstart', handleTouchStart)
+
+        return () => {
+            currentLink.removeEventListener('touchstart', handleTouchStart)
+        }
+    }, [])
 
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
     // and then use CSS @media queries to toggle between them.
@@ -81,7 +99,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                     <Link
                                         to={toggleItem.path}
                                         className={classNames(styles.navDropdownLink, navItemStyles.itemFocusable)}
-                                        tabIndex={0}
+                                        ref={linkReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <toggleItem.icon

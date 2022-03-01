@@ -119,11 +119,11 @@ func (r *firecrackerRunner) Setup(ctx context.Context) error {
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.options, r.operations)
+	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.operations)
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
-	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.dir, r.options), r.logger)
+	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.options), r.logger)
 }
 
 type runnerWrapper struct{}

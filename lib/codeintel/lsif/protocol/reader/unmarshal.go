@@ -306,7 +306,7 @@ func unmarshalHoverPart(raw json.RawMessage) (*string, error) {
 			trimmed := strings.TrimSpace(strPayload)
 			return &trimmed, nil
 		}
-		return &strPayload, nil
+		return &strPayload, err
 	}
 
 	// now check if MarkupContent

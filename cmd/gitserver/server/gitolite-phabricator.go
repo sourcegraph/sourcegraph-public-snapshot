@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // handleGetGitolitePhabricatorMetadata serves the Gitolite
@@ -42,7 +41,7 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 			if gconf.Phabricator == nil {
 				continue
 			}
-			callsign, err := getGitolitePhabCallsign(r.Context(), gconf, repoName, gconf.Phabricator.CallsignCommand)
+			callsign, err := getGitolitePhabCallsign(r.Context(), repoName, gconf.Phabricator.CallsignCommand)
 			if err != nil {
 				log15.Warn("failed to get Phabricator callsign", "host", gconf.Host, "repo", repoName, "err", err)
 				continue
@@ -71,7 +70,7 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 
 var callSignPattern = lazyregexp.New("^[A-Z]+$")
 
-func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnection, repo, command string) (string, error) {
+func getGitolitePhabCallsign(ctx context.Context, repo, command string) (string, error) {
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	cmd.Env = append(os.Environ(), "REPO="+repo)
 	stdout, err := cmd.Output()

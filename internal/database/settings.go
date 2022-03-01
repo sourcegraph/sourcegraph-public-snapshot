@@ -126,7 +126,7 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 	if err != nil {
 		return nil, err
 	}
-	settings, err := parseQueryRows(ctx, rows)
+	settings, err := parseQueryRows(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -193,10 +193,10 @@ func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) 
 	if err != nil {
 		return nil, err
 	}
-	return parseQueryRows(ctx, rows)
+	return parseQueryRows(rows)
 }
 
-func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+func parseQueryRows(rows *sql.Rows) ([]*api.Settings, error) {
 	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {
