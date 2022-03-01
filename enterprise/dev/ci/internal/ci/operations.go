@@ -71,10 +71,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests, // ~4.5m
-			addWebApp,     // ~5.5m
-			addBrowserExt, // ~4.5m
-			addClientLinters))
+			frontendTests,     // ~4.5m
+			addWebApp,         // ~5.5m
+			addBrowserExt,     // ~4.5m
+			addClientLinters)) // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -163,20 +163,19 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
-// Adds client linters and Typescript check. (3x ~60s) + ~60s + ~137s + 7s
+// Adds client linters and Typescript check.
 func addClientLinters(pipeline *bk.Pipeline) {
-	// - yarn 60s (required on all steps)
-	// - eslint 137s
+	// - ESLint ~9m
 	pipeline.AddStep(":eslint: ESLint",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
 
-	// - build-ts 60s
+	// - build-ts ~4m
 	pipeline.AddStep(":typescript: Build TS",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
 
-	// - stylelint 7s
+	// - Stylelint ~2m
 	pipeline.AddStep(":stylelint: Stylelint",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
