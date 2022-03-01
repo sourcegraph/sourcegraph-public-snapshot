@@ -21,13 +21,10 @@ type OrgNotFoundError struct {
 }
 
 func (e *OrgNotFoundError) Error() string {
-	fmt.Println("AAAAA", e.Message)
 	return fmt.Sprintf("org not found: %s", e.Message)
 }
 
 func (e *OrgNotFoundError) NotFound() bool {
-	fmt.Println("BBB")
-
 	return true
 }
 
