@@ -183,8 +183,9 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         if (!authenticatedUser) {
             return
         }
+        props.telemetryService.log('SearchNotebookCopyNotebookButtonClick')
         copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
-    }, [authenticatedUser, copyNotebook, notebook])
+    }, [authenticatedUser, copyNotebook, notebook, props.telemetryService])
 
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
