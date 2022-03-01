@@ -139,9 +139,11 @@ func (client *HTTPClient) GetPackage(ctx context.Context, name string) (info *Pa
 }
 
 type DependencyInfo struct {
-	Dist struct {
-		TarballURL string `json:"tarball"`
-	} `json:"dist"`
+	Dist DependencyInfoDist `json:"dist"`
+}
+
+type DependencyInfoDist struct {
+	TarballURL string `json:"tarball"`
 }
 
 type illFormedJSONError struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -12,6 +13,35 @@ import (
 
 type MockClient struct {
 	Packages map[string]*npm.PackageInfo
+}
+
+func NewMockClient(t testing.TB, deps ...string) *MockClient {
+	t.Helper()
+
+	packages := map[string]*npm.PackageInfo{}
+	for _, dep := range deps {
+		d, err := reposource.ParseNPMDependency(dep)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		name := d.PackageSyntax()
+		info := packages[name]
+
+		if info == nil {
+			info = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
+			packages[name] = info
+		}
+
+		info.Description = name + " description"
+		version := info.Versions[d.Version]
+		if version == nil {
+			version = &npm.DependencyInfo{}
+			info.Versions[d.Version] = version
+		}
+	}
+
+	return &MockClient{Packages: packages}
 }
 
 var _ npm.Client = &MockClient{}
@@ -25,16 +55,20 @@ func (m *MockClient) GetPackage(_ context.Context, name string) (info *npm.Packa
 }
 
 func (m *MockClient) DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error) {
-	return m.Packages[dep.PackageManagerSyntax()] != nil, nil
+	pkg := m.Packages[dep.PackageSyntax()]
+	if pkg == nil {
+		return false, nil
+	}
+	return pkg.Versions[dep.Version] != nil, nil
 }
 
 func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (closer io.ReadSeekCloser, err error) {
-	info, ok := m.Packages[dep.PackageManagerSyntax()]
+	info, ok := m.Packages[dep.PackageSyntax()]
 	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
 	}
 
-	version, ok := info.Versions[dep.PackageVersion()]
+	version, ok := info.Versions[dep.Version]
 	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
 	}

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 
 	"github.com/keegancsmith/sqlf"
@@ -113,33 +112,7 @@ func TestListRepos(t *testing.T) {
 	packageSource, err := NewNPMPackagesSource(&svc)
 	require.Nil(t, err)
 	packageSource.SetDB(db)
-	packageSource.client = &npmtest.MockClient{
-		Packages: func() map[string]*npm.PackageInfo {
-			m := map[string]*npm.PackageInfo{}
-			for _, dep := range dependencies {
-				d, err := reposource.ParseNPMDependency(dep)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				name := d.PackageSyntax()
-				info := m[name]
-
-				if info == nil {
-					info = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
-					m[name] = info
-				}
-
-				info.Description = name + " description"
-				version := info.Versions[d.Version]
-				if version == nil {
-					version = &npm.DependencyInfo{}
-					info.Versions[d.Version] = version
-				}
-			}
-			return m
-		}(),
-	}
+	packageSource.client = npmtest.NewMockClient(t, dependencies...)
 	results := make(chan SourceResult, 10)
 	go func() {
 		packageSource.ListRepos(ctx, results)
