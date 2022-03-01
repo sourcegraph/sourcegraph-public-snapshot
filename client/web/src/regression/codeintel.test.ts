@@ -305,7 +305,7 @@ async function collectLinks(driver: Driver): Promise<Set<string>> {
         const tabElement = await driver.page.$$(
             `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
         )
-        if (tabElement.length > 0) {
+        if (tabElement[0]) {
             await tabElement[0].click()
         }
 

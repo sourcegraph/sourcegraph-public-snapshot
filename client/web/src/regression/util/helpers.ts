@@ -188,7 +188,7 @@ export async function ensureNewOrganization(
     if (matchingOrgs.length > 1) {
         throw new Error(`More than one organization name exists with name ${variables.name}`)
     }
-    if (matchingOrgs.length === 1) {
+    if (matchingOrgs.length === 1 && matchingOrgs[0]) {
         await deleteOrganization({ requestGraphQL }, matchingOrgs[0].id).toPromise()
     }
     const createdOrg = await createOrganization({ requestGraphQL }, variables).toPromise()

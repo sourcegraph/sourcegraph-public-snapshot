@@ -55,10 +55,11 @@ export class TestResourceManager {
             if (!seen[resource.type]) {
                 seen[resource.type] = {}
             }
-            if (seen[resource.type][resource.name]) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            if (seen[resource.type]![resource.name]) {
                 continue
-            }
-            seen[resource.type][resource.name] = true
+            } // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            seen[resource.type]![resource.name] = true
 
             try {
                 await resource.destroy()

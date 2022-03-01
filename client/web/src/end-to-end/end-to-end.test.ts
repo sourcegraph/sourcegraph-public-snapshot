@@ -151,7 +151,7 @@ describe('e2e test suite', () => {
                     for (let index = 0; index < element.childNodes.length; index++) {
                         const child = element.childNodes[index]
                         const childSelector = `${selector} > :nth-child(${index + 1})`
-                        if (child.nodeType === Node.TEXT_NODE) {
+                        if (child?.nodeType === Node.TEXT_NODE) {
                             if (child.nodeValue === null) {
                                 continue
                             }
@@ -161,14 +161,14 @@ describe('e2e test suite', () => {
                             }
 
                             offset -= child.nodeValue.length
-                        } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        } else if (child?.nodeType === Node.ELEMENT_NODE) {
                             const result = recur(offset, childSelector)
                             if (typeof result === 'string') {
                                 return result
                             }
                             offset = result
                         } else {
-                            throw new Error(`clickHoverJ2D: unexpected node type ${child.nodeType}`)
+                            throw new Error(`clickHoverJ2D: unexpected node type ${child?.nodeType || 'undefined'}`)
                         }
                     }
 

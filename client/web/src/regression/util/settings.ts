@@ -15,7 +15,10 @@ export async function editUserSettings(
     if (!user) {
         throw new Error(`User not found: ${username}`)
     }
-    const [{ latestSettings }] = user.settingsCascade.subjects.slice(-1)
-    const lastID = latestSettings ? latestSettings.id : null
+    const [lastSubject] = user.settingsCascade.subjects.slice(-1)
+    if (!lastSubject) {
+        return
+    }
+    const lastID = lastSubject.latestSettings?.id || null
     await mutateSettings(graphQLClient, user.id, lastID, edit)
 }

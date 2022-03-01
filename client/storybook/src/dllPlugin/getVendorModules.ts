@@ -22,7 +22,7 @@ export function getVendorModules(webpackStats: StatsCompilation): Set<string> {
             }
 
             // `identifier` contains loaders prefix, so `path.relative()` doesn't work for all cases.
-            const [relativePathToModule] = module.identifier.split(`${NODE_MODULES_PATH}/`).slice(-1)
+            const [relativePathToModule = ''] = module.identifier.split(`${NODE_MODULES_PATH}/`).slice(-1)
 
             // Remove suffix generated for some Storybook modules.
             return relativePathToModule.replace('-generated-other-entry.js', '')
