@@ -24,21 +24,11 @@ interface LinkOrAnchorProps {
     onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => {
-    if (isExternalURL(href)) {
-        return (
-            <Link to={href} target="_blank" rel="noopener noreferrer" {...props}>
-                {children}
-            </Link>
-        )
-    }
-
-    return (
-        <Link to={href} {...props}>
-            {children}
-        </Link>
-    )
-}
+const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => (
+    <Link to={href} {...props} {...(isExternalURL(href) && { target: '_blank', rel: 'noopener noreferrer' })}>
+        {children}
+    </Link>
+)
 
 interface OnboardingTourStepProps extends OnboardingTourStepItem, TelemetryProps {}
 

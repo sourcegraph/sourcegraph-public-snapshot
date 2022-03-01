@@ -4,7 +4,6 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
@@ -95,7 +94,8 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
-        <Form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
+        // eslint-disable-next-line react/forbid-elements
+        <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
 
@@ -187,6 +187,6 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     Save as new view
                 </Button>
             </footer>
-        </Form>
+        </form>
     )
 }

@@ -1,33 +1,42 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
-
 interface FormProps extends React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> {
     children: React.ReactNode
 }
 
-export const Form = React.forwardRef((props, reference) => {
-    const { as: Component = 'form', children, className, onInvalid, ...otherProps } = props
+interface FormState {
+    wasValidated: boolean
+}
 
-    const [wasValidated, setWasValidated] = React.useState(false)
-
-    const localOnInvalid = (event: React.InvalidEvent<HTMLFormElement>): void => {
-        setWasValidated(true)
-        if (onInvalid) {
-            onInvalid(event)
-        }
+/**
+ * Form component that handles validation.
+ * If the user tries to submit the form and one of the inputs is invalid,
+ * Bootstrap's `was-validated` class will be assigned so the invalid inputs get highlighted.
+ */
+export class Form extends React.PureComponent<FormProps, FormState> {
+    constructor(props: FormProps) {
+        super(props)
+        this.state = { wasValidated: false }
     }
 
-    return (
-        // eslint-disable-next-line react/forbid-elements
-        <form
-            ref={reference}
-            className={classNames(className, wasValidated && 'was-validated')}
-            onInvalid={localOnInvalid}
-            {...otherProps}
-        >
-            {children}
-        </form>
-    )
-}) as ForwardReferenceComponent<'form', FormProps>
+    public render(): React.ReactNode {
+        return (
+            // eslint-disable-next-line react/forbid-elements
+            <form
+                {...this.props}
+                className={classNames(this.props.className, this.state.wasValidated && 'was-validated')}
+                onInvalid={this.onInvalid}
+            >
+                {this.props.children}
+            </form>
+        )
+    }
+
+    private onInvalid: React.EventHandler<React.InvalidEvent<HTMLFormElement>> = event => {
+        this.setState({ wasValidated: true })
+        if (this.props.onInvalid) {
+            this.props.onInvalid(event)
+        }
+    }
+}

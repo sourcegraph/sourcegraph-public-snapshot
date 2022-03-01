@@ -6,7 +6,7 @@ This is a reference outlining what CI pipelines we generate under different cond
 
 To preview the pipeline for your branch, use `sg ci preview`.
 
-For a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/continuous_integration).
+For a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/ci).
 
 ## Run types
 

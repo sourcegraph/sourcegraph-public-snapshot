@@ -21,7 +21,7 @@
     "watch-web": "yarn workspace @sourcegraph/web run watch",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
-    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
+    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook /out/.*test.js",
     "test-integration:base": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json mocha --parallel=$CI --retries=1 --jobs=2",
     "test-integration": "yarn test-integration:base \"./client/web/src/integration/**/*.test.ts\"",
     "test-browser-integration": "yarn --cwd client/browser run test-integration",

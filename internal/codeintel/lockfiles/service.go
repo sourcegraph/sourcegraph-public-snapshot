@@ -5,41 +5,70 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"path"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	GitArchive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	gitSvc     GitService
+	operations *operations
+}
+
+func newService(gitSvc GitService, observationContext *observation.Context) *Service {
+	return &Service{
+		gitSvc:     gitSvc,
+		operations: newOperations(observationContext),
+	}
+}
+
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
+	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
+		deps = append(deps, d)
+		return nil
+	})
+
+	return deps, err
 }
 
 func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
-	tr, ctx := trace.New(ctx, "lockfiles.StreamDependencies", string(repo)+"@"+rev)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	opts := gitserver.ArchiveOptions{
-		Treeish: rev,
-		Format:  "zip",
-		Paths: []string{
-			"*" + NPMFilename,
-		},
-	}
-
-	rc, err := s.GitArchive(ctx, repo, opts)
+	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePaths...)
 	if err != nil {
 		return err
 	}
 
+	opts := gitserver.ArchiveOptions{
+		Treeish: rev,
+		Format:  "zip",
+		Paths:   paths,
+	}
+
+	rc, err := s.gitSvc.Archive(ctx, repo, opts)
+	if err != nil {
+		return err
+	}
 	defer rc.Close()
+
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		if strings.Contains(err.Error(), "did not match any files") {
@@ -78,21 +107,6 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
-	tr, ctx := trace.New(ctx, "lockfiles.ListDependencies", string(repo)+"@"+rev)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
-		deps = append(deps, d)
-		return nil
-	})
-
-	return deps, err
-}
-
 func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	r, err := f.Open()
 	if err != nil {
@@ -100,15 +114,35 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := Parse(f.Name, contents)
+	packageDependencies, err := parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
 
-	return ds, nil
+	return packageDependencies, nil
+}
+
+func parse(file string, r io.Reader) (_ []reposource.PackageDependency, err error) {
+	parser, ok := parsers[path.Base(file)]
+	if !ok {
+		return nil, ErrUnsupported
+	}
+
+	libraries, err := parser.parseLockfileContents(r)
+	if err != nil {
+		return nil, err
+	}
+
+	packageDependencies := make([]reposource.PackageDependency, 0, len(libraries))
+	for _, library := range libraries {
+		packageDependency, transformErr := parser.transformLibraryToPackageDependency(library)
+		if transformErr != nil {
+			err = errors.Append(err, transformErr)
+			continue
+		}
+
+		packageDependencies = append(packageDependencies, packageDependency)
+	}
+
+	return packageDependencies, err
 }

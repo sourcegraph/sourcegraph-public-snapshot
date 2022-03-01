@@ -30,6 +30,8 @@ Writes aggregated historical data, including the builds it finds, to a few files
 ```sh
 go run ./dev/buildchecker \
   -buildkite.token=$BUILDKITE_TOKEN \
+  -builds.write-to=".tmp/builds.json" \
+  -csv.write-to=".tmp/" \
   -failures.timeout=999 \
   -created.from="2021-08-01" \
   history

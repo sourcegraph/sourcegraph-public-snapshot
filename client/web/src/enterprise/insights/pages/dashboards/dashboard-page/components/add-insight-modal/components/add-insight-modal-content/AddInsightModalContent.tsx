@@ -3,7 +3,6 @@ import { escapeRegExp } from 'lodash'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
@@ -52,7 +51,8 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     )
 
     return (
-        <Form ref={ref} onSubmit={handleSubmit}>
+        // eslint-disable-next-line react/forbid-elements
+        <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}
                 description={
@@ -106,6 +106,6 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     variant="primary"
                 />
             </div>
-        </Form>
+        </form>
     )
 }

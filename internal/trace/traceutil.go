@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/uber/jaeger-client-go"
 	nettrace "golang.org/x/net/trace"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,11 +31,15 @@ func ID(ctx context.Context) string {
 
 // IDFromSpan returns a trace ID, if any, found in the given span.
 func IDFromSpan(span opentracing.Span) string {
-	spanCtx, ok := span.Context().(jaeger.SpanContext)
-	if !ok {
-		return ""
+	ddctx, ok := span.Context().(ddtrace.SpanContext)
+	if ok {
+		return strconv.FormatUint(ddctx.TraceID(), 10)
 	}
-	return spanCtx.TraceID().String()
+	spanCtx, ok := span.Context().(jaeger.SpanContext)
+	if ok {
+		return spanCtx.TraceID().String()
+	}
+	return ""
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.

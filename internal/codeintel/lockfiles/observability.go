@@ -1,4 +1,4 @@
-package codeintel
+package lockfiles
 
 import (
 	"fmt"
@@ -7,27 +7,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type dependencyServiceOperations struct {
-	dependencies *observation.Operation
+type operations struct {
+	listDependencies   *observation.Operation
+	streamDependencies *observation.Operation
 }
 
-func newDependencyServiceOperations(observationContext *observation.Context) *dependencyServiceOperations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_dependencies",
+		"codeintel_lockfiles",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.dependencies.%s", name),
+			Name:              fmt.Sprintf("codeintel.lockfiles.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 		})
 	}
 
-	return &dependencyServiceOperations{
-		dependencies: op("Dependencies"),
+	return &operations{
+		listDependencies:   op("ListDependencies"),
+		streamDependencies: op("StreamDependencies"),
 	}
 }

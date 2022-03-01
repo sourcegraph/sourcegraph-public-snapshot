@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
@@ -48,7 +47,8 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
     })
 
     return (
-        <Form innerRef={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
+        // eslint-disable-next-line react/forbid-elements
+        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
             <h3 className="mb-3">Save as new view</h3>
 
             <FormInput
@@ -81,6 +81,6 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
                     variant="primary"
                 />
             </footer>
-        </Form>
+        </form>
     )
 }
