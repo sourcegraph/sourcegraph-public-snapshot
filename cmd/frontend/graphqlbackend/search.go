@@ -36,8 +36,6 @@ type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
-
-	Inputs() run.SearchInputs
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -87,10 +85,6 @@ type searchResolver struct {
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
-}
-
-func (r *searchResolver) Inputs() run.SearchInputs {
-	return *r.SearchInputs
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings
