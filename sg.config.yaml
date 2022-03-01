@@ -283,6 +283,20 @@ commands:
       - enterprise/cmd/symbols
       - enterprise/internal/rockskip
 
+  squirrel:
+    cmd: .bin/squirrel
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/squirrel github.com/sourcegraph/sourcegraph/cmd/squirrel
+    checkBinary: .bin/squirrel
+    watch:
+      - lib
+      - internal
+      - cmd/squirrel
+
   searcher:
     cmd: .bin/searcher
     install: |
