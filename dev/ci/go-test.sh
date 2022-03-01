@@ -49,6 +49,7 @@ function go_test() {
   "run_env": {
     "CI": "buildkite",
     "key": "$BUILDKITE_BUILD_ID",
+    "number": "$BUILDKITE_BUILD_NUMBER",
     "job_id": "$BUILDKITE_JOB_ID",
     "branch": "$BUILDKITE_BRANCH",
     "commit_sha": "$BUILDKITE_COMMIT",
