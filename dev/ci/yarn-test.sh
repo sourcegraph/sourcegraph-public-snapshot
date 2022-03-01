@@ -13,7 +13,7 @@ root_dir=$(pwd)
 cd "$1"
 echo "--- test"
 
-JEST_JUNIT_OUTPUT_NAME="jest-junit.xml"
+JEST_JUNIT_OUTPUT_NAME="yarn-test-junit.xml"
 export JEST_JUNIT_OUTPUT_NAME
 JEST_JUNIT_OUTPUT_DIR="$root_dir/test-reports"
 export JEST_JUNIT_OUTPUT_DIR

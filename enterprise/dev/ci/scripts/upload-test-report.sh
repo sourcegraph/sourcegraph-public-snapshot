@@ -26,14 +26,14 @@ data=$(
 EOF
 )
 
-KEY=$(gcloud secrets versions access latest --secret="$test_key_variable_name" --project="sourcegraph-ci" --quiet)
+TOKEN=$(gcloud secrets versions access latest --secret="$test_key_variable_name" --project="sourcegraph-ci" --quiet)
 
 set +e
 echo "$data" | curl \
   --fail \
   --request POST \
   --url https://analytics-api.buildkite.com/v1/uploads \
-  --header "Authorization: Token token=\"$KEY\";" \
+  --header "Authorization: Token token=\"$TOKEN\";" \
   --header 'Content-Type: application/json' \
   --data-binary @-
 curl_exit="$?"

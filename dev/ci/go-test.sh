@@ -38,7 +38,7 @@ function go_test() {
   local xml
   xml=$(go-junit-report <"$tmpfile")
   mkdir -p './test-reports'
-  echo "$xml" >>./test-reports/go-test.xml
+  echo "$xml" >>./test-reports/go-test-junit.xml
 
   return "$test_exit_code"
 }
