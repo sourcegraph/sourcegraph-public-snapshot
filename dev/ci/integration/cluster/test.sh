@@ -104,5 +104,4 @@ function e2e() {
 cluster_setup
 test_setup
 set +o pipefail
-e2e
-exit 1
+e2e || exit 1
