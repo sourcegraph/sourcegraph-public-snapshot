@@ -13,21 +13,22 @@ import (
 )
 
 var (
-	upgradeFlags   = flag.NewFlagSet("sg upgrade", flag.ExitOnError)
-	upgradeToLocal = upgradeFlags.Bool("local", false, "Upgrade to local copy of 'dev/sg'")
+	updateFlags   = flag.NewFlagSet("sg update", flag.ExitOnError)
+	updateToLocal = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
 )
 
-var upgradeCommand = &ffcli.Command{
-	Name:      "upgrade",
-	FlagSet:   upgradeFlags,
-	ShortHelp: "Upgrade sg",
-	LongHelp: `Upgrade local sg installation with the latest changes. To see what's new, run:
+var updateCommand = &ffcli.Command{
+	Name:       "update",
+	FlagSet:    updateFlags,
+	ShortUsage: "sg update",
+	ShortHelp:  "Update sg.",
+	LongHelp: `Update local sg installation with the latest changes. To see what's new, run:
 
-	sg version changelog -next
+  sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 	Exec: func(ctx context.Context, args []string) error {
-		if *upgradeToLocal {
+		if *updateToLocal {
 			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StylePending, "Upgrading to local copy of 'dev/sg'..."))
 		} else {
 			// Update from remote
@@ -70,7 +71,7 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 			}
 
 			// Checkout main, which we will install from
-			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StyleSuggestion, "Setting workspace up for upgrade..."))
+			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StyleSuggestion, "Setting workspace up for update..."))
 			if _, err := run.GitCmd("checkout", "origin/main"); err != nil {
 				return err
 			}
@@ -84,7 +85,7 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 			if err != nil {
 				return err
 			}
-			stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, output.StylePending, "Upgrading to sg@%s...", commit))
+			stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, output.StylePending, "Updating to sg@%s...", commit))
 		}
 
 		// Run installation script
@@ -92,7 +93,7 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 		if err := run.InteractiveInRoot(cmd); err != nil {
 			return err
 		}
-		writeSuccessLinef("Upgrade succeeded!")
+		writeSuccessLinef("Update succeeded!")
 		return nil
 	},
 }

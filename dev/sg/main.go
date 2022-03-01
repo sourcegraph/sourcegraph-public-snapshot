@@ -64,7 +64,7 @@ var (
 			lintCommand,
 			checkCommand, // TODO remove after a while
 			dbCommand,
-			upgradeCommand,
+			updateCommand,
 		},
 	}
 )
