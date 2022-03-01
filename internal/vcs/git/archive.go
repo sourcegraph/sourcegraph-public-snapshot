@@ -11,15 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ArchiveFormat represents an archive format (zip, tar, etc).
-type ArchiveFormat string
-
 const (
 	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip ArchiveFormat = "zip"
+	ArchiveFormatZip = "zip"
 
 	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar ArchiveFormat = "tar"
+	ArchiveFormatTar = "tar"
 )
 
 // ArchiveReader streams back the file contents of an archived git repo.
@@ -27,7 +24,7 @@ func ArchiveReader(
 	ctx context.Context,
 	checker authz.SubRepoPermissionChecker,
 	repo *types.Repo,
-	format ArchiveFormat,
+	format string,
 	commit api.CommitID,
 	relativePath string,
 ) (io.ReadCloser, error) {
@@ -40,7 +37,5 @@ func ArchiveReader(
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(format), string(commit), relativePath)
-	cmd.Repo = repo.Name
-	return gitserver.StdoutReader(ctx, cmd)
+	return gitserver.DefaultClient.Archive(ctx, repo.Name, gitserver.ArchiveOptions{Format: format, Treeish: string(commit), Paths: []string{relativePath}})
 }
