@@ -170,6 +170,8 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         useCallback(
             (input: Observable<Omit<CopyNotebookProps, 'title'>>) =>
                 input.pipe(
+                    // The delay is added to make the copy loading state more obvious. Otherwise, the copy
+                    // happens too fast, and it can seem like nothing happened.
                     switchMap(props => onCopyNotebook(props).pipe(delay(400), startWith(LOADING))),
                     catchError(error => [asError(error)])
                 ),
