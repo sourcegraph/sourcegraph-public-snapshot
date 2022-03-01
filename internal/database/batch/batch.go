@@ -270,9 +270,9 @@ func (i *Inserter) pop() (batch []interface{}, payloadSize int) {
 	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxBatchSize:]
 
 	for idx := range i.cumulativeValueSizes {
-		// Batch payload sizes are cumulative. Remove the size of the batch we've just
-		// extracted from every value remaining in the slice. This should generally only
-		// be a handful of elements and shouldn't be anywhere near a dominating loop.
+		// Remove the size of the batch we've just extracted from every value remaining in the slice.
+		// This should generally only be a handful of elements and shouldn't be anywhere near a dominating
+		// loop.
 		i.cumulativeValueSizes[idx] -= payloadSize
 	}
 
