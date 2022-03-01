@@ -217,10 +217,6 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 }
 
 func newOrgsCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
-	if urlIsGitHubDotCom(apiURL) {
-		return nil
-	}
-
 	if a == nil {
 		log15.Warn("Cannot initialize orgsCache for nil auth")
 		return nil
