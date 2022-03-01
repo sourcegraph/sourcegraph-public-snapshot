@@ -12,8 +12,8 @@ curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.s
 # mkdir .gitlfs/git-lfs
 # mv git-lfs/git-lfs .gitlfs/git-lfs
 # rm -rf git-lfs.tgz git-lfs/
-
-git lfs install
+git-lfs --version
+git-lfs install
 
 echo "Git LFS installed"
 
