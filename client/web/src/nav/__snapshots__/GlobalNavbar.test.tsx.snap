@@ -68,7 +68,6 @@ exports[`GlobalNavbar default 1`] = `
               <a
                 class="anchorLink navDropdownLink itemFocusable"
                 href="/search"
-                tabindex="0"
               >
                 <span
                   class="itemFocusableContent"
@@ -327,7 +326,6 @@ exports[`GlobalNavbar low-profile 1`] = `
               <a
                 class="anchorLink navDropdownLink itemFocusable"
                 href="/search"
-                tabindex="0"
               >
                 <span
                   class="itemFocusableContent"
