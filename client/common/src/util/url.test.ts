@@ -16,7 +16,7 @@ function assertDeepStrictEqual(actual: any, expected: any): void {
     expect(actual).toEqual(expected)
 }
 
-describe('encodeURIPathComponent:trigger:jest', () => {
+describe('encodeURIPathComponent', () => {
     it('encodes all special characters except slashes and the plus sign', () => {
         expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
             'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
