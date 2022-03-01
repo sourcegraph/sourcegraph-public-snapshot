@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client'
 import React, { useCallback } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Modal } from '@sourcegraph/wildcard'
+import { Modal, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -48,8 +48,14 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             data-testid="delete-org-modal"
         >
             <h3 className="text-danger" id={deleteLabelId}>
-               Text goes here
+               Please contact support to delete this organization
             </h3>
+            <p>
+                To delete this orgnaization, please contact our support on{' '}
+                <Link target="_blank" rel="noopener noreferrer" to="mailto:support@sourcegraph.com">
+                    support@sourcegraph.com
+                </Link>{' '}
+            </p>
 
         </Modal>
     )
