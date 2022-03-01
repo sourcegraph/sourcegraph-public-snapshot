@@ -6,6 +6,8 @@ import (
 
 	"k8s.io/utils/lru"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -230,7 +232,16 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 						}
 					}
 					if !found {
-						return errors.Newf("could not find id for path %s symbol %s", path, symbol)
+						// We did not find the symbol that (supposedly) has been deleted, so ignore the
+						// deletion. This will probably lead to extra symbols in search results.
+						//
+						// The last time this happened, it was caused by impurity in ctags where the
+						// result of parsing a file was affected by previously parsed files and not fully
+						// determined by the file itself:
+						//
+						// https://github.com/universal-ctags/ctags/pull/3300
+						log15.Error("Could not find symbol that was supposedly deleted", "repo", repo, "commit", commit, "path", path, "symbol", symbol)
+						continue
 					}
 				}
 
