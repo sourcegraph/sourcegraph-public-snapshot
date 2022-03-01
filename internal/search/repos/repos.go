@@ -568,7 +568,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 
 	depsSvc := codeintel.GetDependenciesService(
 		r.DB,
-		lockfiles.GetService(lockfiles.DefaultGitService),
+		lockfiles.GetService(lockfiles.NewDefaultGitService(nil)),
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)
 

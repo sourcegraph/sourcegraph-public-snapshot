@@ -19,8 +19,14 @@ type gitService struct {
 	checker authz.SubRepoPermissionChecker
 }
 
-var DefaultGitService = &gitService{
-	checker: authz.DefaultSubRepoPermsChecker,
+func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
+	if checker == nil {
+		checker = authz.DefaultSubRepoPermsChecker
+	}
+
+	return &gitService{
+		checker: checker,
+	}
 }
 
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, paths ...string) ([]string, error) {
