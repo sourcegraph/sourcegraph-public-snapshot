@@ -70,6 +70,20 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 		errs errors.MultiError
 	)
 
+	/* yarn.lock
+
+	__metadata:
+	  version: 4
+	  cacheKey: 6
+
+	"asap@npm:~2.0.6":
+	  version: 2.0.6
+	  resolution: "asap@npm:2.0.6"
+	  checksum: 3d314f8c598b625a98347bacdba609d4c889c616ca5d8ea65acaae8050ab8b7aa6630df2cfe9856c20b260b432adf2ee7a65a1021f268ef70408c70f809e3a39
+	  languageName: node
+	  linkType: hard
+	*/
+
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -77,9 +91,8 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 			continue
 		}
 
-		// parse version
 		var version string
-		if version, err = getVersion(line); err == nil {
+		if version, err = getVersion(line); err == nil { // e.g. version: 2.0.6
 			if skip {
 				continue
 			}
@@ -88,7 +101,6 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 				return nil, errors.New("invalid yarn.lock format")
 			}
 
-			// fetch between version prefix and last double-quote
 			dep, err := reposource.ParseNPMDependency(name + "@" + version)
 			if err != nil {
 				errs = errors.Append(errs, err)
@@ -98,12 +110,12 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 			}
 			continue
 		}
-		// skip __metadata block
+
 		if skip = strings.HasPrefix(line, "__metadata"); skip {
 			continue
 		}
-		// packagename line start 1 char
-		if line[:1] != " " && line[:1] != "#" {
+
+		if line[:1] != " " && line[:1] != "#" { // e.g. "asap@npm:~2.0.6":
 			var packagename, protocol string
 			if packagename, protocol, err = parsePackageLocator(line); err != nil {
 				continue
