@@ -111,8 +111,17 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of clicks on the code monitor email search link
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - who visited Sourcegraph instance from browser extension
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
+- Ide extensions usage data
+  - Total user count
+  - Aggregate daily, weekly, and monthly counts of:
+    - Searches performed by unique users
+    - Total searches performed
+  - Aggregated monthly user state changes: 
+    - Count of users who installed the extension
+    - Count of users who uninstalled the extension 
+  - Aggregate monthly count of redirects to Sourcegraph instance from the extension
+
 
 
 ## CIDR Range for Sourcegraph

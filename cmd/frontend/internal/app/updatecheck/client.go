@@ -270,6 +270,17 @@ func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.
 	return json.Marshal(codeHostIntegrationUsage)
 }
 
+func getAndMarshalIdeExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalIdeExtensionsUsageJSON")
+
+	ideExtensionsUsage, err := usagestats.GetIdeExtensionsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(ideExtensionsUsage)
+}
+
 func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
@@ -366,6 +377,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		CodeInsightsUsage:        []byte("{}"),
 		CodeMonitoringUsage:      []byte("{}"),
 		CodeHostIntegrationUsage: []byte("{}"),
+		IdeExtensionsUsage:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -468,6 +480,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.IdeExtensionsUsage, err = getAndMarshalIdeExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalIdeExtensionsUsageJSON failed", "error", err)
 		}
 
 		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)

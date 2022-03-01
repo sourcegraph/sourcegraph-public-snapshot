@@ -340,6 +340,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     IDE extension data
                     <ul>
                         VS Code extension
+                        <li>Total user count</li>
                         <li>
                             Aggregate daily, weekly, and monthly counts of:
                             <ul>
