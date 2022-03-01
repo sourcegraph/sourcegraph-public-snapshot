@@ -686,11 +686,11 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 
 	// If multiple `states` are provided, prefer them over `state`.
-	states, err := parseBatchChangeStates(args.States)
-	if err != nil {
-		return nil, err
-	}
-	if len(states) > 0 {
+	if args.States != nil {
+		states, err := parseBatchChangeStates(args.States)
+		if err != nil {
+			return nil, err
+		}
 		opts.States = states
 	}
 
