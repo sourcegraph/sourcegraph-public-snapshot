@@ -26,6 +26,11 @@ export const SEARCH_USERS_AUTOCOMPLETE_QUERY = gql`
             username
             displayName
             avatarURL
+            organizations {
+                nodes {
+                    id
+                }
+            }
         }
     }
 `

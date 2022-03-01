@@ -84,7 +84,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}
             <div className="d-flex flex-row position-relative mt-2">
-                <AutocompleteSearchUsers onValueChanged={onValueChanged} disabled={isInviting} />
+                <AutocompleteSearchUsers onValueChanged={onValueChanged} disabled={isInviting} orgId={orgId} />
             </div>
             <div className="d-flex justify-content-end mt-4">
                 <Button type="button" variant="primary" onClick={debounceInviteUser} disabled={isInviting}>

@@ -16,6 +16,7 @@ import styles from './SearchUserAutocomplete.module.scss'
 interface IUserItem {
     id: string
     username: string
+    alreadyInOrg: boolean
     displayName: Maybe<string>
     avatarURL: Maybe<string>
 }
@@ -23,6 +24,7 @@ interface IUserItem {
 interface AutocompleteSearchUsersProps {
     disabled?: boolean
     onValueChanged: (value: string, isEmail: boolean) => void
+    orgId: string
 }
 
 const UserResultItem: React.FunctionComponent<{
@@ -49,25 +51,25 @@ const UserResultItem: React.FunctionComponent<{
             className={styles.item}
             onClick={selectUser}
             role="menuitem"
+            disabled={user.alreadyInOrg}
             onKeyDown={keyDown}
         >
             <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
                 <div className={styles.avatarContainer}>
                     <UserAvatar
                         size={24}
-                        className={styles.avatar}
+                        className={classNames(styles.avatar, user.alreadyInOrg ? styles.avatarDisabled : undefined)}
                         user={user}
                         data-tooltip={user.displayName || user.username}
                     />
                 </div>
                 <div className="d-flex flex-column">
-                    <strong>{user.displayName || user.username}</strong>
-                </div>
-                {user.displayName && (
-                    <div className="d-flex flex-column">
-                        <span className={styles.userName}>{user.username}</span>
+                    <div>
+                        <strong>{user.displayName || user.username}</strong>{' '}
+                        {user.displayName && <span className={styles.userName}>{user.username}</span>}
                     </div>
-                )}
+                    {user.alreadyInOrg && <small className="text-muted">Already in this organization</small>}
+                </div>
             </div>
         </DropdownItem>
     )
@@ -94,7 +96,7 @@ const getUserSearchResultItem = (userId: string): HTMLButtonElement | null =>
     document.querySelector(`[data-res-user-id="${userId}"]`)
 
 export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearchUsersProps> = props => {
-    const { disabled, onValueChanged } = props
+    const { disabled, onValueChanged, orgId } = props
     const MinSearchLength = 3
     const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
@@ -109,7 +111,15 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
         }
     )
 
-    const results = (data ? data.autocompleteSearchUsers || [] : []) as IUserItem[]
+    const results = (data
+        ? data.autocompleteSearchUsers
+              .map(gqlUser => ({
+                  ...gqlUser,
+                  alreadyInOrg: gqlUser.organizations.nodes.map(node => node.id).includes(orgId),
+              }))
+              .sort(item => (item.alreadyInOrg ? 1 : -1))
+        : []) as IUserItem[]
+
     const firstResult = results.length > 0 ? results[0] : undefined
     const resultsEnabled = !isEmail && !loading && !error && userNameOrEmail.length >= MinSearchLength && openResults
     const renderResults = resultsEnabled && results.length > 0
