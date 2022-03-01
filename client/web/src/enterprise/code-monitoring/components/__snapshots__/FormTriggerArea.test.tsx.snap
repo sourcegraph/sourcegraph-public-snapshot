@@ -53,7 +53,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 />
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon icon-inline text-success checklistCheckbox"
+                  class="mdi-icon iconInline text-success checklistCheckbox"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -87,7 +87,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 >
                   <svg
                     aria-hidden="true"
-                    class="mdi-icon checklistHint icon-inline checklistHintFaded"
+                    class="mdi-icon iconInline checklistHint checklistHintFaded"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -112,7 +112,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 />
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon icon-inline checklistCheckbox checklistCheckboxUnchecked"
+                  class="mdi-icon iconInline checklistCheckbox checklistCheckboxUnchecked"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -147,7 +147,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 >
                   <svg
                     aria-hidden="true"
-                    class="mdi-icon checklistHint icon-inline"
+                    class="mdi-icon iconInline checklistHint"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -172,7 +172,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 />
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon icon-inline text-success checklistCheckbox"
+                  class="mdi-icon iconInline text-success checklistCheckbox"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -203,7 +203,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 >
                   <svg
                     aria-hidden="true"
-                    class="mdi-icon checklistHint icon-inline checklistHintFaded"
+                    class="mdi-icon iconInline checklistHint checklistHintFaded"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -228,7 +228,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 />
                 <svg
                   aria-hidden="true"
-                  class="mdi-icon icon-inline text-success checklistCheckbox"
+                  class="mdi-icon iconInline text-success checklistCheckbox"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -258,7 +258,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           >
             Preview results 
             <svg
-              class="mdi-icon ml-1 icon-inline queryInputPreviewLinkIcon"
+              class="mdi-icon iconInline ml-1 queryInputPreviewLinkIcon"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
