@@ -35,10 +35,8 @@ function go_test() {
   test_exit_code="${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
 
-  local xml
-  xml=$(go-junit-report <"$tmpfile")
   mkdir -p './test-reports'
-  echo "$xml" >>./test-reports/go-test-junit.xml
+  go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
   return "$test_exit_code"
 }
