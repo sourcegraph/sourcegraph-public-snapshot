@@ -7,11 +7,29 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { aggregateStreamingSearch, emptyAggregateResults } from '@sourcegraph/shared/src/search/stream'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection } from '..'
-import { SearchPatternType } from '../../graphql-operations'
+import { NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
-import { serializeBlockToMarkdown } from '../serialize'
+import { createNotebook } from '../backend'
+import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
 
 const DONE = 'DONE' as const
+
+export interface CopyNotebookProps {
+    title: string
+    blocks: BlockInit[]
+    namespace: string
+}
+
+export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): Observable<NotebookFields> {
+    return createNotebook({
+        notebook: {
+            title,
+            blocks: blocks.map(blockToGQLInput),
+            namespace,
+            public: false,
+        },
+    })
+}
 
 export class Notebook {
     private blocks: Map<string, Block>

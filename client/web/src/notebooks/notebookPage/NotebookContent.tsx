@@ -1,5 +1,6 @@
 import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+import { Observable } from 'rxjs'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -9,8 +10,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
+import { NotebookFields } from '../../graphql-operations'
 import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { SearchStreamingProps } from '../../search'
+import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
@@ -27,6 +30,7 @@ export interface NotebookContentProps
     exportedFileName: string
     isEmbedded?: boolean
     onUpdateBlocks: (blocks: Block[]) => void
+    onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
     fetchRepository: typeof fetchRepository
     resolveRevision: typeof resolveRevision
 }
