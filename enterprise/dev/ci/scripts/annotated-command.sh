@@ -28,7 +28,7 @@ if [ -n "$ANNOTATE_OPTS" ]; then
   # shellcheck disable=SC2124
   annotate_opts="$@"
 
-  echo "--- Uploading annotations"
+  echo "~~~ Uploading annotations"
   echo "include_names=$include_names, annotate_opts=$annotate_opts"
   for file in "$annotation_dir"/*; do
     if [ ! -f "$file" ]; then
