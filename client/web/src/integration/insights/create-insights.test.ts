@@ -9,11 +9,11 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../c
 import { percySnapshotWithVariants } from '../utils'
 
 import {
-    INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
-    INSIGHT_TYPES_MIGRATION_COMMITS,
-    LangStatsInsightContent,
-} from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+    MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+    MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
+    SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
+} from './fixtures/runtime-insights'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
@@ -40,7 +40,7 @@ describe('Code insight create insight page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('is styled correctly, with welcome popup', async () => {
-        overrideGraphQLExtensions({ testContext })
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
@@ -52,7 +52,7 @@ describe('Code insight create insight page', () => {
     })
 
     it('is styled correctly, without welcome popup', async () => {
-        overrideGraphQLExtensions({ testContext })
+        overrideInsightsGraphQLApi({ testContext })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create')
 
         // Waiting for all important part page be rendered.
@@ -64,7 +64,7 @@ describe('Code insight create insight page', () => {
     })
 
     it('should run a proper GQL mutation if code-stats insight has been created', async () => {
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
                 /**
@@ -74,7 +74,7 @@ describe('Code insight create insight page', () => {
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                LangStatsInsightContent: () => LangStatsInsightContent,
+                LangStatsInsightContent: () => SOURCEGRAPH_LANG_STATS_INSIGHT_DATA_FIXTURE,
 
                 /** Mock for repository suggest component. */
                 RepositorySearchSuggestions: () => ({
@@ -137,7 +137,7 @@ describe('Code insight create insight page', () => {
             Date.now = () => mockMs
         })
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
             overrides: {
                 // Mock for async repositories field validation.
@@ -146,8 +146,8 @@ describe('Code insight create insight page', () => {
                 }),
 
                 // Mocks of commits searching and data search itself for live preview chart
-                BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+                BulkSearchCommits: () => MIGRATION_TO_GQL_INSIGHT_COMMITS_FIXTURE,
+                BulkSearch: () => MIGRATION_TO_GQL_INSIGHT_MATCHES_DATA_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
