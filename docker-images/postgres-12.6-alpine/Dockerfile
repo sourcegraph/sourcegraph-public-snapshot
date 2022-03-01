@@ -1,4 +1,4 @@
-FROM postgres:12.6-alpine@sha256:faf54a67a58ecf4d21e3e68b9a3b33f81a11e8a786530044c4ee80d51b148e05
+FROM postgres:12.6-alpine@sha256:b5c57d326a4cb8cf2fd5cdedc758ed72146a69304ae434b177088b94a7c9e6b8
 
 # We modify the postgres user/group to reconcile with our previous debian based images
 # and avoid issues with customers migrating.
