@@ -114,35 +114,18 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	}
 	defer r.Close()
 
-	packageDependencies, err := parse(f.Name, r)
+	deps, err := parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
 
-	return packageDependencies, nil
+	return deps, nil
 }
 
-func parse(file string, r io.Reader) (_ []reposource.PackageDependency, err error) {
+func parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
 	parser, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, ErrUnsupported
 	}
-
-	libraries, err := parser.parseLockfileContents(r)
-	if err != nil {
-		return nil, err
-	}
-
-	packageDependencies := make([]reposource.PackageDependency, 0, len(libraries))
-	for _, library := range libraries {
-		packageDependency, transformErr := parser.transformLibraryToPackageDependency(library)
-		if transformErr != nil {
-			err = errors.Append(err, transformErr)
-			continue
-		}
-
-		packageDependencies = append(packageDependencies, packageDependency)
-	}
-
-	return packageDependencies, err
+	return parser(r)
 }
