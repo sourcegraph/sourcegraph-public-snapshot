@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -23,18 +24,44 @@ import (
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
-	if env.Get("USE_ROCKSKIP", "false", "use Rockskip instead of SQLite") == "true" {
-		shared.Main(SetupRockskip)
+	reposVar := env.Get("ROCKSKIP_REPOS", "", "comma separated list of repositories to index (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)")
+	repos := strings.Split(reposVar, ",")
+
+	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS") == "true" {
+		shared.Main(func(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+			rockskipSearchFunc, rockskipHandleStatus, rockskipBackgroundRoutines, rockskipCtagsCommand, err := SetupRockskip(observationContext, gitserverClient, repositoryFetcher)
+			if err != nil {
+				return nil, nil, nil, "", err
+			}
+
+			// The blanks are the SQLite status endpoint (it's always nil) and the ctags command (same as
+			// Rockskip's).
+			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := shared.SetupSqlite(observationContext, gitserverClient, repositoryFetcher)
+			if err != nil {
+				return nil, nil, nil, "", err
+			}
+
+			searchFunc := func(ctx context.Context, args types.SearchArgs) (results result.Symbols, err error) {
+				if sliceContains(repos, string(args.Repo)) {
+					return rockskipSearchFunc(ctx, args)
+				} else {
+					return sqliteSearchFunc(ctx, args)
+				}
+			}
+
+			return searchFunc, rockskipHandleStatus, append(rockskipBackgroundRoutines, sqliteBackgroundRoutines...), rockskipCtagsCommand, nil
+		})
 	} else {
 		shared.Main(shared.SetupSqlite)
 	}
 }
 
-func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+func SetupRockskip(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
@@ -42,8 +69,6 @@ func SetupRockskip(observationContext *observation.Context) (types.SearchFunc, f
 	}
 
 	db := mustInitializeCodeIntelDB()
-	gitserverClient := symbolsGitserver.NewClient(observationContext)
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	git := NewGitserver(repositoryFetcher)
 	createParser := func() rockskip.ParseSymbolsFunc { return createParserWithConfig(config.Ctags) }
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
@@ -204,4 +229,13 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 	}
 
 	return nil
+}
+
+func sliceContains(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

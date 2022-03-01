@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+func SetupSqlite(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	baseConfig := env.BaseConfig{}
 	config := types.LoadSqliteConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
@@ -48,8 +48,6 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, fun
 
 	ctagsParserFactory := parser.NewCtagsParserFactory(config.Ctags)
 
-	gitserverClient := gitserver.NewClient(observationContext)
-
 	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.NumCtagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to create parser pool: %s", err)
@@ -60,7 +58,6 @@ func SetupSqlite(observationContext *observation.Context) (types.SearchFunc, fun
 		diskcache.WithObservationContext(observationContext),
 	)
 
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, config.RepositoryFetcher.MaxTotalPathsLength, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, config.RequestBufferSize, config.NumCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.CacheDir, gitserverClient, parser, semaphore.NewWeighted(int64(config.MaxConcurrentlyIndexing)))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)

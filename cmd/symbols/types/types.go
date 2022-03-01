@@ -29,6 +29,7 @@ type SqliteConfig struct {
 func LoadSqliteConfig(baseConfig env.BaseConfig) SqliteConfig {
 	return SqliteConfig{
 		Ctags:                   LoadCtagsConfig(baseConfig),
+		RepositoryFetcher:       LoadRepositoryFetcherConfig(baseConfig),
 		SanityCheck:             baseConfig.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"),
 		CacheDir:                baseConfig.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols"),
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),

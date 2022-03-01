@@ -10,6 +10,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,7 +32,9 @@ import (
 
 const addr = ":3184"
 
-func Main(setup func(observationContext *observation.Context) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)) {
+type SetupFunc func(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
+
+func Main(setup SetupFunc) {
 	routines := []goroutine.BackgroundRoutine{}
 
 	// Set up Google Cloud Profiler when running in Cloud
@@ -49,14 +53,15 @@ func Main(setup func(observationContext *observation.Context) (types.SearchFunc,
 		},
 	}
 	// Run setup
-	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext)
+	gitserverClient := gitserver.NewClient(observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, types.LoadRepositoryFetcherConfig(env.BaseConfig{}).MaxTotalPathsLength, observationContext)
+	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, gitserverClient, repositoryFetcher)
 	if err != nil {
 		log.Fatalf("Failed to setup: %v", err)
 	}
 	routines = append(routines, newRoutines...)
 
 	// Initialization
-	env.Lock()
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
