@@ -185,7 +185,7 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 	}
 	combinedLogFields := append(operationlogFields, i.commonLogFields...)
 	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
-	endObservation(1, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should
 	// generally be the full querySuffix string, except for the last call to Flush which
