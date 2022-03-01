@@ -16,7 +16,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
   <div>
     <div
       aria-modal="true"
-      class="floatingPanel dropdown-menu menu"
+      class="floatingPanel menu"
       role="dialog"
     >
       <div
@@ -520,7 +520,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
               Error submitting feedback
               :
             </strong>
-             
+
             <span
               class="markdown"
             >
@@ -562,22 +562,21 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
   <div>
     <div
       aria-modal="true"
-      class="floatingPanel dropdown-menu menu"
-      hidden=""
+      class="floatingPanel menu"
       role="dialog"
     >
       <div
         data-focus-guard="true"
         style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-        tabindex="0"
+        tabindex="-1"
       />
       <div
         data-focus-guard="true"
         style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-        tabindex="1"
+        tabindex="-1"
       />
       <div
-        data-focus-lock-disabled="false"
+        data-focus-lock-disabled="disabled"
       >
         <button
           class="close"
@@ -616,16 +615,16 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
             class="d-inline"
           >
             Thank you for your help.
-             
+
             Want to help keep making Sourcegraph better?
-             
+
             <a
               class=""
               href="/user/settings/product-research"
             >
               Join us for occasional user research
             </a>
-             
+
             and share your feedback on our latest features and ideas.
           </p>
         </div>
@@ -633,7 +632,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
       <div
         data-focus-guard="true"
         style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
-        tabindex="0"
+        tabindex="-1"
       />
     </div>
   </div>
