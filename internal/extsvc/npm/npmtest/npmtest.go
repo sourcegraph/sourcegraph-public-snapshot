@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -11,39 +12,66 @@ import (
 )
 
 type MockClient struct {
-	// TarballMap is a map from dependency (in package manager syntax)
-	// to optional tarball paths.
-	TarballMap map[string]string
+	Packages map[string]*npm.PackageInfo
+}
+
+func NewMockClient(t testing.TB, deps ...string) *MockClient {
+	t.Helper()
+
+	packages := map[string]*npm.PackageInfo{}
+	for _, dep := range deps {
+		d, err := reposource.ParseNPMDependency(dep)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		name := d.PackageSyntax()
+		info := packages[name]
+
+		if info == nil {
+			info = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
+			packages[name] = info
+		}
+
+		info.Description = name + " description"
+		version := info.Versions[d.Version]
+		if version == nil {
+			version = &npm.DependencyInfo{}
+			info.Versions[d.Version] = version
+		}
+	}
+
+	return &MockClient{Packages: packages}
 }
 
 var _ npm.Client = &MockClient{}
 
-func (m *MockClient) AvailablePackageVersions(_ context.Context, pkg *reposource.NPMPackage) (versions map[string]struct{}, err error) {
-	versions = map[string]struct{}{}
-	for dep := range m.TarballMap {
-		dep, err := reposource.ParseNPMDependency(dep)
-		if err != nil {
-			return versions, err
-		}
-		if *pkg == *dep.NPMPackage {
-			versions[dep.Version] = struct{}{}
-		}
+func (m *MockClient) GetPackage(_ context.Context, name string) (info *npm.PackageInfo, err error) {
+	info = m.Packages[name]
+	if info == nil {
+		return nil, errors.Newf("No version for package: %s", name)
 	}
-	if len(versions) == 0 {
-		return nil, errors.Newf("No version for package: %s", pkg.PackageSyntax())
-	}
-	return versions, err
+	return info, nil
 }
 
 func (m *MockClient) DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error) {
-	_, found := m.TarballMap[dep.PackageManagerSyntax()]
-	return found, nil
+	pkg := m.Packages[dep.PackageSyntax()]
+	if pkg == nil {
+		return false, nil
+	}
+	return pkg.Versions[dep.Version] != nil, nil
 }
 
 func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (closer io.ReadSeekCloser, err error) {
-	path, found := m.TarballMap[dep.PackageManagerSyntax()]
-	if !found {
+	info, ok := m.Packages[dep.PackageSyntax()]
+	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
 	}
-	return os.Open(path)
+
+	version, ok := info.Versions[dep.Version]
+	if !ok {
+		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
+	}
+
+	return os.Open(version.Dist.TarballURL)
 }

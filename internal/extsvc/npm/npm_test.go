@@ -105,16 +105,17 @@ func TestCredentials(t *testing.T) {
 	require.True(t, errors.As(err, &npmErr2) && npmErr2.statusCode == http.StatusUnauthorized)
 }
 
-func TestAvailablePackageVersions(t *testing.T) {
+func TestGetPackage(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
 	pkg, err := reposource.ParseNPMPackageFromPackageSyntax("is-sorted")
 	require.Nil(t, err)
-	versionMap, err := client.AvailablePackageVersions(ctx, pkg)
+	info, err := client.GetPackage(ctx, pkg.PackageSyntax())
 	require.Nil(t, err)
+	require.Equal(t, info.Description, "A small module to check if an Array is sorted")
 	versions := []string{}
-	for v := range versionMap {
+	for v := range info.Versions {
 		versions = append(versions, v)
 	}
 	sort.Strings(versions)

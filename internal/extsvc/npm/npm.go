@@ -30,13 +30,13 @@ import (
 )
 
 type Client interface {
-	// AvailablePackageVersions lists the available versions for an NPM package.
+	// GetPackage gets a package's data from the registry, including versions.
 	//
 	// It is preferable to use this method instead of calling DoesDependencyExist
 	// in a loop, if different dependencies may share the same underlying package.
 	//
 	// If err is nil, versions should be non-empty.
-	AvailablePackageVersions(ctx context.Context, pkg *reposource.NPMPackage) (versions map[string]struct{}, err error)
+	GetPackage(ctx context.Context, name string) (*PackageInfo, error)
 
 	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
 	//
@@ -117,36 +117,33 @@ func NewHTTPClient(registryURL string, rateLimit *schema.NPMRateLimit, credentia
 	}
 }
 
-type packageInfo struct {
-	Versions map[string]interface{} `json:"versions"`
+type PackageInfo struct {
+	Description string                     `json:"description"`
+	Versions    map[string]*DependencyInfo `json:"versions"`
 }
 
-func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg *reposource.NPMPackage) (versions map[string]struct{}, err error) {
-	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
+func (client *HTTPClient) GetPackage(ctx context.Context, name string) (info *PackageInfo, err error) {
+	url := fmt.Sprintf("%s/%s", client.registryURL, name)
 	jsonBytes, err := client.makeGetRequest(ctx, url)
 	if err != nil {
 		return nil, err
 	}
-	var pkgInfo packageInfo
+	var pkgInfo PackageInfo
 	if err := json.Unmarshal(jsonBytes, &pkgInfo); err != nil {
 		return nil, err
 	}
 	if len(pkgInfo.Versions) == 0 {
 		return nil, errors.Newf("NPM returned empty list of versions")
 	}
-	versions = map[string]struct{}{}
-	for k := range pkgInfo.Versions {
-		versions[k] = struct{}{}
-	}
-	return versions, nil
+	return &pkgInfo, nil
 }
 
-type npmDependencyDist struct {
+type DependencyInfo struct {
+	Dist DependencyInfoDist `json:"dist"`
+}
+
+type DependencyInfoDist struct {
 	TarballURL string `json:"tarball"`
-}
-
-type npmDependencyInfo struct {
-	Dist npmDependencyDist `json:"dist"`
 }
 
 type illFormedJSONError struct {
@@ -213,17 +210,18 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (respo
 	return bodyBuffer.Bytes(), nil
 }
 
-func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (info npmDependencyInfo, err error) {
+func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	respBytes, err := client.makeGetRequest(ctx, url)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
+	var info DependencyInfo
 	if json.Unmarshal(respBytes, &info) != nil {
-		return info, illFormedJSONError{url: url}
+		return nil, illFormedJSONError{url: url}
 	}
-	return info, nil
+	return &info, nil
 }
 
 func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error) {
