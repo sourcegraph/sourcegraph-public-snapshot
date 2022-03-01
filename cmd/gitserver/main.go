@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -97,11 +97,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}, nil)
+	codeintelDB := dependenciesStore.GetStore(db)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -332,7 +328,7 @@ func getRemoteURLFunc(
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *codeinteldbstore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -375,7 +371,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
+		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
 	case extsvc.TypeNPMPackages:
 		var c schema.NPMPackagesConnection
 		if err := extractOptions(&c); err != nil {

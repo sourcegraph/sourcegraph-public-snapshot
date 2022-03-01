@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 
