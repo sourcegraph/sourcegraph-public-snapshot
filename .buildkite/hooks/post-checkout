@@ -3,13 +3,15 @@
 ## -- START: ADD git lfs
 echo "Installing Git LFS"
 
-curl -s https://github.com/git-lfs/git-lfs/releases/download/v3.1.2/git-lfs-linux-amd64-v3.1.2.tar.gz
 pwd
-mkdir git-lfs
-tar -xvzf git-lfs.tgz -C git-lfs
-mkdir .gitlfs/git-lfs
-mv git-lfs/git-lfs .gitlfs/git-lfs
-rm -rf git-lfs.tgz git-lfs/
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+
+# curl -s https://github.com/git-lfs/git-lfs/releases/download/v3.1.2/git-lfs-linux-amd64-v3.1.2.tar.gz
+# mkdir git-lfs
+# tar -xvzf git-lfs.tgz -C git-lfs
+# mkdir .gitlfs/git-lfs
+# mv git-lfs/git-lfs .gitlfs/git-lfs
+# rm -rf git-lfs.tgz git-lfs/
 
 git lfs install
 
