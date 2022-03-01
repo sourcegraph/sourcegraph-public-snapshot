@@ -9,6 +9,7 @@ import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/que
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
+
 import { EventLogResult } from './backend'
 
 /**

@@ -26,7 +26,7 @@ interface Props extends TelemetryProps {
     fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
 }
 
-const emailEnabled = window.context.emailEnabled
+const emailEnabled = window.context?.emailEnabled ?? false
 
 export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     className,

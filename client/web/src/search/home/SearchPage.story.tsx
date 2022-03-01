@@ -15,7 +15,13 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+import {
+    _fetchRecentFileViews,
+    _fetchRecentSearches,
+    _fetchSavedSearches,
+    _fetchCollaborators,
+    authUser,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -44,6 +50,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
