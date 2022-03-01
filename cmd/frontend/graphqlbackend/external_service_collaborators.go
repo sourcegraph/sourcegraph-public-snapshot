@@ -131,7 +131,12 @@ type invitableCollaboratorResolver struct {
 func (i *invitableCollaboratorResolver) Name() string        { return i.name }
 func (i *invitableCollaboratorResolver) Email() string       { return i.email }
 func (i *invitableCollaboratorResolver) DisplayName() string { return i.name }
-func (i *invitableCollaboratorResolver) AvatarURL() *string  { return &i.avatarURL }
+func (i *invitableCollaboratorResolver) AvatarURL() *string {
+	if i.avatarURL == "" {
+		return nil
+	}
+	return &i.avatarURL
+}
 func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
 
 type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
