@@ -19,8 +19,8 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
+import { DeleteOrg } from './DeleteOrg'
 import { OrgSettingsMembersPage } from './members-v1/OrgSettingsMembersPage'
-import { OrgSettingsDelete } from './OrgSettingsDelete'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
@@ -97,10 +97,9 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 </>
                                             }
                                         />
-                                        <OrgSettingsDelete
+                                        <DeleteOrg
                                             {...routeComponentProps}
                                             {...props}
-                                            subject={props.org}
                                         />
                                     </div>
 
