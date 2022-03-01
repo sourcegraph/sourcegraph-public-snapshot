@@ -40,13 +40,15 @@ export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
                     <Button
                         variant="danger"
                         size="sm"
+                        onClick={toggleDeleteModal}
+
                     >
                         Delete this organization
                     </Button>
                     <DeleteOrgModal
+                        {...props}
                         isOpen={showDeleteModal}
                         toggleDeleteModal={toggleDeleteModal}
-
                     />
 
                 </div>
