@@ -17,12 +17,14 @@ describe('useObservable()', () => {
         const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
-        const [subscriber] = subscribe.args[0]
-        act(() => {
-            subscriber.next(2)
-        })
-        expect(result.current).toBe(2)
-        sinon.assert.calledOnce(subscribe)
+        if (subscribe.args[0]) {
+            const [subscriber] = subscribe.args[0]
+            act(() => {
+                subscriber.next(2)
+            })
+            expect(result.current).toBe(2)
+            sinon.assert.calledOnce(subscribe)
+        }
     })
 
     it('should return undefined if the Observable did not emit anything yet', () => {
@@ -32,12 +34,14 @@ describe('useObservable()', () => {
         const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.current).toBe(undefined)
         sinon.assert.calledOnce(subscribe)
-        const [subscriber] = subscribe.args[0]
-        act(() => {
-            subscriber.next(1)
-        })
-        expect(result.current).toBe(1)
-        sinon.assert.calledOnce(subscribe)
+        if (subscribe.args[0]) {
+            const [subscriber] = subscribe.args[0]
+            act(() => {
+                subscriber.next(1)
+            })
+            expect(result.current).toBe(1)
+            sinon.assert.calledOnce(subscribe)
+        }
     })
 
     it('should throw if the Observable errored', () => {
@@ -70,7 +74,9 @@ describe('useObservable()', () => {
         expect(result.current).toBe(1)
         sinon.assert.calledTwice(subscribe)
         const unsubscribe = subscribe.returnValues[0]
-        sinon.assert.calledOnce(unsubscribe)
+        if (unsubscribe) {
+            sinon.assert.calledOnce(unsubscribe)
+        }
     })
 
     it('should not subscribe if component rerenders and observable did not change', () => {
@@ -89,7 +95,9 @@ describe('useObservable()', () => {
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
         const unsubscribe = subscribe.returnValues[0]
-        sinon.assert.notCalled(unsubscribe)
+        if (unsubscribe) {
+            sinon.assert.notCalled(unsubscribe)
+        }
     })
 
     it('should unsubscribe when the component unmounts', () => {
@@ -107,7 +115,9 @@ describe('useObservable()', () => {
         unmount()
         sinon.assert.calledOnce(subscribe)
         const unsubscribe = subscribe.returnValues[0]
-        sinon.assert.calledOnce(unsubscribe)
+        if (unsubscribe) {
+            sinon.assert.calledOnce(unsubscribe)
+        }
     })
 })
 

@@ -390,7 +390,7 @@ describe('codeHost', () => {
                         filter(
                             decorations =>
                                 !!decorations &&
-                                !!decorations[0].after &&
+                                !!decorations[0]?.after &&
                                 decorations[0].after.contentText === 'test decoration 2'
                         ),
                         take(1)
@@ -553,6 +553,10 @@ describe('codeHost', () => {
                 expect(codeView).toMatchSnapshot()
 
                 // Change decoration in first line
+                if (!headDecorations[0] || !headDecorations[1] || !headDecorations[2]) {
+                    fail('Head decorations are missing')
+                }
+
                 headEditor.setDecorations(decorationType, [
                     headDecorations[0],
                     {

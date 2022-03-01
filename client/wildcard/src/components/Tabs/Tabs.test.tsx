@@ -97,10 +97,14 @@ describe('Tabs', () => {
             })
 
             it('will render <TabPanel/> children each time associated <Tab>  is clicked', () => {
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                const [panel1, panel2] = queries.getAllByTestId('wildcard-tab')
+                if (!panel1 || !panel2) {
+                    fail('Could not find panels')
+                }
+                fireEvent.click(panel1)
                 expect(queries.getByText('Panel 1')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                fireEvent.click(panel2)
                 expect(queries.getByText('Panel 2')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 1')).not.toBeInTheDocument()
             })
@@ -117,19 +121,27 @@ describe('Tabs', () => {
             })
 
             it('will render and keep mounted <TabPanel/> children when <Tab> is clicked', () => {
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                const [panel1, panel2] = queries.getAllByTestId('wildcard-tab')
+                if (!panel1 || !panel2) {
+                    fail('Could not find panels')
+                }
+                fireEvent.click(panel1)
                 expect(queries.getByText('Panel 1')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                fireEvent.click(panel2)
                 expect(queries.getByText('Panel 2')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 1')).toBeInTheDocument()
             })
 
             it('will not render and keep unmounted <TabPanel/> children when <Tab> is not selected', () => {
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+                const [panel1, panel2] = queries.getAllByTestId('wildcard-tab')
+                if (!panel1 || !panel2) {
+                    fail('Could not find panels')
+                }
+                fireEvent.click(panel1)
                 expect(queries.getByText('Panel 1')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 2')).not.toBeInTheDocument()
-                fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+                fireEvent.click(panel2)
                 expect(queries.getByText('Panel 2')).toBeInTheDocument()
                 expect(queries.queryByText('Panel 1')).toBeInTheDocument()
             })
@@ -142,10 +154,14 @@ describe('Tabs', () => {
         })
 
         it('will render all <TabPanel/> children', () => {
-            fireEvent.click(queries.getAllByTestId('wildcard-tab')[0])
+            const [panel1, panel2] = queries.getAllByTestId('wildcard-tab')
+            if (!panel1 || !panel2) {
+                fail('Could not find panels')
+            }
+            fireEvent.click(panel1)
             expect(queries.getByText('Panel 1')).toBeInTheDocument()
             expect(queries.queryByText('Panel 2')).toBeInTheDocument()
-            fireEvent.click(queries.getAllByTestId('wildcard-tab')[1])
+            fireEvent.click(panel2)
             expect(queries.getByText('Panel 2')).toBeInTheDocument()
             expect(queries.queryByText('Panel 1')).toBeInTheDocument()
         })

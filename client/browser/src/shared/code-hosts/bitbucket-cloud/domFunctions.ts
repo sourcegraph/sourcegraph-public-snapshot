@@ -106,7 +106,8 @@ function getLineElementFromLineNumber(codeView: HTMLElement, line: number): HTML
         console.error(`Could not find line element for line #${line}`)
     }
 
-    return inferredLineElement
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return inferredLineElement!
 }
 
 function getPRLineElementFromLineNumber(codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement {
@@ -133,7 +134,7 @@ export const pullRequestDOMFunctions: DOMFunctions = {
         }
 
         const lastLineNumberPermalink = lineNumberPermalinks[lineNumberPermalinks.length - 1]
-        const lineNumber = parseInt(lastLineNumberPermalink.textContent ?? '', 10)
+        const lineNumber = parseInt(lastLineNumberPermalink?.textContent ?? '', 10)
         if (!isNaN(lineNumber)) {
             return lineNumber
         }

@@ -47,10 +47,10 @@ export function getDiffFileName(container: HTMLElement): { headFilePath: string;
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
     const elements = element.title.split(' → ')
-    if (elements.length > 1) {
+    if (elements[1]) {
         return { headFilePath: elements[1], baseFilePath: elements[0] }
     }
-    return { headFilePath: elements[0], baseFilePath: elements[0] }
+    return { headFilePath: elements[0] || '', baseFilePath: elements[0] }
 }
 
 /**
@@ -98,12 +98,12 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
         // Refined GitHub adds a `.patch-diff-links` element
         const shaContainers = document.querySelectorAll('.sha-block:not(.patch-diff-links)')
         if (shaContainers && shaContainers.length === 2) {
-            const baseShaElement = shaContainers[0].querySelector('a')
+            const baseShaElement = shaContainers[0]?.querySelector('a')
             if (baseShaElement) {
                 // e.g "https://github.com/gorilla/mux/commit/0b13a922203ebdbfd236c818efcd5ed46097d690"
-                baseCommitID = baseShaElement.href.split('/').slice(-1)[0]
+                baseCommitID = baseShaElement.href.split('/').slice(-1)[0] || ''
             }
-            const headShaElement = shaContainers[1].querySelector('span.sha') as HTMLElement
+            const headShaElement = shaContainers[1]?.querySelector('span.sha') as HTMLElement
             if (headShaElement) {
                 headCommitID = headShaElement.innerHTML
             }

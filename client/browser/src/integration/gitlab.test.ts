@@ -176,6 +176,9 @@ describe('GitLab', () => {
         }
 
         const [token] = await line.$x('.//span[text()="CallOption"]')
+        if (!token) {
+            fail('Could not find token')
+        }
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: '[data-testid="hover-overlay-content"] > p',

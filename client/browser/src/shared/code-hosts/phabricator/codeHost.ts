@@ -66,7 +66,7 @@ const getPositionAdjuster = (
             const textContentInfo = getTextContent(codeElement)
 
             const documentLineContent = textContentInfo.textContent
-            const actualLineContent = lines[position.line - 1]
+            const actualLineContent = lines[position.line - 1] || ''
 
             // See if we should adjust for whitespace changes.
             const convertSpaces = convertSpacesToTabs(actualLineContent, documentLineContent)

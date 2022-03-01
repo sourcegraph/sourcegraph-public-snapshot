@@ -29,8 +29,8 @@ export function parsePRFilePaths(codeView: HTMLElement, changeType: ChangeType):
         arrowImageElement.textContent = SEPARATOR
     }
 
-    const [start, changed, end] = breadcrumbs.textContent!.split(/[{}]/)
-    const [first, second] = changed.split(SEPARATOR)
+    const [start = '', changed = '', end = ''] = breadcrumbs.textContent!.split(/[{}]/)
+    const [first = '', second = ''] = changed.split(SEPARATOR)
     return { base: clean(start + first + end), head: clean(start + second + end) }
 }
 
@@ -61,8 +61,8 @@ export function parseCommitFilePaths(codeView: HTMLElement, changeType: ChangeTy
 
     const SEPARATOR = '→'
 
-    const [start, changed, end] = text.split(/[{}]/).map(text => text.trim())
-    const [first, second] = changed.split(SEPARATOR).map(text => text.trim())
+    const [start = '', changed = '', end = ''] = text.split(/[{}]/).map(text => text.trim())
+    const [first = '', second = ''] = changed.split(SEPARATOR).map(text => text.trim())
     return { base: clean(start + first + end), head: clean(start + second + end) }
 }
 
@@ -103,7 +103,7 @@ export function getRevisionsForPR(): { baseRevision: string; headRevision: strin
         throw new Error('Could not find branches element')
     }
     const branches = [...branchesContainer.querySelectorAll<HTMLElement>('[aria-hidden="true"]')]
-    if (branches.length !== 2) {
+    if (branches.length !== 2 || !branches[0] || !branches[1]) {
         throw new Error('Expected source and destination branch elements')
     }
     // "Head" is the "source" branch.
@@ -126,7 +126,7 @@ export function getCommitIDFromPermalink(): string | null {
 
         for (const anchor of anchors) {
             const matches = anchor.href.match(/full-commit\/([\da-f]{40})\//)
-            if (!matches) {
+            if (!matches?.[1]) {
                 continue
             }
             return matches[1]
@@ -143,13 +143,13 @@ export function getCommitIDsForCommit(): { baseCommitID: string; headCommitID: s
     if (!baseCommitMatch) {
         throw new Error('Could not determine base commit ID')
     }
-    const baseCommitID = baseCommitMatch[1]
+    const baseCommitID = baseCommitMatch[1] || ''
 
     const headCommitMatch = window.location.href.match(/\/commits\/(.*)/)
     if (!headCommitMatch) {
         throw new Error('Could not determine head commit ID')
     }
-    const headCommitID = headCommitMatch[1]
+    const headCommitID = headCommitMatch[1] || ''
 
     return { baseCommitID, headCommitID }
 }

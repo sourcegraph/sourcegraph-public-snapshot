@@ -121,7 +121,7 @@ const getSnippetPositionAdjuster = (
                 throw new Error('(adjustPosition) could not find code element for line provided')
             }
 
-            const actualLine = lines[position.line - 1]
+            const actualLine = lines[position.line - 1] || ''
             const documentLine = codeElement.textContent || ''
 
             const actualLeadingWhiteSpace = actualLine.length - trimStart(actualLine).length
@@ -489,14 +489,14 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
     }
 
     if (isRepoSearchPage()) {
-        const [user, repo] = window.location.pathname.split('/').filter(Boolean)
+        const [user = '', repo = ''] = window.location.pathname.split('/').filter(Boolean)
         queryParameters.push(`repo:${user}/${repo}$`)
     }
 
     for (const owner of ['org', 'user']) {
         const index = queryParameters.findIndex(parameter => parameter.startsWith(`${owner}:`))
         if (index >= 0) {
-            const name = queryParameters[index].replace(`${owner}:`, '')
+            const name = queryParameters[index]?.replace(`${owner}:`, '')
             if (name) {
                 queryParameters[index] = `repo:${name}/*`
             }

@@ -165,6 +165,9 @@ describe('GitHub', () => {
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
                 },
             }),
+            // TODO: The type seems to be wrong, or else this key is actually unused.
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             UserSettingsURL: () => ({
                 currentUser: {
                     settingsURL: 'users/john-doe/settings',
@@ -267,6 +270,10 @@ describe('GitHub', () => {
 
         let token = await openPageAndGetToken()
 
+        if (!token) {
+            throw new Error('Could not find token')
+        }
+
         // 1. Check that hovering a token shows code intel popup.
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
@@ -285,6 +292,10 @@ describe('GitHub', () => {
         // 3. Enable click-to-def setting and check that it redirects to the proper page
         await driver.setClickGoToDefOptionFlag(true)
         token = await openPageAndGetToken()
+        if (!token) {
+            throw new Error('Could not find token')
+        }
+
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: ' [data-testid="hover-overlay-content"] > p',
@@ -391,15 +402,15 @@ describe('GitHub', () => {
                                         if (!lines) {
                                             return null
                                         }
-                                        const line = lines[position.line]
+                                        const line = lines[position.line] || ''
                                         const hoverIndex = position.character
                                         let startCharacter = hoverIndex
                                         let endCharacter = hoverIndex
 
-                                        while (line[startCharacter - 1].match(/\w/)) {
+                                        while (line[startCharacter - 1]?.match(/\w/)) {
                                             startCharacter--
                                         }
-                                        while (line[endCharacter + 1].match(/\w/)) {
+                                        while (line[endCharacter + 1]?.match(/\w/)) {
                                             endCharacter++
                                         }
                                         endCharacter++ // Not inclusive
@@ -701,6 +712,11 @@ describe('GitHub', () => {
                 }
 
                 const [token] = await line.$x('.//span[text()="HandlerFunc"]')
+
+                if (!token) {
+                    throw new Error('Found no token with text "HandlerFunc"')
+                }
+
                 await token.hover()
 
                 await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')
@@ -730,6 +746,10 @@ describe('GitHub', () => {
                 }
 
                 const [token] = await line.$x('.//span[text()="HandlerFunc"]')
+                if (!token) {
+                    throw new Error('Found no token with text "HandlerFunc"')
+                }
+
                 await token.hover()
 
                 await driver.page.waitForSelector('[data-testid="hover-overlay-contents"]')

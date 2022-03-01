@@ -49,7 +49,8 @@ const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
         }),
     '/api/differential.querydiffs': (parameters: { ids: string[]; revisionIDs: string[] }) =>
         of({
-            [parameters.ids[0]]: {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            [parameters.ids[0]!]: {
                 id: parameters.ids[0],
                 revisionID: parameters.revisionIDs[0],
                 dateCreated: '1566329300',
@@ -70,15 +71,15 @@ const DEFAULT_CONDUIT_RESPONSES: ConduitResponseMap = {
                         status: 'pushed',
                         refs: [
                             {
-                                ref: `refs/tags/phabricator/base/${parameters.ids[0]}`,
+                                ref: `refs/tags/phabricator/base/${parameters.ids[0] || ''}`,
                                 type: 'base',
-                                commit: `base-${parameters.ids[0]}`,
+                                commit: `base-${parameters.ids[0] || ''}`,
                                 remote: { uri: 'https://github.com/lguychard/testing.git' },
                             },
                             {
-                                ref: `refs/tags/phabricator/diff/${parameters.ids[0]}`,
+                                ref: `refs/tags/phabricator/diff/${parameters.ids[0] || ''}`,
                                 type: 'diff',
-                                commit: `diff-${parameters.ids[0]}`,
+                                commit: `diff-${parameters.ids[0] || ''}`,
                                 remote: { uri: 'https://github.com/lguychard/testing.git' },
                             },
                         ],

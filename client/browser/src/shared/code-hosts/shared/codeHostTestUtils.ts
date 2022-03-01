@@ -236,7 +236,7 @@ export function testDOMFunctions(
                             // Check that the first character is truly a diff indicator
                             const diffIndicators = new Set(['+', '-', ' '])
                             expect(actualFirstCharacterIsDiffIndicator).toBe(
-                                diffIndicators.has(codeElement.textContent![0])
+                                diffIndicators.has(codeElement.textContent![0] || '')
                             )
                         }
                     })

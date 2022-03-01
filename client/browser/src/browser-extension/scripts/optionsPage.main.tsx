@@ -61,6 +61,9 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
     }
+    if (!tabs[0]) {
+        throw new Error('Querying for the currently active tab returned no results')
+    }
     const { url, id } = tabs[0]
     if (!url) {
         throw new Error('Currently active tab has no URL')

@@ -103,5 +103,6 @@ export const mockRequestGraphQL = (
     if (!requestName || !responseMap[requestName]) {
         return throwError(new Error(`No mock for GraphQL request ${String(requestName)}`))
     }
-    return responseMap[requestName](variables, mightContainPrivateInfo)
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return responseMap[requestName]!(variables, mightContainPrivateInfo)
 }

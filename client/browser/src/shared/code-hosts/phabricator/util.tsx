@@ -13,12 +13,12 @@ function matchPageTag(): RegExpExecArray | null {
     if (!element) {
         throw new Error('Could not find Phabricator page tag')
     }
-    return TAG_PATTERN.exec(element.children[0].getAttribute('href') as string)
+    return TAG_PATTERN.exec(element.children[0]?.getAttribute('href') as string)
 }
 
 function getCallsignFromPageTag(): string {
     const match = matchPageTag()
-    if (!match) {
+    if (!match || !match[1]) {
         throw new Error('Could not determine callsign from page tag')
     }
     return match[1]
@@ -26,7 +26,7 @@ function getCallsignFromPageTag(): string {
 
 function getCommitIDFromPageTag(): string {
     const match = matchPageTag()
-    if (!match) {
+    if (!match || !match[2]) {
         throw new Error('Could not determine commitID from page tag')
     }
     return match[2]
@@ -42,12 +42,12 @@ function getDiffIdFromDifferentialPage(): number {
     if (!wrappingDiffBox) {
         throw new Error('parent container of diff container not found.')
     }
-    const diffTitle = wrappingDiffBox.children[0].querySelectorAll('.phui-header-header').item(0)
+    const diffTitle = wrappingDiffBox.children[0]?.querySelectorAll('.phui-header-header').item(0)
     if (!diffTitle || !diffTitle.textContent) {
         throw new Error('Could not find diffTitle element, or it had no text content')
     }
     const matches = DIFF_PATTERN.exec(diffTitle.textContent)
-    if (!matches) {
+    if (!matches || !matches[1]) {
         throw new Error(`diffTitle element does not match pattern. Content: '${diffTitle.textContent}'`)
     }
     return parseInt(matches[1], 10)
@@ -68,10 +68,10 @@ function getBaseCommitIDFromRevisionPage(): string {
     const keyElements = document.querySelectorAll('.phui-property-list-key')
     for (const keyElement of keyElements) {
         if (keyElement.textContent === 'Parents ') {
-            const parentUrl = ((keyElement.nextSibling as HTMLElement).children[0].children[0] as HTMLLinkElement).href
+            const parentUrl = ((keyElement.nextSibling as HTMLElement).children[0]?.children[0] as HTMLLinkElement).href
             const url = new URL(parentUrl)
             const revisionMatch = PHAB_REVISION_REGEX.exec(url.pathname)
-            if (revisionMatch) {
+            if (revisionMatch?.[2]) {
                 return revisionMatch[2]
             }
         }
@@ -108,7 +108,7 @@ export function getPhabricatorState(
         if (differentialMatch) {
             const differentialID = differentialMatch[1]
             const comparison = differentialMatch[3]
-            const revisionID = parseInt(differentialID.split('D')[1], 10)
+            const revisionID = parseInt(differentialID?.split('D')[1] || '', 10)
             let diffID = differentialMatch[2] ? parseInt(differentialMatch[2], 10) : undefined
             if (!diffID) {
                 diffID = getDiffIdFromDifferentialPage()
@@ -141,8 +141,8 @@ export function getPhabricatorState(
 
         const revisionMatch = PHAB_REVISION_REGEX.exec(stateUrl)
         if (revisionMatch) {
-            const callsign = revisionMatch[1]
-            const headCommitID = revisionMatch[2]
+            const callsign = revisionMatch[1] || ''
+            const headCommitID = revisionMatch[2] || ''
             const baseCommitID = getBaseCommitIDFromRevisionPage()
             return getRepoDetailsFromCallsign(callsign, requestGraphQL, queryConduit).pipe(
                 map(
@@ -158,7 +158,7 @@ export function getPhabricatorState(
 
         const changeMatch = PHAB_CHANGE_REGEX.exec(stateUrl)
         if (changeMatch) {
-            const filePath = changeMatch[8]
+            const filePath = changeMatch[8] || ''
             const callsign = getCallsignFromPageTag()
             const commitID = getCommitIDFromPageTag()
             return getRepoDetailsFromCallsign(callsign, requestGraphQL, queryConduit).pipe(
@@ -182,14 +182,14 @@ export function getPhabricatorState(
 
             const [, differentialHref, diffHref] = crumbs.querySelectorAll('a')
 
-            const differentialMatch = differentialHref.getAttribute('href')!.match(/D(\d+)/)
-            if (!differentialMatch) {
+            const differentialMatch = differentialHref?.getAttribute('href')!.match(/D(\d+)/)
+            if (!differentialMatch?.[1]) {
                 throw new Error('failed parsing differentialID')
             }
             const revisionID = parseInt(differentialMatch[1], 10)
 
-            const diffMatch = diffHref.getAttribute('href')!.match(/\/differential\/diff\/(\d+)/)
-            if (!diffMatch) {
+            const diffMatch = diffHref?.getAttribute('href')!.match(/\/differential\/diff\/(\d+)/)
+            if (!diffMatch?.[1]) {
                 throw new Error('failed parsing diffID')
             }
             const diffID = parseInt(diffMatch[1], 10)
@@ -225,7 +225,7 @@ export function normalizeRepoName(origin: string): string {
     } else if (origin.includes('@')) {
         // Assume the origin looks like `username@host:repo/path`
         const split = origin.split('@')
-        repoName = split[1]
+        repoName = split[1] || ''
         repoName = repoName.replace(':', '/')
     }
     return repoName.replace(/.git$/, '')

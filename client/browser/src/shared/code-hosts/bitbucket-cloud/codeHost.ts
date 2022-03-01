@@ -132,7 +132,7 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     // This is brittle since it relies on DOM structure and not classes. If it fails in the future,
     // fallback to appending as last child of page header. This is still aesthetically acceptable.
 
-    const actionsContainer = pageHeader.childNodes[1]?.childNodes[1].firstChild
+    const actionsContainer = pageHeader.childNodes[1]?.childNodes[1]?.firstChild
     if (actionsContainer instanceof HTMLElement) {
         actionsContainer.append(mount)
     } else {

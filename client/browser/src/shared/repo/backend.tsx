@@ -211,7 +211,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     throw new Error('Invalid response')
                 }
                 if (errors) {
-                    if (errors.length === 1) {
+                    if (errors.length === 1 && errors[0]) {
                         const error = errors[0]
                         const errorPath = error.path?.join('.')
 

@@ -21,7 +21,7 @@ function addVersionsToManifest(links: string[]): void {
             throw new Error(`could not get version from ${link}`)
         }
 
-        const version = match[1]
+        const version = match[1] || ''
 
         updates.push({
             version,

@@ -46,7 +46,7 @@ const getFileInfoFromLinkInSingleFileView = (
                 throw new Error(`Path of link matching selector ${selector} did not match path regex: ${path}`)
             }
 
-            const [, project, repoSlug, filePath] = pathMatch
+            const [, project = '', repoSlug = '', filePath = ''] = pathMatch
 
             // Looks like 'refs/heads/<revision>'
             const atParameter = url.searchParams.get('at')
@@ -207,7 +207,7 @@ const getBaseFilePathForDiffCodeView = ({
         span.innerHTML = tooltip
         const tooltipText = span.textContent!
         if (changeType === 'MOVE' || changeType === 'COPY') {
-            const from = tooltipText.split('→')[0].trim()
+            const from = tooltipText.split('→')[0]?.trim()
             if (!from) {
                 throw new Error(`Unexpected move change type badge content "${tooltipText}"`)
             }
@@ -216,7 +216,7 @@ const getBaseFilePathForDiffCodeView = ({
         if (changeType === 'RENAME') {
             const renameRegexp = /Renamed from '(.+)'/
             const match = tooltipText.match(renameRegexp)
-            if (!match) {
+            if (!match?.[1]) {
                 throw new Error(
                     `Rename change type badge content did not match ${renameRegexp.toString()}: "${tooltipText}"`
                 )
@@ -282,7 +282,7 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     if (!pathMatch) {
         throw new Error('Location did not match regexp')
     }
-    const [, project, repoSlug] = pathMatch
+    const [, project = '', repoSlug = ''] = pathMatch
     const rawRepoName = bitbucketToSourcegraphRepoName({ project, repoSlug })
 
     // Get base file path from the change type indicator
@@ -318,7 +318,7 @@ export const getFileInfoFromCommitDiffCodeView = (codeViewElement: HTMLElement):
 
 export function getPRIDFromPathName(): number {
     const prIDMatch = window.location.pathname.match(/pull-requests\/(\d*?)\/(diff|overview|commits)/)
-    if (!prIDMatch) {
+    if (!prIDMatch?.[1]) {
         throw new Error(`Could not parse PR ID from pathname: ${window.location.pathname}`)
     }
     return parseInt(prIDMatch[1], 10)

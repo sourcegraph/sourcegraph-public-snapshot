@@ -16,7 +16,7 @@ export function getFileInfoFromSingleFileSourceCodeView(): BlobInfo {
 
     const revisionRegex = /src\/(.*?)\/(.*)/
     const matches = location.pathname.match(revisionRegex)
-    if (!matches) {
+    if (!matches?.[1] || !matches[2]) {
         throw new Error('Unable to determine revision or file path')
     }
     const revision = decodeURIComponent(matches[1])

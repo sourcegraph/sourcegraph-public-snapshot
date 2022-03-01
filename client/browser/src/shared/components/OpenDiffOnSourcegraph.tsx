@@ -98,7 +98,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                     : ''
 
             // Go to the specific file in the commit diff using the internalID of the matched file diff.
-            return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
+            return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0]?.internalID || ''}`
         }
         // If the request for fileDiffs fails, and we can't get the internal ID, just go to the comparison page.
         return urlToCommit

@@ -79,7 +79,7 @@ export function getPageInfo(): GitLabInfo {
 export function getFilePageInfo(): GitLabFileInfo {
     const { rawRepoName } = getPageInfo()
     const matches = window.location.pathname.match(/\/blob\/(.*?)\/(.*)/)
-    if (!matches) {
+    if (!matches?.[1] || !matches[2]) {
         throw new Error('Unable to determine revision or file path')
     }
 
@@ -104,7 +104,7 @@ export const getMergeRequestID = (): string => {
         // Matches with and without trailing slash (merge_requests/151 or merge_requests/151/)
         matches = window.location.pathname.match(/merge_requests\/(.*?)((\/)|$)/)
     }
-    if (!matches) {
+    if (!matches?.[1]) {
         throw new Error('Unable to determine merge request ID')
     }
     return matches[1]

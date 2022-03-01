@@ -194,7 +194,7 @@ const getRepoPHIDForRevisionID = memoizeObservable(
     }) =>
         queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [revisionID] }).pipe(
             map(result => {
-                const phid = result['0'].repositoryPHID
+                const phid = result['0']?.repositoryPHID
                 if (!phid) {
                     // This happens for revisions that were created without an associated repository
                     throw new Error(`no repositoryPHID for revision ${revisionID}`)
@@ -388,7 +388,7 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
             isExternalURI: !fields.uri.normalized.replace('\\', '').startsWith(window.location.host + '/'),
             rawURI: fields.uri.raw,
         }))
-    if (enabledURIs.length === 0) {
+    if (!enabledURIs[0]) {
         return null
     }
     // Use the external URI if there is one, otherwise use the first enabled URI.
@@ -481,7 +481,8 @@ function getPropsWithDiffDetails(
 ): Observable<PropsWithDiffDetails> {
     return getDiffDetailsFromConduit({ ...props, queryConduit }).pipe(
         switchMap(diffDetails => {
-            if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, diffDetails.changes)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, diffDetails!.changes)) {
                 // no need to update props
                 return of({
                     ...props,
@@ -492,14 +493,15 @@ function getPropsWithDiffDetails(
                 map(
                     (diffDetails): PropsWithDiffDetails => ({
                         ...props,
-                        diffDetails,
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        diffDetails: diffDetails!,
                         diffID: props.baseDiffID!,
                         useBaseForDiff: true,
                     })
                 )
             )
         })
-    )
+    ) as Observable<PropsWithDiffDetails>
 }
 
 function getStagingDetails(

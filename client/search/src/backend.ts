@@ -103,9 +103,10 @@ export function fetchAutoDefinedSearchContexts({
                 }
                 ${searchContextWithSkippableFieldsFragment}
             `,
+            // TODO: The type for `AutoDefinedSearchContextsVariables` (`{ [x: string]: never; }`) seems wrong.
             variables: {
                 useMinimalFields: useMinimalFields ?? false,
-            },
+            } as any,
             mightContainPrivateInfo: false,
         })
         .pipe(
@@ -180,6 +181,9 @@ export function fetchSearchContexts({
                 namespaces: namespaces ?? [],
                 orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                 descending: descending ?? false,
+                // TODO: The type for `ListSearchContextsVariables` is either wrong or this variable shouldnt be here.
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 useMinimalFields: useMinimalFields ?? false,
             },
             mightContainPrivateInfo: true,

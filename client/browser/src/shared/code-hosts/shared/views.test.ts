@@ -146,7 +146,7 @@ describe('trackViews()', () => {
         mutations.next([{ addedNodes: [element], removedNodes: [] }])
         await wait
         sinon.assert.calledOnce(subscriber)
-        expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ element }])
+        expect(subscriber.args[0]?.map(({ subscriptions, ...rest }) => rest)).toEqual([{ element }])
     })
 
     test('detects nested views added later', async () => {
@@ -180,7 +180,7 @@ describe('trackViews()', () => {
         mutations.next([{ addedNodes: [container], removedNodes: [] }])
         await wait
         sinon.assert.calledOnce(subscriber)
-        expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ element }])
+        expect(subscriber.args[0]?.map(({ subscriptions, ...rest }) => rest)).toEqual([{ element }])
     })
 
     test('removes views', async () => {
@@ -195,9 +195,9 @@ describe('trackViews()', () => {
                 bufferCount(3),
                 switchMap(async ([view1, view2, view3]) => {
                     const v2Removed = sinon.spy(() => undefined)
-                    view2.subscriptions.add(v2Removed)
-                    const v1Removed = new Promise(resolve => view1.subscriptions.add(resolve))
-                    const v3Removed = new Promise(resolve => view3.subscriptions.add(resolve))
+                    view2?.subscriptions.add(v2Removed)
+                    const v1Removed = new Promise(resolve => view1?.subscriptions.add(resolve))
+                    const v3Removed = new Promise(resolve => view3?.subscriptions.add(resolve))
                     await Promise.all([v1Removed, v3Removed])
                     sinon.assert.notCalled(v2Removed)
                 })
@@ -250,7 +250,8 @@ describe('trackViews()', () => {
         mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
         await wait
         sinon.assert.calledOnce(subscriber)
-        const view = subscriber.args[0][0] as { element: HTMLElement; subscriptions: Subscription }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const view = subscriber.args[0]![0] as { element: HTMLElement; subscriptions: Subscription }
         expect(view.element).toEqual(testElement)
 
         // Remove code view from the DOM. Verify it cannot be resolved anymore.

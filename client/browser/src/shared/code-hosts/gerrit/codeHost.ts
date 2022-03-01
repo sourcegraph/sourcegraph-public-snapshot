@@ -85,7 +85,7 @@ function parseGerritChange(): GerritChangeAndPatchset {
     const cPart = pathParts.indexOf('c')
     const plusSign = pathParts.indexOf('+')
     const repoName = pathParts.slice(cPart + 1, plusSign).join('/')
-    const changeId = pathParts[plusSign + 1]
+    const changeId = pathParts[plusSign + 1] || ''
 
     // The URL may or may not contain the patchset ID. When viewing a single
     // file on Gerrit, there is no dropdown on the page that gives us the
@@ -482,7 +482,7 @@ function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string |
     }
     let currentElement: ParentNode | null = element
     const selectorsExceptLast = selectors.slice(0, -1)
-    const lastSelector = selectors[selectors.length - 1]
+    const lastSelector = selectors[selectors.length - 1] || ''
     for (const selector of selectorsExceptLast) {
         if (!currentElement) {
             return null

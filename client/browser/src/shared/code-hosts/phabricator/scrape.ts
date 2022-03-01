@@ -1,5 +1,5 @@
 export function getFilepathFromFileForDiff(fileContainer: HTMLElement): { filePath: string; baseFilePath?: string } {
-    const filePath = fileContainer.children[3].textContent as string
+    const filePath = fileContainer.children[3]?.textContent || ''
     const metas = fileContainer.querySelectorAll('.differential-meta-notice')
     let baseFilePath: string | undefined
     const movedFilePrefix = 'This file was moved from '
