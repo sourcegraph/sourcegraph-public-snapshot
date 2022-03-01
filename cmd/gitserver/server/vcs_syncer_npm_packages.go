@@ -409,9 +409,7 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 
 	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-		count := 0
-		tarballFileLimit := 10000
-		for count < tarballFileLimit {
+		for {
 			header, err := tarReader.Next()
 			if err == io.EOF {
 				return nil
@@ -432,12 +430,10 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 				if err != nil {
 					return err
 				}
-				count++
 			default:
 				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
 			}
 		}
-		return errors.Errorf("number of files in tarball for %s exceeded limit (10000)", tgzReadSeeker.name)
 	})
 }
 
@@ -448,11 +444,16 @@ func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath stri
 	}
 	// For reference, "pathological" code like SQLite's amalgamation file is
 	// about 7.9 MiB. So a 15 MiB limit seems good enough.
-	const sizeLimitMiB = 15
-	if header.Size >= (sizeLimitMiB * 1024 * 1024) {
-		return errors.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
-			path.Base(outputPath), header.Size, sizeLimitMiB)
+	const sizeLimit = 15 * 1024 * 1024
+	if header.Size >= sizeLimit {
+		log15.Warn("skipping large file in npm package",
+			"path", outputPath,
+			"size", header.Size,
+			"limit", sizeLimit,
+		)
+		return nil
 	}
+
 	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
 		return err
 	}
