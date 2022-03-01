@@ -235,14 +235,13 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// sending invitation to user ID or email
 	var recipientID int32
 	var recipientEmail string
-	var userEmail string
 	if args.Username != nil {
-		var recipient *types.User
-		recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+		recipient, userEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
 		if err != nil {
 			return nil, err
 		}
 		recipientID = recipient.ID
+		recipientEmail = userEmail
 	}
 	hasConfig := orgInvitationConfigDefined()
 	if args.Email != nil {
@@ -251,7 +250,6 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 			return nil, errors.New(SigningKeyMessage)
 		}
 		recipientEmail = *args.Email
-		userEmail = recipientEmail
 	}
 
 	expiryTime := newExpiryTime()
@@ -277,8 +275,8 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
-	if conf.CanSendEmail() && userEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, userEmail, invitationURL, *invitation.ExpiresAt); err != nil {
+	if conf.CanSendEmail() && recipientEmail != "" {
+		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *invitation.ExpiresAt); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -376,7 +374,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 
 	// Do not allow to resend for expired invitation
 	if orgInvitation.Expired() {
-		return nil, database.NewOrgInvitationExpiredErr(orgInvitation.ID)
+		return nil, errors.New("invitation is expired")
 	}
 
 	if !conf.CanSendEmail() {
