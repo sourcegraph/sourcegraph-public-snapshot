@@ -121,7 +121,7 @@ func checkSgVersion() {
 	out = strings.TrimSpace(out)
 	if out != "" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg upgrade' to install it.      "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 	}
