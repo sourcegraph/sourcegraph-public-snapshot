@@ -24,7 +24,7 @@ func TestWebhook(t *testing.T) {
 			ExternalURL:        eu,
 			MonitorID:          42,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make([]*result.CommitMatch, 313),
+			Results:            make([]*result.CommitMatch, 3),
 			IncludeResults:     false,
 		}
 
@@ -46,7 +46,7 @@ func TestWebhook(t *testing.T) {
 			MonitorDescription: "My test monitor",
 			ExternalURL:        eu,
 			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-			Results:            make([]*result.CommitMatch, 313),
+			Results:            make([]*result.CommitMatch, 3),
 			IncludeResults:     false,
 		}
 
