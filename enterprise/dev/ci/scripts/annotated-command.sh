@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 
-# This script is designed to wrap commands to run them and pick up the annotations they
-# leave behind for upload.
+# This script is designed to wrap commands to run them and pick up the annotations and
+# test reports they leave behind for upload.
 #
 # An alias for this command, './an', is set up in .buildkite/post-checkout
 
 cmd=$1
-include_names=$2
-shift 2
-# shellcheck disable=SC2124
-annotate_opts="$@"
 
 # Set up directory for annotated command to leave annotations
 annotation_dir="./annotations"
@@ -21,28 +17,41 @@ eval "$cmd"
 exit_code="$?"
 
 # Check for annotations left behind by the command
-echo "--- Uploading annotations"
-for file in "$annotation_dir"/*; do
-  if [ ! -f "$file" ]; then
-    continue
-  fi
+if [ -n "${ANNOTATE_OPTS-''}" ]; then
+  # Parse annotation options:
+  # - $1 => include_names
+  # - $2... => annotate_opts, base options for the ./annotate.sh script
+  # shellcheck disable=SC2086
+  set -- $ANNOTATE_OPTS
+  include_names=$1
+  shift 1
+  # shellcheck disable=SC2124
+  annotate_opts="$@"
 
-  echo "handling $file"
-  name=$(basename "$file")
-  annotate_file_opts=$annotate_opts
+  echo "~~~ Uploading annotations"
+  echo "include_names=$include_names, annotate_opts=$annotate_opts"
+  for file in "$annotation_dir"/*; do
+    if [ ! -f "$file" ]; then
+      continue
+    fi
 
-  case "$name" in
-    # Append markdown annotations as markdown, and remove the suffix from the name
-    *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
-  esac
+    echo "handling $file"
+    name=$(basename "$file")
+    annotate_file_opts=$annotate_opts
 
-  if [ "$include_names" = "true" ]; then
-    # Set the name of the file as the title of this annotation section
-    annotate_file_opts="-s '$name' $annotate_file_opts"
-  fi
+    case "$name" in
+      # Append markdown annotations as markdown, and remove the suffix from the name
+      *.md) annotate_file_opts="$annotate_file_opts -m" && name="${name%.*}" ;;
+    esac
 
-  # Generate annotation from file contents
-  eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
-done
+    if [ "$include_names" = "true" ]; then
+      # Set the name of the file as the title of this annotation section
+      annotate_file_opts="-s '$name' $annotate_file_opts"
+    fi
+
+    # Generate annotation from file contents
+    eval "./enterprise/dev/ci/scripts/annotate.sh $annotate_file_opts <'$file'"
+  done
+fi
 
 exit "$exit_code"

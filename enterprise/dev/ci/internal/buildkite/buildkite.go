@@ -310,23 +310,22 @@ type AnnotatedCmdOpts struct {
 // DO NOT use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
 func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
 	var annotateOpts string
-
 	if opts.Type == "" {
 		annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
 	} else {
 		annotateOpts += fmt.Sprintf(" -t %s", opts.Type)
 	}
-
 	if opts.MultiJobContext != "" {
 		annotateOpts += fmt.Sprintf(" -c %q", opts.MultiJobContext)
 	}
+	annotateOpts = fmt.Sprintf("%v %s", opts.IncludeNames, strings.TrimSpace(annotateOpts))
 
 	// ./an is a symbolic link created by the .buildkite/hooks/post-checkout hook.
 	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
 	// see the underlying command even if prefixed by the annotation script.
-	annotatedCmd := fmt.Sprintf("./an %q %q %q",
-		tracedCmd(command), fmt.Sprintf("%v", opts.IncludeNames), strings.TrimSpace(annotateOpts))
-	return RawCmd(annotatedCmd)
+	annotatedCmd := fmt.Sprintf("./an %q", tracedCmd(command))
+	return flattenStepOpts(RawCmd(annotatedCmd),
+		Env("ANNOTATE_OPTS", annotateOpts))
 }
 
 func Async(async bool) StepOpt {
