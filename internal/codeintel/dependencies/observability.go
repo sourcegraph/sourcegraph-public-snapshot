@@ -1,4 +1,4 @@
-package codeintel
+package dependencies
 
 import (
 	"fmt"
@@ -7,11 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type dependencyServiceOperations struct {
+type operations struct {
 	dependencies *observation.Operation
 }
 
-func newDependencyServiceOperations(observationContext *observation.Context) *dependencyServiceOperations {
+func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_dependencies",
@@ -27,7 +27,7 @@ func newDependencyServiceOperations(observationContext *observation.Context) *de
 		})
 	}
 
-	return &dependencyServiceOperations{
+	return &operations{
 		dependencies: op("Dependencies"),
 	}
 }
