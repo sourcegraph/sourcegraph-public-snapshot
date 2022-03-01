@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -43,13 +45,15 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		}
 	})
 
-	patternType := "regexp"
-	searchArgs := &graphqlbackend.SearchArgs{
-		Query:       searchQuery,
-		PatternType: &patternType,
-		Stream:      stream,
+	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
+	if err != nil {
+		close(eventsC)
+		return eventsC, func() error { return err }
 	}
-	job, err := graphqlbackend.NewSearchImplementer(ctx, db, searchArgs)
+
+	patternType := "regexp"
+	searchClient := client.NewSearchClient(search.Indexed(), search.SearcherURLs())
+	inputs, err := searchClient.Plan(ctx, db, "", &patternType, searchQuery, search.Streaming, settings)
 	if err != nil {
 		close(eventsC)
 		return eventsC, func() error { return err }
@@ -63,7 +67,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 
-		_, err := job.Results(ctx)
+		_, err := searchClient.Execute(ctx, db, stream, inputs)
 		final <- finalResult{err: err}
 	}()
 

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -60,13 +61,6 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
-		// Filter out any jobs that aren't commit jobs as they are added
-		if jargs.SearchInputs.CodeMonitorID != nil {
-			if _, ok := job.(*commit.CommitSearch); !ok {
-				return
-			}
-		}
-
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -220,8 +214,8 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Diff:                 diff,
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
-				CodeMonitorID:        jargs.SearchInputs.CodeMonitorID,
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Gitserver:            gitserver.DefaultClient,
 			})
 		}
 

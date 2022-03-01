@@ -61,7 +61,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
 
             <div className={styles.column}>
                 <div>
-                    <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:3370
+                    <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:7080
                 </div>
                 <MarketingBlock wrapperClassName={styles.codeWrapper} contentClassName={styles.codeContent}>
                     <Button
@@ -87,7 +87,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                     </Link>
                     <Link
-                        to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=inproduct-self-hosted-install&utm_term=null&utm_content=self-hosted-install"
+                        to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=self-hosted-install"
                         onClick={onTalkToEngineerClicked}
                         className="text-right flex-shrink-0"
                     >

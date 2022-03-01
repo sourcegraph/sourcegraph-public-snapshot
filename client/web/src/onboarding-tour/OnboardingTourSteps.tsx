@@ -5,9 +5,10 @@ import ArrowDropDownIcon from 'mdi-react/ArrowDropDownIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link } from '@sourcegraph/wildcard'
 
 import { useOnboardingTourState } from '../stores/onboardingTourState'
 
@@ -23,21 +24,11 @@ interface LinkOrAnchorProps {
     onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => {
-    if (isExternalURL(href)) {
-        return (
-            <Link to={href} target="_blank" rel="noopener noreferrer" {...props}>
-                {children}
-            </Link>
-        )
-    }
-
-    return (
-        <Link to={href} {...props}>
-            {children}
-        </Link>
-    )
-}
+const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, children, ...props }) => (
+    <Link to={href} {...props} {...(isExternalURL(href) && { target: '_blank', rel: 'noopener noreferrer' })}>
+        {children}
+    </Link>
+)
 
 interface OnboardingTourStepProps extends OnboardingTourStepItem, TelemetryProps {}
 

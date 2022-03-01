@@ -26,6 +26,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { render as renderLsifHtml } from '../../lsif/html'
+import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
@@ -47,7 +48,7 @@ import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
+import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -213,6 +214,15 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
         showSearchNotebook
 
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => {
+            const title =
+                blobInfoOrError && !isErrorLike(blobInfoOrError) ? basename(blobInfoOrError.filePath) : 'Notebook'
+            return copyNotebook({ title: `Copy of ${title}`, ...props })
+        },
+        [blobInfoOrError]
+    )
+
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
     // - If file does not contain richHTML or the url includes a line number: We render in code view.
@@ -333,11 +343,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown
+                <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
                     resolveRevision={resolveRevision}
                     fetchRepository={fetchRepository}
+                    onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}
                 />
