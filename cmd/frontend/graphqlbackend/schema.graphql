@@ -95,11 +95,11 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Deletes an organization. Only site admins may perform this mutation.
+    Marks an organization as deleted. Only site admins may perform this mutation.
     """
     deleteOrganization(organization: ID!): EmptyResponse
     """
-    Removes an organization.
+    Hard deletes an organization along with all resources associated with it.
     """
     removeOrganization(organization: ID!): EmptyResponse
     """

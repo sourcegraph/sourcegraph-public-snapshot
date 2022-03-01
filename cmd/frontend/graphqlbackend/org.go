@@ -294,7 +294,9 @@ func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
 	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
 	if err != nil {
 		return nil, err
-	} else if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
+	}
+
+	if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
 		return nil, errors.New("hard deleting organization is not supported")
 	}
 
