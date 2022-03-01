@@ -7,14 +7,10 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var (
@@ -22,7 +18,7 @@ var (
 	svcOnce sync.Once
 )
 
-func GetService(db database.DB, syncer Syncer) *Service {
+func GetService(db database.DB, lockfilesService LockfilesService, syncer Syncer) *Service {
 	svcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -32,11 +28,7 @@ func GetService(db database.DB, syncer Syncer) *Service {
 
 		svc = newService(
 			store.GetStore(db),
-			lockfiles.GetService(
-				authz.DefaultSubRepoPermsChecker,
-				git.LsFiles,
-				gitserver.DefaultClient.Archive,
-			),
+			lockfilesService,
 			syncer,
 			observationContext,
 		)

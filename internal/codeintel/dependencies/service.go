@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -20,12 +19,12 @@ import (
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
 	dependenciesStore *store.Store
-	lockfilesSvc      *lockfiles.Service
+	lockfilesSvc      LockfilesService
 	syncer            Syncer
 	operations        *operations
 }
 
-func newService(depsStore *store.Store, lockfilesSvc *lockfiles.Service, syncer Syncer, observationContext *observation.Context) *Service {
+func newService(depsStore *store.Store, lockfilesSvc LockfilesService, syncer Syncer, observationContext *observation.Context) *Service {
 	return &Service{
 		dependenciesStore: depsStore,
 		lockfilesSvc:      lockfilesSvc,

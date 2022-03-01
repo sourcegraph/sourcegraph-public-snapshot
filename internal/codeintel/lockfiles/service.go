@@ -8,8 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -21,22 +19,13 @@ import (
 )
 
 type Service struct {
-	checker    authz.SubRepoPermissionChecker
-	lsFiles    func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error)
-	archive    func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error)
+	gitSvc     GitService
 	operations *operations
 }
 
-func newService(
-	checker authz.SubRepoPermissionChecker,
-	lsFiles func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...string) ([]string, error),
-	archive func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error),
-	observationContext *observation.Context,
-) *Service {
+func newService(gitSvc GitService, observationContext *observation.Context) *Service {
 	return &Service{
-		checker:    checker,
-		lsFiles:    lsFiles,
-		archive:    archive,
+		gitSvc:     gitSvc,
 		operations: newOperations(observationContext),
 	}
 }
@@ -63,7 +52,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
-	paths, err := s.lsFiles(ctx, s.checker, repo, api.CommitID(rev), lockfilePaths...)
+	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePaths...)
 	if err != nil {
 		return err
 	}
@@ -74,7 +63,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 		Paths:   paths,
 	}
 
-	rc, err := s.archive(ctx, repo, opts)
+	rc, err := s.gitSvc.Archive(ctx, repo, opts)
 	if err != nil {
 		return err
 	}
