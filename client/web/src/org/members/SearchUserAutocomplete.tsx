@@ -121,7 +121,7 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
         : []) as IUserItem[]
 
     const firstResult = results.length > 0 ? results[0] : undefined
-    const resultsEnabled = !isEmail && !loading && !error && userNameOrEmail.length >= MinSearchLength && openResults
+    const resultsEnabled = !isEmail && !error && userNameOrEmail.length >= MinSearchLength && openResults
     const renderResults = resultsEnabled && results.length > 0
     const renderNoMatch = resultsEnabled && results.length === 0
 
