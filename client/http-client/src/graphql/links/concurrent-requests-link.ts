@@ -62,16 +62,21 @@ export class ConcurrentRequestsLink extends ApolloLink {
             }
         }
 
-        this.requests[operation.groupKey].queue.push(operation)
+        this.requests[operation.groupKey]?.queue.push(operation)
         this.scheduleOperations(operation.groupKey)
     }
 
     private cancelOperation(event: OperationQueueEntry): void {
-        const { queue, activeQueue } = this.requests[event.groupKey]
+        const group = this.requests[event.groupKey]
+        if (!group) {
+            return
+        }
+        const { queue, activeQueue } = group
         const possibleQueuedEventIndex = queue.indexOf(event)
 
         if (possibleQueuedEventIndex !== -1) {
-            this.requests[event.groupKey].queue = queue.filter(queuedEvent => queuedEvent !== event)
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this.requests[event.groupKey]!.queue = queue.filter(queuedEvent => queuedEvent !== event)
             event.currentSubscription?.unsubscribe()
 
             return
@@ -80,7 +85,8 @@ export class ConcurrentRequestsLink extends ApolloLink {
         const possibleOnGoingEventIndex = activeQueue.indexOf(event)
 
         if (possibleOnGoingEventIndex !== -1) {
-            this.requests[event.groupKey].activeQueue = activeQueue.filter(operation => operation !== event)
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this.requests[event.groupKey]!.activeQueue = activeQueue.filter(operation => operation !== event)
             event.currentSubscription?.unsubscribe()
 
             this.scheduleOperations(event.groupKey)
@@ -88,7 +94,11 @@ export class ConcurrentRequestsLink extends ApolloLink {
     }
 
     private scheduleOperations(groupKey: string): void {
-        const { activeQueue, queue } = this.requests[groupKey]
+        const group = this.requests[groupKey]
+        if (!group) {
+            return
+        }
+        const { activeQueue, queue } = group
         const maxParallelRequests = Math.max(...queue.map(event => event.limit))
 
         while (activeQueue.length < maxParallelRequests && queue.length > 0) {
@@ -129,11 +139,16 @@ export class ConcurrentRequestsLink extends ApolloLink {
     }
 
     private finishEventExecution(event: OperationQueueEntry): void {
-        const { activeQueue } = this.requests[event.groupKey]
+        const group = this.requests[event.groupKey]
+        if (!group) {
+            return
+        }
+        const { activeQueue } = group
 
         // Delete completed event from the active queue in order to run other
         // queued events.
-        this.requests[event.groupKey].activeQueue = activeQueue.filter(operation => operation !== event)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.requests[event.groupKey]!.activeQueue = activeQueue.filter(operation => operation !== event)
 
         // Run queued events
         this.scheduleOperations(event.groupKey)

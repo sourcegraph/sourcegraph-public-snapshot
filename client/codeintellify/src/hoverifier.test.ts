@@ -213,6 +213,9 @@ describe('Hoverifier', () => {
     // https://github.com/jsdom/jsdom/issues/1695
     it.skip('hides the hover overlay when the hovered token intersects with a scrollBoundary', async () => {
         const gitHubCodeView = testcases[1]
+        if (!gitHubCodeView) {
+            fail('No code view found')
+        }
         const hoverifier = createHoverifier({
             hoverOverlayElements: of(null),
             hoverOverlayRerenders: EMPTY,

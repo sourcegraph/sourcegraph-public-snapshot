@@ -975,7 +975,7 @@ export function createHoverifier<C extends object, D, A>({
                 }
                 // Scroll into view
                 if (codeElements.length > 0) {
-                    scrollIntoCenterIfNeeded(scrollElement, codeView, codeElements[0].element)
+                    scrollIntoCenterIfNeeded(scrollElement, codeView, codeElements[0]?.element)
                 }
             }
         )

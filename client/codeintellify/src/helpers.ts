@@ -39,7 +39,14 @@ export const propertyIsDefined = <T extends object, K extends keyof T>(key: K) =
  * @param content The content child that is being scrolled
  * @param target The element that should be scrolled into view
  */
-export const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLElement, target: HTMLElement): void => {
+export const scrollIntoCenterIfNeeded = (
+    container: HTMLElement,
+    content: HTMLElement,
+    target: HTMLElement | undefined
+): void => {
+    if (!target) {
+        return
+    }
     const containerRectangle = container.getBoundingClientRect()
     const rowRectangle = target.getBoundingClientRect()
     if (rowRectangle.top <= containerRectangle.top || rowRectangle.bottom >= containerRectangle.bottom) {

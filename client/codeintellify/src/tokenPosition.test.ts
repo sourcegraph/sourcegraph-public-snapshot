@@ -73,7 +73,7 @@ describe('token_positions', () => {
                 expect(nodes.length).toEqual(nodeValues.length)
 
                 for (const [index, value] of nodeValues.entries()) {
-                    expect(nodes[index].nodeValue).toEqual(value)
+                    expect(nodes[index]?.nodeValue).toEqual(value)
                 }
             }
         })

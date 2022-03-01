@@ -126,6 +126,10 @@ export function convertNode(parentNode: HTMLElement): void {
         const node = parentNode.childNodes[index]
         const isLastNode = index === parentNode.childNodes.length - 1
 
+        if (!node) {
+            continue
+        }
+
         if (node.nodeType === Node.TEXT_NODE) {
             let nodeText = node.textContent ?? ''
             if (nodeText === '') {
@@ -146,7 +150,11 @@ export function convertNode(parentNode: HTMLElement): void {
                     parentNode.append(newTextNodeWrapper)
                 } else {
                     // increment insertBefore as new span-wrapped text nodes are added
-                    parentNode.insertBefore(newTextNodeWrapper, parentNode.childNodes[insertBefore++])
+                    insertBefore++
+                    const beforeNode = parentNode.childNodes[insertBefore]
+                    if (beforeNode) {
+                        beforeNode.before(newTextNodeWrapper)
+                    }
                 }
                 nodeText = nodeText.slice(nextToken.length)
             }
@@ -202,7 +210,11 @@ function getTokenType(node: Node): TokenType {
  * This is a helper function for making sure the node is the same type of a token and if we care
  * about grouping the type of token together.
  */
-function isSameTokenType(tokenType: TokenType, node: Node): boolean {
+function isSameTokenType(tokenType: TokenType, node?: Node): boolean {
+    if (!node) {
+        return false
+    }
+
     // We don't care about grouping things like :=, ===, etc
     if (tokenType === TokenType.ASCII) {
         return false
@@ -219,26 +231,26 @@ function isSameTokenType(tokenType: TokenType, node: Node): boolean {
  * @param txt Aribitrary text to tokenize.
  */
 function consumeNextToken(txt: string): string {
-    if (txt.length === 0) {
+    if (!txt[0]) {
         return ''
     }
 
     // first, check for real stuff, i.e. sets of [A-Za-z0-9_]
     const variableMatch = txt.match(VARIABLE_TOKENIZER)
-    if (variableMatch) {
+    if (variableMatch?.[0]) {
         return variableMatch[0]
     }
     // next, check for tokens that are not variables, but should stand alone
     // i.e. {}, (), :;. ...
     const asciiMatch = txt.match(ASCII_CHARACTER_TOKENIZER)
-    if (asciiMatch) {
+    if (asciiMatch?.[0]) {
         return asciiMatch[0]
     }
     // finally, the remaining tokens we can combine into blocks, since they are whitespace
     // or UTF8 control characters. We had better clump these in case UTF8 control bytes
     // require adjacent bytes
     const nonVariableMatch = txt.match(NONVARIABLE_TOKENIZER)
-    if (nonVariableMatch) {
+    if (nonVariableMatch?.[0]) {
         return nonVariableMatch[0]
     }
     return txt[0]
@@ -283,8 +295,8 @@ export function findElementWithOffset(
 
     const textNodes = getTextNodes(codeElement)
 
-    let startNode: Node
-    let endNode: Node
+    let startNode: Node | undefined
+    let endNode: Node | undefined
     if (typeof offsetEnd === 'number' && offsetEnd > offsetStart) {
         // Find elements in RANGE
 
@@ -370,6 +382,10 @@ export function findElementWithOffset(
 
         startNode = textNodes[findTokenEdgeIndex(nodeIndex, -1)]
         endNode = textNodes[findTokenEdgeIndex(nodeIndex, 1)]
+    }
+
+    if (!startNode || !endNode) {
+        return undefined
     }
 
     // Create a range spanning from the beginning of the token to the end.
