@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+## -- START: ADD git lfs
+echo "Installing Git LFS"
+
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt install git-lfs
+git-lfs install
+git-lfs fetch
+
+echo "Git LFS installed"
+
+## -- END: ADD git lfs
+
 # shellcheck disable=SC1090
 source "$HOME/.profile"
 
