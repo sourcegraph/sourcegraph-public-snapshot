@@ -41,7 +41,9 @@ describe('extensionHostAPI.getFileDecorations()', () => {
 
         let counter = 0
         extensionAPI.app.registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: `a${++counter}` } }],
+            provideFileDecorations: ({ files }) => [
+                { uri: files[0]?.uri || '', after: { contentText: `a${++counter}` } },
+            ],
         })
 
         let results: FileDecorationsByPath[] = []
@@ -77,7 +79,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
         results = []
 
         const subscription = extensionAPI.app.registerFileDecorationProvider({
-            provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: 'b' } }],
+            provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri || '', after: { contentText: 'b' } }],
         })
 
         // second and first

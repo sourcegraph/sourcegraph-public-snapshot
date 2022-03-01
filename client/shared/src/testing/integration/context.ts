@@ -175,7 +175,7 @@ export const createSharedIntegrationTestContext = async <
 
     // Serve assets from disk
     server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
-        const asset = request.params.path
+        const asset = request.params.path || ''
         // Cache all responses for the entire lifetime of the test run
         response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
         try {

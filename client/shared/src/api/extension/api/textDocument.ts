@@ -43,7 +43,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         offset = Math.max(0, offset)
 
         const out = this.lineStarts.getIndexOf(offset)
-        const lineLength = this._lines[out.index].length
+        const lineLength = this._lines[out.index]?.length || 0
         const character = Math.min(out.remainder, lineLength) // ensure we return a valid position
         return new Position(out.index, character)
     }
@@ -63,10 +63,10 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
             hasChanged = true
         } else if (line >= this._lines.length) {
             line = this._lines.length - 1
-            character = this._lines[line].length
+            character = this._lines[line]?.length || 0
             hasChanged = true
         } else {
-            const maxCharacter = this._lines[line].length
+            const maxCharacter = this._lines[line]?.length || 0
             if (character < 0) {
                 character = 0
                 hasChanged = true
@@ -100,7 +100,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
     public getWordRangeAtPosition(position: sourcegraph.Position): sourcegraph.Range | undefined {
         this.throwIfNoModelText()
         position = this.validatePosition(position)
-        const wordAtText = getWordAtText(position.character, this._lines[position.line])
+        const wordAtText = getWordAtText(position.character, this._lines[position.line] || '')
         if (wordAtText) {
             return new Range(position.line, wordAtText.startColumn, position.line, wordAtText.endColumn)
         }
@@ -116,15 +116,15 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
         const { start, end } = range
 
         if (start.line === end.line) {
-            return this._lines[start.line].slice(start.character, end.character)
+            return this._lines[start.line]?.slice(start.character, end.character)
         }
 
         let text = ''
         for (let line = start.line; line <= end.line; line++) {
             if (line === start.line) {
-                text += this._lines[line].slice(start.character)
+                text += this._lines[line]?.slice(start.character)
             } else if (line === end.line) {
-                text += this._lines[line].slice(0, end.character)
+                text += this._lines[line]?.slice(0, end.character)
             } else {
                 text += this._lines[line]
             }
@@ -141,7 +141,7 @@ export class ExtensionDocument implements sourcegraph.TextDocument {
             const linesLength = this._lines.length
             const lineStartValues = new Uint32Array(linesLength)
             for (let index = 0; index < linesLength; index++) {
-                lineStartValues[index] = this._lines[index].length + eolLength
+                lineStartValues[index] = (this._lines[index]?.length || 0) + eolLength
             }
             this._lineStarts = new PrefixSumComputer(lineStartValues)
         }

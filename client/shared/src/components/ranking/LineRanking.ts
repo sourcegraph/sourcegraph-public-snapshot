@@ -21,7 +21,7 @@ export const mergeContext = <T extends { line: number }>(context: number, highli
     const groupsOfHighlights: T[][] = []
 
     for (let index = 0; index < highlights.length; index++) {
-        const current = highlights[index]
+        const current = highlights[index] as T
         const previous = highlights[index - 1]
         if (!previous || current.line - previous.line - 2 * context > 1) {
             // Either this is the beginning of the file, or there is at
@@ -32,7 +32,7 @@ export const mergeContext = <T extends { line: number }>(context: number, highli
             // This context either overlaps with or is adjacent to the
             // previous context, so add this highlight to the previous
             // group.
-            groupsOfHighlights[groupsOfHighlights.length - 1].push(current)
+            groupsOfHighlights[groupsOfHighlights.length - 1]?.push(current)
         }
     }
 
@@ -50,7 +50,7 @@ const calculateGroupPositions = (
     highestLineNumberWithinSubsetMatches: number
 ): MatchGroup => {
     {
-        let startLine = matches[0].line - context
+        let startLine = (matches[0]?.line || 0) - context
         startLine = startLine < 0 ? 0 : startLine
 
         const highlightRangeLines = matches.map(range => range.line)
@@ -81,7 +81,7 @@ const calculateGroupPositions = (
             matches,
 
             // 1-based position describing the starting place of the matches.
-            position: { line: matches[0].line + 1, character: matches[0].character + 1 },
+            position: { line: (matches[0]?.line || 0) + 1, character: (matches[0]?.character || 0) + 1 },
 
             // 0-based range describing the start and end lines (end line is exclusive.)
             startLine,
@@ -114,10 +114,10 @@ export const calculateMatchGroupsSorted = (
             return -1
         }
         if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+            if ((a.highlightRanges[0]?.start || 0) < (b.highlightRanges[0]?.start || 0)) {
                 return -1
             }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+            if ((a.highlightRanges[0]?.start || 0) === (b.highlightRanges[0]?.start || 0)) {
                 return 0
             }
         }
@@ -129,8 +129,8 @@ export const calculateMatchGroupsSorted = (
     const highestLineNumberWithinSubsetMatches =
         sortedMatches.length > 0
             ? sortedMatches.length > maxMatches
-                ? sortedMatches[maxMatches === 0 ? 0 : maxMatches - 1].line
-                : sortedMatches[sortedMatches.length - 1].line
+                ? sortedMatches[maxMatches === 0 ? 0 : maxMatches - 1]?.line || 0
+                : sortedMatches[sortedMatches.length - 1]?.line || 0
             : 0
 
     // Determine which line matches we will show. This includes matches that are in the context

@@ -193,9 +193,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         { durationMs: Date.now() - startTime },
                         { durationMs: Date.now() - startTime }
                     )
-                    return optimizeHighlighting
-                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                        : lines[0].slice(startLine, endLine)
+                    return (
+                        (optimizeHighlighting
+                            ? lines[
+                                  grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)
+                              ]
+                            : lines[0]?.slice(startLine, endLine)) || []
+                    )
                 })
             )
         },

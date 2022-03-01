@@ -17,7 +17,7 @@ export const RepoIcon: React.FunctionComponent<{ repoName: string; className?: s
         'bitbucket.com': BitbucketIcon,
     }
 
-    const hostName = repoName.split('/')[0]
+    const hostName = repoName.split('/')[0] || ''
 
     const Icon: React.ComponentType<MdiReactIconProps> | undefined = iconMap[hostName]
 

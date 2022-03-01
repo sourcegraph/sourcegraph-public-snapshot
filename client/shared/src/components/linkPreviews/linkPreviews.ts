@@ -62,7 +62,10 @@ export function applyLinkPreview(
                 // Use while-loop instead of iterating over span.childNodes because the loop body
                 // mutates span.childNodes, so nodes would be skipped.
                 while (span.hasChildNodes()) {
-                    afterElement.append(span.childNodes[0])
+                    const childNode = span.childNodes[0]
+                    if (childNode) {
+                        afterElement.append(childNode)
+                    }
                 }
             }
         }

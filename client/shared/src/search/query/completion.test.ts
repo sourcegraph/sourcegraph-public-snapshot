@@ -16,7 +16,7 @@ expect.addSnapshotSerializer({
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
-const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
+const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex] as Token
 
 describe('getCompletionItems()', () => {
     test('returns only static filter type completions when the token matches a known filter', async () => {

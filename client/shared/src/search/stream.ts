@@ -435,7 +435,7 @@ function initiateSearchStream(
         if (trace) {
             parameters.push(['trace', trace])
         }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        const parameterEncoded = parameters.map(([k = '', v = '']) => k + '=' + encodeURIComponent(v)).join('&')
 
         const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
@@ -486,7 +486,7 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 export function getRevision(branches?: string[], version?: string): string {
     let revision = ''
     if (branches) {
-        const branch = branches[0]
+        const branch = branches[0] || ''
         if (branch !== '') {
             revision = branch
         }

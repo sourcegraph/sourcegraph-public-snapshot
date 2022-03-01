@@ -71,7 +71,7 @@ const domFunctions: DOMFunctions = {
         if (!row) {
             return null
         }
-        return row.cells[1]
+        return row.cells[1] || null
     },
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
         const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
@@ -82,7 +82,7 @@ const domFunctions: DOMFunctions = {
         if (!row) {
             return null
         }
-        return row.cells[1]
+        return row.cells[1] || null
     },
     getLineNumberFromCodeElement: codeCell => {
         const row = codeCell.closest('tr')

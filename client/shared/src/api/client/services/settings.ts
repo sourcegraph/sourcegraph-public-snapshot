@@ -39,5 +39,8 @@ export async function updateSettings(
         throw new Error('invalid settings (internal error)')
     }
     const subject = settings.subjects[settings.subjects.length - 1]
+    if (!subject) {
+        return
+    }
     await update(subject.subject.id, edit)
 }

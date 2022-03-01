@@ -130,7 +130,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         () =>
             result.type === 'content'
                 ? result.lineMatches?.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
+                      highlightRanges: match.offsetAndLengths.map(([start = 0, highlightLength = 0]) => ({
                           start,
                           highlightLength,
                       })),
@@ -192,8 +192,8 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         startLine: hunk.lineStart,
                         endLine: hunk.lineStart + hunk.lineCount,
                         position: {
-                            line: hunk.matches[0].start.line + hunk.lineStart + 1,
-                            character: hunk.matches[0].start.column + 1,
+                            line: (hunk.matches[0]?.start?.line || 0) + hunk.lineStart + 1,
+                            character: (hunk.matches[0]?.start?.column || 0) + 1,
                         },
                     } as MatchGroup)
             ) || []
@@ -334,14 +334,14 @@ export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
     // Add matches on the same line and next line (context line) as the limited match
     const [lastMatch] = partialGroup.matches.slice(-1)
     for (const match of group.matches.slice(limit, undefined)) {
-        if (match.line <= lastMatch.line + 1) {
+        if (lastMatch && match.line <= lastMatch.line + 1) {
             // include an extra context line
             partialGroup.matches.push(match)
             continue
         }
         break
     }
-    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
+    partialGroup.endLine = (lastMatch?.line || 0) + 2 // include an extra context line
     partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
     return partialGroup
 }

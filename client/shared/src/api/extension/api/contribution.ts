@@ -14,7 +14,7 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
     if (contributions.length === 0) {
         return {}
     }
-    if (contributions.length === 1) {
+    if (contributions.length === 1 && contributions[0]) {
         return contributions[0]
     }
     const merged: Evaluated<Contributions> = {}

@@ -63,10 +63,14 @@ const toRegexpHover = (token: MetaRegexp): string => {
             return '**Group**. Groups together multiple expressions to match.'
         case MetaRegexpKind.EscapedCharacter: {
             const escapable = '~`!@#$%^&*()[]{}<>,.?/\\|=+-_'
-            let description = escapable.includes(token.value[1])
-                ? `Match the character \`${token.value[1]}\`.`
-                : `The character \`${token.value[1]}\` is escaped.`
-            switch (token.value[1]) {
+            const character = token.value[1]
+            let description = ''
+            if (character) {
+                description = escapable.includes(character)
+                    ? `Match the character \`${character}\`.`
+                    : `The character \`${character}\` is escaped.`
+            }
+            switch (character) {
                 case 'n':
                     description = 'Match a new line.'
                     break
@@ -92,11 +96,11 @@ const toRegexpHover = (token: MetaRegexp): string => {
                 default: {
                     const range = token.value.slice(1, -1).split(',')
                     let quantity = ''
-                    if (range.length === 1 || (range.length === 2 && range[0] === range[1])) {
+                    if (range[0] && (range.length === 1 || (range.length === 2 && range[0] === range[1]))) {
                         quantity = range[0]
-                    } else if (range[1] === '') {
+                    } else if (range[0] && range[1] === '') {
                         quantity = `${range[0]} or more`
-                    } else {
+                    } else if (range[0] && range[1]) {
                         quantity = `between ${range[0]} and ${range[1]}`
                     }
                     return `**Range**. Match ${quantity} of the previous expression.`

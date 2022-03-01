@@ -33,10 +33,10 @@ describe('createLinkClickHandler', () => {
         anchor.click()
 
         sinon.assert.calledOnce(spy)
-        expect(spy.args[0][0].defaultPrevented).toBe(true)
+        expect(spy.args[0]?.[0]?.defaultPrevented).toBe(true)
 
         expect(history).toHaveLength(1)
-        expect(history.entries[0].pathname).toBe('/else/where')
+        expect(history.entries[0]?.pathname).toBe('/else/where')
     })
 
     it('ignores clicks on links that go outside the app', () => {
@@ -63,7 +63,7 @@ describe('createLinkClickHandler', () => {
         anchor.click()
 
         sinon.assert.calledOnce(spy)
-        expect(spy.args[0][0].defaultPrevented).toBe(false)
+        expect(spy.args[0]?.[0]?.defaultPrevented).toBe(false)
         expect(history).toHaveLength(0)
     })
 })

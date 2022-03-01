@@ -163,12 +163,12 @@ const scanToken = <T extends Term = Literal>(
         if (!match) {
             return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
-        const range = { start, end: start + match[0].length }
+        const range = { start, end: start + (match[0] || '').length }
         return {
             type: 'success',
             term: output
                 ? typeof output === 'function'
-                    ? output(match[0], range)
+                    ? output(match[0] || '', range)
                     : output
                 : ({ type: 'literal', value: match[0], range } as T),
         }
@@ -203,7 +203,7 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
     const result: string[] = []
 
     const nextChar = (): void => {
-        current = input[adjustedStart]
+        current = input[adjustedStart] || ''
         adjustedStart += 1
     }
 

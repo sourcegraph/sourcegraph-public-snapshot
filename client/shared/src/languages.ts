@@ -569,5 +569,5 @@ export function getPathExtension(path: string): string {
     if (pathSplit.length === 2 && pathSplit[0] === '') {
         return '' // e.g. .gitignore
     }
-    return pathSplit[pathSplit.length - 1].toLowerCase()
+    return (pathSplit[pathSplit.length - 1] || '').toLowerCase()
 }

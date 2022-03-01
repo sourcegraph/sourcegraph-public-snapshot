@@ -41,7 +41,7 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     public readonly type = 'CodeEditor'
 
     public get selection(): sourcegraph.Selection | null {
-        return this.selectionsChanges.value.length > 0 ? this.selectionsChanges.value[0] : null
+        return this.selectionsChanges.value[0] || null
     }
 
     public get selections(): sourcegraph.Selection[] {

@@ -58,7 +58,7 @@ export const isRepoSeeOtherErrorLike = (value: unknown): string | false => {
         return value.redirectURL
     }
     const match = value.message.match(/repository not found at this location, but might exist at (\S+)/i)
-    if (match) {
+    if (match?.[1]) {
         return match[1]
     }
     return false

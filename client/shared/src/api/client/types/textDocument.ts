@@ -159,7 +159,7 @@ export function offsetToPosition(text: string, offset: number): Position {
     const newLines = before.match(/\n/g)
     const line = newLines ? newLines.length : 0
     const pre = before.match(/(^|\n).*$/g)
-    return { line, character: pre ? pre[0].length + (line === 0 ? 0 : -1) : 0 }
+    return { line, character: pre?.[0] ? pre[0].length + (line === 0 ? 0 : -1) : 0 }
 }
 
 /**

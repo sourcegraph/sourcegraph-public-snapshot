@@ -60,8 +60,8 @@ describe('gqlToCascade', () => {
         expect(
             value.subjects &&
                 !isErrorLike(value.subjects) &&
-                isErrorLike(value.subjects[1].settings) &&
-                value.subjects[1].settings.message
+                isErrorLike(value.subjects[1]?.settings) &&
+                value.subjects[1]?.settings.message
         ).toBe(SETTINGS_ERROR_FOR_FIXTURE_USER.message)
     })
 })

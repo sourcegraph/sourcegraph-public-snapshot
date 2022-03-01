@@ -496,7 +496,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                     debounceTime(0),
                     map(statusBarItems =>
                         statusBarItems.sort(
-                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
+                            (a, b) =>
+                                (a.text[0] || '').toLowerCase().charCodeAt(0) -
+                                (b.text[0] || '').toLowerCase().charCodeAt(0)
                         )
                     )
                 )

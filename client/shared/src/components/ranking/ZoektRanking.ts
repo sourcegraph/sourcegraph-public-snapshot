@@ -34,10 +34,10 @@ function sortHunkMatches(hunk: Hunk): void {
             return -1
         }
         if (a.line === b.line) {
-            if (a.highlightRanges[0].start < b.highlightRanges[0].start) {
+            if ((a.highlightRanges[0]?.start || 0) < (b.highlightRanges[0]?.start || 0)) {
                 return -1
             }
-            if (a.highlightRanges[0].start === b.highlightRanges[0].start) {
+            if ((a.highlightRanges[0]?.start || 0) === (b.highlightRanges[0]?.start || 0)) {
                 return 0
             }
         }
@@ -90,7 +90,7 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             startLine: Math.max(0, hunk.startLine - context),
             endLine: hunk.endLine + context + 1,
             // 1-based position describing the starting place of the matches.
-            position: { line: topGroupMatch.line + 1, character: topGroupMatch.character + 1 },
+            position: { line: (topGroupMatch?.line || 0) + 1, character: (topGroupMatch?.character || 0) + 1 },
         }
         groups.push(matchGroup)
     }

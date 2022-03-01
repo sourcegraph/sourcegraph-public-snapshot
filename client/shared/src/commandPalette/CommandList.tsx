@@ -355,7 +355,7 @@ export function filterAndRankItems(
             if (scores[index] === undefined) {
                 scores[index] = stringScore(label, query, 0)
             }
-            return scores[index] > 0
+            return (scores[index] || 0) > 0
         })
         .map((item, index) => {
             const recentIndex = recentActions?.indexOf(item.action.id)

@@ -6,7 +6,7 @@ const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSucce
 
 function getTokens(query: string, tokenIndex: number): [Token[], Token] {
     const tokens = toSuccess(scanSearchQuery(query))
-    return [tokens, tokens[tokenIndex]]
+    return [tokens, tokens[tokenIndex] as Token]
 }
 
 describe('getSuggestionQuery', () => {

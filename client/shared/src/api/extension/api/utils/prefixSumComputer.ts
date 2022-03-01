@@ -54,13 +54,14 @@ export class PrefixSumComputer {
         this.values.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLength)
         this.values.set(insertValues, insertIndex)
 
-        if (insertIndex - 1 < this.prefixSumValidIndex[0]) {
+        const firstPrefixSumValidIndex = this.prefixSumValidIndex[0] || 0
+        if (insertIndex - 1 < firstPrefixSumValidIndex) {
             this.prefixSumValidIndex[0] = insertIndex - 1
         }
 
         this.prefixSum = new Uint32Array(this.values.length)
-        if (this.prefixSumValidIndex[0] >= 0) {
-            this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1))
+        if (firstPrefixSumValidIndex >= 0) {
+            this.prefixSum.set(oldPrefixSum.subarray(0, firstPrefixSumValidIndex + 1))
         }
         return true
     }
@@ -73,7 +74,7 @@ export class PrefixSumComputer {
             return false
         }
         this.values[index] = value
-        if (index - 1 < this.prefixSumValidIndex[0]) {
+        if (index - 1 < (this.prefixSumValidIndex[0] || 0)) {
             this.prefixSumValidIndex[0] = index - 1
         }
         return true
@@ -104,11 +105,12 @@ export class PrefixSumComputer {
         this.values.set(oldValues.subarray(startIndex + cnt), startIndex)
 
         this.prefixSum = new Uint32Array(this.values.length)
-        if (startIndex - 1 < this.prefixSumValidIndex[0]) {
+        const firstPrefixSumValidIndex = this.prefixSumValidIndex[0] || 0
+        if (startIndex - 1 < firstPrefixSumValidIndex) {
             this.prefixSumValidIndex[0] = startIndex - 1
         }
-        if (this.prefixSumValidIndex[0] >= 0) {
-            this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1))
+        if (firstPrefixSumValidIndex >= 0) {
+            this.prefixSum.set(oldPrefixSum.subarray(0, firstPrefixSumValidIndex + 1))
         }
         return true
     }
@@ -130,13 +132,14 @@ export class PrefixSumComputer {
     }
 
     private _getAccumulatedValue(valueIndex: number): number {
-        if (valueIndex <= this.prefixSumValidIndex[0]) {
-            return this.prefixSum[valueIndex]
+        const firstPrefixSumValidIndex = this.prefixSumValidIndex[0] || 0
+        if (valueIndex <= firstPrefixSumValidIndex) {
+            return this.prefixSum[valueIndex] || 0
         }
 
-        let startIndex = this.prefixSumValidIndex[0] + 1
+        let startIndex = firstPrefixSumValidIndex + 1
         if (startIndex === 0) {
-            this.prefixSum[0] = this.values[0]
+            this.prefixSum[0] = this.values[0] || 0
             startIndex++
         }
 
@@ -145,10 +148,10 @@ export class PrefixSumComputer {
         }
 
         for (let index = startIndex; index <= valueIndex; index++) {
-            this.prefixSum[index] = this.prefixSum[index - 1] + this.values[index]
+            this.prefixSum[index] = (this.prefixSum[index - 1] || 0) + (this.values[index] || 0)
         }
-        this.prefixSumValidIndex[0] = Math.max(this.prefixSumValidIndex[0], valueIndex)
-        return this.prefixSum[valueIndex]
+        this.prefixSumValidIndex[0] = Math.max(firstPrefixSumValidIndex, valueIndex)
+        return this.prefixSum[valueIndex] || 0
     }
 
     public getIndexOf(accumulatedValue: number): PrefixSumIndexOfResult {
@@ -166,8 +169,8 @@ export class PrefixSumComputer {
         while (low <= high) {
             mid = (low + (high - low) / 2) | 0
 
-            midStop = this.prefixSum[mid]
-            midStart = midStop - this.values[mid]
+            midStop = this.prefixSum[mid] || 0
+            midStart = midStop - (this.values[mid] || 0)
 
             if (accumulatedValue < midStart) {
                 high = mid - 1

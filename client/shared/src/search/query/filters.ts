@@ -107,7 +107,7 @@ export const negatedFilters = Object.values(NegatedFilters)
 export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
 
-const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
+const negatedFilterToNegatableFilter: { [key in NegatedFilters]: NegatableFilter } = {
     '-author': FilterType.author,
     '-committer': FilterType.committer,
     '-content': FilterType.content,
@@ -377,7 +377,7 @@ const isValidDiscreteValue = (
     )
 
     for (const discreteValue of validDiscreteValuesForDefinition) {
-        if (discreteValueAliases[discreteValue].includes(value)) {
+        if (discreteValueAliases[discreteValue]?.includes(value)) {
             return true
         }
     }
@@ -432,8 +432,9 @@ export const escapeSpaces = (value: string): string => {
     while (value[current]) {
         switch (value[current]) {
             case '\\': {
-                if (value[current + 1]) {
-                    escaped.push('\\', value[current + 1])
+                const nextValue = value[current + 1]
+                if (nextValue) {
+                    escaped.push('\\', nextValue)
                     current = current + 2 // Continue past escaped value.
                     continue
                 }
@@ -447,7 +448,7 @@ export const escapeSpaces = (value: string): string => {
                 continue
             }
             default:
-                escaped.push(value[current])
+                escaped.push(value[current] || '')
                 current = current + 1
                 continue
         }

@@ -31,9 +31,7 @@ const succeedScan = (query: string): Token[] => {
  */
 export const updateFilter = (query: string, field: string, value: string): string => {
     const filters = findFilters(succeedScan(query), field)
-    return filters.length > 0
-        ? replaceRange(query, filters[0].range, `${field}:${value}`).trim()
-        : `${query} ${field}:${value}`
+    return filters[0] ? replaceRange(query, filters[0].range, `${field}:${value}`).trim() : `${query} ${field}:${value}`
 }
 
 /**

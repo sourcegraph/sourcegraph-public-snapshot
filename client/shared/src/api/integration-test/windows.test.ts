@@ -118,7 +118,7 @@ describe('Windows (integration)', () => {
                 isActive: true,
             })
 
-            assertToJSON(extensionAPI.app.windows[0].visibleViewComponents, [
+            assertToJSON(extensionAPI.app.windows[0]?.visibleViewComponents, [
                 {
                     type: 'CodeEditor' as const,
                     document: { uri: 'file:///f', languageId: 'l', text: 't' },
@@ -146,7 +146,7 @@ describe('Windows (integration)', () => {
                     isActive: false,
                 })
 
-                assertToJSON(extensionAPI.app.windows[0].activeViewComponent, {
+                assertToJSON(extensionAPI.app.windows[0]?.activeViewComponent, {
                     type: 'CodeEditor' as const,
                     document: { uri: 'file:///f', languageId: 'l', text: 't' },
                 })

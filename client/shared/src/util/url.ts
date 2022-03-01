@@ -163,7 +163,8 @@ const parsePosition = (string: string): Position => {
         return { line: parseInt(string, 10), character: 0 }
     }
     if (split.length === 2) {
-        return { line: parseInt(split[0], 10), character: parseInt(split[1], 10) }
+        const [first, second] = split as [string, string]
+        return { line: parseInt(first, 10), character: parseInt(second, 10) }
     }
     throw new Error('unexpected position: ' + string)
 }
@@ -194,14 +195,15 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     }
     if (fragmentSplit.length === 2) {
         filePath = fragmentSplit[0]
-        const rangeOrPosition = fragmentSplit[1]
+        const rangeOrPosition = fragmentSplit[1] || ''
         const rangeOrPositionSplit = rangeOrPosition.split('-')
 
         if (rangeOrPositionSplit.length === 1) {
-            position = parsePosition(rangeOrPositionSplit[0])
+            position = parsePosition(rangeOrPositionSplit[0] || '')
         }
         if (rangeOrPositionSplit.length === 2) {
-            range = { start: parsePosition(rangeOrPositionSplit[0]), end: parsePosition(rangeOrPositionSplit[1]) }
+            const [start, end] = rangeOrPositionSplit as [string, string]
+            range = { start: parsePosition(start), end: parsePosition(end) }
         }
         if (rangeOrPositionSplit.length > 2) {
             throw new Error('unexpected range or position: ' + rangeOrPosition)
@@ -328,7 +330,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
         return {}
     }
     const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references"
-    const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0]) as LineOrPositionOrRange & { viewState?: V }
+    const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0] || '') as LineOrPositionOrRange & { viewState?: V }
     if (lineCharModalInfo[1]) {
         lpr.viewState = lineCharModalInfo[1] as V
     }
@@ -407,10 +409,11 @@ function parseLineOrPosition(
     let line: number | undefined
     let character: number | undefined
     if (parts.length >= 1) {
-        line = parseInt(parts[0], 10)
+        line = parseInt(parts[0] || '', 10)
     }
     if (parts.length === 2) {
-        character = parseInt(parts[1], 10)
+        const [_first, second] = parts as [string, string]
+        character = parseInt(second, 10)
     }
     line = typeof line === 'number' && isNaN(line) ? undefined : line
     character = typeof character === 'number' && isNaN(character) ? undefined : character
@@ -546,7 +549,7 @@ export function buildSearchURLQuery(
     if (globalCase?.value) {
         // When case:value is explicit in the query, override any previous value of caseParameter.
         const globalCaseParameterValue = globalCase.value.value
-        caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
+        caseParameter = discreteValueAliases.yes?.includes(globalCaseParameterValue) ? 'yes' : 'no'
         queryParameter = replaceRange(queryParameter, globalCase.range)
     }
 

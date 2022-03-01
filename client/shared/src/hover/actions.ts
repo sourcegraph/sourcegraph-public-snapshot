@@ -273,8 +273,8 @@ export const getDefinitionURL = (
                 // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
                 // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
                 // branch name to a URL with a full Git commit SHA.
-                const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(def.uri))
-                if (def.range) {
+                const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(def?.uri || ''))
+                if (def?.range) {
                     uri.position = {
                         line: def.range.start.line + 1,
                         character: def.range.start.character + 1,

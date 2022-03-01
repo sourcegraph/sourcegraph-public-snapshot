@@ -546,7 +546,7 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
     let accumulator: string[] = []
 
     const nextChar = (): string => {
-        current = token.value[start]
+        current = token.value[start] || ''
         start = start + 1
         return current
     }
@@ -623,7 +623,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     let inside = 0
 
     const nextChar = (): string => {
-        current = pattern.value[start]
+        current = pattern.value[start] || ''
         start = start + 1
         return current
     }
@@ -636,11 +636,11 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
             decorated.push({ type: 'pattern', kind, value, range })
         } else if (value.match(/^:\[(\w*)~(.*)\]$/)) {
             // Handle regexp hole.
-            const [, variable, pattern] = value.match(/^:\[(\w*)~(.*)\]$/)!
+            const [, variable, pattern = ''] = value.match(/^:\[(\w*)~(.*)\]$/)!
             const variableStart = range.start + 2 /* :[ */
-            const variableRange = { start: variableStart, end: variableStart + variable.length }
+            const variableRange = { start: variableStart, end: variableStart + (variable?.length || 0) }
             const patternStart = variableRange.end + 1 /* ~ */
-            const patternRange = { start: patternStart, end: patternStart + pattern.length }
+            const patternRange = { start: patternStart, end: patternStart + (pattern?.length || 0) }
             decorated.push(
                 ...([
                     {
@@ -797,7 +797,7 @@ export const hasRegexpValue = (field: string): boolean => {
 const specifiesRevision = (value: string): boolean => value.match(/@/) !== null
 
 const decorateRepoRevision = (token: Literal): DecoratedToken[] => {
-    const [repo, revision] = token.value.split('@', 2)
+    const [repo = '', revision = ''] = token.value.split('@', 2)
     const offset = token.range.start
 
     return [

@@ -193,7 +193,7 @@ export function gqlToCascade({
  * TODO(sqs): In the future, this will pass a CustomMergeFunctions value to merge.
  */
 export function mergeSettings<S extends Settings>(values: S[]): S | null {
-    if (values.length === 0) {
+    if (!values[0]) {
         return null
     }
     const customFunctions: CustomMergeFunctions = {

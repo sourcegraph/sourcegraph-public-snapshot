@@ -79,7 +79,7 @@ export const scanBalancedParens = (input: string): string | undefined => {
     const result: string[] = []
 
     const nextChar = (): void => {
-        current = input[adjustedStart]
+        current = input[adjustedStart] || ''
         adjustedStart += 1
     }
 
@@ -128,7 +128,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     if (!match) {
         return undefined
     }
-    const name = match[0]
+    const name = match[0] || ''
     const path = name.split('.')
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)

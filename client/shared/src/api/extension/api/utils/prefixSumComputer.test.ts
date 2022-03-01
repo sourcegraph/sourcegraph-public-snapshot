@@ -169,7 +169,7 @@ function toUint32Array(array: number[]): Uint32Array {
     const length = array.length
     const uint32Array = new Uint32Array(length)
     for (let index = 0; index < length; index++) {
-        uint32Array[index] = toUint32(array[index])
+        uint32Array[index] = toUint32(array[index] || 0)
     }
     return uint32Array
 }

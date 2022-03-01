@@ -133,11 +133,8 @@ export function splitExtensionID(
 ): { publisher: string; name: string; host?: string; isSourcegraphExtension?: boolean } {
     const parts = extensionID.split('/')
     if (parts.length === 3) {
-        return {
-            host: parts[0],
-            publisher: parts[1],
-            name: parts[2],
-        }
+        const [host, publisher, name] = parts as [string, string, string]
+        return { host, publisher, name }
     }
 
     return {

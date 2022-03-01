@@ -80,7 +80,7 @@ export const negatedFilters = Object.values(NegatedFilters)
 export const isNegatedFilter = (filter: string): filter is NegatedFilters =>
     negatedFilters.includes(filter as NegatedFilters)
 
-const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
+const negatedFilterToNegatableFilter: { [key in NegatedFilters]: NegatableFilter } = {
     '-repo': FilterType.repo,
     '-file': FilterType.file,
     '-lang': FilterType.lang,
@@ -345,7 +345,7 @@ const scanToken = <T extends Term = Literal>(
         if (!match) {
             return { type: 'error', expected: expected || `/${regexp.source}/`, at: start }
         }
-        const range = { start, end: start + match[0].length }
+        const range = { start, end: start + (match[0]?.length || 0) }
         return {
             type: 'success',
             token: output
@@ -486,7 +486,7 @@ export const scanBalancedPattern = (kind = PatternKind.Literal): Parser<Pattern>
     const result: string[] = []
 
     const nextChar = (): void => {
-        current = input[adjustedStart]
+        current = input[adjustedStart] || ''
         adjustedStart += 1
     }
 

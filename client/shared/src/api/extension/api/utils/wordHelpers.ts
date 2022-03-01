@@ -54,7 +54,7 @@ export function getWordAtText(column: number, text: string): WordAtPosition | nu
         const matchIndex = match.index || 0
         if (matchIndex <= column && WORD_REGEXP.lastIndex >= column) {
             return {
-                word: match[0],
+                word: match[0] || '',
                 startColumn: matchIndex,
                 endColumn: WORD_REGEXP.lastIndex,
             }
