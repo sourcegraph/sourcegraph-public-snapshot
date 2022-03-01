@@ -682,6 +682,38 @@ func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitori
 	})
 }
 
+// src_codeintel_lockfiles_total
+// src_codeintel_lockfiles_duration_seconds_bucket
+// src_codeintel_lockfiles_errors_total
+func (codeIntelligence) NewLockfilesGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "lockfiles service stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_lockfiles",
+				MetricDescriptionRoot: "service",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_uploadstore_total
 // src_codeintel_uploadstore_duration_seconds_bucket
 // src_codeintel_uploadstore_errors_total

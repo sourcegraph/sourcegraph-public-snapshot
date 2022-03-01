@@ -1475,6 +1475,7 @@ func bbsChangeset(id int64, t time.Time) *btypes.Changeset {
 	}
 }
 
+//nolint:unparam // unparam complains that `id` always has same value across call-sites, but that's OK
 func glChangeset(id int64, t time.Time) *btypes.Changeset {
 	return &btypes.Changeset{
 		ID:       id,
@@ -1549,6 +1550,7 @@ func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *btypes.Ch
 	}
 }
 
+//nolint:unparam // unparam complains that `id` always has same value across call-sites, but that's OK
 func ghReadyForReview(id int64, t time.Time, login string) *btypes.ChangesetEvent {
 	return &btypes.ChangesetEvent{
 		ChangesetID: id,
@@ -1575,6 +1577,7 @@ func ghConvertToDraft(id int64, t time.Time, login string) *btypes.ChangesetEven
 	}
 }
 
+//nolint:unparam // unparam complains that `id` always has same value across call-sites, but that's OK
 func glUnmarkWorkInProgress(id int64, t time.Time, login string) *btypes.ChangesetEvent {
 	return &btypes.ChangesetEvent{
 		ChangesetID: id,
