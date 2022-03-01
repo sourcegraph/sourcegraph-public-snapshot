@@ -217,7 +217,7 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 			}
 		}
 		if len(stateConds) > 0 {
-			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, " OR ")))
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
 		}
 	}
 
@@ -524,7 +524,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 			}
 		}
 		if len(stateConds) > 0 {
-			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, " OR ")))
+			preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(stateConds, "OR")))
 		}
 	}
 
