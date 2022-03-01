@@ -8,41 +8,9 @@ import (
 )
 
 func GetIdeExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.IdeExtensionsUsage, error) {
-	// Only getting stats by month
-	// TODO: group by month, day, week
-	// TODO: add backward compatible for vsce
 	stats := types.IdeExtensionsUsage{}
 
-	ideExtensionsPeriodQuery := `
-	SELECT
-		DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) as current_month,
-		DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
-		DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
-	FROM event_logs
-	WHERE timestamp >= DATE_TRUNC('month', $1::timestamp) AND source = 'IDEEXTENSION';
-	`
-
-	if err := db.QueryRowContext(ctx, ideExtensionsPeriodQuery, timeNow()).Scan(
-		&stats.Month.StartTime,
-		&stats.Week.StartTime,
-		&stats.Day.StartTime,
-	); err != nil {
-		return nil, err
-	}
-
-	ideExtensionsPeriodUsageQuery := `
-	SELECT
-		argument ->> 'platform'::text AS ide_kind,
-		COUNT(DISTINCT user_id) AS user_count,
-		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(*) FILTER (WHERE name = 'IDERedirects')
-	FROM event_logs
-	WHERE
-		source = 'IDEEXTENSION' AND timestamp >= DATE_TRUNC('month', $1::timestamp)
-	GROUP BY ide_kind;
-	`
-	usageStatisticsByIde := []*types.IdeExtensionsUsageStatistics{}
+	usageStatisticsByIdext := []*types.IdeExtensionsUsageStatistics{}
 
 	rows, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQuery, timeNow())
 	if err != nil {
@@ -52,132 +20,148 @@ func GetIdeExtensionsUsageStatistics(ctx context.Context, db database.DB) (*type
 	defer rows.Close()
 
 	for rows.Next() {
-		ideaExtensionUsageStatistics := types.IdeExtensionsUsageStatistics{}
+		ideaExtensionUsage := types.IdeExtensionsUsageStatistics{}
 
 		if err := rows.Scan(
-			&ideaExtensionUsageStatistics.IdeKind,
-			&ideaExtensionUsageStatistics.UserCount,
-			&ideaExtensionUsageStatistics.SearchPerformed.TotalCount,
-			&ideaExtensionUsageStatistics.SearchPerformed.UniqueCount,
-			&ideaExtensionUsageStatistics.RedirectCount,
+			&ideaExtensionUsage.IdeKind,
+			&ideaExtensionUsage.Month.StartTime,
+			&ideaExtensionUsage.Month.UserCount,
+			&ideaExtensionUsage.Month.SearchPerformed.UniqueCount,
+			&ideaExtensionUsage.Month.SearchPerformed.TotalCount,
+			&ideaExtensionUsage.Month.RedirectCount,
+			&ideaExtensionUsage.Month.MonthlyUserState.Installs,
+			&ideaExtensionUsage.Month.MonthlyUserState.Uninstalls,
+			&ideaExtensionUsage.Week.StartTime,
+			&ideaExtensionUsage.Week.UserCount,
+			&ideaExtensionUsage.Week.SearchPerformed.UniqueCount,
+			&ideaExtensionUsage.Week.SearchPerformed.TotalCount,
+			&ideaExtensionUsage.Week.RedirectCount,
+			&ideaExtensionUsage.Day.StartTime,
+			&ideaExtensionUsage.Day.UserCount,
+			&ideaExtensionUsage.Day.SearchPerformed.UniqueCount,
+			&ideaExtensionUsage.Day.SearchPerformed.TotalCount,
+			&ideaExtensionUsage.Day.RedirectCount,
 		); err != nil {
 			return nil, err
 		}
 
-		usageStatisticsByIde = append(usageStatisticsByIde, &ideaExtensionUsageStatistics)
+		usageStatisticsByIdext = append(usageStatisticsByIdext, &ideaExtensionUsage)
 	}
-
-	stats.Month.IDEs = usageStatisticsByIde
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	ideExtensionsPeriodUsageQueryWeekly := `
-	SELECT
-		argument ->> 'platform'::text AS ide_kind,
-		COUNT(DISTINCT user_id) AS user_count,
-		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(*) FILTER (WHERE name = 'IDERedirects')
-	FROM event_logs
-	WHERE
-		source = 'IDEEXTENSION' AND timestamp >= DATE_TRUNC('week', $1::timestamp)
-	GROUP BY ide_kind;
-	`
-	usageStatisticsByIdeWeekly := []*types.IdeExtensionsUsageStatistics{}
+	// Get VSCE data from older instances that do not support EventSource.IDEEXTENSION
+	oldVsceUsageStats := types.IdeExtensionsUsageStatistics{}
 
-	rowsWeek, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQueryWeekly, timeNow())
-	if err != nil {
+	oldVsceUsageStats.IdeKind = "vscode_pre_ide"
+
+	if err := db.QueryRowContext(ctx, ideExtensionsOldVSCEPeriodUsageQuery, timeNow()).Scan(
+		&oldVsceUsageStats.Month.StartTime,
+		&oldVsceUsageStats.Month.UserCount,
+		&oldVsceUsageStats.Month.SearchPerformed.UniqueCount,
+		&oldVsceUsageStats.Month.SearchPerformed.TotalCount,
+		&oldVsceUsageStats.Month.RedirectCount,
+		&oldVsceUsageStats.Month.MonthlyUserState.Installs,
+		&oldVsceUsageStats.Month.MonthlyUserState.Uninstalls,
+		&oldVsceUsageStats.Week.StartTime,
+		&oldVsceUsageStats.Week.UserCount,
+		&oldVsceUsageStats.Week.SearchPerformed.UniqueCount,
+		&oldVsceUsageStats.Week.SearchPerformed.TotalCount,
+		&oldVsceUsageStats.Week.RedirectCount,
+		&oldVsceUsageStats.Day.StartTime,
+		&oldVsceUsageStats.Day.UserCount,
+		&oldVsceUsageStats.Day.SearchPerformed.UniqueCount,
+		&oldVsceUsageStats.Day.SearchPerformed.TotalCount,
+		&oldVsceUsageStats.Day.RedirectCount,
+	); err != nil {
 		return nil, err
 	}
 
-	defer rowsWeek.Close()
+	usageStatisticsByIdext = append(usageStatisticsByIdext, &oldVsceUsageStats)
 
-	for rowsWeek.Next() {
-		ideaExtensionUsageStatisticsWeekly := types.IdeExtensionsUsageStatistics{}
-
-		if err := rowsWeek.Scan(
-			&ideaExtensionUsageStatisticsWeekly.IdeKind,
-			&ideaExtensionUsageStatisticsWeekly.UserCount,
-			&ideaExtensionUsageStatisticsWeekly.SearchPerformed.TotalCount,
-			&ideaExtensionUsageStatisticsWeekly.SearchPerformed.UniqueCount,
-			&ideaExtensionUsageStatisticsWeekly.RedirectCount,
-		); err != nil {
-			return nil, err
-		}
-
-		usageStatisticsByIdeWeekly = append(usageStatisticsByIdeWeekly, &ideaExtensionUsageStatisticsWeekly)
-	}
-
-	stats.Week.IDEs = usageStatisticsByIdeWeekly
-
-	if err := rowsWeek.Err(); err != nil {
-		return nil, err
-	}
-
-	ideExtensionsPeriodUsageQueryDaily := `
-	SELECT
-		argument ->> 'platform'::text AS ide_kind,
-		COUNT(DISTINCT user_id) AS user_count,
-		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted'),
-		COUNT(*) FILTER (WHERE name = 'IDERedirects')
-	FROM event_logs
-	WHERE
-		source = 'IDEEXTENSION' AND timestamp >= DATE_TRUNC('day', $1::timestamp)
-	GROUP BY ide_kind;
-	`
-	usageStatisticsByIdeDaily := []*types.IdeExtensionsUsageStatistics{}
-
-	rowsDay, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQueryDaily, timeNow())
-	if err != nil {
-		return nil, err
-	}
-
-	defer rowsDay.Close()
-
-	for rowsDay.Next() {
-		ideaExtensionUsageStatisticsDaily := types.IdeExtensionsUsageStatistics{}
-
-		if err := rowsDay.Scan(
-			&ideaExtensionUsageStatisticsDaily.IdeKind,
-			&ideaExtensionUsageStatisticsDaily.UserCount,
-			&ideaExtensionUsageStatisticsDaily.SearchPerformed.TotalCount,
-			&ideaExtensionUsageStatisticsDaily.SearchPerformed.UniqueCount,
-			&ideaExtensionUsageStatisticsDaily.RedirectCount,
-		); err != nil {
-			return nil, err
-		}
-
-		usageStatisticsByIdeDaily = append(usageStatisticsByIdeDaily, &ideaExtensionUsageStatisticsDaily)
-	}
-
-	stats.Day.IDEs = usageStatisticsByIdeDaily
-
-	if err := rowsDay.Err(); err != nil {
-		return nil, err
-	}
+	stats.IDEs = usageStatisticsByIdext
 
 	return &stats, nil
 
-	// TODO: Monthly Installs
-
-	// TODO: Monthly Uninstalls
 }
 
-// USERCOUNT
-// SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name LIKE 'VSCE%' OR source = 'IDEEXTENSION';
+var ideExtensionsPeriodUsageQuery = `
+	WITH events AS (
+		SELECT
+			argument ->> 'platform'::text AS ide_kind,
+			name,
+			user_id,
+			argument,
+			source,
+			timestamp,
+			DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+			DATE_TRUNC('week', TIMEZONE('UTC', timestamp)) as week,
+			DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+			DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) as current_month,
+			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
+			DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
+		FROM event_logs
+		WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) AND source = 'IDEEXTENSION'
+	)
+	SELECT
+		ide_kind,
+		current_month,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_month),
+		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_month),
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_month),
+		COUNT(*) FILTER (WHERE name = 'IDERedirects' AND timestamp > current_month),
+		COUNT(DISTINCT user_id) FILTER (WHERE (SELECT MIN(timestamp) FROM events) > current_month),
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_month AND name = 'IDEUninstalled'),
+		current_week,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_week),
+		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_week),
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_week),
+		COUNT(*) FILTER (WHERE name = 'IDERedirects' AND timestamp > current_week),
+		current_day,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_day),
+		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_day),
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_day),
+		COUNT(*) FILTER (WHERE name = 'IDERedirects' AND timestamp > current_day)
+	FROM events
+	GROUP BY ide_kind, current_month, current_week, current_day;
+`
 
-// SEARCHPERFORMED
-// SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name LIKE 'VSCESearchSubmitted' OR name LIKE 'IDESearchSubmitted';
-
-// TOTALSEARCHPERFORMED
-// SELECT COUNT(name) FROM event_logs WHERE name LIKE 'VSCESearchSubmitted' OR name LIKE 'IDESearchSubmitted';
-
-// Redirects
-// SELECT * FROM event_logs WHERE name = 'IDERedirects' OR (url LIKE '%&utm_source=VSCode-%' AND name = 'ViewBlob');
-
-// Installs
-
-// Uninstalls
+var ideExtensionsOldVSCEPeriodUsageQuery = `
+	WITH events AS (
+		SELECT
+			name,
+			user_id,
+			url,
+			timestamp,
+			DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
+			DATE_TRUNC('week', TIMEZONE('UTC', timestamp)) as week,
+			DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
+			DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) as current_month,
+			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
+			DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
+		FROM event_logs
+		WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) AND source <> 'IDEEXTENSION' AND (name LIKE 'VSCE%' OR name LIKE 'IDE%' OR (url LIKE '%&utm_source=VSCode-%' AND name = 'ViewBlob'))
+	)
+	SELECT
+		current_month,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_month),
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_month AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_month AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_month AND name = 'ViewBlob' AND url LIKE '%&utm_source=VSCode-%'),
+		COUNT(DISTINCT user_id) FILTER (WHERE (SELECT MIN(timestamp) FROM events) > current_month),
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_month AND name = 'IDEUninstalled'),
+		current_week,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_week),
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_week AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_week AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_week AND name = 'ViewBlob' AND url LIKE '%&utm_source=VSCode-%'),
+		current_day,
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_day),
+		COUNT(DISTINCT user_id) FILTER (WHERE timestamp > current_day AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_day AND name = 'VSCESearchSubmitted'),
+		COUNT(*) FILTER (WHERE timestamp > current_day AND name = 'ViewBlob' AND url LIKE '%&utm_source=VSCode-%')
+	FROM events
+	GROUP BY current_month, current_week, current_day;
+`
