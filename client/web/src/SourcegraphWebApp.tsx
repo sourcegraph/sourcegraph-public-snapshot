@@ -455,9 +455,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     this.state.defaultSearchContextSpec
                                                                 }
                                                                 globbing={this.state.globbing}
-                                                                isCodeInsightsGqlApiEnabled={
-                                                                    window.context.codeInsightsGqlApiEnabled
-                                                                }
                                                                 fetchSavedSearches={fetchSavedSearches}
                                                                 fetchRecentSearches={fetchRecentSearches}
                                                                 fetchRecentFileViews={fetchRecentFileViews}

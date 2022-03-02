@@ -67,7 +67,6 @@ describe('SearchPage', () => {
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         featureFlags: new Map(),
-        extensionViews: () => null,
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

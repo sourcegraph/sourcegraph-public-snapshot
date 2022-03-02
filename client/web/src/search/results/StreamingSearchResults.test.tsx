@@ -52,7 +52,6 @@ describe('StreamingSearchResults', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
         featureFlags: EMPTY_FEATURE_FLAGS,
-        extensionViews: () => null,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
     }
