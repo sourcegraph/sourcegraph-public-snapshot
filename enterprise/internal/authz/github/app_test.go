@@ -33,25 +33,25 @@ func TestNewAppProvider(t *testing.T) {
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
 			if r.URL.Path == "/app/installations/1234/access_tokens" {
-				tokenString := "1234"
+				tokenString := "app-token"
 				tokenExpiry := time.Now()
 				token := github.InstallationToken{
 					Token:     &tokenString,
 					ExpiresAt: &tokenExpiry,
 				}
 
-				respJson, err := json.Marshal(token)
+				respJSON, err := json.Marshal(token)
 				require.NoError(t, err)
 
 				return &http.Response{
 					Status:     http.StatusText(http.StatusCreated),
 					StatusCode: http.StatusCreated,
-					Body:       io.NopCloser(bytes.NewReader(respJson)),
+					Body:       io.NopCloser(bytes.NewReader(respJSON)),
 				}, nil
 			}
 
 			srvHit = true
-			assert.Equal(t, "Bearer 1234", r.Header.Get("Authorization"))
+			assert.Equal(t, "Bearer app-token", r.Header.Get("Authorization"))
 			return &http.Response{
 				Status:     http.StatusText(http.StatusOK),
 				StatusCode: http.StatusOK,
