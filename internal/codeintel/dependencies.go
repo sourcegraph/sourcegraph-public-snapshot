@@ -3,6 +3,7 @@ package codeintel
 import (
 	"context"
 	"database/sql"
+	"io"
 	"strings"
 	"sync"
 
@@ -11,29 +12,33 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/lockfiles"
 )
 
 // DependenciesServices encapsulates the resolution and persistence of dependencies at the repository
 // and package levels.
 type DependenciesService struct {
 	db              database.DB
-	sync            func(context.Context, api.RepoName) (*types.Repo, error)
+	syncer          Syncer
 	lockfileService *lockfiles.Service
 	operations      *dependencyServiceOperations
+}
+
+type Syncer interface {
+	// Sync will lazily sync the repos that have been inserted into the database but have not yet been
+	// cloned. See repos.Syncer.SyncRepo.
+	Sync(ctx context.Context, repo api.RepoName) error
 }
 
 var (
@@ -41,7 +46,7 @@ var (
 	depSvcOnce sync.Once
 )
 
-func GetOrCreateGlobalDependencyService(db database.DB, repoStore database.RepoStore) *DependenciesService {
+func GetDependenciesService(db database.DB, syncer Syncer) *DependenciesService {
 	depSvcOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log15.Root(),
@@ -49,23 +54,29 @@ func GetOrCreateGlobalDependencyService(db database.DB, repoStore database.RepoS
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		depSvc = NewDependenciesService(db, backend.NewRepos(repoStore).GetByName, observationContext)
+		depSvc = newDependenciesService(db, syncer, observationContext)
 	})
 
 	return depSvc
 }
 
-func NewDependenciesService(
+func newDependenciesService(
 	db database.DB,
-	sync func(context.Context, api.RepoName) (*types.Repo, error),
+	syncer Syncer,
 	observationContext *observation.Context,
 ) *DependenciesService {
 	return &DependenciesService{
 		db:              db,
-		sync:            sync,
-		lockfileService: &lockfiles.Service{GitArchive: gitserver.DefaultClient.Archive},
+		syncer:          syncer,
+		lockfileService: lockfiles.NewService(defaultArchiveStreamer{}, observationContext),
 		operations:      newDependencyServiceOperations(observationContext),
 	}
+}
+
+type defaultArchiveStreamer struct{}
+
+func (defaultArchiveStreamer) StreamArchive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+	return gitserver.DefaultClient.Archive(ctx, repo, opts)
 }
 
 // RevSpecSet is a utility type for a set of RevSpecs.
@@ -131,16 +142,19 @@ func (r *DependenciesService) Dependencies(ctx context.Context, repoRevs map[api
 					g.Go(func() error {
 						defer sem.Release(1)
 
-						if err := depsStore.UpsertDependencyRepo(ctx, dep); err != nil {
+						isNew, err := depsStore.UpsertDependencyRepo(ctx, dep)
+						if err != nil {
 							return err
 						}
 
 						depName := dep.RepoName()
-						if _, err := r.sync(ctx, depName); err != nil {
-							return err
-						}
-
 						depRev := api.RevSpec(dep.GitTagFromVersion())
+
+						if isNew {
+							if err := r.syncer.Sync(ctx, depName); err != nil {
+								log15.Warn("failed to sync dependency repo", "repo", depName, "rev", depRev, "error", err)
+							}
+						}
 
 						mu.Lock()
 						defer mu.Unlock()

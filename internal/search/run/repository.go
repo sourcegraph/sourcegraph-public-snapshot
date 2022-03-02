@@ -122,8 +122,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
 
-	globalSearch := newArgs.Mode == search.ZoektGlobalSearch
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}

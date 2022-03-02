@@ -2,4 +2,4 @@
 
 The folder contains the scripts that our CI pipeline uses to run vulnerability scans with [Trivy](https://aquasecurity.github.io/trivy/).
 
-See https://docs.sourcegraph.com/dev/background-information/continuous_integration for more information.
+See https://docs.sourcegraph.com/dev/background-information/ci for more information.

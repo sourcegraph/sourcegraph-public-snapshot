@@ -54,7 +54,7 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
                 <>
                     Sourcegraph's code intelligence will follow you to your code host.{' '}
                     <AlertLink
-                        to="https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=inproduct-cta&utm_medium=direct_traffic&utm_source=search-results-cta&utm_term=null&utm_content=install-browser-exten"
+                        to="https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=search-results-cta&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=install-browser-exten"
                         target="_blank"
                         rel="noopener"
                     >

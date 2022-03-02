@@ -159,7 +159,7 @@ export const InviteCollaborators: React.FunctionComponent<InviteCollaborators> =
 
     return (
         <div>
-            <div className="m5-5 d-flex">
+            <div className="d-flex flex-column flex-xl-row w-100">
                 <InvitePane
                     user={user}
                     className={className}

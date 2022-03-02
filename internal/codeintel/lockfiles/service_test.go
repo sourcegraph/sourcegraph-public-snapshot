@@ -9,36 +9,39 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestService_ListDependencies(t *testing.T) {
-	s := &Service{
-		GitArchive: func(c context.Context, repo api.RepoName, ao gitserver.ArchiveOptions) (io.ReadCloser, error) {
-			var b bytes.Buffer
-			zw := zip.NewWriter(&b)
-			defer zw.Close()
+func TestListDependencies(t *testing.T) {
+	archiveStreamer := NewMockArchiveStreamer()
+	archiveStreamer.StreamArchiveFunc.SetDefaultHook(func(c context.Context, repo api.RepoName, ao gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		var b bytes.Buffer
+		zw := zip.NewWriter(&b)
+		defer zw.Close()
 
-			for file, data := range map[string]string{
-				"client/package-lock.json": `{"dependencies": { "@octokit/request": {"version": "5.6.2"} }}`,
-				"web/package-lock.json":    `{"dependencies": { "nan": {"version": "2.15.0"} }}`,
-			} {
-				w, err := zw.Create(file)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				_, err = w.Write([]byte(data))
-				if err != nil {
-					t.Fatal(err)
-				}
+		for file, data := range map[string]string{
+			"client/package-lock.json": `{"dependencies": { "@octokit/request": {"version": "5.6.2"} }}`,
+			"web/package-lock.json":    `{"dependencies": { "nan": {"version": "2.15.0"} }}`,
+		} {
+			w, err := zw.Create(file)
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			return io.NopCloser(&b), nil
-		},
-	}
+			_, err = w.Write([]byte(data))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		return io.NopCloser(&b), nil
+	})
+
+	s := NewService(archiveStreamer, &observation.TestContext)
 
 	ctx := context.Background()
 	got, err := s.ListDependencies(ctx, "foo", "HEAD")

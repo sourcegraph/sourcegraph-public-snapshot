@@ -330,32 +330,25 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		err = tx.Done(err)
 	}()
 
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_members WHERE org_id=$1", id); err != nil {
-		return err
+	// Some tables that reference the "orgs" table do not have ON DELETE CASCADE set, so we need to manually delete their entries before
+	// hard deleting an org.
+	tablesAndKeys := map[string]string{
+		"org_members":         "org_id",
+		"org_invitations":     "org_id",
+		"registry_extensions": "publisher_org_id",
+		"saved_searches":      "org_id",
+		"notebooks":           "namespace_org_id",
+		"settings":            "org_id",
+		"orgs":                "id",
 	}
 
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM org_invitations WHERE org_id=$1", id); err != nil {
-		return err
-	}
-
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM registry_extensions WHERE publisher_org_id=$1", id); err != nil {
-		return err
-	}
-
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM saved_searches WHERE org_id=$1", id); err != nil {
-		return err
-	}
-
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM notebooks WHERE namespace_org_id=$1", id); err != nil {
-		return err
-	}
-
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM settings WHERE org_id=$1", id); err != nil {
-		return err
-	}
-
-	if _, err := tx.Handle().DB().ExecContext(ctx, "DELETE FROM orgs WHERE id=$1", id); err != nil {
-		return err
+	// The order of deletion matters, that is why we iterate over an array instead of a map, which is unordered.
+	tables := []string{"org_members", "org_invitations", "registry_extensions", "saved_searches", "notebooks", "settings", "orgs"}
+	for _, t := range tables {
+		query := fmt.Sprintf("DELETE FROM %s WHERE %s=%v", t, tablesAndKeys[t], id)
+		if _, err := tx.Handle().DB().ExecContext(ctx, query); err != nil {
+			return err
+		}
 	}
 
 	return nil
