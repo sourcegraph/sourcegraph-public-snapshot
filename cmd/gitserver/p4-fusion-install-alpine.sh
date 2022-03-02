@@ -35,10 +35,10 @@ set -x
 #
 #   docker build -t p4-fusion --target=p4-fusion .
 #
-# then extract the binary from /usr/local/bin/p4-fusion. Please rename it
+# Then extract the binary from /usr/local/bin/p4-fusion. Please rename it
 # follow the format and upload to the bucket here
 # https://console.cloud.google.com/storage/browser/sourcegraph-artifacts/p4-fusion
-export P4_FUSION_VERSION=v1.5
+export P4_FUSION_VERSION=v1.6
 
 # Runtime dependencies
 echo "--- p4-fusion apk runtime-deps"
@@ -49,7 +49,7 @@ echo "--- p4-fusion prebuilt binary check"
 if wget https://storage.googleapis.com/sourcegraph-artifacts/p4-fusion/p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64; then
   src=p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64
   cat <<EOF | grep "$src" | sha256sum -c
-988c39b163b0419ed1abb71c5ccb656eedfb2fea54803e5275fccb244e344a7e  p4-fusion-v1.5-musl-x86_64
+9a7a1d7e991a8ab8a4faf2c64f9351fa68416d7b1fc52d5a8d8fff6c5f1a0eac  p4-fusion-v1.6-musl-x86_64
 EOF
   chmod +x "$src"
   mv "$src" /usr/local/bin/p4-fusion
