@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, Link, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, Modal } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -24,7 +24,7 @@ const REMOVE_ORG_MUTATION = gql`
 `
 
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
-    const { org, isOpen, authenticatedUser, toggleDeleteModal } = props
+    const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
     const [removeOrganization] = useMutation(REMOVE_ORG_MUTATION)
@@ -66,24 +66,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             data-testid="delete-org-modal"
         >
 
-        {!props.authenticatedUser.siteAdmin ?
-            <div>
-                <h3 className="text-danger" id={deleteLabelId}>
-                Please contact support to delete this organization
-                </h3>
-                <CloseIcon
-                    className="icon-inline position-absolute cursor-pointer"
-                    style={{ top: '1rem', right: '1rem' }}
-                    onClick={toggleDeleteModal}
-                />
-                <p>
-                    To delete this orgnaization, please contact our support on{' '}
-                    <Link target="_blank" rel="noopener noreferrer" to="mailto:support@sourcegraph.com">
-                        support@sourcegraph.com
-                    </Link>{' '}
-                </p>
-            </div>
-            :
+        {props.org.viewerIsMember && (
             <div>
                 <h3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
@@ -114,7 +97,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                 </Button>
             </div>
             </div>
-        }
+        )}
         </Modal>
     )
 }

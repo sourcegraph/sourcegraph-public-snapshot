@@ -36,7 +36,6 @@ export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
                         isOpen={showDeleteModal}
                         toggleDeleteModal={toggleDeleteModal}
                     />
-
                 </div>
             </Container>
         </div>
