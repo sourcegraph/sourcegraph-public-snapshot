@@ -1,7 +1,10 @@
 package profiler
 
 import (
+	"os"
+
 	"cloud.google.com/go/profiler"
+	ddprofiler "gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -21,7 +24,19 @@ func Init() error {
 	if !deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		return nil
 	}
-
+	// https://docs.datadoghq.com/tracing/profiler/enabling/go/
+	if os.Getenv("DD_ENV") != "" {
+		profileTypes := []ddprofiler.ProfileType{ddprofiler.CPUProfile, ddprofiler.HeapProfile}
+		if os.Getenv("DD_PROFILE_ALL") != "" {
+			profileTypes = append(profileTypes, ddprofiler.MutexProfile, ddprofiler.BlockProfile)
+		}
+		return ddprofiler.Start(
+			ddprofiler.WithService(env.MyName),
+			ddprofiler.WithVersion(version.Version()),
+			ddprofiler.WithProfileTypes(profileTypes...,
+			),
+		)
+	}
 	return profiler.Start(profiler.Config{
 		Service:        env.MyName,
 		ServiceVersion: version.Version(),
