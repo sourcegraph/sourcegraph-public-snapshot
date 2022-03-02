@@ -5154,7 +5154,9 @@ type OrganizationInvitation implements Node {
     """
     isVerifiedEmail: Boolean
 }
-
+"""
+Result user returned by invite members autocomplete search.
+"""
 type AutocompleteMemberSearchItem {
     """
     The unique ID for the user.
@@ -5173,7 +5175,7 @@ type AutocompleteMemberSearchItem {
     """
     avatarURL: String
     """
-    The URL of the user's avatar image.
+    If the user belongs to current Organization.
     """
     inOrg: Boolean
 }

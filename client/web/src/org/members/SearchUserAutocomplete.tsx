@@ -24,7 +24,6 @@ interface IUserItem {
 interface AutocompleteSearchUsersProps {
     disabled?: boolean
     onValueChanged: (value: string, isEmail: boolean) => void
-    orgMembersId: string[]
     orgId: string
 }
 
