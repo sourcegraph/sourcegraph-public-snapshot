@@ -45,11 +45,6 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	readmeHash, err := readmeObject(r.Storer)
-	if err != nil {
-		return err
-	}
-
 	conf, err := r.Config()
 	if err != nil {
 		return err
@@ -130,13 +125,6 @@ func Combine(path string, opt Options) error {
 				Hash: tree,
 			})
 		}
-
-		// Add README.md.
-		entries = append(entries, object.TreeEntry{
-			Name: "README.md",
-			Mode: filemode.Regular,
-			Hash: readmeHash,
-		})
 
 		// TODO is this necessary?
 		sort.Slice(entries, func(i, j int) bool {
@@ -229,34 +217,6 @@ func Combine(path string, opt Options) error {
 	}
 
 	return nil
-}
-
-func readmeObject(storer storer.EncodedObjectStorer) (plumbing.Hash, error) {
-	readme := []byte(`# megarepo
-
-This is a synthetic monorepo created by continuously applying commits from upstream projects into respective sub directories.
-
-See https://github.com/sourcegraph/sourcegraph/tree/main/internal/cmd/git-combine
-`)
-	obj := storer.NewEncodedObject()
-	obj.SetType(plumbing.BlobObject)
-	obj.SetSize(int64(len(readme)))
-
-	w, err := obj.Writer()
-	if err != nil {
-		return plumbing.ZeroHash, err
-	}
-
-	if _, err := w.Write(readme); err != nil {
-		_ = w.Close()
-		return plumbing.ZeroHash, err
-	}
-
-	if err := w.Close(); err != nil {
-		return plumbing.ZeroHash, err
-	}
-
-	return storer.SetEncodedObject(obj)
 }
 
 func storeObject(storer storer.EncodedObjectStorer, obj interface {
