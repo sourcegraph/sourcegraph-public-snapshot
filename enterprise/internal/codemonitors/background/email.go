@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"net/url"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,6 +31,20 @@ func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *Templa
 	}
 	return sendEmail(ctx, userID, newSearchResultsEmailTemplates, data)
 }
+
+var (
+	//go:embed template.html.tmpl
+	htmlTemplate string
+
+	//go:embed template.txt.tmpl
+	textTemplate string
+)
+
+var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `{{ if .IsTest }}Test: {{ end }}[{{.Priority}} event] {{.Description}}`,
+	Text:    textTemplate,
+	HTML:    htmlTemplate,
+})
 
 type TemplateDataNewSearchResults struct {
 	Priority                  string
