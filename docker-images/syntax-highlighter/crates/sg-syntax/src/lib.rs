@@ -10,8 +10,12 @@ use syntect::{
 
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
+pub use sg_treesitter::dump_document_range;
 pub use sg_treesitter::index_language as lsif_index;
+pub use sg_treesitter::index_language_with_config as lsif_index_with_config;
 pub use sg_treesitter::lsif_highlight;
+pub use sg_treesitter::make_highlight_config;
+pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
@@ -60,7 +64,21 @@ pub struct SourcegraphQuery {
     pub code: String,
 }
 
-pub fn determine_language<'a>(
+pub fn determine_filetype(q: &SourcegraphQuery) -> String {
+    let filetype = SYNTAX_SET.with(|syntax_set| match determine_language(q, syntax_set) {
+        Ok(language) => language.name.clone(),
+        Err(_) => "".to_owned(),
+    });
+
+    // We normalize all the filenames here
+    match filetype.as_str() {
+        "C#" => "c_sharp",
+        filetype => filetype,
+    }
+    .to_lowercase()
+}
+
+fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {

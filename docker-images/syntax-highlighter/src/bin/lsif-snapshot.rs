@@ -21,8 +21,7 @@ fn main() {
             }
         };
 
-        println!("\n\n{}", dump_document(document, &contents));
-        // println!("{}", dump_document())
+        println!("\n\n{}", dump_document(&document, &contents));
     } else {
         panic!("Must pass a filepath");
     }

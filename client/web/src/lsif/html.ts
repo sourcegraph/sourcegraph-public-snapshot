@@ -1,3 +1,5 @@
+import escape from 'escape-html'
+
 import { JsonDocument, Occurrence, SyntaxKind } from './lsif-typed'
 
 class HtmlBuilder {
@@ -14,7 +16,7 @@ class HtmlBuilder {
     }
     public element(element: string, attributes: string, value: string): void {
         this.openTag(element + ' ' + attributes)
-        this.raw(value)
+        this.raw(escape(value))
         this.closeTag(element)
     }
     public raw(html: string): void {
@@ -103,7 +105,7 @@ export function render(lsif_json: string, content: string): string {
             // At this time, the syntax highlighter only returns non-overlapping ranges so this
             // is OK.
             if (start.line !== end.line) {
-                html.plaintext(line.slice(start.character))
+                highlightSlice(html, occ.kind, line.slice(start.character))
                 closeLine(html)
 
                 // Move to the next line

@@ -43,7 +43,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
     ("keyword.return",          SyntaxKind::IdentifierKeyword),
-    ("method",                  SyntaxKind::Identifier),
+    ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
     ("property",                SyntaxKind::Identifier),
@@ -112,7 +112,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql )
+        create_configurations!( go, sql, c_sharp )
     };
 }
 
@@ -139,17 +139,46 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
 }
 
 pub fn index_language(filetype: &str, code: &str) -> Result<Document, Error> {
-    let mut highlighter = TSHighlighter::new();
     let lang_config = match CONFIGURATIONS.get(filetype) {
         Some(lang_config) => lang_config,
         None => return Err(Error::InvalidLanguage),
     };
 
+    index_language_with_config(code, &lang_config)
+}
+
+pub fn make_highlight_config(name: &str, highlights: &str) -> Option<HighlightConfiguration> {
+    let config = match CONFIGURATIONS.get(name) {
+        Some(config) => config,
+        None => return None,
+    };
+
+    // Create HighlightConfiguration language
+    let mut lang = match HighlightConfiguration::new(config.language, highlights, "", "") {
+        Ok(lang) => lang,
+        Err(_) => return None,
+    };
+
+    // Associate highlights with configuration
+    let highlight_names = MATCHES_TO_SYNTAX_KINDS
+        .iter()
+        .map(|hl| hl.0)
+        .collect::<Vec<&str>>();
+    lang.configure(&highlight_names);
+
+    Some(lang)
+}
+
+pub fn index_language_with_config(
+    code: &str,
+    lang_config: &HighlightConfiguration,
+) -> Result<Document, Error> {
     // TODO: We should automatically apply no highlights when we are
     // in an injected piece of code.
     //
     // Unfortunately, that information isn't currently available when
     // we are iterating in the higlighter.
+    let mut highlighter = TSHighlighter::new();
     let highlights = highlighter.highlight(lang_config, code.as_bytes(), None, |l| {
         CONFIGURATIONS.get(l)
     })?;
@@ -313,14 +342,34 @@ impl LsifEmitter {
     }
 }
 
-pub fn dump_document(doc: Document, source: &str) -> String {
+pub fn dump_document(doc: &Document, source: &str) -> String {
+    dump_document_range(doc, source, &None)
+}
+
+pub struct FileRange {
+    pub start: usize,
+    pub end: usize,
+}
+
+pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
     let mut occurences = doc.get_occurrences().to_owned();
     occurences.sort_by_key(|o| PackedRange::from_vec(&o.range));
     let mut occurences = VecDeque::from(occurences);
 
     let mut result = String::new();
 
-    for (idx, line) in source.lines().enumerate() {
+    let line_iterator: Box<dyn Iterator<Item = (usize, &str)>> = match file_range {
+        Some(range) => Box::new(
+            source
+                .lines()
+                .enumerate()
+                .skip(range.start - 1)
+                .take(range.end - range.start + 1),
+        ),
+        None => Box::new(source.lines().enumerate()),
+    };
+
+    for (idx, line) in line_iterator {
         result += "  ";
         result += &line.replace("\t", " ");
         result += "\n";
@@ -335,7 +384,9 @@ pub fn dump_document(doc: Document, source: &str) -> String {
                 continue;
             }
 
-            if range.start_line != idx as i32 {
+            if range.start_line < idx as i32 {
+                continue;
+            } else if range.start_line > idx as i32 {
                 occurences.push_front(occ);
                 break;
             }
@@ -356,13 +407,20 @@ pub fn dump_document(doc: Document, source: &str) -> String {
 
 #[cfg(test)]
 mod test {
+    use std::{
+        fs::{read_dir, File},
+        io::Read,
+    };
+
+    use crate::determine_filetype;
+
     use super::*;
 
     #[test]
     fn test_highlights_one_comment() -> Result<(), Error> {
         let src = "// Hello World";
         let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(document, src));
+        insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
     }
@@ -378,7 +436,7 @@ func main() {
 "#;
 
         let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(document, src));
+        insta::assert_snapshot!(dump_document(&document, src));
 
         Ok(())
     }
@@ -393,7 +451,51 @@ SELECT * FROM my_table
 "#;
 
         let document = index_language("go", src)?;
-        insta::assert_snapshot!(dump_document(document, src));
+        insta::assert_snapshot!(dump_document(&document, src));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_highlight_csharp_file() -> Result<(), Error> {
+        let src = "using System;";
+        let document = index_language("c_sharp", src)?;
+        insta::assert_snapshot!(dump_document(&document, src));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_all_files() -> Result<(), std::io::Error> {
+        let dir = read_dir("./src/snapshots/files/")?;
+        for entry in dir.into_iter() {
+            let entry = entry?;
+            let filepath = entry.path();
+            let mut file = File::open(&filepath)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+
+            let filetype = &determine_filetype(&SourcegraphQuery {
+                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
+                filepath: filepath.to_str().unwrap().to_string(),
+                filetype: None,
+                css: false,
+                line_length_limit: None,
+                theme: "".to_string(),
+                code: contents.clone(),
+            });
+
+            println!("Filetype: {filetype}");
+
+            let document = index_language(filetype, &contents).unwrap();
+            insta::assert_snapshot!(
+                filepath
+                    .to_str()
+                    .unwrap()
+                    .replace("/src/snapshots/files", ""),
+                dump_document(&document, &contents)
+            );
+        }
 
         Ok(())
     }
