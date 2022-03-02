@@ -165,6 +165,11 @@ describe('GitHub', () => {
                     merged: { contents: JSON.stringify(userSettings), messages: [] },
                 },
             }),
+            UserSettingsURL: () => ({
+                currentUser: {
+                    settingsURL: 'users/john-doe/settings',
+                },
+            }),
             Extensions,
         })
 

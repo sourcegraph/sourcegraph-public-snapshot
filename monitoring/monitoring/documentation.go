@@ -92,10 +92,7 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 						return nil, errors.Errorf("error rendering alert solution entry %q %q: %w",
 							c.Name, o.Name, err)
 					}
-					if err := docs.renderDashboardPanelEntry(c, g, o, observablePanelID(gIndex, rIndex, oIndex)); err != nil {
-						return nil, errors.Errorf("error rendering dashboard panel entry  %q %q: %w",
-							c.Name, o.Name, err)
-					}
+					docs.renderDashboardPanelEntry(c, o, observablePanelID(gIndex, rIndex, oIndex))
 				}
 			}
 		}
@@ -164,7 +161,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	return nil
 }
 
-func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Observable, panelID uint) error {
+func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable, panelID uint) {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
 	fprintSubtitle(&d.dashboards, upperFirst(o.Description))
 
@@ -202,5 +199,4 @@ Query: %s
 
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
-	return nil
 }

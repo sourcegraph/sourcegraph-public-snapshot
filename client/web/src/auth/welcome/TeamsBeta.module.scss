@@ -1,5 +1,6 @@
 .container {
     width: 45.5rem;
+    max-width: calc(100vw - 2rem);
 }
 
 .content {
@@ -9,7 +10,7 @@
     padding: 1rem;
     position: static;
     min-height: 14rem;
-    background: var(--color-bg-1);
+    background-color: var(--color-bg-1);
     border: 1px solid var(--border-color);
     border-radius: 3px;
     opacity: 1;
@@ -18,6 +19,13 @@
 
 .content-transitioning {
     min-height: 56rem;
+    // Hard-code white here as the iframe of HubSpot is not easily configurable and ignores our
+    // dark-mode setting.
+    background-color: var(--white);
+}
+
+.content-submitted {
+    min-height: 14rem;
 }
 
 .content-inner {

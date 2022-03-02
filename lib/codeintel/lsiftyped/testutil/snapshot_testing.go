@@ -10,8 +10,9 @@ import (
 	"github.com/hexops/gotextdiff"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 )
 
 var updateLsifSnapshots = flag.Bool("update-lsif-snapshots", false, "update LSIF snapshots files")
@@ -47,12 +48,12 @@ func SnapshotTestDirectories(t *testing.T, inputDirectory, outputDirectory strin
 			sources, err := lsiftyped.NewSourcesFromDirectory(baseInputDirectory)
 			require.Nil(t, err)
 			obtainedSnapshots := indexFunction(baseInputDirectory, baseOutputDirectory, sources)
-			snapshotTestSources(t, baseInputDirectory, baseOutputDirectory, obtainedSnapshots)
+			snapshotTestSources(t, baseOutputDirectory, obtainedSnapshots)
 		})
 	}
 }
 
-func snapshotTestSources(t *testing.T, inputDirectory, outputDirectory string, obtainedSnapshots []*lsiftyped.SourceFile) {
+func snapshotTestSources(t *testing.T, outputDirectory string, obtainedSnapshots []*lsiftyped.SourceFile) {
 	for _, document := range obtainedSnapshots {
 		t.Run(document.RelativePath, func(t *testing.T) {
 			obtained := document.Text

@@ -170,6 +170,16 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'contains.commit.after(${1:1 month ago})',
                 asSnippet: true,
             },
+            {
+                label: 'deps(...)',
+                insertText: 'deps(${1})',
+                asSnippet: true,
+            },
+            {
+                label: 'dependencies(...)',
+                insertText: 'dependencies(${1})',
+                asSnippet: true,
+            },
         ]
     }
     return []

@@ -17,7 +17,7 @@ export enum InsightExecutionType {
     Runtime = 'runtime',
 
     /**
-     * This type of insights work via our backend and and gql API returns these insight with
+     * This type of insights work via our backend and gql API returns this insight with
      * pre-calculated data points.
      */
     Backend = 'backend',

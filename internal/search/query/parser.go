@@ -783,21 +783,21 @@ func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
 		} else {
 			labels = Literal | Quoted
 		}
-		return newPattern(value, false, labels, newRange(start, p.pos)), true
+		return newPattern(value, labels, newRange(start, p.pos)), true
 	}
 	return Pattern{}, false
 }
 
 func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
 	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
-		pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
+		pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 		p.pos += advance
 		return pattern, true
 	}
 	return Pattern{}, false
 }
 
-func newPattern(value string, negated bool, labels labels, range_ Range) Pattern {
+func newPattern(value string, labels labels, range_ Range) Pattern {
 	return Pattern{
 		Value:   value,
 		Negated: false,
@@ -837,7 +837,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		label.set(HeuristicDanglingParens)
 	}
 	p.pos += advance
-	return newPattern(value, false, label, newRange(start, p.pos))
+	return newPattern(value, label, newRange(start, p.pos))
 
 }
 
@@ -917,7 +917,7 @@ loop:
 					if label.IsSet(Literal) {
 						label.set(HeuristicParensAsPatterns)
 					}
-					pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))
+					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance
 					nodes = append(nodes, pattern)
 					continue
@@ -943,7 +943,7 @@ loop:
 				// We parsed "()".
 				if isSet(p.heuristics, parensAsPatterns) {
 					// Interpret literally.
-					nodes = []Node{newPattern("()", false, Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
+					nodes = []Node{newPattern("()", Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
 				} else {
 					// Interpret as a group: return an empty non-nil node.
 					nodes = []Node{Parameter{}}

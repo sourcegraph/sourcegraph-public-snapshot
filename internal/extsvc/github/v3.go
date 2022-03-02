@@ -140,6 +140,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 	return c.request(ctx, req, result)
 }
 
+//nolint:unparam // Return *httpResponseState for consistency with other methods
 func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -510,7 +511,7 @@ func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *V3Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+func (c *V3Client) getRepositoryFromCache(key string) *cachedRepo {
 	b, ok := c.repoCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil

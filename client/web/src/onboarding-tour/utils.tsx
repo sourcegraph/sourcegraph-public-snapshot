@@ -1,3 +1,5 @@
+import isAbsoluteURL from 'is-absolute-url'
+
 export const buildURIMarkers = (href: string, stepId: string): string => {
     const isRelative = !isAbsoluteURL(href)
 
@@ -17,7 +19,5 @@ export const parseURIMarkers = (searchParameters: string): { isTour: boolean; st
     const stepId = parameters.get('stepId')
     return { isTour, stepId }
 }
-
-const isAbsoluteURL = (url: string): boolean => /^https?:\/\//i.test(url)
 
 export const isExternalURL = (url: string): boolean => isAbsoluteURL(url) && new URL(url).origin !== location.origin
