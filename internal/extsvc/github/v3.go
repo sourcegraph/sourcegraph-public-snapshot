@@ -519,12 +519,12 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, page)
 	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, page)
 
-	if c.orgsCache == nil {
-		return nil, false, errors.New("ListOrganizations cannot be invoked if orgsCache is nil (client belongs to either github.com or has no authenticator")
-	}
-
 	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
 	updateOrgsCache := func(r *httpResponseState) error {
+		if c.orgsCache == nil {
+			return nil
+		}
+
 		newEtag := r.headers.Get("Etag")
 		c.orgsCache.Set(etagKey, []byte(newEtag))
 
@@ -545,6 +545,16 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		}
 
 		return updateOrgsCache(respState)
+	}
+
+	if c.orgsCache == nil {
+		log15.Warn("ListOrganizations invoked with a nil orgsCache (client probably has no authenticator) and this could be bad for API rate limits")
+
+		if err := getOrgsFromAPI(); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
 	}
 
 	etag, cacheHit := c.orgsCache.Get(etagKey)

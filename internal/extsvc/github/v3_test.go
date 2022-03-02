@@ -455,7 +455,32 @@ func TestGetOrganization(t *testing.T) {
 // username milton in 1password. The token used for this test is named sourcegraph-vcr-token and is
 // also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
-	t.Run("enterprise-integration", func(t *testing.T) {
+	t.Run("enterprise-integration-without-cache", func(t *testing.T) {
+		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
+		defer save()
+
+		// Simplest way to initialise a client with no cache.
+		cli.orgsCache = nil
+
+		orgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if orgs == nil {
+			t.Fatal("expected orgs but got nil")
+		}
+
+		if len(orgs) != 100 {
+			t.Fatalf("expected 100 orgs but got %d", len(orgs))
+		}
+
+		if !hasNextPage {
+			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		}
+	})
+
+	t.Run("enterprise-integration-with-cache", func(t *testing.T) {
 		rcache.SetupForTest(t)
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
