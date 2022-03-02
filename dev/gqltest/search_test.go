@@ -359,7 +359,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 		_, err = client.Repository("github.com/sgtest/sourcegraph-typescript")
 		require.NoError(t, err)
 
-		query := fmt.Sprintf("r:deps(^github\\.com/sgtest/sourcegraph-typescript$@e1e1143) r:lodash")
+		const query = `r:deps(^github\.com/sgtest/sourcegraph-typescript$@e1e1143) r:lodash`
 
 		want := []string{
 			"/npm/lodash.clone@v4.5.0",
