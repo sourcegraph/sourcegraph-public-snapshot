@@ -5,7 +5,6 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import GraphOutlineIcon from 'mdi-react/GraphOutlineIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -41,17 +40,8 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { toURIWithPath, toPrettyBlobURL, buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    useObservable,
-    ButtonGroup,
-    Link,
-    ProductStatusBadge,
-} from '@sourcegraph/wildcard'
+import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -61,7 +51,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchPatternType, GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -332,9 +322,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
-    const repoDepsSearchQueryURL = buildSearchURLQuery(`repo:deps(${repo.name})`, SearchPatternType.literal, false)
-
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
@@ -426,17 +413,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                             >
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </Button>
-                                        )}
-                                        {dependenciesSearchEnabled && (
-                                            <Button
-                                                to={`/search?${repoDepsSearchQueryURL}`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
-                                                <ProductStatusBadge status="beta" />
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
