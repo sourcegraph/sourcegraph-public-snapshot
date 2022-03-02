@@ -25,10 +25,11 @@ func Test_getExtraScopes(t *testing.T) {
 		provider  string
 		scopes    []string
 	}{
-		"withoutScopes_gitlab": {LoginStateOpCreateAccount, extsvc.TypeGitLab, []string{}},
-		"withoutScopes_github": {LoginStateOpCreateAccount, extsvc.TypeGitHub, []string{}},
-		"withScopes_gitlab":    {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitLab, []string{"api"}},
-		"withScopes_github":    {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitHub, []string{"repo"}},
+		"withoutScopes_gitlab":  {LoginStateOpCreateAccount, extsvc.TypeGitLab, []string{}},
+		"withoutScopes_github":  {LoginStateOpCreateAccount, extsvc.TypeGitHub, []string{}},
+		"withScopes_gitlab":     {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitLab, []string{"api"}},
+		"withScopes_github":     {LoginStateOpCreateCodeHostConnection, extsvc.TypeGitHub, []string{"repo"}},
+		"withScopes_github_org": {LoginStateOpCreateOrgCodeHostConnection, extsvc.TypeGitHub, []string{"read:org"}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			got, err := getExtraScopes(context.Background(), db, test.provider, test.operation)
