@@ -107,10 +107,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		tc.name = "GITHUB-DOT-COM/" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
+			setUpRcache(t)
 
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
@@ -142,20 +139,55 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
-func TestListPublicReposPagination(t *testing.T) {
-	u, _ := url.Parse("https://ghe.sgdev.org/api/v3")
-	a := &auth.OAuthBearerToken{
-		Token: "REDACTED",
+func setUpRcache(t *testing.T) {
+	// The GithubSource uses the github.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+}
+
+func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
+	setUpRcache(t)
+
+	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
+	gheToken := prepareGheToken(t, fixtureName)
+
+	service := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org",
+			Token: gheToken,
+		}),
 	}
 
-	client := github.NewV3Client(u, a, nil)
+	factory, save := newClientFactory(t, fixtureName)
+	defer save(t)
 
-	ctx := context.Background()
-	repos, err := client.ListPublicRepositories(ctx, 500000)
+	githubSrc, err := NewGithubSource(service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Fatal(repos)
+
+	results := make(chan *githubResult)
+	go func() {
+		githubSrc.listPublic(context.Background(), results)
+		close(results)
+	}()
+
+	for result := range results {
+		if result.err != nil {
+			t.Error("unexpected error, expected repository instead")
+		}
+	}
+}
+
+func prepareGheToken(t *testing.T, fixtureName string) string {
+	gheToken := os.Getenv("GHE_TOKEN")
+
+	if update(fixtureName) && gheToken == "" {
+		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+	}
+	return gheToken
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
@@ -222,7 +254,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				},
 			})
 
-			rcache.SetupForTest(t)
+			setUpRcache(t)
 			fixtureName := "githubenterprise-getrepo"
 			gheToken := os.Getenv("GHE_TOKEN")
 			fmt.Println(gheToken)
@@ -482,10 +514,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "GITHUB-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
+			setUpRcache(t)
 
 			var (
 				cf   *httpcli.Factory
@@ -631,10 +660,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 	})
 
 	t.Run("github enterprise", func(t *testing.T) {
-		// The GithubSource uses the github.Client under the hood, which
-		// uses rcache, a caching layer that uses Redis.
-		// We need to clear the cache before we run the tests
-		rcache.SetupForTest(t)
+		setUpRcache(t)
 
 		fixtureName := "githubenterprise-version"
 		gheToken := os.Getenv("GHE_TOKEN")
