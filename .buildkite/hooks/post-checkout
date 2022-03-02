@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
 ## -- START: ADD git lfs
-if [ $(dpkg-query -W -f='${Status}' git-lfs 2>/dev/null | grep -c "ok installed") -eq 0 ]
-then
+REQUIRED_PKG = "git-lfs"
+PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
+echo "Checking for $REQUIRED_PKG: $PKG_OK"
+if [ "" = PKG_OK ]; then
+  echo "No $REQUIRED_PKG. Setting up $REQUIRED_PKG."
   echo "Installing Git LFS..."
 
   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
