@@ -834,21 +834,22 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> =
         return null
     }
 
-    const urlBasedToken = {
-        repoName,
-        line,
-        character,
-        filePath,
-    }
+    const token = { repoName, line, character, filePath }
+
     if (commitID === undefined || revision === undefined) {
-        return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
+        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} handlePanelClose={handlePanelClose} />
     }
 
-    const token = { ...urlBasedToken, revision, commitID }
-    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={handlePanelClose} />
+    return (
+        <ResizableCoolCodeIntelPanel
+            {...props}
+            clickedToken={{ ...token, revision, commitID }}
+            handlePanelClose={handlePanelClose}
+        />
+    )
 }
 
-export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
+export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
     CoolCodeIntelProps & {
         repoName: string
         line: number

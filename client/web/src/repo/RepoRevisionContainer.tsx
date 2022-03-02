@@ -2,7 +2,7 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -211,11 +211,12 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     // Experimental reference panel
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
     // We only render the reference panel when looking at files
-    const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
-    const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
+    // const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
+    // const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
     const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
     // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
-    const showCoolCodeIntelPanel = coolCodeIntelEnabled && referencePanelRouteMatch && viewState
+    const showCoolCodeIntelPanel =
+        coolCodeIntelEnabled && viewState && (viewState === 'references' || viewState.startsWith('implementations_'))
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
