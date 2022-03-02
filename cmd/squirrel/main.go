@@ -118,28 +118,26 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(golang.GetLanguage())
-	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
-	cmd.Repo = api.RepoName(repo)
-	stdout, stderr, err := cmd.DividedOutput(r.Context())
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr), http.StatusInternalServerError)
-		return
+	readFile := func(RepoCommitPath) ([]byte, error) {
+		cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
+		cmd.Repo = api.RepoName(repo)
+		stdout, stderr, err := cmd.DividedOutput(r.Context())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
+		}
+		return stdout, nil
 	}
-	tree, err := parser.ParseCtx(context.Background(), nil, stdout)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to parse file contents: %s", err), http.StatusInternalServerError)
-		return
-	}
-	root := tree.RootNode()
 
-	node := root.NamedDescendantForPointRange(
-		sitter.Point{Row: row, Column: column},
-		sitter.Point{Row: row, Column: column},
-	)
+	squirrel := NewSquirrel(readFile)
 
-	result, err := definition(node)
+	result, err := squirrel.definition(Location{
+		RepoCommitPath: RepoCommitPath{
+			Repo:   repo,
+			Commit: commit,
+			Path:   path},
+		Row:    row,
+		Column: column,
+	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
 		return
@@ -148,21 +146,61 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, result)
 }
 
-type definitionResult struct {
+type RepoCommitPath struct {
 	Repo   string `json:"repo"`
 	Commit string `json:"commit"`
 	Path   string `json:"path"`
+}
+
+type Location struct {
+	RepoCommitPath
 	Row    uint32 `json:"row"`
 	Column uint32 `json:"column"`
 }
 
-func definition(node *sitter.Node) (*definitionResult, error) {
+type ReadFileFunc func(RepoCommitPath) ([]byte, error)
+
+type Squirrel struct {
+	readFile ReadFileFunc
+}
+
+func NewSquirrel(readFile ReadFileFunc) *Squirrel {
+	return &Squirrel{readFile: readFile}
+}
+
+func (s *Squirrel) definition(location Location) (*Location, error) {
+	parser := sitter.NewParser()
+
+	ext := filepath.Ext(location.Path)
+	switch ext {
+	case ".go":
+		parser.SetLanguage(golang.GetLanguage())
+	default:
+		return nil, fmt.Errorf("unrecognized file extension %s", ext)
+	}
+
+	contents, err := s.readFile(location.RepoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err := parser.ParseCtx(context.Background(), nil, contents)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse file contents: %s", err)
+	}
+	root := tree.RootNode()
+
+	node := root.NamedDescendantForPointRange(
+		sitter.Point{Row: location.Row, Column: location.Column},
+		sitter.Point{Row: location.Row, Column: location.Column},
+	)
+
 	if node == nil {
 		return nil, errors.New("node is nil")
 	}
 
 	if node.Type() != "identifier" {
-		return nil, errors.New("node is not an identifier")
+		return nil, errors.Newf("can't find definition of %s at location %+v", node.Type(), location)
 	}
 
 	return nil, errors.New("not implemented")
