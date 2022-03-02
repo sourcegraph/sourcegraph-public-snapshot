@@ -301,26 +301,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Browser extension
                             <ul>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the file
-                                    page
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
                                 </li>
                                 <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the file
-                                    page
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            IDE extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
                                 </li>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>Total number of views of the "install browser extension" CTA on the file page</li>
-                                <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
-                                <li>Total number of views of the "install browser extension" CTA on the search page</li>
-                                <li>
-                                    Total number of clicks on the "install browser extension" CTA on the search page
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
                                 </li>
                             </ul>
                         </li>

@@ -95,7 +95,10 @@ END
             DATE_TRUNC('day', timestamp) AS day,
             argument->>'page' AS page
       FROM event_logs
-     WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
+     WHERE name IN ('InstallBrowserExtensionCTAShown',
+                    'InstallBrowserExtensionCTAClicked',
+                    'InstallIDEExtensionCTAShown',
+                    'InstallIDEExtensionCTAClicked')
        AND argument->>'page' IN ('file', 'search')
        AND DATE_TRUNC('day', timestamp) = DATE_TRUNC('day', $1::timestamp)
      ) UNION ALL (
@@ -106,56 +109,64 @@ END
     )
  )
  SELECT day,
-        COUNT(DISTINCT user_id) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'file') AS user_count_who_saw_bext_cta_on_file_page,
-        COUNT(DISTINCT user_id) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'file') AS user_count_who_clicked_bext_cta_on_file_page,
-        COUNT(DISTINCT user_id) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'search') AS user_count_who_saw_bext_cta_on_search_page,
-        COUNT(DISTINCT user_id) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'search') AS user_count_who_clicked_bext_cta_on_search_page,
-        COUNT(*) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'file') AS bext_cta_displays_on_file_page,
-        COUNT(*) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'file') AS bext_cta_clicks_on_file_page,
-        COUNT(*) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'search') AS bext_cta_displays_on_search_page,
-        COUNT(*) FILTER (
-                  WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'search') AS bext_cta_clicks_on_search_page
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallBrowserExtensionCTAShown' AND page = 'file'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallBrowserExtensionCTAClicked' AND page = 'file'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallBrowserExtensionCTAShown' AND page = 'search'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallBrowserExtensionCTAClicked' AND page = 'search'),
+        COUNT(*) FILTER (WHERE name = 'InstallBrowserExtensionCTAShown' AND page = 'file'),
+        COUNT(*) FILTER (WHERE name = 'InstallBrowserExtensionCTAClicked' AND page = 'file'),
+        COUNT(*) FILTER (WHERE name = 'InstallBrowserExtensionCTAShown' AND page = 'search'),
+        COUNT(*) FILTER (WHERE name = 'InstallBrowserExtensionCTAClicked' AND page = 'search'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallIDEExtensionCTAShown' AND page = 'file'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallIDEExtensionCTAClicked' AND page = 'file'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallIDEExtensionCTAShown' AND page = 'search'),
+        COUNT(DISTINCT user_id) FILTER (WHERE name = 'InstallIDEExtensionCTAClicked' AND page = 'search'),
+        COUNT(*) FILTER (WHERE name = 'InstallIDEExtensionCTAShown' AND page = 'file'),
+        COUNT(*) FILTER (WHERE name = 'InstallIDEExtensionCTAClicked' AND page = 'file'),
+        COUNT(*) FILTER (WHERE name = 'InstallIDEExtensionCTAShown' AND page = 'search'),
+        COUNT(*) FILTER (WHERE name = 'InstallIDEExtensionCTAClicked' AND page = 'search')
    FROM events_for_today
   GROUP BY day
 `
 
 	var (
-		day                                    time.Time
-		userCountWhoSawBextCtaOnFilePage       int32
-		userCountWhoClickedBextCtaOnFilePage   int32
-		userCountWhoSawBextCtaOnSearchPage     int32
-		userCountWhoClickedBextCtaOnSearchPage int32
-		bextCtaDisplaysOnFilePage              int32
-		bextCtaClicksOnFilePage                int32
-		bextCtaDisplaysOnSearchPage            int32
-		bextCtaClicksOnSearchPage              int32
+		day                        time.Time
+		bextFilePageUserDisplays   int32
+		bextFilePageUserClicks     int32
+		bextSearchPageUserDisplays int32
+		bextSearchPageUserClicks   int32
+		bextFilePageDisplays       int32
+		bextFilePageClicks         int32
+		bextSearchPageDisplays     int32
+		bextSearchPageClicks       int32
+		ideFilePageUserDisplays    int32
+		ideFilePageUserClicks      int32
+		ideSearchPageUserDisplays  int32
+		ideSearchPageUserClicks    int32
+		ideFilePageDisplays        int32
+		ideFilePageClicks          int32
+		ideSearchPageDisplays      int32
+		ideSearchPageClicks        int32
 	)
 	now := timeNow()
 	if err := db.QueryRowContext(ctx, q, now).Scan(
 		&day,
-		&userCountWhoSawBextCtaOnFilePage,
-		&userCountWhoClickedBextCtaOnFilePage,
-		&userCountWhoSawBextCtaOnSearchPage,
-		&userCountWhoClickedBextCtaOnSearchPage,
-		&bextCtaDisplaysOnFilePage,
-		&bextCtaClicksOnFilePage,
-		&bextCtaDisplaysOnSearchPage,
-		&bextCtaClicksOnSearchPage,
+		&bextFilePageUserDisplays,
+		&bextFilePageUserClicks,
+		&bextSearchPageUserDisplays,
+		&bextSearchPageUserClicks,
+		&bextFilePageDisplays,
+		&bextFilePageClicks,
+		&bextSearchPageDisplays,
+		&bextSearchPageClicks,
+		&ideFilePageUserDisplays,
+		&ideFilePageUserClicks,
+		&ideSearchPageUserDisplays,
+		&ideSearchPageUserClicks,
+		&ideFilePageDisplays,
+		&ideFilePageClicks,
+		&ideSearchPageDisplays,
+		&ideSearchPageClicks,
 	); err != nil {
 		return nil, err
 	}
@@ -163,10 +174,17 @@ END
 	return &types.CTAUsage{
 		DailyBrowserExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
 			StartTime:             day,
-			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnFilePage, EventCount: bextCtaDisplaysOnFilePage},
-			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: userCountWhoSawBextCtaOnSearchPage, EventCount: bextCtaDisplaysOnSearchPage},
-			ClickedOnFilePage:     types.UserAndEventCount{UserCount: userCountWhoClickedBextCtaOnFilePage, EventCount: bextCtaClicksOnFilePage},
-			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: userCountWhoClickedBextCtaOnSearchPage, EventCount: bextCtaClicksOnSearchPage},
+			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: bextFilePageUserDisplays, EventCount: bextFilePageDisplays},
+			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: bextSearchPageUserDisplays, EventCount: bextSearchPageDisplays},
+			ClickedOnFilePage:     types.UserAndEventCount{UserCount: bextFilePageUserClicks, EventCount: bextFilePageClicks},
+			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: bextSearchPageUserClicks, EventCount: bextSearchPageClicks},
+		},
+		DailyIDEExtensionCTA: types.FileAndSearchPageUserAndEventCounts{
+			StartTime:             day,
+			DisplayedOnFilePage:   types.UserAndEventCount{UserCount: ideFilePageUserDisplays, EventCount: ideFilePageDisplays},
+			DisplayedOnSearchPage: types.UserAndEventCount{UserCount: ideSearchPageUserDisplays, EventCount: ideSearchPageDisplays},
+			ClickedOnFilePage:     types.UserAndEventCount{UserCount: ideFilePageUserClicks, EventCount: ideFilePageClicks},
+			ClickedOnSearchPage:   types.UserAndEventCount{UserCount: ideSearchPageUserClicks, EventCount: ideSearchPageClicks},
 		},
 	}, nil
 }

@@ -100,6 +100,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights creation UI query field now has live-preview button that leads to the search page with predefined query value. [#29698](https://github.com/sourcegraph/sourcegraph/pull/29698)
 - Code Insights creation UI detect and track patterns can now search across all repositories. [#29906](https://github.com/sourcegraph/sourcegraph/pull/29906)
 - Pings now contain aggregated CTA metrics. [#29966](https://github.com/sourcegraph/sourcegraph/pull/29966)
+- Pings now contain aggregated CTA metrics. [#29966](https://github.com/sourcegraph/sourcegraph/pull/29966) and [#31389](https://github.com/sourcegraph/sourcegraph/pull/31389)
 
 ### Changed
 
