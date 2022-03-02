@@ -107,8 +107,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 		mapping := make(map[string][]string)
 		err = json.NewDecoder(resp.Body).Decode(&mapping)
 
-		// assume a distribution of roughly 2 mappings per language (except C++ that has over 15...)
-		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages)*2)
+		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages))
 
 		for _, allowedLanguage := range ctags.SupportedLanguages {
 			for _, pattern := range mapping[allowedLanguage] {
