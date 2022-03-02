@@ -1160,12 +1160,9 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
 
-		// Temporary feature flag to disable this feature in case their are any regressions.
-		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("invalid command"))
-			return
-		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid command"))
+		return
 	}
 
 	ctx := r.Context()
