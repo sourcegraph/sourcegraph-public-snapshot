@@ -2,13 +2,9 @@ package resolvers
 
 import (
 	"context"
-	"path"
 	"time"
 
-	"github.com/gobwas/glob"
 	"github.com/opentracing/opentracing-go/log"
-
-	"github.com/sourcegraph/go-ctags"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -304,15 +300,10 @@ func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoNa
 		return false, "", err
 	}
 
-	for _, allowedLanguage := range ctags.SupportedLanguages {
-		for _, pattern := range mappings[allowedLanguage] {
-			compiled, err := glob.Compile(pattern)
-			if err != nil {
-				return false, "", err
-			}
-
-			if compiled.Match(path.Base(filepath)) {
-				return true, allowedLanguage, nil
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
 			}
 		}
 	}
