@@ -1513,6 +1513,20 @@ type Query {
         """
         organization: ID!
     ): [OrganizationInvitation!]!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [AutocompleteMemberSearchItem!]!
 }
 
 """
@@ -5139,6 +5153,31 @@ type OrganizationInvitation implements Node {
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """
     isVerifiedEmail: Boolean
+}
+"""
+Result user returned by invite members autocomplete search.
+"""
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    If the user belongs to current Organization.
+    """
+    inOrg: Boolean
 }
 
 """

@@ -664,6 +664,14 @@ type User struct {
 	Searchable            bool
 }
 
+type OrgMemberAutocompleteSearchItem struct {
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	InOrg       int32
+}
+
 type Org struct {
 	ID          int32
 	Name        string
