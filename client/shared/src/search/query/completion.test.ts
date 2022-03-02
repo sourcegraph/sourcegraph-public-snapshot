@@ -437,6 +437,8 @@ describe('getCompletionItems()', () => {
               "contains.content(\${1:TODO}) ",
               "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
               "contains.commit.after(\${1:1 month ago}) ",
+              "deps(\${1}) ",
+              "dependencies(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -455,7 +457,9 @@ describe('getCompletionItems()', () => {
               "contains.file(\${1:CHANGELOG}) ",
               "contains.content(\${1:TODO}) ",
               "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) "
+              "contains.commit.after(\${1:1 month ago}) ",
+              "deps(\${1}) ",
+              "dependencies(\${1}) "
             ]
         `)
     })
