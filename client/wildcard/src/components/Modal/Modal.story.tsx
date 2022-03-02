@@ -26,10 +26,23 @@ export const Default: Story = () => (
 )
 
 Default.parameters = {
+    component: Modal,
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
     },
+    design: [
+        {
+            type: 'figma',
+            name: 'Figma Light',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=15122%3A40371',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Dark',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=15122%3A40506',
+        },
+    ],
 }
 
 export const PositionCentered: Story = () => (
