@@ -56,7 +56,7 @@ func changelogExec(ctx context.Context, args []string) error {
 	}
 	var title string
 	if BuildCommit != "dev" {
-		current := strings.TrimLeft(BuildCommit, "dev-")
+		current := strings.TrimPrefix(BuildCommit, "dev-")
 		if *versionChangelogNext {
 			logArgs = append(logArgs, current+"..origin/main")
 			title = fmt.Sprintf("Changes since sg release %s", BuildCommit)

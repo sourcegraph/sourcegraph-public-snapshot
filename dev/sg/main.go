@@ -106,10 +106,7 @@ func checkSgVersion() {
 		return
 	}
 
-	rev := BuildCommit
-	if strings.HasPrefix(BuildCommit, "dev-") {
-		rev = BuildCommit[len("dev-"):]
-	}
+	rev := strings.TrimPrefix(BuildCommit, "dev-")
 
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
