@@ -641,7 +641,7 @@
             "overrides": {
               "description": "Manually specify overrides for syntax highlighting engine per language",
               "type": "object",
-              "additionalProperties": {"type": "string", "enum": ["tree-sitter", "syntect"]}
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
             }
           }
         },
@@ -653,12 +653,12 @@
             "extensions": {
               "description": "Map of extension to filetype",
               "type": "object",
-              "additionalProperties": {"type": "string"}
+              "additionalProperties": { "type": "string" }
             },
             "patterns": {
               "description": "Map of patterns to filetype",
               "type": "object",
-              "additionalProperties": {"type": "string"}
+              "additionalProperties": { "type": "string" }
             }
           }
         }
