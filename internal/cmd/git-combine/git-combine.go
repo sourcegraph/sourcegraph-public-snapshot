@@ -195,7 +195,7 @@ func Combine(path string, opt Options) error {
 	for _, commits := range remoteToCommits {
 		total += len(commits)
 	}
-	for height := 0; len(remoteToCommits) > 0; height++ {
+	for height := 0; len(remoteToCommits) > 0; {
 		// Loop over keys so we can delete entries from the map.
 		remotes := []string{}
 		for remote := range remoteToCommits {
@@ -210,6 +210,7 @@ func Combine(path string, opt Options) error {
 			if err != nil {
 				return err
 			}
+			height++
 
 			// Pop the deepest commit.
 			remoteToCommits[remote] = remoteToCommits[remote][:len(remoteToCommits[remote])-1]
