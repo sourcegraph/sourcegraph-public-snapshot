@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Alert, Button, Input, Link, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, Link, Modal } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -18,37 +18,32 @@ interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> 
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
     const { org, isOpen, authenticatedUser, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
-    const [organizationName, setOrgName] = useState('')
+    const [orgNameInput, setOrgNameInput] = useState('')
+    const [removeOrganization] = useMutation(REMOVE_ORG_MUTATION)
+    const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
     // const history = useHistory()
-    const [removeOrganization, { error }] = useMutation(REMOVE_ORG_MUTATION)
-    const [errorMessage, setErrorMessage] = useState('')
 
-    useEffect(() => { setOrgName(organizationName) }, [setOrgName, organizationName])
+    useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
 
     const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setErrorMessage('')
-        setOrgName(event.currentTarget.value)
-    }, [])
+        setOrgNameInput(event.currentTarget.value)
+        setIsOrgNameValid(event.currentTarget.value === org.name)
+    }, [org])
 
-    const deleteOrg = useCallback(async () => {
-        eventLogger.log('DeleteOrgClicked', org.id)
+    const deleteOrg = useCallback(
+        async() => {
+            try {
+                await removeOrganization({
+                    variables: {
+                        organization: org.id,
+                    },
+                })
+            } catch(error)   {
+                eventLogger.log('OrgDeletionFailed', error)
+            }
 
-        if (org.name !== organizationName) {
-            setErrorMessage('Organization name does not match')
-            return
-        }
-
-        try {
-            await removeOrganization({
-                variables: {
-                    organization: org.id,
-                },
-            })
-        } catch(error)   {
-            eventLogger.log('OrgDeletionFailed', error)
-        }
-
-    },[org, organizationName, removeOrganization])
+        },
+        [org, removeOrganization])
 
     return (
         <Modal
@@ -90,19 +85,13 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                 <p>
                     Please type the organization's name to continue
                 </p>
-
-                {errorMessage && (
-                    <Alert variant="danger">
-                        { errorMessage }
-                    </Alert>
-                )}
                 <Input
                     autoFocus={true}
-                    value={organizationName}
+                    value={orgNameInput}
                     onChange={onOrgChangeName}
-                />
+                    status={isOrgNameValid === undefined ? undefined : isOrgNameValid ? 'valid' : 'error'}                />
                 <div className="d-flex justify-content-end mt-4">
-                <Button type="button" variant="danger" onClick={deleteOrg}>
+                <Button type="button" variant="danger" onClick={deleteOrg} disabled={!isOrgNameValid}>
                     Delete this organization
                 </Button>
             </div>
