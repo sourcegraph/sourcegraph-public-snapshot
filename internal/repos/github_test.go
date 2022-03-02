@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -125,7 +126,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -229,7 +230,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -291,7 +292,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schema, nil)
+			s, err := newGithubSource(database.NewMockExternalServiceStore(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -491,7 +492,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(svc, cf)
+			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -526,7 +527,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		}),
 	}
 
-	githubSrc, err := NewGithubSource(svc, nil)
+	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -574,7 +575,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 		}),
 	}
 
-	githubSrc, err := NewGithubSource(svc, nil)
+	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +600,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 			}),
 		}
 
-		githubSrc, err := NewGithubSource(svc, nil)
+		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -637,7 +638,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 			}),
 		}
 
-		githubSrc, err := NewGithubSource(svc, cf)
+		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -123,7 +123,7 @@ func newAuthzProvider(
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
-		return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID)
+		return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now

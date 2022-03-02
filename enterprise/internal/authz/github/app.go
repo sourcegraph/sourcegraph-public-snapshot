@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,6 +24,7 @@ func newAppProvider(
 	appID string,
 	privateKey string,
 	installationID int64,
+	cli httpcli.Doer,
 ) (*Provider, error) {
 	pkey, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
@@ -35,7 +37,7 @@ func newAppProvider(
 	}
 
 	apiURL, _ := github.APIRoot(baseURL)
-	appClient := github.NewV3Client(apiURL, auther, nil)
+	appClient := github.NewV3Client(apiURL, auther, cli)
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
@@ -47,7 +49,7 @@ func newAppProvider(
 
 			auther = &auth.OAuthBearerToken{Token: token}
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(apiURL, auther, nil),
+				V3Client: github.NewV3Client(apiURL, auther, cli),
 			}, nil
 		},
 	}, nil
