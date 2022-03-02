@@ -132,7 +132,7 @@ To indicate exceptions like these, simply write `n/a` within your pull request's
 ### Pull request review exceptions
 
 Certain workflows leverage PRs that deploy already-tested changes or boilerplate work.
-For these PRs a review may not be required. This can be indicated by creating a section within your test plan indicating `No review required`, like so:
+For these PRs a review may not be required. This can be indicated by creating a section within your test plan indicating `No review required:`, like so:
 
 ```md
 ## Test plan
