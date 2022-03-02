@@ -822,7 +822,7 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  clone_url           | text                     |           | not null | 
  user_id             | integer                  |           |          | 
  org_id              | integer                  |           |          | 
- created_at          | timestamp with time zone |           |          | transaction_timestamp()
+ created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
