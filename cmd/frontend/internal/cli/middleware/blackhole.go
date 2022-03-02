@@ -34,5 +34,10 @@ func isBlackhole(r *http.Request) bool {
 		return true
 	}
 
+	// we no longer support "go get sourcegraph.com/{sourcegraph,sqs}/*"
+	if r.URL.Query().Get("go-get") == "1" {
+		return true
+	}
+
 	return false
 }

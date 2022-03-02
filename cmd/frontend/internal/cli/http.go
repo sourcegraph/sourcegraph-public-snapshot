@@ -104,7 +104,6 @@ func newExternalHTTPHandler(
 	h = gcontext.ClearHandler(h)
 	h = healthCheckMiddleware(h)
 	h = middleware.BlackHole(h)
-	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
