@@ -99,6 +99,9 @@ export interface BlobProps
 
     // Experimental reference panel
     disableStatusBar: boolean
+    // If set, nav is called when a user clicks on a token highlighted by
+    // WebHoverOverlay
+    nav?: (url: string) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -204,7 +207,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    console.log('blob location.hash', location.hash)
     const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
         location.search,
         location.hash,
@@ -616,7 +618,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => props.history.push(url)}
+                        nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}

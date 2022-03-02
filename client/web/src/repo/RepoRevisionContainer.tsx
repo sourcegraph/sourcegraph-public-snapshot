@@ -335,7 +335,9 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {coolCodeIntelEnabled && referencePanelRouteMatch && <CoolCodeIntel {...props} />}
+            {coolCodeIntelEnabled && referencePanelRouteMatch && (
+                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
+            )}
         </>
     )
 }

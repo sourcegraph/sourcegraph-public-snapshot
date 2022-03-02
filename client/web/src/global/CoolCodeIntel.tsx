@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
+import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -17,6 +17,7 @@ import {
     lprToRange,
     renderMarkdown,
     toPositionOrRangeQueryParameter,
+    toViewStateHash,
 } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
@@ -74,6 +75,12 @@ export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec
 interface CoolCodeIntelProps
     extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar' | 'coolCodeIntelEnabled'> {
     clickedToken?: CoolClickedToken
+    /**
+     * The panel runs inside its own MemoryRouter, we keep track of externalHistory
+     * so that we're still able to actually navigate within the browser when required
+     */
+    externalHistory: H.History
+    externalLocation: H.Location
 }
 
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -88,7 +95,13 @@ export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props 
             </div>
         )}
     >
-        <CoolCodeIntelResizablePanel {...props} />
+        <MemoryRouter
+            // Force router to remount the Panel when external location changes
+            key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
+            initialEntries={[props.externalLocation]}
+        >
+            <CoolCodeIntelResizablePanel {...props} />
+        </MemoryRouter>
     </ErrorBoundary>
 )
 
@@ -161,7 +174,6 @@ export const ReferencesList: React.FunctionComponent<
         clickedToken: CoolClickedToken
     }
 > = props => {
-    // const realHistory = useHistory()
     const [activeLocation, setActiveLocation] = useState<Location>()
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
@@ -173,15 +185,29 @@ export const ReferencesList: React.FunctionComponent<
 
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const history = useMemo(() => H.createMemoryHistory(), [])
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    // This is the history of the panel, that is inside a memory router
+    const panelHistory = useHistory()
 
-    console.log('history.location', history.location)
+    // When a user clicks on an item in the list of references, we push it to
+    // the memory history for the code blob on the right, so it will jump to &
+    // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
-            console.log('pushing location.url', location.url)
-            history.push(location.url)
+            blobMemoryHistory.push(location.url)
         }
         setActiveLocation(location)
+    }
+
+    // When we user clicks on a token *inside* the code blob on the right, we
+    // update the history for the panel itself, which is inside a memory router.
+    //
+    // We also add '#tab=references' to the URL.
+    //
+    // That will cause the panel to show the references of the clicked token,
+    // but not navigate the main web app to it.
+    const onBlobNav = (url: string): void => {
+        panelHistory.push(url + toViewStateHash('references'))
     }
 
     return (
@@ -212,7 +238,10 @@ export const ReferencesList: React.FunctionComponent<
                         >
                             <h4>
                                 {activeLocation.resource.path}{' '}
-                                <Link to={activeLocation.url}>
+                                <Link
+                                    to={activeLocation.url}
+                                    onClick={() => props.externalHistory.push(activeLocation.url)}
+                                >
                                     <OpenInAppIcon className="icon-inline" />
                                 </Link>
                             </h4>
@@ -229,8 +258,9 @@ export const ReferencesList: React.FunctionComponent<
                         </CardHeader>
                         <SideBlob
                             {...props}
-                            history={history}
-                            location={history.location}
+                            blobNav={onBlobNav}
+                            history={blobMemoryHistory}
+                            location={blobMemoryHistory.location}
                             activeLocation={activeLocation}
                         />
                     </div>
@@ -466,6 +496,7 @@ const CollapsibleLocationList: React.FunctionComponent<{
 const SideBlob: React.FunctionComponent<
     CoolCodeIntelProps & {
         activeLocation: Location
+        blobNav: (url: string) => void
     }
 > = props => {
     const { data, error, loading } = useQuery<
@@ -528,6 +559,7 @@ const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
+            nav={props.blobNav}
             history={props.history}
             location={props.location}
             coolCodeIntelEnabled={true}
@@ -807,8 +839,9 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<
     const location = useLocation()
 
     const handlePanelClose = useCallback(() => {
-        props.history.push(locationWithoutViewState(location))
-    }, [props.history, location])
+        // We need to close it in the external history
+        props.externalHistory.push(locationWithoutViewState(location))
+    }, [props.externalHistory, location])
 
     const { hash, pathname, search } = location
     const { line, character, viewState } = parseQueryAndHash(search, hash)
