@@ -39,19 +39,14 @@ type TemplateDataNewSearchResults struct {
 	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *edb.EmailAction, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		priority                  string
 		numberOfResultsWithDetail string
 	)
 
-	externalURL, err := getExternalURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	searchURL := getSearchURL(externalURL, queryString, utmSourceEmail)
-	codeMonitorURL := getCodeMonitorURL(externalURL, email.Monitor, utmSourceEmail)
+	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
+	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)
 
 	if email.Priority == priorityCritical {
 		priority = "Critical"
@@ -59,17 +54,17 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription,
 		priority = "New"
 	}
 
-	if numResults == 1 {
-		numberOfResultsWithDetail = fmt.Sprintf("There was %d new search result for your query", numResults)
+	if len(args.Results) == 1 {
+		numberOfResultsWithDetail = fmt.Sprintf("There was %d new search result for your query", len(args.Results))
 	} else {
-		numberOfResultsWithDetail = fmt.Sprintf("There were %d new search results for your query", numResults)
+		numberOfResultsWithDetail = fmt.Sprintf("There were %d new search results for your query", len(args.Results))
 	}
 
 	return &TemplateDataNewSearchResults{
 		Priority:                  priority,
 		CodeMonitorURL:            codeMonitorURL,
 		SearchURL:                 searchURL,
-		Description:               monitorDescription,
+		Description:               args.MonitorDescription,
 		NumberOfResultsWithDetail: numberOfResultsWithDetail,
 	}, nil
 }
