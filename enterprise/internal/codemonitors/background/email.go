@@ -33,10 +33,10 @@ func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *Templa
 }
 
 var (
-	//go:embed template.html.tmpl
+	//go:embed email_template.html.tmpl
 	htmlTemplate string
 
-	//go:embed template.txt.tmpl
+	//go:embed email_template.txt.tmpl
 	textTemplate string
 )
 
