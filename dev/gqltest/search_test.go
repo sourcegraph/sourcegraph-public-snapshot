@@ -331,6 +331,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 			t.Fatal(err)
 		}
 
+		if cfg.ExperimentalFeatures == nil {
+			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+
 		cfg.ExperimentalFeatures.NpmPackages = "enabled"
 		cfg.ExperimentalFeatures.DependenciesSearch = true
 
