@@ -144,15 +144,12 @@ func main() {
 	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
-	addr := os.Getenv("HOSTNAME")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
+	port := "3178"
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
 	}
+	addr := net.JoinHostPort(host, port)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
