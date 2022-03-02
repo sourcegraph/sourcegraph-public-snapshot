@@ -13,6 +13,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
+	repos "github.com/sourcegraph/sourcegraph/internal/repos"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -94,6 +96,19 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
+	mux.Handle("/install-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		dotcomConfig := conf.SiteConfig().Dotcom
+		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
+		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+			http.NotFound(w, req)
+			return
+		}
+		redirect := req.URL.Query().Get("redirect")
+		if redirect == "" {
+			http.Error(w, "No redirect specified", http.StatusBadRequest)
+		}
+		http.Redirect(w, req, redirect, http.StatusFound)
+	}))
 	return mux
 }
 
@@ -105,6 +120,10 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitLab: {"api"},
 }
 
+var extraOrgScopes = map[string][]string{
+	extsvc.TypeGitHub: {"read:org"},
+}
+
 func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
 	// Extra scopes are only needed on Sourcegraph.com
 	if !envvar.SourcegraphDotComMode() {
@@ -114,9 +133,17 @@ func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op 
 	if op == LoginStateOpCreateAccount {
 		return nil, nil
 	}
+
 	scopes, ok := extraScopes[serviceType]
 	if !ok {
 		return nil, nil
+	}
+
+	if op == LoginStateOpCreateOrgCodeHostConnection {
+		scopes, ok = extraOrgScopes[serviceType]
+		if !ok {
+			return nil, nil
+		}
 	}
 
 	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
