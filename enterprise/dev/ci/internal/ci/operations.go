@@ -237,7 +237,11 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
