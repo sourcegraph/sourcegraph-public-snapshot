@@ -1,6 +1,8 @@
+
 import { useMutation } from '@apollo/client'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useState } from 'react'
+import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { Button, Input, Link, Modal } from '@sourcegraph/wildcard'
@@ -21,7 +23,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
     const [orgNameInput, setOrgNameInput] = useState('')
     const [removeOrganization] = useMutation(REMOVE_ORG_MUTATION)
     const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
-    // const history = useHistory()
+    const history = useHistory()
 
     useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
 
@@ -38,12 +40,16 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                         organization: org.id,
                     },
                 })
+                history.push({
+                    pathname: '/settings',
+                })
+
             } catch(error)   {
                 eventLogger.log('OrgDeletionFailed', error)
             }
 
         },
-        [org, removeOrganization])
+        [org, removeOrganization, history])
 
     return (
         <Modal
