@@ -75,7 +75,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center font-italic mt-3">
-                    Search your code and 2M+ open source repositories
+                    Search your code and 5M+ open source repositories
                 </div>
             )}
             <div
