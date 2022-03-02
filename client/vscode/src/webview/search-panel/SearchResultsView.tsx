@@ -113,7 +113,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     // Track sidebar + keyboard shortcut search submissions
     useEffect(() => {
-        platformContext.telemetryService.log('VSCESearchSubmitted')
+        platformContext.telemetryService.log('IDESearchSubmitted')
     }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
@@ -151,7 +151,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     console.error('Error updating sidebar query state from panel', error)
                 })
 
-            platformContext.telemetryService.log('VSCESearchSubmitted')
+            platformContext.telemetryService.log('IDESearchSubmitted')
 
             // Clear repo view
             setRepoToShow(null)

@@ -2,10 +2,14 @@ import { from, Observable, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { GraphQLResult } from '@sourcegraph/http-client'
+import { gql, GraphQLResult } from '@sourcegraph/http-client'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/search'
 
-import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from '../settings/LocalStorageService'
+import {
+    INSTANCE_VERSION_NUMBER_KEY,
+    LocalStorageService,
+    SELECTED_SEARCH_CONTEXT_SPEC_KEY,
+} from '../settings/LocalStorageService'
 import { VSCEStateMachine } from '../state'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
@@ -42,7 +46,33 @@ export function initializeSearchContexts({
             stateMachine.emit({ type: 'set_selected_search_context_spec', spec: availableSearchContextSpecOrDefault })
         })
 
+    requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {})
+        .then(async siteVersionResult => {
+            if (siteVersionResult.data) {
+                await localStorageService.setValue(
+                    INSTANCE_VERSION_NUMBER_KEY,
+                    siteVersionResult.data.site.productVersion
+                )
+            }
+        })
+        .catch(error => {
+            console.error('Failed to get instance version from host:', error)
+        })
+
     context.subscriptions.push({
         dispose: () => subscription.unsubscribe(),
     })
+}
+
+const siteVersionQuery = gql`
+    query {
+        site {
+            productVersion
+        }
+    }
+`
+interface SiteVersionResult {
+    site: {
+        productVersion: string
+    }
 }

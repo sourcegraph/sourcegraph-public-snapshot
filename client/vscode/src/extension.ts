@@ -138,5 +138,5 @@ export function activate(context: vscode.ExtensionContext): void {
         fs,
         instanceURL: initialInstanceURL,
     })
-    initializeCodeSharingCommands({ context })
+    initializeCodeSharingCommands(context, extensionCoreAPI)
 }
