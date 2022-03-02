@@ -73,5 +73,10 @@ func constructRunCmdLongHelp() string {
 
 	}
 
+	// This is a quick fix to get the overwrite config flag to load properly,
+	// as this function is called before the flags are parsed and sets the globalConf
+	// variable with the wrong override config path.
+	globalConf = nil
+
 	return out.String()
 }
