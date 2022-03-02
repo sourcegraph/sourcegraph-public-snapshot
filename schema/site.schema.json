@@ -623,19 +623,44 @@
       "group": "External services"
     },
     "highlights": {
+      "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["extensions", "patterns"],
+      "required": ["engine", "filetypes"],
       "properties": {
-        "extensions": {
-          "description": "Map of extension to filetype",
+        "engine": {
+          "title": "SyntaxHighlightingEngine",
           "type": "object",
-          "additionalProperties": {"type": "string"}
+          "required": ["default"],
+          "properties": {
+            "default": {
+              "description": "The default syntax highlighting engine to use",
+              "type": "string",
+              "enum": ["tree-sitter", "syntect"]
+            },
+            "overrides": {
+              "description": "Manually specify overrides for syntax highlighting engine per language",
+              "type": "object",
+              "additionalProperties": {"type": "string", "enum": ["tree-sitter", "syntect"]}
+            }
+          }
         },
-        "patterns": {
-          "description": "Map of patterns to filetype",
+        "filetypes": {
+          "title": "SyntaxHighlightingFiletype",
           "type": "object",
-          "additionalProperties": {"type": "string"}
+          "required": ["extensions", "patterns"],
+          "properties": {
+            "extensions": {
+              "description": "Map of extension to filetype",
+              "type": "object",
+              "additionalProperties": {"type": "string"}
+            },
+            "patterns": {
+              "description": "Map of patterns to filetype",
+              "type": "object",
+              "additionalProperties": {"type": "string"}
+            }
+          }
         }
       }
     },

@@ -134,11 +134,11 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 
 	highlightConfig := conf.Get().SiteConfig().Highlights
 	if highlightConfig == nil {
-		highlightConfig = &schema.Highlights{}
+		highlightConfig = &schema.SyntaxHighlighting{}
 	}
 
 	filetype := DetectSyntaxHighlightingFiletype(ftConfig{
-		Extensions: highlightConfig.Extensions,
+		Extensions: highlightConfig.Filetypes.Extensions,
 	}, ftQuery{p.Filepath, string(p.Content)})
 	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
 
