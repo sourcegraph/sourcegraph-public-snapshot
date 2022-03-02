@@ -40,6 +40,10 @@ func NewInsightsDataPrunerJob(ctx context.Context, postgres dbutil.DB, insightsd
 				if err != nil {
 					return err
 				}
+				err = tx.Delete(ctx, id)
+				if err != nil {
+					return errors.Wrap(err, "Delete")
+				}
 
 				insightStoreTx := insightStore.With(tx)
 				err = insightStoreTx.HardDeleteSeries(ctx, id)
