@@ -580,9 +580,8 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		return orgs, len(orgs) > 0, nil
 	}
 
-	var rawOrgs []byte
-	var ok bool
-	if rawOrgs, ok = c.orgsCache.Get(orgsKey); !ok {
+	rawOrgs, ok := c.orgsCache.Get(orgsKey)
+	if !ok {
 		// Reading the orgs from the cache failed even though the API call to GitHub succeeded. This
 		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
 		// anyway.
