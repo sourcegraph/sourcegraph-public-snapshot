@@ -3,10 +3,10 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { Component, FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
+import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Input, Modal } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Modal } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -14,6 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 import styles from './InviteMemberModal.module.scss'
+import { AutocompleteSearchUsers } from './SearchUserAutocomplete'
 
 export interface IModalInviteResult {
     username: string
@@ -28,14 +29,9 @@ export interface InviteMemberModalProps {
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
     const { orgName, orgId, onInviteSent, onDismiss } = props
-    const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite a teammate to ${orgName}`
-
-    useEffect(() => {
-        setIsEmail(emailPattern.current.test(userNameOrEmail))
-    }, [userNameOrEmail])
 
     const [inviteUserToOrganization, { data, loading: isInviting, error }] = useMutation<
         InviteUserToOrganizationResult,
@@ -50,8 +46,9 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
         }
     }, [data, onDismiss, setUsernameOrEmail, onInviteSent, userNameOrEmail])
 
-    const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setUsernameOrEmail(event.currentTarget.value)
+    const onValueChanged = useCallback((value: string, isEmail: boolean) => {
+        setUsernameOrEmail(value)
+        setIsEmail(isEmail)
     }, [])
 
     const inviteUser = useCallback(async () => {
@@ -87,14 +84,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}
             <div className="d-flex flex-row position-relative mt-2">
-                <Input
-                    autoFocus={true}
-                    value={userNameOrEmail}
-                    label="Email address or username"
-                    title="Email address or username"
-                    onChange={onUsernameChange}
-                    status={isInviting ? 'loading' : error ? 'error' : undefined}
-                />
+                <AutocompleteSearchUsers onValueChanged={onValueChanged} disabled={isInviting} orgId={orgId} />
             </div>
             <div className="d-flex justify-content-end mt-4">
                 <Button type="button" variant="primary" onClick={debounceInviteUser} disabled={isInviting}>
