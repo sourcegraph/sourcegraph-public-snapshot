@@ -31,7 +31,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { CoolCodeIntel, GlobalCoolCodeIntelProps, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
+import { CoolCodeIntel, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -71,8 +71,7 @@ export interface RepoRevisionContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -210,9 +209,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 }) => {
     // Experimental reference panel
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-    // We only render the reference panel when looking at files
-    // const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
-    // const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
     const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
     // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
     const showCoolCodeIntelPanel =
@@ -287,7 +283,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
-        coolCodeIntelEnabled,
     }
 
     const resolvedRevisionOrError = props.resolvedRevisionOrError

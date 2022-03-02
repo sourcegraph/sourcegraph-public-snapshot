@@ -71,7 +71,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'
@@ -88,8 +87,7 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
-        GlobalCoolCodeIntelProps {
+        ThemeProps {
     location: H.Location
     history: H.History
     className: string

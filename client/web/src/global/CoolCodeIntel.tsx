@@ -22,7 +22,11 @@ import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     RepoSpec,
     RevisionSpec,
@@ -54,7 +58,8 @@ import {
     LocationFields,
 } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
-import { Blob, BlobProps } from '../repo/blob/Blob'
+import { Blob } from '../repo/blob/Blob'
+import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
@@ -65,10 +70,16 @@ export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
 }
 
-export type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
 interface CoolCodeIntelProps
-    extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar' | 'coolCodeIntelEnabled'> {
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        HoverThresholdProps,
+        ExtensionsControllerProps,
+        ThemeProps {
+    // The token for which to show references
     token?: Token
     /**
      * The panel runs inside its own MemoryRouter, we keep track of externalHistory
@@ -481,6 +492,9 @@ const CollapsibleLocationList: React.FunctionComponent<{
 const SideBlob: React.FunctionComponent<
     CoolCodeIntelProps & {
         activeLocation: Location
+
+        location: H.Location
+        history: H.History
         blobNav: (url: string) => void
     }
 > = props => {
@@ -547,7 +561,6 @@ const SideBlob: React.FunctionComponent<
             nav={props.blobNav}
             history={props.history}
             location={props.location}
-            coolCodeIntelEnabled={true}
             disableStatusBar={true}
             wrapCode={true}
             className={styles.referencesSideBlobCode}
