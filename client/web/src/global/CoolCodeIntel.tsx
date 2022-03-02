@@ -245,7 +245,10 @@ export const ReferencesList: React.FunctionComponent<
                                 {activeLocation.resource.path}{' '}
                                 <Link
                                     to={activeLocation.url}
-                                    onClick={() => props.externalHistory.push(activeLocation.url)}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        props.externalHistory.push(activeLocation.url)
+                                    }}
                                 >
                                     <OpenInAppIcon className="icon-inline" />
                                 </Link>
