@@ -321,7 +321,7 @@ func getRemoteURLFunc(
 					return "", errors.Wrap(err, "new authenticator with GitHub App")
 				}
 
-				client := github.NewV3Client(apiURL, auther, cli)
+				client := github.NewV3Client(apiURL, auther, cli, nil)
 
 				installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 				if err != nil {

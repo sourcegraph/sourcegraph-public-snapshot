@@ -24,13 +24,14 @@ func TestNewRepoCache(t *testing.T) {
 	t.Run("GitHub.com", func(t *testing.T) {
 		url, _ := url.Parse("https://www.github.com")
 		token := &auth.OAuthBearerToken{Token: "asdf"}
+		newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
 
 		// github.com caches should:
 		// (1) use githubProxyURL for the prefix hash rather than the given url
 		// (2) have a TTL of 10 minutes
 		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 600)
+		got := newRepoCache(url, token, newCache)
+		want := newCache(prefix, 600)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatal(diff)
 		}
@@ -39,13 +40,14 @@ func TestNewRepoCache(t *testing.T) {
 	t.Run("GitHub Enterprise", func(t *testing.T) {
 		url, _ := url.Parse("https://www.sourcegraph.com")
 		token := &auth.OAuthBearerToken{Token: "asdf"}
+		newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
 
 		// GitHub Enterprise caches should:
 		// (1) use the given URL for the prefix hash
 		// (2) have a TTL of 30 seconds
 		prefix := "gh_repo:" + token.Hash()
-		got := newRepoCache(url, token)
-		want := rcache.NewWithTTL(prefix, 30)
+		got := newRepoCache(url, token, newCache)
+		want := newCache(prefix, 30)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatal(diff)
 		}
@@ -546,7 +548,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli := NewV3Client(uri, gheToken, testServer.Client(), nil)
 		testCli.ListOrganizations(context.Background(), 1)
 	})
 
@@ -596,7 +598,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli := NewV3Client(uri, gheToken, testServer.Client(), nil)
 
 		runTest := func(expectedOrgs []byte) {
 			orgs, hasNextPage, err := testCli.ListOrganizations(context.Background(), 1)
@@ -774,7 +776,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(uri, vcrToken, doer), save
+	return NewV3Client(uri, vcrToken, doer, nil), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -791,7 +793,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(uri, gheToken, doer), save
+	return NewV3Client(uri, gheToken, doer, nil), save
 }
 
 func strPtr(s string) *string { return &s }

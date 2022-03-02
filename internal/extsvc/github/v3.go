@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -48,11 +47,14 @@ type V3Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
+	//
+	newCacheFunc NewCacheFunc
+
 	// orgsCache is the organizations cache associated with the token.
-	orgsCache *rcache.Cache
+	orgsCache Cache
 
 	// repoCache is the repository cache associated with the token.
-	repoCache *rcache.Cache
+	repoCache Cache
 
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
@@ -70,8 +72,8 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(apiURL, a, "rest", cli)
+func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+	return newV3Client(apiURL, a, "rest", cli, newCache)
 }
 
 // NewV3SearchClient creates a new GitHub API client intended for use with the
@@ -79,11 +81,11 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(apiURL, a, "search", cli)
+func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+	return newV3Client(apiURL, a, "search", cli, newCache)
 }
 
-func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -116,10 +118,11 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
 		httpClient:       cli,
+		newCacheFunc:     newCache,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		orgsCache:        newOrgsCache(apiURL, a),
-		repoCache:        newRepoCache(apiURL, a),
+		orgsCache:        newOrgsCache(apiURL, a, newCache),
+		repoCache:        newRepoCache(apiURL, a, newCache),
 		resource:         resource,
 	}
 }
@@ -128,7 +131,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.apiURL, a, c.resource, c.httpClient)
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient, c.newCacheFunc)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -216,21 +219,21 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
-func newOrgsCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
+func newOrgsCache(apiURL *url.URL, a auth.Authenticator, newCache NewCacheFunc) Cache {
 	if a == nil {
 		log15.Warn("Cannot initialize orgsCache for nil auth")
 		return nil
 	}
 
 	// Cache with a 1 hour TTL.
-	return rcache.New("gh_orgs:" + a.Hash())
+	return newCache("gh_orgs:"+a.Hash(), int(time.Hour/time.Second))
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
 // store is Redis. A checksum of the authenticator and API URL are used as a
 // Redis key prefix to prevent collisions with caches for different
 // authentication and API URLs.
-func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
+func newRepoCache(apiURL *url.URL, a auth.Authenticator, newCache NewCacheFunc) Cache {
 	var cacheTTL time.Duration
 	if urlIsGitHubDotCom(apiURL) {
 		cacheTTL = 10 * time.Minute
@@ -243,7 +246,7 @@ func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
 	if a != nil {
 		key = a.Hash()
 	}
-	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
+	return newCache("gh_repo:"+key, int(cacheTTL/time.Second))
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with

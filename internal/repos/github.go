@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -148,9 +149,9 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli)
+		v3Client     = github.NewV3Client(apiURL, token, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
 		v4Client     = github.NewV4Client(apiURL, token, cli)
-		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(apiURL, token, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
 	)
 
 	useGitHubApp := false
@@ -172,7 +173,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		if err != nil {
 			return nil, errors.Wrap(err, "parse api.github.com")
 		}
-		client := github.NewV3Client(apiURL, auther, nil)
+		client := github.NewV3Client(apiURL, auther, nil, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -204,7 +205,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		}
 
 		auther = &auth.OAuthBearerToken{Token: *token.Token}
-		v3Client = github.NewV3Client(apiURL, auther, cli)
+		v3Client = github.NewV3Client(apiURL, auther, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
 		v4Client = github.NewV4Client(apiURL, auther, cli)
 
 		useGitHubApp = true

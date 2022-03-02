@@ -62,14 +62,14 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 }
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
-	return newTestClientWithAuthenticator(t, nil, cli)
+	return newTestClientWithAuthenticator(t, nil, cli, nil)
 }
 
-func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
+func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(apiURL, auth, cli)
+	return NewV3Client(apiURL, auth, cli, newCache)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.
