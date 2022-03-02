@@ -102,8 +102,14 @@ type response struct {
 	Code  string `json:"code"`
 }
 
+// Make sure all names are lowercase here, since they are normalized
+var enryLanguageMappings = map[string]string{
+	"c#": "c_sharp",
+}
+
 var supportedFiletypes = map[string]struct{}{
-	"go": {},
+	"go":      {},
+	"c_sharp": {},
 }
 
 // Client represents a client connection to a syntect_server.
@@ -113,8 +119,17 @@ type Client struct {
 
 var client = &http.Client{Transport: &nethttp.Transport{}}
 
+func normalizeFiletype(filetype string) string {
+	normalized := strings.ToLower(filetype)
+	if mapped, ok := enryLanguageMappings[normalized]; ok {
+		normalized = mapped
+	}
+
+	return normalized
+}
+
 func (c *Client) IsTreesitterSupported(filetype string) bool {
-	_, contained := supportedFiletypes[strings.ToLower(filetype)]
+	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
 	return contained
 }
 
@@ -126,6 +141,9 @@ func (c *Client) IsTreesitterSupported(filetype string) bool {
 // to be a separate param. But I need to clean up these other deprecated
 // options later, so it's OK for the first iteration.
 func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*Response, error) {
+	// Normalize filetype
+	q.Filetype = normalizeFiletype(q.Filetype)
+
 	if useTreeSitter && !c.IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
