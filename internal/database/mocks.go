@@ -19936,6 +19936,10 @@ func (c OrgInvitationStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockOrgMemberStore struct {
+	// AutocompleteMembersSearchFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// AutocompleteMembersSearch.
+	AutocompleteMembersSearchFunc *OrgMemberStoreAutocompleteMembersSearchFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *OrgMemberStoreCreateFunc
@@ -19973,6 +19977,11 @@ type MockOrgMemberStore struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockOrgMemberStore() *MockOrgMemberStore {
 	return &MockOrgMemberStore{
+		AutocompleteMembersSearchFunc: &OrgMemberStoreAutocompleteMembersSearchFunc{
+			defaultHook: func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+				return nil, nil
+			},
+		},
 		CreateFunc: &OrgMemberStoreCreateFunc{
 			defaultHook: func(context.Context, int32, int32) (*types.OrgMembership, error) {
 				return nil, nil
@@ -20030,6 +20039,11 @@ func NewMockOrgMemberStore() *MockOrgMemberStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockOrgMemberStore() *MockOrgMemberStore {
 	return &MockOrgMemberStore{
+		AutocompleteMembersSearchFunc: &OrgMemberStoreAutocompleteMembersSearchFunc{
+			defaultHook: func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+				panic("unexpected invocation of MockOrgMemberStore.AutocompleteMembersSearch")
+			},
+		},
 		CreateFunc: &OrgMemberStoreCreateFunc{
 			defaultHook: func(context.Context, int32, int32) (*types.OrgMembership, error) {
 				panic("unexpected invocation of MockOrgMemberStore.Create")
@@ -20088,6 +20102,9 @@ func NewStrictMockOrgMemberStore() *MockOrgMemberStore {
 // overwritten.
 func NewMockOrgMemberStoreFrom(i OrgMemberStore) *MockOrgMemberStore {
 	return &MockOrgMemberStore{
+		AutocompleteMembersSearchFunc: &OrgMemberStoreAutocompleteMembersSearchFunc{
+			defaultHook: i.AutocompleteMembersSearch,
+		},
 		CreateFunc: &OrgMemberStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -20119,6 +20136,121 @@ func NewMockOrgMemberStoreFrom(i OrgMemberStore) *MockOrgMemberStore {
 			defaultHook: i.With,
 		},
 	}
+}
+
+// OrgMemberStoreAutocompleteMembersSearchFunc describes the behavior when
+// the AutocompleteMembersSearch method of the parent MockOrgMemberStore
+// instance is invoked.
+type OrgMemberStoreAutocompleteMembersSearchFunc struct {
+	defaultHook func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error)
+	hooks       []func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error)
+	history     []OrgMemberStoreAutocompleteMembersSearchFuncCall
+	mutex       sync.Mutex
+}
+
+// AutocompleteMembersSearch delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockOrgMemberStore) AutocompleteMembersSearch(v0 context.Context, v1 int32, v2 string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+	r0, r1 := m.AutocompleteMembersSearchFunc.nextHook()(v0, v1, v2)
+	m.AutocompleteMembersSearchFunc.appendCall(OrgMemberStoreAutocompleteMembersSearchFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// AutocompleteMembersSearch method of the parent MockOrgMemberStore
+// instance is invoked and the hook queue is empty.
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) SetDefaultHook(hook func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AutocompleteMembersSearch method of the parent MockOrgMemberStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) PushHook(hook func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) SetDefaultReturn(r0 []*types.OrgMemberAutocompleteSearchItem, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) PushReturn(r0 []*types.OrgMemberAutocompleteSearchItem, r1 error) {
+	f.PushHook(func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+		return r0, r1
+	})
+}
+
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) nextHook() func(context.Context, int32, string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) appendCall(r0 OrgMemberStoreAutocompleteMembersSearchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// OrgMemberStoreAutocompleteMembersSearchFuncCall objects describing the
+// invocations of this function.
+func (f *OrgMemberStoreAutocompleteMembersSearchFunc) History() []OrgMemberStoreAutocompleteMembersSearchFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgMemberStoreAutocompleteMembersSearchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgMemberStoreAutocompleteMembersSearchFuncCall is an object that
+// describes an invocation of method AutocompleteMembersSearch on an
+// instance of MockOrgMemberStore.
+type OrgMemberStoreAutocompleteMembersSearchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.OrgMemberAutocompleteSearchItem
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgMemberStoreAutocompleteMembersSearchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgMemberStoreAutocompleteMembersSearchFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // OrgMemberStoreCreateFunc describes the behavior when the Create method of
@@ -37933,9 +38065,6 @@ func (c UserPublicRepoStoreSetUserReposFuncCall) Results() []interface{} {
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
 type MockUserStore struct {
-	// AutocompleteUserSearchFunc is an instance of a mock function object
-	// controlling the behavior of the method AutocompleteUserSearch.
-	AutocompleteUserSearchFunc *UserStoreAutocompleteUserSearchFunc
 	// CheckAndDecrementInviteQuotaFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// CheckAndDecrementInviteQuota.
@@ -38045,11 +38174,6 @@ type MockUserStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockUserStore() *MockUserStore {
 	return &MockUserStore{
-		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
-			defaultHook: func(context.Context, string) ([]*types.User, error) {
-				return nil, nil
-			},
-		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: func(context.Context, int32) (bool, error) {
 				return false, nil
@@ -38222,11 +38346,6 @@ func NewMockUserStore() *MockUserStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockUserStore() *MockUserStore {
 	return &MockUserStore{
-		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
-			defaultHook: func(context.Context, string) ([]*types.User, error) {
-				panic("unexpected invocation of MockUserStore.AutocompleteUserSearch")
-			},
-		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: func(context.Context, int32) (bool, error) {
 				panic("unexpected invocation of MockUserStore.CheckAndDecrementInviteQuota")
@@ -38399,9 +38518,6 @@ func NewStrictMockUserStore() *MockUserStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 	return &MockUserStore{
-		AutocompleteUserSearchFunc: &UserStoreAutocompleteUserSearchFunc{
-			defaultHook: i.AutocompleteUserSearch,
-		},
 		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
 			defaultHook: i.CheckAndDecrementInviteQuota,
 		},
@@ -38502,117 +38618,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 			defaultHook: i.With,
 		},
 	}
-}
-
-// UserStoreAutocompleteUserSearchFunc describes the behavior when the
-// AutocompleteUserSearch method of the parent MockUserStore instance is
-// invoked.
-type UserStoreAutocompleteUserSearchFunc struct {
-	defaultHook func(context.Context, string) ([]*types.User, error)
-	hooks       []func(context.Context, string) ([]*types.User, error)
-	history     []UserStoreAutocompleteUserSearchFuncCall
-	mutex       sync.Mutex
-}
-
-// AutocompleteUserSearch delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockUserStore) AutocompleteUserSearch(v0 context.Context, v1 string) ([]*types.User, error) {
-	r0, r1 := m.AutocompleteUserSearchFunc.nextHook()(v0, v1)
-	m.AutocompleteUserSearchFunc.appendCall(UserStoreAutocompleteUserSearchFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// AutocompleteUserSearch method of the parent MockUserStore instance is
-// invoked and the hook queue is empty.
-func (f *UserStoreAutocompleteUserSearchFunc) SetDefaultHook(hook func(context.Context, string) ([]*types.User, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AutocompleteUserSearch method of the parent MockUserStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UserStoreAutocompleteUserSearchFunc) PushHook(hook func(context.Context, string) ([]*types.User, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreAutocompleteUserSearchFunc) SetDefaultReturn(r0 []*types.User, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]*types.User, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreAutocompleteUserSearchFunc) PushReturn(r0 []*types.User, r1 error) {
-	f.PushHook(func(context.Context, string) ([]*types.User, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreAutocompleteUserSearchFunc) nextHook() func(context.Context, string) ([]*types.User, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreAutocompleteUserSearchFunc) appendCall(r0 UserStoreAutocompleteUserSearchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreAutocompleteUserSearchFuncCall
-// objects describing the invocations of this function.
-func (f *UserStoreAutocompleteUserSearchFunc) History() []UserStoreAutocompleteUserSearchFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreAutocompleteUserSearchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreAutocompleteUserSearchFuncCall is an object that describes an
-// invocation of method AutocompleteUserSearch on an instance of
-// MockUserStore.
-type UserStoreAutocompleteUserSearchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*types.User
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreAutocompleteUserSearchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreAutocompleteUserSearchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreCheckAndDecrementInviteQuotaFunc describes the behavior when the

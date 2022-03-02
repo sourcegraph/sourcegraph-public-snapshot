@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -28,28 +27,6 @@ func (r *schemaResolver) Users(args *struct {
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
-}
-
-func (r *schemaResolver) AutocompleteSearchUsers(ctx context.Context, args *struct {
-	Query string
-}) ([]*UserResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-
-	usersMatching, err := r.db.Users().AutocompleteUserSearch(ctx, args.Query)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var users []*UserResolver
-	for _, user := range usersMatching {
-		users = append(users, NewUserResolver(r.db, user))
-	}
-
-	return users, nil
 }
 
 type UserConnectionResolver interface {

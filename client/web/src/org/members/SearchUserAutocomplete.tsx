@@ -6,7 +6,7 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 
 import { Input } from '@sourcegraph/wildcard'
 
-import { AutocompleteUsersResult, AutocompleteUsersVariables, Maybe } from '../../graphql-operations'
+import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
@@ -16,7 +16,7 @@ import styles from './SearchUserAutocomplete.module.scss'
 interface IUserItem {
     id: string
     username: string
-    alreadyInOrg: boolean
+    inOrg: boolean
     displayName: Maybe<string>
     avatarURL: Maybe<string>
 }
@@ -24,6 +24,7 @@ interface IUserItem {
 interface AutocompleteSearchUsersProps {
     disabled?: boolean
     onValueChanged: (value: string, isEmail: boolean) => void
+    orgMembersId: string[]
     orgId: string
 }
 
@@ -51,14 +52,14 @@ const UserResultItem: React.FunctionComponent<{
             className={styles.item}
             onClick={selectUser}
             role="menuitem"
-            disabled={user.alreadyInOrg}
+            disabled={user.inOrg}
             onKeyDown={keyDown}
         >
             <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
                 <div className={styles.avatarContainer}>
                     <UserAvatar
                         size={24}
-                        className={classNames(styles.avatar, user.alreadyInOrg ? styles.avatarDisabled : undefined)}
+                        className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
                         user={user}
                         data-tooltip={user.displayName || user.username}
                     />
@@ -68,7 +69,7 @@ const UserResultItem: React.FunctionComponent<{
                         <strong>{user.displayName || user.username}</strong>{' '}
                         {user.displayName && <span className={styles.userName}>{user.username}</span>}
                     </div>
-                    {user.alreadyInOrg && <small className="text-muted">Already in this organization</small>}
+                    {user.inOrg && <small className="text-muted">Already in this organization</small>}
                 </div>
             </div>
         </DropdownItem>
@@ -104,20 +105,15 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const inputReference = useRef<HTMLInputElement | null>(null)
     const [openResults, setOpenResults] = useState<boolean>(true)
 
-    const [getUsers, { loading, data, error }] = useLazyQuery<AutocompleteUsersResult, AutocompleteUsersVariables>(
-        SEARCH_USERS_AUTOCOMPLETE_QUERY,
-        {
-            variables: { query: userNameOrEmail },
-        }
-    )
+    const [getUsers, { loading, data, error }] = useLazyQuery<
+        AutocompleteMembersSearchResult,
+        AutocompleteMembersSearchVariables
+    >(SEARCH_USERS_AUTOCOMPLETE_QUERY, {
+        variables: { organization: orgId, query: userNameOrEmail },
+    })
 
     const results = (data
-        ? data.autocompleteSearchUsers
-              .map(gqlUser => ({
-                  ...gqlUser,
-                  alreadyInOrg: gqlUser.organizations.nodes.map(node => node.id).includes(orgId),
-              }))
-              .sort(item => (item.alreadyInOrg ? 1 : -1))
+        ? data.autocompleteMembersSearch.map(usr => ({ ...usr })).sort(item => (item.inOrg ? 1 : -1))
         : []) as IUserItem[]
 
     const firstResult = results.length > 0 ? results[0] : undefined
@@ -132,9 +128,9 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const searchUsers = useCallback(
         (query: string): void => {
             setOpenResults(true)
-            getUsers({ variables: { query } })
+            getUsers({ variables: { query, organization: orgId } })
         },
-        [getUsers]
+        [getUsers, orgId]
     )
 
     const debounceGetUsers = useRef(debounce(searchUsers, 250, { leading: false }))

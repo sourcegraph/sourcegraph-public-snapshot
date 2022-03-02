@@ -20,17 +20,13 @@ export const ORG_MEMBERS_QUERY = gql`
 `
 
 export const SEARCH_USERS_AUTOCOMPLETE_QUERY = gql`
-    query AutocompleteUsers($query: String!) {
-        autocompleteSearchUsers(query: $query) {
+    query AutocompleteMembersSearch($organization: ID!, $query: String!) {
+        autocompleteMembersSearch(organization: $organization, query: $query) {
             id
             username
             displayName
             avatarURL
-            organizations {
-                nodes {
-                    id
-                }
-            }
+            inOrg
         }
     }
 `

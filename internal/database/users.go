@@ -52,7 +52,6 @@ var (
 //
 // For a detailed overview of the schema, see schema.md.
 type UserStore interface {
-	AutocompleteUserSearch(ctx context.Context, query string) ([]*types.User, error)
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
@@ -710,12 +709,6 @@ func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 		items[i] = sqlf.Sprintf("%s", usernames[i])
 	}
 	q := sqlf.Sprintf("WHERE username IN (%s) AND deleted_at IS NULL ORDER BY id ASC", sqlf.Join(items, ","))
-	return u.getBySQL(ctx, q)
-}
-
-func (u *userStore) AutocompleteUserSearch(ctx context.Context, query string) ([]*types.User, error) {
-	pattern := query + "%"
-	q := sqlf.Sprintf("WHERE (username ILIKE %s OR display_name ILIKE %s) AND searchable IS TRUE AND deleted_at IS NULL ORDER BY id ASC LIMIT 10", pattern, pattern)
 	return u.getBySQL(ctx, q)
 }
 

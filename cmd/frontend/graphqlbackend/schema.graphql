@@ -1517,12 +1517,16 @@ type Query {
     """
     Search for users that opt-in to search autocomplete.
     """
-    autocompleteSearchUsers(
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
         """
         Return users whose usernames or display names match the query.
         """
         query: String!
-    ): [User!]!
+    ): [AutocompleteMemberSearchItem!]!
 }
 
 """
@@ -5149,6 +5153,29 @@ type OrganizationInvitation implements Node {
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """
     isVerifiedEmail: Boolean
+}
+
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    The URL of the user's avatar image.
+    """
+    inOrg: Boolean
 }
 
 """
