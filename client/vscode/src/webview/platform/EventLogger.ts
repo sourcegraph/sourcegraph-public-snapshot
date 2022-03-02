@@ -3,15 +3,16 @@ import * as uuid from 'uuid'
 
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
+import { version } from '../../../package.json'
 import { ExtensionCoreAPI } from '../../contract'
+import { INSTANCE_VERSION_NUMBER_KEY, ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
 
 import { VsceTelemetryService } from './telemetryService'
-
-export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
 // Event Logger for VS Code Extension
 export class EventLogger implements VsceTelemetryService {
     private anonymousUserID = ''
+    private instanceVersion = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private vsceAPI: Comlink.Remote<ExtensionCoreAPI>
@@ -29,10 +30,12 @@ export class EventLogger implements VsceTelemetryService {
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true, url?: string): void {
         if (pageTitle) {
+            // Adding eventProperties when none is provided would break the search history sync to cloud
+
             this.tracker(
                 `View${pageTitle}`,
+                eventProperties ? { platform: 'vscode', version, ...eventProperties } : eventProperties,
                 logAsActiveUser,
-                eventProperties ? { platform: 'vsce', ...eventProperties } : eventProperties,
                 url
             )
         }
@@ -69,10 +72,26 @@ export class EventLogger implements VsceTelemetryService {
         }
         this.tracker(
             eventLabel,
-            eventProperties ? { platform: 'vsce', ...eventProperties } : eventProperties,
+            eventProperties ? { platform: 'vscode', version, ...eventProperties } : { platform: 'vscode', version },
             publicArgument,
             uri
         )
+    }
+
+    /**
+     * Gets the anonymous user ID and cohort ID of the user from VSCE storage utility.
+     * If user doesn't have an anonymous user ID yet, a new one is generated
+     */
+    private async initializeLogParameters(): Promise<void> {
+        let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
+        // instance version is set during the initial authenticating step
+        const instanceVersion = await this.vsceAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
+        if (!anonymousUserID) {
+            anonymousUserID = uuid.v4()
+            await this.vsceAPI.setLocalStorageItem(ANONYMOUS_USER_ID_KEY, anonymousUserID)
+        }
+        this.anonymousUserID = anonymousUserID
+        this.instanceVersion = instanceVersion
     }
 
     /**
@@ -84,25 +103,25 @@ export class EventLogger implements VsceTelemetryService {
         return this.anonymousUserID
     }
 
-    // Event ID is used to deduplicate events in Amplitude.
-    // This is used in the case that multiple events with the same userID and timestamp
-    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
-    public getEventID(): number {
-        this.eventID++
-        return this.eventID
+    /**
+     * Regular instance version format: 3.38.2
+     * Insider version format: 134683_2022-03-02_5188fes0101
+     */
+    public getEventSourceType(): EventSource {
+        // assume instance version longer than 8 is using insider version
+        const flattenVersion = this.instanceVersion.length > 8 ? '999999' : this.instanceVersion.split('.').join()
+        // instances below 3.38.0 does not support EventSource.IDEEXTENSION
+        return flattenVersion > '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
     }
 
     /**
-     * Gets the anonymous user ID and cohort ID of the user from VSCE storage utility.
-     * If user doesn't have an anonymous user ID yet, a new one is generated
+     * Event ID is used to deduplicate events in Amplitude.
+     * This is used in the case that multiple events with the same userID and timestamp
+     * are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
      */
-    private async initializeLogParameters(): Promise<void> {
-        let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
-        if (!anonymousUserID) {
-            anonymousUserID = uuid.v4()
-            await this.vsceAPI.setLocalStorageItem(ANONYMOUS_USER_ID_KEY, anonymousUserID)
-        }
-        this.anonymousUserID = anonymousUserID
+    public getEventID(): number {
+        this.eventID++
+        return this.eventID
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {
@@ -116,7 +135,7 @@ export class EventLogger implements VsceTelemetryService {
             userCookieID: this.getAnonymousUserID(),
             referrer: 'VSCE',
             url: uri || '',
-            source: EventSource.BACKEND,
+            source: this.getEventSourceType(),
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
             deviceID: this.getAnonymousUserID(),

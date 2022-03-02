@@ -1,13 +1,18 @@
 import vscode, { env } from 'vscode'
 
-import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
-import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
+import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
+import { version } from '../../package.json'
+import { ExtensionCoreAPI } from '../contract'
+import { ANONYMOUS_USER_ID_KEY, INSTANCE_VERSION_NUMBER_KEY } from '../settings/LocalStorageService'
+
+import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
+import { checkEventSourceSupport, generateSourcegraphBlobLink, vsceUtms } from './initialize'
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
  */
 
-export async function browserActions(action: string): Promise<void> {
+export async function browserActions(action: string, extensionCoreAPI: ExtensionCoreAPI): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
         throw new Error('No active editor')
@@ -35,7 +40,17 @@ export async function browserActions(action: string): Promise<void> {
             sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
         }
     }
-
+    // Log redirect events
+    const instranceVersion = extensionCoreAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
+    const userEventVariables = {
+        event: 'IDERedirects',
+        userCookieID: extensionCoreAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY),
+        referrer: 'VSCE',
+        url: sourcegraphUrl,
+        source: checkEventSourceSupport(instranceVersion) ? EventSource.IDEEXTENSION : EventSource.BACKEND,
+        argument: JSON.stringify({ platform: 'vscode', version, action }),
+    }
+    extensionCoreAPI.logEvents(userEventVariables)
     // Open in browser or Copy file link
     if (action === 'open' && sourcegraphUrl) {
         await vscode.env.openExternal(vscode.Uri.parse(sourcegraphUrl))

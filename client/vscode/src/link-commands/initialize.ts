@@ -1,21 +1,25 @@
 import vscode from 'vscode'
 
+import { ExtensionCoreAPI } from '../contract'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
 
 import { browserActions } from './browserActionsNode'
 
-export function initializeCodeSharingCommands({ context }: { context: vscode.ExtensionContext }): void {
+export function initializeCodeSharingCommands(
+    context: vscode.ExtensionContext,
+    extensionCoreAPI: ExtensionCoreAPI
+): void {
     // Open local file or remote Sourcegraph file in browser
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.openInBrowser', async () => {
-            await browserActions('open')
+            await browserActions('open', extensionCoreAPI)
         })
     )
 
     // Copy Sourcegraph link to file
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
-            await browserActions('copy')
+            await browserActions('copy', extensionCoreAPI)
         })
     )
 
@@ -55,4 +59,11 @@ export function generateSourcegraphBlobLink(
     )}:${encodeURIComponent(String(startChar))}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(
         String(endChar)
     )}${vsceUtms}`
+}
+
+// check if instance version supports EventSource.IDEEXTENSION or not
+export function checkEventSourceSupport(versionNumber: string): boolean {
+    const flattenVersion = versionNumber.length > 8 ? '999999' : versionNumber.split('.').join()
+    // instances below 3.38.0 does not support EventSource.IDEEXTENSION
+    return flattenVersion > '3380'
 }
