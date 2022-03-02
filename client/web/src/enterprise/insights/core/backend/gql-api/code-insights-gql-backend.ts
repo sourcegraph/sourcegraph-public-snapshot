@@ -197,9 +197,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             title: dashboard.title,
                             insightIds: dashboard.views?.nodes.map(view => view.id),
                             grants: dashboard.grants,
-
-                            // BE gql dashboards don't have setting key (it's setting cascade conception only)
-                            settingsKey: null,
                         })
                     ),
                 ]

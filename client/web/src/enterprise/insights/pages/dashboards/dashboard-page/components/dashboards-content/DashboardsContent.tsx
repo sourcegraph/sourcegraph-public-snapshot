@@ -76,9 +76,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     !isVirtualDashboard(currentDashboard) &&
                     isCustomInsightDashboard(currentDashboard)
                 ) {
-                    const dashboardURL = currentDashboard.settingsKey ?? currentDashboard.id
-
-                    history.push(`/insights/dashboards/${dashboardURL}/edit`)
+                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }

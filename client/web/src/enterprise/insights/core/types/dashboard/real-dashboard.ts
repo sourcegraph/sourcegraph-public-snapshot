@@ -6,7 +6,7 @@ import { InsightDashboard, InsightDashboardOwner, InsightsDashboardType } from '
 export interface BuiltInInsightDashboard extends InsightDashboard {
     /**
      * Property to distinguish between real user-created dashboards and
-     * built-in dashboards. Currently we support 3 types of user built-in dashboard.
+     * built-in dashboards. Currently, we support 3 types of user built-in dashboard.
      *
      * "Personal" - all personal insights from personal settings (all users
      * have it by default)
@@ -29,13 +29,6 @@ export interface BuiltInInsightDashboard extends InsightDashboard {
  */
 export interface CustomInsightDashboard extends InsightDashboard {
     type: InsightsDashboardType.Custom
-
-    /**
-     * Value of dashboard key in the settings for which the dashboard data is available.
-     * Dashboard already has an id property but this id is UUID and will be used for further
-     * BE migration.
-     */
-    settingsKey: string | null
 
     /**
      * Subject that has a particular dashboard, it can be personal setting

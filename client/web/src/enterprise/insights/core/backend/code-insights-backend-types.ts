@@ -28,7 +28,6 @@ export interface DashboardUpdateResult {
 }
 
 export interface DashboardDeleteInput {
-    dashboardSettingKey: string
     dashboardOwnerId: string
     id?: string
 }

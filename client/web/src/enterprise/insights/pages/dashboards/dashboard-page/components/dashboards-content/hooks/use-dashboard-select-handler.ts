@@ -1,7 +1,6 @@
 import { useHistory } from 'react-router-dom'
 
 import { InsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
-import { isCustomInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 type SelectHandler = (dashboard: InsightDashboard) => void
 
@@ -15,12 +14,6 @@ export function useDashboardSelectHandler(): SelectHandler {
     return (dashboard: InsightDashboard): void => {
         if (isVirtualDashboard(dashboard)) {
             history.push(`/insights/dashboards/${dashboard.id}`)
-
-            return
-        }
-
-        if (isCustomInsightDashboard(dashboard) && dashboard.settingsKey) {
-            history.push(`/insights/dashboards/${dashboard.settingsKey}`)
 
             return
         }
