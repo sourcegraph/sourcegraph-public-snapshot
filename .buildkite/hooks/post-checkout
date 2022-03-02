@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1090
+source "$HOME/.profile"
+
+# Fetch the latest origin/main to accurately determine the set of changed
+# files on this branch.
+echo "Running git fetch..."
+git fetch
+echo "Running git fetch... done"
+
 ## -- START: ADD git lfs
 REQUIRED_PKG="git-lfs"
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
@@ -13,21 +22,12 @@ if [ "" = $PKG_OK ]; then
   git-lfs install
 
   echo "Git LFS installed"
+
+  echo "Fetching files from Git LFS..."
+  git-lfs fetch
+  echo "Fetched files from Git LFS"
 fi
 ## -- END: ADD git lfs
-
-# shellcheck disable=SC1090
-source "$HOME/.profile"
-
-# Fetch the latest origin/main to accurately determine the set of changed
-# files on this branch.
-echo "Running git fetch..."
-git fetch
-echo "Running git fetch... done"
-
-echo "Fetching files from Git LFS..."
-git-lfs fetch
-echo "Fetched files from Git LFS"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
