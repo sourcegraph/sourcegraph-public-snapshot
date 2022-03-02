@@ -26,12 +26,14 @@ func Init() error {
 	}
 	// https://docs.datadoghq.com/tracing/profiler/enabling/go/
 	if os.Getenv("DD_ENV") != "" {
+		profileTypes := []ddprofiler.ProfileType{ddprofiler.CPUProfile, ddprofiler.HeapProfile}
+		if os.Getenv("DD_PROFILE_ALL") != "" {
+			profileTypes = append(profileTypes, ddprofiler.MutexProfile, ddprofiler.BlockProfile)
+		}
 		return ddprofiler.Start(
 			ddprofiler.WithService(env.MyName),
 			ddprofiler.WithVersion(version.Version()),
-			ddprofiler.WithProfileTypes(
-				ddprofiler.CPUProfile,
-				ddprofiler.HeapProfile,
+			ddprofiler.WithProfileTypes(profileTypes...,
 			),
 		)
 	}
