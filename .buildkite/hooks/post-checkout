@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 ## -- START: ADD git lfs
-echo "Installing Git LFS..."
+if [ $(dpkg-query -W -f='${Status}' git-lfs 2>/dev/null | grep -c "ok installed") -eq 0 ]
+then
+  echo "Installing Git LFS..."
 
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-sudo apt install git-lfs
-git-lfs install
+  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+  sudo apt install git-lfs
+  git-lfs install
 
-echo "Git LFS installed"
+  echo "Git LFS installed"
+fi
 ## -- END: ADD git lfs
 
 # shellcheck disable=SC1090
