@@ -10,24 +10,20 @@ git fetch
 echo "Running git fetch... done"
 
 ## -- START: ADD git lfs
-REQUIRED_PKG="git-lfs"
-PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
-echo "Checking for $REQUIRED_PKG: $PKG_OK"
-if [ "" = $PKG_OK ]; then
-  echo "No $REQUIRED_PKG. Setting up $REQUIRED_PKG."
-  echo "Installing Git LFS..."
+echo "Installing Git LFS..."
 
-  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-  sudo apt install git-lfs
-  git-lfs install
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt install git-lfs
+git-lfs install
 
-  echo "Git LFS installed"
-
-  echo "Fetching files from Git LFS..."
-  git-lfs fetch
-  echo "Fetched files from Git LFS"
-fi
+echo "Git LFS installed"
 ## -- END: ADD git lfs
+
+## -- START: fetch files from git lfs
+echo "Fetching files from Git LFS..."
+git-lfs fetch
+echo "Fetched files from Git LFS"
+## -- END: fetch files from git lfs
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
