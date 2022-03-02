@@ -41,7 +41,7 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			require.Equal(t, "Test: [New event] My test monitor", buf.String())
 		})
 	})
 
@@ -72,7 +72,7 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			require.Equal(t, "[New event] My test monitor", buf.String())
 		})
 	})
 
@@ -103,7 +103,7 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+			require.Equal(t, "[New event] My test monitor", buf.String())
 		})
 	})
 }
