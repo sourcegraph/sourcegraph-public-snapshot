@@ -1,14 +1,16 @@
 import { noop } from 'lodash'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
+import { Redirect } from 'react-router-dom'
 import { Observable, ReplaySubject } from 'rxjs'
-import { filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { isDefined, property } from '@sourcegraph/common'
+import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -28,7 +30,9 @@ import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/WebHoverOverlay'
+import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
+import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
@@ -40,7 +44,7 @@ import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
 import styles from './NotebookComponent.module.scss'
 
-import { Notebook } from '.'
+import { Notebook, CopyNotebookProps } from '.'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,
@@ -51,13 +55,14 @@ export interface NotebookComponentProps
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
-    onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
     extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
     platformContext: Pick<PlatformContext, 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>
     exportedFileName: string
     isEmbedded?: boolean
+    onSerializeBlocks: (blocks: Block[]) => void
+    onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
 
 const LOADING = 'LOADING' as const
@@ -87,10 +92,12 @@ function downloadTextAsFile(text: string, fileName: string): void {
 
 export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = ({
     onSerializeBlocks,
+    onCopyNotebook,
     isReadOnly = false,
     extensionsController,
     exportedFileName,
     isEmbedded,
+    authenticatedUser,
     ...props
 }) => {
     const notebook = useMemo(
@@ -158,6 +165,27 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         downloadTextAsFile(exportedMarkdown, exportedFileName)
         props.telemetryService.log('SearchNotebookExportNotebook')
     }, [notebook, exportedFileName, props.telemetryService])
+
+    const [copyNotebook, copiedNotebookOrError] = useEventObservable(
+        useCallback(
+            (input: Observable<Omit<CopyNotebookProps, 'title'>>) =>
+                input.pipe(
+                    // The delay is added to make the copy loading state more obvious. Otherwise, the copy
+                    // happens too fast, and it can seem like nothing happened.
+                    switchMap(props => onCopyNotebook(props).pipe(delay(400), startWith(LOADING))),
+                    catchError(error => [asError(error)])
+                ),
+            [onCopyNotebook]
+        )
+    )
+
+    const onCopyNotebookButtonClick = useCallback(() => {
+        if (!authenticatedUser) {
+            return
+        }
+        props.telemetryService.log('SearchNotebookCopyNotebookButtonClick')
+        copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
+    }, [authenticatedUser, copyNotebook, notebook, props.telemetryService])
 
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
@@ -400,6 +428,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         <NotebookQueryBlock
                             {...block}
                             {...blockProps}
+                            authenticatedUser={authenticatedUser}
                             hoverifier={hoverifier}
                             sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
                             extensionsController={extensionsController}
@@ -421,11 +450,16 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             sourcegraphSearchLanguageId,
             extensionsController,
             hoverifier,
+            authenticatedUser,
         ]
     )
 
     const location = useLocation()
     const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
+
+    if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
+        return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+    }
 
     return (
         <div className={styles.searchNotebook} ref={nextNotebookElement}>
@@ -450,6 +484,19 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     >
                         <DownloadIcon className="icon-inline mr-1" />
                         <span>Export as Markdown</span>
+                    </Button>
+                )}
+                {!isEmbedded && authenticatedUser && (
+                    <Button
+                        className="mr-2"
+                        variant="secondary"
+                        size="sm"
+                        onClick={onCopyNotebookButtonClick}
+                        data-testid="copy-notebook-button"
+                        disabled={copiedNotebookOrError === LOADING}
+                    >
+                        <ContentCopyIcon className="icon-inline mr-1" />
+                        <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                     </Button>
                 )}
             </div>

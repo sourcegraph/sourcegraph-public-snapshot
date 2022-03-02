@@ -31,52 +31,12 @@ function go_test() {
     -race \
     -v \
     $test_packages | tee "$tmpfile" | richgo testfilter
-  # Save the test exit code so we can return it after submitting the test run to the analytics.
+  # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
 
-  local xml
-  xml=$(go-junit-report <"$tmpfile")
-  # escape xml output properly for JSON
-  local quoted_xml
-  quoted_xml="$(echo "$xml" | jq -R -s '.')"
-
-  local data
-  data=$(
-    cat <<EOF
-{
-  "format": "junit",
-  "run_env": {
-    "CI": "buildkite",
-    "key": "$BUILDKITE_BUILD_ID",
-    "number": "$BUILDKITE_BUILD_NUMBER",
-    "job_id": "$BUILDKITE_JOB_ID",
-    "branch": "$BUILDKITE_BRANCH",
-    "commit_sha": "$BUILDKITE_COMMIT",
-    "message": "$BUILDKITE_MESSAGE",
-    "url": "$BUILDKITE_BUILD_URL"
-  },
-  "data": $quoted_xml
-}
-EOF
-  )
-
-  echo -e "\n--- :information_source: Uploading test results to Buildkite analytics"
-  set +e
-  echo "$data" | curl \
-    --fail \
-    --request POST \
-    --url https://analytics-api.buildkite.com/v1/uploads \
-    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
-    --header 'Content-Type: application/json' \
-    --data-binary @-
-  local curl_exit="$?"
-  if [ "$curl_exit" -eq 0 ]; then
-    echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
-  else
-    echo -e "\n^^^ +++ :warning: Failed to upload test results to Buildkite analytics"
-  fi
-  set -e
+  mkdir -p './test-reports'
+  go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
   return "$test_exit_code"
 }
@@ -103,10 +63,6 @@ fi
 # TODO is that the best way to handle this?
 go install github.com/jstemmer/go-junit-report@latest
 asdf reshim golang
-
-# TODO move to manifest
-# https://github.com/sourcegraph/sourcegraph/issues/28469
-BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
 # For searcher
 echo "--- comby install"

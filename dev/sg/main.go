@@ -64,6 +64,7 @@ var (
 			lintCommand,
 			checkCommand, // TODO remove after a while
 			dbCommand,
+			updateCommand,
 		},
 	}
 )
@@ -110,7 +111,7 @@ func checkSgVersion() {
 		rev = BuildCommit[len("dev-"):]
 	}
 
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", rev), "./dev/sg")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
 		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
@@ -120,7 +121,7 @@ func checkSgVersion() {
 	out = strings.TrimSpace(out)
 	if out != "" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  HEY! New version of sg available. Run './dev/sg/install.sh' to install it.  "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 	}

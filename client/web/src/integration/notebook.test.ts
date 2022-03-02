@@ -455,4 +455,32 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/cli
         // Verify the redirected URL contains the imported notebook id.
         expect(driver.page.url()).toContain('/notebooks/importedId')
     })
+
+    it('Should copy the notebook', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            CreateNotebook: ({ notebook }) => ({
+                createNotebook: notebookFixture(
+                    'copiedId',
+                    notebook.title,
+                    notebook.blocks.map(GQLBlockInputToResponse)
+                ),
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-testid="copy-notebook-button"]', { visible: true })
+
+        await Promise.all([
+            // We should be redirected to the copied notebook page, wait for the navigation.
+            driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
+            driver.page.click('[data-testid="copy-notebook-button"]'),
+        ])
+
+        // Wait for blocks to load.
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Verify the redirected URL contains the copied notebook id.
+        expect(driver.page.url()).toContain('/notebooks/copiedId')
+    })
 })
