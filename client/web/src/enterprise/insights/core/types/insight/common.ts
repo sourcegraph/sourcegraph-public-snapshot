@@ -38,4 +38,3 @@ export interface SyntheticInsightFields {
     viewType: InsightType
     dashboardReferenceCount: number
 }
-
