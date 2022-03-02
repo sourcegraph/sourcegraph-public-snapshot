@@ -60,14 +60,14 @@ Use this to start your Sourcegraph environment!
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	cfg := parseConfAndReset()
 
-	if globalConf != nil {
+	if cfg != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
 		var names []string
-		for name := range globalConf.Commandsets {
+		for name := range cfg.Commandsets {
 			switch name {
 			case "enterprise-codeintel":
 				names = append(names, fmt.Sprintf("  %s 🧠", name))
@@ -82,11 +82,6 @@ Use this to start your Sourcegraph environment!
 	} else {
 		fmt.Fprintf(&out, "\n%sNo commandsets found! Please change your current directory to the Sourcegraph repository.%s", output.StyleOrange, output.StyleReset)
 	}
-
-	// This is a quick fix to get the overwrite config flag to load properly,
-	// as this function is called before the flags are parsed and sets the globalConf
-	// variable with the wrong override config path.
-	globalConf = nil
 
 	return out.String()
 }

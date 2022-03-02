@@ -58,25 +58,20 @@ func constructRunCmdLongHelp() string {
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	cfg := parseConfAndReset()
 
-	if globalConf != nil {
+	if cfg != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
 		var names []string
-		for name := range globalConf.Commands {
+		for name := range cfg.Commands {
 			names = append(names, name)
 		}
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	}
-
-	// This is a quick fix to get the overwrite config flag to load properly,
-	// as this function is called before the flags are parsed and sets the globalConf
-	// variable with the wrong override config path.
-	globalConf = nil
 
 	return out.String()
 }
