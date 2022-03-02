@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with: { repository: 'sourcegraph/sourcegraph' }
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with: { go-version: '1.17' }
 
       - run: ./dev/pr-auditor/check-pr.sh
