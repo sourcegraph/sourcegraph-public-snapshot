@@ -65,7 +65,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             aria-labelledby={deleteLabelId}
             data-testid="delete-org-modal"
         >
-        {!authenticatedUser.viewerCanAdminister ?
+
+        {!props.authenticatedUser.siteAdmin ?
             <div>
                 <h3 className="text-danger" id={deleteLabelId}>
                 Please contact support to delete this organization
