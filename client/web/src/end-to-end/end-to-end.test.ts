@@ -1,6 +1,4 @@
-import expect from 'expect'
 import { sortBy } from 'lodash'
-import { describe, test, before, beforeEach, after } from 'mocha'
 import MockDate from 'mockdate'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
@@ -15,15 +13,12 @@ const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegrap
 describe('e2e test suite', () => {
     let driver: Driver
 
-    before(async function () {
+    beforeAll(async () => {
+        // Reset date mocking
+        MockDate.reset()
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
-        this.timeout(5 * 60 * 1000)
-
-        // Reset date mocking
-        MockDate.reset()
-
         const config = getConfig('headless', 'slowMo', 'testUserPassword')
 
         // Start browser
@@ -57,9 +52,9 @@ describe('e2e test suite', () => {
             ensureRepos: clonedRepoSlugs.map(slug => `github.com/${slug}`),
             alwaysCloning: alwaysCloningRepoSlugs.map(slug => `github.com/${slug}`),
         })
-    })
+    }, 5 * 60 * 1000)
 
-    after('Close browser', () => driver?.close())
+    afterAll(() => driver?.close())
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEachRecordCoverage(() => driver)
@@ -115,11 +110,11 @@ describe('e2e test suite', () => {
 
             // Switch to dark
             await driver.page.select('.test-theme-toggle', 'dark')
-            expect(await getActiveThemeClasses()).toEqual(expect.arrayContaining(['theme-dark']))
+            expect(await getActiveThemeClasses()).toContain(expect.arrayContaining(['theme-dark']))
 
             // Switch to light
             await driver.page.select('.test-theme-toggle', 'light')
-            expect(await getActiveThemeClasses()).toEqual(expect.arrayContaining(['theme-light']))
+            expect(await getActiveThemeClasses()).toContain(expect.arrayContaining(['theme-light']))
         })
     })
 
@@ -270,9 +265,12 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
                 await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
+                // expect(
+                //     await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
+                // ).toHaveLength(1)
                 expect(
-                    await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-                ).toEqual(1)
+                    await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]'))
+                ).toHaveLength(1)
             })
 
             test('responds to keyboard shortcuts', async () => {
@@ -281,7 +279,7 @@ describe('e2e test suite', () => {
                         await driver.page.evaluate(
                             () => document.querySelectorAll('[data-tree-row-expanded="true"]').length
                         )
-                    ).toEqual(expectedCount)
+                    ).toBe(expectedCount)
                 }
                 await driver.page.goto(
                     sourcegraphBaseUrl +
@@ -653,8 +651,8 @@ describe('e2e test suite', () => {
                 })
 
                 describe('find references', () => {
-                    test('opens widget and fetches local references', async function () {
-                        this.timeout(120000)
+                    test('opens widget and fetches local references', async () => {
+                        jest.setTimeout(120000)
 
                         await driver.page.goto(
                             sourcegraphBaseUrl +
@@ -676,13 +674,12 @@ describe('e2e test suite', () => {
                         )
                         await retry(async () =>
                             expect(
-                                await driver.page.evaluate(
-                                    () =>
-                                        document.querySelectorAll(
-                                            '[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]'
-                                        ).length
+                                await driver.page.evaluate(() =>
+                                    document.querySelectorAll(
+                                        '[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]'
+                                    )
                                 )
-                            ).toEqual(
+                            ).toHaveLength(
                                 // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
                                 4
                             )

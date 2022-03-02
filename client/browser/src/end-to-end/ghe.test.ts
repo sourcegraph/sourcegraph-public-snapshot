@@ -38,8 +38,7 @@ async function gheLogin({ page }: Driver): Promise<void> {
 describe('Sourcegraph browser extension on GitHub Enterprise', () => {
     let driver: Driver
 
-    before(async function () {
-        this.timeout(4 * 60 * 1000)
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
@@ -66,9 +65,9 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
         if (await driver.page.evaluate(() => document.querySelector('#not-found-search') !== null)) {
             throw new Error('You must clone sourcegraph/jsonrpc2 to your GHE instance to run these tests')
         }
-    })
+    }, 4 * 60 * 1000)
 
-    after(async () => {
+    afterAll(async () => {
         await driver.close()
     })
 

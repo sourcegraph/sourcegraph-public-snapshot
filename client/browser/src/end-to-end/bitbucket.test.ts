@@ -1,5 +1,3 @@
-import expect from 'expect'
-
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -133,8 +131,7 @@ async function configureSourcegraphIntegration(driver: Driver, enable: boolean):
 describe('Sourcegraph browser extension on Bitbucket Server', () => {
     let driver: Driver
 
-    before(async function () {
-        this.timeout(4 * 60 * 1000)
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com' && restConfig.testUserPassword) {
             await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
@@ -171,9 +168,9 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
             const corsOrigin = bbsUrl.hostname === 'localhost' ? '*' : bbsUrl.origin
             await driver.ensureHasCORSOrigin({ corsOriginURL: corsOrigin })
         }
-    })
+    }, 4 * 60 * 1000)
 
-    after(async () => {
+    afterAll(async () => {
         await driver.close()
     })
 

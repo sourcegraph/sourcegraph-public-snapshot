@@ -1,4 +1,3 @@
-import expect from 'expect'
 import { isEqual } from 'lodash'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -78,7 +77,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Activate the repo and wait for it to clone
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/')
     const activateButton = await driver.page.waitForSelector('a[href="/source/jrpc/edit/activate/"]')
-    const buttonLabel = ((await (await activateButton.getProperty('textContent')).jsonValue()) as string).trim()
+    const buttonLabel = (await (await activateButton.getProperty('textContent')).jsonValue()).trim()
     // Don't click if it says "Deactivate Repository"
     if (buttonLabel === 'Activate Repository') {
         await activateButton.click()
@@ -164,11 +163,10 @@ async function init(driver: Driver): Promise<void> {
 describe('Sourcegraph Phabricator extension', () => {
     let driver: Driver
 
-    before(async function () {
-        this.timeout(4 * 60 * 1000)
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
         await init(driver)
-    })
+    }, 4 * 60 * 1000)
 
     // Take a screenshot when a test fails.
     afterEachSaveScreenshotIfFailed(() => driver.page)

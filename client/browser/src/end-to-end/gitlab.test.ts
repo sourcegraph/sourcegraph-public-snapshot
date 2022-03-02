@@ -17,8 +17,7 @@ const { sourcegraphBaseUrl, ...restConfig } = getConfig('sourcegraphBaseUrl')
 describe('Sourcegraph browser extension on Gitlab Server', () => {
     let driver: Driver
 
-    before(async function () {
-        this.timeout(4 * 60 * 1000)
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
@@ -38,9 +37,9 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
             })
             await driver.ensureHasCORSOrigin({ corsOriginURL: GITLAB_BASE_URL })
         }
-    })
+    }, 4 * 60 * 1000)
 
-    after(async () => {
+    afterAll(async () => {
         await driver.close()
     })
 

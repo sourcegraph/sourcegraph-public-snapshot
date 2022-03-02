@@ -13,15 +13,12 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { closeInstallPageTab, testSingleFilePage } from './shared'
 
-describe('Sourcegraph browser extension on github.com', function () {
-    this.slow(8000)
-
+describe('Sourcegraph browser extension on github.com', () => {
     const { browser, sourcegraphBaseUrl, ...restConfig } = getConfig('browser', 'sourcegraphBaseUrl')
 
     let driver: Driver
 
-    before('Open browser', async function () {
-        this.timeout(90 * 1000)
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
@@ -29,12 +26,12 @@ describe('Sourcegraph browser extension on github.com', function () {
             }
             await driver.setExtensionSourcegraphUrl()
         }
-    })
+    }, 90 * 1000)
 
     // Take a screenshot when a test fails
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    after('Close browser', () => driver?.close())
+    afterAll(() => driver?.close())
 
     testSingleFilePage({
         getDriver: () => driver,
