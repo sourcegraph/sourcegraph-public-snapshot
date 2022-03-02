@@ -27,9 +27,6 @@ type SearchArgs struct {
 	// to rip this out in the future, this should be possible once we can build
 	// a static representation of our job tree independently of any resolvers.
 	CodeMonitorID *graphql.ID
-
-	// For tests
-	Settings *schema.Settings
 }
 
 type SearchImplementer interface {
@@ -40,13 +37,9 @@ type SearchImplementer interface {
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
-	settings := args.Settings
-	if settings == nil {
-		var err error
-		settings, err = DecodedViewerFinalSettings(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+	settings, err := DecodedViewerFinalSettings(ctx, db)
+	if err != nil {
+		return nil, err
 	}
 
 	inputs, err := run.NewSearchInputs(
