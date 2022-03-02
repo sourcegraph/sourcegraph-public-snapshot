@@ -204,17 +204,6 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 }
 
-func subjectMatchesOrgId(claims *orgInvitationClaims, invite *database.OrgInvitation) error {
-	orgID, err := strconv.ParseInt(claims.Subject, 10, 32)
-	if err != nil {
-		return err
-	}
-	if orgID != int64(invite.OrgID) {
-		return errors.Newf("token subject %v does match orgId %v", orgID, claims.InvitationID)
-	}
-	return nil
-}
-
 func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Username     *string
@@ -578,6 +567,17 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 			ExpiryDays:      int(math.Round(expiryTime.Sub(timeNow()).Hours() / 24)), // golang does not have `duration.Days` :(
 		},
 	})
+}
+
+func subjectMatchesOrgId(claims *orgInvitationClaims, invite *database.OrgInvitation) error {
+	orgID, err := strconv.ParseInt(claims.Subject, 10, 32)
+	if err != nil {
+		return err
+	}
+	if orgID != int64(invite.OrgID) {
+		return errors.Newf("token subject %v does match orgId %v", orgID, claims.InvitationID)
+	}
+	return nil
 }
 
 var emailTemplates = txemail.MustValidate(txtypes.Templates{

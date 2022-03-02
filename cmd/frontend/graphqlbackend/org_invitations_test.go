@@ -71,6 +71,7 @@ func TestCreateJWT(t *testing.T) {
 		defer mockDefaultSiteConfig()
 
 		token, err := createInvitationJWT(1, 2, 3, expiryTime)
+		fmt.Println(token)
 		if err != nil {
 			t.Fatal(err)
 		}
