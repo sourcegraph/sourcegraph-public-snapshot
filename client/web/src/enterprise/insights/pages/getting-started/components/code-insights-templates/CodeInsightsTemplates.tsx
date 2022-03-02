@@ -1,7 +1,6 @@
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { MouseEvent, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,6 +16,7 @@ import {
     TabPanels,
     Tabs,
     TooltipController,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { InsightType } from '../../../../core/types'

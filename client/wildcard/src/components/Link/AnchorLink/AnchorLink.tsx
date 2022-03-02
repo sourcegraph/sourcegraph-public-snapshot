@@ -22,6 +22,7 @@ export const AnchorLink = React.forwardRef(({ to, as: Component, children, class
 
     if (!Component) {
         return (
+            // eslint-disable-next-line react/forbid-elements
             <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...rest} {...commonProps}>
                 {children}
             </a>

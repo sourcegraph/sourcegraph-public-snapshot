@@ -61,6 +61,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     const isEditMode = mode === 'edit'
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"

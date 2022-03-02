@@ -1,4 +1,3 @@
-import { isArray } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -135,12 +134,14 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[],
     expand: boolean
 ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
-    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
-    const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
+    const finished = Array.isArray(value)
+        ? value.every(logEntry => logEntry.exitCode !== null)
+        : value.exitCode !== null
+    const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
-        date: isArray(value) ? value[0].startTime : value.startTime,
+        date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
         expanded: expand || !(success || !finished),
     }
