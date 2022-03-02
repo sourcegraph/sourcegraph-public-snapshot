@@ -10,7 +10,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -159,18 +158,11 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
 
-	totalOrgs, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, getTotalOrgsSql))
-	if err != nil {
-		return nil, errors.Wrap(err, "GetTotalOrgs")
-	}
-	totalOrgsInt := int32(totalOrgs)
-	stats.TotalOrgs = &totalOrgsInt
-
 	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetTotalDashboards")
 	}
-	stats.WeeklyDashboardCount = &totalDashboards
+	stats.TotalDashboardCount = &totalDashboards
 
 	insightsPerDashboard, err := GetInsightsPerDashboard(ctx, db)
 	if err != nil {
@@ -444,10 +436,6 @@ const getStartedTabMoreClickSql = `
 SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
 WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
 GROUP BY argument;
-`
-
-const getTotalOrgsSql = `
-SELECT COUNT(*) FROM orgs WHERE deleted_at IS NOT NULL;
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`

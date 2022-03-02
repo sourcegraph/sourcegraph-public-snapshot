@@ -95,8 +95,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		WeeklyFirstTimeInsightCreators:          &oneInt,
 		WeeklyGetStartedTabClickByTab:           []types.InsightGetStartedTabClickPing{},
 		WeeklyGetStartedTabMoreClickByTab:       []types.InsightGetStartedTabClickPing{},
-		WeeklyDashboardCount:                    &zeroInt,
-		TotalOrgs:                               &zeroInt,
+		TotalDashboardCount:                     &zeroInt,
 		TotalOrgsWithDashboard:                  &zeroInt,
 	}
 

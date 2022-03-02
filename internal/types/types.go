@@ -1160,8 +1160,7 @@ type CodeInsightsUsageStatistics struct {
 	InsightOrgVisible                       []OrgVisibleInsightPing
 	InsightTotalCounts                      InsightTotalCounts
 	TotalOrgsWithDashboard                  *int32
-	TotalOrgs                               *int32
-	WeeklyDashboardCount                    *int32
+	TotalDashboardCount                     *int32
 	InsightsPerDashboard                    InsightsPerDashboardPing
 }
 
