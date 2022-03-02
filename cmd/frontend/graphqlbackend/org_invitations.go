@@ -176,8 +176,15 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 
 	if claims, ok := token.Claims.(*orgInvitationClaims); ok && token.Valid {
+		if claims.RegisteredClaims.Issuer != globals.ExternalURL().String() {
+			return nil, errors.Newf("token issuer %v does not match the expected value %v", claims.RegisteredClaims.Issuer, globals.ExternalURL().String())
+		}
+
 		invite, err := r.db.OrgInvitations().GetPendingByID(ctx, claims.InvitationID)
 		if err != nil {
+			return nil, err
+		}
+		if err := subjectMatchesOrgId(claims, invite); err != nil {
 			return nil, err
 		}
 		if invite.RecipientUserID > 0 && invite.RecipientUserID != actor.UID {
@@ -195,6 +202,17 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	} else {
 		return nil, errors.Newf("Invitation token not valid")
 	}
+}
+
+func subjectMatchesOrgId(claims *orgInvitationClaims, invite *database.OrgInvitation) error {
+	orgID, err := strconv.ParseInt(claims.Subject, 10, 32)
+	if err != nil {
+		return err
+	}
+	if orgID != int64(invite.OrgID) {
+		return errors.Newf("token subject %v does match orgId %v", orgID, claims.InvitationID)
+	}
+	return nil
 }
 
 func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {

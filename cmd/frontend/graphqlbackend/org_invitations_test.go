@@ -5,12 +5,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -246,7 +250,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					"username":     "foo",
 				},
 				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "cannot invite user because their primary email address is not verified",
 						Path:    []interface{}{"inviteUserToOrganization"},
@@ -305,7 +309,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 					"email":        "foo@bar.baz",
 				},
 				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "inviting by email is not supported for this organization",
 						Path:    []interface{}{"inviteUserToOrganization"},
@@ -473,7 +477,16 @@ func TestInvitationByToken(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
-
+	inviteByTokenQuery := `
+	query InvitationByToken($token: String!) {
+		invitationByToken(token: $token) {
+			id
+			organization {
+				name
+			}
+		}
+	}
+	`
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	t.Run("Fails if site config is not provided", func(t *testing.T) {
@@ -482,20 +495,12 @@ func TestInvitationByToken(t *testing.T) {
 			{
 				Schema:  mustParseGraphQLSchema(t, db),
 				Context: ctx,
-				Query: `
-				query InvitationByToken($token: String!) {
-					invitationByToken(token: $token) {
-						organization {
-							name
-						}
-					}
-				}
-				`,
+				Query:   inviteByTokenQuery,
 				Variables: map[string]interface{}{
 					"token": token,
 				},
 				ExpectedResult: `null`,
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.",
 						Path:    []interface{}{"invitationByToken"},
@@ -516,16 +521,7 @@ func TestInvitationByToken(t *testing.T) {
 			{
 				Schema:  mustParseGraphQLSchema(t, db),
 				Context: ctx,
-				Query: `
-				query InvitationByToken($token: String!) {
-					invitationByToken(token: $token) {
-						id
-						organization {
-							name
-						}
-					}
-				}
-				`,
+				Query:   inviteByTokenQuery,
 				Variables: map[string]interface{}{
 					"token": token,
 				},
@@ -537,6 +533,58 @@ func TestInvitationByToken(t *testing.T) {
 						}
 					}
 				}`,
+			},
+		})
+	})
+
+	t.Run("Fails if issuer doesn't match", func(t *testing.T) {
+		mockSiteConfigSigningKey(nil)
+		defer mockDefaultSiteConfig()
+		token, err := createInvitationJWTWithFakeIssuer(1, 1, 1, timeNow().Add(DefaultExpiryDuration))
+		if err != nil {
+			t.Fatal(err)
+		}
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query:   inviteByTokenQuery,
+				Variables: map[string]interface{}{
+					"token": token,
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:    []interface{}{"invitationByToken"},
+						Message: "token issuer invalid does not match the expected value http://example.com",
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("Fails if subject doesn't match", func(t *testing.T) {
+		mockSiteConfigSigningKey(nil)
+		defer mockDefaultSiteConfig()
+		token, err := createInvitationJWTWithFakeSubject(1, 1, timeNow().Add(DefaultExpiryDuration))
+		if err != nil {
+			t.Fatal(err)
+		}
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query:   inviteByTokenQuery,
+				Variables: map[string]interface{}{
+					"token": token,
+				},
+				ExpectedResult: "null",
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:    []interface{}{"invitationByToken"},
+						Message: "token subject 123 does match orgId 1",
+					},
+				},
 			},
 		})
 	})
@@ -726,7 +774,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 					"response": "ACCEPT",
 				},
 				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "your email addresses [something@else.invalid] do not match the email address on the invitation.",
 						Path:    []interface{}{"respondToOrganizationInvitation"},
@@ -889,7 +937,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "invitation is expired",
 						Path:    []interface{}{"resendOrganizationInvitationNotification"},
@@ -921,7 +969,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 					"id": string(MarshalOrgInvitationID(invitationID)),
 				},
 				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
+				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "refusing to send notification because recipient has no verified email address",
 						Path:    []interface{}{"resendOrganizationInvitationNotification"},
@@ -930,4 +978,60 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 			},
 		})
 	})
+}
+
+func createInvitationJWTWithFakeIssuer(orgID int32, invitationID int64, senderID int32, expiryTime time.Time) (string, error) {
+	if !orgInvitationConfigDefined() {
+		return "", errors.New(SigningKeyMessage)
+	}
+	config := conf.SiteConfig().OrganizationInvitations
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "invalid",
+			ExpiresAt: jwt.NewNumericDate(expiryTime),
+			Subject:   strconv.FormatInt(int64(orgID), 10),
+		},
+		InvitationID: invitationID,
+		SenderID:     senderID,
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	key, err := base64.StdEncoding.DecodeString(config.SigningKey)
+	if err != nil {
+		return "", err
+	}
+	tokenString, err := token.SignedString(key)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+func createInvitationJWTWithFakeSubject(invitationID int64, senderID int32, expiryTime time.Time) (string, error) {
+	if !orgInvitationConfigDefined() {
+		return "", errors.New(SigningKeyMessage)
+	}
+	config := conf.SiteConfig().OrganizationInvitations
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    globals.ExternalURL().String(),
+			ExpiresAt: jwt.NewNumericDate(expiryTime),
+			Subject:   "123",
+		},
+		InvitationID: invitationID,
+		SenderID:     senderID,
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	key, err := base64.StdEncoding.DecodeString(config.SigningKey)
+	if err != nil {
+		return "", err
+	}
+	tokenString, err := token.SignedString(key)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
