@@ -110,18 +110,9 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         coolCodeIntelEnabled,
     ])
 
-    const onlyGoToDefinition = Array.isArray(props.actionsOrError)
-        ? props.actionsOrError.filter(
-              a => a.action.id === 'goToDefinition.preloaded' || a.action.id === 'goToDefinition'
-          )
-        : []
-
     return (
         <HoverOverlay
             {...propsToUse}
-            {...(coolCodeIntelEnabled && {
-                actionsOrError: onlyGoToDefinition,
-            })}
             className={styles.webHoverOverlay}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}

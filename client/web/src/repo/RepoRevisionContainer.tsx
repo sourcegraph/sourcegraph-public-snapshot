@@ -21,7 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -213,6 +213,9 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     // We only render the reference panel when looking at files
     const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
     const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
+    const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
+    // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
+    const showCoolCodeIntelPanel = coolCodeIntelEnabled && referencePanelRouteMatch && viewState
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
@@ -335,7 +338,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {coolCodeIntelEnabled && referencePanelRouteMatch && (
+            {showCoolCodeIntelPanel && (
                 <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
             )}
         </>
