@@ -52,7 +52,7 @@ Add the following to your `docker run` command:
 
 ### Docker Compose
 
-1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml):
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services, the `sourcegraph-frontend-internal` service, and the `migrator` service (for Sourcegraph versions 3.37+) in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.37/docker-compose/docker-compose.yaml):
 
     ```
     sourcegraph-frontend-0:
@@ -74,7 +74,7 @@ Add the following to your `docker run` command:
 
     See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
-1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
+1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.37/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
     ```
     # # Description: PostgreSQL database for various data.
@@ -158,7 +158,7 @@ Add the following to your `docker run` command:
 
 ### Docker Compose
 
-1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml):
+1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services, the `sourcegraph-frontend-internal` service, and the `migrator` service (for Sourcegraph versions 3.37+) in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.37/docker-compose/docker-compose.yaml):
 
     ```yml
     sourcegraph-frontend-0:
@@ -172,7 +172,7 @@ Add the following to your `docker run` command:
 
     See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
-1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.21/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
+1. Comment out / remove the internal `pgsql` and `codeintel-db` services in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.37/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
     ```yml
     # # Description: PostgreSQL database for various data.
