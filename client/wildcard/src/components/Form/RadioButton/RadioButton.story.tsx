@@ -22,8 +22,7 @@ const config: Meta = {
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=854%3A2792',
         },
     },
 }
