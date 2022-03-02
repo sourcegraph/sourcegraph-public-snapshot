@@ -326,7 +326,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                         hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        coolCodeIntelEnabled={false}
                     />
                 )}
             </div>

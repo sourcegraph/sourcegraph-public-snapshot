@@ -1,8 +1,8 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
+import React, { useCallback, useMemo, useState } from 'react'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -21,7 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -31,13 +31,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import {
-    CoolClickedToken,
-    CoolCodeIntel,
-    GlobalCoolCodeIntelProps,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from '../global/CoolCodeIntel'
+import { CoolCodeIntel, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -77,8 +71,7 @@ export interface RepoRevisionContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -216,23 +209,10 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 }) => {
     // Experimental reference panel
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-
-    // We only render the reference panel when looking at files
-    const referencePanelRoute = props.routePrefix + '/-/blob/:filePath*'
-    const referencePanelRouteMatch = useRouteMatch(referencePanelRoute)
-
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    const onTokenClickRemoveViewState = (token: CoolClickedToken | undefined): void => {
-        props.history.push(locationWithoutViewState(context.location))
-        onTokenClick(token)
-    }
-    useEffect(() => {
-        // If we don't have a route match anymore, we reset the state of the
-        // reference panel by setting the token to undefined
-        if (coolCodeIntelEnabled && !referencePanelRouteMatch) {
-            onTokenClick(undefined)
-        }
-    }, [coolCodeIntelEnabled, referencePanelRouteMatch])
+    const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
+    // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
+    const showCoolCodeIntelPanel =
+        coolCodeIntelEnabled && viewState && (viewState === 'references' || viewState.startsWith('implementations_'))
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
@@ -303,8 +283,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
-        onTokenClick: onTokenClickRemoveViewState,
-        coolCodeIntelEnabled,
     }
 
     const resolvedRevisionOrError = props.resolvedRevisionOrError
@@ -356,8 +334,8 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {coolCodeIntelEnabled && referencePanelRouteMatch && (
-                <CoolCodeIntel {...props} onTokenClick={onTokenClickRemoveViewState} clickedToken={clickedToken} />
+            {showCoolCodeIntelPanel && (
+                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
             )}
         </>
     )

@@ -8,7 +8,6 @@ import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensio
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
@@ -21,7 +20,7 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-interface Props extends HoverOverlayProps, HoverThresholdProps, GlobalCoolCodeIntelProps {
+interface Props extends HoverOverlayProps, HoverThresholdProps {
     hoveredTokenElement?: HTMLElement
     nav?: (url: string) => void
 }
@@ -46,7 +45,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken, onTokenClick, coolCodeIntelEnabled } = props
+    const { onHoverShown, hoveredToken } = props
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
@@ -91,13 +90,9 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
                         return
                     }
 
-                    if (coolCodeIntelEnabled && onTokenClick !== undefined && hoveredToken !== undefined) {
-                        onTokenClick(hoveredToken)
-                    } else {
-                        const actionType = action === definitionAction ? 'definition' : 'reference'
-                        props.telemetryService.log(`${actionType}HoverOverlay.click`)
-                        nav(url)
-                    }
+                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                    nav(url)
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
             )
@@ -111,22 +106,11 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         props.nav,
         props.telemetryService,
         hoveredToken,
-        coolCodeIntelEnabled,
-        onTokenClick,
     ])
-
-    const onlyGoToDefinition = Array.isArray(props.actionsOrError)
-        ? props.actionsOrError.filter(
-              a => a.action.id === 'goToDefinition.preloaded' || a.action.id === 'goToDefinition'
-          )
-        : []
 
     return (
         <HoverOverlay
             {...propsToUse}
-            {...(coolCodeIntelEnabled && {
-                actionsOrError: onlyGoToDefinition,
-            })}
             className={styles.webHoverOverlay}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}

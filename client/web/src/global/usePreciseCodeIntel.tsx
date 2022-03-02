@@ -82,7 +82,6 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
             setReferenceData({
                 implementations: previousData.implementations,
                 definitions: previousData.definitions,
-                hover: previousData.hover,
                 references: {
                     ...newReferenceData,
                     nodes: [...previousData.references.nodes, ...newReferenceData.nodes],
@@ -108,7 +107,6 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
             setReferenceData({
                 references: previousData.references,
                 definitions: previousData.definitions,
-                hover: previousData.hover,
                 implementations: {
                     ...newImplementationsData,
                     nodes: [...previousData.implementations.nodes, ...newImplementationsData.nodes],
@@ -165,7 +163,6 @@ const getLsifData = ({
     // If there weren't any errors and we just didn't receive any data
     if (!extractedData || !extractedData.repository?.commit?.blob?.lsif) {
         return {
-            hover: null,
             definitions: {
                 nodes: [],
                 pageInfo: {
