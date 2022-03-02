@@ -100,6 +100,17 @@ go build -o ~/my/path/sg ./dev/sg
 
 Then make sure that `~/my/path` is in your `$PATH`.
 
+## Updates
+
+Once set up, `sg` will automatically check for updates and let you know when there are changes.
+To update `sg`, run:
+
+```sh
+sg update
+```
+
+> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+
 ## Usage
 
 See [configuration](#configuration) to learn more about configuring `sg` behaviour.
