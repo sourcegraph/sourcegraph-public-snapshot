@@ -1,17 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
-import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Alert, Button, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
 
 import { ActionEditor } from './ActionEditor'
-
-import styles from '../FormActionArea.module.scss'
 
 export const SEND_TEST_WEBHOOK = gql`
     mutation SendTestWebhook($namespace: ID!, $description: String!, $webhook: MonitorWebhookInput!) {
@@ -75,23 +72,29 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     const [sendTestMessage, { loading, error, called }] = useMutation<SendTestWebhookResult, SendTestWebhookVariables>(
         SEND_TEST_WEBHOOK
     )
-    const isSendTestButtonDisabled = loading || !monitorName || !url || (called && !error)
 
     const onSendTestMessage = useCallback(() => {
         sendTestMessage({
             variables: {
                 namespace: authenticatedUser.id,
                 description: monitorName,
-                webhook: { url, enabled: true, includeResults: false },
+                webhook: { url, enabled: true, includeResults },
             },
         }).catch(noop) // Ignore errors, they will be handled with the error state from useMutation
-    }, [authenticatedUser.id, monitorName, sendTestMessage, url])
+    }, [authenticatedUser.id, includeResults, monitorName, sendTestMessage, url])
 
-    const sendTestEmailButtonText = loading
+    const testButtonText = loading
         ? 'Calling webhook...'
         : called && !error
         ? 'Test call completed!'
         : 'Call webhook with test payload'
+
+    const testButtonDisabled = !monitorName || !url
+    const testButtonDisabledReason = !monitorName
+        ? 'Please provide a name for the code monitor before making a test call'
+        : !url
+        ? 'Please provide a webhook URL before making a test call'
+        : undefined
 
     return (
         <ActionEditor
@@ -115,6 +118,14 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
+            testButtonDisabled={testButtonDisabled}
+            testButtonDisabledReason={testButtonDisabledReason}
+            testCalled={called}
+            testError={error}
+            testLoading={loading}
+            testButtonText={testButtonText}
+            testAgainButtonText="Test again"
+            onTest={onSendTestMessage}
             _testStartOpen={_testStartOpen}
         >
             <Alert variant="info" className="mt-4">
@@ -138,48 +149,6 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                     status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
                     error={!urlIsValid && url && 'Enter a valid webhook URL.'}
                 />
-            </div>
-            <div className="flex mt-1">
-                <Button
-                    className="mr-2"
-                    variant="secondary"
-                    outline={!isSendTestButtonDisabled}
-                    disabled={isSendTestButtonDisabled}
-                    onClick={onSendTestMessage}
-                    size="sm"
-                    data-testid="send-test-webhook"
-                >
-                    {sendTestEmailButtonText}
-                </Button>
-                {called && !error && !loading && monitorName && url && (
-                    <Button
-                        className="p-0"
-                        onClick={onSendTestMessage}
-                        variant="link"
-                        size="sm"
-                        data-testid="send-test-webhook-again"
-                    >
-                        Test again
-                    </Button>
-                )}
-                {!monitorName && (
-                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
-                        Please provide a name for the code monitor before making a test call
-                    </small>
-                )}
-                {!url && (
-                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
-                        Please provide a webhook URL before making a test call
-                    </small>
-                )}
-                {error && (
-                    <small
-                        className={classNames('mt-2 form-text', styles.testActionError)}
-                        data-testid="test-webhook-error"
-                    >
-                        {error.message}
-                    </small>
-                )}
             </div>
         </ActionEditor>
     )

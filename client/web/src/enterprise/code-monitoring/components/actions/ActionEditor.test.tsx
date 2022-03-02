@@ -17,11 +17,19 @@ describe('ActionEditor', () => {
         idName: 'email',
         actionEnabled: true,
         toggleActionEnabled: sinon.fake(),
+        includeResults: true,
+        toggleIncludeResults: sinon.fake(),
         canSubmit: true,
         onSubmit: sinon.fake(),
         onCancel: sinon.fake(),
         canDelete: true,
         onDelete: sinon.fake(),
+        testButtonDisabled: false,
+        testButtonText: 'Send test email',
+        onTest: sinon.fake(),
+        testAgainButtonText: 'Send again',
+        testCalled: false,
+        testLoading: false,
     }
 
     test('expand and collapse with cancel button', () => {

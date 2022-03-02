@@ -29,6 +29,16 @@ export interface ActionEditorProps {
     canDelete: boolean
     onDelete: React.FormEventHandler
 
+    // Test action
+    testButtonDisabled: boolean
+    testButtonDisabledReason?: string
+    testCalled: boolean
+    testError?: Error
+    testLoading: boolean
+    testButtonText: string
+    testAgainButtonText: string
+    onTest: () => void
+
     // For testing purposes only
     _testStartOpen?: boolean
 }
@@ -50,6 +60,14 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
     onCancel,
     canDelete,
     onDelete,
+    testButtonDisabled,
+    testButtonDisabledReason,
+    testLoading,
+    testCalled,
+    testError,
+    testButtonText,
+    testAgainButtonText,
+    onTest,
     children,
     _testStartOpen = false,
 }) => {
@@ -95,10 +113,10 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
 
                     {children}
 
-                    <div className="d-flex align-items-center my-4">
+                    <div className="d-flex align-items-center mb-3">
                         <div>
                             <Toggle
-                                title="Enabled"
+                                title="Include search results in sent message"
                                 value={includeResults}
                                 onToggle={toggleIncludeResults}
                                 className="mr-2"
@@ -106,11 +124,48 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                 data-testid={`include-results-toggle-${idName}`}
                             />
                         </div>
-                        <span id={`code-monitoring-${idName}-include-results-toggle`}>
+                        <span id={`code-monitoring-${idName}-form-actions-include-results-toggle`}>
                             Include search results in sent message
                         </span>
                     </div>
-                    <div className="d-flex align-items-center mb-4">
+
+                    <div className="flex mt-1">
+                        <Button
+                            className="mr-2"
+                            variant="secondary"
+                            outline={!testButtonDisabled}
+                            disabled={testButtonDisabled || testLoading || (testCalled && !testError)}
+                            onClick={onTest}
+                            size="sm"
+                            data-testid={`send-test-${idName}`}
+                        >
+                            {testButtonText}
+                        </Button>
+                        {testCalled && !testError && !testLoading && !testButtonDisabled && (
+                            <Button
+                                className="p-0"
+                                onClick={onTest}
+                                variant="link"
+                                size="sm"
+                                data-testid={`send-test-${idName}-again`}
+                            >
+                                {testAgainButtonText}
+                            </Button>
+                        )}
+                        {testButtonDisabled && (
+                            <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
+                        )}
+                        {testError && (
+                            <div
+                                className={classNames('mt-2', styles.testActionError)}
+                                data-testid={`test-${idName}-error`}
+                            >
+                                {testError.message}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="d-flex align-items-center my-4">
                         <div>
                             <Toggle
                                 title="Enabled"
