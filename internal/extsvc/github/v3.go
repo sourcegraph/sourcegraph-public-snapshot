@@ -222,7 +222,6 @@ func newOrgsCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
 		return nil
 	}
 
-	// Cache with a 1 hour TTL.
 	return rcache.New("gh_orgs:" + a.Hash())
 }
 
