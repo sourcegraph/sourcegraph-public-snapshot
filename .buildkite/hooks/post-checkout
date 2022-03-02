@@ -3,12 +3,6 @@
 # shellcheck disable=SC1090
 source "$HOME/.profile"
 
-# Fetch the latest origin/main to accurately determine the set of changed
-# files on this branch.
-echo "Running git fetch..."
-git fetch
-echo "Running git fetch... done"
-
 ## -- START: ADD git lfs
 echo "Installing Git LFS..."
 
@@ -18,6 +12,12 @@ git-lfs install
 
 echo "Git LFS installed"
 ## -- END: ADD git lfs
+
+# Fetch the latest origin/main to accurately determine the set of changed
+# files on this branch.
+echo "Running git fetch..."
+git fetch
+echo "Running git fetch... done"
 
 ## -- START: fetch files from git lfs
 echo "Fetching files from Git LFS..."
