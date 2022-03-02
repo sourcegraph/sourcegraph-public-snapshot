@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -26,6 +25,7 @@ type SearchClient interface {
 		searchQuery string,
 		protocol search.Protocol,
 		settings *schema.Settings,
+		sourcegraphDotComMode bool,
 	) (*run.SearchInputs, error)
 
 	Execute(
@@ -56,8 +56,9 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	protocol search.Protocol,
 	settings *schema.Settings,
+	sourcegraphDotComMode bool,
 ) (*run.SearchInputs, error) {
-	return run.NewSearchInputs(ctx, db, version, patternType, searchQuery, protocol, settings)
+	return run.NewSearchInputs(ctx, db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
 }
 
 func (s *searchClient) Execute(
@@ -67,10 +68,9 @@ func (s *searchClient) Execute(
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
 	jobArgs := &job.Args{
-		SearchInputs:        inputs,
-		Zoekt:               s.zoekt,
-		SearcherURLs:        s.searcherURLs,
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
+		SearchInputs: inputs,
+		Zoekt:        s.zoekt,
+		SearcherURLs: s.searcherURLs,
 	}
 	return execute.Execute(ctx, db, stream, jobArgs)
 }

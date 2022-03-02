@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -295,7 +296,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 	}
 
 	searchClient := h.newSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings)
+	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
 		var queryErr *run.QueryError

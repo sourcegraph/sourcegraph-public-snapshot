@@ -6,6 +6,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -50,6 +51,7 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 		args.Query,
 		search.Batch,
 		settings,
+		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *run.QueryError

@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -441,10 +440,9 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 // JobArgs converts the parts of search resolver state to values needed to create search jobs.
 func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
-		SearchInputs:        r.SearchInputs,
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Zoekt:               r.zoekt,
-		SearcherURLs:        r.searcherURLs,
+		SearchInputs: r.SearchInputs,
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
 	}
 }
 
