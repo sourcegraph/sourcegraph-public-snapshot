@@ -50,7 +50,7 @@ assertEnvironment('BACKGROUND')
 initSentry('background')
 
 // Whether current extension is built in dev mode
-const IS_DEVELOPMENT_VERSION = getExtensionVersion().startsWith('0.0.0')
+const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 /**
  * For each tab, we store a flag if we know that we are on a private
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
         if (event.reason !== 'install') {
             return
         }
-        if (!IS_DEVELOPMENT_VERSION) {
+        if (IsProductionVersion) {
             subscriptions.add(
                 observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
                     const eventLogger = new EventLogger(requestGraphQL, sourcegraphURL)
@@ -251,7 +251,7 @@ async function main(): Promise<void> {
     await browser.runtime.setUninstallURL(
         createURLWithUTM(
             new URL('https://about.sourcegraph.com/uninstall'),
-            IS_DEVELOPMENT_VERSION
+            IsProductionVersion
                 ? {
                       utm_source: getPlatformName(),
                       utm_campaign: 'browser-extension-uninstall',
