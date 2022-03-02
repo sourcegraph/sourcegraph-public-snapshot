@@ -97,12 +97,13 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 </>
                                             }
                                         />
-                                        <DeleteOrg
+                                        {props.isSourcegraphDotCom && (
+                                            <DeleteOrg
                                             {...routeComponentProps}
                                             {...props}
-                                        />
+                                            />
+                                        )}
                                     </div>
-
                                 )}
                             />
 

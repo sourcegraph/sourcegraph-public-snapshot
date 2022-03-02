@@ -1,5 +1,5 @@
 
-import { useMutation } from '@apollo/client'
+import { gql, useMutation } from '@apollo/client'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
@@ -10,12 +10,18 @@ import { Button, Input, Link, Modal } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-import { REMOVE_ORG_MUTATION } from './gqlQueries'
-
 interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}>  {
     isOpen: boolean
     toggleDeleteModal: () => void
 }
+
+const REMOVE_ORG_MUTATION = gql`
+    mutation RemoveOrganization($organization: ID!) {
+        removeOrganization(organization: $organization) {
+            alwaysNil
+        }
+    }
+`
 
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
     const { org, isOpen, authenticatedUser, toggleDeleteModal } = props
@@ -75,7 +81,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                         support@sourcegraph.com
                     </Link>{' '}
                 </p>
-            </div> :
+            </div>
+            :
             <div>
                 <h3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
@@ -97,7 +104,11 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     onChange={onOrgChangeName}
                     status={isOrgNameValid === undefined ? undefined : isOrgNameValid ? 'valid' : 'error'}                />
                 <div className="d-flex justify-content-end mt-4">
-                <Button type="button" variant="danger" onClick={deleteOrg} disabled={!isOrgNameValid}>
+                <Button
+                    type="button"
+                    variant="danger"
+                    onClick={deleteOrg}
+                    disabled={!isOrgNameValid}>
                     Delete this organization
                 </Button>
             </div>

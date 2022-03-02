@@ -7,30 +7,16 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 
-interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {
-    isSourcegraphDotCom: boolean,
-    isOpen: boolean
-}
+interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
 /**
- * Delete an organization
+ * Deletes an organization.
  */
 export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
-    const {
-        isSourcegraphDotCom,
-        isOpen,
-    } = props
-
-    // const history = useHistory()
-
-    // const onCancel = useCallback(() => {
-    //     history.push('/settings')
-    // }, [history])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
 
-    console.log(isSourcegraphDotCom, isOpen)
     return (
         <div className="mt-3 mb-5">
             <Container>
