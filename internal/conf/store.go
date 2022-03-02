@@ -27,6 +27,11 @@ type store struct {
 	once  sync.Once
 }
 
+// defaultStore is shared between client and server in the same process,
+// so can make sure our writes in backend integration tests are immediately
+// effectual.
+var defaultStore = newStore()
+
 // newStore returns a new configuration store.
 func newStore() *store {
 	return &store{

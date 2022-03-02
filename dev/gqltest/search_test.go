@@ -326,6 +326,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("repo:deps predicate", func(t *testing.T) {
+		cfg, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cfg.ExperimentalFeatures.NpmPackages = "enabled"
+		cfg.ExperimentalFeatures.DependenciesSearch = true
+
+		if err = client.UpdateSiteConfiguration(cfg); err != nil {
+			t.Fatal(err)
+		}
+
 		// Set up a NPM external service to test dependencies search
 		npmExtSvcID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNPMPackages,
