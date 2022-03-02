@@ -13,7 +13,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -126,6 +125,17 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		return Mocks.Code(p)
 	}
 
+	p.Filepath = normalizeFilepath(p.Filepath)
+
+	// TODO: Just needs a setting and then compile the regexes...
+	// Maybe if it's a site config, I can compile the regexes only once?
+	filetype := DetectSyntaxHighlightingFiletype(ftConfig{
+		Extensions: map[string]string{
+			"strato": "scala",
+		},
+	}, ftQuery{p.Filepath, string(p.Content)})
+	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
+
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
 		otlog.String("repo", p.Metadata.RepoName),
@@ -135,6 +145,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
 		otlog.Bool("treeSitterEnabled", p.TreeSitterEnabled),
+		otlog.Bool("useTreeSitter", useTreeSitter),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -190,11 +201,6 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 	if !p.HighlightLongLines {
 		maxLineLength = 2000
 	}
-
-	p.Filepath = normalizeFilepath(p.Filepath)
-
-	filetype := enry.GetLanguage(p.Filepath, []byte(code))
-	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,

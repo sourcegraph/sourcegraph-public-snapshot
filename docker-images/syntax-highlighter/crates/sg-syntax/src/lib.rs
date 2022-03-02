@@ -82,6 +82,23 @@ fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {
+    // If filetype is a453
+    if let Some(filetype) = &q.filetype {
+        // This is `find_syntax_by_name` except that it doesn't care about
+        // case sensitivity or anything like that.
+        //
+        // This makes it just a lost simpler to move between frontend and backend.
+        // At some point, we need a definitive list for this.
+        if let Some(language) = syntax_set
+            .syntaxes()
+            .iter()
+            .rev()
+            .find(|&s| filetype == &s.name.to_lowercase())
+        {
+            return Ok(language);
+        }
+    }
+
     if q.filepath.is_empty() {
         // Legacy codepath, kept for backwards-compatability with old clients.
         return match syntax_set.find_syntax_by_extension(&q.extension) {
