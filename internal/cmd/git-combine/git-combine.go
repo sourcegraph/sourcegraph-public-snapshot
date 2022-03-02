@@ -50,8 +50,6 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	lastLog := time.Now()
-
 	headRef, _ := r.Head()
 	var head *object.Commit
 	if headRef != nil {
@@ -74,7 +72,7 @@ func Combine(path string, opt Options) error {
 	}
 
 	log.Println("Collecting new commits...")
-	lastLog = time.Now()
+	lastLog := time.Now()
 	remoteToCommits := map[string][]*object.Commit{}
 	for remote := range conf.Remotes {
 		if remote == "origin" {
