@@ -87,11 +87,7 @@ func TestReposHandler(t *testing.T) {
 
 			// This is the difference, we create a symlink for root
 			{
-				tmp, err := os.MkdirTemp("", "")
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Cleanup(func() { os.RemoveAll(tmp) })
+				tmp := t.TempDir()
 
 				symlink := filepath.Join(tmp, "symlink-root")
 				if err := os.Symlink(root, symlink); err != nil {
@@ -178,11 +174,7 @@ func gitInitBare(t *testing.T, path string) {
 }
 
 func gitInitRepos(t *testing.T, names ...string) string {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 	root = filepath.Join(root, "repos-root")
 
 	for _, name := range names {
@@ -201,11 +193,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 }
 
 func TestIgnoreGitSubmodules(t *testing.T) {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 
 	if err := os.MkdirAll(filepath.Join(root, "dir"), os.ModePerm); err != nil {
 		t.Fatal(err)
@@ -229,11 +217,7 @@ func TestIgnoreGitSubmodules(t *testing.T) {
 }
 
 func TestIsBareRepo(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	dir := t.TempDir()
 
 	gitInitBare(t, dir)
 
@@ -243,11 +227,7 @@ func TestIsBareRepo(t *testing.T) {
 }
 
 func TestEmptyDirIsNotBareRepo(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	dir := t.TempDir()
 
 	if isBareRepo(dir) {
 		t.Errorf("Path %s it falsey detected as a bare repository", dir)

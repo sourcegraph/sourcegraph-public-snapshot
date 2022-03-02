@@ -44,19 +44,9 @@ func zipUpFiles(t *testing.T, dir string, files map[string]string) string {
 	return archivePath
 }
 
-func workspaceTmpDir(t *testing.T) string {
-	testTempDir, err := os.MkdirTemp("", "bind-workspace-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Remove(testTempDir) })
-
-	return testTempDir
-}
-
 func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	// Create a zip file for all the other tests to use.
-	fakeFilesTmpDir := workspaceTmpDir(t)
+	fakeFilesTmpDir := t.TempDir()
 	filesInZip := map[string]string{
 		"README.md": "# Welcome to the README\n",
 	}
@@ -85,7 +75,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		testTempDir := workspaceTmpDir(t)
+		testTempDir := t.TempDir()
 
 		archive := &fakeRepoArchive{mockPath: archivePath}
 		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
@@ -105,7 +95,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	})
 
 	t.Run("failure", func(t *testing.T) {
-		testTempDir := workspaceTmpDir(t)
+		testTempDir := t.TempDir()
 
 		// Create an empty file (which is therefore a bad zip file).
 		badZip, err := os.CreateTemp(testTempDir, "bad-zip-*")
@@ -125,7 +115,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	})
 
 	t.Run("additional files", func(t *testing.T) {
-		testTempDir := workspaceTmpDir(t)
+		testTempDir := t.TempDir()
 
 		archive := &fakeRepoArchive{
 			mockPath:                archivePath,
@@ -158,7 +148,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 
 func TestDockerBindWorkspace_ApplyDiff(t *testing.T) {
 	// Create a zip file for all the other tests to use.
-	fakeFilesTmpDir := workspaceTmpDir(t)
+	fakeFilesTmpDir := t.TempDir()
 	filesInZip := map[string]string{
 		"README.md": "# Welcome to the README\n",
 	}
@@ -187,7 +177,7 @@ index 0000000..7bb2542
 			"README.md":    "# Welcome to the README\n\nThis is a new line\n",
 			"new-file.txt": "check this out. this is a new file.\nwritten on a computer. what a blast.\n",
 		}
-		testTempDir := workspaceTmpDir(t)
+		testTempDir := t.TempDir()
 
 		archive := &fakeRepoArchive{mockPath: archivePath}
 		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
@@ -214,7 +204,7 @@ index 0000000..7bb2542
 	t.Run("failure", func(t *testing.T) {
 		diff := `lol this is not a diff but the computer doesn't know it yet, watch`
 
-		testTempDir := workspaceTmpDir(t)
+		testTempDir := t.TempDir()
 
 		archive := &fakeRepoArchive{mockPath: archivePath}
 		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
@@ -236,7 +226,6 @@ func TestMkdirAll(t *testing.T) {
 
 	// Create a shared workspace.
 	base := mustCreateWorkspace(t)
-	defer os.RemoveAll(base)
 
 	t.Run("directory exists", func(t *testing.T) {
 		if err := os.MkdirAll(filepath.Join(base, "exist"), 0755); err != nil {
@@ -287,7 +276,6 @@ func TestMkdirAll(t *testing.T) {
 func TestEnsureAll(t *testing.T) {
 	// Create a workspace.
 	base := mustCreateWorkspace(t)
-	defer os.RemoveAll(base)
 
 	// Create three nested directories with 0700 permissions. We'll use Chmod
 	// explicitly to avoid any umask issues.
@@ -326,10 +314,7 @@ func TestEnsureAll(t *testing.T) {
 }
 
 func mustCreateWorkspace(t *testing.T) string {
-	base, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	base := t.TempDir()
 
 	// We'll explicitly set the base workspace to 0700 so we have a known
 	// environment for testing.

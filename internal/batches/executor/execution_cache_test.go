@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -44,16 +43,6 @@ index 0000000..3363c39
 func TestExecutionDiskCache_GetSet(t *testing.T) {
 	ctx := context.Background()
 
-	cacheTmpDir := func(t *testing.T) string {
-		testTempDir, err := os.MkdirTemp("", "execution-disk-cache-test-*")
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() { os.Remove(testTempDir) })
-
-		return testTempDir
-	}
-
 	cacheKey1 := &cache.ExecutionKey{
 		Repository: cacheRepo1,
 		Steps: []batcheslib.Step{
@@ -76,7 +65,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 		Outputs: map[string]interface{}{},
 	}
 
-	cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
+	cache := ExecutionDiskCache{Dir: t.TempDir()}
 
 	// Empty cache, no hits
 	assertCacheMiss(t, cache, cacheKey1)

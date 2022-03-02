@@ -335,11 +335,7 @@ func TestExecutor_Integration(t *testing.T) {
 			client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
 
 			// Temp dir for log files and downloaded archives
-			testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(testTempDir)
+			testTempDir := t.TempDir()
 
 			// Setup executor
 			opts := newExecutorOpts{
@@ -667,11 +663,7 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		t.Skip("Test doesn't work on Windows because dummydocker is written in bash")
 	}
 
-	testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Remove(testTempDir) })
+	testTempDir := t.TempDir()
 
 	// Setup dummydocker
 	addToPath(t, "testdata/dummydocker")

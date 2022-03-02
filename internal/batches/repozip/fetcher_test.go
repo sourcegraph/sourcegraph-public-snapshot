@@ -21,16 +21,6 @@ import (
 )
 
 func TestArchive_Ensure(t *testing.T) {
-	workspaceTmpDir := func(t *testing.T) string {
-		testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() { os.Remove(testTempDir) })
-
-		return testTempDir
-	}
-
 	repo := RepoRevision{
 		RepoName: "github.com/sourcegraph/src-cli",
 		Commit:   "d34db33f",
@@ -58,7 +48,7 @@ func TestArchive_Ensure(t *testing.T) {
 
 		rf := &archiveRegistry{
 			client:     client,
-			dir:        workspaceTmpDir(t),
+			dir:        t.TempDir(),
 			deleteZips: false,
 		}
 
@@ -103,7 +93,7 @@ func TestArchive_Ensure(t *testing.T) {
 
 		rf := &archiveRegistry{
 			client:     client,
-			dir:        workspaceTmpDir(t),
+			dir:        t.TempDir(),
 			deleteZips: true,
 		}
 
@@ -167,7 +157,7 @@ func TestArchive_Ensure(t *testing.T) {
 
 		rf := &archiveRegistry{
 			client:     client,
-			dir:        workspaceTmpDir(t),
+			dir:        t.TempDir(),
 			deleteZips: false,
 		}
 
@@ -207,7 +197,7 @@ func TestArchive_Ensure(t *testing.T) {
 
 		rf := &archiveRegistry{
 			client:     client,
-			dir:        workspaceTmpDir(t),
+			dir:        t.TempDir(),
 			deleteZips: false,
 		}
 		zip := rf.Checkout(repo, "")
@@ -276,7 +266,7 @@ func TestArchive_Ensure(t *testing.T) {
 
 		rf := &archiveRegistry{
 			client:     client,
-			dir:        workspaceTmpDir(t),
+			dir:        t.TempDir(),
 			deleteZips: false,
 		}
 		zip := rf.Checkout(repo, path)

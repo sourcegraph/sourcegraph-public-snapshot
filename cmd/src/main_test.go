@@ -153,12 +153,8 @@ func TestReadConfig(t *testing.T) {
 			setEnv("SRC_ACCESS_TOKEN", test.envToken)
 			setEnv("SRC_ENDPOINT", test.envEndpoint)
 
-			tmpDir, err := os.MkdirTemp("", "")
-			if err != nil {
-				t.Fatal(err)
-			}
+			tmpDir := t.TempDir()
 			testHomeDir = tmpDir
-			t.Cleanup(func() { os.RemoveAll(tmpDir) })
 
 			if test.flagEndpoint != "" {
 				val := test.flagEndpoint
