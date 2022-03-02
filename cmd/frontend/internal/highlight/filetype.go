@@ -1,11 +1,14 @@
 package highlight
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 type ftQuery struct {
@@ -31,6 +34,23 @@ type ftConfig struct {
 
 	// TODO:
 	// Shebang
+}
+
+func init() {
+	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		highlights := c.SiteConfig().Highlights
+		if highlights == nil {
+			return
+		}
+
+		for _, pattern := range highlights.Filetypes.Patterns {
+			if _, err := regexp.Compile(pattern.Pattern); err != nil {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
+			}
+		}
+
+		return
+	})
 }
 
 // Matches against config, otherwise uses enry to get default

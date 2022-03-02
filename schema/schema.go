@@ -1852,8 +1852,14 @@ type SyntaxHighlightingEngine struct {
 type SyntaxHighlightingFiletype struct {
 	// Extensions description: Map of extension to filetype
 	Extensions map[string]string `json:"extensions"`
-	// Patterns description: Map of patterns to filetype
-	Patterns map[string]string `json:"patterns"`
+	// Patterns description: Map of patterns to filetype. Will return after first match, if any.
+	Patterns []*SyntaxHighlightingFiletypePatterns `json:"patterns"`
+}
+type SyntaxHighlightingFiletypePatterns struct {
+	// Filetype description: Name of the filetype if pattern matches
+	Filetype string `json:"filetype"`
+	// Pattern description: Regular expression which matches the filepath
+	Pattern string `json:"pattern"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

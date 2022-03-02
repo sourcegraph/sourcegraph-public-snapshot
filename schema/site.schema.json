@@ -656,9 +656,24 @@
               "additionalProperties": { "type": "string" }
             },
             "patterns": {
-              "description": "Map of patterns to filetype",
-              "type": "object",
-              "additionalProperties": { "type": "string" }
+              "description": "Map of patterns to filetype. Will return after first match, if any.",
+              "type": "array",
+              "items": {
+                "title": "SyntaxHighlightingFiletypePatterns",
+                "type": "object",
+                "required": ["pattern", "filetype"],
+                "properties": {
+                  "pattern": {
+                    "description": "Regular expression which matches the filepath",
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "filetype": {
+                    "description": "Name of the filetype if pattern matches",
+                    "type": "string"
+                  }
+                }
+              }
             }
           }
         }

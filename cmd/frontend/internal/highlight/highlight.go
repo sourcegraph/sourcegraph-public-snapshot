@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -137,8 +138,16 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		highlightConfig = &schema.SyntaxHighlighting{}
 	}
 
+	patterns := []ftPattern{}
+	for _, pattern := range highlightConfig.Filetypes.Patterns {
+		if re, err := regexp.Compile(pattern.Pattern); err == nil {
+			patterns = append(patterns, ftPattern{pattern: re, filetype: pattern.Filetype})
+		}
+	}
+
 	filetype := DetectSyntaxHighlightingFiletype(ftConfig{
 		Extensions: highlightConfig.Filetypes.Extensions,
+		Patterns:   patterns,
 	}, ftQuery{p.Filepath, string(p.Content)})
 	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
 
