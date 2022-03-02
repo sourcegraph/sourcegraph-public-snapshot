@@ -92,6 +92,9 @@ func TestSearch(t *testing.T) {
 // searchClient is an interface so we can swap out a streaming vs graphql
 // based search API. It only supports the methods that streaming supports.
 type searchClient interface {
+	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
+	DeleteExternalService(id string) error
+
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
@@ -319,6 +322,82 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 		if len(wantRepos) != len(results) {
 			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		}
+	})
+
+	t.Run("repo:deps predicate", func(t *testing.T) {
+		cfg, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if cfg.ExperimentalFeatures == nil {
+			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+
+		cfg.ExperimentalFeatures.NpmPackages = "enabled"
+		cfg.ExperimentalFeatures.DependenciesSearch = true
+
+		if err = client.UpdateSiteConfiguration(cfg); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up a NPM external service to test dependencies search
+		npmExtSvcID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindNPMPackages,
+			DisplayName: "gqltest-npm-search",
+			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
+				Registry: "https://registry.npmjs.org",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Cleanup(func() {
+			if err := client.DeleteExternalService(npmExtSvcID); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		_, err = client.Repository("github.com/sgtest/sourcegraph-typescript")
+		require.NoError(t, err)
+
+		const query = `r:deps(^github\.com/sgtest/sourcegraph-typescript$@e1e1143) r:lodash`
+
+		want := []string{
+			"/npm/lodash.clone@v4.5.0",
+			"/npm/lodash.memoize@v4.1.2",
+			"/npm/lodash.sortby@v4.7.0",
+			"/npm/lodash.uniq@v4.5.0",
+			"/npm/lodash@v4.17.15",
+			"/npm/types/lodash@v4.14.157",
+		}
+
+		began := time.Now()
+
+		for {
+			results, err := client.SearchRepositories(query)
+			require.NoError(t, err)
+
+			var have []string
+			for _, r := range results {
+				have = append(have, r.URL)
+			}
+
+			sort.Strings(have)
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				if time.Since(began) >= time.Minute {
+					t.Fatalf("missing repositories after 1m: %v", diff)
+				}
+
+				t.Logf("still missing repositories: %v", diff)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			break
 		}
 	})
 
