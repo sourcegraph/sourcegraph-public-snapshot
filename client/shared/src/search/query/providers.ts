@@ -48,9 +48,10 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): strin
     )
 
     if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
-        const relevantFilters = !hasAndOrOperators ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
         const depsPredicateMatch = tokenAtColumn.value.value.match(REPO_DEPS_PREDICATE_REGEX)
         const repoValue = depsPredicateMatch ? depsPredicateMatch[2] : tokenAtColumn.value.value
+        const relevantFilters =
+            !hasAndOrOperators && !depsPredicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
         return `${relevantFilters} repo:${repoValue} type:repo count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
 
