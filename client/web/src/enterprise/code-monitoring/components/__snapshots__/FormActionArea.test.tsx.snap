@@ -70,6 +70,34 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <div>
         <button
+          aria-checked="false"
+          aria-labelledby="code-monitoring-email-include-results-toggle"
+          class="toggle mr-2 inlineCenter"
+          data-testid="include-results-toggle-email"
+          role="switch"
+          title="Enabled"
+          type="button"
+          value="0"
+        >
+          <span
+            class="bar"
+          />
+          <span
+            class="knob"
+          />
+        </button>
+      </div>
+      <span
+        id="code-monitoring-email-include-results-toggle"
+      >
+        Include search results in sent message
+      </span>
+    </div>
+    <div
+      class="d-flex align-items-center mb-4"
+    >
+      <div>
+        <button
           aria-checked="true"
           aria-labelledby="code-monitoring-email-form-actions-enable-toggle"
           class="toggle mr-2 inlineCenter"

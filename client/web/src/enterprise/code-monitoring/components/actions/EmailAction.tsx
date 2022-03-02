@@ -41,6 +41,11 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
         [action, setAction]
     )
 
+    const [includeResults, setIncludeResults] = useState(action ? action.includeResults : false)
+    const toggleIncludeResults: (includeResults: boolean) => void = useCallback(includeResults => {
+        setIncludeResults(includeResults)
+    }, [])
+
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
@@ -52,11 +57,11 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
                     id: '',
                     recipients: { nodes: [{ id: authenticatedUser.id }] },
                     enabled: emailNotificationEnabled,
-                    includeResults: false,
+                    includeResults,
                 })
             }
         },
-        [action, authenticatedUser.id, emailNotificationEnabled, setAction]
+        [action, authenticatedUser.id, emailNotificationEnabled, includeResults, setAction]
     )
 
     const onCancel: React.FormEventHandler = useCallback(() => {
@@ -105,6 +110,8 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             completedSubtitle={authenticatedUser.email}
             actionEnabled={emailNotificationEnabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}
+            includeResults={includeResults}
+            toggleIncludeResults={toggleIncludeResults}
             onSubmit={onSubmit}
             onCancel={onCancel}
             canDelete={!!action}

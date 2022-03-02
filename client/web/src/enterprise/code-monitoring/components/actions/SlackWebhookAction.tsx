@@ -44,6 +44,11 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     const [url, setUrl] = useState(action && action.__typename === 'MonitorSlackWebhook' ? action.url : '')
     const urlIsValid = useMemo(() => url.startsWith('https://hooks.slack.com/services/'), [url])
 
+    const [includeResults, setIncludeResults] = useState(action ? action.includeResults : false)
+    const toggleIncludeResults: (includeResults: boolean) => void = useCallback(includeResults => {
+        setIncludeResults(includeResults)
+    }, [])
+
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
@@ -51,11 +56,11 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 __typename: 'MonitorSlackWebhook',
                 id: action ? action.id : '',
                 url,
-                enabled: true,
-                includeResults: false,
+                enabled: webhookEnabled,
+                includeResults,
             })
         },
-        [action, setAction, url]
+        [action, includeResults, setAction, url, webhookEnabled]
     )
 
     const onCancel: React.FormEventHandler = useCallback(() => {
@@ -105,6 +110,8 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}
             canSubmit={urlIsValid}
+            includeResults={includeResults}
+            toggleIncludeResults={toggleIncludeResults}
             onSubmit={onSubmit}
             onCancel={onCancel}
             canDelete={!!action}
