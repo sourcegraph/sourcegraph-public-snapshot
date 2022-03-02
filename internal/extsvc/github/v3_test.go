@@ -451,9 +451,10 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
-// Note: to update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org) with
-// username milton in 1password. The token used for this test is named sourcegraph-vcr-token and is
-// also saved in 1Password under this account.
+// ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
+// ghe.sgdev.org.  To update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org)
+// with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
+// and is also saved in 1Password under this account.
 func TestListOrganizations(t *testing.T) {
 	t.Run("enterprise-integration-without-cache", func(t *testing.T) {
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
