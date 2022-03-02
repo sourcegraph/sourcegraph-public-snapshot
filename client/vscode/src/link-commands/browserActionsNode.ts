@@ -41,13 +41,13 @@ export async function browserActions(action: string, extensionCoreAPI: Extension
         }
     }
     // Log redirect events
-    const instranceVersion = extensionCoreAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
+    const instanceVersion = extensionCoreAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
     const userEventVariables = {
         event: 'IDERedirects',
         userCookieID: extensionCoreAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY),
         referrer: 'VSCE',
         url: sourcegraphUrl,
-        source: checkEventSourceSupport(instranceVersion) ? EventSource.IDEEXTENSION : EventSource.BACKEND,
+        source: checkEventSourceSupport(instanceVersion) ? EventSource.IDEEXTENSION : EventSource.BACKEND,
         argument: JSON.stringify({ platform: 'vscode', version, action }),
     }
     extensionCoreAPI.logEvents(userEventVariables)

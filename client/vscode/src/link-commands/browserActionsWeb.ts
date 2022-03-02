@@ -39,13 +39,13 @@ export async function browserActions(action: string, extensionCoreAPI: Extension
         await vscode.window.showInformationMessage('Non-Remote files are not supported on VS Code Web currently')
     }
     // Log redirect events
-    const instranceVersion = extensionCoreAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
+    const instanceVersion = extensionCoreAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
     const userEventVariables = {
         event: 'IDERedirects',
         userCookieID: extensionCoreAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY),
         referrer: 'VSCE-WEB',
         url: sourcegraphUrl,
-        source: checkEventSourceSupport(instranceVersion) ? EventSource.IDEEXTENSION : EventSource.BACKEND,
+        source: checkEventSourceSupport(instanceVersion) ? EventSource.IDEEXTENSION : EventSource.BACKEND,
         argument: JSON.stringify({ platform: 'vscode-web', version, action }),
     }
     extensionCoreAPI.logEvents(userEventVariables)
