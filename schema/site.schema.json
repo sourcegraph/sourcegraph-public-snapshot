@@ -622,6 +622,23 @@
       "default": -1,
       "group": "External services"
     },
+    "highlights": {
+      "description": "Syntax highlighting configuration",
+      "type": "object",
+      "required": ["extensions", "patterns"],
+      "properties": {
+        "extensions": {
+          "description": "Map of extension to filetype",
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "patterns": {
+          "description": "Map of patterns to filetype",
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",

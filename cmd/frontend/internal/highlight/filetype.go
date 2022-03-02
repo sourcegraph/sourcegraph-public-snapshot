@@ -14,8 +14,8 @@ type ftQuery struct {
 }
 
 type ftPattern struct {
-	pattern *regexp.Regexp
-	ft      string
+	pattern  *regexp.Regexp
+	filetype string
 }
 
 // TODO: Decide on capitalization, cause it's a nightmare otherwise.
@@ -42,7 +42,7 @@ func matchConfig(config ftConfig, query ftQuery) (string, bool) {
 
 	for _, pattern := range config.Patterns {
 		if pattern.pattern != nil && pattern.pattern.MatchString(query.path) {
-			return pattern.ft, true
+			return pattern.filetype, true
 		}
 	}
 

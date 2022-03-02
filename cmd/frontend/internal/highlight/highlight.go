@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -129,10 +131,14 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 
 	// TODO: Just needs a setting and then compile the regexes...
 	// Maybe if it's a site config, I can compile the regexes only once?
+
+	highlightConfig := conf.Get().SiteConfig().Highlights
+	if highlightConfig == nil {
+		highlightConfig = &schema.Highlights{}
+	}
+
 	filetype := DetectSyntaxHighlightingFiletype(ftConfig{
-		Extensions: map[string]string{
-			"strato": "scala",
-		},
+		Extensions: highlightConfig.Extensions,
 	}, ftQuery{p.Filepath, string(p.Content)})
 	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
 

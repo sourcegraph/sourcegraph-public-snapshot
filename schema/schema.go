@@ -907,6 +907,14 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 
+// Highlights description: Syntax highlighting configuration
+type Highlights struct {
+	// Extensions description: Map of extension to filetype
+	Extensions map[string]string `json:"extensions"`
+	// Patterns description: Map of patterns to filetype
+	Patterns map[string]string `json:"patterns"`
+}
+
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1736,6 +1744,8 @@ type SiteConfiguration struct {
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
 	GithubClientSecret string `json:"githubClientSecret,omitempty"`
+	// Highlights description: Syntax highlighting configuration
+	Highlights *Highlights `json:"highlights,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts
