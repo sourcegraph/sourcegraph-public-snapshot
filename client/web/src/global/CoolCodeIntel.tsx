@@ -81,6 +81,8 @@ interface CoolCodeIntelProps
         ThemeProps {
     // The token for which to show references
     token?: Token
+
+    jumpToFirst?: boolean
     /**
      * The panel runs inside its own MemoryRouter, we keep track of externalHistory
      * so that we're still able to actually navigate within the browser when required
@@ -178,11 +180,51 @@ interface LocationGroup {
 export const ReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
         token: Token
+        jumpToFirst?: boolean
     }
 > = props => {
-    const [activeLocation, setActiveLocation] = useState<Location>()
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
+
+    const {
+        lsifData,
+        error,
+        loading,
+        referencesHasNextPage,
+        implementationsHasNextPage,
+        fetchMoreReferences,
+        fetchMoreImplementations,
+        fetchMoreReferencesLoading,
+        fetchMoreImplementationsLoading,
+    } = usePreciseCodeIntel({
+        variables: {
+            repository: props.token.repoName,
+            commit: props.token.commitID,
+            path: props.token.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.token.line - 1,
+            character: props.token.character - 1,
+            filter: filter || null,
+            firstReferences: 100,
+            afterReferences: null,
+            firstImplementations: 100,
+            afterImplementations: null,
+        },
+    })
+
+    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
+    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
+    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+
+    const [activeLocation, setActiveLocation] = useState<Location>()
+    // If we finished loading (and have definitions) and props.jumpToFirst is
+    // true, then we use the first definition as activeLocation
+    useEffect(() => {
+        if (props.jumpToFirst === true && definitions.length > 0) {
+            setActiveLocation(definitions[0])
+        }
+    }, [props.jumpToFirst, definitions])
 
     useEffect(() => {
         setActiveLocation(undefined)
@@ -191,12 +233,19 @@ export const ReferencesList: React.FunctionComponent<
 
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    const blobMemoryHistory = useMemo(() => {
+        const history = H.createMemoryHistory()
+        return history
+    }, [])
+
+    if (activeLocation !== undefined) {
+        blobMemoryHistory.push(activeLocation.url)
+    }
+
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
-        console.log('onReferenceClick', location)
         if (location) {
             blobMemoryHistory.push(location.url)
         }
@@ -218,23 +267,77 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(parsedURL.pathname + parsedURL.search + toViewStateHash('references'))
     }
 
+    if (loading) {
+        return (
+            <>
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading precise code intel ...</i>
+                </p>
+            </>
+        )
+    }
+
+    // If we received an error before we had received any data
+    if (error && !lsifData) {
+        return (
+            <div>
+                <p className="text-danger">Loading precise code intel failed:</p>
+                <pre>{error.message}</pre>
+            </div>
+        )
+    }
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!lsifData) {
+        return <>Nothing found</>
+    }
+
     return (
         <>
             <Input
                 className={classNames('py-0 my-0', styles.referencesFilter)}
                 type="text"
                 placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
+                value={debouncedFilter === undefined ? '' : debouncedFilter}
                 onChange={event => setFilter(event.target.value)}
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
-                    <SideReferences
+                    <CollapsibleLocationList
                         {...props}
-                        activeLocation={activeLocation}
+                        name="definitions"
+                        locations={definitions}
+                        hasMore={false}
+                        loadingMore={false}
                         setActiveLocation={onReferenceClick}
                         filter={debouncedFilter}
+                        activeLocation={activeLocation}
                     />
+                    <CollapsibleLocationList
+                        {...props}
+                        name="references"
+                        locations={references}
+                        hasMore={referencesHasNextPage}
+                        fetchMore={fetchMoreReferences}
+                        loadingMore={fetchMoreReferencesLoading}
+                        setActiveLocation={onReferenceClick}
+                        filter={debouncedFilter}
+                        activeLocation={activeLocation}
+                    />
+                    {implementations.length > 0 && (
+                        <CollapsibleLocationList
+                            {...props}
+                            name="implementations"
+                            locations={implementations}
+                            hasMore={implementationsHasNextPage}
+                            fetchMore={fetchMoreImplementations}
+                            loadingMore={fetchMoreImplementationsLoading}
+                            setActiveLocation={onReferenceClick}
+                            filter={debouncedFilter}
+                            activeLocation={activeLocation}
+                        />
+                    )}
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
@@ -277,109 +380,6 @@ export const ReferencesList: React.FunctionComponent<
                     </div>
                 )}
             </div>
-        </>
-    )
-}
-
-interface ReferencesComponentProps extends CoolCodeIntelProps {
-    token: Token
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
-    filter: string | undefined
-}
-
-export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
-    // const { search } = useLocation()
-    // const searchParameters = new URLSearchParams(search)
-    // if (props.activeLocation === undefined && searchParameters.get('jumpToFirst') === 'true' && references.length > 0) {
-    //     props.setActiveLocation(references[0])
-    //     return null
-    // }
-
-    const {
-        lsifData,
-        error,
-        loading,
-        referencesHasNextPage,
-        implementationsHasNextPage,
-        fetchMoreReferences,
-        fetchMoreImplementations,
-        fetchMoreReferencesLoading,
-        fetchMoreImplementationsLoading,
-    } = usePreciseCodeIntel({
-        variables: {
-            repository: props.token.repoName,
-            commit: props.token.commitID,
-            path: props.token.filePath,
-            // On the backend the line/character are 0-indexed, but what we
-            // get from hoverifier is 1-indexed.
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-            filter: props.filter || null,
-            firstReferences: 100,
-            afterReferences: null,
-            firstImplementations: 100,
-            afterImplementations: null,
-        },
-    })
-
-    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
-    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
-    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
-
-    if (loading) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading precise code intel ...</i>
-                </p>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !lsifData) {
-        return (
-            <div>
-                <p className="text-danger">Loading precise code intel failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!lsifData) {
-        return <>Nothing found</>
-    }
-
-    return (
-        <>
-            <CollapsibleLocationList
-                {...props}
-                name="definitions"
-                locations={definitions}
-                hasMore={false}
-                loadingMore={false}
-            />
-            <CollapsibleLocationList
-                {...props}
-                name="references"
-                locations={references}
-                hasMore={referencesHasNextPage}
-                fetchMore={fetchMoreReferences}
-                loadingMore={fetchMoreReferencesLoading}
-            />
-            {implementations.length > 0 && (
-                <CollapsibleLocationList
-                    {...props}
-                    name="implementations"
-                    locations={implementations}
-                    hasMore={implementationsHasNextPage}
-                    fetchMore={fetchMoreImplementations}
-                    loadingMore={fetchMoreImplementationsLoading}
-                />
-            )}
         </>
     )
 }
@@ -812,7 +812,6 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> =
     const location = useLocation()
 
     const { hash, pathname, search } = location
-    console.log('search', search)
     const { line, character, viewState } = parseQueryAndHash(search, hash)
     const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
 
@@ -821,13 +820,16 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> =
         return null
     }
 
+    const searchParameters = new URLSearchParams(search)
+    const jumpToFirst = searchParameters.get('jumpToFirst') === 'true'
+
     const token = { repoName, line, character, filePath }
 
     if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} />
+        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} jumpToFirst={jumpToFirst} />
     }
 
-    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} />
+    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
 }
 
 export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
@@ -857,6 +859,3 @@ export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
 
     return <ResizableCoolCodeIntelPanel {...props} token={token} />
 }
-
-const addJumpToFirstQueryParameter = (searchParameters: URLSearchParams): URLSearchParams =>
-    new URLSearchParams([['jumpToFirst', 'reference'], ...searchParameters.entries()])
