@@ -13,7 +13,7 @@ import (
 
 func TestBestWorkspaceCreator(t *testing.T) {
 	ctx := context.Background()
-	isOverridden := !(runtime.GOOS == "darwin" && runtime.GOARCH == "amd64")
+	isOverridden := !(runtime.GOOS == "darwin" && (runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64"))
 
 	uidGid := func(uid, gid int) docker.UIDGID {
 		return docker.UIDGID{UID: uid, GID: gid}
