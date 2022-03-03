@@ -80,22 +80,13 @@ func TestSearch(t *testing.T) {
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
-
-	streamClient := &gqltestutil.SearchStreamClient{Client: client}
 	t.Run("stream", func(t *testing.T) {
-		testSearchClient(t, streamClient)
+		testSearchClient(t, &gqltestutil.SearchStreamClient{
+			Client: client,
+		})
 	})
 
 	testSearchOther(t)
-
-	// This test runs after all others because its adds a NPM external service
-	// which expands the set of repositories in the instance. All previous tests
-	// assume only the repos from gqltest-github-search exist.
-	//
-	// Adding and deleting the NPM external service in between all other tests is
-	// flaky since deleting an external service doesn't cancel a running external
-	// service sync job for it.
-	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -113,10 +104,7 @@ type searchClient interface {
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
-
 	Repository(repositoryName string) (*gqltestutil.Repository, error)
-	WaitForReposToBeCloned(repos ...string) error
-
 	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
 	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
 	DeleteSearchContext(id string) error
@@ -334,6 +322,84 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 		if len(wantRepos) != len(results) {
 			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		}
+	})
+
+	t.Run("repo:deps predicate", func(t *testing.T) {
+		t.Skip("Flaky test, working on a follow up to https://github.com/sourcegraph/sourcegraph/pull/32133")
+
+		cfg, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if cfg.ExperimentalFeatures == nil {
+			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+
+		cfg.ExperimentalFeatures.NpmPackages = "enabled"
+		cfg.ExperimentalFeatures.DependenciesSearch = true
+
+		if err = client.UpdateSiteConfiguration(cfg); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up a NPM external service to test dependencies search
+		npmExtSvcID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindNPMPackages,
+			DisplayName: "gqltest-npm-search",
+			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
+				Registry: "https://registry.npmjs.org",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Cleanup(func() {
+			if err := client.DeleteExternalService(npmExtSvcID); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		_, err = client.Repository("github.com/sgtest/sourcegraph-typescript")
+		require.NoError(t, err)
+
+		const query = `r:deps(^github\.com/sgtest/sourcegraph-typescript$@e1e1143) r:lodash`
+
+		want := []string{
+			"/npm/lodash.clone@v4.5.0",
+			"/npm/lodash.memoize@v4.1.2",
+			"/npm/lodash.sortby@v4.7.0",
+			"/npm/lodash.uniq@v4.5.0",
+			"/npm/lodash@v4.17.15",
+			"/npm/types/lodash@v4.14.157",
+		}
+
+		began := time.Now()
+
+		for {
+			results, err := client.SearchRepositories(query)
+			require.NoError(t, err)
+
+			var have []string
+			for _, r := range results {
+				have = append(have, r.URL)
+			}
+
+			sort.Strings(have)
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				if time.Since(began) >= time.Minute {
+					t.Fatalf("missing repositories after 1m: %v", diff)
+				}
+
+				t.Logf("still missing repositories: %v", diff)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			break
 		}
 	})
 
@@ -1354,104 +1420,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			})
 		}
 	})
-}
-
-func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
-	return func(t *testing.T) {
-		t.Helper()
-
-		cfg, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldConfig := *cfg
-
-		if cfg.ExperimentalFeatures == nil {
-			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-
-		if cfg.ExperimentalFeatures.NpmPackages != "enabled" {
-			cfg.ExperimentalFeatures.NpmPackages = "enabled"
-		}
-
-		if !cfg.ExperimentalFeatures.DependenciesSearch {
-			cfg.ExperimentalFeatures.DependenciesSearch = true
-		}
-
-		if err = client.UpdateSiteConfiguration(cfg); err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNPMPackages,
-			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
-				Registry: "https://registry.npmjs.org",
-				Dependencies: []string{
-					"urql@2.2.0", // We're searching the dependencies of this repo.
-				},
-			}),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Set up a NPM external service to test dependencies search
-		t.Cleanup(func() {
-			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		err = client.WaitForReposToBeCloned("npm/urql")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
-
-		want := []string{
-			"/npm/urql/core@v1.9.2",
-			"/npm/wonka@v4.0.7",
-		}
-
-		for _, tc := range []struct {
-			name   string
-			client searchClient
-		}{
-			{"graphql", client},
-			{"stream", streamClient},
-		} {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				began := time.Now()
-
-				for {
-					results, err := tc.client.SearchRepositories(query)
-					require.NoError(t, err)
-
-					var have []string
-					for _, r := range results {
-						have = append(have, r.URL)
-					}
-
-					sort.Strings(have)
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						if time.Since(began) >= time.Minute {
-							t.Fatalf("missing repositories after 1m: %v", diff)
-						}
-
-						t.Logf("still missing repositories: %v", diff)
-						time.Sleep(time.Second)
-						continue
-					}
-					break
-				}
-			})
-		}
-	}
 }
 
 // testSearchOther other contains search tests for parts of the GraphQL API
