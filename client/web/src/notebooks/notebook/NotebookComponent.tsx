@@ -34,6 +34,7 @@ import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
+import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -73,6 +74,7 @@ function countBlockTypes(blocks: Block[]): BlockCounts {
         md: 0,
         file: 0,
         query: 0,
+        compute: 0,
     })
 }
 
@@ -433,6 +435,8 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             extensionsController={extensionsController}
                         />
                     )
+                case 'compute':
+                    return <NotebookComputeBlock {...block} {...blockProps} />
             }
         },
         [
