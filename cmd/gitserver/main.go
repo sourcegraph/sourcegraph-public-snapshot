@@ -47,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -286,46 +287,63 @@ func getRemoteURLFunc(
 			svc.Kind == extsvc.KindGitHub {
 			installationID := gjson.Get(svc.Config, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+				svc.Config, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, dotcomConfig, installationID, cli)
 				if err != nil {
-					return "", errors.Wrap(err, "parse base URL")
-				}
-
-				apiURL, githubDotCom := github.APIRoot(baseURL)
-				if !githubDotCom {
-					return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-				}
-
-				pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-				if err != nil {
-					return "", errors.Wrap(err, "decode private key")
-				}
-
-				auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
-				if err != nil {
-					return "", errors.Wrap(err, "new authenticator with GitHub App")
-				}
-
-				client := github.NewV3Client(apiURL, auther, cli)
-
-				token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
-				if err != nil {
-					return "", errors.Wrap(err, "get or renew GitHub App installation access token")
-				}
-
-				// NOTE: Use `json.Marshal` breaks the actual external service config that fails
-				// validation with missing "repos" property when no repository has been selected,
-				// due to generated JSON tag of ",omitempty".
-				svc.Config, err = jsonc.Edit(svc.Config, token, "token")
-				if err != nil {
-					return "", errors.Wrap(err, "edit token")
+					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
 			}
 		}
-
 		return repos.CloneURL(svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
+}
+
+// editGitHubAppExternalServiceConfigToken updates the "token" field of the given
+// external service config through GitHub App and returns a new copy of the
+// config ensuring the token is always valid.
+func editGitHubAppExternalServiceConfigToken(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	dotcomConfig *schema.Dotcom,
+	installationID int64,
+	cli httpcli.Doer,
+) (string, error) {
+	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+	if err != nil {
+		return "", errors.Wrap(err, "parse base URL")
+	}
+
+	apiURL, githubDotCom := github.APIRoot(baseURL)
+	if !githubDotCom {
+		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
+	}
+
+	pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "decode private key")
+	}
+
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+	if err != nil {
+		return "", errors.Wrap(err, "new authenticator with GitHub App")
+	}
+
+	client := github.NewV3Client(apiURL, auther, cli)
+
+	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
+	if err != nil {
+		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
+	}
+
+	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+	// validation with missing "repos" property when no repository has been selected,
+	// due to generated JSON tag of ",omitempty".
+	config, err := jsonc.Edit(svc.Config, token, "token")
+	if err != nil {
+		return "", errors.Wrap(err, "edit token")
+	}
+	return config, nil
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
