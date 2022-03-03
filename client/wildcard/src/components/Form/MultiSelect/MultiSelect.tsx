@@ -25,6 +25,7 @@ import styles from './MultiSelect.module.scss'
 
 /**
  * Generic type for an option to be listed from the `MultiSelect` dropdown.
+ *
  * @param OptionValue The type of the value of the option, i.e. a union set of all
  * possible values.
  */
@@ -35,6 +36,7 @@ export interface Option<OptionValue = unknown> {
 
 /**
  * Generic type for the state a consumer of `MultiSelect` should expect to manage.
+ *
  * @param OptionValue The type of the value of the option, i.e. a union set of all
  * possible values.
  */
@@ -228,7 +230,7 @@ const STYLES: StylesConfig = {
             : state.isFocused
             ? 'var(--dropdown-link-hover-bg)'
             : 'transparent',
-        color: undefined,
+        color: state.isSelected ? 'var(--light-text)' : undefined,
         ':hover': {
             cursor: 'pointer',
         },
