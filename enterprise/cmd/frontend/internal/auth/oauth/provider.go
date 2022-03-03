@@ -148,9 +148,8 @@ type LoginStateOp string
 
 const (
 	// NOTE: OAuth is almost always used for creating new accounts, therefore we don't need a special name for it.
-	LoginStateOpCreateAccount               LoginStateOp = ""
-	LoginStateOpCreateCodeHostConnection    LoginStateOp = "createCodeHostConnection"
-	LoginStateOpCreateOrgCodeHostConnection LoginStateOp = "createOrgCodeHostConnection"
+	LoginStateOpCreateAccount            LoginStateOp = ""
+	LoginStateOpCreateCodeHostConnection LoginStateOp = "createCodeHostConnection"
 )
 
 type LoginState struct {
