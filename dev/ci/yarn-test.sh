@@ -9,12 +9,11 @@ yarn --mutex network --frozen-lockfile --network-timeout 60000
 echo "--- generate"
 yarn gulp generate
 
-root_dir=$(pwd)
 echo "--- test"
 
 JEST_JUNIT_OUTPUT_NAME="yarn-test-junit.xml"
 export JEST_JUNIT_OUTPUT_NAME
-JEST_JUNIT_OUTPUT_DIR="$root_dir/test-reports"
+JEST_JUNIT_OUTPUT_DIR="./test-reports"
 export JEST_JUNIT_OUTPUT_DIR
 mkdir -p "$JEST_JUNIT_OUTPUT_DIR"
 
