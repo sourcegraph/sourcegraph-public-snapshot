@@ -32,7 +32,7 @@ func TestAlertSolutionsURL(t *testing.T) {
 			wantIncludes: defaultURL,
 		}, {
 			name:         "semver",
-			mockVersion:  "3.24.1",
+			mockVersion:  "bobeadxi",
 			wantIncludes: "@v3.24.1",
 		},
 	}
