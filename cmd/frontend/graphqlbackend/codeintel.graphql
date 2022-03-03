@@ -535,6 +535,11 @@ extend type GitTree {
         """
         toolName: String
     ): GitTreeLSIFData
+
+    """
+    Provides info on the level of code-intel support for the direct children of this git tree.
+    """
+    codeIntelInfo: GitTreeCodeIntelInfo
 }
 
 extend type GitBlob {
@@ -550,9 +555,9 @@ extend type GitBlob {
     ): GitBlobLSIFData
 
     """
-    Provides info on the level of code-intel support.
+    Provides info on the level of code-intel support for this git blob.
     """
-    codeIntelInfo: CodeIntelSupport!
+    codeIntelSupport: CodeIntelSupport!
 }
 
 """
@@ -1421,6 +1426,30 @@ type IndexConfiguration {
     The raw JSON-encoded index configuration as inferred by the auto-indexer.
     """
     inferredConfiguration: String
+}
+
+"""
+Details code-intel support for a group of files rooted at a tree.
+"""
+type GitTreeCodeIntelInfo {
+    searchBasedSupport: [GitTreeSearchBasedCoverage!]!
+    preciseSupport: [GitTreePreciseCoverage!]!
+}
+
+type GitTreeSearchBasedCoverage {
+    coveredPaths: [String!]!
+    support: SearchBasedCodeIntelSupport!
+}
+
+type GitTreePreciseCoverage {
+    coveredPaths: [String!]!
+    support: PreciseCodeIntelSupport!
+    confidence: InferredPreciseSupportLevel!
+}
+
+enum InferredPreciseSupportLevel {
+    LANGUAGE_SUPPORTED
+    PROJECT_STRUCTURE_SUPPORTED
 }
 
 """
