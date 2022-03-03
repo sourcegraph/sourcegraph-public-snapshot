@@ -28,6 +28,7 @@ import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboa
 import { SupportedInsightSubject } from '../../types/subjects'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -146,10 +147,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getBuiltInInsightData = getBuiltInInsight
 
-    // We don't have insight visibility and subject levels in the new GQL API anymore.
-    // it was part of setting-cascade based API.
-    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
-
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
     public updateInsight = (input: InsightUpdateInput): Observable<unknown> => updateInsight(this.apolloClient, input)
@@ -201,9 +198,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             title: dashboard.title,
                             insightIds: dashboard.views?.nodes.map(view => view.id),
                             grants: dashboard.grants,
-
-                            // BE gql dashboards don't have setting key (it's setting cascade conception only)
-                            settingsKey: null,
                         })
                     ),
                 ]
@@ -214,7 +208,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         const { dashboardId } = input
 
         // the 'all' dashboardId is not a real dashboard so return nothing
-        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
+        if (!dashboardId || dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }
 
@@ -333,10 +327,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    public updateDashboard = ({
-        previousDashboard,
-        nextDashboardInput,
-    }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
+    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
@@ -364,7 +355,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: {
-                    id: previousDashboard.id,
+                    id,
                     input,
                 },
             })
@@ -399,9 +390,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public assignInsightsToDashboard = ({
         id,
-        nextDashboardInput,
-        previousDashboard,
-    }: DashboardUpdateInput): Observable<unknown> => {
+        prevInsightIds,
+        nextInsightIds,
+    }: AssignInsightsToDashboardInput): Observable<unknown> => {
         const addInsightViewToDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
             this.apolloClient.mutate<AddInsightViewToDashboardResult>({
                 mutation: gql`
@@ -432,12 +423,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 variables: { insightViewId, dashboardId },
             })
 
-        const addedInsightIds =
-            nextDashboardInput.insightIds?.filter(insightId => !previousDashboard.insightIds?.includes(insightId)) || []
+        const addedInsightIds = nextInsightIds.filter(insightId => !prevInsightIds.includes(insightId)) || []
 
         // Get array of removed insight view ids
-        const removedInsightIds =
-            previousDashboard.insightIds?.filter(insightId => !nextDashboardInput.insightIds?.includes(insightId)) || []
+        const removedInsightIds = prevInsightIds.filter(insightId => !nextInsightIds.includes(insightId)) || []
 
         return from(
             Promise.all([

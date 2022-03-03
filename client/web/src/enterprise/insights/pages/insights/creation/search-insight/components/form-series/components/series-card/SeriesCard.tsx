@@ -8,8 +8,6 @@ import { DEFAULT_DATA_SERIES_COLOR } from '../../../../constants'
 import styles from './SeriesCard.module.scss'
 
 interface SeriesCardProps {
-    isRemoveSeriesAvailable: boolean
-
     /** Name of series. */
     name: string
     /** Query value of series. */
@@ -28,15 +26,7 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const {
-        isRemoveSeriesAvailable,
-        name,
-        query,
-        stroke: color = DEFAULT_DATA_SERIES_COLOR,
-        className,
-        onEdit,
-        onRemove,
-    } = props
+    const { name, query, stroke: color = DEFAULT_DATA_SERIES_COLOR, className, onEdit, onRemove } = props
 
     return (
         <Card
@@ -79,7 +69,6 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     data-testid="series-delete-button"
                     type="button"
                     onClick={onRemove}
-                    disabled={!isRemoveSeriesAvailable}
                     className="border-0 ml-1"
                     variant="danger"
                     outline={true}

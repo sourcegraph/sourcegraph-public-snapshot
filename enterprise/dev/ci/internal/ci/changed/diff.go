@@ -55,6 +55,9 @@ func ParseDiff(files []string) (diff Diff) {
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			diff |= Client
 		}
+		if strings.HasSuffix(p, "dev/ci/yarn-test.sh") {
+			diff |= Client
+		}
 
 		// Affects GraphQL
 		if strings.HasSuffix(p, ".graphql") {

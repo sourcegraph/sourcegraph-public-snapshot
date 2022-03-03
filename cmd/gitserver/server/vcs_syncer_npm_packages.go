@@ -13,7 +13,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -38,7 +38,7 @@ var (
 type NPMPackagesSyncer struct {
 	// Configuration object describing the connection to the NPM registry.
 	connection schema.NPMPackagesConnection
-	dbStore    repos.NPMPackagesRepoStore
+	depsStore  repos.DependenciesStore
 	// The client to use for making queries against NPM.
 	client npm.Client
 }
@@ -47,7 +47,7 @@ type NPMPackagesSyncer struct {
 // for the syncer is configured based on the connection parameter.
 func NewNPMPackagesSyncer(
 	connection schema.NPMPackagesConnection,
-	dbStore repos.NPMPackagesRepoStore,
+	dbStore repos.DependenciesStore,
 	customClient npm.Client,
 ) *NPMPackagesSyncer {
 	var client = customClient
@@ -200,17 +200,18 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	if err != nil {
 		return nil, err
 	}
-	dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-		ArtifactName: parsedPackage.PackageSyntax(),
+	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+		Scheme: dependenciesStore.NPMPackagesScheme,
+		Name:   parsedPackage.PackageSyntax(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get npm dependencies from dbStore")
 	}
 
 	for _, dbDep := range dbDeps {
-		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Package)
+		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
 		if err != nil {
-			log15.Error("failed to parse npm package", "package", dbDep.Package, "message", err)
+			log15.Error("failed to parse npm package", "package", dbDep.Name, "message", err)
 			continue
 		}
 		if repoPackage.Equal(parsedDbPackage) {
@@ -408,9 +409,7 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 
 	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-		count := 0
-		tarballFileLimit := 10000
-		for count < tarballFileLimit {
+		for {
 			header, err := tarReader.Next()
 			if err == io.EOF {
 				return nil
@@ -431,12 +430,10 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 				if err != nil {
 					return err
 				}
-				count++
 			default:
 				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
 			}
 		}
-		return errors.Errorf("number of files in tarball for %s exceeded limit (10000)", tgzReadSeeker.name)
 	})
 }
 
@@ -447,11 +444,16 @@ func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath stri
 	}
 	// For reference, "pathological" code like SQLite's amalgamation file is
 	// about 7.9 MiB. So a 15 MiB limit seems good enough.
-	const sizeLimitMiB = 15
-	if header.Size >= (sizeLimitMiB * 1024 * 1024) {
-		return errors.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
-			path.Base(outputPath), header.Size, sizeLimitMiB)
+	const sizeLimit = 15 * 1024 * 1024
+	if header.Size >= sizeLimit {
+		log15.Warn("skipping large file in npm package",
+			"path", outputPath,
+			"size", header.Size,
+			"limit", sizeLimit,
+		)
+		return nil
 	}
+
 	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
 		return err
 	}

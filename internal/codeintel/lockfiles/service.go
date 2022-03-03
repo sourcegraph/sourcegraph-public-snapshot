@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"path"
 	"strings"
 
 	"github.com/inconshreveable/log15"
@@ -18,15 +19,30 @@ import (
 )
 
 type Service struct {
-	archiveStreamer ArchiveStreamer
-	operations      *operations
+	gitSvc     GitService
+	operations *operations
 }
 
-func NewService(archiveStreamer ArchiveStreamer, observationContext *observation.Context) *Service {
+func newService(gitSvc GitService, observationContext *observation.Context) *Service {
 	return &Service{
-		archiveStreamer: archiveStreamer,
-		operations:      newOperations(observationContext),
+		gitSvc:     gitSvc,
+		operations: newOperations(observationContext),
 	}
+}
+
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
+	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", string(repo)),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
+		deps = append(deps, d)
+		return nil
+	})
+
+	return deps, err
 }
 
 func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
@@ -36,20 +52,27 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
-	opts := gitserver.ArchiveOptions{
-		Treeish: rev,
-		Format:  "zip",
-		Paths: []string{
-			"*" + NPMFilename,
-		},
-	}
-
-	rc, err := s.archiveStreamer.StreamArchive(ctx, repo, opts)
+	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePaths...)
 	if err != nil {
 		return err
 	}
 
+	if len(paths) == 0 {
+		return nil
+	}
+
+	opts := gitserver.ArchiveOptions{
+		Treeish: rev,
+		Format:  "zip",
+		Paths:   paths,
+	}
+
+	rc, err := s.gitSvc.Archive(ctx, repo, opts)
+	if err != nil {
+		return err
+	}
 	defer rc.Close()
+
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		if strings.Contains(err.Error(), "did not match any files") {
@@ -88,21 +111,6 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
-	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("rev", rev),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
-		deps = append(deps, d)
-		return nil
-	})
-
-	return deps, err
-}
-
 func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	r, err := f.Open()
 	if err != nil {
@@ -110,15 +118,18 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	ds, err := Parse(f.Name, contents)
+	deps, err := parse(f.Name, r)
 	if err != nil {
 		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
 	}
 
-	return ds, nil
+	return deps, nil
+}
+
+func parse(file string, r io.Reader) ([]reposource.PackageDependency, error) {
+	parser, ok := parsers[path.Base(file)]
+	if !ok {
+		return nil, ErrUnsupported
+	}
+	return parser(r)
 }

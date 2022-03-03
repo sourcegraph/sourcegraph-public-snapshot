@@ -216,7 +216,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                         hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        coolCodeIntelEnabled={false}
                     />
                 )}
             </div>
