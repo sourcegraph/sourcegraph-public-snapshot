@@ -446,7 +446,16 @@ func RunRepoSubsetTextSearch(ctx context.Context, args *search.TextParameters) (
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return searcher.SearchOverRepos(ctx, searcherArgs, agg, unindexed, false)
+		searcherJob := &searcher.Searcher{
+			PatternInfo:     searcherArgs.PatternInfo,
+			Repos:           unindexed,
+			Indexed:         false,
+			SearcherURLs:    searcherArgs.SearcherURLs,
+			UseFullDeadline: searcherArgs.UseFullDeadline,
+		}
+
+		_, err := searcherJob.Run(ctx, nil, agg)
+		return err
 	})
 
 	err = g.Wait()
