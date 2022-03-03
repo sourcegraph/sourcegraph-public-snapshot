@@ -7,8 +7,15 @@ import (
 )
 
 func Init() {
+	// The default client is started in InitConfigurationServerFrontendOnly in
+	// the case of server mode.
+	if getMode() == modeClient {
+		go defaultClientVal.continuouslyUpdate(nil)
+		close(configurationServerFrontendOnlyInitialized)
+	}
+
 	// This watch loop is here so that we don't introduce
-	// dependency cycles, since conf itself uses httpcli's internal
+	// package dependency cycles, since conf itself uses httpcli's internal
 	// client. This is gross, and the whole conf package is gross.
 	go Watch(func() {
 		before := httpcli.TLSExternalConfig()
@@ -17,6 +24,4 @@ func Init() {
 			httpcli.SetTLSExternalConfig(after)
 		}
 	})
-
-	Ready()
 }

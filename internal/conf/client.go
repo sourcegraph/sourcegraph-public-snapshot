@@ -20,7 +20,6 @@ type client struct {
 	passthrough ConfigurationSource
 	watchersMu  sync.Mutex
 	watchers    []chan struct{}
-	ready       chan struct{}
 }
 
 var _ conftypes.UnifiedQuerier = &client{}
@@ -40,10 +39,6 @@ func DefaultClient() *client {
 // Raw returns a copy of the raw configuration.
 func Raw() conftypes.RawUnified {
 	return DefaultClient().Raw()
-}
-
-func Ready() {
-	DefaultClient().Ready()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -101,10 +96,6 @@ func (c *client) SiteConfig() schema.SiteConfiguration {
 
 func (c *client) ServiceConnections() conftypes.ServiceConnections {
 	return c.Get().ServiceConnections()
-}
-
-func (c *client) Ready() {
-	close(c.ready)
 }
 
 // Mock sets up mock data for the site configuration.
@@ -238,9 +229,6 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 		var e *net.OpError
 		return errors.As(err, &e) && e.Op == "dial"
 	}
-
-	// block until ready
-	<-c.ready
 
 	start := time.Now()
 	for {
