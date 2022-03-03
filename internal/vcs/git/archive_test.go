@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -28,7 +29,12 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 
-	if _, err := ArchiveReader(context.Background(), checker, repo, ArchiveFormatZip, commitID, "."); err == nil {
+	opts := gitserver.ArchiveOptions{
+		Format:  ArchiveFormatZip,
+		Treeish: commitID,
+		Paths:   []string{"."},
+	}
+	if _, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
 }
@@ -52,7 +58,12 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 
-	readCloser, err := ArchiveReader(context.Background(), checker, repo, ArchiveFormatZip, commitID, ".")
+	opts := gitserver.ArchiveOptions{
+		Format:  ArchiveFormatZip,
+		Treeish: commitID,
+		Paths:   []string{"."},
+	}
+	readCloser, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
 	}
