@@ -1,0 +1,57 @@
+.multi-select {
+    :global(.theme-light) & {
+        --react-select-neutral0: #fff;
+        --react-select-neutral5: #f9fafb;
+        --react-select-neutral10: #f9fafb;
+        --react-select-neutral20: #eff2f5;
+        --react-select-neutral30: #e6ebf2;
+        --react-select-neutral40: #dbe2f0;
+        --react-select-neutral50: #a6b6d9;
+        --react-select-neutral60: #798baf;
+        --react-select-neutral70: #5e6e8c;
+        --react-select-neutral80: #343a4d;
+        --react-select-neutral90: #262b38;
+    }
+
+    :global(.theme-dark) & {
+        --react-select-neutral0: #262b38;
+        --react-select-neutral5: #262b38;
+        --react-select-neutral10: #343a4d;
+        --react-select-neutral20: #5e6e8c;
+        --react-select-neutral30: #798baf;
+        --react-select-neutral40: #a6b6d9;
+        --react-select-neutral50: #dbe2f0;
+        --react-select-neutral60: #e6ebf2;
+        --react-select-neutral70: #eff2f5;
+        --react-select-neutral80: #f9fafb;
+        --react-select-neutral90: #fff;
+    }
+}
+
+.multi-select {
+    input:focus-within {
+        box-shadow: none;
+    }
+}
+
+.clear-icon {
+    color: var(--icon-color);
+    height: 1rem;
+}
+
+.dropdown-icon {
+    color: var(--icon-color);
+    height: 1rem;
+}
+
+.remove-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.multi-value-container {
+    display: flex;
+    align-items: center;
+    padding-right: 0;
+    margin: 0.125rem;
+}
