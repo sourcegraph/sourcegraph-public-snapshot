@@ -14,10 +14,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -63,12 +65,12 @@ var (
 )
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	return newGithubSource(externalServicesStore, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -92,7 +94,66 @@ func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
 		dotcom.GithubAppCloud.Slug != ""
 }
 
-func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+// GetOrRenewGitHubAppInstallationAccessToken extracts and returns the token
+// stored in the given external service config. It automatically renews and
+// updates the access token if it had expired or about to expire in 5 minutes.
+func GetOrRenewGitHubAppInstallationAccessToken(
+	ctx context.Context,
+	externalServicesStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	client *github.V3Client,
+	installationID int64,
+) (string, error) {
+	token := gjson.Get(svc.Config, "token").String()
+	// It is incorrect to have GitHub App installation access token without an
+	// expiration time, and being conservative to have 5-minute buffer in case the
+	// expiration time is close to the current time.
+	if token != "" && svc.TokenExpiresAt != nil && time.Until(*svc.TokenExpiresAt) > 5*time.Minute {
+		return token, nil
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	tok, err := client.CreateAppInstallationAccessToken(reqCtx, installationID)
+	if err != nil {
+		return "", errors.Wrap(err, "create app installation access token")
+	}
+	if tok.Token == nil || *tok.Token == "" {
+		return "", errors.New("empty token returned")
+	}
+
+	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
+	// validation with missing "repos" property when no repository has been selected,
+	// due to generated JSON tag of ",omitempty".
+	config, err := jsonc.Edit(svc.Config, *tok.Token, "token")
+	if err != nil {
+		return "", errors.Wrap(err, "edit token")
+	}
+
+	err = externalServicesStore.Update(ctx,
+		conf.Get().AuthProviders,
+		svc.ID,
+		&database.ExternalServiceUpdate{
+			Config:         &config,
+			TokenExpiresAt: tok.ExpiresAt,
+		},
+	)
+	if err != nil {
+		// If we failed to update the new token and its expiration time, it is fine to
+		// try again later. We should not block further process since we already have the
+		// new token available for use at this time.
+		log15.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", "id", svc.ID, "error", err)
+	}
+	return *tok.Token, nil
+}
+
+func newGithubSource(
+	externalServicesStore database.ExternalServiceStore,
+	svc *types.ExternalService,
+	c *schema.GitHubConnection,
+	cf *httpcli.Factory,
+) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -179,31 +240,12 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-
-		// TODO(cloud-saas): This code path is called every time a user visits the page
-		// https://sourcegraph.test:3443/organizations/test-org1/settings/repositories,
-		// and making an access token with every single refresh feels like a waste. We
-		// probably need to either reduce the call times of this code path or consider
-		// storing the access token within the external service config and create a new
-		// column (e.g. "token_expired_at") to store its expiry (as installation access
-		// tokens are forced to expire after one hour).
-		//
-		// As a side effect of having this extra column, it could also be used to
-		// indicate the token expiry for non-GitHub App cases because we are having
-		// revoked/expired access tokens in some external services but we currently do
-		// not stop trying on these external services, as well as lacking a reliable way
-		// to inform users about their revoked/expired access tokens.
-		token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
+		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, client, installationID)
 		if err != nil {
-			return nil, errors.Wrap(err, "create app installation access token")
-		}
-		if token.Token == nil {
-			return nil, errors.New("empty token returned")
+			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}
 
-		auther = &auth.OAuthBearerToken{Token: *token.Token}
+		auther = &auth.OAuthBearerToken{Token: token}
 		v3Client = github.NewV3Client(apiURL, auther, cli)
 		v4Client = github.NewV4Client(apiURL, auther, cli)
 

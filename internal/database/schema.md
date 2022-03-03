@@ -880,6 +880,7 @@ Foreign-key constraints:
  encryption_key_id | text                     |           | not null | ''::text
  namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
+ token_expires_at  | timestamp with time zone |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL

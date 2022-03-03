@@ -259,7 +259,7 @@ func TestGrantedScopes(t *testing.T) {
 		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceUserID: 123}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, cache, svc)
+			have, err := GrantedScopes(ctx, cache, database.NewMockExternalServiceStore(), svc)
 			if err != nil {
 				t.Fatal(i, err)
 			}
@@ -273,7 +273,7 @@ func TestGrantedScopes(t *testing.T) {
 		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceOrgID: 42}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, cache, svc)
+			have, err := GrantedScopes(ctx, cache, database.NewMockExternalServiceStore(), svc)
 			if err != nil {
 				t.Fatal(i, err)
 			}

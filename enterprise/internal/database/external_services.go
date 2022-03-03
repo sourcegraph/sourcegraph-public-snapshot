@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -15,7 +16,7 @@ import (
 func NewExternalServicesStore(db dbutil.DB) database.ExternalServiceStore {
 	return database.NewExternalServiceStoreWithValidators(
 		db,
-		[]func(*schema.GitHubConnection) error{github.ValidateAuthz},
+		[]func(*types.GitHubConnection) error{github.ValidateAuthz},
 		[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
 		[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
 		[]func(connection *schema.PerforceConnection) error{perforce.ValidateAuthz},

@@ -23,10 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type ExternalServicesStore interface {
-	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config
 // based on `NewAuthzProviders` constructors provided by each provider type's package.
 //
@@ -40,7 +36,7 @@ type ExternalServicesStore interface {
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
-	store ExternalServicesStore,
+	store database.ExternalServiceStore,
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -69,7 +65,7 @@ func ProvidersFromConfig(
 	}
 
 	var (
-		gitHubConns          []*types.GitHubConnection
+		gitHubConns          []*github.ExternalConnection
 		gitLabConns          []*types.GitLabConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
@@ -98,10 +94,15 @@ func ProvidersFromConfig(
 
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
-				gitHubConns = append(gitHubConns, &types.GitHubConnection{
-					URN:              svc.URN(),
-					GitHubConnection: c,
-				})
+				gitHubConns = append(gitHubConns,
+					&github.ExternalConnection{
+						ExternalService: svc,
+						GitHubConnection: &types.GitHubConnection{
+							URN:              svc.URN(),
+							GitHubConnection: c,
+						},
+					},
+				)
 			case *schema.GitLabConnection:
 				gitLabConns = append(gitLabConns, &types.GitLabConnection{
 					URN:              svc.URN(),
@@ -135,7 +136,7 @@ func ProvidersFromConfig(
 			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 		}
 
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(store, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
@@ -192,7 +193,11 @@ var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, sv
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
+func ProviderFromExternalService(
+	externalServicesStore database.ExternalServiceStore,
+	siteConfig schema.SiteConfiguration,
+	svc *types.ExternalService,
+) (authz.Provider, error) {
 	if MockProviderFromExternalService != nil {
 		return MockProviderFromExternalService(siteConfig, svc)
 	}
@@ -214,10 +219,14 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
 		providers, problems, _ = github.NewAuthzProviders(
-			[]*types.GitHubConnection{
+			externalServicesStore,
+			[]*github.ExternalConnection{
 				{
-					URN:              svc.URN(),
-					GitHubConnection: c,
+					ExternalService: svc,
+					GitHubConnection: &types.GitHubConnection{
+						URN:              svc.URN(),
+						GitHubConnection: c,
+					},
 				},
 			},
 			siteConfig.AuthProviders,
