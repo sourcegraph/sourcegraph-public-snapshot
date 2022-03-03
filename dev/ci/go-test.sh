@@ -89,6 +89,7 @@ export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in som
 export NO_GRAPHQL_LOG=true
 
 # Install richgo for better output
+# This fork gives us the `anyStyle` configuration required to hide log lines
 go install github.com/jhchabran/richgo@installable
 asdf reshim golang
 
