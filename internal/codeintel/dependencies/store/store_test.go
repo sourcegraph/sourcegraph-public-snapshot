@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -21,41 +23,25 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	store := testStore(db)
 
-	batches := [][]DependencyRepo{
-		{
-			// Test same-set flushes
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=1
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "2.0.0"}, // id=2, duplicate
-		},
-		{
-			DependencyRepo{Scheme: "npm", Name: "bar", Version: "3.0.0"}, // id=3
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=4
-		},
-		{
-			// Test different-set flushes
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "1.0.0"}, // id=5, duplicate
-			DependencyRepo{Scheme: "npm", Name: "foo", Version: "2.0.0"}, // id=6
-		},
-	}
-
-	var allNewDeps []DependencyRepo
-	for _, batch := range batches {
-		newDeps, err := store.UpsertDependencyRepos(ctx, batch)
+	for _, dep := range []struct {
+		reposource.PackageDependency
+		isNew bool
+	}{
+		{mustParseNPMDependency(t, "bar@2.0.0"), true},
+		{mustParseNPMDependency(t, "bar@2.0.0"), false},
+		{mustParseNPMDependency(t, "bar@3.0.0"), true},
+		{mustParseNPMDependency(t, "foo@1.0.0"), true},
+		{mustParseNPMDependency(t, "foo@1.0.0"), false},
+		{mustParseNPMDependency(t, "foo@2.0.0"), true},
+	} {
+		isNew, err := store.UpsertDependencyRepo(ctx, dep)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		allNewDeps = append(allNewDeps, newDeps...)
-	}
-
-	want := []DependencyRepo{
-		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
-		{ID: 3, Scheme: "npm", Name: "bar", Version: "3.0.0"},
-		{ID: 4, Scheme: "npm", Name: "foo", Version: "1.0.0"},
-		{ID: 6, Scheme: "npm", Name: "foo", Version: "2.0.0"},
-	}
-	if diff := cmp.Diff(allNewDeps, want); diff != "" {
-		t.Fatalf("mismatch (-have, +want): %s", diff)
+		if have, want := isNew, dep.isNew; have != want {
+			t.Fatalf("%s: want isNew=%t, have %t", dep.PackageManagerSyntax(), want, have)
+		}
 	}
 
 	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
@@ -64,9 +50,29 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(have, want); diff != "" {
+
+	want := []DependencyRepo{
+		{ID: 6, Scheme: "npm", Name: "foo", Version: "2.0.0"},
+		{ID: 4, Scheme: "npm", Name: "foo", Version: "1.0.0"},
+		{ID: 3, Scheme: "npm", Name: "bar", Version: "3.0.0"},
+		{ID: 1, Scheme: "npm", Name: "bar", Version: "2.0.0"},
+	}
+
+	opt := cmpopts.IgnoreFields(DependencyRepo{}, "ID")
+	if diff := cmp.Diff(have, want, opt); diff != "" {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
 	}
+}
+
+func mustParseNPMDependency(t testing.TB, dep string) reposource.PackageDependency {
+	t.Helper()
+
+	d, err := reposource.ParseNPMDependency(dep)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return d
 }
 
 func testStore(db dbutil.DB) *Store {

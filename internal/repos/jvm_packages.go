@@ -84,10 +84,9 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 	)
 	for {
 		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.JVMPackagesScheme,
-			After:       lastID,
-			Limit:       100,
-			NewestFirst: true,
+			Scheme: dependenciesStore.JVMPackagesScheme,
+			After:  lastID,
+			Limit:  100,
 		})
 		if err != nil {
 			results <- SourceResult{Err: err}
