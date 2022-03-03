@@ -88,7 +88,7 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// This test run after all others because its adds a NPM external service
+	// This test runs after all others because its adds a NPM external service
 	// which expands the set of repositories in the instance. All previous tests
 	// assume only the repos from gqltest-github-search exist.
 	//
@@ -1389,7 +1389,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
 				Registry: "https://registry.npmjs.org",
 				Dependencies: []string{
-					"urql@2.2.0", // We're search the dependencies of this repo.
+					"urql@2.2.0", // We're searching the dependencies of this repo.
 				},
 			}),
 		})
