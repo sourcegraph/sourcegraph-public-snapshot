@@ -1,14 +1,12 @@
 @import './colors.scss';
 @import './border-radius.scss';
+@import './variables.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
 $popover-border-radius: var(--popover-border-radius);
-
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
 
 $box-shadow: var(--box-shadow);
 
@@ -87,15 +85,6 @@ $hr-margin-y: 0.25rem;
 
 // Disable all Bootstrap transitions
 $enable-transitions: false;
-
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-    --font-size-base: #{$font-size-base};
-    --line-height-base: #{$line-height-base};
-}
 
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
