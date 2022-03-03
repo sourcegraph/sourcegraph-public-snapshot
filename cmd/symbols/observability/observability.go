@@ -1,4 +1,4 @@
-package api
+package observability
 
 import (
 	"fmt"
@@ -7,11 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-	search *observation.Operation
+type Operations struct {
+	Search *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func NewOperations(observationContext *observation.Context) *Operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_symbols_api",
@@ -28,7 +28,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	return &operations{
-		search: op("Search"),
+	return &Operations{
+		Search: op("Search"),
 	}
 }

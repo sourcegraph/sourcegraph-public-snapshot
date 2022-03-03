@@ -61,6 +61,7 @@ var DeploySourcegraphDockerImages = []string{
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
+	"enterprise-symbols",
 	"frontend",
 	"github-proxy",
 	"gitserver",

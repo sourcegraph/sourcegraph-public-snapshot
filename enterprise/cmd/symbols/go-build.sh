@@ -3,7 +3,7 @@
 # This script builds the symbols go binary.
 # Requires a single argument which is the path to the target bindir.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 set -eu
 
 OUTPUT="${1:?no output path provided}"
@@ -19,16 +19,8 @@ export CGO_ENABLED=1
 # Default CC to musl-gcc.
 export CC="${CC:-musl-gcc}"
 
-help() {
-  echo "You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine."
-  echo
-  echo "    Linux: run 'apt-get install -y musl-tools'"
-  echo "    macOS: download https://github.com/FiloSottile/homebrew-musl-cross/blob/6ee3329ee41231fe693306490f8e4d127c70e618/musl-cross.rb and run 'brew install ~/Downloads/musl-cross.rb'"
-}
-
 if ! command -v "$CC" >/dev/null; then
-  echo "$CC not found."
-  help
+  echo "$CC not found. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
   exit 1
 fi
 
@@ -37,20 +29,19 @@ case "$CC" in
   *musl*)
     ;;
   *)
-    echo "$CC doesn't look like a musl compiler."
-    help
+    echo "$CC doesn't look like a musl compiler. You need to set CC to a musl compiler in order to compile go-sqlite3 for Alpine. Run 'apt-get install -y musl-tools'."
     exit 1
     ;;
 esac
 
 echo "--- go build"
-pkg="github.com/sourcegraph/sourcegraph/cmd/symbols"
+pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols"
 env go build \
   -trimpath \
   -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
   -buildmode exe \
   -tags dist \
-  -o "$OUTPUT/$(basename $pkg)" \
+  -o "$OUTPUT/enterprise-$(basename $pkg)" \
   "$pkg"
 
 # We can't use -v because the spawned container might not share
@@ -62,8 +53,8 @@ env go build \
 #     'cat FILE | docker run ... -i ... sh -c "cat > FILE && ..."'
 echo "--- sanity check"
 # shellcheck disable=SC2002
-cat "$OUTPUT/$(basename $pkg)" | docker run \
+cat "$OUTPUT/enterprise-$(basename $pkg)" | docker run \
   --rm \
   -i \
   sourcegraph/alpine@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 \
-  sh -c "cat > /symbols && chmod a+x /symbols && env SANITY_CHECK=true /symbols"
+  sh -c "cat > /enterprise-symbols && chmod a+x /enterprise-symbols && env SANITY_CHECK=true /enterprise-symbols"

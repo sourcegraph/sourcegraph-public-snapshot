@@ -8,6 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/go-ctags"
+
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 )
 
 func TestCtagsParser(t *testing.T) {
@@ -16,7 +18,7 @@ func TestCtagsParser(t *testing.T) {
 		t.Skip("command not in PATH: universal-ctags")
 	}
 
-	p, err := NewCtagsParserFactory("universal-ctags", 250, false, false)()
+	p, err := NewCtagsParserFactory(types.CtagsConfig{Command: "universal-ctags", PatternLengthLimit: 250})()
 	if err != nil {
 		t.Fatal(err)
 	}
