@@ -2028,7 +2028,6 @@ Triggers:
 ---------------+--------------------------+-----------+----------+-----------------
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
- user_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at    | timestamp with time zone |           | not null | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
@@ -2340,7 +2339,6 @@ Foreign-key constraints:
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
- object_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at      | timestamp with time zone |           | not null | 
  service_type    | text                     |           | not null | 
  service_id      | text                     |           | not null | 
