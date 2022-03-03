@@ -26,7 +26,10 @@ func ArchiveReader(
 	options gitserver.ArchiveOptions,
 ) (io.ReadCloser, error) {
 	if authz.SubRepoEnabled(checker) {
-		// todo: handle case if options nil or if paths empty
+		// todo: handle case if options nil or if Treeish empty
+		if len(options.Paths) == 0 {
+			options.Paths = []string{"."}
+		}
 		filteredFiles, err := LsFiles(ctx, checker, repo, api.CommitID(options.Treeish), options.Paths...)
 		if err != nil {
 			return nil, errors.Wrap(err, "LsFiles in ArchiveReader")
