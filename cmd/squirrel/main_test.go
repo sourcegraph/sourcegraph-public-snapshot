@@ -116,7 +116,7 @@ func collectAnnotations(t *testing.T) []annotation {
 					break nextSourceLine
 				}
 
-				matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.]+) (def|ref)`).FindStringSubmatch(lines[annLine])
+				matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[annLine])
 				if matches == nil {
 					sourceLine = annLine
 					continue nextSourceLine
