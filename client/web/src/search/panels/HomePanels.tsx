@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
+import { useEffect } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,6 +8,7 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CollaboratorsPanel } from './CollaboratorsPanel'
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
@@ -24,25 +26,38 @@ interface Props extends TelemetryProps, HomePanelsProps {
 
 const INVITES_TAB_KEY = 'homepage.userInvites.tab'
 
-export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
-    <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
-        <div className="row">
-            <RepositoriesPanel {...props} className={classNames('col-lg-4', styles.panel)} />
-            <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
-        </div>
-        <div className="row">
-            <RecentFilesPanel {...props} className={classNames('col-lg-7', styles.panel)} />
+export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
+    useEffect(() => {
+        if (props.showCollaborators === true) {
+            return
+        }
+        const loggerPayload = {
+            // The other types are emitted in <CollaboratorsPanel />
+            type: 'config-disabled',
+        }
+        eventLogger.log('HomepageInvitationsViewEmpty', loggerPayload, loggerPayload)
+    }, [props.showCollaborators])
 
-            {props.showCollaborators ? (
-                <CollaboratorsTabPanel {...props} />
-            ) : props.isSourcegraphDotCom ? (
-                <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
-            ) : (
-                <SavedSearchesPanel {...props} className={classNames('col-lg-5', styles.panel)} />
-            )}
+    return (
+        <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
+            <div className="row">
+                <RepositoriesPanel {...props} className={classNames('col-lg-4', styles.panel)} />
+                <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
+            </div>
+            <div className="row">
+                <RecentFilesPanel {...props} className={classNames('col-lg-7', styles.panel)} />
+
+                {props.showCollaborators ? (
+                    <CollaboratorsTabPanel {...props} />
+                ) : props.isSourcegraphDotCom ? (
+                    <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
+                ) : (
+                    <SavedSearchesPanel {...props} className={classNames('col-lg-5', styles.panel)} />
+                )}
+            </div>
         </div>
-    </div>
-)
+    )
+}
 
 const CollaboratorsTabPanel: React.FunctionComponent<Props> = (props: Props) => {
     const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting(INVITES_TAB_KEY, 1)

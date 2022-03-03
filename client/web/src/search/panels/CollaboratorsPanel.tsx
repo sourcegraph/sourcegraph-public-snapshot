@@ -55,7 +55,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
         const loggerPayload = {
             discovered: collaborators.length,
         }
-        eventLogger.log('HomepageUserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
+        eventLogger.log('HomepageInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
     }, [collaborators])
 
     const invitePerson = useCallback(
@@ -75,7 +75,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                 })
                 setSuccessfulInvites(set => new Set(set).add(person.email))
 
-                eventLogger.log('HomepageUserInvitationsSentEmailInvite')
+                eventLogger.log('HomepageInvitationsSentEmailInvite')
             } catch (error) {
                 setInviteError(error)
             }
@@ -159,6 +159,14 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }> = ({ username }) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
+    useEffect(() => {
+        const loggerPayload = {
+            // The third type, `config-disabled`, is emitted in <HomePanels />
+            type: emailEnabled ? 'email-not-configured' : 'no-collaborators',
+        }
+        eventLogger.log('HomepageInvitationsViewEmpty', loggerPayload, loggerPayload)
+    }, [])
+
     return (
         <div
             className={classNames(
@@ -179,7 +187,7 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 text={inviteURL}
                 flex={true}
                 size={inviteURL.length}
-                onCopy={() => eventLogger.log('HomepageUserInvitationsCopiedInviteLink')}
+                onCopy={() => eventLogger.log('HomepageInvitationsCopiedInviteLink')}
             />
         </div>
     )
