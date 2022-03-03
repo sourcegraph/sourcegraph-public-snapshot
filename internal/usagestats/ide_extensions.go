@@ -20,7 +20,7 @@ func GetIdeExtensionsUsageStatistics(ctx context.Context, db database.DB) (*type
 	defer rows.Close()
 
 	for rows.Next() {
-		ideaExtensionUsage := types.IdeExtensionsUsageStatistics{}
+		ideExtensionUsage := types.IdeExtensionsUsageStatistics{}
 
 		if err := rows.Scan(
 			&ideaExtensionUsage.IdeKind,

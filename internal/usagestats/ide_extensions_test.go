@@ -19,13 +19,11 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 		timeNow = time.Now
 	}()
 
-	// monthStart := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Date(2022, 2, 9, 12, 55, 0, 0, time.UTC) // Feb 16 2022, Wednesday
 	mockTimeNow(now)
 
 	db := database.NewDB(dbtest.NewDB(t))
 
-	// TODO add better events
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, timestamp, public_argument, version)

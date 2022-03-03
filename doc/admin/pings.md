@@ -112,7 +112,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
   - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
-- Ide extensions usage data
+- IDE extensions usage data
   - Total user count
   - Aggregate daily, weekly, and monthly counts of:
     - Searches performed by unique users
