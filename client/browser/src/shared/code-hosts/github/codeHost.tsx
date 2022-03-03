@@ -39,7 +39,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL } from './util'
+import { getFileContainers, parseURL, getFilePath } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -674,7 +674,7 @@ export const githubCodeHost: GithubCodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
-    isPageLoaded: () => !!document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut'),
+    getFilePath,
     getContext: async () => {
         const { repoName, rawRepoName, pageType } = parseURL()
 

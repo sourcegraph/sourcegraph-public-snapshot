@@ -740,6 +740,7 @@ const isSafeToContinueCodeIntel = async ({
 }: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
     Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
+        console.log(111111)
         return true
     }
 
@@ -748,6 +749,8 @@ const isSafeToContinueCodeIntel = async ({
     // This is only when connected to Sourcegraph Cloud and code host either GitLab or GitHub
     try {
         const context = await codeHost.getContext()
+
+        console.log({ context })
 
         if (!context.privateRepository) {
             // We can auto-clone public repos
@@ -761,8 +764,11 @@ const isSafeToContinueCodeIntel = async ({
             requestGraphQL,
         }).toPromise()
 
+        console.log({ isRepoCloned })
+
         return isRepoCloned
     } catch (error) {
+        console.log({ error })
         // Ignore non-repository pages
         if (error instanceof RepoURLParseError) {
             return false
@@ -898,7 +904,13 @@ export async function handleCodeHost({
         }
     }
 
-    if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
+    const isSafeToContinue = await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render })
+
+    console.log({
+        isSafeToContinue,
+    })
+
+    if (!isSafeToContinue) {
         // Stop initializing code intelligence
         return subscriptions
     }
@@ -1609,5 +1621,8 @@ export function injectCodeIntelligenceToCodeHost(
             }
         })
     )
+
+    console.log('subscribed!')
+
     return subscriptions
 }

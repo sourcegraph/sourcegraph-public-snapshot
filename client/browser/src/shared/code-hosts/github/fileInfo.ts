@@ -50,12 +50,6 @@ export const resolveFileInfo = (): BlobInfo => {
         ? revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length)
         : revisionAndFilePath
 
-    console.log({
-        parsedURL,
-        filePath,
-        filePathWithLeadingSlash,
-    })
-
     if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
         throw new Error(
             `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`

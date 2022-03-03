@@ -39,10 +39,10 @@ export async function injectCodeIntelligence(
         subscriptions.add(
             mutations
                 .pipe(
-                    map(() => codeHost.isPageLoaded() && window.location.pathname),
-                    tap(v => console.log(`pathname: ${v}`)),
-                    filter(Boolean),
-                    distinctUntilChanged()
+                    map(() => window.location.pathname),
+                    filter(pathname => (codeHost.getFilePath ? pathname.endsWith(codeHost.getFilePath()) : true)),
+                    distinctUntilChanged(),
+                    tap(v => console.log('pathname:', v, ' ', 'is loaded:', codeHost.getFilePath?.() ?? true))
                 )
                 .subscribe(() => {
                     if (previousSubscription) {
