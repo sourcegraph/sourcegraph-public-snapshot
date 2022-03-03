@@ -118,7 +118,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		orgsCache:        newOrgsCache(apiURL, a),
+		orgsCache:        newOrgsCache(a),
 		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
 	}
