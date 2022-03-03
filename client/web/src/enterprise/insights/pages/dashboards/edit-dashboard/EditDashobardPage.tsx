@@ -83,7 +83,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
         try {
             const updatedDashboard = await updateDashboard({
-                previousDashboard: dashboard,
+                id: dashboard.id,
                 nextDashboardInput: {
                     name,
                     visibility,

@@ -28,10 +28,7 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         setLoadingOrError(true)
 
         try {
-            await deleteDashboard({
-                dashboardOwnerId: dashboard.owner?.id || '',
-                id: dashboard.id,
-            }).toPromise()
+            await deleteDashboard({ id: dashboard.id }).toPromise()
 
             setLoadingOrError(false)
             onSuccess()
