@@ -110,18 +110,10 @@ func collectAnnotations(t *testing.T) []annotation {
 
 		lines := strings.Split(strings.TrimSpace(string(contents)), "\n")
 	nextSourceLine:
-		for sourceLine := 0; ; {
-			for annLine := sourceLine + 1; ; annLine++ {
-				if annLine >= len(lines) {
-					break nextSourceLine
-				}
-
-				matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[annLine])
-				if matches == nil {
-					sourceLine = annLine
-					continue nextSourceLine
-				}
-
+		for sourceLine := 0; sourceLine < len(lines); {
+			if matches := regexp.MustCompile(`^([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[sourceLine]); matches != nil {
+				// After line annotation
+				column := strings.Index(lines[sourceLine], matches[2])
 				annotations = append(annotations, annotation{
 					location: Location{
 						RepoCommitPath: RepoCommitPath{
@@ -130,11 +122,41 @@ func collectAnnotations(t *testing.T) []annotation {
 							Path:   path,
 						},
 						Row:    uint32(sourceLine),
-						Column: uint32(spacesToColumn(lines[sourceLine], lengthInSpaces(matches[1]))),
+						Column: uint32(column),
 					},
 					symbol: matches[3],
 					kind:   matches[4],
 				})
+
+				sourceLine++
+				continue nextSourceLine
+			} else {
+				// Next line annotation
+				for annLine := sourceLine + 1; ; annLine++ {
+					if annLine >= len(lines) {
+						break nextSourceLine
+					}
+
+					matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.-]+) (def|ref)`).FindStringSubmatch(lines[annLine])
+					if matches == nil {
+						sourceLine = annLine
+						continue nextSourceLine
+					}
+
+					annotations = append(annotations, annotation{
+						location: Location{
+							RepoCommitPath: RepoCommitPath{
+								Repo:   "foo",
+								Commit: "bar",
+								Path:   path,
+							},
+							Row:    uint32(sourceLine),
+							Column: uint32(spacesToColumn(lines[sourceLine], lengthInSpaces(matches[1]))),
+						},
+						symbol: matches[3],
+						kind:   matches[4],
+					})
+				}
 			}
 		}
 

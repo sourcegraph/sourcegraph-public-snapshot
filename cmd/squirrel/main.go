@@ -227,6 +227,7 @@ func (s *Squirrel) definition(location Location) (*Location, error) {
 var goBindings expr = eOr(
 	eAnd(eType("function_declaration"), eField("name", eCapture(eType("identifier"))), eField("parameters", goBindingsParameters)),
 	eAnd(eType("func_literal"), eField("parameters", goBindingsParameters)),
+	eAnd(eType("block"), eChildren(eAnd(eType("short_var_declaration"), eField("left", eAnd(eType("expression_list"), eChildren(eCapture(eType("identifier")))))))),
 )
 
 var goBindingsParameters expr = eAnd(
