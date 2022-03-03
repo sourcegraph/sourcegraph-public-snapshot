@@ -14,20 +14,28 @@ interface Props {
     disabled: boolean
     name: string
     selected?: number
+    className?: string
     onChange: (value: number) => void
 }
 
 /**
  * Used to render a list of icons with <input type="radio" />
  */
-export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, selected, onChange, disabled }) => {
+export const IconRadioButtons: React.FunctionComponent<Props> = ({
+    name,
+    icons,
+    selected,
+    onChange,
+    disabled,
+    className,
+}) => {
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => onChange(Number(event.target.value)),
         [onChange]
     )
 
     return (
-        <ul className={styles.buttons}>
+        <ul className={classNames(className, styles.buttons)}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
                     <label className={styles.label}>

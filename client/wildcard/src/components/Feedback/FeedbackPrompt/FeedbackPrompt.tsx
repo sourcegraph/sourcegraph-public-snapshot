@@ -125,7 +125,7 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <h3 className="mb-0">What’s on your mind?</h3>
+                    <h3 className="mb-3">What’s on your mind?</h3>
 
                     <FlexTextArea
                         onChange={handleTextChange}
@@ -144,6 +144,7 @@ const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps>
                         selected={rating}
                         onChange={handleRateChange}
                         disabled={submitting}
+                        className="mt-3"
                     />
                     {submitResponse?.errorMessage && (
                         <ErrorAlert
