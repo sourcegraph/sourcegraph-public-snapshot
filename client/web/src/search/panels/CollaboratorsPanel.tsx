@@ -113,7 +113,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                         >
                             <UserAvatar size={40} className={classNames(styles.avatar, 'mr-3')} user={person} />
                             <div className={styles.content}>
-                                <strong className={styles.clipText}>{person.displayName}dasdfjlaskdfjlsakfd</strong>
+                                <strong className={styles.clipText}>{person.displayName}</strong>
                                 <div className={styles.inviteButton}>
                                     {loadingInvites.has(person.email) ? (
                                         <span className=" ml-auto mr-3">
