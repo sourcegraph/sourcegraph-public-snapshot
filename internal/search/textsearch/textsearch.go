@@ -70,7 +70,15 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 
 		// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 		g.Go(func() error {
-			return searcher.SearchOverRepos(ctx, t.SearcherArgs, stream, unindexed, false)
+			searcherJob := &searcher.Searcher{
+				PatternInfo:     t.SearcherArgs.PatternInfo,
+				Repos:           unindexed,
+				Indexed:         false,
+				SearcherURLs:    t.SearcherArgs.SearcherURLs,
+				UseFullDeadline: t.SearcherArgs.UseFullDeadline,
+			}
+			_, err := searcherJob.Run(ctx, db, stream)
+			return err
 		})
 
 		return g.Wait()
