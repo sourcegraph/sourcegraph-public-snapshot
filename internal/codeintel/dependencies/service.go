@@ -128,8 +128,12 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 				defer s.lockfilesSemaphore.Release(1)
 
 				repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
+				if err != nil {
+					return err
+				}
+
 				depsChan <- repoDeps
-				return err
+				return nil
 			})
 		}
 	}
