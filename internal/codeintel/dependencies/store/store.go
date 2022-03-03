@@ -7,8 +7,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -45,10 +45,11 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 type ListDependencyReposOpts struct {
-	Scheme string
-	Name   string
-	After  int
-	Limit  int
+	Scheme      string
+	Name        string
+	After       int
+	Limit       int
+	NewestFirst bool
 }
 
 func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []DependencyRepo, err error) {
@@ -61,9 +62,15 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
+	sortDirection := "ASC"
+	if opts.NewestFirst {
+		sortDirection = "DESC"
+	}
+
 	return scanDependencyRepos(s.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
+		sqlf.Sprintf(sortDirection),
 		makeLimit(opts.Limit),
 	)))
 }
@@ -73,7 +80,7 @@ const listDependencyReposQuery = `
 SELECT id, scheme, name, version
 FROM lsif_dependency_repos
 WHERE %s
-ORDER BY id DESC
+ORDER BY id %s
 %s
 `
 
@@ -84,8 +91,12 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
+	if opts.After != 0 {
+		if opts.NewestFirst {
+			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
+		} else {
+			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
 	}
 
 	return conds
@@ -99,23 +110,53 @@ func makeLimit(limit int) *sqlf.Query {
 	return sqlf.Sprintf("LIMIT %s", limit)
 }
 
-// UpsertDependencyRepo creates the given dependency repo if it doesn't yet exist.
-func (s *Store) UpsertDependencyRepo(ctx context.Context, dep reposource.PackageDependency) (isNew bool, err error) {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(
-		`insert into lsif_dependency_repos (scheme, name, version) values (%s, %s, %s) on conflict do nothing`,
-		dep.Scheme(),
-		dep.PackageSyntax(),
-		dep.PackageVersion(),
-	))
+// UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
+// did not exist previously are returned.
+func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []DependencyRepo) (newDeps []DependencyRepo, err error) {
+	ctx, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numDeps", len(deps)),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numNewDeps", len(newDeps)),
+		}})
+	}()
 
-	if err != nil {
-		return false, err
+	callback := func(inserter *batch.Inserter) error {
+		for _, dep := range deps {
+			if err := inserter.Insert(ctx, dep.Scheme, dep.Name, dep.Version); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return false, err
+	returningScanner := func(rows dbutil.Scanner) error {
+		var dependencyRepo DependencyRepo
+		if err = rows.Scan(
+			&dependencyRepo.ID,
+			&dependencyRepo.Scheme,
+			&dependencyRepo.Name,
+			&dependencyRepo.Version,
+		); err != nil {
+			return err
+		}
+
+		newDeps = append(newDeps, dependencyRepo)
+		return nil
 	}
 
-	return affected == 1, nil
+	err = batch.WithInserterWithReturn(
+		ctx,
+		s.Handle().DB(),
+		"lsif_dependency_repos",
+		batch.MaxNumPostgresParameters,
+		[]string{"scheme", "name", "version"},
+		"ON CONFLICT DO NOTHING",
+		[]string{"id", "scheme", "name", "version"},
+		returningScanner,
+		callback,
+	)
+	return newDeps, err
 }
