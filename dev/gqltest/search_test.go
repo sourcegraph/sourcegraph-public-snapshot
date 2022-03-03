@@ -326,6 +326,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("repo:deps predicate", func(t *testing.T) {
+		t.Skip("Flaky test, working on a follow up to https://github.com/sourcegraph/sourcegraph/pull/32133")
+
 		cfg, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
