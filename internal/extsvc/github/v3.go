@@ -118,7 +118,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		orgsCache:        newOrgsCache(apiURL, a),
+		orgsCache:        newOrgsCache(a),
 		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
 	}
@@ -217,7 +217,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
-func newOrgsCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
+func newOrgsCache(a auth.Authenticator) *rcache.Cache {
 	if a == nil {
 		log15.Warn("Cannot initialize orgsCache for nil auth")
 		return nil
