@@ -5,8 +5,8 @@ import "fmt"
 func main() {}
 
 //       v simple-foo-x def
-//       |      v simple-foo-y def
-func foo(x int, y int) {
+//       |  v simple-foo-y def
+func foo(x, y int) {
 	//          v simple-foo-x ref
 	//          |  v simple-foo-y ref
 	fmt.Println(x, y)
