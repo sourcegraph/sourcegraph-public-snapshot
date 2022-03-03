@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -97,7 +98,7 @@ func settings(ctx context.Context) (_ *schema.Settings, err error) {
 
 func doSearch(ctx context.Context, db database.DB, query string, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, db, "V2", nil, query, search.Streaming, settings)
+	inputs, err := searchClient.Plan(ctx, db, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, err
 	}
