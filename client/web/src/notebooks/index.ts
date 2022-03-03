@@ -6,7 +6,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
-export type BlockType = 'md' | 'query' | 'file'
+export type BlockType = 'md' | 'query' | 'file' | 'compute'
 
 interface BaseBlock<I, O> {
     id: string
@@ -34,14 +34,23 @@ export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[]
     type: 'file'
 }
 
-export type Block = QueryBlock | MarkdownBlock | FileBlock
+export interface ComputeBlock extends BaseBlock<string, string> {
+    type: 'compute'
+}
+
+export type Block = QueryBlock | MarkdownBlock | FileBlock | ComputeBlock
 
 export type BlockInput =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
+    | Pick<ComputeBlock, 'type' | 'input'>
 
-export type BlockInit = Omit<FileBlock, 'output'> | Omit<MarkdownBlock, 'output'> | Omit<QueryBlock, 'output'>
+export type BlockInit =
+    | Omit<FileBlock, 'output'>
+    | Omit<MarkdownBlock, 'output'>
+    | Omit<QueryBlock, 'output'>
+    | Omit<ComputeBlock, 'output'>
 
 export type BlockDirection = 'up' | 'down'
 

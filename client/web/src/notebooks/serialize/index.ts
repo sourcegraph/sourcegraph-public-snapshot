@@ -22,6 +22,7 @@ export function serializeBlockToMarkdown(block: Block, sourcegraphURL: string): 
         case 'query':
             return `\`\`\`sourcegraph\n${serializedInput}\n\`\`\``
         case 'file':
+        case 'compute':
             return serializedInput
     }
 }
@@ -30,6 +31,7 @@ export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): 
     switch (block.type) {
         case 'md':
         case 'query':
+        case 'compute':
             return block.input
         case 'file':
             return toAbsoluteBlobURL(sourcegraphURL, {
@@ -76,6 +78,7 @@ export function deserializeBlockInput(type: Block['type'], input: string): Block
     switch (type) {
         case 'md':
         case 'query':
+        case 'compute':
             return { type, input }
         case 'file':
             return { type, input: parseFileBlockInput(input) }
@@ -116,6 +119,8 @@ export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
             return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input }
         case 'file':
             return { id: block.id, type: NotebookBlockType.FILE, fileInput: block.input }
+        case 'compute':
+            throw new Error('Unreachable: Compute block deserialization not supported yet.')
     }
 }
 

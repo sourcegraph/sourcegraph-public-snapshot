@@ -17,13 +17,16 @@ import { blockToGQLInput, deserializeBlockInput } from '../serialize'
 const LOADING = 'loading' as const
 
 function deserializeBlocks(serializedBlocks: string): CreateNotebookBlockInput[] {
-    return serializedBlocks.split(',').map(serializedBlock => {
+    return serializedBlocks.split(',').flatMap(serializedBlock => {
         const [type, encodedInput] = serializedBlock.split(':')
-        if (type !== 'md' && type !== 'query' && type !== 'file') {
+        if (type !== 'md' && type !== 'query' && type !== 'file' && type !== 'compute') {
             throw new Error(`Unknown block type: ${type}`)
         }
+        if (type === 'compute') {
+            return [] // compute blocks do not support deserialization yet.
+        }
         const block = deserializeBlockInput(type, decodeURIComponent(encodedInput))
-        return blockToGQLInput({ id: uuid.v4(), ...block })
+        return [blockToGQLInput({ id: uuid.v4(), ...block })]
     })
 }
 
