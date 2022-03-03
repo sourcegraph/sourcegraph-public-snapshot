@@ -43,7 +43,7 @@ export const logUserEvent = (
  * Log a raw user action on the associated Sourcegraph instance
  */
 export const logEvent = (
-    event: { name: string; userCookieID: string; url: string; argument?: string | {} },
+    event: { name: string; userCookieID: string; url: string; argument?: string | {}; publicArgument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     requestGraphQL<GQL.IMutation>({
@@ -54,8 +54,16 @@ export const logEvent = (
                 $url: String!
                 $source: EventSource!
                 $argument: String
+                $publicArgument: String
             ) {
-                logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
+                logEvent(
+                    event: $name
+                    userCookieID: $userCookieID
+                    url: $url
+                    source: $source
+                    argument: $argument
+                    publicArgument: $publicArgument
+                ) {
                     alwaysNil
                 }
             }
@@ -64,6 +72,7 @@ export const logEvent = (
             ...event,
             source: EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
+            publicArgument: event.publicArgument && JSON.stringify(event.publicArgument),
         },
         mightContainPrivateInfo: false,
         // eslint-disable-next-line rxjs/no-ignored-subscription
