@@ -763,7 +763,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     return path.join(configPath, 'puppeteer.cfg')
 }
 
-interface DriverOptions extends LaunchOptions, BrowserConnectOptions {
+interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLaunchArgumentOptions {
     browser?: 'chrome' | 'firefox'
 
     /** If true, load the Sourcegraph browser extension. */

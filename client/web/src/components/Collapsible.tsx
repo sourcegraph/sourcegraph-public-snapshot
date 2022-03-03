@@ -97,7 +97,11 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
-                    <Icon aria-label="Close section" as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                    {isExpanded ? (
+                        <Icon aria-label="Close section" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand section" as={ChevronRightIcon} />
+                    )}
                 </Button>
                 {!titleAtStart && titleNode}
             </div>

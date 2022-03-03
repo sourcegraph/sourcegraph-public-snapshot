@@ -15,22 +15,12 @@ export interface IconProps extends SVGProps<SVGSVGElement> {
      * Always be mindful of potentially accessibility pitfalls when using this!
      */
     as?: ElementType
-    /**
-     * Whether to show with icon-inline
-     *
-     * @default true
-     */
-    inline?: boolean
-    /**
-     * Supports src property for image icons
-     */
-    src?: string
 }
 
 export const Icon = React.forwardRef<SVGElement, IconProps>(
-    ({ children, inline = true, className, size, as: Component = 'svg', ...attributes }, reference) => (
+    ({ children, className, size, as: Component = 'svg', ...attributes }, reference) => (
         <Component
-            className={classNames(inline && styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
+            className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
             ref={reference}
             {...attributes}
         >

@@ -99,7 +99,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
                     <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
-                        {expanded ? <Icon as={ChevronDownIcon} /> : <Icon as={ChevronRightIcon} />}
+                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (

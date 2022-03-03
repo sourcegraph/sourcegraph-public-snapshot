@@ -17,6 +17,20 @@ const config: Meta = {
     title: 'wildcard/Popover',
     component: Popover,
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
+    parameters: {
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A1352',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A2975',
+            },
+        ],
+    },
 }
 
 export default config

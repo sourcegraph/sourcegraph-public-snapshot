@@ -43,15 +43,6 @@ const codeIntelFragments = gql`
     }
 `
 
-const hoverFragments = gql`
-    fragment HoverFields on Hover {
-        markdown {
-            html
-            text
-        }
-    }
-`
-
 const gitBlobLsifDataQueryFragment = gql`
     fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
         references(
@@ -74,9 +65,6 @@ const gitBlobLsifDataQueryFragment = gql`
         }
         definitions(line: $line, character: $character, filter: $filter) {
             ...LocationConnectionFields
-        }
-        hover(line: $line, character: $character) {
-            ...HoverFields
         }
     }
 `
@@ -108,7 +96,6 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
     }
 
     ${codeIntelFragments}
-    ${hoverFragments}
     ${gitBlobLsifDataQueryFragment}
 `
 

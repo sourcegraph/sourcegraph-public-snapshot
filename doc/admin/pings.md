@@ -115,6 +115,25 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - who visited Sourcegraph instance from browser extension
 
 
+- CTA usage data
+  - Browser extension
+    - Total number of users who viewed the "install browser extension" CTA on the file page
+    - Total number of users who clicked the "install browser extension" CTA on the file page
+    - Total number of users who viewed the "install browser extension" CTA on the search page
+    - Total number of users who clicked the "install browser extension" CTA on the search page
+    - Total number of views of the "install browser extension" CTA on the file page
+    - Total number of clicks on the "install browser extension" CTA on the file page
+    - Total number of views of the "install browser extension" CTA on the search page
+    - Total number of clicks on the "install browser extension" CTA on the search page
+
+- CTA usage data
+  - Browser extension
+    - Number of users who viewed / clicked the "install browser extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install browser extension" CTA on the file / search pages today
+  - IDE extension
+    - Number of users who viewed / clicked the "install IDE extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install IDE extension" CTA on the file / search pages today
+
 ## CIDR Range for Sourcegraph
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)

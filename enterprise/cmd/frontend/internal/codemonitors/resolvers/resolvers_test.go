@@ -15,11 +15,11 @@ import (
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -325,7 +325,7 @@ func TestQueryMonitor(t *testing.T) {
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
 		func() error {
-			return r.db.CodeMonitors().UpdateTriggerJobWithResults(ctx, 1, "", make([]cmtypes.CommitSearchResult, 1))
+			return r.db.CodeMonitors().UpdateTriggerJobWithResults(ctx, 1, "", make([]*result.CommitMatch, 1))
 		},
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
