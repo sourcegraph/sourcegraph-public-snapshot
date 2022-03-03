@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -45,7 +43,7 @@ import (
 func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
-		newSearchClient:     client.NewSearchClient,
+		searchClient:        client.NewSearchClient(search.Indexed(), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -53,7 +51,7 @@ func StreamHandler(db database.DB) http.Handler {
 
 type streamHandler struct {
 	db                  database.DB
-	newSearchClient     func(zoekt.Streamer, *endpoint.Map) client.SearchClient
+	searchClient        client.SearchClient
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -298,8 +296,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 		}
 	}
 
-	searchClient := h.newSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
 		var queryErr *run.QueryError
@@ -323,7 +320,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 		defer close(eventsC)
 		defer batchedStream.Done()
 
-		alert, err := searchClient.Execute(ctx, h.db, batchedStream, inputs)
+		alert, err := h.searchClient.Execute(ctx, h.db, batchedStream, inputs)
 		final <- finalResult{alert: alert, err: err}
 	}()
 
