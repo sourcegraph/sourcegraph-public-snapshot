@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { isErrorLike } from '@sourcegraph/common'
 import { Button, Card } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
@@ -30,11 +31,9 @@ export interface ActionEditorProps {
     onDelete: React.FormEventHandler
 
     // Test action
-    testButtonDisabled: boolean
-    testButtonDisabledReason?: string
-    testCalled: boolean
-    testError?: Error
-    testLoading: boolean
+    testState: 'called' | 'loading' | Error | undefined
+
+    testButtonDisabledReason?: string // If defined, the test button is disabled and this is the reason why
     testButtonText: string
     testAgainButtonText: string
     onTest: () => void
@@ -60,11 +59,8 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
     onCancel,
     canDelete,
     onDelete,
-    testButtonDisabled,
+    testState,
     testButtonDisabledReason,
-    testLoading,
-    testCalled,
-    testError,
     testButtonText,
     testAgainButtonText,
     onTest,
@@ -133,15 +129,15 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                         <Button
                             className="mr-2"
                             variant="secondary"
-                            outline={!testButtonDisabled}
-                            disabled={testButtonDisabled || testLoading || (testCalled && !testError)}
+                            outline={!testButtonDisabledReason}
+                            disabled={!!testButtonDisabledReason || testState === 'loading' || testState === 'called'}
                             onClick={onTest}
                             size="sm"
                             data-testid={`send-test-${idName}`}
                         >
                             {testButtonText}
                         </Button>
-                        {testCalled && !testError && !testLoading && !testButtonDisabled && (
+                        {testState === 'called' && !testButtonDisabledReason && (
                             <Button
                                 className="p-0"
                                 onClick={onTest}
@@ -152,15 +148,15 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                 {testAgainButtonText}
                             </Button>
                         )}
-                        {testButtonDisabled && (
+                        {testButtonDisabledReason && (
                             <div className={classNames('mt-2', styles.testActionError)}>{testButtonDisabledReason}</div>
                         )}
-                        {testError && (
+                        {isErrorLike(testState) && (
                             <div
                                 className={classNames('mt-2', styles.testActionError)}
                                 data-testid={`test-${idName}-error`}
                             >
-                                {testError.message}
+                                {testState.message}
                             </div>
                         )}
                     </div>

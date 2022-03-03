@@ -89,12 +89,13 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
         ? 'Test call completed!'
         : 'Call webhook with test payload'
 
-    const testButtonDisabled = !monitorName || !url
     const testButtonDisabledReason = !monitorName
         ? 'Please provide a name for the code monitor before making a test call'
         : !url
         ? 'Please provide a webhook URL before making a test call'
         : undefined
+
+    const testState = loading ? 'loading' : called && !error ? 'called' : error || undefined
 
     return (
         <ActionEditor
@@ -118,11 +119,8 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
-            testButtonDisabled={testButtonDisabled}
+            testState={testState}
             testButtonDisabledReason={testButtonDisabledReason}
-            testCalled={called}
-            testError={error}
-            testLoading={loading}
             testButtonText={testButtonText}
             testAgainButtonText="Test again"
             onTest={onSendTestMessage}

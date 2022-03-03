@@ -89,8 +89,10 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
 
     const testButtonText = loading ? 'Sending email...' : called && !error ? 'Test email sent!' : 'Send test email'
 
-    const testButtonDisabled = !monitorName
-    const testButtonDisabledReason = 'Please provide a name for the code monitor before sending a test'
+    const testButtonDisabledReason = !monitorName
+        ? 'Please provide a name for the code monitor before sending a test'
+        : undefined
+    const testState = loading ? 'loading' : called && !error ? 'called' : error || undefined
 
     return (
         <ActionEditor
@@ -109,14 +111,11 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
-            testButtonDisabled={testButtonDisabled}
+            testState={testState}
             testButtonDisabledReason={testButtonDisabledReason}
             testButtonText={testButtonText}
             testAgainButtonText="Send again"
             onTest={onSendTestEmail}
-            testLoading={loading}
-            testError={error}
-            testCalled={called}
             _testStartOpen={_testStartOpen}
         >
             <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">

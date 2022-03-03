@@ -24,12 +24,10 @@ describe('ActionEditor', () => {
         onCancel: sinon.fake(),
         canDelete: true,
         onDelete: sinon.fake(),
-        testButtonDisabled: false,
         testButtonText: 'Send test email',
         onTest: sinon.fake(),
         testAgainButtonText: 'Send again',
-        testCalled: false,
-        testLoading: false,
+        testState: undefined,
     }
 
     test('expand and collapse with cancel button', () => {
