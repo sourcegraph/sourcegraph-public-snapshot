@@ -166,7 +166,7 @@ func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMa
 		enrichWithLogLevels(&cmd, levelOverrides)
 	}
 
-	env := globalConf.Env
+	env := conf.Env
 	for k, v := range set.Env {
 		env[k] = v
 	}
