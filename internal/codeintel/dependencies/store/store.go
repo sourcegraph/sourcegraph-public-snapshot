@@ -45,10 +45,11 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 type ListDependencyReposOpts struct {
-	Scheme string
-	Name   string
-	After  int
-	Limit  int
+	Scheme      string
+	Name        string
+	After       int
+	Limit       int
+	NewestFirst bool
 }
 
 func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []DependencyRepo, err error) {
@@ -61,9 +62,15 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
+	sortDirection := "ASC"
+	if opts.NewestFirst {
+		sortDirection = "DESC"
+	}
+
 	return scanDependencyRepos(s.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
+		sqlf.Sprintf(sortDirection),
 		makeLimit(opts.Limit),
 	)))
 }
@@ -73,7 +80,7 @@ const listDependencyReposQuery = `
 SELECT id, scheme, name, version
 FROM lsif_dependency_repos
 WHERE %s
-ORDER BY id DESC
+ORDER BY id %s
 %s
 `
 
@@ -84,8 +91,12 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After > 0 {
-		conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
+	if opts.After != 0 {
+		if opts.NewestFirst {
+			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
+		} else {
+			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
 	}
 
 	return conds
