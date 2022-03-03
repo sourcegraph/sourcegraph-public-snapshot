@@ -342,11 +342,13 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		"orgs":                "id",
 	}
 
-	// The order of deletion matters, that is why we iterate over an array instead of a map, which is unordered.
+	// 🚨 SECURITY: Be cautious about changing order here.
 	tables := []string{"org_members", "org_invitations", "registry_extensions", "saved_searches", "notebooks", "settings", "orgs"}
 	for _, t := range tables {
-		query := fmt.Sprintf("DELETE FROM %s WHERE %s=%v", t, tablesAndKeys[t], id)
-		if _, err := tx.Handle().DB().ExecContext(ctx, query); err != nil {
+		query := sqlf.Sprintf(fmt.Sprintf("DELETE FROM %s WHERE %s=%d", t, tablesAndKeys[t], id))
+
+		_, err := tx.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		if err != nil {
 			return err
 		}
 	}
