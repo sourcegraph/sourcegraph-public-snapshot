@@ -10,7 +10,7 @@ func Init() {
 	// The default client is started in InitConfigurationServerFrontendOnly in
 	// the case of server mode.
 	if getMode() == modeClient {
-		go defaultClientVal.continuouslyUpdate(nil)
+		go DefaultClient().continuouslyUpdate(nil)
 		close(configurationServerFrontendOnlyInitialized)
 	}
 
