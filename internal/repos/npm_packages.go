@@ -75,10 +75,9 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	pkgVersions := map[string]*npm.PackageInfo{}
 	for {
 		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.NPMPackagesScheme,
-			After:       lastID,
-			Limit:       100,
-			NewestFirst: true,
+			Scheme: dependenciesStore.NPMPackagesScheme,
+			After:  lastID,
+			Limit:  100,
 		})
 		if err != nil {
 			results <- SourceResult{Err: err}

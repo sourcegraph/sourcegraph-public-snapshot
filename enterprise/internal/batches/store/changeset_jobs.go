@@ -111,7 +111,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		changesetJobInsertColumns,
 		"",
 		changesetJobColumns,
-		func(rows dbutil.Scanner) error {
+		func(rows *sql.Rows) error {
 			i++
 			return scanChangesetJob(cs[i], rows)
 		},

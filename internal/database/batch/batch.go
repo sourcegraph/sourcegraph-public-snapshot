@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
@@ -31,7 +32,7 @@ type Inserter struct {
 	commonLogFields      []log.Field
 }
 
-type ReturningScanner func(rows dbutil.Scanner) error
+type ReturningScanner func(rows *sql.Rows) error
 
 // InsertValues creates a new batch inserter using the given database handle, table name, and
 // column names, then reads from the given channel as if they specify values for a single row.
