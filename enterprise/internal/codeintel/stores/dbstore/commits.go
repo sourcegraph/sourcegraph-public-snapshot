@@ -351,7 +351,7 @@ func (s *Store) calculateVisibleUploadsInternal(
 
 	// Return a structure holding several channels that are populated by a background goroutine.
 	// When we write this data to temporary tables, we have three consumers pulling values from
-	// these channels in paralle. We need to make sure that once we return from this function that
+	// these channels in parallel. We need to make sure that once we return from this function that
 	// the producer routine shuts down. This prevents the producer from leaking if there is an
 	// error in one of the consumers before all values have been emitted.
 	sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
